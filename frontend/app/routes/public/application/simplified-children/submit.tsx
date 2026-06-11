@@ -22,9 +22,8 @@ import { InlineLink } from '~/components/inline-link';
 import { InputCheckbox } from '~/components/input-checkbox';
 import { LoadingButton } from '~/components/loading-button';
 import { NavigationButtonLink } from '~/components/navigation-buttons';
-import { useFetcherSubmissionState, useHCaptcha } from '~/hooks';
+import { useHCaptchaFetcherSubmit } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { useFeature } from '~/root';
 import { ProgressStepper } from '~/routes/public/application/simplified-children/progress-stepper';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -117,30 +116,9 @@ export default function RenewChildrenSubmit({ loaderData, params }: Route.Compon
   const { t } = useTranslation('applicationSimplifiedChild');
 
   const fetcher = useFetcher<typeof action>();
-  const { isSubmitting } = useFetcherSubmissionState(fetcher);
-
   const errors = fetcher.data?.errors;
 
-  const hCaptchaEnabled = useFeature('hcaptcha');
-  const { captchaRef, onLoad, sitekey } = useHCaptcha();
-
-  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
-    if (hCaptchaEnabled && captchaRef.current) {
-      try {
-        const response = captchaRef.current.getResponse();
-        formData.set('h-captcha-response', response);
-      } catch {
-        /* intentionally ignore and proceed with submission */
-      } finally {
-        captchaRef.current.resetCaptcha();
-      }
-    }
-
-    await fetcher.submit(formData, { method: 'POST' });
-  }
+  const { handleSubmit, hCaptchaEnabled, hCaptchaOnLoad, hCaptchaRef, hCaptchaSitekey, isSubmitting } = useHCaptchaFetcherSubmit(fetcher);
 
   const eligibilityLink = <InlineLink to={t(($) => $.submit.doYouQualifyHref)} className="external-link" newTabIndicator target="_blank" />;
 
@@ -178,7 +156,7 @@ export default function RenewChildrenSubmit({ loaderData, params }: Route.Compon
               </p>
               <fetcher.Form method="post" onSubmit={handleSubmit} noValidate>
                 <CsrfTokenInput />
-                {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={sitekey} ref={captchaRef} onLoad={onLoad} />}
+                {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={hCaptchaSitekey} ref={hCaptchaRef} onLoad={hCaptchaOnLoad} />}
                 <div className="space-y-2">
                   <InputCheckbox id="acknowledge-info" name="acknowledgeInfo" value={CHECKBOX_VALUE.yes} errorMessage={errors?.acknowledgeInfo} required>
                     {t(($) => $.submit.infoIsCorrect)}
