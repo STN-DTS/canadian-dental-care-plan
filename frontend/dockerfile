@@ -97,7 +97,7 @@ ARG BUILD_VERSION="0.0.0"
 ARG IMAGE_AUTHORS="Digital Technology Solutions"
 ARG IMAGE_DESCRIPTION="Canadian Dental Care Plan -- Frontend Application"
 ARG IMAGE_TITLE="Canadian Dental Care Plan"
-ARG IMAGE_URL="https://github.com/DTS-STN/canadian-dental-care-plan/"
+ARG IMAGE_URL="https://github.com/STN-DTS/canadian-dental-care-plan/"
 ARG IMAGE_VENDOR="Employment and Social Development Canada"
 
 ENV BUILD_DATE=${BUILD_DATE}
