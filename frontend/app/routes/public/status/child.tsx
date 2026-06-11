@@ -26,9 +26,8 @@ import { InputPatternField } from '~/components/input-pattern-field';
 import { InputRadios } from '~/components/input-radios';
 import { InputSanitizeField } from '~/components/input-sanitize-field';
 import { LoadingButton } from '~/components/loading-button';
-import { useFetcherSubmissionState, useHCaptcha } from '~/hooks';
+import { useHCaptchaFetcherSubmit } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { useFeature } from '~/root';
 import { applicationCodeInputPatternFormat, isValidCodeOrNumber } from '~/utils/application-code-utils';
 import { extractDateParts, getAgeFromDateString, isPastDateString, isValidDateString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
@@ -245,32 +244,10 @@ export async function action({ context: { appContainer, session }, params, reque
 
 export default function StatusCheckerChild({ loaderData, params }: Route.ComponentProps) {
   const { t } = useTranslation('status');
-  const hCaptchaEnabled = useFeature('hcaptcha');
-  const { captchaRef, onLoad, sitekey } = useHCaptcha();
-
   const [childHasSinState, setChildHasSinState] = useState<boolean>();
-
   const fetcher = useFetcher<typeof action>();
-  const { isSubmitting } = useFetcherSubmissionState(fetcher);
   const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : undefined;
-
-  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
-    if (hCaptchaEnabled && captchaRef.current) {
-      try {
-        const response = captchaRef.current.getResponse();
-        formData.set('h-captcha-response', response);
-      } catch {
-        /* intentionally ignore and proceed with submission */
-      } finally {
-        captchaRef.current.resetCaptcha();
-      }
-    }
-
-    await fetcher.submit(formData, { method: 'POST' });
-  }
+  const { isSubmitting, handleSubmit, hCaptchaRef, hCaptchaOnLoad, hCaptchaSitekey, hCaptchaEnabled } = useHCaptchaFetcherSubmit(fetcher);
 
   function handleOnChildHasSinChanged(e: React.ChangeEvent<HTMLInputElement>) {
     setChildHasSinState(e.target.value === CHILD_HAS_SIN.yes);
@@ -285,7 +262,7 @@ export default function StatusCheckerChild({ loaderData, params }: Route.Compone
           <ErrorSummary />
           <fetcher.Form method="post" onSubmit={handleSubmit} noValidate autoComplete="off" data-gc-analytics-formname="ESDC-EDSC: Canadian Dental Care Plan Status Checker">
             <CsrfTokenInput />
-            {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={sitekey} ref={captchaRef} onLoad={onLoad} />}
+            {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={hCaptchaSitekey} ref={hCaptchaRef} onLoad={hCaptchaOnLoad} />}
             <div className="mb-8 space-y-6">
               <InputPatternField
                 id="code"
