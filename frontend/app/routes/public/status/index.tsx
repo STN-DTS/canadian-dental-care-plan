@@ -19,9 +19,8 @@ import { ErrorSummaryProvider } from '~/components/error-summary-context';
 import { InlineLink } from '~/components/inline-link';
 import { InputRadios } from '~/components/input-radios';
 import { LoadingButton } from '~/components/loading-button';
-import { useFetcherSubmissionState, useHCaptcha } from '~/hooks';
+import { useHCaptchaFetcherSubmit } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { useFeature } from '~/root';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -85,29 +84,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
 export default function StatusChecker({ loaderData, params }: Route.ComponentProps) {
   const { t } = useTranslation('status');
-  const hCaptchaEnabled = useFeature('hcaptcha');
-  const { captchaRef, onLoad, sitekey } = useHCaptcha();
   const fetcher = useFetcher<typeof action>();
-  const { isSubmitting } = useFetcherSubmissionState(fetcher);
   const errors = fetcher.data?.errors;
 
-  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
-    if (hCaptchaEnabled && captchaRef.current) {
-      try {
-        const response = captchaRef.current.getResponse();
-        formData.set('h-captcha-response', response);
-      } catch {
-        /* intentionally ignore and proceed with submission */
-      } finally {
-        captchaRef.current.resetCaptcha();
-      }
-    }
-
-    await fetcher.submit(formData, { method: 'POST' });
-  }
+  const { isSubmitting, handleSubmit, hCaptchaRef, hCaptchaOnLoad, hCaptchaSitekey, hCaptchaEnabled } = useHCaptchaFetcherSubmit(fetcher);
 
   const hcaptchaTermsOfService = <InlineLink to={t(($) => $.links.hcaptcha)} className="external-link" newTabIndicator target="_blank" />;
   const microsoftDataPrivacyPolicy = <InlineLink to={t(($) => $.links.microsoftDataPrivacyPolicy)} className="external-link" newTabIndicator target="_blank" />;
@@ -178,7 +158,7 @@ export default function StatusChecker({ loaderData, params }: Route.ComponentPro
           <ErrorSummary />
           <fetcher.Form method="post" onSubmit={handleSubmit} noValidate autoComplete="off" data-gc-analytics-formname="ESDC-EDSC: Canadian Dental Care Plan Status Checker">
             <CsrfTokenInput />
-            {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={sitekey} ref={captchaRef} onLoad={onLoad} />}
+            {hCaptchaEnabled && <HCaptcha size="invisible" sitekey={hCaptchaSitekey} ref={hCaptchaRef} onLoad={hCaptchaOnLoad} />}
             <InputRadios
               id="status-check-for"
               name="statusCheckFor"

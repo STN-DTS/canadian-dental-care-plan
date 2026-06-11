@@ -39,15 +39,10 @@ type UseFetcherOptions = {
  */
 export function useFetcherSubmissionState(fetcher: FetcherLike, options?: UseFetcherOptions): FetcherState {
   const submitActionKey = options?.submitActionKey ?? DEFAULT_SUBMIT_ACTION_KEY;
-  const submitActionValue = fetcher.formData?.get(submitActionKey);
-  const isSubmitting = fetcher.state !== 'idle';
-  const submitAction = typeof submitActionValue === 'string' ? submitActionValue : undefined;
-
-  return useMemo(
-    () => ({
-      isSubmitting,
-      submitAction,
-    }),
-    [isSubmitting, submitAction],
-  );
+  return useMemo(() => {
+    const isSubmitting = fetcher.state !== 'idle';
+    const submitActionValue = fetcher.formData?.get(submitActionKey);
+    const submitAction = typeof submitActionValue === 'string' ? submitActionValue : undefined;
+    return { isSubmitting, submitAction };
+  }, [fetcher.state, fetcher.formData, submitActionKey]);
 }
