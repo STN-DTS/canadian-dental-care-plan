@@ -12,6 +12,7 @@ import type {
   RenewalChildDto,
   RenewalCommunicationPreferencesDto,
   RenewalContactInformationDto,
+  RenewalEmailDto,
   RenewalPartnerInformationDto,
   RenewalTypeOfApplicationDto,
 } from '~/.server/domain/dtos';
@@ -44,6 +45,7 @@ interface ToBenefitRenewalRequestEntityArgs {
   children: readonly RenewalChildDto[];
   communicationPreferences: RenewalCommunicationPreferencesDto;
   contactInformation: RenewalContactInformationDto;
+  emailAddress: RenewalEmailDto;
   dateOfBirth: string;
   dentalBenefits: readonly string[];
   dentalInsurance?: DentalInsuranceDto;
@@ -60,11 +62,6 @@ interface ToAddressArgs {
   country: string;
   postalCode?: string;
   province?: string;
-}
-
-interface ToEmailAddressArgs {
-  contactEmail?: string;
-  communicationEmail?: string;
 }
 
 @injectable()
@@ -95,6 +92,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
       children: benefitRenewalDto.children,
       communicationPreferences: benefitRenewalDto.communicationPreferences,
       contactInformation: benefitRenewalDto.contactInformation,
+      emailAddress: benefitRenewalDto.emailAddress,
       dateOfBirth: benefitRenewalDto.dateOfBirth,
       dentalBenefits: benefitRenewalDto.dentalBenefits,
       dentalInsurance: benefitRenewalDto.dentalInsurance,
@@ -113,6 +111,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     children,
     communicationPreferences,
     contactInformation,
+    emailAddress,
     dateOfBirth,
     dentalBenefits,
     dentalInsurance,
@@ -133,7 +132,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
             SharingConsentIndicator: true,
             EligibilityAttestationIndicator: true,
             AccuracyConfirmationIndicator: true,
-            ApplicantEmailVerifiedIndicator: communicationPreferences.emailVerified,
+            ApplicantEmailVerifiedIndicator: emailAddress.verified,
             InsurancePlan: this.toInsurancePlan(dentalBenefits),
             ...this.toChangeIndicators(changeIndicators),
           },
@@ -146,7 +145,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
           PersonContactInformation: [
             {
               Address: [this.toMailingAddress(contactInformation), this.toHomeAddress(contactInformation)],
-              EmailAddress: this.toEmailAddress({ contactEmail: contactInformation.email, communicationEmail: communicationPreferences.email }),
+              EmailAddress: emailAddress.value && !validator.isEmpty(emailAddress.value) ? [{ EmailAddressID: emailAddress.value }] : [],
               TelephoneNumber: this.toTelephoneNumber(contactInformation),
             },
           ],
@@ -275,22 +274,6 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
         StreetName: address,
       },
     };
-  }
-
-  private toEmailAddress({ contactEmail, communicationEmail }: ToEmailAddressArgs) {
-    const emailAddress = [];
-
-    if (contactEmail && !validator.isEmpty(contactEmail)) {
-      emailAddress.push({
-        EmailAddressID: contactEmail,
-      });
-    } else if (communicationEmail && !validator.isEmpty(communicationEmail)) {
-      emailAddress.push({
-        EmailAddressID: communicationEmail,
-      });
-    }
-
-    return emailAddress;
   }
 
   private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: RenewalContactInformationDto) {

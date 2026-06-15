@@ -6,6 +6,7 @@ export type BenefitRenewalDto = ReadonlyDeep<{
   children: RenewalChildDto[];
   communicationPreferences: RenewalCommunicationPreferencesDto;
   contactInformation: RenewalContactInformationDto;
+  emailAddress: RenewalEmailDto;
   dateOfBirth: string;
   dentalBenefits: string[];
   dentalInsurance?: DentalInsuranceDto;
@@ -53,9 +54,12 @@ export type RenewalChildDto = ReadonlyDeep<{
   };
 }>;
 
+export type RenewalEmailDto = ReadonlyDeep<{
+  value?: string;
+  verified?: boolean;
+}>;
+
 export type RenewalCommunicationPreferencesDto = ReadonlyDeep<{
-  email?: string;
-  emailVerified?: boolean;
   preferredLanguage: string;
   preferredMethod: string;
   preferredMethodGovernmentOfCanada: string;
@@ -77,7 +81,6 @@ export type RenewalContactInformationDto = ReadonlyDeep<{
   mailingProvince?: string;
   phoneNumber?: string;
   phoneNumberAlt?: string;
-  email?: string;
 }>;
 
 export type RenewalPartnerInformationDto = ReadonlyDeep<{

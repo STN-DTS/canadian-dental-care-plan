@@ -15,6 +15,7 @@ import type {
   RenewalChildDto,
   RenewalCommunicationPreferencesDto,
   RenewalContactInformationDto,
+  RenewalEmailDto,
   RenewalPartnerInformationDto,
 } from '~/.server/domain/dtos';
 import { maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -105,8 +106,13 @@ interface ToChildrenArgs {
 interface ToCommunicationPreferencesArgs {
   existingCommunicationPreferences: ReadonlyDeep<ClientCommunicationPreferencesDto>;
   communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
-  email?: string;
-  emailVerified?: boolean;
+}
+
+interface ToEmailAddressArgs {
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+  existingEmail: string | undefined;
+  existingEmailVerified: boolean | undefined;
 }
 
 interface ToContactInformationArgs {
@@ -115,8 +121,6 @@ interface ToContactInformationArgs {
   renewedContactInformation: BaseApplicationPhoneNumberDeclaredChangeState | undefined;
   renewedHomeAddress: BaseApplicationAddressDeclaredChangeState | undefined;
   renewedMailingAddress: BaseApplicationAddressDeclaredChangeState | undefined;
-  renewedEmailVerified: boolean | undefined;
-  renewedEmail: string | undefined;
 }
 
 interface ToDentalBenefitsArgs {
@@ -197,8 +201,12 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
+      }),
+      emailAddress: this.toEmailAddress({
+        email: email,
+        emailVerified: emailVerified,
+        existingEmail: clientApplication.contactInformation.email,
+        existingEmailVerified: clientApplication.contactInformation.emailVerified,
       }),
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
@@ -206,8 +214,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: this.toDentalBenefits({
         existingDentalBenefits: clientApplication.dentalBenefits,
@@ -279,8 +285,12 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
+      }),
+      emailAddress: this.toEmailAddress({
+        email: email,
+        emailVerified: emailVerified,
+        existingEmail: clientApplication.contactInformation.email,
+        existingEmailVerified: clientApplication.contactInformation.emailVerified,
       }),
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
@@ -288,8 +298,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: this.toDentalBenefits({
         existingDentalBenefits: clientApplication.dentalBenefits,
@@ -359,8 +367,12 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
+      }),
+      emailAddress: this.toEmailAddress({
+        email: email,
+        emailVerified: emailVerified,
+        existingEmail: clientApplication.contactInformation.email,
+        existingEmailVerified: clientApplication.contactInformation.emailVerified,
       }),
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
@@ -368,8 +380,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: [],
       dentalInsurance: undefined,
@@ -459,15 +469,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     });
   }
 
-  private toContactInformation({
-    existingContactInformation,
-    isHomeAddressSameAsMailingAddress,
-    renewedContactInformation,
-    renewedHomeAddress,
-    renewedMailingAddress,
-    renewedEmailVerified,
-    renewedEmail,
-  }: ToContactInformationArgs): RenewalContactInformationDto {
+  private toContactInformation({ existingContactInformation, isHomeAddressSameAsMailingAddress, renewedContactInformation, renewedHomeAddress, renewedMailingAddress }: ToContactInformationArgs): RenewalContactInformationDto {
     // If the phone number has changed, use the new phone number values. Otherwise, use the existing phone number values.
     const phoneNumbers = renewedContactInformation?.hasChanged
       ? {
@@ -479,12 +481,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
           phoneNumberAlt: existingContactInformation.phoneNumberAlt,
         };
 
-    const hasEmailChanged = this.hasEmailChanged({
-      emailVerified: renewedEmailVerified,
-      email: renewedEmail,
-      existingEmail: existingContactInformation.email,
-    });
-
     // Determine if the home address is the same as the mailing address. If either address has changed, use the
     // isHomeAddressSameAsMailingAddress value provided by the user. If neither address has changed, use the existing
     // copyMailingAddress value to maintain consistency with the existing data.
@@ -492,7 +488,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const resolvedIsHomeAddressSameAsMailingAddress = haveAddressesChanged ? isHomeAddressSameAsMailingAddress : existingContactInformation.copyMailingAddress;
 
     return {
-      email: hasEmailChanged && renewedEmail ? renewedEmail : existingContactInformation.email,
       copyMailingAddress: !!resolvedIsHomeAddressSameAsMailingAddress,
       ...this.toHomeAddress({ existingContactInformation, isHomeAddressSameAsMailingAddress: resolvedIsHomeAddressSameAsMailingAddress, homeAddress: renewedHomeAddress, mailingAddress: renewedMailingAddress }),
       ...this.toMailingAddress({ existingContactInformation, mailingAddress: renewedMailingAddress }),
@@ -579,13 +574,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     };
   }
 
-  private toCommunicationPreferences({ existingCommunicationPreferences, communicationPreferences, email, emailVerified }: ToCommunicationPreferencesArgs): RenewalCommunicationPreferencesDto {
+  private toCommunicationPreferences({ existingCommunicationPreferences, communicationPreferences }: ToCommunicationPreferencesArgs): RenewalCommunicationPreferencesDto {
     invariant(communicationPreferences, 'Expected communicationPreferences to be defined');
 
     if (communicationPreferences.hasChanged) {
       return {
-        email,
-        emailVerified,
         preferredLanguage: communicationPreferences.value.preferredLanguage,
         preferredMethod: communicationPreferences.value.preferredMethod,
         preferredMethodGovernmentOfCanada: communicationPreferences.value.preferredNotificationMethod,
@@ -597,11 +590,16 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     invariant(existingCommunicationPreferences.preferredMethodGovernmentOfCanada, 'Expected existingCommunicationPreferences.preferredMethodGovernmentOfCanada to be defined');
 
     return {
-      email,
-      emailVerified,
       preferredLanguage: existingCommunicationPreferences.preferredLanguage,
       preferredMethod: existingCommunicationPreferences.preferredMethodSunLife,
       preferredMethodGovernmentOfCanada: existingCommunicationPreferences.preferredMethodGovernmentOfCanada,
+    };
+  }
+
+  private toEmailAddress({ email, emailVerified, existingEmail, existingEmailVerified }: ToEmailAddressArgs): RenewalEmailDto {
+    return {
+      value: email ?? existingEmail,
+      verified: emailVerified ?? existingEmailVerified,
     };
   }
 
