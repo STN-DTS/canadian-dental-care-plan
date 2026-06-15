@@ -1,4 +1,5 @@
-import type { PickDeep } from 'type-fest';
+import type { PickDeep, SetRequired } from 'type-fest';
+import validator from 'validator';
 
 import { isChildClientNumberValid, isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationChildState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -63,22 +64,55 @@ export function isAddressSectionCompleted(
 /**
  * Checks if the communication preferences section is completed for simplified application.
  */
-export function isCommunicationPreferencesSectionCompleted(state: Pick<PublicApplicationState, 'communicationPreferences' | 'email' | 'emailVerified'>): boolean {
-  if (state.communicationPreferences === undefined) {
+export function isCommunicationPreferencesSectionCompleted({
+  clientApplication,
+  communicationPreferences,
+  email,
+  emailVerified,
+}: SetRequired<
+  PickDeep<
+    PublicApplicationState,
+    | 'clientApplication.communicationPreferences.preferredMethodGovernmentOfCanada'
+    | 'clientApplication.communicationPreferences.preferredMethodSunLife'
+    | 'clientApplication.contactInformation.email'
+    | 'clientApplication.contactInformation.emailVerified'
+    | 'communicationPreferences'
+    | 'email'
+    | 'emailVerified'
+  >,
+  'clientApplication'
+>): boolean {
+  if (communicationPreferences === undefined) {
     return false; // communication preferences not set
   }
 
-  if (state.communicationPreferences.hasChanged === false) {
-    return true; // communication preferences set but has not changed
+  const resolvedSunLifePreferredMethod = communicationPreferences.hasChanged //
+    ? communicationPreferences.value.preferredMethod
+    : clientApplication.communicationPreferences.preferredMethodSunLife;
+
+  if (resolvedSunLifePreferredMethod === undefined) {
+    return false; // preferred Sun Life method not set, section is incomplete
+  }
+
+  const resolvedGovernmentOfCanadaPreferredMethod = communicationPreferences.hasChanged //
+    ? communicationPreferences.value.preferredNotificationMethod
+    : clientApplication.communicationPreferences.preferredMethodGovernmentOfCanada;
+
+  if (resolvedGovernmentOfCanadaPreferredMethod === undefined) {
+    return false; // preferred government of Canada method not set, section is incomplete
   }
 
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = getEnv();
   const emailMethods = new Set([COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID]); // methods that require email
-  const isEmailRequired =
-    emailMethods.has(state.communicationPreferences.value.preferredMethod) || //
-    emailMethods.has(state.communicationPreferences.value.preferredNotificationMethod);
+  const isEmailRequired = emailMethods.has(resolvedSunLifePreferredMethod) || emailMethods.has(resolvedGovernmentOfCanadaPreferredMethod);
 
-  return isEmailRequired ? state.email !== undefined && state.emailVerified === true : true;
+  if (!isEmailRequired) {
+    return true; // email not required, section is complete
+  }
+
+  const resolvedEmail = communicationPreferences.hasChanged ? email : clientApplication.contactInformation.email;
+  const resolvedEmailVerified = communicationPreferences.hasChanged ? emailVerified : clientApplication.contactInformation.emailVerified;
+  return resolvedEmail !== undefined && validator.isEmail(resolvedEmail) && resolvedEmailVerified === true;
 }
 
 /**

@@ -20,6 +20,11 @@ const APPLICATION_YEAR = { applicationYearId: 'year-2024', taxYear: '2025', depe
 describe('public-application-simplified-section-checks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.mocked(getEnv, { partial: true }).mockReturnValue({
+      COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'SL_EMAIL',
+      COMMUNICATION_METHOD_GC_DIGITAL_ID: 'GC_DIGITAL',
+    });
   });
 
   describe('isPhoneNumberSectionCompleted', () => {
@@ -217,9 +222,23 @@ describe('public-application-simplified-section-checks', () => {
   });
 
   describe('isCommunicationPreferencesSectionCompleted', () => {
+    const baseClientApplication = {
+      communicationPreferences: {
+        preferredMethodGovernmentOfCanada: 'GC_MAIL',
+        preferredMethodSunLife: 'SL_MAIL',
+      },
+      contactInformation: {
+        email: 'test@example.com',
+        emailVerified: true,
+      },
+    };
+
+    // --- SECTION 1: INITIAL GUARD CLAUSES ---
+
     it('should return false when communicationPreferences is undefined', () => {
       expect(
         isCommunicationPreferencesSectionCompleted({
+          clientApplication: baseClientApplication,
           communicationPreferences: undefined,
           email: undefined,
           emailVerified: undefined,
@@ -227,126 +246,216 @@ describe('public-application-simplified-section-checks', () => {
       ).toBe(false);
     });
 
-    it('should return true when communicationPreferences is set but hasChanged is false', () => {
+    it('should return false when Sun Life preferred method is missing (hasChanged: false)', () => {
       expect(
         isCommunicationPreferencesSectionCompleted({
+          clientApplication: {
+            ...baseClientApplication,
+            communicationPreferences: {
+              ...baseClientApplication.communicationPreferences,
+              preferredMethodSunLife: undefined,
+            },
+          },
           communicationPreferences: {
             hasChanged: false,
           },
           email: undefined,
-          emailVerified: false,
-        }),
-      ).toBe(true);
-    });
-
-    it('should return true when email not required and preferences have changed', () => {
-      vi.mocked(getEnv, { partial: true }).mockReturnValue({
-        COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'sunlife',
-        COMMUNICATION_METHOD_GC_DIGITAL_ID: 'gc-digital',
-      });
-
-      expect(
-        isCommunicationPreferencesSectionCompleted({
-          communicationPreferences: {
-            hasChanged: true,
-            value: {
-              preferredMethod: 'mail',
-              preferredLanguage: 'en',
-              preferredNotificationMethod: 'mail',
-            },
-          },
-          email: undefined,
-          emailVerified: false,
-        }),
-      ).toBe(true);
-    });
-
-    it('should return true when email required for preferredMethod and email is verified', () => {
-      vi.mocked(getEnv, { partial: true }).mockReturnValue({
-        COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'sunlife',
-        COMMUNICATION_METHOD_GC_DIGITAL_ID: 'gc-digital',
-      });
-
-      expect(
-        isCommunicationPreferencesSectionCompleted({
-          communicationPreferences: {
-            hasChanged: true,
-            value: {
-              preferredMethod: 'sunlife',
-              preferredLanguage: 'en',
-              preferredNotificationMethod: 'mail',
-            },
-          },
-          email: 'test@example.com',
-          emailVerified: true,
-        }),
-      ).toBe(true);
-    });
-
-    it('should return true when email required for preferredNotificationMethod and email is verified', () => {
-      vi.mocked(getEnv, { partial: true }).mockReturnValue({
-        COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'sunlife',
-        COMMUNICATION_METHOD_GC_DIGITAL_ID: 'gc-digital',
-      });
-
-      expect(
-        isCommunicationPreferencesSectionCompleted({
-          communicationPreferences: {
-            hasChanged: true,
-            value: {
-              preferredMethod: 'mail',
-              preferredLanguage: 'en',
-              preferredNotificationMethod: 'gc-digital',
-            },
-          },
-          email: 'test@example.com',
-          emailVerified: true,
-        }),
-      ).toBe(true);
-    });
-
-    it('should return false when email required but not verified', () => {
-      vi.mocked(getEnv, { partial: true }).mockReturnValue({
-        COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'sunlife',
-        COMMUNICATION_METHOD_GC_DIGITAL_ID: 'gc-digital',
-      });
-
-      expect(
-        isCommunicationPreferencesSectionCompleted({
-          communicationPreferences: {
-            hasChanged: true,
-            value: {
-              preferredMethod: 'sunlife',
-              preferredLanguage: 'en',
-              preferredNotificationMethod: 'mail',
-            },
-          },
-          email: 'test@example.com',
-          emailVerified: false,
+          emailVerified: undefined,
         }),
       ).toBe(false);
     });
 
-    it('should return false when email required but email is undefined', () => {
-      vi.mocked(getEnv, { partial: true }).mockReturnValue({
-        COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'sunlife',
-        COMMUNICATION_METHOD_GC_DIGITAL_ID: 'gc-digital',
-      });
-
+    it('should return false when Gov of Canada preferred method is missing (hasChanged: false)', () => {
       expect(
         isCommunicationPreferencesSectionCompleted({
-          communicationPreferences: {
-            hasChanged: true,
-            value: {
-              preferredMethod: 'gc-digital',
-              preferredLanguage: 'fr',
-              preferredNotificationMethod: 'mail',
+          clientApplication: {
+            ...baseClientApplication,
+            communicationPreferences: {
+              ...baseClientApplication.communicationPreferences,
+              preferredMethodGovernmentOfCanada: undefined,
             },
           },
+          communicationPreferences: {
+            hasChanged: false,
+          },
           email: undefined,
-          emailVerified: false,
+          emailVerified: undefined,
         }),
       ).toBe(false);
+    });
+
+    it('should return true when mail methods are selected and email requirements are bypassed', () => {
+      expect(
+        isCommunicationPreferencesSectionCompleted({
+          clientApplication: baseClientApplication,
+          communicationPreferences: {
+            hasChanged: false,
+          },
+          email: undefined,
+          emailVerified: undefined,
+        }),
+      ).toBe(true);
+    });
+
+    // --- SECTION 2: EMAIL REQUIRED SCENARIOS ---
+
+    describe('when email communication is required', () => {
+      const clientAppWithEmailReq = {
+        ...baseClientApplication,
+        communicationPreferences: {
+          preferredMethodGovernmentOfCanada: 'GC_DIGITAL',
+          preferredMethodSunLife: 'SL_MAIL',
+        },
+      };
+
+      it('should validate and return true using clientApplication profile data when hasChanged is false', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: clientAppWithEmailReq,
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(true);
+      });
+
+      it('should validate and return true using direct payload fields when hasChanged is true', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: baseClientApplication,
+            communicationPreferences: {
+              hasChanged: true,
+              value: {
+                preferredLanguage: 'en',
+                preferredMethod: 'SL_MAIL',
+                preferredNotificationMethod: 'GC_DIGITAL',
+              },
+            },
+            email: 'changed@example.com',
+            emailVerified: true,
+          }),
+        ).toBe(true);
+      });
+
+      it('should return false if the email field is undefined', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: {
+              ...clientAppWithEmailReq,
+              contactInformation: {
+                email: undefined,
+                emailVerified: true,
+              },
+            },
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(false);
+      });
+
+      it('should return false if the email format fails validation', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: {
+              ...clientAppWithEmailReq,
+              contactInformation: {
+                email: 'invalid-email',
+                emailVerified: true,
+              },
+            },
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(false);
+      });
+
+      it('should return false if the email is not verified', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: {
+              ...clientAppWithEmailReq,
+              contactInformation: {
+                email: 'test@example.com',
+                emailVerified: false,
+              },
+            },
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(false);
+      });
+    });
+
+    // --- SECTION 3: FALLBACK CONFIGURATION ISOLATION ---
+
+    describe('when hasChanged is false (Fallback Isolation)', () => {
+      it('should ignore valid value overrides in payload and fall back to incomplete clientApplication settings', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: {
+              ...baseClientApplication,
+              communicationPreferences: {
+                preferredMethodSunLife: undefined,
+                preferredMethodGovernmentOfCanada: 'GC_MAIL',
+              },
+            },
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(false);
+      });
+
+      it('should ignore invalid values in payload and read successful configurations entirely from clientApplication', () => {
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: baseClientApplication,
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: undefined,
+            emailVerified: undefined,
+          }),
+        ).toBe(true);
+      });
+
+      it('should fall back to clientApplication for email fields and ignore direct payload fields', () => {
+        const clientAppWithEmailReq = {
+          ...baseClientApplication,
+          communicationPreferences: {
+            preferredMethodGovernmentOfCanada: 'GC_DIGITAL',
+            preferredMethodSunLife: 'SL_MAIL',
+          },
+          contactInformation: {
+            email: 'fallback@example.com',
+            emailVerified: true,
+          },
+        };
+
+        expect(
+          isCommunicationPreferencesSectionCompleted({
+            clientApplication: clientAppWithEmailReq,
+            communicationPreferences: {
+              hasChanged: false,
+            },
+            email: 'ignored@example.com',
+            emailVerified: false,
+          }),
+        ).toBe(true);
+      });
     });
   });
 

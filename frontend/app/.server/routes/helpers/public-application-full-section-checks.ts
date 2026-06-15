@@ -1,3 +1,5 @@
+import validator from 'validator';
+
 import { isChildClientNumberValid, isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationChildState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getEnv } from '~/.server/utils/env.utils';
@@ -42,7 +44,11 @@ export function isCommunicationPreferencesSectionCompleted(state: Pick<PublicApp
     emailMethods.has(state.communicationPreferences.value.preferredMethod) || //
     emailMethods.has(state.communicationPreferences.value.preferredNotificationMethod);
 
-  return isEmailRequired ? state.email !== undefined && state.emailVerified === true : true;
+  if (!isEmailRequired) {
+    return true; // email not required, section is complete
+  }
+
+  return state.email !== undefined && validator.isEmail(state.email) && state.emailVerified === true;
 }
 
 /**
