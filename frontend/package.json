@@ -157,5 +157,13 @@
     "esbuild": false,
     "protobufjs": false,
     "unrs-resolver": false
+  },
+  "//1": "Bumps vite-node to use Vite 8, resolving the esbuild CVE via GitHub Issue #14956.",
+  "//2": "TODO: Remove this override block entirely when migrating to React Router v8.",
+  "//3": "React Router v8 will natively drop vite-node as a dependency (PR #15104).",
+  "overrides": {
+    "@react-router/dev": {
+      "vite-node": "^6.0.0"
+    }
   }
 }
