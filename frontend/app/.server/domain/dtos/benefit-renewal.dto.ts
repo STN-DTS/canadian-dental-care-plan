@@ -1,20 +1,21 @@
 import type { ReadonlyDeep } from 'type-fest';
 
 export type BenefitRenewalDto = ReadonlyDeep<{
-  applicantInformation: RenewalApplicantInformationDto;
+  applicationChannelCode: 'protected' | 'public';
+  applicantInformation: BenefitRenewalApplicantInformationDto;
   applicationYearId: string;
-  children: RenewalChildDto[];
-  communicationPreferences: RenewalCommunicationPreferencesDto;
-  contactInformation: RenewalContactInformationDto;
-  emailAddress: RenewalEmailDto;
+  children: BenefitRenewalChildDto[];
+  communicationPreferences: BenefitRenewalCommunicationPreferencesDto;
+  contactInformation: BenefitRenewalContactInformationDto;
+  emailAddress: BenefitRenewalEmailDto;
   dateOfBirth: string;
   dentalBenefits: string[];
-  dentalInsurance?: DentalInsuranceDto;
+  dentalInsurance?: BenefitRenewalDentalInsuranceDto;
   livingIndependently?: boolean;
-  partnerInformation?: RenewalPartnerInformationDto;
-  typeOfApplication: RenewalTypeOfApplicationDto;
-  termsAndConditions: TermsAndConditionsDto;
-  changeIndicators?: ChangeIndicatorsDto;
+  partnerInformation?: BenefitRenewalPartnerInformationDto;
+  typeOfApplication: BenefitRenewalTypeOfApplicationDto;
+  termsAndConditions: BenefitRenewalTermsAndConditionsDto;
+  changeIndicators?: BenefitRenewalChangeIndicatorsDto;
 
   /**
    * Indicates whether the renewal request is to create a new benefit application or renew an existing benefit
@@ -31,7 +32,7 @@ export type BenefitRenewalDto = ReadonlyDeep<{
   userId: string;
 }>;
 
-export type RenewalApplicantInformationDto = ReadonlyDeep<{
+export type BenefitRenewalApplicantInformationDto = ReadonlyDeep<{
   clientId: string;
   clientNumber: string;
   firstName: string;
@@ -40,11 +41,11 @@ export type RenewalApplicantInformationDto = ReadonlyDeep<{
   socialInsuranceNumber: string;
 }>;
 
-export type RenewalChildDto = ReadonlyDeep<{
+export type BenefitRenewalChildDto = ReadonlyDeep<{
   clientId: string;
   clientNumber: string;
   dentalBenefits: string[];
-  dentalInsurance: DentalInsuranceDto;
+  dentalInsurance: BenefitRenewalDentalInsuranceDto;
   information: {
     firstName: string;
     lastName: string;
@@ -54,18 +55,18 @@ export type RenewalChildDto = ReadonlyDeep<{
   };
 }>;
 
-export type RenewalEmailDto = ReadonlyDeep<{
+export type BenefitRenewalEmailDto = ReadonlyDeep<{
   value?: string;
   verified?: boolean;
 }>;
 
-export type RenewalCommunicationPreferencesDto = ReadonlyDeep<{
+export type BenefitRenewalCommunicationPreferencesDto = ReadonlyDeep<{
   preferredLanguage: string;
   preferredMethod: string;
   preferredMethodGovernmentOfCanada: string;
 }>;
 
-export type RenewalContactInformationDto = ReadonlyDeep<{
+export type BenefitRenewalContactInformationDto = ReadonlyDeep<{
   copyMailingAddress: boolean;
   homeAddress: string;
   homeApartment?: string;
@@ -83,27 +84,27 @@ export type RenewalContactInformationDto = ReadonlyDeep<{
   phoneNumberAlt?: string;
 }>;
 
-export type RenewalPartnerInformationDto = ReadonlyDeep<{
+export type BenefitRenewalPartnerInformationDto = ReadonlyDeep<{
   clientId?: string;
   consentToSharePersonalInformation: true;
   socialInsuranceNumber: string;
   yearOfBirth: string;
 }>;
 
-export type RenewalTypeOfApplicationDto = 'adult' | 'adult-child' | 'child';
+export type BenefitRenewalTypeOfApplicationDto = 'adult' | 'adult-child' | 'child';
 
-type DentalInsuranceDto = ReadonlyDeep<{
+export type BenefitRenewalDentalInsuranceDto = ReadonlyDeep<{
   hasDentalInsurance: boolean;
   dentalInsuranceEligibilityConfirmation?: boolean;
 }>;
 
-type TermsAndConditionsDto = ReadonlyDeep<{
+export type BenefitRenewalTermsAndConditionsDto = ReadonlyDeep<{
   acknowledgeTerms: boolean;
   acknowledgePrivacy: boolean;
   shareData: boolean;
 }>;
 
-export type ChangeIndicatorsDto = ReadonlyDeep<{
+export type BenefitRenewalChangeIndicatorsDto = ReadonlyDeep<{
   hasAddressChanged?: boolean;
   hasMaritalStatusChanged?: boolean;
   hasPhoneChanged?: boolean;

@@ -11,6 +11,7 @@ import { createLogger } from '~/.server/logging';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
+  BaseApplicationChannelCodeState,
   BaseApplicationChildState,
   BaseApplicationCommunicationPreferencesDeclaredChangeState,
   BaseApplicationContextState,
@@ -41,6 +42,7 @@ export type ProtectedApplicationState = ReadonlyDeep<{
    * The unique identifier for the protected application.
    */
   id: string;
+  channelCode: ExtractStrict<BaseApplicationChannelCodeState, 'protected'>;
   context: BaseApplicationContextState;
   lastUpdatedOn: string;
   applicantInformation?: BaseApplicationApplicantInformationState;
@@ -139,13 +141,24 @@ export function getProtectedApplicationState({ params, session }: LoadStateArgs)
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
-  return state;
+  // Validate channelCode to ensure the session state is consistent with protected application expectations
+  const channelCode = state.channelCode as string | undefined;
+
+  if (channelCode !== undefined && channelCode !== 'protected') {
+    throw new Error(`Invalid channelCode in session state; expected 'protected' but got [${channelCode}]`);
+  }
+
+  return {
+    ...state,
+    // Default to 'protected' if channelCode is missing to maintain backward compatibility
+    channelCode: channelCode ?? 'protected',
+  };
 }
 
 interface SaveProtectedApplicationStateArgs {
   params: ApplicationStateParams;
   session: Session;
-  state: Partial<OmitStrict<ProtectedApplicationState, 'id' | 'lastUpdatedOn' | 'applicationYear' | 'context'>>;
+  state: Partial<OmitStrict<ProtectedApplicationState, 'id' | 'lastUpdatedOn' | 'applicationYear' | 'context' | 'channelCode'>>;
 }
 
 /**
@@ -161,6 +174,7 @@ export function saveProtectedApplicationState({ params, session, state }: SavePr
     ...currentState,
     ...state,
     lastUpdatedOn: new UTCDate().toISOString(),
+    channelCode: 'protected', // Ensure channelCode remains 'protected' regardless of input to maintain state integrity
   } satisfies ProtectedApplicationState;
 
   const sessionkey = getSessionKey(currentState.id);
@@ -227,6 +241,7 @@ export function startProtectedApplicationState({ applicationYear, clientApplicat
   // Create the initial state object
   const initialState = {
     id,
+    channelCode: 'protected',
     context,
     lastUpdatedOn: new UTCDate().toISOString(),
     applicationYear,

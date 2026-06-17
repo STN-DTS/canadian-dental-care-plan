@@ -2,12 +2,15 @@ import { invariant } from '@dts-stn/invariant';
 import { injectable } from 'inversify';
 import validator from 'validator';
 
-import type { ApplicantInformationDto, BenefitApplicationDto, CommunicationPreferencesDto } from '~/.server/domain/dtos';
+import type { BenefitApplicationApplicantInformationDto, BenefitApplicationCommunicationPreferencesDto, BenefitApplicationDto, BenefitApplicationEmailDto } from '~/.server/domain/dtos';
+import { checkValidAndVerifiedEmailAddress, isEmailAddressRequired } from '~/.server/routes/helpers/base-application-route-helpers';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
+  BaseApplicationChannelCodeState,
   BaseApplicationChildState,
   BaseApplicationCommunicationPreferencesDeclaredChangeState,
+  BaseApplicationContextState,
   BaseApplicationDentalBenefitsDeclaredChangeState,
   BaseApplicationDentalInsuranceState,
   BaseApplicationNewOrReturningMemberState,
@@ -19,7 +22,8 @@ import type {
 import { getContextualAgeCategoryFromDate } from '~/.server/routes/helpers/public-application-route-helpers';
 
 export interface ApplicationAdultState {
-  context: 'intake' | 'renewal';
+  channelCode: BaseApplicationChannelCodeState;
+  context: BaseApplicationContextState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
@@ -39,7 +43,8 @@ export interface ApplicationAdultState {
 }
 
 export interface ApplicationFamilyState {
-  context: 'intake' | 'renewal';
+  channelCode: BaseApplicationChannelCodeState;
+  context: BaseApplicationContextState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children: BaseApplicationChildState[];
@@ -60,7 +65,8 @@ export interface ApplicationFamilyState {
 }
 
 export interface ApplicationChildrenState {
-  context: 'intake' | 'renewal';
+  channelCode: BaseApplicationChannelCodeState;
+  context: BaseApplicationContextState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children: BaseApplicationChildState[];
@@ -79,7 +85,8 @@ export interface ApplicationChildrenState {
 }
 
 interface ToBenefitApplicationDtoArgs {
-  context: 'intake' | 'renewal';
+  channelCode: BaseApplicationChannelCodeState;
+  context: BaseApplicationContextState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children?: BaseApplicationChildState[];
@@ -114,8 +121,6 @@ interface ToHomeAddressArgs {
 
 interface ToCommunicationPreferencesArgs {
   communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
-  email?: string;
-  emailVerified?: boolean;
 }
 
 interface ToContactInformationArgs {
@@ -123,6 +128,24 @@ interface ToContactInformationArgs {
   homeAddress?: BaseApplicationAddressDeclaredChangeState;
   isHomeAddressSameAsMailingAddress?: boolean;
   mailingAddress?: BaseApplicationAddressDeclaredChangeState;
+}
+
+interface ToEmailAddressArgs {
+  applicationChannelCode: 'protected' | 'public';
+  communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+}
+
+interface ToEmailAddressProtectedChannelArgs {
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+}
+
+interface ToEmailAddressPublicChannelArgs {
+  communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
+  email: string | undefined;
+  emailVerified: boolean | undefined;
 }
 
 export interface BenefitApplicationStateMapper {
@@ -142,6 +165,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     }
 
     return this.toBenefitApplicationDto({
+      channelCode: applicationAdultState.channelCode,
       applicantInformation: applicationAdultState.applicantInformation,
       applicationYear: applicationAdultState.applicationYear,
       communicationPreferences: applicationAdultState.communicationPreferences,
@@ -172,6 +196,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     invariant(applicationFamilyState.children.length > 0, 'Expected children to be non-empty for a family application');
 
     return this.toBenefitApplicationDto({
+      channelCode: applicationFamilyState.channelCode,
       applicantInformation: applicationFamilyState.applicantInformation,
       applicationYear: applicationFamilyState.applicationYear,
       children: applicationFamilyState.children,
@@ -203,6 +228,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     invariant(applicationChildrenState.children.length > 0, 'Expected children to be non-empty for a child application');
 
     return this.toBenefitApplicationDto({
+      channelCode: applicationChildrenState.channelCode,
       applicantInformation: applicationChildrenState.applicantInformation,
       applicationYear: applicationChildrenState.applicationYear,
       children: applicationChildrenState.children,
@@ -224,6 +250,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
   }
 
   private toBenefitApplicationDto({
+    channelCode,
     applicantInformation,
     applicationYear,
     children,
@@ -242,8 +269,9 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     termsAndConditions,
     typeOfApplication,
     newOrReturningMember,
-  }: ToBenefitApplicationDtoArgs) {
+  }: ToBenefitApplicationDtoArgs): BenefitApplicationDto {
     return {
+      applicationChannelCode: channelCode,
       applicantInformation: this.toApplicantInformation({
         applicantInformation,
         maritalStatus,
@@ -251,10 +279,10 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       }),
       applicationYearId: applicationYear.applicationYearId,
       children: this.toChildren(children),
-      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences, email, emailVerified }),
+      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences }),
       contactInformation: this.toContactInformation({ phoneNumber, isHomeAddressSameAsMailingAddress, homeAddress, mailingAddress }),
       dateOfBirth: applicantInformation.dateOfBirth,
-      maritalStatus,
+      emailAddress: this.toEmailAddress({ applicationChannelCode: channelCode, communicationPreferences, email, emailVerified }),
       dentalBenefits: this.toDentalBenefits(dentalBenefits),
       dentalInsurance,
       livingIndependently,
@@ -265,7 +293,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     };
   }
 
-  private toApplicantInformation({ applicantInformation, maritalStatus, newOrReturningMember }: ToApplicantInformationArgs): ApplicantInformationDto {
+  private toApplicantInformation({ applicantInformation, maritalStatus, newOrReturningMember }: ToApplicantInformationArgs): BenefitApplicationApplicantInformationDto {
     invariant(maritalStatus, 'Expected maritalStatus to be defined');
     return {
       ...applicantInformation,
@@ -296,20 +324,10 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     });
   }
 
-  private toCommunicationPreferences({ communicationPreferences, email, emailVerified }: ToCommunicationPreferencesArgs): CommunicationPreferencesDto {
+  private toCommunicationPreferences({ communicationPreferences }: ToCommunicationPreferencesArgs): BenefitApplicationCommunicationPreferencesDto {
     invariant(communicationPreferences.value, 'Expected communicationPreferences.value to be defined');
 
-    // Only include the email if the user has verified it. This handles the case where the user entered
-    // an email, then navigated back and switched to a non-digital method.
-    const effectiveEmail = emailVerified ? email : undefined;
-
-    // Keep emailVerified aligned with the email value emitted by this mapper: when no effective email is
-    // sent, omit emailVerified as well so we do not send a stale or contradictory false value.
-    const effectiveEmailVerified = effectiveEmail ? true : undefined;
-
     return {
-      email: effectiveEmail,
-      emailVerified: effectiveEmailVerified,
       preferredLanguage: communicationPreferences.value.preferredLanguage,
       preferredMethod: communicationPreferences.value.preferredMethod,
       preferredMethodGovernmentOfCanada: communicationPreferences.value.preferredNotificationMethod,
@@ -374,5 +392,67 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       mailingPostalCode: mailingAddress.value?.postalCode ?? '',
       mailingProvince: mailingAddress.value?.province ?? '',
     };
+  }
+
+  /**
+   * Maps email address fields to an {@link BenefitApplicationEmailDto} using channel-specific validation rules.
+   * Delegates to {@link toEmailAddressProtectedChannel} for protected-channel applications
+   * and to {@link toEmailAddressPublicChannel} for public-channel applications.
+   */
+  private toEmailAddress({ applicationChannelCode, communicationPreferences, email, emailVerified }: ToEmailAddressArgs): BenefitApplicationEmailDto {
+    if (applicationChannelCode === 'protected') {
+      return this.toEmailAddressProtectedChannel({ email, emailVerified });
+    }
+
+    return this.toEmailAddressPublicChannel({ communicationPreferences, email, emailVerified });
+  }
+
+  /**
+   * Maps email address fields for a protected-channel application.
+   * Protected-channel applications always require a valid, verified email address;
+   * throws if the email is absent or unverified.
+   */
+  private toEmailAddressProtectedChannel({ email, emailVerified }: ToEmailAddressProtectedChannelArgs): BenefitApplicationEmailDto {
+    const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
+
+    if (!result.success) {
+      throw new Error('Expected a valid and verified email for protected application channel');
+    }
+
+    return { value: result.email, verified: result.emailVerified };
+  }
+
+  /**
+   * Maps email address fields for a public-channel application.
+   * Because this is a new application (intake), the applicant always enters their communication
+   * preferences from scratch — there is no prior data to preserve. The spoke therefore always
+   * sets `communicationPreferences.hasChanged` to `true`, which is enforced here as an invariant.
+   * An email is only required when at least one of the applicant's chosen communication methods
+   * (Sun Life and/or Government of Canada) necessitates one. If neither method requires email,
+   * both {@link BenefitApplicationEmailDto.value} and {@link BenefitApplicationEmailDto.verified}
+   * are returned as `undefined`. Otherwise a valid, verified email is required and throws if
+   * absent or unverified.
+   */
+  private toEmailAddressPublicChannel({ communicationPreferences, email, emailVerified }: ToEmailAddressPublicChannelArgs): BenefitApplicationEmailDto {
+    invariant(communicationPreferences.hasChanged === true, 'Expected communicationPreferences.hasChanged to be true for public application channel when mapping email address');
+
+    if (
+      !isEmailAddressRequired({
+        preferredMethodSunLife: communicationPreferences.value.preferredMethod,
+        preferredMethodGovernmentOfCanada: communicationPreferences.value.preferredNotificationMethod,
+      })
+    ) {
+      // If no selected communication method requires email, both fields remain undefined.
+      return { value: undefined, verified: undefined };
+    }
+
+    // If a selected communication method requires email, it must be valid and verified.
+    const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
+
+    if (!result.success) {
+      throw new Error('Expected a valid and verified email for public application channel when at least one communication method requires email');
+    }
+
+    return { value: result.email, verified: result.emailVerified };
   }
 }

@@ -15,16 +15,18 @@ import { ErrorCodes } from '~/errors/error-codes';
 
 export interface BenefitRenewalService {
   /**
-   * Submits a benefit renewal request.
+   * Submits a public benefit renewal request.
    *
    * @param benefitRenewalDto The benefit renewal request dto
+   * @returns A Promise that resolves to the benefit renewal application code
    */
-  createBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string>;
+  createPublicBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string>;
 
   /**
-   * Submits benefit renewal request for protected route.
+   * Submits a protected benefit renewal request.
    *
-   * @param benefitRenewalDto The route benefit renewal request dto
+   * @param benefitRenewalDto The benefit renewal request dto
+   * @returns A Promise that resolves to the benefit renewal application code
    */
   createProtectedBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string>;
 }
@@ -63,20 +65,25 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
     this.log.debug('DefaultBenefitRenewalService initiated.');
   }
 
-  async createBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
+  async createPublicBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
     this.log.trace('Creating benefit renewal for request [%j]', benefitRenewalDto);
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
       this.log.error('Request to renew benefit application is unavailable (killswitch engaged).');
-      new AppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throw new AppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
+
+    if (benefitRenewalDto.applicationChannelCode !== 'public') {
+      this.log.error('Received request to create public benefit renewal with invalid application channel code: [%s]', benefitRenewalDto.applicationChannelCode);
+      throw new AppError(`Invalid application channel code [${benefitRenewalDto.applicationChannelCode}]`, ErrorCodes.INVALID_REQUEST);
     }
 
     this.auditService.createAudit('benefit-renewal-submit.post', { userId: benefitRenewalDto.userId });
 
     try {
-      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto, 'public');
+      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto);
       const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 
@@ -99,13 +106,18 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
 
     if (killswitchEngaged) {
       this.log.error('Request to renew protected benefit application is unavailable (killswitch engaged).');
-      new AppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throw new AppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
+
+    if (benefitRenewalDto.applicationChannelCode !== 'protected') {
+      this.log.error('Received request to create protected benefit renewal with invalid application channel code: [%s]', benefitRenewalDto.applicationChannelCode);
+      throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
     this.auditService.createAudit('protected-renewal-submit.post', { userId: benefitRenewalDto.userId });
 
     try {
-      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto, 'protected');
+      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto);
       const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 

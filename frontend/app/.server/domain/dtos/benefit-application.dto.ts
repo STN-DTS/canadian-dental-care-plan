@@ -1,24 +1,26 @@
 import type { ReadonlyDeep } from 'type-fest';
 
 export type BenefitApplicationDto = ReadonlyDeep<{
-  applicantInformation: ApplicantInformationDto;
+  applicationChannelCode: 'protected' | 'public';
+  applicantInformation: BenefitApplicationApplicantInformationDto;
   applicationYearId: string;
-  children: ChildDto[];
-  communicationPreferences: CommunicationPreferencesDto;
-  contactInformation: ContactInformationDto;
+  children: BenefitApplicationChildDto[];
+  communicationPreferences: BenefitApplicationCommunicationPreferencesDto;
+  contactInformation: BenefitApplicationContactInformationDto;
+  emailAddress: BenefitApplicationEmailDto;
   dateOfBirth: string;
   dentalBenefits: string[];
-  dentalInsurance?: DentalInsuranceDto;
+  dentalInsurance?: BenefitApplicationDentalInsuranceDto;
   livingIndependently?: boolean;
-  partnerInformation?: PartnerInformationDto;
-  termsAndConditions: TermsAndConditionsDto;
-  typeOfApplication: TypeOfApplicationDto;
+  partnerInformation?: BenefitApplicationPartnerInformationDto;
+  termsAndConditions: BenefitApplicationTermsAndConditionsDto;
+  typeOfApplication: BenefitApplicationTypeOfApplicationDto;
 
   /** A unique identifier for the user making the request - used for auditing */
   userId: string;
 }>;
 
-export type ApplicantInformationDto = ReadonlyDeep<{
+export type BenefitApplicationApplicantInformationDto = ReadonlyDeep<{
   clientNumber?: string;
   firstName: string;
   lastName: string;
@@ -26,9 +28,9 @@ export type ApplicantInformationDto = ReadonlyDeep<{
   socialInsuranceNumber: string;
 }>;
 
-export type ChildDto = ReadonlyDeep<{
+export type BenefitApplicationChildDto = ReadonlyDeep<{
   dentalBenefits: string[];
-  dentalInsurance: DentalInsuranceDto;
+  dentalInsurance: BenefitApplicationDentalInsuranceDto;
   information: {
     firstName: string;
     lastName: string;
@@ -38,15 +40,18 @@ export type ChildDto = ReadonlyDeep<{
   };
 }>;
 
-export type CommunicationPreferencesDto = ReadonlyDeep<{
-  email?: string;
-  emailVerified?: boolean;
+export type BenefitApplicationEmailDto = ReadonlyDeep<{
+  value?: string;
+  verified?: boolean;
+}>;
+
+export type BenefitApplicationCommunicationPreferencesDto = ReadonlyDeep<{
   preferredLanguage: string;
   preferredMethod: string;
   preferredMethodGovernmentOfCanada: string;
 }>;
 
-export type ContactInformationDto = ReadonlyDeep<{
+export type BenefitApplicationContactInformationDto = ReadonlyDeep<{
   copyMailingAddress: boolean;
   homeAddress: string;
   homeApartment?: string;
@@ -64,21 +69,21 @@ export type ContactInformationDto = ReadonlyDeep<{
   phoneNumberAlt?: string;
 }>;
 
-export type DentalInsuranceDto = ReadonlyDeep<{
+export type BenefitApplicationDentalInsuranceDto = ReadonlyDeep<{
   hasDentalInsurance: boolean;
   dentalInsuranceEligibilityConfirmation?: boolean;
 }>;
 
-export type TermsAndConditionsDto = ReadonlyDeep<{
+export type BenefitApplicationTermsAndConditionsDto = ReadonlyDeep<{
   acknowledgeTerms: boolean;
   acknowledgePrivacy: boolean;
   shareData: boolean;
 }>;
 
-export type PartnerInformationDto = ReadonlyDeep<{
+export type BenefitApplicationPartnerInformationDto = ReadonlyDeep<{
   consentToSharePersonalInformation: true;
   yearOfBirth: string;
   socialInsuranceNumber: string;
 }>;
 
-export type TypeOfApplicationDto = 'adult' | 'adult-child' | 'child';
+export type BenefitApplicationTypeOfApplicationDto = 'adult' | 'adult-child' | 'child';
