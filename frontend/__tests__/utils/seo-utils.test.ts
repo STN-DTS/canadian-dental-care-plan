@@ -52,10 +52,10 @@ describe('useAlternateLanguages', () => {
   it('should return alternate language URLs with default languages', () => {
     vi.mocked(useLocation, { partial: true }).mockReturnValue({ pathname: '/path', search: '?param=value' });
 
-    const origin = 'http://example.com';
+    const origin = 'https://example.com';
     const expectedUrls = [
-      { href: 'http://example.com/en/path?param=value', hrefLang: 'en' },
-      { href: 'http://example.com/fr/path?param=value', hrefLang: 'fr' },
+      { href: 'https://example.com/en/path?param=value', hrefLang: 'en' },
+      { href: 'https://example.com/fr/path?param=value', hrefLang: 'fr' },
     ];
 
     const { result } = renderHook(() => useAlternateLanguages(origin));
@@ -66,9 +66,9 @@ describe('useAlternateLanguages', () => {
   it('should return alternate language URLs with custom languages', () => {
     vi.mocked(useLocation, { partial: true }).mockReturnValue({ pathname: '/path', search: '?param=value' });
 
-    const origin = 'http://example.com';
+    const origin = 'https://example.com';
     const languages = ['en'] as const;
-    const expectedUrls = [{ href: 'http://example.com/en/path?param=value', hrefLang: 'en' }];
+    const expectedUrls = [{ href: 'https://example.com/en/path?param=value', hrefLang: 'en' }];
 
     const { result } = renderHook(() => useAlternateLanguages(origin, languages));
 

@@ -70,11 +70,7 @@ export function InputSanitizeField(props: InputSanitizeFieldProps) {
         format={(value) => normalizeHyphens(removeInvalidInputCharacters(value))}
         removeFormatting={(value) => normalizeHyphens(removeInvalidInputCharacters(value))}
         isValidInputCharacter={(char) => isAllValidInputCharacters(char)}
-        getCaretBoundary={(value) =>
-          Array.from({ length: value.length + 1 })
-            .fill(0)
-            .map((v) => true)
-        }
+        getCaretBoundary={(value) => Array.from({ length: value.length + 1 }).map((v) => true)}
       />
       {helpMessageSecondary && (
         <InputHelp id={inputHelpMessageSecondaryId} className={cn('mt-2', helpMessageSecondaryClassName)}>

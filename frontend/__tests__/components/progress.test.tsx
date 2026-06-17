@@ -20,7 +20,7 @@ describe('Progress component', () => {
   it('renders with default props', () => {
     const { getByTestId } = render(<Progress label="test" value={0} data-testid="progress-root" />);
     const rootElement = getByTestId('progress-root');
-    const indicatorElement = rootElement.children[0];
+    const indicatorElement = rootElement.firstElementChild;
 
     expect(rootElement).toBeInTheDocument();
     expect(indicatorElement).toBeInTheDocument();
@@ -31,7 +31,7 @@ describe('Progress component', () => {
   it('renders with custom size and variant', () => {
     const { getByTestId } = render(<Progress size="lg" variant="blue" label="test" value={0} data-testid="progress-root" />);
     const rootElement = getByTestId('progress-root');
-    const indicatorElement = rootElement.children[0];
+    const indicatorElement = rootElement.firstElementChild;
 
     expect(rootElement).toBeInTheDocument();
     expect(indicatorElement).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('Progress component', () => {
   it('renders with custom value', () => {
     const { getByTestId } = render(<Progress value={50} label="test" data-testid="progress-root" />);
     const rootElement = getByTestId('progress-root');
-    const indicatorElement = rootElement.children[0];
+    const indicatorElement = rootElement.firstElementChild;
 
     expect(indicatorElement).toBeInTheDocument();
     expect(indicatorElement).toHaveStyle('transform: translateX(-50%)');

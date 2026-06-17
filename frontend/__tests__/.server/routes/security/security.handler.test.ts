@@ -250,7 +250,7 @@ describe('DefaultSecurityHandler', () => {
   describe('validateRequestMethod', () => {
     it('should allow valid request methods', () => {
       const allowedMethods: ValidateRequestMethodParams['allowedMethods'] = ['GET', 'POST'];
-      const request = new Request('http://example.com/test', { method: 'GET' });
+      const request = new Request('https://example.com/test', { method: 'GET' });
 
       securityHandler.validateRequestMethod({ allowedMethods, request });
 
@@ -260,7 +260,7 @@ describe('DefaultSecurityHandler', () => {
 
     it('should throw 405 error for invalid request methods', () => {
       const allowedMethods: ValidateRequestMethodParams['allowedMethods'] = ['GET', 'POST'];
-      const request = new Request('http://example.com/test', { method: 'PUT' });
+      const request = new Request('https://example.com/test', { method: 'PUT' });
 
       expect(() => securityHandler.validateRequestMethod({ allowedMethods, request })).toThrow(
         expect.objectContaining({

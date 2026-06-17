@@ -42,18 +42,18 @@ export async function loader({ context: { appContainer, session }, params, reque
   const t = await getFixedT(request, ['protectedApplicationIntakeAdult', 'gcweb']);
   const locale = getLocale(request);
 
-  // prettier-ignore
-  if (state.applicantInformation === undefined ||
+  if (
+    !state.applicantInformation ||
     state.communicationPreferences?.hasChanged !== true ||
     state.dentalBenefits?.hasChanged !== true ||
-    state.dentalInsurance === undefined ||
+    !state.dentalInsurance ||
     state.phoneNumber?.hasChanged !== true ||
     state.mailingAddress?.hasChanged !== true ||
     state.homeAddress?.hasChanged !== true ||
-    state.submitTerms === undefined ||
-    state.hasFiledTaxes === undefined  ||
-    state.submissionInfo === undefined
-    ) {
+    !state.submitTerms ||
+    !state.hasFiledTaxes ||
+    !state.submissionInfo
+  ) {
     throw new Error(`Incomplete application "${state.id}" state!`);
   }
 

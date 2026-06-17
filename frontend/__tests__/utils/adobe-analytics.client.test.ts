@@ -16,8 +16,8 @@ describe('isConfigured', () => {
 
   it('should return true if all necessary environment variables are present and are valid URLs', () => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
     const result = isConfigured();
     expect(result).toBe(true);
@@ -25,7 +25,7 @@ describe('isConfigured', () => {
 
   it('should return false if ADOBE_ANALYTICS_SRC is missing', () => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
     });
     const result = isConfigured();
     expect(result).toBe(false);
@@ -34,7 +34,7 @@ describe('isConfigured', () => {
   it('should return false if ADOBE_ANALYTICS_JQUERY_SRC is not a valid URL', () => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
       ADOBE_ANALYTICS_JQUERY_SRC: 'invalid-url',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
     const result = isConfigured();
     expect(result).toBe(false);
@@ -42,7 +42,7 @@ describe('isConfigured', () => {
 
   it('should return false if ADOBE_ANALYTICS_SRC is not a valid URL', () => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
       ADOBE_ANALYTICS_SRC: 'invalid-url',
     });
     const result = isConfigured();
@@ -55,8 +55,8 @@ describe('pushErrorEvent', () => {
 
   beforeEach(() => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
   });
 
@@ -90,8 +90,8 @@ describe('pushPageviewEvent', () => {
 
   beforeEach(() => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
   });
 
@@ -125,8 +125,8 @@ describe('pushValidationErrorEvent', () => {
 
   beforeEach(() => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
   });
 
@@ -184,8 +184,8 @@ describe('pushFormSubmitEvent', () => {
 
   beforeEach(() => {
     vi.mocked(getClientEnv, { partial: true }).mockReturnValue({
-      ADOBE_ANALYTICS_JQUERY_SRC: 'http://example.com/jquery.min.js',
-      ADOBE_ANALYTICS_SRC: 'http://example.com/adobe-analytics.min.js',
+      ADOBE_ANALYTICS_JQUERY_SRC: 'https://example.com/jquery.min.js',
+      ADOBE_ANALYTICS_SRC: 'https://example.com/adobe-analytics.min.js',
     });
   });
 

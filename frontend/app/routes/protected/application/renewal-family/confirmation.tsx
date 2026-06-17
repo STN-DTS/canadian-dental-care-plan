@@ -46,22 +46,17 @@ export async function loader({ context: { appContainer, session }, params, reque
   const locale = getLocale(request);
 
   if (
-    state.applicantInformation === undefined || //
-    state.communicationPreferences === undefined ||
-    state.dentalBenefits === undefined ||
-    state.dentalInsurance === undefined ||
-    state.phoneNumber === undefined ||
-    state.mailingAddress === undefined ||
-    state.homeAddress === undefined ||
-    state.submitTerms === undefined ||
-    state.hasFiledTaxes === undefined ||
-    state.submissionInfo === undefined ||
-    state.children.some(
-      (child) =>
-        child.information === undefined || //
-        child.dentalInsurance === undefined ||
-        child.dentalBenefits === undefined,
-    )
+    !state.applicantInformation ||
+    !state.communicationPreferences ||
+    !state.dentalBenefits ||
+    !state.dentalInsurance ||
+    !state.phoneNumber ||
+    !state.mailingAddress ||
+    !state.homeAddress ||
+    !state.submitTerms ||
+    !state.hasFiledTaxes ||
+    !state.submissionInfo ||
+    state.children.some((child) => !child.information || !child.dentalInsurance || !child.dentalBenefits)
   ) {
     throw new Error(`Incomplete application "${state.id}" state!`);
   }

@@ -256,7 +256,7 @@ export function getContextualAgeCategoryFromDate(date: string, applicationYear: 
 }
 
 export function isNewChildState(child: ProtectedApplicationChildState) {
-  return child.dentalInsurance === undefined || child.information === undefined || child.dentalBenefits === undefined;
+  return !child.dentalInsurance || !child.information || !child.dentalBenefits;
 }
 
 export function getChildrenState<TState extends Pick<ProtectedApplicationState, 'children'>>(state: TState, includesNewChildState: boolean = false) {

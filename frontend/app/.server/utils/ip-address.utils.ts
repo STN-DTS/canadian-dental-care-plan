@@ -18,5 +18,5 @@ export function getClientIpAddress(request: Request): string | null {
   }
 
   const xForwardedForHeader = request.headers.get('X-Forwarded-For');
-  return xForwardedForHeader?.split(',')[0]?.trim() ?? null;
+  return xForwardedForHeader?.split(',', 1)[0]?.trim() ?? null;
 }

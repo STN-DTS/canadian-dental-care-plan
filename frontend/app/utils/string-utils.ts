@@ -20,7 +20,7 @@ export function randomHexString(len: number) {
  */
 export function randomString(length: number, allowedChars = '0123456789abcdefghijklmnopqrstuvwxyz') {
   const toRandomChar = () => allowedChars[Math.floor(Math.random() * allowedChars.length)];
-  return Array.from({ length }).fill(undefined).map(toRandomChar).join('');
+  return Array.from({ length }).map(toRandomChar).join('');
 }
 
 /**

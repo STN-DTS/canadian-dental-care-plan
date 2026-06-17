@@ -108,7 +108,7 @@ describe('phoneSchema', () => {
   });
 
   it('should fail validation for a phone number with only spaces', () => {
-    const result = z.object({ phone: phoneSchema() }).safeParse({ phone: '   ' });
+    const result = z.object({ phone: phoneSchema() }).safeParse({ phone: ' '.repeat(3) });
     assert(!result.success);
     expect(result.error.issues).toStrictEqual([
       {

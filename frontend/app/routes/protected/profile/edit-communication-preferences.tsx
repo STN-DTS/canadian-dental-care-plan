@@ -201,7 +201,7 @@ export default function EditCommunicationPreferences({ loaderData, params }: Rou
         const formValues = new Map<string, { elementType: 'radio'; value: string }>();
 
         function getCheckedValue(name: string, fieldId: string) {
-          const selectedEl = document.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+          const selectedEl = document.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]:checked`);
           if (selectedEl) {
             formValues.set(fieldId, {
               elementType: 'radio',

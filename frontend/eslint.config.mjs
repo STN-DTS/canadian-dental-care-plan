@@ -137,6 +137,13 @@ export default defineConfig(
       'unicorn/prefer-global-this': 'off',
       'unicorn/prefer-structured-clone': 'off',
       'unicorn/prevent-abbreviations': 'off',
+      'unicorn/filename-case': [
+        'error',
+        {
+          case: 'kebabCase',
+          ignore: ['__tests__', '__mocks__'],
+        },
+      ],
     },
   },
   //

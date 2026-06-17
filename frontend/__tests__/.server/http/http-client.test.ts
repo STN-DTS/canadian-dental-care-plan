@@ -23,7 +23,7 @@ describe('DefaultHttpClient', () => {
     it('calls fetch and instrumentationService on success', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
 
-      const res = await httpClient.instrumentedFetch('example-metric', 'http://api.example.com');
+      const res = await httpClient.instrumentedFetch('example-metric', 'https://api.example.com');
 
       expect(res.status).toBe(200);
       expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledWith('example-metric', 200);
@@ -35,7 +35,7 @@ describe('DefaultHttpClient', () => {
       mockFetch.mockResolvedValue(response);
 
       await expect(
-        httpClient.instrumentedFetch('example-metric', 'http://api.example.com', {
+        httpClient.instrumentedFetch('example-metric', 'https://api.example.com', {
           retryOptions: {
             retries: 1,
             backoffMs: 1,
@@ -55,7 +55,7 @@ describe('DefaultHttpClient', () => {
       mockFetch.mockResolvedValue(response);
 
       await expect(
-        httpClient.instrumentedFetch('example-metric', 'http://api.example.com', {
+        httpClient.instrumentedFetch('example-metric', 'https://api.example.com', {
           retryOptions: {
             retries: 1,
             backoffMs: 1,
@@ -74,7 +74,7 @@ describe('DefaultHttpClient', () => {
       const response = new Response('not matching', { status: 503 });
       mockFetch.mockResolvedValue(response);
 
-      const res = await httpClient.instrumentedFetch('example-metric', 'http://api.example.com', {
+      const res = await httpClient.instrumentedFetch('example-metric', 'https://api.example.com', {
         retryOptions: {
           retries: 1,
           backoffMs: 1,
@@ -93,7 +93,7 @@ describe('DefaultHttpClient', () => {
       const response = new Response(null, { status: 503 });
       mockFetch.mockResolvedValue(response);
 
-      const res = await httpClient.instrumentedFetch('example-metric', 'http://api.example.com', {
+      const res = await httpClient.instrumentedFetch('example-metric', 'https://api.example.com', {
         retryOptions: {},
       });
 
@@ -105,7 +105,7 @@ describe('DefaultHttpClient', () => {
     it('calls instrumentationService with 500 on unexpected error', async () => {
       mockFetch.mockRejectedValue(new Error('Network fail'));
 
-      await expect(httpClient.instrumentedFetch('example-metric', 'http://api.example.com')).rejects.toThrow();
+      await expect(httpClient.instrumentedFetch('example-metric', 'https://api.example.com')).rejects.toThrow();
 
       expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledWith('example-metric', 500);
       expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledOnce();

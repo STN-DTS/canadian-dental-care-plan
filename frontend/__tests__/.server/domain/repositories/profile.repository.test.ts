@@ -13,7 +13,7 @@ describe('DefaultProfileRepository', () => {
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
-      HTTP_PROXY_URL: 'http://proxy.example.com',
+      HTTP_PROXY_URL: 'https://proxy.example.com',
       INTEROP_API_SUBSCRIPTION_KEY: 'SUBSCRIPTION_KEY',
       INTEROP_API_MAX_RETRIES: 3,
       INTEROP_API_BACKOFF_MS: 100,

@@ -421,7 +421,7 @@ export function generateRandomState(len = 32) {
 export function generateRandomString(length: number) {
   const allowedChars = '0123456789abcdefghijklmnopqrstuvwxyz';
   const toRandomChar = () => allowedChars[Math.floor(Math.random() * allowedChars.length)];
-  return Array.from({ length }).fill(undefined).map(toRandomChar).join('');
+  return Array.from({ length }).map(toRandomChar).join('');
 }
 
 function validateAuthorizationToken(tokenEndpointResponse: TokenEndpointResponse) {

@@ -128,7 +128,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
           </>
         )}
       </head>
-      <body vocab="http://schema.org/" typeof="WebPage">
+      <body vocab="https://schema.org/" typeof="WebPage">
         <RouteChangeAnnouncer />
         <Outlet />
         <ScrollRestoration nonce={nonce} />
@@ -196,7 +196,7 @@ export function ErrorBoundary() {
         <Meta />
         <Links nonce={nonce} />
       </head>
-      <body vocab="http://schema.org/" typeof="WebPage">
+      <body vocab="https://schema.org/" typeof="WebPage">
         <header className="border-b-[3px] border-slate-700 print:hidden">
           <div id="wb-bnr">
             <div className="container flex items-center justify-between gap-6 py-2.5 sm:py-3.5">

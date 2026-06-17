@@ -8,14 +8,14 @@ describe('DefaultBearerTokenResolver', () => {
 
     const token = '00000000-0000-0000-0000-000000000000';
     const headers = { authorization: `Bearer ${token}` };
-    const request = new Request('http://example.com', { headers: headers });
+    const request = new Request('https://example.com', { headers: headers });
 
     expect(bearerTokenResolver.resolve(request)).toEqual(token);
   });
 
   it('should return undefined if the authorization header is not set', () => {
     const bearerTokenResolver = new DefaultBearerTokenResolver();
-    const request = new Request('http://example.com');
+    const request = new Request('https://example.com');
 
     expect(bearerTokenResolver.resolve(request)).toBeUndefined();
   });
@@ -24,7 +24,7 @@ describe('DefaultBearerTokenResolver', () => {
     const bearerTokenResolver = new DefaultBearerTokenResolver();
 
     const headers = { authorization: 'Basic 00000000-0000-0000-0000-000000000000' };
-    const request = new Request('http://example.com', { headers: headers });
+    const request = new Request('https://example.com', { headers: headers });
 
     expect(bearerTokenResolver.resolve(request)).toBeUndefined();
   });
