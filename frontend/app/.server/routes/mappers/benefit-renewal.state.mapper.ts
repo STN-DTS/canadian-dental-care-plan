@@ -440,7 +440,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
    * insurance number is retained.
    *
    * @param param0 - An object containing the existing applicant information, the renewed social insurance number, and the renewed marital status.
-   * @returns A RenewalApplicantInformationDto object containing the merged applicant information for the renewal application.
+   * @returns A BenefitRenewalApplicantInformationDto object containing the merged applicant information for the renewal application.
    */
   private toApplicantInformation({ existingApplicantInformation, renewedSocialInsuranceNumber, renewedMaritalStatus }: ToApplicantInformationArgs): BenefitRenewalApplicantInformationDto {
     // If the renewed marital status is provided, use it. Otherwise, use the existing marital status.
