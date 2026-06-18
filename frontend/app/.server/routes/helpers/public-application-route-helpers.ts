@@ -10,6 +10,7 @@ import { createLogger } from '~/.server/logging';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
+  BaseApplicationChannelCodeState,
   BaseApplicationChildState,
   BaseApplicationCommunicationPreferencesDeclaredChangeState,
   BaseApplicationContextState,
@@ -42,6 +43,7 @@ export type PublicApplicationState = ReadonlyDeep<{
    * The unique identifier for the public application.
    */
   id: string;
+  channelCode: ExtractStrict<BaseApplicationChannelCodeState, 'public'>;
   context: BaseApplicationContextState;
   inputModel?: PublicApplicationInputModelState;
   lastUpdatedOn: string;
@@ -107,7 +109,7 @@ interface LoadStateArgs {
 /**
  * Gets public application state.
  * @param args - The arguments.
- * @returns The public applicqation state.
+ * @returns The public application state.
  */
 export function getPublicApplicationState({ params, session }: LoadStateArgs): PublicApplicationState {
   const log = createLogger('application-route-helpers.server/loadApplicationState');
@@ -139,13 +141,24 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
-  return state;
+  // Validate channelCode to ensure the session state is consistent with public application expectations
+  const channelCode = state.channelCode as string | undefined;
+
+  if (channelCode !== undefined && channelCode !== 'public') {
+    throw new Error(`Invalid channelCode in session state; expected 'public' but got [${channelCode}]`);
+  }
+
+  return {
+    ...state,
+    // Default to 'public' if channelCode is missing to maintain backward compatibility
+    channelCode: channelCode ?? 'public',
+  };
 }
 
 interface SavePublicApplicationStateArgs {
   params: ApplicationStateParams;
   session: Session;
-  state: Partial<OmitStrict<PublicApplicationState, 'id' | 'lastUpdatedOn' | 'applicationYear' | 'context'>>;
+  state: Partial<OmitStrict<PublicApplicationState, 'id' | 'lastUpdatedOn' | 'applicationYear' | 'context' | 'channelCode'>>;
 }
 
 /**
@@ -161,6 +174,7 @@ export function savePublicApplicationState({ params, session, state }: SavePubli
     ...currentState,
     ...state,
     lastUpdatedOn: new UTCDate().toISOString(),
+    channelCode: 'public', // Ensure channelCode remains 'public' regardless of input to maintain state integrity
   } satisfies PublicApplicationState;
 
   const sessionkey = getSessionKey(currentState.id);
@@ -203,6 +217,7 @@ export function startApplicationState({ applicationYear, session }: StartArgs): 
   const id = generateId();
   const initialState: PublicApplicationState = {
     id,
+    channelCode: 'public',
     context: isWithinRenewalPeriod() ? 'renewal' : 'intake',
     lastUpdatedOn: new UTCDate().toISOString(),
     applicationYear,

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import {
+  checkValidAndVerifiedEmailAddress,
   getAgeCategoryFromAge,
   getAgeCategoryFromDateString,
   getAgeCategoryReferenceDate,
@@ -9,6 +10,7 @@ import {
   getEligibilityStatus,
   isChildClientNumberValid,
   isChildOrYouth,
+  isEmailAddressRequired,
   isSinReserved,
   maritalStatusHasPartner,
 } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -18,6 +20,8 @@ vi.mock('~/.server/utils/env.utils', () => ({
     ELIGIBILITY_STATUS_CODE_ELIGIBLE: 'ELIGIBLE',
     MARITAL_STATUS_CODE_COMMON_LAW: 'COMMON_LAW',
     MARITAL_STATUS_CODE_MARRIED: 'MARRIED',
+    COMMUNICATION_METHOD_GC_DIGITAL_ID: 'digital',
+    COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'email',
   })),
 }));
 
@@ -455,6 +459,43 @@ describe('base-application-route-helpers', () => {
       it('returns false when the reserved list contains only undefined and invalid SINs', () => {
         expect(isSinReserved('123456782', [undefined, '123456789'])).toBe(false);
       });
+    });
+  });
+
+  describe('isEmailAddressRequired', () => {
+    it('returns true when preferred method includes GC digital', () => {
+      expect(isEmailAddressRequired({ preferredMethodSunLife: 'mail', preferredMethodGovernmentOfCanada: 'digital' })).toBe(true);
+    });
+
+    it('returns true when preferred method includes Sun Life email', () => {
+      expect(isEmailAddressRequired({ preferredMethodSunLife: 'email', preferredMethodGovernmentOfCanada: 'mail' })).toBe(true);
+    });
+
+    it('returns true when preferred method includes both GC digital and Sun Life email', () => {
+      expect(isEmailAddressRequired({ preferredMethodSunLife: 'email', preferredMethodGovernmentOfCanada: 'digital' })).toBe(true);
+    });
+
+    it('returns false when preferred method includes neither GC digital nor Sun Life email', () => {
+      expect(isEmailAddressRequired({ preferredMethodSunLife: 'mail', preferredMethodGovernmentOfCanada: 'mail' })).toBe(false);
+    });
+  });
+
+  describe('checkValidAndVerifiedEmailAddress', () => {
+    it('returns valid and verified when email is valid and verified', () => {
+      expect(checkValidAndVerifiedEmailAddress({ email: 'valid@example.com', emailVerified: true })).toEqual({ success: true, email: 'valid@example.com', emailVerified: true });
+    });
+
+    it.each([
+      [undefined, false],
+      [undefined, true],
+      [undefined, undefined],
+      ['invalid-email', false],
+      ['invalid-email', true],
+      ['invalid-email', undefined],
+      ['valid@example.com', false],
+      ['valid@example.com', undefined],
+    ])('returns invalid when email is [%s] or not verified is [%s]', (email, emailVerified) => {
+      expect(checkValidAndVerifiedEmailAddress({ email, emailVerified })).toEqual({ success: false, email, emailVerified });
     });
   });
 });

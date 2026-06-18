@@ -4,23 +4,25 @@ import type { ReadonlyDeep } from 'type-fest';
 import validator from 'validator';
 
 import type {
+  BenefitRenewalApplicantInformationDto,
+  BenefitRenewalChildDto,
+  BenefitRenewalCommunicationPreferencesDto,
+  BenefitRenewalContactInformationDto,
   BenefitRenewalDto,
+  BenefitRenewalEmailDto,
+  BenefitRenewalPartnerInformationDto,
   ClientApplicantInformationDto,
   ClientApplicationDto,
   ClientChildDto,
   ClientCommunicationPreferencesDto,
   ClientContactInformationDto,
   ClientPartnerInformationDto,
-  RenewalApplicantInformationDto,
-  RenewalChildDto,
-  RenewalCommunicationPreferencesDto,
-  RenewalContactInformationDto,
-  RenewalPartnerInformationDto,
 } from '~/.server/domain/dtos';
-import { maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
+import { checkValidAndVerifiedEmailAddress, isEmailAddressRequired, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
+  BaseApplicationChannelCodeState,
   BaseApplicationChildState,
   BaseApplicationCommunicationPreferencesDeclaredChangeState,
   BaseApplicationDentalBenefitsDeclaredChangeState,
@@ -32,6 +34,7 @@ import type {
 } from '~/.server/routes/helpers/base-application-route-helpers';
 
 export interface BenefitRenewalAdultState {
+  channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   clientApplication?: ClientApplicationDto & { applicationCategoryCodeName: 'New' | 'Renewal' };
@@ -50,6 +53,7 @@ export interface BenefitRenewalAdultState {
 }
 
 export interface BenefitRenewalFamilyState {
+  channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children: BaseApplicationChildState[];
@@ -69,6 +73,7 @@ export interface BenefitRenewalFamilyState {
 }
 
 export interface BenefitRenewalChildState {
+  channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   clientApplication?: ClientApplicationDto & { applicationCategoryCodeName: 'New' | 'Renewal' };
@@ -86,9 +91,9 @@ export interface BenefitRenewalChildState {
 }
 
 export interface BenefitRenewalStateMapper {
-  mapBenefitRenewalAdultStateToBenefitRenewalDto(benefitrenewalAdultState: BenefitRenewalAdultState, userId?: string): BenefitRenewalDto;
-  mapBenefitRenewalFamilyStateToBenefitRenewalDto(benefitrenewalFamilyState: BenefitRenewalFamilyState, userId?: string): BenefitRenewalDto;
-  mapBenefitRenewalChildStateToBenefitRenewalDto(benefitRenewalChildState: BenefitRenewalChildState, userId?: string): BenefitRenewalDto;
+  mapBenefitRenewalAdultStateToBenefitRenewalDto(benefitrenewalAdultState: BenefitRenewalAdultState, options?: { userId?: string }): BenefitRenewalDto;
+  mapBenefitRenewalFamilyStateToBenefitRenewalDto(benefitrenewalFamilyState: BenefitRenewalFamilyState, options?: { userId?: string }): BenefitRenewalDto;
+  mapBenefitRenewalChildStateToBenefitRenewalDto(benefitRenewalChildState: BenefitRenewalChildState, options?: { userId?: string }): BenefitRenewalDto;
 }
 
 interface ToApplicantInformationArgs {
@@ -105,8 +110,28 @@ interface ToChildrenArgs {
 interface ToCommunicationPreferencesArgs {
   existingCommunicationPreferences: ReadonlyDeep<ClientCommunicationPreferencesDto>;
   communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
-  email?: string;
-  emailVerified?: boolean;
+}
+
+interface ToEmailAddressArgs {
+  applicationChannelCode: 'protected' | 'public';
+  communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+  existingEmail: string | undefined;
+  existingEmailVerified: boolean | undefined;
+}
+
+interface ToEmailAddressProtectedChannelArgs {
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+}
+
+interface ToEmailAddressPublicChannelArgs {
+  communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
+  email: string | undefined;
+  emailVerified: boolean | undefined;
+  existingEmail: string | undefined;
+  existingEmailVerified: boolean | undefined;
 }
 
 interface ToContactInformationArgs {
@@ -115,8 +140,6 @@ interface ToContactInformationArgs {
   renewedContactInformation: BaseApplicationPhoneNumberDeclaredChangeState | undefined;
   renewedHomeAddress: BaseApplicationAddressDeclaredChangeState | undefined;
   renewedMailingAddress: BaseApplicationAddressDeclaredChangeState | undefined;
-  renewedEmailVerified: boolean | undefined;
-  renewedEmail: string | undefined;
 }
 
 interface ToDentalBenefitsArgs {
@@ -142,16 +165,11 @@ interface ToPartnerInformationArgs {
   renewedPartnerInformation?: BaseApplicationPartnerInformationState;
 }
 
-interface HasEmailChangedArgs {
-  emailVerified: boolean | undefined;
-  email: string | undefined;
-  existingEmail: string | undefined;
-}
-
 @injectable()
 export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapper {
   mapBenefitRenewalAdultStateToBenefitRenewalDto(
     {
+      channelCode,
       applicantInformation,
       applicationYear,
       clientApplication,
@@ -168,8 +186,10 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       phoneNumber,
       termsAndConditions,
     }: BenefitRenewalAdultState,
-    userId: string = 'anonymous',
+    options?: { userId?: string },
   ): BenefitRenewalDto {
+    const userId = options?.userId ?? 'anonymous';
+
     if (communicationPreferences === undefined) {
       throw new Error('Expected communicationPreferences to be defined');
     }
@@ -178,13 +198,17 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       throw new Error('Expected clientApplication to be defined');
     }
 
-    const hasEmailChanged = this.hasEmailChanged({
-      emailVerified,
-      email,
+    const emailAddress = this.toEmailAddress({
+      applicationChannelCode: channelCode,
+      communicationPreferences: communicationPreferences,
+      email: email,
+      emailVerified: emailVerified,
       existingEmail: clientApplication.contactInformation.email,
+      existingEmailVerified: clientApplication.contactInformation.emailVerified,
     });
 
     return {
+      applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,
       applicantInformation: this.toApplicantInformation({
@@ -197,17 +221,14 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
       }),
+      emailAddress,
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
         isHomeAddressSameAsMailingAddress,
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: this.toDentalBenefits({
         existingDentalBenefits: clientApplication.dentalBenefits,
@@ -227,13 +248,14 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,
         hasPhoneChanged: phoneNumber.hasChanged,
-        hasEmailChanged,
+        hasEmailChanged: emailAddress.value !== clientApplication.contactInformation.email,
       },
     };
   }
 
   mapBenefitRenewalFamilyStateToBenefitRenewalDto(
     {
+      channelCode,
       applicantInformation,
       applicationYear,
       children,
@@ -251,8 +273,10 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences,
       termsAndConditions,
     }: BenefitRenewalFamilyState,
-    userId: string = 'anonymous',
+    options?: { userId?: string },
   ): BenefitRenewalDto {
+    const userId = options?.userId ?? 'anonymous';
+
     if (communicationPreferences === undefined) {
       throw new Error('Expected communicationPreferences to be defined');
     }
@@ -263,7 +287,17 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
 
     invariant(children.length > 0, 'Expected children to be non-empty for a family renewal');
 
+    const emailAddress = this.toEmailAddress({
+      applicationChannelCode: channelCode,
+      communicationPreferences: communicationPreferences,
+      email: email,
+      emailVerified: emailVerified,
+      existingEmail: clientApplication.contactInformation.email,
+      existingEmailVerified: clientApplication.contactInformation.emailVerified,
+    });
+
     return {
+      applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,
       applicantInformation: this.toApplicantInformation({
@@ -279,17 +313,14 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
       }),
+      emailAddress,
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
         isHomeAddressSameAsMailingAddress,
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: this.toDentalBenefits({
         existingDentalBenefits: clientApplication.dentalBenefits,
@@ -309,13 +340,14 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,
         hasPhoneChanged: phoneNumber.hasChanged,
-        hasEmailChanged: this.hasEmailChanged({ emailVerified, email, existingEmail: clientApplication.contactInformation.email }),
+        hasEmailChanged: emailAddress.value !== clientApplication.contactInformation.email,
       },
     };
   }
 
   mapBenefitRenewalChildStateToBenefitRenewalDto(
     {
+      channelCode,
       applicantInformation,
       applicationYear,
       children,
@@ -331,8 +363,10 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences,
       termsAndConditions,
     }: BenefitRenewalChildState,
-    userId: string = 'anonymous',
+    options?: { userId?: string },
   ): BenefitRenewalDto {
+    const userId = options?.userId ?? 'anonymous';
+
     if (communicationPreferences === undefined) {
       throw new Error('Expected communicationPreferences to be defined');
     }
@@ -343,7 +377,17 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
 
     invariant(children.length > 0, 'Expected children to be non-empty for a child renewal');
 
+    const emailAddress = this.toEmailAddress({
+      applicationChannelCode: channelCode,
+      communicationPreferences: communicationPreferences,
+      email: email,
+      emailVerified: emailVerified,
+      existingEmail: clientApplication.contactInformation.email,
+      existingEmailVerified: clientApplication.contactInformation.emailVerified,
+    });
+
     return {
+      applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,
       applicantInformation: this.toApplicantInformation({
@@ -359,17 +403,14 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       communicationPreferences: this.toCommunicationPreferences({
         existingCommunicationPreferences: clientApplication.communicationPreferences,
         communicationPreferences,
-        email,
-        emailVerified,
       }),
+      emailAddress,
       contactInformation: this.toContactInformation({
         existingContactInformation: clientApplication.contactInformation,
         isHomeAddressSameAsMailingAddress,
         renewedContactInformation: phoneNumber,
         renewedHomeAddress: homeAddress,
         renewedMailingAddress: mailingAddress,
-        renewedEmailVerified: emailVerified,
-        renewedEmail: email,
       }),
       dentalBenefits: [],
       dentalInsurance: undefined,
@@ -386,20 +427,9 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,
         hasPhoneChanged: phoneNumber.hasChanged,
-        hasEmailChanged: this.hasEmailChanged({ emailVerified, email, existingEmail: clientApplication.contactInformation.email }),
+        hasEmailChanged: emailAddress.value !== clientApplication.contactInformation.email,
       },
     };
-  }
-
-  /**
-   * Determines if the email has changed based on the emailVerified flag, the new email value, and the existing email
-   * value. The email is considered changed if it is verified, not empty, and different from the existing email.
-   *
-   * @param param0 - An object containing the emailVerified flag, the new email value, and the existing email value.
-   * @returns A boolean indicating whether the email has changed.
-   */
-  private hasEmailChanged({ emailVerified, email, existingEmail }: HasEmailChangedArgs): boolean {
-    return emailVerified === true && email !== undefined && email.trim().length > 0 && email !== existingEmail;
   }
 
   /**
@@ -410,9 +440,9 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
    * insurance number is retained.
    *
    * @param param0 - An object containing the existing applicant information, the renewed social insurance number, and the renewed marital status.
-   * @returns A RenewalApplicantInformationDto object containing the merged applicant information for the renewal application.
+   * @returns A BenefitRenewalApplicantInformationDto object containing the merged applicant information for the renewal application.
    */
-  private toApplicantInformation({ existingApplicantInformation, renewedSocialInsuranceNumber, renewedMaritalStatus }: ToApplicantInformationArgs): RenewalApplicantInformationDto {
+  private toApplicantInformation({ existingApplicantInformation, renewedSocialInsuranceNumber, renewedMaritalStatus }: ToApplicantInformationArgs): BenefitRenewalApplicantInformationDto {
     // If the renewed marital status is provided, use it. Otherwise, use the existing marital status.
     const maritalStatus = renewedMaritalStatus ?? existingApplicantInformation.maritalStatus;
 
@@ -430,7 +460,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     };
   }
 
-  private toChildren({ existingChildren, renewedChildren }: ToChildrenArgs): RenewalChildDto[] {
+  private toChildren({ existingChildren, renewedChildren }: ToChildrenArgs): BenefitRenewalChildDto[] {
     return renewedChildren.map((renewedChild) => {
       const existingChild = existingChildren.find((existingChild) => existingChild.information.clientNumber === renewedChild.information?.memberId);
       invariant(existingChild, 'Expected existingChild to be defined');
@@ -459,15 +489,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     });
   }
 
-  private toContactInformation({
-    existingContactInformation,
-    isHomeAddressSameAsMailingAddress,
-    renewedContactInformation,
-    renewedHomeAddress,
-    renewedMailingAddress,
-    renewedEmailVerified,
-    renewedEmail,
-  }: ToContactInformationArgs): RenewalContactInformationDto {
+  private toContactInformation({ existingContactInformation, isHomeAddressSameAsMailingAddress, renewedContactInformation, renewedHomeAddress, renewedMailingAddress }: ToContactInformationArgs): BenefitRenewalContactInformationDto {
     // If the phone number has changed, use the new phone number values. Otherwise, use the existing phone number values.
     const phoneNumbers = renewedContactInformation?.hasChanged
       ? {
@@ -479,12 +501,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
           phoneNumberAlt: existingContactInformation.phoneNumberAlt,
         };
 
-    const hasEmailChanged = this.hasEmailChanged({
-      emailVerified: renewedEmailVerified,
-      email: renewedEmail,
-      existingEmail: existingContactInformation.email,
-    });
-
     // Determine if the home address is the same as the mailing address. If either address has changed, use the
     // isHomeAddressSameAsMailingAddress value provided by the user. If neither address has changed, use the existing
     // copyMailingAddress value to maintain consistency with the existing data.
@@ -492,7 +508,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const resolvedIsHomeAddressSameAsMailingAddress = haveAddressesChanged ? isHomeAddressSameAsMailingAddress : existingContactInformation.copyMailingAddress;
 
     return {
-      email: hasEmailChanged && renewedEmail ? renewedEmail : existingContactInformation.email,
       copyMailingAddress: !!resolvedIsHomeAddressSameAsMailingAddress,
       ...this.toHomeAddress({ existingContactInformation, isHomeAddressSameAsMailingAddress: resolvedIsHomeAddressSameAsMailingAddress, homeAddress: renewedHomeAddress, mailingAddress: renewedMailingAddress }),
       ...this.toMailingAddress({ existingContactInformation, mailingAddress: renewedMailingAddress }),
@@ -579,13 +594,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     };
   }
 
-  private toCommunicationPreferences({ existingCommunicationPreferences, communicationPreferences, email, emailVerified }: ToCommunicationPreferencesArgs): RenewalCommunicationPreferencesDto {
+  private toCommunicationPreferences({ existingCommunicationPreferences, communicationPreferences }: ToCommunicationPreferencesArgs): BenefitRenewalCommunicationPreferencesDto {
     invariant(communicationPreferences, 'Expected communicationPreferences to be defined');
 
     if (communicationPreferences.hasChanged) {
       return {
-        email,
-        emailVerified,
         preferredLanguage: communicationPreferences.value.preferredLanguage,
         preferredMethod: communicationPreferences.value.preferredMethod,
         preferredMethodGovernmentOfCanada: communicationPreferences.value.preferredNotificationMethod,
@@ -597,12 +610,67 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     invariant(existingCommunicationPreferences.preferredMethodGovernmentOfCanada, 'Expected existingCommunicationPreferences.preferredMethodGovernmentOfCanada to be defined');
 
     return {
-      email,
-      emailVerified,
       preferredLanguage: existingCommunicationPreferences.preferredLanguage,
       preferredMethod: existingCommunicationPreferences.preferredMethodSunLife,
       preferredMethodGovernmentOfCanada: existingCommunicationPreferences.preferredMethodGovernmentOfCanada,
     };
+  }
+
+  /**
+   * Maps email address fields to a {@link BenefitRenewalEmailDto} using channel-specific validation rules.
+   * Delegates to {@link toEmailAddressProtectedChannel} for protected-channel renewals
+   * and to {@link toEmailAddressPublicChannel} for public-channel renewals.
+   */
+  private toEmailAddress({ applicationChannelCode, communicationPreferences, email, emailVerified, existingEmail, existingEmailVerified }: ToEmailAddressArgs): BenefitRenewalEmailDto {
+    if (applicationChannelCode === 'protected') {
+      return this.toEmailAddressProtectedChannel({ email, emailVerified });
+    }
+
+    return this.toEmailAddressPublicChannel({ communicationPreferences, email, emailVerified, existingEmail, existingEmailVerified });
+  }
+
+  /**
+   * Maps email address fields for a protected-channel renewal.
+   * Protected-channel renewals always require a valid, verified email address;
+   * throws if the email is absent or unverified.
+   */
+  private toEmailAddressProtectedChannel({ email, emailVerified }: ToEmailAddressProtectedChannelArgs): BenefitRenewalEmailDto {
+    const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
+
+    if (!result.success) {
+      throw new Error('Expected a valid and verified email for protected application channel');
+    }
+
+    return { value: result.email, verified: result.emailVerified };
+  }
+
+  /**
+   * Maps email address fields for a public-channel renewal.
+   * If the communication preferences have not changed, or have changed but do not require an
+   * email, the existing email and verification status are preserved to avoid data loss.
+   * If the preferences have changed and a selected communication method requires email,
+   * a valid, verified email is enforced and throws if absent or unverified.
+   */
+  private toEmailAddressPublicChannel({ communicationPreferences, email, emailVerified, existingEmail, existingEmailVerified }: ToEmailAddressPublicChannelArgs): BenefitRenewalEmailDto {
+    if (
+      !communicationPreferences.hasChanged ||
+      !isEmailAddressRequired({
+        preferredMethodSunLife: communicationPreferences.value.preferredMethod,
+        preferredMethodGovernmentOfCanada: communicationPreferences.value.preferredNotificationMethod,
+      })
+    ) {
+      // Preferences unchanged, or changed but email not required — retain existing email to avoid data loss.
+      return { value: existingEmail, verified: existingEmailVerified };
+    }
+
+    // Preferences changed and a selected communication method requires email — must be valid and verified.
+    const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
+
+    if (!result.success) {
+      throw new Error('Expected a valid and verified email for public application channel when communication preferences have changed and require an email');
+    }
+
+    return { value: result.email, verified: result.emailVerified };
   }
 
   private toDentalBenefits({ existingDentalBenefits, renewedDentalBenefits }: ToDentalBenefitsArgs): readonly string[] {
@@ -628,7 +696,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     return dentalBenefits;
   }
 
-  private toPartnerInformation({ effectiveMaritalStatus, existingPartnerInformation, renewedPartnerInformation }: ToPartnerInformationArgs): RenewalPartnerInformationDto | undefined {
+  private toPartnerInformation({ effectiveMaritalStatus, existingPartnerInformation, renewedPartnerInformation }: ToPartnerInformationArgs): BenefitRenewalPartnerInformationDto | undefined {
     if (!maritalStatusHasPartner(effectiveMaritalStatus)) {
       return undefined;
     }

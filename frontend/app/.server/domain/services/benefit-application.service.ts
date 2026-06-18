@@ -15,15 +15,15 @@ import { ErrorCodes } from '~/errors/error-codes';
 
 export interface BenefitApplicationService {
   /**
-   * Submits benefit application request.
+   * Submits a public benefit application request.
    *
-   * @param benefitApplicationRequestDto The benefit application request dto
+   * @param benefitApplicationRequestDto The public benefit application request dto
    * @returns A Promise that resolves to the benefit application code
    */
-  createBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string>;
+  createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string>;
 
   /**
-   * Submits benefit application request for the protected route.
+   * Submits a protected benefit application request.
    *
    * @param protectedBenefitApplicationRequestDto The protected route benefit application request dto
    * @returns A Promise that resolves to the benefit application code
@@ -65,20 +65,25 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     this.log.debug('DefaultBenefitApplicationService initiated.');
   }
 
-  async createBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
+  async createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
     this.log.trace('Creating benefit application for request [%j]', benefitApplicationRequestDto);
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
       this.log.error('Request to create benefit application is unavailable (killswitch engaged).');
-      new AppError('Request to create benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throw new AppError('Request to create benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
+
+    if (benefitApplicationRequestDto.applicationChannelCode !== 'public') {
+      this.log.error('Received request to create public benefit application with invalid application channel code: [%s]', benefitApplicationRequestDto.applicationChannelCode);
+      throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
     this.auditService.createAudit('application-submit.post', { userId: benefitApplicationRequestDto.userId });
 
     try {
-      const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationRequestDto, 'public');
+      const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationRequestDto);
       const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(benefitApplicationRequestEntity);
       const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 
@@ -97,9 +102,14 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   async createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
     this.log.trace('Creating protected benefit application for request [%j]', protectedBenefitApplicationRequestDto);
 
+    if (protectedBenefitApplicationRequestDto.applicationChannelCode !== 'protected') {
+      this.log.error('Received request to create protected benefit application with invalid application channel code: [%s]', protectedBenefitApplicationRequestDto.applicationChannelCode);
+      throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
+    }
+
     this.auditService.createAudit('protected-application-submit.post', { userId: protectedBenefitApplicationRequestDto.userId });
 
-    const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationRequestDto, 'protected');
+    const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationRequestDto);
     const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(protectedBenefitApplicationRequestEntity);
     const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 

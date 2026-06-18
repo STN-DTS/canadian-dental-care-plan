@@ -1,5 +1,6 @@
 // Shared state field types for Public/Protected ApplicationState
 import type { PickDeep, ReadonlyDeep } from 'type-fest';
+import validator from 'validator';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import type { DeclaredChange } from '~/.server/routes/helpers/declared-change-type';
@@ -8,6 +9,12 @@ import { getEnv } from '~/.server/utils/env.utils';
 import type { EligibilityType } from '~/components/eligibility';
 import { getAgeFromDateString } from '~/utils/date-utils';
 import { formatSin, isValidSin } from '~/utils/sin-utils';
+
+/**
+ * The channel through which the application is being submitted, either 'protected' for authenticated
+ * users or 'public' for unauthenticated users.
+ */
+export type BaseApplicationChannelCodeState = 'protected' | 'public';
 
 /**
  * The context of the application, either 'intake' for new applications or 'renewal' for renewal applications.
@@ -92,8 +99,19 @@ export type BaseApplicationChildState = ReadonlyDeep<{
  * Communication preferences for the application state.
  */
 export type BaseApplicationCommunicationPreferencesState = ReadonlyDeep<{
+  /**
+   * The preferred language for the applicant to receive communications from Sun Life and the Government of Canada.
+   */
   preferredLanguage: string;
+
+  /**
+   * The preferred method for the applicant to receive communications from Sun Life.
+   */
   preferredMethod: string;
+
+  /**
+   * The preferred method for the applicant to receive communications from the Government of Canada.
+   */
   preferredNotificationMethod: string;
 }>;
 
@@ -386,4 +404,60 @@ export function isSinReserved(sin: string, reservedSins: ReadonlyArray<string | 
   });
 
   return formattedReserved.includes(formatSin(sin));
+}
+
+type IsEmailAddressRequiredArgs = {
+  /** The applicant's preferred method of communication with Sun Life. */
+  preferredMethodSunLife: string;
+  /** The applicant's preferred method of communication with the Government of Canada. */
+  preferredMethodGovernmentOfCanada: string;
+};
+
+/**
+ * Determines whether an email address is required based on the applicant's preferred communication methods.
+ *
+ * An email address is required if the applicant's preferred method of communication with Sun Life
+ * is "email" from config or if their preferred method of communication with the Government of
+ * Canada is "digital" from config.
+ *
+ * @returns `true` if an email address is required, `false` otherwise.
+ */
+export function isEmailAddressRequired({ preferredMethodSunLife, preferredMethodGovernmentOfCanada }: IsEmailAddressRequiredArgs): boolean {
+  const { COMMUNICATION_METHOD_GC_DIGITAL_ID, COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID } = getEnv();
+  return preferredMethodSunLife === COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID || preferredMethodGovernmentOfCanada === COMMUNICATION_METHOD_GC_DIGITAL_ID;
+}
+
+type CheckValidAndVerifiedEmailAddressResult =
+  | {
+      success: true;
+      email: string;
+      emailVerified: true;
+    }
+  | {
+      success: false;
+      email: string | undefined;
+      emailVerified: boolean | undefined;
+    };
+
+type CheckValidAndVerifiedEmailAddressArgs = {
+  /** The email address to validate. */
+  email: string | undefined;
+  /** Indicates whether the email address has been verified. */
+  emailVerified: boolean | undefined;
+};
+
+/**
+ * Determines whether the provided email address is valid and verified.
+ *
+ * @returns An object indicating whether the email address is valid and verified, along with the
+ *  email address and its verification status.
+ */
+export function checkValidAndVerifiedEmailAddress({ email, emailVerified }: CheckValidAndVerifiedEmailAddressArgs): CheckValidAndVerifiedEmailAddressResult {
+  if (typeof email === 'string' && validator.isEmail(email) && emailVerified === true) {
+    // The email is valid and verified, return success with the email and verification status.
+    return { success: true, email, emailVerified };
+  }
+
+  // The email is either invalid or not verified, return failure with the email and verification status.
+  return { success: false, email, emailVerified };
 }

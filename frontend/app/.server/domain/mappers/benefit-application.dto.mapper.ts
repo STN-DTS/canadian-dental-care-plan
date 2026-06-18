@@ -4,14 +4,14 @@ import validator from 'validator';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { BenefitApplicationDto, ChildDto, ContactInformationDto, PartnerInformationDto, TypeOfApplicationDto } from '~/.server/domain/dtos';
+import type { BenefitApplicationChildDto, BenefitApplicationContactInformationDto, BenefitApplicationDto, BenefitApplicationPartnerInformationDto, BenefitApplicationTypeOfApplicationDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationRequestEntity, BenefitApplicationResponseEntity } from '~/.server/domain/entities';
 import { expectDefined } from '~/utils/assert-utils';
 import { parseDateString } from '~/utils/date-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 export interface BenefitApplicationDtoMapper {
-  mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto: BenefitApplicationDto, applicationChannelCode: 'protected' | 'public'): BenefitApplicationRequestEntity;
+  mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto: BenefitApplicationDto): BenefitApplicationRequestEntity;
   mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity: BenefitApplicationResponseEntity): string;
 }
 
@@ -25,31 +25,27 @@ interface ToAddressArgs {
   province?: string;
 }
 
-interface ToEmailAddressArgs {
-  email?: string;
-}
+type DefaultBenefitApplicationDtoMapperServerConfig = Pick<
+  ServerConfig,
+  'APPLICANT_CATEGORY_CODE_INDIVIDUAL' | 'APPLICANT_CATEGORY_CODE_FAMILY' | 'APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED'
+>;
 
 @injectable()
 export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDtoMapper {
-  private readonly serverConfig: Pick<
-    ServerConfig,
-    'APPLICANT_CATEGORY_CODE_INDIVIDUAL' | 'APPLICANT_CATEGORY_CODE_FAMILY' | 'APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED'
-  >;
+  private readonly serverConfig: DefaultBenefitApplicationDtoMapperServerConfig;
 
-  constructor(
-    @inject(TYPES.ServerConfig)
-    serverConfig: Pick<ServerConfig, 'APPLICANT_CATEGORY_CODE_INDIVIDUAL' | 'APPLICANT_CATEGORY_CODE_FAMILY' | 'APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC' | 'BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED'>,
-  ) {
+  constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultBenefitApplicationDtoMapperServerConfig) {
     this.serverConfig = serverConfig;
   }
 
-  mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto: BenefitApplicationDto, applicationChannelCode: 'protected' | 'public'): BenefitApplicationRequestEntity {
+  mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto: BenefitApplicationDto): BenefitApplicationRequestEntity {
     const { BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED, BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC } = this.serverConfig;
-    return this.toBenefitApplicationRequestEntity(benefitApplicationDto, applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC);
+    const applicationChannelCode = benefitApplicationDto.applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC;
+    return this.toBenefitApplicationRequestEntity(benefitApplicationDto, applicationChannelCode);
   }
 
   private toBenefitApplicationRequestEntity(benefitApplication: BenefitApplicationDto, applicationChannelCode: string): BenefitApplicationRequestEntity {
-    const { applicantInformation, applicationYearId, children, communicationPreferences, contactInformation, dateOfBirth, dentalBenefits, dentalInsurance, livingIndependently, partnerInformation, termsAndConditions, typeOfApplication } =
+    const { applicantInformation, applicationYearId, children, communicationPreferences, contactInformation, emailAddress, dateOfBirth, dentalBenefits, dentalInsurance, livingIndependently, partnerInformation, termsAndConditions, typeOfApplication } =
       benefitApplication;
     return {
       BenefitApplication: {
@@ -62,7 +58,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
             SharingConsentIndicator: termsAndConditions.shareData,
             EligibilityAttestationIndicator: true,
             AccuracyConfirmationIndicator: true,
-            ApplicantEmailVerifiedIndicator: communicationPreferences.emailVerified,
+            ApplicantEmailVerifiedIndicator: emailAddress.verified,
             InsurancePlan: this.toInsurancePlan(dentalBenefits),
           },
           ClientIdentification: this.toClientIdentification(applicantInformation.clientNumber),
@@ -70,7 +66,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
           PersonContactInformation: [
             {
               Address: [this.toMailingAddress(contactInformation), this.toHomeAddress(contactInformation)],
-              EmailAddress: this.toEmailAddress({ email: communicationPreferences.email }),
+              EmailAddress: emailAddress.value && validator.isEmail(emailAddress.value) ? [{ EmailAddressID: emailAddress.value }] : [],
               TelephoneNumber: this.toTelephoneNumber(contactInformation),
             },
           ],
@@ -143,7 +139,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     };
   }
 
-  private toMailingAddress({ mailingAddress, mailingApartment, mailingCity, mailingCountry, mailingPostalCode, mailingProvince }: ContactInformationDto) {
+  private toMailingAddress({ mailingAddress, mailingApartment, mailingCity, mailingCountry, mailingPostalCode, mailingProvince }: BenefitApplicationContactInformationDto) {
     return this.toAddress({
       address: mailingAddress,
       apartment: mailingApartment,
@@ -155,7 +151,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     });
   }
 
-  private toHomeAddress({ homeAddress, homeApartment, homeCity, homeCountry, homePostalCode, homeProvince }: ContactInformationDto) {
+  private toHomeAddress({ homeAddress, homeApartment, homeCity, homeCountry, homePostalCode, homeProvince }: BenefitApplicationContactInformationDto) {
     return this.toAddress({
       address: homeAddress,
       apartment: homeApartment,
@@ -191,13 +187,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     };
   }
 
-  private toEmailAddress({ email }: ToEmailAddressArgs) {
-    return email && !validator.isEmpty(email) //
-      ? [{ EmailAddressID: email }]
-      : [];
-  }
-
-  private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: ContactInformationDto) {
+  private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: BenefitApplicationContactInformationDto) {
     const telephoneNumber = [];
 
     if (phoneNumber && !validator.isEmpty(phoneNumber)) {
@@ -221,7 +211,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     return telephoneNumber;
   }
 
-  private toRelatedPersons(partnerInformation: PartnerInformationDto | undefined, children: ReadonlyArray<ChildDto>) {
+  private toRelatedPersons(partnerInformation: BenefitApplicationPartnerInformationDto | undefined, children: ReadonlyArray<BenefitApplicationChildDto>) {
     const relatedPersons = [];
 
     if (partnerInformation) {
@@ -234,7 +224,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     return relatedPersons;
   }
 
-  private toRelatedPersonSpouse({ consentToSharePersonalInformation, socialInsuranceNumber, yearOfBirth }: PartnerInformationDto) {
+  private toRelatedPersonSpouse({ consentToSharePersonalInformation, socialInsuranceNumber, yearOfBirth }: BenefitApplicationPartnerInformationDto) {
     return {
       PersonBirthDate: {
         YearDate: yearOfBirth,
@@ -251,7 +241,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     };
   }
 
-  private toRelatedPersonDependent(children: ReadonlyArray<ChildDto>) {
+  private toRelatedPersonDependent(children: ReadonlyArray<BenefitApplicationChildDto>) {
     return children.map((child) => ({
       PersonBirthDate: this.toDate(child.information.dateOfBirth),
       PersonName: [
@@ -274,7 +264,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     }));
   }
 
-  private toBenefitApplicationCategoryCode(typeOfApplication: TypeOfApplicationDto) {
+  private toBenefitApplicationCategoryCode(typeOfApplication: BenefitApplicationTypeOfApplicationDto) {
     const { APPLICANT_CATEGORY_CODE_INDIVIDUAL, APPLICANT_CATEGORY_CODE_FAMILY, APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY } = this.serverConfig;
     if (typeOfApplication === 'adult') return APPLICANT_CATEGORY_CODE_INDIVIDUAL;
     if (typeOfApplication === 'adult-child') return APPLICANT_CATEGORY_CODE_FAMILY;

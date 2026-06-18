@@ -64,7 +64,7 @@ export async function loader({ context: { appContainer, session }, request, para
   const benefitApplicationDtoMapper = appContainer.get(TYPES.BenefitApplicationDtoMapper);
   const benefitApplicationStateMapper = appContainer.get(TYPES.BenefitApplicationStateMapper);
   const benefitApplicationDto = viewPayloadEnabled && benefitApplicationStateMapper.mapApplicationChildrenStateToBenefitApplicationDto(state);
-  const payload = benefitApplicationDto && benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto, 'protected');
+  const payload = benefitApplicationDto && benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto);
 
   return {
     state: {

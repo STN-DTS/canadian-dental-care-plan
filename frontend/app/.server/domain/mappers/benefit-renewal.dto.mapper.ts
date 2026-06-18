@@ -5,15 +5,16 @@ import validator from 'validator';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type {
+  BenefitRenewalApplicantInformationDto,
+  BenefitRenewalChangeIndicatorsDto,
+  BenefitRenewalChildDto,
+  BenefitRenewalCommunicationPreferencesDto,
+  BenefitRenewalContactInformationDto,
+  BenefitRenewalDentalInsuranceDto,
   BenefitRenewalDto,
-  ChangeIndicatorsDto,
-  DentalInsuranceDto,
-  RenewalApplicantInformationDto,
-  RenewalChildDto,
-  RenewalCommunicationPreferencesDto,
-  RenewalContactInformationDto,
-  RenewalPartnerInformationDto,
-  RenewalTypeOfApplicationDto,
+  BenefitRenewalEmailDto,
+  BenefitRenewalPartnerInformationDto,
+  BenefitRenewalTypeOfApplicationDto,
 } from '~/.server/domain/dtos';
 import type { BenefitRenewalRequestEntity, BenefitRenewalResponseEntity } from '~/.server/domain/entities';
 import { expectDefined } from '~/utils/assert-utils';
@@ -21,7 +22,7 @@ import { parseDateString } from '~/utils/date-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 export interface BenefitRenewalDtoMapper {
-  mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto, applicationChannelCode: 'protected' | 'public'): BenefitRenewalRequestEntity;
+  mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto): BenefitRenewalRequestEntity;
   mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity: BenefitRenewalResponseEntity): string;
 }
 
@@ -38,18 +39,19 @@ interface ToBenefitRenewalRequestEntityArgs {
   applicationCategoryCodeName: 'New' | 'Renewal';
 
   applicationChannelCode: string;
-  applicantInformation: RenewalApplicantInformationDto;
+  applicantInformation: BenefitRenewalApplicantInformationDto;
   applicationYearId: string;
-  changeIndicators?: ChangeIndicatorsDto;
-  children: readonly RenewalChildDto[];
-  communicationPreferences: RenewalCommunicationPreferencesDto;
-  contactInformation: RenewalContactInformationDto;
+  changeIndicators?: BenefitRenewalChangeIndicatorsDto;
+  children: readonly BenefitRenewalChildDto[];
+  communicationPreferences: BenefitRenewalCommunicationPreferencesDto;
+  contactInformation: BenefitRenewalContactInformationDto;
+  emailAddress: BenefitRenewalEmailDto;
   dateOfBirth: string;
   dentalBenefits: readonly string[];
-  dentalInsurance?: DentalInsuranceDto;
+  dentalInsurance?: BenefitRenewalDentalInsuranceDto;
   livingIndependently?: boolean;
-  partnerInformation?: RenewalPartnerInformationDto;
-  typeOfApplication: RenewalTypeOfApplicationDto;
+  partnerInformation?: BenefitRenewalPartnerInformationDto;
+  typeOfApplication: BenefitRenewalTypeOfApplicationDto;
 }
 
 interface ToAddressArgs {
@@ -60,11 +62,6 @@ interface ToAddressArgs {
   country: string;
   postalCode?: string;
   province?: string;
-}
-
-interface ToEmailAddressArgs {
-  contactEmail?: string;
-  communicationEmail?: string;
 }
 
 @injectable()
@@ -84,17 +81,20 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     this.serverConfig = serverConfig;
   }
 
-  mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto, applicationChannelCode: 'protected' | 'public'): BenefitRenewalRequestEntity {
+  mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto): BenefitRenewalRequestEntity {
     const { BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED, BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC } = this.serverConfig;
+    const applicationChannelCode = benefitRenewalDto.applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC;
+
     return this.toBenefitRenewalRequestEntity({
       applicantInformation: benefitRenewalDto.applicantInformation,
       applicationCategoryCodeName: benefitRenewalDto.applicationCategoryCodeName,
-      applicationChannelCode: applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC,
+      applicationChannelCode: applicationChannelCode,
       applicationYearId: benefitRenewalDto.applicationYearId,
       changeIndicators: benefitRenewalDto.changeIndicators,
       children: benefitRenewalDto.children,
       communicationPreferences: benefitRenewalDto.communicationPreferences,
       contactInformation: benefitRenewalDto.contactInformation,
+      emailAddress: benefitRenewalDto.emailAddress,
       dateOfBirth: benefitRenewalDto.dateOfBirth,
       dentalBenefits: benefitRenewalDto.dentalBenefits,
       dentalInsurance: benefitRenewalDto.dentalInsurance,
@@ -113,6 +113,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     children,
     communicationPreferences,
     contactInformation,
+    emailAddress,
     dateOfBirth,
     dentalBenefits,
     dentalInsurance,
@@ -133,7 +134,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
             SharingConsentIndicator: true,
             EligibilityAttestationIndicator: true,
             AccuracyConfirmationIndicator: true,
-            ApplicantEmailVerifiedIndicator: communicationPreferences.emailVerified,
+            ApplicantEmailVerifiedIndicator: emailAddress.verified,
             InsurancePlan: this.toInsurancePlan(dentalBenefits),
             ...this.toChangeIndicators(changeIndicators),
           },
@@ -146,7 +147,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
           PersonContactInformation: [
             {
               Address: [this.toMailingAddress(contactInformation), this.toHomeAddress(contactInformation)],
-              EmailAddress: this.toEmailAddress({ contactEmail: contactInformation.email, communicationEmail: communicationPreferences.email }),
+              EmailAddress: emailAddress.value && validator.isEmail(emailAddress.value) ? [{ EmailAddressID: emailAddress.value }] : [],
               TelephoneNumber: this.toTelephoneNumber(contactInformation),
             },
           ],
@@ -209,7 +210,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     ];
   }
 
-  private toChangeIndicators(changeIndicators?: ChangeIndicatorsDto) {
+  private toChangeIndicators(changeIndicators?: BenefitRenewalChangeIndicatorsDto) {
     if (!changeIndicators) {
       return {};
     }
@@ -229,7 +230,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     };
   }
 
-  private toMailingAddress({ mailingAddress, mailingApartment, mailingCity, mailingCountry, mailingPostalCode, mailingProvince }: RenewalContactInformationDto) {
+  private toMailingAddress({ mailingAddress, mailingApartment, mailingCity, mailingCountry, mailingPostalCode, mailingProvince }: BenefitRenewalContactInformationDto) {
     return this.toAddress({
       address: mailingAddress,
       apartment: mailingApartment,
@@ -241,7 +242,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     });
   }
 
-  private toHomeAddress({ homeAddress, homeApartment, homeCity, homeCountry, homePostalCode, homeProvince }: RenewalContactInformationDto) {
+  private toHomeAddress({ homeAddress, homeApartment, homeCity, homeCountry, homePostalCode, homeProvince }: BenefitRenewalContactInformationDto) {
     return this.toAddress({
       address: homeAddress,
       apartment: homeApartment,
@@ -277,23 +278,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     };
   }
 
-  private toEmailAddress({ contactEmail, communicationEmail }: ToEmailAddressArgs) {
-    const emailAddress = [];
-
-    if (contactEmail && !validator.isEmpty(contactEmail)) {
-      emailAddress.push({
-        EmailAddressID: contactEmail,
-      });
-    } else if (communicationEmail && !validator.isEmpty(communicationEmail)) {
-      emailAddress.push({
-        EmailAddressID: communicationEmail,
-      });
-    }
-
-    return emailAddress;
-  }
-
-  private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: RenewalContactInformationDto) {
+  private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: BenefitRenewalContactInformationDto) {
     const telephoneNumber = [];
 
     if (phoneNumber && !validator.isEmpty(phoneNumber)) {
@@ -317,7 +302,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     return telephoneNumber;
   }
 
-  private toRelatedPersons(partnerInformation: RenewalPartnerInformationDto | undefined, children: ReadonlyArray<RenewalChildDto>) {
+  private toRelatedPersons(partnerInformation: BenefitRenewalPartnerInformationDto | undefined, children: ReadonlyArray<BenefitRenewalChildDto>) {
     const relatedPersons = [];
 
     if (partnerInformation) {
@@ -330,7 +315,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     return relatedPersons;
   }
 
-  private toRelatedPersonSpouse(renewalPartnerInformation: RenewalPartnerInformationDto) {
+  private toRelatedPersonSpouse(renewalPartnerInformation: BenefitRenewalPartnerInformationDto) {
     return {
       ApplicantDetail: { ConsentToSharePersonalInformationIndicator: renewalPartnerInformation.consentToSharePersonalInformation },
       ClientIdentification: renewalPartnerInformation.clientId ? [{ IdentificationID: renewalPartnerInformation.clientId, IdentificationCategoryText: 'Client ID' }] : undefined,
@@ -340,7 +325,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     };
   }
 
-  private toRelatedPersonDependent(children: ReadonlyArray<RenewalChildDto>) {
+  private toRelatedPersonDependent(children: ReadonlyArray<BenefitRenewalChildDto>) {
     return children.map((child) => ({
       PersonBirthDate: this.toDate(child.information.dateOfBirth),
       PersonName: [
@@ -368,7 +353,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     }));
   }
 
-  private toBenefitApplicationCategoryCode(typeOfApplication: RenewalTypeOfApplicationDto) {
+  private toBenefitApplicationCategoryCode(typeOfApplication: BenefitRenewalTypeOfApplicationDto) {
     const { APPLICANT_CATEGORY_CODE_INDIVIDUAL, APPLICANT_CATEGORY_CODE_FAMILY, APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY } = this.serverConfig;
     if (typeOfApplication === 'adult') return APPLICANT_CATEGORY_CODE_INDIVIDUAL;
     if (typeOfApplication === 'adult-child') return APPLICANT_CATEGORY_CODE_FAMILY;
