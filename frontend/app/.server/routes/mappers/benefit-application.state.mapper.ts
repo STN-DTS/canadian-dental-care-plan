@@ -19,7 +19,6 @@ import type {
 import { getContextualAgeCategoryFromDate } from '~/.server/routes/helpers/public-application-route-helpers';
 
 export interface ApplicationAdultState {
-  context: 'intake' | 'renewal';
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
@@ -39,7 +38,6 @@ export interface ApplicationAdultState {
 }
 
 export interface ApplicationFamilyState {
-  context: 'intake' | 'renewal';
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children: BaseApplicationChildState[];
@@ -60,7 +58,6 @@ export interface ApplicationFamilyState {
 }
 
 export interface ApplicationChildrenState {
-  context: 'intake' | 'renewal';
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children: BaseApplicationChildState[];
@@ -79,7 +76,6 @@ export interface ApplicationChildrenState {
 }
 
 interface ToBenefitApplicationDtoArgs {
-  context: 'intake' | 'renewal';
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
   children?: BaseApplicationChildState[];
@@ -109,7 +105,7 @@ interface ToApplicantInformationArgs {
 interface ToHomeAddressArgs {
   homeAddress?: BaseApplicationAddressDeclaredChangeState;
   isHomeAddressSameAsMailingAddress?: boolean;
-  mailingAddress: BaseApplicationAddressDeclaredChangeState;
+  mailingAddress: Extract<BaseApplicationAddressDeclaredChangeState, { hasChanged: true }>;
 }
 
 interface ToCommunicationPreferencesArgs {
@@ -145,7 +141,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       applicantInformation: applicationAdultState.applicantInformation,
       applicationYear: applicationAdultState.applicationYear,
       communicationPreferences: applicationAdultState.communicationPreferences,
-      context: applicationAdultState.context,
       dentalBenefits: applicationAdultState.dentalBenefits,
       dentalInsurance: applicationAdultState.dentalInsurance,
       email: applicationAdultState.email,
@@ -176,7 +171,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       applicationYear: applicationFamilyState.applicationYear,
       children: applicationFamilyState.children,
       communicationPreferences: applicationFamilyState.communicationPreferences,
-      context: applicationFamilyState.context,
       dentalBenefits: applicationFamilyState.dentalBenefits,
       dentalInsurance: applicationFamilyState.dentalInsurance,
       email: applicationFamilyState.email,
@@ -207,7 +201,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       applicationYear: applicationChildrenState.applicationYear,
       children: applicationChildrenState.children,
       communicationPreferences: applicationChildrenState.communicationPreferences,
-      context: applicationChildrenState.context,
       email: applicationChildrenState.email,
       emailVerified: applicationChildrenState.emailVerified,
       homeAddress: applicationChildrenState.homeAddress,
@@ -280,6 +273,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     return children.map((child) => {
       invariant(child.information, 'Expected child.information to be defined');
       invariant(child.dentalInsurance, 'Expected child.dentalInsurance to be defined');
+      invariant(child.dentalBenefits?.value, 'Expected child.dentalBenefits.value to be defined');
 
       return {
         ...child,
@@ -317,7 +311,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
   }
 
   private toContactInformation({ phoneNumber, isHomeAddressSameAsMailingAddress, homeAddress, mailingAddress }: ToContactInformationArgs) {
-    invariant(mailingAddress, 'Expected mailingAddress to be defined');
+    invariant(mailingAddress?.value, 'Expected mailingAddress.value to be defined');
     invariant(phoneNumber.value, 'Expected phoneNumber.value to be defined');
     return {
       copyMailingAddress: !!isHomeAddressSameAsMailingAddress,
@@ -329,15 +323,22 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
   }
 
   private toDentalBenefits(dentalBenefitsState?: BaseApplicationDentalBenefitsDeclaredChangeState) {
-    invariant(dentalBenefitsState, 'Expected dentalBenefitsState.value to be defined');
+    // If dentalBenefitsState is undefined, it means the applicant did not interact with the dental
+    // benefits section. This occurs in the context of a children-only application, where applicant-level
+    // dental benefits are not collected. Return an empty array rather than omitting the field or returning undefined.
+    if (!dentalBenefitsState) {
+      return [];
+    }
+
+    invariant(dentalBenefitsState.value, 'Expected dentalBenefitsState.value to be defined');
 
     const dentalBenefits = [];
 
-    if (dentalBenefitsState.value?.hasFederalBenefits && dentalBenefitsState.value.federalSocialProgram && !validator.isEmpty(dentalBenefitsState.value.federalSocialProgram)) {
+    if (dentalBenefitsState.value.hasFederalBenefits && dentalBenefitsState.value.federalSocialProgram && !validator.isEmpty(dentalBenefitsState.value.federalSocialProgram)) {
       dentalBenefits.push(dentalBenefitsState.value.federalSocialProgram);
     }
 
-    if (dentalBenefitsState.value?.hasProvincialTerritorialBenefits && dentalBenefitsState.value.provincialTerritorialSocialProgram && !validator.isEmpty(dentalBenefitsState.value.provincialTerritorialSocialProgram)) {
+    if (dentalBenefitsState.value.hasProvincialTerritorialBenefits && dentalBenefitsState.value.provincialTerritorialSocialProgram && !validator.isEmpty(dentalBenefitsState.value.provincialTerritorialSocialProgram)) {
       dentalBenefits.push(dentalBenefitsState.value.provincialTerritorialSocialProgram);
     }
 
@@ -347,32 +348,32 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
   private toHomeAddress({ isHomeAddressSameAsMailingAddress, homeAddress, mailingAddress }: ToHomeAddressArgs) {
     if (isHomeAddressSameAsMailingAddress) {
       return {
-        homeAddress: mailingAddress.value?.address ?? '',
-        homeCity: mailingAddress.value?.city ?? '',
-        homeCountry: mailingAddress.value?.country ?? '',
-        homePostalCode: mailingAddress.value?.postalCode ?? '',
-        homeProvince: mailingAddress.value?.province ?? '',
+        homeAddress: mailingAddress.value.address,
+        homeCity: mailingAddress.value.city,
+        homeCountry: mailingAddress.value.country,
+        homePostalCode: mailingAddress.value.postalCode,
+        homeProvince: mailingAddress.value.province,
       };
     }
-    invariant(homeAddress, 'Expected homeAddress to be defined when isHomeAddressSameAsMailingAddress is false.');
+
+    invariant(homeAddress?.value, 'Expected homeAddress.value to be defined when isHomeAddressSameAsMailingAddress is false.');
 
     return {
-      homeAddress: homeAddress.value?.address ?? '',
-      homeCity: homeAddress.value?.city ?? '',
-      homeCountry: homeAddress.value?.country ?? '',
-      homePostalCode: homeAddress.value?.postalCode ?? '',
-      homeProvince: homeAddress.value?.province ?? '',
+      homeAddress: homeAddress.value.address,
+      homeCity: homeAddress.value.city,
+      homeCountry: homeAddress.value.country,
+      homePostalCode: homeAddress.value.postalCode,
+      homeProvince: homeAddress.value.province,
     };
   }
 
-  private toMailingAddress(mailingAddress: BaseApplicationAddressDeclaredChangeState) {
+  private toMailingAddress(mailingAddress: Extract<BaseApplicationAddressDeclaredChangeState, { hasChanged: true }>) {
     return {
-      mailingAddress: mailingAddress.value?.address ?? '',
-      mailingApartment: undefined,
-      mailingCity: mailingAddress.value?.city ?? '',
-      mailingCountry: mailingAddress.value?.country ?? '',
-      mailingPostalCode: mailingAddress.value?.postalCode ?? '',
-      mailingProvince: mailingAddress.value?.province ?? '',
+      mailingAddress: mailingAddress.value.address,
+      mailingCity: mailingAddress.value.city,
+      mailingCountry: mailingAddress.value.country,
+      mailingPostalCode: mailingAddress.value.postalCode,
+      mailingProvince: mailingAddress.value.province,
     };
   }
 }
