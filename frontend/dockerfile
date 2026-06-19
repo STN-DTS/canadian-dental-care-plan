@@ -24,7 +24,7 @@
 
 
 # Base image used for all future stages
-FROM docker.io/node:26.3.1-trixie-slim AS base
+FROM docker.io/node:26.3.1-trixie-slim@sha256:7ca13adefae09020a0d0de9b5f1327bde375a3b1fdb744f2bbb67b1a5989caa4 AS base
 ENV NODE_ENV production
 
 # ---------------------------------------------------------------------------- #
