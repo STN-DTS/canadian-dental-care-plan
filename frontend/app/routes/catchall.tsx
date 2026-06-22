@@ -17,7 +17,7 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, url }: Route.LoaderArgs) {
   // Get meta title
   const locale = getLocale(request);
   const t = await getFixedT(locale, 'gcweb');

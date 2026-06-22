@@ -1,4 +1,4 @@
-import type { AppLoadContext } from 'react-router';
+import type { RouterContextProvider } from 'react-router';
 
 import { None } from 'oxide.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,13 +20,13 @@ describe('Letters Page', () => {
 
   describe('loader()', () => {
     it('should return sorted letters', async () => {
-      const mockAppLoadContext = mockDeep<AppLoadContext>();
+      const mockRouterContext = mockDeep<RouterContextProvider>();
 
-      mockAppLoadContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
-      mockAppLoadContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999', sub: '1111111' } as UserinfoToken);
-      mockAppLoadContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
+      mockRouterContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
+      mockRouterContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999', sub: '1111111' } as UserinfoToken);
+      mockRouterContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
 
-      mockAppLoadContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
+      mockRouterContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
         mock<SecurityHandler>({
           requireApplicant: async () =>
             await Promise.resolve({
@@ -47,13 +47,13 @@ describe('Letters Page', () => {
             }),
         }),
       );
-      mockAppLoadContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValueOnce({
+      mockRouterContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValueOnce({
         SCCH_BASE_URI: 'https://api.example.com',
       } satisfies Partial<ClientConfig>);
-      mockAppLoadContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
+      mockRouterContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
         createAudit: vi.fn(),
       } satisfies Partial<AuditService>);
-      mockAppLoadContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
+      mockRouterContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
         findLettersByClientId: async () =>
           await Promise.resolve([
             { id: '1', date: '2024-12-25', letterTypeId: 'ACC' },
@@ -61,7 +61,7 @@ describe('Letters Page', () => {
             { id: '3', date: '2004-02-29', letterTypeId: 'DEN' },
           ]),
       } satisfies Partial<LetterService>);
-      mockAppLoadContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
+      mockRouterContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
         listLetterTypes: async () =>
           await Promise.resolve([
             { id: 'ACC', nameEn: 'Accepted', nameFr: '(FR) Accepted' },
@@ -71,7 +71,7 @@ describe('Letters Page', () => {
 
       const response = await loader({
         request: new Request('http://localhost/letters?sort=desc'),
-        context: mockAppLoadContext,
+        context: mockRouterContext,
         params: { lang: 'en' },
         pattern: '',
         url: new URL('http://localhost/letters?sort=desc'),
@@ -86,13 +86,13 @@ describe('Letters Page', () => {
   });
 
   it('retrieves letter types', async () => {
-    const mockAppLoadContext = mockDeep<AppLoadContext>();
+    const mockRouterContext = mockDeep<RouterContextProvider>();
 
-    mockAppLoadContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
-    mockAppLoadContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999' } as UserinfoToken);
-    mockAppLoadContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
+    mockRouterContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
+    mockRouterContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999' } as UserinfoToken);
+    mockRouterContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
 
-    mockAppLoadContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
+    mockRouterContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
       mock<SecurityHandler>({
         requireApplicant: async () =>
           await Promise.resolve({
@@ -113,13 +113,13 @@ describe('Letters Page', () => {
           }),
       }),
     );
-    mockAppLoadContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({
+    mockRouterContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({
       SCCH_BASE_URI: 'https://api.example.com',
     } satisfies Partial<ClientConfig>);
-    mockAppLoadContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
+    mockRouterContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
       createAudit: vi.fn(),
     } satisfies Partial<AuditService>);
-    mockAppLoadContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
+    mockRouterContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
       findLettersByClientId: async () =>
         await Promise.resolve([
           { id: '1', date: '2024-12-25', letterTypeId: 'ACC' },
@@ -127,7 +127,7 @@ describe('Letters Page', () => {
           { id: '3', date: '2004-02-29', letterTypeId: 'DEN' },
         ]),
     } satisfies Partial<LetterService>);
-    mockAppLoadContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
+    mockRouterContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
       listLetterTypes: async () =>
         await Promise.resolve([
           { id: 'ACC', nameEn: 'Accepted', nameFr: '(FR) Accepted' },
@@ -137,7 +137,7 @@ describe('Letters Page', () => {
 
     const response = await loader({
       request: new Request('http://localhost/letters'),
-      context: mockAppLoadContext,
+      context: mockRouterContext,
       params: { lang: 'en' },
       pattern: '',
       url: new URL('http://localhost/letters'),

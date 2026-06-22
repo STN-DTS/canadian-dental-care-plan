@@ -1,5 +1,5 @@
 import { createRequestHandler } from '@react-router/express';
-import type { AppLoadContext } from 'react-router';
+import { RouterContextProvider } from 'react-router';
 
 import { UTCDate } from '@date-fns/utc';
 import type { ErrorRequestHandler, Request, RequestHandler, Response } from 'express';
@@ -48,27 +48,28 @@ export function rrRequestHandler(mode: string, viteDevServer?: ViteDevServer): R
   });
 }
 
-function getLoadContext(request: Request, response: Response): AppLoadContext {
-  const appContainer = getAppContainerProvider();
+function getLoadContext(request: Request, response: Response): RouterContextProvider {
+  const context = new RouterContextProvider();
+  context.appContainer = getAppContainerProvider();
 
   // `request.session` may be undefined if session middleware is not applied,
   // so a fallback `NoopSession` is used in that case.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const session = request.session ? new ExpressSession(request) : new NoopSession();
+  context.session = request.session ? new ExpressSession(request) : new NoopSession();
 
-  if (session instanceof ExpressSession) {
+  if (context.session instanceof ExpressSession) {
     // We use session-scoped CSRF tokens to ensure back button and multi-tab navigation still works.
     // @see: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern
-    if (!session.has('csrfToken')) {
+    if (!context.session.has('csrfToken')) {
       const csrfToken = randomString(32);
       log.debug('Adding CSRF token [%s] to session', csrfToken);
-      session.set('csrfToken', csrfToken);
+      context.session.set('csrfToken', csrfToken);
     }
 
     const lastAccessTime = new UTCDate().toISOString();
     log.debug('Setting session.lastAccessTime to [%s]', lastAccessTime);
-    session.set('lastAccessTime', lastAccessTime);
+    context.session.set('lastAccessTime', lastAccessTime);
   }
 
-  return { appContainer, session };
+  return context;
 }
