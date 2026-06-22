@@ -80,28 +80,6 @@ export interface ApplicationChildrenState {
   newOrReturningMember?: BaseApplicationNewOrReturningMemberState;
 }
 
-interface ToBenefitApplicationDtoArgs {
-  channelCode: BaseApplicationChannelCodeState;
-  applicantInformation: BaseApplicationApplicantInformationState;
-  applicationYear: BaseApplicationYearState;
-  children?: BaseApplicationChildState[];
-  communicationPreferences: BaseApplicationCommunicationPreferencesDeclaredChangeState;
-  email?: string;
-  emailVerified?: boolean;
-  dentalBenefits?: BaseApplicationDentalBenefitsDeclaredChangeState;
-  dentalInsurance?: BaseApplicationDentalInsuranceState;
-  livingIndependently?: boolean;
-  homeAddress?: BaseApplicationAddressDeclaredChangeState;
-  isHomeAddressSameAsMailingAddress?: boolean;
-  mailingAddress?: BaseApplicationAddressDeclaredChangeState;
-  maritalStatus?: string;
-  partnerInformation?: BaseApplicationPartnerInformationState;
-  phoneNumber: BaseApplicationPhoneNumberDeclaredChangeState;
-  termsAndConditions: BaseApplicationTermsAndConditionsState;
-  newOrReturningMember?: BaseApplicationNewOrReturningMemberState;
-  typeOfApplication: 'adult' | 'adult-child' | 'child';
-}
-
 interface ToApplicantInformationArgs {
   applicantInformation: BaseApplicationApplicantInformationState;
   maritalStatus?: string;
@@ -144,166 +122,157 @@ interface ToEmailAddressPublicChannelArgs {
 }
 
 export interface BenefitApplicationStateMapper {
-  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState): BenefitApplicationDto;
+  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId?: string): BenefitApplicationDto;
 
-  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState): BenefitApplicationDto;
+  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId?: string): BenefitApplicationDto;
 
-  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState): BenefitApplicationDto;
+  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId?: string): BenefitApplicationDto;
 }
 
 @injectable()
 export class DefaultBenefitApplicationStateMapper implements BenefitApplicationStateMapper {
-  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState): BenefitApplicationDto {
+  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationAdultState.applicantInformation.dateOfBirth, applicationAdultState.applicationYear);
     if (ageCategory === 'youth' && applicationAdultState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }
 
-    return this.toBenefitApplicationDto({
-      channelCode: applicationAdultState.channelCode,
-      applicantInformation: applicationAdultState.applicantInformation,
-      applicationYear: applicationAdultState.applicationYear,
-      communicationPreferences: applicationAdultState.communicationPreferences,
-      dentalBenefits: applicationAdultState.dentalBenefits,
+    invariant(applicationAdultState.dentalBenefits, 'Expected dentalBenefits to be defined for an adult application');
+
+    return {
+      applicationChannelCode: applicationAdultState.channelCode,
+      applicantInformation: this.toApplicantInformation({
+        applicantInformation: applicationAdultState.applicantInformation,
+        maritalStatus: applicationAdultState.maritalStatus,
+        newOrReturningMember: applicationAdultState.newOrReturningMember,
+      }),
+      applicationYearId: applicationAdultState.applicationYear.applicationYearId,
+      // For adult-only applications, children are not collected and should be sent as an empty array.
+      children: [],
+      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences: applicationAdultState.communicationPreferences }),
+      contactInformation: this.toContactInformation({
+        phoneNumber: applicationAdultState.phoneNumber,
+        isHomeAddressSameAsMailingAddress: applicationAdultState.isHomeAddressSameAsMailingAddress,
+        homeAddress: applicationAdultState.homeAddress,
+        mailingAddress: applicationAdultState.mailingAddress,
+      }),
+      dateOfBirth: applicationAdultState.applicantInformation.dateOfBirth,
+      emailAddress: this.toEmailAddress({
+        applicationChannelCode: applicationAdultState.channelCode,
+        communicationPreferences: applicationAdultState.communicationPreferences,
+        email: applicationAdultState.email,
+        emailVerified: applicationAdultState.emailVerified,
+      }),
+      dentalBenefits: this.toDentalBenefits(applicationAdultState.dentalBenefits),
       dentalInsurance: applicationAdultState.dentalInsurance,
-      email: applicationAdultState.email,
-      emailVerified: applicationAdultState.emailVerified,
-      homeAddress: applicationAdultState.homeAddress,
-      isHomeAddressSameAsMailingAddress: applicationAdultState.isHomeAddressSameAsMailingAddress,
-      livingIndependently: ageCategory === 'youth' ? applicationAdultState.livingIndependently : undefined,
-      mailingAddress: applicationAdultState.mailingAddress,
-      maritalStatus: applicationAdultState.maritalStatus,
-      newOrReturningMember: applicationAdultState.newOrReturningMember,
+      livingIndependently: applicationAdultState.livingIndependently,
       partnerInformation: applicationAdultState.partnerInformation,
-      phoneNumber: applicationAdultState.phoneNumber,
       termsAndConditions: applicationAdultState.termsAndConditions,
       typeOfApplication: 'adult',
-    });
+      userId: userId,
+    };
   }
 
-  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState): BenefitApplicationDto {
+  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationFamilyState.applicantInformation.dateOfBirth, applicationFamilyState.applicationYear);
     if (ageCategory === 'youth' && applicationFamilyState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }
 
-    invariant(applicationFamilyState.children.length > 0, 'Expected children to be non-empty for a family application');
+    invariant(applicationFamilyState.dentalBenefits, 'Expected dentalBenefits to be defined for a family application');
 
-    return this.toBenefitApplicationDto({
-      channelCode: applicationFamilyState.channelCode,
-      applicantInformation: applicationFamilyState.applicantInformation,
-      applicationYear: applicationFamilyState.applicationYear,
-      children: applicationFamilyState.children,
-      communicationPreferences: applicationFamilyState.communicationPreferences,
-      dentalBenefits: applicationFamilyState.dentalBenefits,
+    return {
+      applicationChannelCode: applicationFamilyState.channelCode,
+      applicantInformation: this.toApplicantInformation({
+        applicantInformation: applicationFamilyState.applicantInformation,
+        maritalStatus: applicationFamilyState.maritalStatus,
+        newOrReturningMember: applicationFamilyState.newOrReturningMember,
+      }),
+      applicationYearId: applicationFamilyState.applicationYear.applicationYearId,
+      children: this.toChildren(applicationFamilyState.children),
+      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences: applicationFamilyState.communicationPreferences }),
+      contactInformation: this.toContactInformation({
+        phoneNumber: applicationFamilyState.phoneNumber,
+        isHomeAddressSameAsMailingAddress: applicationFamilyState.isHomeAddressSameAsMailingAddress,
+        homeAddress: applicationFamilyState.homeAddress,
+        mailingAddress: applicationFamilyState.mailingAddress,
+      }),
+      dateOfBirth: applicationFamilyState.applicantInformation.dateOfBirth,
+      emailAddress: this.toEmailAddress({
+        applicationChannelCode: applicationFamilyState.channelCode,
+        communicationPreferences: applicationFamilyState.communicationPreferences,
+        email: applicationFamilyState.email,
+        emailVerified: applicationFamilyState.emailVerified,
+      }),
+      dentalBenefits: this.toDentalBenefits(applicationFamilyState.dentalBenefits),
       dentalInsurance: applicationFamilyState.dentalInsurance,
-      email: applicationFamilyState.email,
-      emailVerified: applicationFamilyState.emailVerified,
-      homeAddress: applicationFamilyState.homeAddress,
-      isHomeAddressSameAsMailingAddress: applicationFamilyState.isHomeAddressSameAsMailingAddress,
-      livingIndependently: ageCategory === 'youth' ? applicationFamilyState.livingIndependently : undefined,
-      mailingAddress: applicationFamilyState.mailingAddress,
-      maritalStatus: applicationFamilyState.maritalStatus,
-      newOrReturningMember: applicationFamilyState.newOrReturningMember,
+      livingIndependently: applicationFamilyState.livingIndependently,
       partnerInformation: applicationFamilyState.partnerInformation,
-      phoneNumber: applicationFamilyState.phoneNumber,
       termsAndConditions: applicationFamilyState.termsAndConditions,
       typeOfApplication: 'adult-child',
-    });
+      userId: userId,
+    };
   }
 
-  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState): BenefitApplicationDto {
+  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationChildrenState.applicantInformation.dateOfBirth, applicationChildrenState.applicationYear);
     if (ageCategory === 'youth' && applicationChildrenState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }
 
-    invariant(applicationChildrenState.children.length > 0, 'Expected children to be non-empty for a child application');
-
-    return this.toBenefitApplicationDto({
-      channelCode: applicationChildrenState.channelCode,
-      applicantInformation: applicationChildrenState.applicantInformation,
-      applicationYear: applicationChildrenState.applicationYear,
-      children: applicationChildrenState.children,
-      communicationPreferences: applicationChildrenState.communicationPreferences,
-      email: applicationChildrenState.email,
-      emailVerified: applicationChildrenState.emailVerified,
-      homeAddress: applicationChildrenState.homeAddress,
-      isHomeAddressSameAsMailingAddress: applicationChildrenState.isHomeAddressSameAsMailingAddress,
-      livingIndependently: ageCategory === 'youth' ? applicationChildrenState.livingIndependently : undefined,
-      mailingAddress: applicationChildrenState.mailingAddress,
-      maritalStatus: applicationChildrenState.maritalStatus,
-      newOrReturningMember: applicationChildrenState.newOrReturningMember,
+    return {
+      applicationChannelCode: applicationChildrenState.channelCode,
+      applicantInformation: this.toApplicantInformation({
+        applicantInformation: applicationChildrenState.applicantInformation,
+        maritalStatus: applicationChildrenState.maritalStatus,
+        newOrReturningMember: applicationChildrenState.newOrReturningMember,
+      }),
+      applicationYearId: applicationChildrenState.applicationYear.applicationYearId,
+      children: this.toChildren(applicationChildrenState.children),
+      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences: applicationChildrenState.communicationPreferences }),
+      contactInformation: this.toContactInformation({
+        phoneNumber: applicationChildrenState.phoneNumber,
+        isHomeAddressSameAsMailingAddress: applicationChildrenState.isHomeAddressSameAsMailingAddress,
+        homeAddress: applicationChildrenState.homeAddress,
+        mailingAddress: applicationChildrenState.mailingAddress,
+      }),
+      dateOfBirth: applicationChildrenState.applicantInformation.dateOfBirth,
+      emailAddress: this.toEmailAddress({
+        applicationChannelCode: applicationChildrenState.channelCode,
+        communicationPreferences: applicationChildrenState.communicationPreferences,
+        email: applicationChildrenState.email,
+        emailVerified: applicationChildrenState.emailVerified,
+      }),
+      // For children-only applications, applicant-level dental benefits are not collected and should be sent as an empty array.
+      dentalBenefits: [],
+      // For children-only applications, applicant-level dental insurance is not collected and should be sent as undefined.
+      dentalInsurance: undefined,
+      livingIndependently: applicationChildrenState.livingIndependently,
       partnerInformation: applicationChildrenState.partnerInformation,
-      phoneNumber: applicationChildrenState.phoneNumber,
       termsAndConditions: applicationChildrenState.termsAndConditions,
       typeOfApplication: 'child',
-    });
-  }
-
-  private toBenefitApplicationDto({
-    channelCode,
-    applicantInformation,
-    applicationYear,
-    children,
-    communicationPreferences,
-    maritalStatus,
-    dentalBenefits,
-    dentalInsurance,
-    email,
-    emailVerified,
-    homeAddress,
-    isHomeAddressSameAsMailingAddress,
-    livingIndependently,
-    mailingAddress,
-    partnerInformation,
-    phoneNumber,
-    termsAndConditions,
-    typeOfApplication,
-    newOrReturningMember,
-  }: ToBenefitApplicationDtoArgs): BenefitApplicationDto {
-    return {
-      applicationChannelCode: channelCode,
-      applicantInformation: this.toApplicantInformation({
-        applicantInformation,
-        maritalStatus,
-        newOrReturningMember,
-      }),
-      applicationYearId: applicationYear.applicationYearId,
-      children: this.toChildren(children),
-      communicationPreferences: this.toCommunicationPreferences({ communicationPreferences }),
-      contactInformation: this.toContactInformation({ phoneNumber, isHomeAddressSameAsMailingAddress, homeAddress, mailingAddress }),
-      dateOfBirth: applicantInformation.dateOfBirth,
-      emailAddress: this.toEmailAddress({ applicationChannelCode: channelCode, communicationPreferences, email, emailVerified }),
-      dentalBenefits: this.toDentalBenefits(dentalBenefits),
-      dentalInsurance,
-      livingIndependently,
-      partnerInformation,
-      termsAndConditions,
-      typeOfApplication,
-      userId: 'anonymous',
+      userId: userId,
     };
   }
 
   private toApplicantInformation({ applicantInformation, maritalStatus, newOrReturningMember }: ToApplicantInformationArgs): BenefitApplicationApplicantInformationDto {
     invariant(maritalStatus, 'Expected maritalStatus to be defined');
     return {
-      ...applicantInformation,
-      maritalStatus,
       clientNumber: newOrReturningMember?.memberId,
+      firstName: applicantInformation.firstName,
+      lastName: applicantInformation.lastName,
+      maritalStatus: maritalStatus,
+      socialInsuranceNumber: applicantInformation.socialInsuranceNumber,
     };
   }
 
-  private toChildren(children?: BaseApplicationChildState[]) {
-    if (!children) return [];
-
+  private toChildren(children: BaseApplicationChildState[]) {
+    invariant(children.length > 0, 'Expected children to be non-empty when mapping children');
     return children.map((child) => {
       invariant(child.information, 'Expected child.information to be defined');
       invariant(child.dentalInsurance, 'Expected child.dentalInsurance to be defined');
       invariant(child.dentalBenefits?.value, 'Expected child.dentalBenefits.value to be defined');
-
       return {
-        ...child,
         dentalInsurance: child.dentalInsurance,
         dentalBenefits: this.toDentalBenefits(child.dentalBenefits),
         information: {
@@ -319,7 +288,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
 
   private toCommunicationPreferences({ communicationPreferences }: ToCommunicationPreferencesArgs): BenefitApplicationCommunicationPreferencesDto {
     invariant(communicationPreferences.value, 'Expected communicationPreferences.value to be defined');
-
     return {
       preferredLanguage: communicationPreferences.value.preferredLanguage,
       preferredMethod: communicationPreferences.value.preferredMethod,
@@ -339,16 +307,8 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     };
   }
 
-  private toDentalBenefits(dentalBenefitsState?: BaseApplicationDentalBenefitsDeclaredChangeState) {
-    // If dentalBenefitsState is undefined, it means the applicant did not interact with the dental
-    // benefits section. This occurs in the context of a children-only application, where applicant-level
-    // dental benefits are not collected. Return an empty array rather than omitting the field or returning undefined.
-    if (!dentalBenefitsState) {
-      return [];
-    }
-
+  private toDentalBenefits(dentalBenefitsState: BaseApplicationDentalBenefitsDeclaredChangeState) {
     invariant(dentalBenefitsState.value, 'Expected dentalBenefitsState.value to be defined');
-
     const dentalBenefits = [];
 
     if (dentalBenefitsState.value.hasFederalBenefits && dentalBenefitsState.value.federalSocialProgram && !validator.isEmpty(dentalBenefitsState.value.federalSocialProgram)) {
@@ -374,7 +334,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     }
 
     invariant(homeAddress?.value, 'Expected homeAddress.value to be defined when isHomeAddressSameAsMailingAddress is false.');
-
     return {
       homeAddress: homeAddress.value.address,
       homeCity: homeAddress.value.city,
