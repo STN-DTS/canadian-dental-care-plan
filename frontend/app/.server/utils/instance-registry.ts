@@ -6,6 +6,8 @@
  * and retrieve these instances, and it supports the use of factory
  * functions for creating instances on demand.
  */
+import type { RouteObject, ServerBuild } from 'react-router';
+
 import type { Logger } from 'winston';
 
 import type { RedisClient } from '~/.server/data';
@@ -24,6 +26,9 @@ interface InstanceTypeMap {
   clientEnv: ClientEnv;
   loggingConfig: LoggingConfig;
   redisClient: RedisClient;
+  routes: readonly RouteObject[];
+  serverBuild: ServerBuild;
+  serverRoute: ServerBuild;
   serverEnv: ServerEnv;
   winstonLogger: Logger;
 }
@@ -33,6 +38,12 @@ interface InstanceTypeMap {
  * Used to constrain the allowed instance names for singleton retrieval and registration.
  */
 type InstanceName = keyof InstanceTypeMap;
+
+function instanceRegistry(): Map<InstanceName, unknown> {
+  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
+  globalThis.__instanceRegistry ??= new Map<InstanceName, unknown>();
+  return globalThis.__instanceRegistry;
+}
 
 /**
  * Retrieves a singleton instance by name. If the instance does not exist, it is created using the provided factory function.
@@ -46,16 +57,50 @@ type InstanceName = keyof InstanceTypeMap;
  *   const env = singleton('serverEnv', () => loadServerEnv());
  */
 export function singleton<N extends InstanceName, T extends InstanceTypeMap[N]>(instanceName: N, factory?: () => T): T {
-  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
-  globalThis.__instanceRegistry ??= new Map<InstanceName, unknown>();
+  const registry = instanceRegistry();
 
-  if (!globalThis.__instanceRegistry.has(instanceName)) {
+  if (!registry.has(instanceName)) {
     if (!factory) {
       throw new AppError(`Instance [${instanceName}] not found and factory not provided`, ErrorCodes.NO_FACTORY_PROVIDED);
     }
 
-    globalThis.__instanceRegistry.set(instanceName, factory());
+    registry.set(instanceName, factory());
   }
 
-  return globalThis.__instanceRegistry.get(instanceName) as T;
+  return registry.get(instanceName) as T;
+}
+
+/**
+ * Checks if a singleton instance exists in the registry.
+ *
+ * @param instanceName - The unique name of the singleton instance to check.
+ * @returns True if the instance exists, false otherwise.
+ */
+export function hasSingleton<N extends InstanceName>(instanceName: N): boolean {
+  const registry = instanceRegistry();
+  return registry.has(instanceName);
+}
+
+/**
+ * Registers a singleton instance in the registry. If an instance with the same name already exists,
+ * it will be overwritten.
+ *
+ * @param instanceName - The unique name of the singleton instance to register.
+ * @param instance - The singleton instance to register.
+ * @returns The registered singleton instance.
+ */
+export function setSingleton<N extends InstanceName, T extends InstanceTypeMap[N]>(instanceName: N, instance: T): T {
+  const registry = instanceRegistry();
+  registry.set(instanceName, instance);
+  return instance;
+}
+
+/**
+ * Deletes a singleton instance from the registry.
+ *
+ * @param instanceName - The unique name of the singleton instance to delete.
+ */
+export function deleteSingleton<N extends InstanceName>(instanceName: N): void {
+  const registry = instanceRegistry();
+  registry.delete(instanceName);
 }

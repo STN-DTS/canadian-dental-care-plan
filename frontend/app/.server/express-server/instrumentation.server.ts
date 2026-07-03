@@ -1,12 +1,11 @@
 import { matchRoutes } from 'react-router';
 
 import type { RequestHandler } from 'express';
-import type { ViteDevServer } from 'vite';
 
 import { getAppContainerProvider } from '~/.server/app.container';
 import { TYPES } from '~/.server/constants';
-import { initServerBuild } from '~/.server/express-server/server-build.server';
 import { createLogger } from '~/.server/logging';
+import { hasSingleton, singleton } from '~/.server/utils/instance-registry';
 import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build.utils';
 
 // Define a type for the cache value (can be string or null/undefined if no match/id)
@@ -18,13 +17,8 @@ type CachedRouteId = string | null | undefined;
  *
  * @returns Express RequestHandler middleware.
  */
-export async function routeRequestCounter(viteDevServer?: ViteDevServer): Promise<RequestHandler> {
+export function routeRequestCounter(): RequestHandler {
   const log = createLogger('express.server/routeRequestCounter');
-
-  const build = await initServerBuild(viteDevServer);
-  const serverRoutes = createServerRoutes(build.routes);
-  const routes = createAgnosticRoutes(serverRoutes);
-
   const appContainer = getAppContainerProvider();
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
 
@@ -32,12 +26,22 @@ export async function routeRequestCounter(viteDevServer?: ViteDevServer): Promis
   // This Map persists across requests for this middleware instance.
   const pathCache = new Map<string, CachedRouteId>();
 
-  log.info('Initializing request counter middleware with route matching cache.');
-
   return (req, res, next) => {
     // Hook into the 'finish' event to capture the final status code
     res.on('finish', () => {
       try {
+        if (!hasSingleton('serverBuild')) {
+          // If the server build is not yet available, we cannot match routes, so we skip counting for this request.
+          log.warn('Server build not available. Skipping request counting for path: %s', req.path);
+          return;
+        }
+
+        const build = singleton('serverBuild');
+        const routes = singleton('routes', () => {
+          const serverRoutes = createServerRoutes(build.routes);
+          return createAgnosticRoutes(serverRoutes);
+        });
+
         // Use req.path to ignore query strings for routing/caching purposes
         // Normalize path (e.g., remove trailing .data for React Router loaders/actions)
         const normalizedPath = req.path.replace(/\.data$/, '');

@@ -3,9 +3,10 @@ import express from 'express';
 import sourceMapSupport from 'source-map-support';
 
 import { routeRequestCounter } from '~/.server/express-server/instrumentation.server';
-import { logging, responseMaxListeners, securityHeaders, session } from '~/.server/express-server/middleware.server';
-import { globalErrorHandler, rrRequestHandler } from '~/.server/express-server/request-handlers.server';
-import { createViteDevServer } from '~/.server/express-server/vite.server';
+import { logging, responseMaxListeners, securityHeaders, session } from '~/.server/express-server/middleware';
+import { globalErrorHandler } from '~/.server/express-server/request-handlers';
+import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
+import { configureProductionServer, configureProductionStaticAssets } from '~/.server/express-server/server-prod';
 import { createLogger } from '~/.server/logging';
 import { getEnv } from '~/.server/utils/env.utils';
 
@@ -23,8 +24,6 @@ log.info('Installing source map support');
 sourceMapSupport.install();
 
 log.info(`Initializing %s mode express server...`, environment.NODE_ENV);
-const viteDevServer = await createViteDevServer(isProduction);
-
 const app = express();
 
 log.info('  ✓ disabling X-Powered-By response header');
@@ -45,15 +44,9 @@ log.info('    ✓ logging middleware');
 app.use(logging(isProduction));
 
 if (isProduction) {
-  log.info('    ✓ static assets middleware (production)');
-  log.info('      ✓ caching /assets for 1y');
-  app.use('/assets', express.static('./build/client/assets', { immutable: true, maxAge: '1y' }));
-  log.info('      ✓ caching remaining static content for 1y');
-  app.use(express.static('./build/client', { maxAge: '1y' }));
+  configureProductionStaticAssets(app);
 } else {
-  log.info('    ✓ static assets middleware (development)');
-  log.info('      ✓ caching remaining static content for 1h');
-  app.use(express.static('./build/client', { maxAge: '1h' }));
+  configureDevStaticAssets(app);
 }
 
 log.info('    ✓ security headers middleware');
@@ -61,16 +54,6 @@ app.use(securityHeaders());
 
 log.info('    ✓ session middleware (%s)', environment.SESSION_STORAGE_TYPE);
 app.use(await session(isProduction, environment));
-
-if (viteDevServer) {
-  log.info('    ✓ vite dev server middlewares');
-  app.use(viteDevServer.middlewares);
-}
-
-log.info('  ✓ registering route request counter');
-app.use(await routeRequestCounter(viteDevServer));
-
-log.info('  ✓ registering react router request handler');
 
 /**
  * Redirect Protected Apply
@@ -106,10 +89,18 @@ app.all(['/:lang/apply{/*splat}', '/:lang/demander{/*splat}'], (req, res) => {
   res.redirect(302, redirectUrl);
 });
 
-app.all('*splat', rrRequestHandler(environment.NODE_ENV, viteDevServer));
+log.info('  ✓ registering route request counter');
+app.use(routeRequestCounter());
+
+// eslint-disable-next-line unicorn/prefer-ternary
+if (isProduction) {
+  await configureProductionServer(app);
+} else {
+  await configureDevServer(app);
+}
 
 log.info('  ✓ registering global error handler');
-app.use(globalErrorHandler(isProduction));
+app.use(globalErrorHandler());
 
 log.info('Server initialization complete');
 app.listen(port, () => log.info(`Listening on http://localhost:${port}/`));

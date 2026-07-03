@@ -4,7 +4,7 @@
 const config = {
   workspaces: {
     '.': {
-      entry: ['./app/.server/express-server/opentelemetry.server.ts', './app/.server/express-server/express.server.ts'],
+      entry: ['./app/.server/express-server/opentelemetry.ts', './app/.server/express-server/express.ts'],
     },
   },
 };

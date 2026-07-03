@@ -13,32 +13,38 @@ export default defineConfig({
   build: {
     target: 'es2022',
   },
-  server: {
-    hmr: {
-      port: 3001,
+  envDir: false,
+  environments: {
+    ssr: {
+      build: {
+        rolldownOptions: {
+          input: ['./app/.server/express-server/app.ts'],
+        },
+      },
     },
   },
   optimizeDeps: {
-    // Configure Remix plugin optimizeDeps entries since is has a bug on Windows
-    // TODO: Check if the issue has been fixed
-    // @see https://github.com/remix-run/remix/pull/10258
-    entries: ['~/entry.client.tsx', '~/root.tsx', '~/routes/**/*.tsx'],
+    entries: ['./app/entry.client.tsx', './app/root.tsx', './app/routes/**/*.tsx'],
     // exclude the otlp-exporter-base package because it causes
     // issues with vite's dependency optimization
     // see: https://github.com/open-telemetry/opentelemetry-js/issues/4794
     exclude: ['@opentelemetry/otlp-exporter-base'],
   },
-  plugins: [
-    tailwindcss(),
-    //
-    // see https://github.com/remix-run/remix/issues/9871
-    //
-    process.env.NODE_ENV === 'test' ? react() : reactRouter(),
-  ],
+  plugins: [tailwindcss(), framework()],
   resolve: {
+    // Ensures that Vite can resolve TypeScript path aliases defined in `tsconfig.json`.
+    // This is crucial for maintaining clean and manageable import paths in the server code.
     tsconfigPaths: true,
   },
-
+  server: {
+    hmr: {
+      // Configures the Hot Module Replacement (HMR) port.
+      // Typically this would be set by the React Router server, but because
+      // we use a custom express server, we have to manage this ourselves.
+      // Leaving this blank equates to `random` which makes CSP more difficult.
+      port: 3001,
+    },
+  },
   //
   // Vitest config. For more test configuration, see vitest.workspace.ts
   // see: https://vitest.dev/config/
@@ -56,3 +62,14 @@ export default defineConfig({
     setupFiles: ['./__tests__/setup-test-env.ts'],
   },
 });
+
+/**
+ * Determines which framework plugin to use.
+ * Uses `@react-router/dev/vite` for development, and
+ * @vitejs/plugin-react` for testing or other environments.
+ *
+ * see https://github.com/remix-run/remix/issues/9871
+ */
+function framework() {
+  return process.env.NODE_ENV === 'test' ? react() : reactRouter();
+}

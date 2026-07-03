@@ -5,7 +5,7 @@ import morganMiddleware from 'morgan';
 import { randomUUID } from 'node:crypto';
 
 import type { ServerConfig } from '~/.server/configs';
-import { createMemoryStore, createRedisStore } from '~/.server/express-server/session.server';
+import { createMemoryStore, createRedisStore } from '~/.server/express-server/session';
 import { createLogger } from '~/.server/logging';
 
 /**
