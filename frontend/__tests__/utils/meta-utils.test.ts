@@ -16,12 +16,10 @@ describe('mergeMeta', () => {
     type MetaArgs = GetAnnotations<any>['MetaArgs'];
 
     const args: MetaArgs = {
-      data: undefined,
       loaderData: undefined,
       location: mock<MetaArgs['location']>({ pathname: '/leaf' }),
       matches: [
         {
-          data: undefined,
           loaderData: undefined,
           id: 'parent',
           meta: parentMeta,
