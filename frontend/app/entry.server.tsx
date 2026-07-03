@@ -2,8 +2,8 @@ import { renderToPipeableStream } from 'react-dom/server';
 import type { RenderToPipeableStreamOptions } from 'react-dom/server';
 
 import { createReadableStreamFromReadable } from '@react-router/node';
-import type { ActionFunctionArgs, EntryContext, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
-import { ServerRouter } from 'react-router';
+import type { ActionFunctionArgs, EntryContext, InstrumentationServerHandlerResult, LoaderFunctionArgs, RouterContextProvider, ServerInstrumentation } from 'react-router';
+import { matchRoutes, ServerRouter } from 'react-router';
 
 import { isbot } from 'isbot';
 import { PassThrough } from 'node:stream';
@@ -18,6 +18,8 @@ import { getLocale, initI18n } from '~/.server/utils/locale.utils';
 import { NonceProvider } from '~/components/nonce-context';
 import { getNamespaces } from '~/utils/locale-utils';
 import { randomHexString } from '~/utils/string-utils';
+import { hasSingleton, singleton } from '~/.server/utils/instance-registry';
+import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build.utils';
 
 /**
  * We need to extend the server-side session lifetime whenever a client-side
@@ -134,4 +136,86 @@ export default async function handleRequest(request: Request, responseStatusCode
   });
 }
 
-export const instrumentations = [createOtelInstrumentation()];
+export const instrumentations: ServerInstrumentation[] = [
+  createOtelInstrumentation(),
+  {
+    // Instrument the server handler
+    handler(handler) {
+      handler.instrument({
+        async request(handleRequest, { request, context }) {
+          const result = await handleRequest();
+          if (!context) return;
+          requestCounter(context, request, result);
+        },
+      });
+    },
+  },
+];
+
+// Define a type for the cache value (can be string or null/undefined if no match/id)
+type CachedRouteId = string | null | undefined;
+type ReadonlyRequest = {
+  method: string;
+  url: string;
+  headers: Pick<Headers, 'get'>;
+};
+type ReadonlyContext = Pick<RouterContextProvider, 'get'>;
+
+// Cache to store: normalizedPath -> routeId (or null/undefined if no match)
+// This Map persists across requests for this middleware instance.
+const pathCache = new Map<string, CachedRouteId>();
+
+function requestCounter(context: ReadonlyContext, request: ReadonlyRequest, result: InstrumentationServerHandlerResult) {
+  const log = createLogger('entry.server/requestCounter');
+  const { appContainer } = context.get(appContext);
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+
+  if (!result.meta) {
+    return;
+  }
+
+  const { pathname } = result.meta.url;
+
+  if (!hasSingleton('serverBuild')) {
+    // If the server build is not yet available, we cannot match routes, so we skip counting for this request.
+    log.warn('Server build not available. Skipping request counting for path: %s', pathname);
+    return;
+  }
+
+  const build = singleton('serverBuild');
+  const routes = singleton('routes', () => {
+    const serverRoutes = createServerRoutes(build.routes);
+    return createAgnosticRoutes(serverRoutes);
+  });
+
+  try {
+    let routeId: CachedRouteId;
+
+    // Check cache first
+    if (pathCache.has(pathname)) {
+      routeId = pathCache.get(pathname);
+      log.debug(`Cache hit for path: ${pathname}, routeId: ${routeId}`);
+    } else {
+      log.debug(`Cache miss for path: ${pathname}. Matching routes...`);
+
+      const matches = matchRoutes(routes, pathname, build.basename);
+
+      // Get the ID from the most specific matched route (last in the array)
+      // Ensure the route and ID exist
+      const lastMatch = matches?.at(-1); // Get the last match object
+      routeId = lastMatch?.route.id ?? null; // Use null if no ID
+
+      // Update cache with the result (even if null)
+      pathCache.set(pathname, routeId);
+      log.debug(`Cached routeId '${routeId}' for path: ${pathname}`);
+    }
+
+    if (routeId) {
+      // Construct metric identifier (e.g., POST '/user/$id/profile' → 'user._id.profile.posts')
+      const metricPrefix = `${routeId.replaceAll('/', '.').replaceAll('$', '_')}.${request.method.toLowerCase()}s`;
+      instrumentationService.countHttpStatus(metricPrefix, result.statusCode);
+    }
+  } catch (error) {
+    log.error('Error during request counting in "finish" handler:', error);
+  }
+}
