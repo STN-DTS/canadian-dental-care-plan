@@ -18,12 +18,12 @@ describe('locale.utils', () => {
 
   describe('getLocale()', () => {
     it('should return the locale from the URL if it exists', () => {
-      expect(getLocale(new Request('http://localhost:3000/en/home'))).toEqual('en');
-      expect(getLocale(new Request('http://localhost:3000/fr/home'))).toEqual('fr');
+      expect(getLocale(new URL('http://localhost:3000/en/home'))).toEqual('en');
+      expect(getLocale(new URL('http://localhost:3000/fr/home'))).toEqual('fr');
     });
 
     it('should return the default locale if there is no locale in the URL', () => {
-      expect(getLocale(new Request('http://localhost:3000/'))).toEqual('en');
+      expect(getLocale(new URL('http://localhost:3000/'))).toEqual('en');
     });
   });
 
@@ -53,7 +53,7 @@ describe('locale.utils', () => {
     it('should return a t function that uses the detected language', async () => {
       vi.mocked(getEnv, { partial: true }).mockReturnValue({ I18NEXT_DEBUG: false });
 
-      const t = await getFixedT(new Request('http://localhost:3000/'), 'gcweb');
+      const t = await getFixedT(new URL('http://localhost:3000/'), 'gcweb');
 
       // GjB :: not sure how else to test this 🤷
       expect(t).toBeDefined();

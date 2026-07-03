@@ -42,15 +42,15 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const state = loadProtectedApplicationIntakeChildStateForReview({ params, request, session });
+  const state = loadProtectedApplicationIntakeChildStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-children']);
 
-  const t = await getFixedT(request, ['protectedApplicationIntakeChild', 'gcweb']);
+  const t = await getFixedT(url, ['protectedApplicationIntakeChild', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.submit.pageTitle) }),
   };
@@ -77,16 +77,16 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, request, params }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const state = loadProtectedApplicationIntakeChildStateForReview({ params, request, session });
+  const state = loadProtectedApplicationIntakeChildStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-children']);
 
   const formData = await request.formData();
-  const t = await getFixedT(request, 'protectedApplicationIntakeChild');
+  const t = await getFixedT(url, 'protectedApplicationIntakeChild');
 
   securityHandler.validateCsrfToken({ formData, session });
   await securityHandler.validateHCaptchaResponse({ formData, request }, () => {

@@ -16,9 +16,9 @@ export const handle = {
   i18nPreloadNamespace: [publicLayoutI18nNamespace, 'status'],
 } as const satisfies RouteHandleData;
 
-export function loader({ context, request }: Route.LoaderArgs) {
+export function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
-  const locale = getLocale(request);
+  const locale = getLocale(url);
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = appContainer.get(TYPES.ClientConfig);
   return { locale, SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS };
 }

@@ -64,14 +64,14 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
-  const t = await getFixedT(request, ['protectedProfile', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
+  const locale = getLocale(url);
 
   const countryList = await appContainer.get(TYPES.CountryService).listAndSortLocalizedCountries(locale);
   const regionList = await appContainer.get(TYPES.ProvinceTerritoryStateService).listAndSortLocalizedProvinceTerritoryStates(locale);
@@ -99,15 +99,15 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
-  const locale = getLocale(request);
+  const locale = getLocale(url);
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
   securityHandler.validateCsrfToken({ formData, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
   const clientConfig = appContainer.get(TYPES.ClientConfig);
   const addressValidationService = appContainer.get(TYPES.AddressValidationService);

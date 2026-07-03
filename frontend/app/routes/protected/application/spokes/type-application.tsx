@@ -32,15 +32,15 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'intake');
 
-  const t = await getFixedT(request, ['protectedApplicationSpokes', 'gcweb']);
+  const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
 
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.typeOfApplication.pageTitle) }),
@@ -49,18 +49,18 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   return { meta, defaultState: state.typeOfApplication };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
   securityHandler.validateCsrfToken({ formData, session });
 
   const state = getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'intake');
 
-  const t = await getFixedT(request, 'protectedApplicationSpokes');
+  const t = await getFixedT(url, 'protectedApplicationSpokes');
 
   /**
    * Schema for application delegate.

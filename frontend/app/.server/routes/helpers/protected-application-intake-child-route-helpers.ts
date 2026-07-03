@@ -11,7 +11,7 @@ import { getPathById } from '~/utils/route-utils';
 
 interface LoadProtectedApplicationIntakeChildStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -20,9 +20,9 @@ interface LoadProtectedApplicationIntakeChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function loadProtectedApplicationIntakeChildState({ params, request, session }: LoadProtectedApplicationIntakeChildStateArgs) {
+export function loadProtectedApplicationIntakeChildState({ params, requestUrl, session }: LoadProtectedApplicationIntakeChildStateArgs) {
   const log = createLogger('protected-application-intake-child-route-helpers/loadProtectedApplicationIntakeChildState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'intake' || applicationState.typeOfApplication !== 'children') {
@@ -50,7 +50,7 @@ export function loadProtectedApplicationIntakeChildState({ params, request, sess
 
 interface LoadProtectedApplicationIntakeChildStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -59,8 +59,8 @@ interface LoadProtectedApplicationIntakeChildStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated child state.
  */
-export function loadProtectedApplicationIntakeChildStateForReview({ params, request, session }: LoadProtectedApplicationIntakeChildStateForReviewArgs) {
-  const state = loadProtectedApplicationIntakeChildState({ params, request, session });
+export function loadProtectedApplicationIntakeChildStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeChildStateForReviewArgs) {
+  const state = loadProtectedApplicationIntakeChildState({ params, requestUrl, session });
   return validateProtectedApplicationIntakeChildStateForReview({ params, state });
 }
 

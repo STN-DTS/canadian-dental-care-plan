@@ -26,10 +26,10 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const t = await getFixedT(request, ['application', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['application', 'gcweb']);
+  const locale = getLocale(url);
 
   const currentDate = getCurrentDateString(locale);
   const applicationYearService = appContainer.get(TYPES.ApplicationYearService);

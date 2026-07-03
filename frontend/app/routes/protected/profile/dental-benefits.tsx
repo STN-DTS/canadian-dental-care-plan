@@ -21,14 +21,14 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
-  const t = await getFixedT(request, ['protectedProfile', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
+  const locale = getLocale(url);
 
   const federalGovernmentInsurancePlanService = appContainer.get(TYPES.FederalGovernmentInsurancePlanService);
   const provincialGovernmentInsurancePlanService = appContainer.get(TYPES.ProvincialGovernmentInsurancePlanService);

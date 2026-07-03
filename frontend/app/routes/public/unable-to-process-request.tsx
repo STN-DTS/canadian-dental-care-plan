@@ -18,8 +18,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const t = await getFixedT(request, ['unableToProcessRequest', 'gcweb']);
+export async function loader({ request, url }: Route.LoaderArgs) {
+  const t = await getFixedT(url, ['unableToProcessRequest', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.pageTitle) }),
   };

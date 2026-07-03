@@ -49,13 +49,13 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
-  const t = await getFixedT(request, ['protectedProfile', 'gcweb']);
+  const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.phoneNumber.pageTitle) }),
   };
@@ -72,16 +72,16 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
   securityHandler.validateCsrfToken({ formData, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
-  const t = await getFixedT(request, 'protectedProfile');
+  const t = await getFixedT(url, 'protectedProfile');
 
   const phoneNumberSchema = z.object({
     phoneNumber: phoneSchema({

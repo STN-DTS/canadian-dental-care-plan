@@ -42,12 +42,12 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationFullAdultStateForReview({ params, request, session });
+  const state = loadPublicApplicationFullAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-adult']);
 
-  const t = await getFixedT(request, ['applicationFullAdult', 'gcweb']);
+  const t = await getFixedT(url, ['applicationFullAdult', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.submit.pageTitle) }),
   };
@@ -77,13 +77,13 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, request, params }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationFullAdultStateForReview({ params, request, session });
+  const state = loadPublicApplicationFullAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-adult']);
 
   const formData = await request.formData();
-  const t = await getFixedT(request, 'applicationFullAdult');
+  const t = await getFixedT(url, 'applicationFullAdult');
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });

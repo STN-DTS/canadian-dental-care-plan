@@ -7,9 +7,9 @@ import type { Route } from './+types/health';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 
-export async function loader({ context, request }: Route.LoaderArgs) {
+export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
-  const { include, exclude, timeout } = Object.fromEntries(new URL(request.url).searchParams);
+  const { include, exclude, timeout } = Object.fromEntries(url.searchParams);
 
   const allHealthChecks = appContainer.findAll(TYPES.HealthCheck);
   const buildInfoService = appContainer.get(TYPES.BuildInfoService);

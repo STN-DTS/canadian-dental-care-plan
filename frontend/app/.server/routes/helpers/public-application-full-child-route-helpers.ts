@@ -12,7 +12,7 @@ import { getPathById } from '~/utils/route-utils';
 
 interface LoadPublicApplicationFullChildStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -21,9 +21,9 @@ interface LoadPublicApplicationFullChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function loadPublicApplicationFullChildState({ params, request, session }: LoadPublicApplicationFullChildStateArgs) {
+export function loadPublicApplicationFullChildState({ params, requestUrl, session }: LoadPublicApplicationFullChildStateArgs) {
   const log = createLogger('public-application-full-child-route-helpers/loadPublicApplicationFullChildState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'full' || applicationState.typeOfApplication !== 'children') {
@@ -51,7 +51,7 @@ export function loadPublicApplicationFullChildState({ params, request, session }
 
 interface LoadPublicApplicationFullChildStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -60,8 +60,8 @@ interface LoadPublicApplicationFullChildStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated child state.
  */
-export function loadPublicApplicationFullChildStateForReview({ params, request, session }: LoadPublicApplicationFullChildStateForReviewArgs) {
-  const state = loadPublicApplicationFullChildState({ params, request, session });
+export function loadPublicApplicationFullChildStateForReview({ params, requestUrl, session }: LoadPublicApplicationFullChildStateForReviewArgs) {
+  const state = loadPublicApplicationFullChildState({ params, requestUrl, session });
   return validatePublicApplicationFullChildStateForReview({ params, state });
 }
 

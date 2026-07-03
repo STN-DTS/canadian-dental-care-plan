@@ -38,7 +38,7 @@ async function getJwks(serverConfig: Pick<ServerConfig, 'AUTH_JWT_PUBLIC_KEY'>) 
  * A JSON endpoint that contains a list of the application's public keys that
  * can be used by an auth provider to verify private key JWTs.
  */
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
   const { AUTH_JWT_PUBLIC_KEY } = appContainer.get(TYPES.ServerConfig);
   const keys = await getJwks({ AUTH_JWT_PUBLIC_KEY });

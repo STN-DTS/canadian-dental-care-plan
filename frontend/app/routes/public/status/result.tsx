@@ -34,17 +34,17 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('status');
 
-  const statusStateId = getStatusStateIdFromUrl(request.url);
+  const statusStateId = getStatusStateIdFromUrl(url);
   const { statusCheckResult } = loadStatusState({ id: statusStateId, params, session });
 
-  const locale = getLocale(request);
+  const locale = getLocale(url);
 
-  const t = await getFixedT(request, ['status', 'gcweb']);
+  const t = await getFixedT(url, ['status', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.result.pageTitle) }),
   };
@@ -59,7 +59,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
@@ -67,10 +67,10 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   securityHandler.validateFeatureEnabled('status');
   securityHandler.validateCsrfToken({ formData, session });
 
-  const statusStateId = getStatusStateIdFromUrl(request.url);
+  const statusStateId = getStatusStateIdFromUrl(url);
   const { id } = loadStatusState({ id: statusStateId, params, session });
 
-  const t = await getFixedT(request, 'status');
+  const t = await getFixedT(url, 'status');
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 

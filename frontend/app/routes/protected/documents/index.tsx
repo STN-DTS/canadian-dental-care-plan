@@ -23,22 +23,22 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ request, session });
-  const locale = getLocale(request);
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const locale = getLocale(url);
 
   const userInfoToken: UserinfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const applicant = await securityHandler.requireApplicant({ params, request, session });
+  const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
   const evidentiaryDocumentService = appContainer.get(TYPES.EvidentiaryDocumentService);
   const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId, userId: userInfoToken.sub }, locale);
 
-  const t = await getFixedT(request, ['documents', 'gcweb']);
+  const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };

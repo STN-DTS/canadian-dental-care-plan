@@ -5,6 +5,6 @@
  */
 import type { Route } from './+types/readyz';
 
-export function loader({ context, request }: Route.LoaderArgs) {
+export function loader({ context, url }: Route.LoaderArgs) {
   return Response.json({ ready: true });
 }

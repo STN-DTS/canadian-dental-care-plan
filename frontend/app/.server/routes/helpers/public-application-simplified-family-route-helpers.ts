@@ -17,7 +17,7 @@ type PublicApplicationRenewalFamilyState = OmitStrict<PublicApplicationState, 'c
 
 interface LoadPublicApplicationSimplifiedFamilyStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -26,9 +26,9 @@ interface LoadPublicApplicationSimplifiedFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded public simplified family state.
  */
-export function loadPublicApplicationSimplifiedFamilyState({ params, request, session }: LoadPublicApplicationSimplifiedFamilyStateArgs) {
+export function loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateArgs) {
   const log = createLogger('public-application-simplified-family-route-helpers/loadPublicApplicationSimplifiedFamilyState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'simplified' || applicationState.typeOfApplication !== 'family') {
@@ -58,7 +58,7 @@ export function loadPublicApplicationSimplifiedFamilyState({ params, request, se
 
 interface LoadPublicApplicationSimplifiedFamilyStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -67,8 +67,8 @@ interface LoadPublicApplicationSimplifiedFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadPublicApplicationSimplifiedFamilyStateForReview({ params, request, session }: LoadPublicApplicationSimplifiedFamilyStateForReviewArgs) {
-  const state = loadPublicApplicationSimplifiedFamilyState({ params, request, session });
+export function loadPublicApplicationSimplifiedFamilyStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateForReviewArgs) {
+  const state = loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session });
   return validatePublicApplicationFamilyStateForReview({ params, state });
 }
 

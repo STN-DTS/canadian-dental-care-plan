@@ -14,7 +14,7 @@ import type { MockName } from '~/.server/utils/env.utils';
 import type { ServerMetadata, TokenEndpointResponse, UserinfoResponse } from '~/.server/utils/raoidc.utils';
 import { generateRandomString } from '~/.server/utils/raoidc.utils';
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   validateRaoidcMockEnabled({ context });
 
   const log = createLogger('oidc.$/loader');
@@ -22,23 +22,23 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 
   switch (slug) {
     case '.well-known/openid-configuration': {
-      log.debug('Handling request for [%s]', request.url);
+      log.debug('Handling request for [%s]', url);
       return handleOpenidConfigurationRequest({ context });
     }
     case 'authorize': {
-      log.debug('Handling request for [%s]', request.url);
-      return handleMockAuthorizeRequest({ context, request });
+      log.debug('Handling request for [%s]', url);
+      return handleMockAuthorizeRequest({ context, url });
     }
     case 'jwks': {
-      log.debug('Handling request for [%s]', request.url);
+      log.debug('Handling request for [%s]', url);
       return await handleJwksRequest({ context });
     }
     case 'userinfo': {
-      log.debug('Handling request for [%s]', request.url);
+      log.debug('Handling request for [%s]', url);
       return await handleUserInfoRequest({ context });
     }
     case 'validatesession': {
-      log.debug('Handling request for [%s]', request.url);
+      log.debug('Handling request for [%s]', url);
       return handleValidateSessionRequest();
     }
     default: {
@@ -48,7 +48,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   }
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   validateRaoidcMockEnabled({ context });
 
   const { appContainer } = context.get(appContext);
@@ -60,7 +60,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
 
   switch (slug) {
     case 'token': {
-      log.debug('Handling request for [%s]', request.url);
+      log.debug('Handling request for [%s]', url);
       return await handleTokenRequest({ context });
     }
     default: {
@@ -176,7 +176,7 @@ function handleValidateSessionRequest(): Response {
 /**
  * @see https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint
  */
-function handleMockAuthorizeRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>): Response {
+function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>): Response {
   const { appContainer } = context.get(appContext);
   const log = createLogger('oidc.$/handleMockAuthorizeRequest');
   log.debug('Handling (mock) RAOIDC authorize request');
@@ -197,7 +197,7 @@ function handleMockAuthorizeRequest({ context, request }: Pick<Route.LoaderArgs,
     state: z.string().min(8).max(256),
   });
 
-  const searchParams = new URL(request.url).searchParams;
+  const searchParams = url.searchParams;
 
   const result = searchParamsSchema.safeParse({
     clientId: searchParams.get('client_id'),

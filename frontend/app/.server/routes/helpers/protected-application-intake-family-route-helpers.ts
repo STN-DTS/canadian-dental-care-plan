@@ -11,7 +11,7 @@ import { getPathById } from '~/utils/route-utils';
 
 interface LoadProtectedApplicationIntakeFamilyStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -20,9 +20,9 @@ interface LoadProtectedApplicationIntakeFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded protected application family state.
  */
-export function loadProtectedApplicationIntakeFamilyState({ params, request, session }: LoadProtectedApplicationIntakeFamilyStateArgs) {
+export function loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateArgs) {
   const log = createLogger('protected-application-intake-family-route-helpers/loadProtectedApplicationIntakeFamilyState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'intake' || applicationState.typeOfApplication !== 'family') {
@@ -50,7 +50,7 @@ export function loadProtectedApplicationIntakeFamilyState({ params, request, ses
 
 interface LoadProtectedApplicationIntakeFamilyStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -59,8 +59,8 @@ interface LoadProtectedApplicationIntakeFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadProtectedApplicationIntakeFamilyStateForReview({ params, request, session }: LoadProtectedApplicationIntakeFamilyStateForReviewArgs) {
-  const state = loadProtectedApplicationIntakeFamilyState({ params, request, session });
+export function loadProtectedApplicationIntakeFamilyStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateForReviewArgs) {
+  const state = loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session });
   return validateProtectedApplicationFamilyStateForReview({ params, state });
 }
 

@@ -41,16 +41,16 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedChildState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-children']);
 
-  const t = await getFixedT(request, ['applicationSimplifiedChild', 'gcweb']);
+  const t = await getFixedT(url, ['applicationSimplifiedChild', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.parentOrGuardian.pageTitle) }),
   };
-  const locale = getLocale(request);
+  const locale = getLocale(url);
 
   const mailingProvinceTerritoryStateAbbr = state.mailingAddress?.value?.province ? await appContainer.get(TYPES.ProvinceTerritoryStateService).getProvinceTerritoryStateById(state.mailingAddress.value.province) : undefined;
   const homeProvinceTerritoryStateAbbr = state.homeAddress?.value?.province ? await appContainer.get(TYPES.ProvinceTerritoryStateService).getProvinceTerritoryStateById(state.homeAddress.value.province) : undefined;
@@ -119,9 +119,9 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedChildState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-children']);
 
   const formData = await request.formData();

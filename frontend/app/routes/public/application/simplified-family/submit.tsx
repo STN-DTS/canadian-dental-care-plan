@@ -42,12 +42,12 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedFamilyStateForReview({ params, request, session });
+  const state = loadPublicApplicationSimplifiedFamilyStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 
-  const t = await getFixedT(request, ['applicationSimplifiedFamily', 'gcweb']);
+  const t = await getFixedT(url, ['applicationSimplifiedFamily', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.submit.pageTitle) }),
   };
@@ -75,13 +75,13 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, request, params }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedFamilyStateForReview({ params, request, session });
+  const state = loadPublicApplicationSimplifiedFamilyStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 
   const formData = await request.formData();
-  const t = await getFixedT(request, 'applicationSimplifiedFamily');
+  const t = await getFixedT(url, 'applicationSimplifiedFamily');
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });

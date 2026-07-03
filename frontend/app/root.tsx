@@ -60,13 +60,12 @@ export const headers: Route.HeadersFunction = () => {
   };
 };
 
-export async function loader({ context, request }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const buildInfoService = appContainer.get(TYPES.BuildInfoService);
   const dynatraceService = appContainer.get(TYPES.DynatraceService);
-  const requestUrl = new URL(request.url);
-  const locale = getLocale(request);
-  const t = await getFixedT(request, 'gcweb');
+  const locale = getLocale(url);
+  const t = await getFixedT(url, 'gcweb');
 
   const buildInfo = buildInfoService.getBuildInfo();
   const dynatraceRumScript = await dynatraceService.findDynatraceRumScript();
@@ -80,7 +79,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     subject: t(($) => $.meta.subject),
     title: t(($) => $.meta.title.default),
   };
-  const origin = requestUrl.origin;
+  const origin = url.origin;
   const csrfToken = session.get('csrfToken');
 
   return {

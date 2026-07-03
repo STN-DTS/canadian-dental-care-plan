@@ -17,7 +17,7 @@ type PublicApplicationRenewalAdultState = OmitStrict<PublicApplicationState, 'cl
 
 interface LoadPublicApplicationSimplifiedAdultStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -26,9 +26,9 @@ interface LoadPublicApplicationSimplifiedAdultStateArgs {
  * @param args - The arguments.
  * @returns The loaded adult state.
  */
-export function loadPublicApplicationSimplifiedAdultState({ params, request, session }: LoadPublicApplicationSimplifiedAdultStateArgs): PublicApplicationRenewalAdultState {
+export function loadPublicApplicationSimplifiedAdultState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedAdultStateArgs): PublicApplicationRenewalAdultState {
   const log = createLogger('public-application-simplified-adult-route-helpers/loadPublicApplicationSimplifiedAdultState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'simplified' || applicationState.typeOfApplication !== 'adult') {
@@ -58,7 +58,7 @@ export function loadPublicApplicationSimplifiedAdultState({ params, request, ses
 
 interface LoadPublicApplicationSimplifiedAdultStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -67,8 +67,8 @@ interface LoadPublicApplicationSimplifiedAdultStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated adult state.
  */
-export function loadPublicApplicationSimplifiedAdultStateForReview({ params, request, session }: LoadPublicApplicationSimplifiedAdultStateForReviewArgs) {
-  const state = loadPublicApplicationSimplifiedAdultState({ params, request, session });
+export function loadPublicApplicationSimplifiedAdultStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedAdultStateForReviewArgs) {
+  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl, session });
   return validatePublicRenewAdultStateForReview({ params, state });
 }
 

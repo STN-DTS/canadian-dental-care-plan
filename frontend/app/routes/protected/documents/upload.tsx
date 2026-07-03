@@ -73,15 +73,15 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const clientApplication = await securityHandler.requireClientApplication({
     params,
-    request,
+    requestUrl: url,
     session,
     options: { redirectUrl: getPathById('protected/documents/not-required', params) },
   });
@@ -92,8 +92,8 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     options: { redirectUrl: getPathById('protected/documents/not-required', params) },
   });
 
-  const locale = getLocale(request);
-  const t = await getFixedT(request, ['documents', 'gcweb']);
+  const locale = getLocale(url);
+  const t = await getFixedT(url, ['documents', 'gcweb']);
 
   const applicants: Array<{ clientId: string; clientNumber: string; name: string }> = [
     {
@@ -126,9 +126,9 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function clientAction({ request, serverAction }: Route.ClientActionArgs) {
+export async function clientAction({ request, url, serverAction }: Route.ClientActionArgs) {
   const formData = await request.clone().formData();
-  const locale = getLanguage(request);
+  const locale = getLanguage(url);
   const t = getI18n().getFixedT(locale, 'documents');
   const env = getClientEnv();
 
@@ -145,18 +145,18 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   return await serverAction();
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const formData = await request.formData();
   securityHandler.validateCsrfToken({ formData, session });
 
   const clientApplication = await securityHandler.requireClientApplication({
     params,
-    request,
+    requestUrl: url,
     session,
     options: { redirectUrl: getPathById('protected/documents/not-required', params) },
   });
@@ -172,7 +172,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     ...clientApplication.children.map((c) => [c.information.clientId, c.information.clientNumber] as const),
   ]);
 
-  const locale = getLocale(request);
+  const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const config = appContainer.get(TYPES.ClientConfig);
   const idToken: IdToken = session.get('idToken');

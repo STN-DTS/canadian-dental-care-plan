@@ -45,16 +45,16 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return getTitleMetaTags(loaderData.meta.title, loaderData.meta.dcTermsTitle);
 });
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);
   const childState = getSingleChildState({ params, session });
 
-  const t = await getFixedT(request, ['protectedApplicationSpokes', 'gcweb']);
+  const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
 
   const childNumber = t(($) => $.children.childNumber, {
     childNumber: childState.childNumber,
@@ -81,10 +81,10 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   return { meta, defaultState: childState.dentalInsurance, childName, applicationFlow: `${state.context}-${state.typeOfApplication}` };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);
@@ -94,7 +94,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   securityHandler.validateCsrfToken({ formData, session });
 
   const childState = getSingleChildState({ params, session });
-  const t = await getFixedT(request, 'protectedApplicationSpokes');
+  const t = await getFixedT(url, 'protectedApplicationSpokes');
 
   // state validation schema
   const dentalInsuranceSchema = z

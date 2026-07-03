@@ -9,7 +9,7 @@ import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const log = createLogger('killswitch/loader');
 
   const { appContainer } = context.get(appContext);
@@ -28,7 +28,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     return { engaged: true, remainingTimeSecs: currentRemainingTime };
   }
 
-  const searchParams = new URL(request.url).searchParams;
+  const searchParams = url.searchParams;
   const engage = searchParams.get('engage') !== null;
 
   if (engage) {

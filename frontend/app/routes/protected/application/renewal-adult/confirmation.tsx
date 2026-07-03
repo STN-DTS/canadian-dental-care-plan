@@ -35,16 +35,16 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const state = loadProtectedApplicationRenewalAdultState({ params, request, session });
+  const state = loadProtectedApplicationRenewalAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);
 
-  const t = await getFixedT(request, ['protectedApplicationRenewalAdult', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['protectedApplicationRenewalAdult', 'gcweb']);
+  const locale = getLocale(url);
 
   if (
     !state.applicantInformation ||
@@ -115,19 +115,19 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const state = loadProtectedApplicationRenewalAdultState({ params, request, session });
+  const state = loadProtectedApplicationRenewalAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);
 
   const formData = await request.formData();
 
   securityHandler.validateCsrfToken({ formData, session });
 
-  const t = await getFixedT(request, 'protectedApplicationRenewalAdult');
+  const t = await getFixedT(url, 'protectedApplicationRenewalAdult');
 
   clearProtectedApplicationState({ params, session });
 

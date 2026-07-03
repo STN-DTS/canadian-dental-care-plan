@@ -60,10 +60,10 @@ describe('DefaultSecurityHandler', () => {
       mockRaoidcSessionValidator.validateRaoidcSession.mockResolvedValue({ isValid: false, errorMessage: 'Invalid session' });
 
       const mockSession = mock<Session>();
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
 
       // Capture the thrown error
-      const error = await securityHandler.validateAuthSession({ request: mockRequest, session: mockSession }).catch((error_) => error_);
+      const error = await securityHandler.validateAuthSession({ requestUrl: mockRequestUrl, session: mockSession }).catch((error_) => error_);
 
       // Assert the error is a Response object
       expect(error).toBeInstanceOf(Response);
@@ -81,10 +81,10 @@ describe('DefaultSecurityHandler', () => {
       mockRaoidcSessionValidator.validateRaoidcSession.mockResolvedValue({ isValid: true });
 
       const mockSession = mock<Session>();
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
 
       // Expect no error if session is valid
-      await expect(securityHandler.validateAuthSession({ request: mockRequest, session: mockSession })).resolves.not.toThrow();
+      await expect(securityHandler.validateAuthSession({ requestUrl: mockRequestUrl, session: mockSession })).resolves.not.toThrow();
     });
   });
 
@@ -281,10 +281,10 @@ describe('DefaultSecurityHandler', () => {
       mockSession.id = 'session-id';
       mockSession.find.calledWith('userInfoToken').mockReturnValue(None);
 
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
 
-      const error = await securityHandler.requireClientApplication({ request: mockRequest, params, session: mockSession }).catch((error_) => error_);
+      const error = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession }).catch((error_) => error_);
 
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
@@ -297,12 +297,12 @@ describe('DefaultSecurityHandler', () => {
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
 
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
 
       mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(None);
 
-      const error = await securityHandler.requireClientApplication({ request: mockRequest, params, session: mockSession }).catch((error_) => error_);
+      const error = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession }).catch((error_) => error_);
 
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
@@ -316,13 +316,13 @@ describe('DefaultSecurityHandler', () => {
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
 
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
       const customRedirectUrl = '/en/custom-data-unavailable';
 
       mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(None);
 
-      const error = await securityHandler.requireClientApplication({ request: mockRequest, params, session: mockSession, options: { redirectUrl: customRedirectUrl } }).catch((error_) => error_);
+      const error = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession, options: { redirectUrl: customRedirectUrl } }).catch((error_) => error_);
 
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
@@ -335,7 +335,7 @@ describe('DefaultSecurityHandler', () => {
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
 
-      const mockRequest = mock<Request>({ url: 'https://localhost:3000/en/protected-page' });
+      const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
 
       const mockClientApplication = mock<ClientApplicationDto>({
@@ -351,7 +351,7 @@ describe('DefaultSecurityHandler', () => {
 
       mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValue(Some(mockClientApplication));
 
-      const clientApplication = await securityHandler.requireClientApplication({ request: mockRequest, params, session: mockSession });
+      const clientApplication = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession });
       expect(clientApplication).toBe(mockClientApplication);
     });
   });

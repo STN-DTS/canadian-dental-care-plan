@@ -17,14 +17,14 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ request, url }: Route.LoaderArgs) {
+export async function loader({ url }: Route.LoaderArgs) {
   // Get meta title
-  const locale = getLocale(request);
+  const locale = getLocale(url);
   const t = await getFixedT(locale, 'gcweb');
   const meta = { title: t(($) => $.meta.title.template, { title: t(($) => $.publicNotFound.documentTitle) }) };
 
   // Get request lang param
-  const { pathname } = new URL(request.url);
+  const { pathname } = url;
   const [, lang] = pathname.split('/');
 
   return data({ isAppLocale: isAppLocale(lang), meta }, { status: 404 });

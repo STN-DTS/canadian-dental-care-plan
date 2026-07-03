@@ -48,11 +48,6 @@ describe('locale-utils', () => {
       { resource: '/en/foo', expected: 'en' },
       { resource: '/fr', expected: 'fr' },
       { resource: '/fr/foo', expected: 'fr' },
-      // Requests
-      { resource: new Request('https://example.com/en'), expected: 'en' },
-      { resource: new Request('https://example.com/en/foo'), expected: 'en' },
-      { resource: new Request('https://example.com/fr'), expected: 'fr' },
-      { resource: new Request('https://example.com/fr/foo'), expected: 'fr' },
       // URLs
       { resource: new URL('https://example.com/en'), expected: 'en' },
       { resource: new URL('https://example.com/en/foo'), expected: 'en' },

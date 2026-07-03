@@ -24,19 +24,19 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
 
-  const t = await getFixedT(request, ['applicationSpokes', 'gcweb']);
+  const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.dentalInsuranceExitApplication.pageTitle) }),
   };
   return { meta };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
@@ -46,7 +46,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });
 
-  const t = await getFixedT(request, 'applicationSpokes');
+  const t = await getFixedT(url, 'applicationSpokes');
 
   clearPublicApplicationState({ params, session });
 

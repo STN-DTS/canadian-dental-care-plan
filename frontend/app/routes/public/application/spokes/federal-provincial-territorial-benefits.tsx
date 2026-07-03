@@ -45,15 +45,15 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
 
   const { CANADA_COUNTRY_ID } = appContainer.get(TYPES.ClientConfig);
 
-  const t = await getFixedT(request, ['applicationSpokes', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
+  const locale = getLocale(url);
 
   const federalSocialPrograms = await appContainer.get(TYPES.FederalGovernmentInsurancePlanService).listAndSortLocalizedFederalGovernmentInsurancePlans(locale);
   const provinceTerritoryStates = await appContainer.get(TYPES.ProvinceTerritoryStateService).listAndSortLocalizedProvinceTerritoryStatesByCountryId(CANADA_COUNTRY_ID, locale);
@@ -73,7 +73,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
@@ -83,7 +83,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });
 
-  const t = await getFixedT(request, 'applicationSpokes');
+  const t = await getFixedT(url, 'applicationSpokes');
 
   // NOTE: state validation schemas are independent otherwise user have to anwser
   // both question first before the superRefine can be executed

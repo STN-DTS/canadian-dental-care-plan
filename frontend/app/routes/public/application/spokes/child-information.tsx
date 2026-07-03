@@ -53,13 +53,13 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return getTitleMetaTags(loaderData.meta.title, loaderData.meta.dcTermsTitle);
 });
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-children', 'full-family', 'simplified-children', 'simplified-family']);
   const childState = getSingleChildState({ params, session });
 
-  const t = await getFixedT(request, ['applicationSpokes', 'gcweb']);
+  const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
 
   const childNumber = t(($) => $.children.childNumber, {
     childNumber: childState.childNumber,
@@ -93,7 +93,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-children', 'full-family', 'simplified-children', 'simplified-family']);
@@ -104,7 +104,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   securityHandler.validateCsrfToken({ formData, session });
 
   const childState = getSingleChildState({ params, session });
-  const t = await getFixedT(request, 'applicationSpokes');
+  const t = await getFixedT(url, 'applicationSpokes');
 
   // Form action Continue & Save
   // state validation schema

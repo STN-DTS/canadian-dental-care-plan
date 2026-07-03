@@ -16,7 +16,7 @@ type ProtectedApplicationRenewalFamilyState = OmitStrict<ProtectedApplicationSta
 
 interface LoadProtectedApplicationRenewalFamilyStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -25,9 +25,9 @@ interface LoadProtectedApplicationRenewalFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded protected renewal family state.
  */
-export function loadProtectedApplicationRenewalFamilyState({ params, request, session }: LoadProtectedApplicationRenewalFamilyStateArgs): ProtectedApplicationRenewalFamilyState {
+export function loadProtectedApplicationRenewalFamilyState({ params, requestUrl, session }: LoadProtectedApplicationRenewalFamilyStateArgs): ProtectedApplicationRenewalFamilyState {
   const log = createLogger('protected-application-renewal-family-route-helpers/loadProtectedApplicationRenewalFamilyState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'renewal' || applicationState.typeOfApplication !== 'family') {
@@ -57,7 +57,7 @@ export function loadProtectedApplicationRenewalFamilyState({ params, request, se
 
 interface LoadProtectedApplicationRenewalFamilyStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -66,8 +66,8 @@ interface LoadProtectedApplicationRenewalFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadProtectedApplicationRenewalFamilyStateForReview({ params, request, session }: LoadProtectedApplicationRenewalFamilyStateForReviewArgs) {
-  const state = loadProtectedApplicationRenewalFamilyState({ params, request, session });
+export function loadProtectedApplicationRenewalFamilyStateForReview({ params, requestUrl, session }: LoadProtectedApplicationRenewalFamilyStateForReviewArgs) {
+  const state = loadProtectedApplicationRenewalFamilyState({ params, requestUrl, session });
   return validateProtectedApplicationFamilyStateForReview({ params, state });
 }
 

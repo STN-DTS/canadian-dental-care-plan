@@ -33,10 +33,10 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
-  const t = await getFixedT(request, ['application', 'gcweb']);
+  const t = await getFixedT(url, ['application', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.yourApplication.pageTitle) }),
   };

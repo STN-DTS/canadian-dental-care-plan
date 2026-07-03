@@ -11,7 +11,7 @@ import { getEnv } from '~/.server/utils/env.utils';
  * @param request the incoming HTTP request object.
  * @returns the trimmed IP address or null if the "X-Forwarded-For" header is missing.
  */
-export function getClientIpAddress(request: Request): string | null {
+export function getClientIpAddress(request: Pick<Request, 'headers'>): string | null {
   const { NODE_ENV } = getEnv();
   if (NODE_ENV === 'development') {
     return '127.0.0.1';

@@ -49,14 +49,14 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 const orderEnumSchema = z.enum(['asc', 'desc']);
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('view-letters');
-  await securityHandler.validateAuthSession({ request, session });
-  const applicant = await securityHandler.requireApplicant({ params, request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
-  const sortParam = new URL(request.url).searchParams.get('sort');
+  const sortParam = url.searchParams.get('sort');
   const sortOrder = orderEnumSchema.catch('desc').parse(sortParam);
 
   const userInfoToken: UserinfoToken = session.get('userInfoToken');
@@ -69,7 +69,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 
   session.set('letters', letters);
 
-  const t = await getFixedT(request, ['letters', 'gcweb']);
+  const t = await getFixedT(url, ['letters', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };

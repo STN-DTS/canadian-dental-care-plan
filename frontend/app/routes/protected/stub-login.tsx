@@ -31,12 +31,12 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('stub-login');
 
-  const t = await getFixedT(request, ['stubLogin', 'gcweb']);
+  const t = await getFixedT(url, ['stubLogin', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };
@@ -53,12 +53,12 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   return { meta, defaultValues };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('stub-login');
 
-  const t = await getFixedT(request, 'stubLogin');
+  const t = await getFixedT(url, 'stubLogin');
 
   const stubLoginSchema = z.object({
     sin: z

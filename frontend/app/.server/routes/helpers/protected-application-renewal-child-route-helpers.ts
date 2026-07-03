@@ -16,7 +16,7 @@ type ProtectedApplicationRenewalChildState = OmitStrict<ProtectedApplicationStat
 
 interface LoadProtectedApplicationRenewalChildStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -25,9 +25,9 @@ interface LoadProtectedApplicationRenewalChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function loadProtectedApplicationRenewalChildState({ params, request, session }: LoadProtectedApplicationRenewalChildStateArgs): ProtectedApplicationRenewalChildState {
+export function loadProtectedApplicationRenewalChildState({ params, requestUrl, session }: LoadProtectedApplicationRenewalChildStateArgs): ProtectedApplicationRenewalChildState {
   const log = createLogger('protected-application-renewal-child-route-helpers/loadProtectedApplicationRenewalChildState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'renewal' || applicationState.typeOfApplication !== 'children') {
@@ -57,7 +57,7 @@ export function loadProtectedApplicationRenewalChildState({ params, request, ses
 
 interface LoadProtectedApplicationRenewalChildStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -66,8 +66,8 @@ interface LoadProtectedApplicationRenewalChildStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated child state.
  */
-export function loadProtectedApplicationRenewalChildStateForReview({ params, request, session }: LoadProtectedApplicationRenewalChildStateForReviewArgs) {
-  const state = loadProtectedApplicationRenewalChildState({ params, request, session });
+export function loadProtectedApplicationRenewalChildStateForReview({ params, requestUrl, session }: LoadProtectedApplicationRenewalChildStateForReviewArgs) {
+  const state = loadProtectedApplicationRenewalChildState({ params, requestUrl, session });
   return validateProtectedApplicationRenewalChildStateForReview({ params, state });
 }
 

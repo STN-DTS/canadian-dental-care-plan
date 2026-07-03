@@ -20,7 +20,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return [{ name: 'dcterms.accessRights', content: '1' }];
 });
 
-export function loader({ context, request }: Route.LoaderArgs) {
+export function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = appContainer.get(TYPES.ClientConfig);
   return { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS };

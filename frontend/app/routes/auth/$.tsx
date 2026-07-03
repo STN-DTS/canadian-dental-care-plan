@@ -34,7 +34,7 @@ function isSafeReturnUrl(returnUrl: string) {
 /**
  * A do-all authentication handler for the application
  */
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
   const log = createLogger('auth.$/loader');
   const { '*': slug } = params;
@@ -42,16 +42,16 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 
   switch (slug) {
     case 'login': {
-      return handleLoginRequest({ context, request });
+      return handleLoginRequest({ context, url });
     }
     case 'logout': {
-      return await handleLogoutRequest({ context, request });
+      return await handleLogoutRequest({ context, url });
     }
     case 'login/raoidc': {
-      return await handleRaoidcLoginRequest({ context, request });
+      return await handleRaoidcLoginRequest({ context, url });
     }
     case 'callback/raoidc': {
-      return await handleRaoidcCallbackRequest({ context, request });
+      return await handleRaoidcCallbackRequest({ context, url });
     }
     default: {
       log.warn('Invalid authentication route requested: [%s]', slug);
@@ -65,21 +65,21 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 /**
  * Handler for /auth/login requests
  */
-function handleLoginRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>) {
+function handleLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
   const { appContainer } = context.get(appContext);
   const log = createLogger('auth.$/handleLoginRequest');
   log.debug('Handling login request');
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('auth.login.requests').add(1);
 
-  const url = new URL(`/auth/login/${defaultProviderId}`, request.url);
-  url.search = new URL(request.url).search;
+  const loginUrl = new URL(`/auth/login/${defaultProviderId}`, url);
+  loginUrl.search = url.search;
 
-  log.debug('Redirecting to default provider handler: [%s]', url);
-  return redirectDocument(url.toString());
+  log.debug('Redirecting to default provider handler: [%s]', loginUrl);
+  return redirectDocument(loginUrl.toString());
 }
 
-async function handleLogoutRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>) {
+async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
   const { appContainer, session } = context.get(appContext);
   const log = createLogger('auth.$/handleLogoutRequest');
   log.debug('Handling RAOIDC logout request');
@@ -95,7 +95,7 @@ async function handleLogoutRequest({ context, request }: Pick<Route.LoaderArgs, 
   }
 
   const idToken: IdToken = session.get('idToken');
-  const detectedLocale = new URL(request.url).searchParams.get('locale');
+  const detectedLocale = url.searchParams.get('locale');
   const locale: AppLocale = detectedLocale === 'fr' ? 'fr' : 'en';
 
   const raoidcService = appContainer.get(TYPES.RaoidcService);
@@ -112,14 +112,14 @@ async function handleLogoutRequest({ context, request }: Pick<Route.LoaderArgs, 
 /**
  * Handler for /auth/login/raoidc requests
  */
-async function handleRaoidcLoginRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>) {
+async function handleRaoidcLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
   const { appContainer, session } = context.get(appContext);
   const log = createLogger('auth.$/handleRaoidcLoginRequest');
   log.debug('Handling RAOIDC login request');
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('auth.login.raoidc.requests').add(1);
 
-  const { origin, searchParams } = new URL(request.url);
+  const { origin, searchParams } = url;
   const returnUrl = searchParams.get('returnto');
 
   if (returnUrl && !isSafeReturnUrl(returnUrl)) {
@@ -149,7 +149,7 @@ async function handleRaoidcLoginRequest({ context, request }: Pick<Route.LoaderA
 /**
  * Handler for /auth/callback/raoidc requests
  */
-async function handleRaoidcCallbackRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>) {
+async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
   const { appContainer, session } = context.get(appContext);
   const log = createLogger('auth.$/handleRaoidcCallbackRequest');
   log.debug('Handling RAOIDC callback request');
@@ -173,10 +173,10 @@ async function handleRaoidcCallbackRequest({ context, request }: Pick<Route.Load
     throw redirectDocument(authLoginUrl);
   }
 
-  const redirectUri = generateCallbackUri(new URL(request.url).origin, 'raoidc');
+  const redirectUri = generateCallbackUri(url.origin, 'raoidc');
 
   log.debug('Storing auth tokens and userinfo in session');
-  const { idToken, userInfoToken } = await raoidcService.handleCallback({ request, codeVerifier: codeVerifier.unwrap(), expectedState: state.unwrap(), redirectUri });
+  const { idToken, userInfoToken } = await raoidcService.handleCallback({ requestUrl: url, codeVerifier: codeVerifier.unwrap(), expectedState: state.unwrap(), redirectUri });
   session.set('idToken', idToken);
   session.set('userInfoToken', userInfoToken);
 

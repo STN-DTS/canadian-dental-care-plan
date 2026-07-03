@@ -36,13 +36,13 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedFamilyState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 
-  const t = await getFixedT(request, ['applicationSimplifiedFamily', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['applicationSimplifiedFamily', 'gcweb']);
+  const locale = getLocale(url);
 
   if (
     !state.applicantInformation ||
@@ -143,9 +143,9 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedFamilyState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 
   const formData = await request.formData();
@@ -153,7 +153,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });
 
-  const t = await getFixedT(request, 'applicationSimplifiedFamily');
+  const t = await getFixedT(url, 'applicationSimplifiedFamily');
 
   clearPublicApplicationState({ params, session });
 

@@ -56,12 +56,8 @@ export function getAltLanguage(language: string): AppLocale {
  * @returns The language code ('en' or 'fr') if found, otherwise undefined.
  * @throws {Error} If the language code cannot be determined.
  */
-export function getLanguage(resource: Request | URL | string): AppLocale {
+export function getLanguage(resource: URL | string): AppLocale {
   switch (true) {
-    case resource instanceof Request: {
-      return getLanguageFromPathname(new URL(resource.url).pathname);
-    }
-
     case resource instanceof URL: {
       return getLanguageFromPathname(resource.pathname);
     }

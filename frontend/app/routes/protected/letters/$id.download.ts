@@ -10,11 +10,11 @@ import { appContext } from '~/.server/context';
 import { getLocale } from '~/.server/utils/locale.utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('view-letters');
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   if (!params.id) {
     throw data(null, { status: 400 });
@@ -33,7 +33,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     throw data(null, { status: 404 });
   }
 
-  const locale = getLocale(request);
+  const locale = getLocale(url);
   const letterType = await appContainer.get(TYPES.LetterTypeService).getLocalizedLetterTypeById(letter.letterTypeId, locale);
   const documentName = `${letterType.name}.pdf`;
 

@@ -32,23 +32,23 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const state = loadProtectedApplicationRenewalFamilyState({ params, request, session });
+  const state = loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-family']);
 
   if (shouldSkipMaritalStatus(state)) {
     throw redirect(getPathById('protected/application/$id/renewal-family/contact-information', params));
   }
 
-  const t = await getFixedT(request, ['protectedApplicationRenewalFamily', 'gcweb']);
+  const t = await getFixedT(url, ['protectedApplicationRenewalFamily', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.maritalStatus.pageTitle) }),
   };
-  const locale = getLocale(request);
+  const locale = getLocale(url);
   return {
     state: {
       maritalStatus: state.maritalStatus ? appContainer.get(TYPES.MaritalStatusService).getLocalizedMaritalStatusById(state.maritalStatus, locale) : undefined,

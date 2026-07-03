@@ -6,7 +6,7 @@ import { createLogger } from '~/.server/logging';
 import { BilingualNotFoundError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
 import { isAppLocale } from '~/utils/locale-utils';
 
-export function loader({ context, params, request }: Route.LoaderArgs) {
+export function loader({ context, params, url }: Route.LoaderArgs) {
   const log = createLogger('public/layout/loader');
 
   if (!isAppLocale(params.lang)) {

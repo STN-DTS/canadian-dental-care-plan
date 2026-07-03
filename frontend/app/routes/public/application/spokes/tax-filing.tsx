@@ -32,10 +32,10 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
-  const t = await getFixedT(request, ['application', 'gcweb']);
+  const t = await getFixedT(url, ['application', 'gcweb']);
 
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.taxFiling.pageTitle) }),
@@ -44,14 +44,14 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   return { meta, defaultState: state.hasFiledTaxes, taxYear: state.applicationYear.taxYear };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateCsrfToken({ formData, session });
 
-  const t = await getFixedT(request, 'application');
+  const t = await getFixedT(url, 'application');
 
   const taxFilingSchema = z.object({
     hasFiledTaxes: z.enum(TAX_FILING_OPTION, {

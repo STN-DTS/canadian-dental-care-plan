@@ -17,7 +17,7 @@ type PublicApplicationRenewalChildState = OmitStrict<PublicApplicationState, 'cl
 
 interface LoadPublicApplicationSimplifiedChildStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -26,9 +26,9 @@ interface LoadPublicApplicationSimplifiedChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function loadPublicApplicationSimplifiedChildState({ params, request, session }: LoadPublicApplicationSimplifiedChildStateArgs): PublicApplicationRenewalChildState {
+export function loadPublicApplicationSimplifiedChildState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateArgs): PublicApplicationRenewalChildState {
   const log = createLogger('public-application-simplified-child-route-helpers/loadPublicApplicationSimplifiedChildState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'simplified' || applicationState.typeOfApplication !== 'children') {
@@ -58,7 +58,7 @@ export function loadPublicApplicationSimplifiedChildState({ params, request, ses
 
 interface LoadPublicApplicationSimplifiedChildStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -67,8 +67,8 @@ interface LoadPublicApplicationSimplifiedChildStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated child state.
  */
-export function loadPublicApplicationSimplifiedChildStateForReview({ params, request, session }: LoadPublicApplicationSimplifiedChildStateForReviewArgs) {
-  const state = loadPublicApplicationSimplifiedChildState({ params, request, session });
+export function loadPublicApplicationSimplifiedChildStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateForReviewArgs) {
+  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl, session });
   return validatePublicApplicationSimplifiedChildStateForReview({ params, state });
 }
 

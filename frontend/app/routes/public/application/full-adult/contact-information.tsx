@@ -30,16 +30,16 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationFullAdultState({ params, request, session });
+  const state = loadPublicApplicationFullAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-adult']);
 
-  const t = await getFixedT(request, ['applicationFullAdult', 'gcweb']);
+  const t = await getFixedT(url, ['applicationFullAdult', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.contactInformation.pageTitle) }),
   };
-  const locale = getLocale(request);
+  const locale = getLocale(url);
 
   const mailingAddressInfo = state.mailingAddress?.hasChanged
     ? {

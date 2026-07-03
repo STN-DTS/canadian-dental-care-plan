@@ -6,7 +6,7 @@ import type { Route } from './+types/locales';
 
 import { initI18n } from '~/.server/utils/locale.utils';
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const language = params.lng;
   const namespace = params.ns;
 

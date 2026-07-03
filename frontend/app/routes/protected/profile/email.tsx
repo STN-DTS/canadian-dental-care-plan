@@ -49,8 +49,7 @@ const profileEmailContextSchema = z
 
 export type ProfileEmailContext = z.infer<typeof profileEmailContextSchema>;
 
-function requireProfileEmailContext({ request, params }: Pick<Route.LoaderArgs | Route.ActionArgs, 'request' | 'params'>): ProfileEmailContext {
-  const url = new URL(request.url);
+function requireProfileEmailContext({ url, params }: Pick<Route.LoaderArgs | Route.ActionArgs, 'url' | 'params'>): ProfileEmailContext {
   const searchParams = Object.fromEntries(url.searchParams);
   const parsed = profileEmailContextSchema.safeParse(searchParams);
 
@@ -83,14 +82,14 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, request, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
-  const profileEmailContext = requireProfileEmailContext({ request, params });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const profileEmailContext = requireProfileEmailContext({ url, params });
 
-  const t = await getFixedT(request, ['protectedProfile', 'gcweb']);
+  const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.email.pageTitle) }),
   };
@@ -105,17 +104,17 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
   securityHandler.validateCsrfToken({ formData, session });
-  const clientApplication = await securityHandler.requireClientApplication({ params, request, session });
-  const profileEmailContext = requireProfileEmailContext({ request, params });
+  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const profileEmailContext = requireProfileEmailContext({ url, params });
 
-  const t = await getFixedT(request, 'protectedProfile');
+  const t = await getFixedT(url, 'protectedProfile');
   const { ENGLISH_LANGUAGE_CODE } = appContainer.get(TYPES.ServerConfig);
   const idToken = session.get('idToken');
 

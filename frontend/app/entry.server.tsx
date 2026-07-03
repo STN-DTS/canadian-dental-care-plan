@@ -70,7 +70,7 @@ export default async function handleRequest(request: Request, responseStatusCode
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('http.server.requests').add(1);
 
-  const locale = getLocale(request);
+  const locale = getLocale(new URL(request.url));
   const routes = Object.values(routerContext.routeModules);
   const i18n = await initI18n(locale, getNamespaces(routes));
   const nonce = randomHexString(32);

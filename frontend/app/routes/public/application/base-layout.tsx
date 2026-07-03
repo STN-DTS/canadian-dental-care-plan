@@ -32,9 +32,9 @@ export const handle = {
   transformAdobeAnalyticsUrl,
 } as const satisfies RouteHandleData;
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
-  const locale = getLocale(request);
+  const locale = getLocale(url);
 
   const redisService = appContainer.find(TYPES.RedisService);
   const killswitchTimeout = (await redisService?.ttl(KILLSWITCH_KEY)) ?? 0;

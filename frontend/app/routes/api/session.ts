@@ -19,7 +19,7 @@ export type ApiSessionAction = (typeof API_SESSION_ACTIONS)[number];
 const API_SESSION_REDIRECT_TO_OPTIONS = ['cdcp-website', 'cdcp-website-apply', 'cdcp-website-renew', 'cdcp-website-status'] as const;
 export type ApiSessionRedirectTo = (typeof API_SESSION_REDIRECT_TO_OPTIONS)[number];
 
-export async function action({ context, request }: Route.ActionArgs) {
+export async function action({ context, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateRequestMethod({ request, allowedMethods: ['POST'] });

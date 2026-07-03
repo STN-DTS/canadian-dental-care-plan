@@ -32,15 +32,15 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ request, session });
+  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'intake');
 
-  const t = await getFixedT(request, ['protectedApplication', 'gcweb']);
+  const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.yourApplication.pageTitle) }),
   };
@@ -68,7 +68,7 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
       ...(shouldSkipNewOrReturningMemberStep ? {} : { newOrReturningMember: { completed: isNewOrReturningMemberSectionCompleted(state) } }),
     },
     meta,
-    locale: getLocale(request),
+    locale: getLocale(url),
   };
 }
 

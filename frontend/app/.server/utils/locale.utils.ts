@@ -13,8 +13,8 @@ import { APP_LOCALES } from '~/utils/locale-utils';
  * Returns a t function that defaults to the language resolved through the request.
  * @see https://www.i18next.com/overview/api#getfixedt
  */
-export async function getFixedT<const N extends Namespace>(localeOrRequest: AppLocale | Request, namespaces: N) {
-  const locale = typeof localeOrRequest === 'string' ? localeOrRequest : getLocale(localeOrRequest);
+export async function getFixedT<const N extends Namespace>(localeOrRequestUrl: AppLocale | URL, namespaces: N) {
+  const locale = typeof localeOrRequestUrl === 'string' ? localeOrRequestUrl : getLocale(localeOrRequestUrl);
   const i18n = await initI18n(locale, namespaces);
   return i18n.getFixedT(locale, namespaces);
 }
@@ -22,16 +22,16 @@ export async function getFixedT<const N extends Namespace>(localeOrRequest: AppL
 /**
  * Extracts and returns the locale from the provided request URL.
  *
- * This function analyzes the pathname of the given `request` URL to determine the locale. It supports
+ * This function analyzes the pathname of the given `requestUrl` to determine the locale. It supports
  * English (`'en'`) and French (`'fr'`). If the pathname does not start with `/en` or `/fr`, the function
  * defaults to English (`'en'`).
  *
- * @param request - The HTTP request object containing the URL from which to extract the locale.
+ * @param requestUrl - The URL object from which to extract the locale.
  * @returns The detected locale, either `'en'` or `'fr'`. Defaults to `'en'` if no valid locale is found.
  */
-export function getLocale(request: Request): AppLocale {
+export function getLocale(requestUrl: URL): AppLocale {
   const log = createLogger('locale-utils.server/getLocale');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
 
   if (pathname.startsWith('/en')) {
     log.debug('Locale [en] detected in URL; pathname: [%s]', pathname);

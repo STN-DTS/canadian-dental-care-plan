@@ -53,8 +53,8 @@ interface GenerateSignoutRequestArgs {
  * Parameters for handling the OIDC callback request.
  */
 interface HandleCallbackArgs {
-  /** The HTTP request object containing the callback data. */
-  request: Request;
+  /** The HTTP request URL containing the callback data. */
+  requestUrl: URL;
   /** The code verifier used in the initial signin request. */
   codeVerifier: string;
   /** The expected state to validate against the callback state parameter. */
@@ -150,13 +150,14 @@ export class DefaultRaoidcService implements RaoidcService {
     return expandTemplate(AUTH_LOGOUT_REDIRECT_URL, { clientId: AUTH_RAOIDC_CLIENT_ID, sharedSessionId: sessionId, uiLocales: locale });
   }
 
-  async handleCallback({ request, codeVerifier, expectedState, redirectUri }: HandleCallbackArgs): Promise<HandleCallbackResult> {
+  async handleCallback({ requestUrl, codeVerifier, expectedState, redirectUri }: HandleCallbackArgs): Promise<HandleCallbackResult> {
     this.log.debug('Handling OIDC callback');
     const { AUTH_JWT_PRIVATE_KEY, AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;
 
-    const authCode = new URL(request.url).searchParams.get('code');
-    const error = new URL(request.url).searchParams.get('error');
-    const state = new URL(request.url).searchParams.get('state');
+    const { searchParams } = requestUrl;
+    const authCode = searchParams.get('code');
+    const error = searchParams.get('error');
+    const state = searchParams.get('state');
 
     if (error) {
       throw new Error(`Unexpected error: ${error}`);

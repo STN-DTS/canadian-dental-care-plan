@@ -105,7 +105,7 @@ describe('DefaultRaoidcService', () => {
   describe('handleCallback', () => {
     it('should handle a callback', async () => {
       // Implementation for handleCallback test
-      const mockRequest = new Request('http://localhost?code=mock_auth_code&state=mock_state');
+      const mockRequestUrl = new URL('http://localhost?code=mock_auth_code&state=mock_state');
       const codeVerifier = 'mock_code_verifier';
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
@@ -130,36 +130,36 @@ describe('DefaultRaoidcService', () => {
       vi.mocked(fetchAccessToken).mockResolvedValue({ accessToken: mockAccessToken, idToken: mockIdToken });
       vi.mocked(fetchUserInfo).mockResolvedValue(mockUserInfoToken);
 
-      const result = await service.handleCallback({ request: mockRequest, codeVerifier, expectedState, redirectUri });
+      const result = await service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri });
 
       expect(result).toEqual({ accessToken: mockAccessToken, idToken: mockIdToken, userInfoToken: mockUserInfoToken });
     });
 
     it('should handle a callback with error parameter', async () => {
-      const mockRequest = new Request('http://localhost?error=mock_error&state=mock_state');
+      const mockRequestUrl = new URL('http://localhost?error=mock_error&state=mock_state');
       const codeVerifier = 'mock_code_verifier';
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ request: mockRequest, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Unexpected error: mock_error');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Unexpected error: mock_error');
     });
 
     it('should handle a callback with missing authorization code', async () => {
-      const mockRequest = new Request('http://localhost?state=mock_state');
+      const mockRequestUrl = new URL('http://localhost?state=mock_state');
       const codeVerifier = 'mock_code_verifier';
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ request: mockRequest, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Missing authorization code in response');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Missing authorization code in response');
     });
 
     it('should handle a callback with state mismatch', async () => {
-      const mockRequest = new Request('http://localhost?code=mock_auth_code&state=wrong_state');
+      const mockRequestUrl = new URL('http://localhost?code=mock_auth_code&state=wrong_state');
       const codeVerifier = 'mock_code_verifier';
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ request: mockRequest, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('CSRF error: incoming state [wrong_state] does not match expected state [mock_state]');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('CSRF error: incoming state [wrong_state] does not match expected state [mock_state]');
     });
   });
 });

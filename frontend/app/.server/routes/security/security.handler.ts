@@ -19,8 +19,8 @@ import { getPathById } from '~/utils/route-utils';
  * Parameters for validating the RAOIDC authentication session.
  */
 export interface ValidateAuthSessionParams {
-  /**  The incoming request to validate. */
-  request: Request;
+  /**  The incoming request URL to validate. */
+  requestUrl: URL;
 
   /**  The session object to validate.*/
   session: Session;
@@ -45,7 +45,7 @@ export interface ValidateHCaptchaResponseParams {
   formData: FormData;
 
   /** The incoming request, used to extract the user's IP address. */
-  request: Request;
+  request: Pick<Request, 'headers'>;
 
   /** The user ID performing the validation (defaults to 'anonymous' if not provided). */
   userId?: string;
@@ -64,7 +64,7 @@ export interface ValidateRequestMethodParams {
   allowedMethods: Array<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>;
 
   /** The incoming request. */
-  request: Request;
+  request: Pick<Request, 'method' | 'url'>;
 }
 
 /**
@@ -73,7 +73,7 @@ export interface ValidateRequestMethodParams {
 export interface RequireClientApplicationParams {
   applicationYearId?: string;
   params: Params;
-  request: Request;
+  requestUrl: URL;
   session: Session;
   options?: {
     /** Custom URL to redirect to instead of the default data-unavailable route */
@@ -86,7 +86,7 @@ export interface RequireClientApplicationParams {
  */
 export interface RequireApplicantArgs {
   params: Params;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -215,17 +215,17 @@ export class DefaultSecurityHandler implements SecurityHandler {
   /**
    * Validates the RAOIDC authentication session.
    *
-   * @param params - The session and request to validate.
+   * @param params - The session and request URL to validate.
    * @throws {Response} Redirects to the login page if the session is invalid.
    * @returns {Promise<void>} Resolves if the session is valid.
    */
-  async validateAuthSession({ request, session }: ValidateAuthSessionParams): Promise<void> {
+  async validateAuthSession({ requestUrl, session }: ValidateAuthSessionParams): Promise<void> {
     this.log.debug('Validating RAOIDC session [%s]', session.id);
     const result = await this.raoidcSessionValidator.validateRaoidcSession({ session });
 
     if (!result.isValid) {
       this.log.debug('RAOIDC session [%s] is invalid; errorMessage: %s', session.id, result.errorMessage);
-      const { pathname, searchParams } = new URL(request.url);
+      const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
@@ -318,13 +318,13 @@ export class DefaultSecurityHandler implements SecurityHandler {
     this.log.debug('Request method [%s] is allowed for path [%s] with allowed methods [%s]', method, pathname, allowedMethods);
   }
 
-  async requireClientApplication({ applicationYearId, params, request, session, options }: RequireClientApplicationParams): Promise<ClientApplicationDto> {
+  async requireClientApplication({ applicationYearId, params, requestUrl, session, options }: RequireClientApplicationParams): Promise<ClientApplicationDto> {
     this.log.debug('Requiring client application for session [%s]', session.id);
     const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
 
     if (!userInfoToken?.sin) {
       this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
-      const { pathname, searchParams } = new URL(request.url);
+      const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
@@ -345,14 +345,14 @@ export class DefaultSecurityHandler implements SecurityHandler {
     return clientApplicationOption.unwrap();
   }
 
-  async requireApplicant({ params, request, session }: RequireApplicantArgs): Promise<ApplicantDto> {
+  async requireApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ApplicantDto> {
     this.log.debug('Requiring applicant for session [%s]', session.id);
 
     const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
 
     if (!userInfoToken?.sin) {
       this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
-      const { pathname, searchParams } = new URL(request.url);
+      const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }

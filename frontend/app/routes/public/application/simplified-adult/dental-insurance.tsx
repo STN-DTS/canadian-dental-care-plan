@@ -40,13 +40,13 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, request, params }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
-  const t = await getFixedT(request, ['applicationSimplifiedAdult', 'gcweb']);
-  const locale = getLocale(request);
+  const t = await getFixedT(url, ['applicationSimplifiedAdult', 'gcweb']);
+  const locale = getLocale(url);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.dentalInsurance.pageTitle) }),
   };
@@ -117,9 +117,9 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, request, session });
+  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const formData = await request.formData();

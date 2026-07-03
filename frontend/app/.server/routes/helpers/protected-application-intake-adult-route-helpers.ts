@@ -11,7 +11,7 @@ import { getPathById } from '~/utils/route-utils';
 
 interface LoadProtectedApplicationIntakeAdultStateArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -20,9 +20,9 @@ interface LoadProtectedApplicationIntakeAdultStateArgs {
  * @param args - The arguments.
  * @returns The loaded adult state.
  */
-export function loadProtectedApplicationIntakeAdultState({ params, request, session }: LoadProtectedApplicationIntakeAdultStateArgs) {
+export function loadProtectedApplicationIntakeAdultState({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateArgs) {
   const log = createLogger('protected-application-intake-adult-route-helpers/loadProtectedApplicationIntakeAdultState');
-  const { pathname } = new URL(request.url);
+  const { pathname } = requestUrl;
   const applicationState = getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'intake' || applicationState.typeOfApplication !== 'adult') {
@@ -50,7 +50,7 @@ export function loadProtectedApplicationIntakeAdultState({ params, request, sess
 
 interface LoadProtectedApplicationIntakeAdultStateForReviewArgs {
   params: ApplicationStateParams;
-  request: Request;
+  requestUrl: URL;
   session: Session;
 }
 
@@ -59,8 +59,8 @@ interface LoadProtectedApplicationIntakeAdultStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated adult state.
  */
-export function loadProtectedApplicationIntakeAdultStateForReview({ params, request, session }: LoadProtectedApplicationIntakeAdultStateForReviewArgs) {
-  const state = loadProtectedApplicationIntakeAdultState({ params, request, session });
+export function loadProtectedApplicationIntakeAdultStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateForReviewArgs) {
+  const state = loadProtectedApplicationIntakeAdultState({ params, requestUrl, session });
   return validateProtectedApplicationIntakeAdultStateForReview({ params, state });
 }
 
