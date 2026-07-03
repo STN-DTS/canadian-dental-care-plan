@@ -7,6 +7,7 @@ import * as z from 'zod';
 import type { Route } from './+types/stub-login';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getFixedT } from '~/.server/utils/locale.utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
 import { transformFlattenedError } from '~/.server/utils/zod.utils';
@@ -30,7 +31,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('stub-login');
 
@@ -51,7 +53,8 @@ export async function loader({ context: { appContainer, session }, request }: Ro
   return { meta, defaultValues };
 }
 
-export async function action({ context: { appContainer, session }, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('stub-login');
 

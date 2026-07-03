@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import type { Route } from './+types/layout';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getLocale } from '~/.server/utils/locale.utils';
 import { PublicLayout, publicLayoutI18nNamespace } from '~/components/layouts/public-layout';
 import SessionTimeout from '~/components/session-timeout';
@@ -15,8 +16,8 @@ export const handle = {
   i18nPreloadNamespace: [publicLayoutI18nNamespace, 'status'],
 } as const satisfies RouteHandleData;
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function loader({ context: { appContainer, session }, request }: Route.LoaderArgs) {
+export function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer } = context.get(appContext);
   const locale = getLocale(request);
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = appContainer.get(TYPES.ClientConfig);
   return { locale, SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS };

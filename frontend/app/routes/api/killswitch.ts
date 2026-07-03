@@ -4,6 +4,7 @@
 import type { Route } from './+types/killswitch';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
@@ -11,14 +12,15 @@ import { HttpStatusCodes } from '~/constants/http-status-codes';
 export async function loader({ context, params, request }: Route.LoaderArgs) {
   const log = createLogger('killswitch/loader');
 
-  const serverConfig = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const serverConfig = appContainer.get(TYPES.ServerConfig);
 
   if (!serverConfig.ENABLED_FEATURES.includes('killswitch-api')) {
     log.warn('killswitch-api is not enabled; returning 404 response');
     throw Response.json(null, { status: HttpStatusCodes.NOT_FOUND });
   }
 
-  const redisService = context.appContainer.find(TYPES.RedisService);
+  const redisService = appContainer.find(TYPES.RedisService);
   const currentRemainingTime = await redisService?.ttl(KILLSWITCH_KEY);
 
   if (currentRemainingTime && currentRemainingTime >= 0) {

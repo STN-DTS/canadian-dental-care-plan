@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from './+types/base-layout';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { getLocale } from '~/.server/utils/locale.utils';
 import { KillswitchDialog } from '~/components/killswitch-dialog';
@@ -33,7 +34,8 @@ export const handle = {
   transformAdobeAnalyticsUrl,
 } as const satisfies RouteHandleData;
 
-export async function loader({ context: { appContainer, session }, request, params }: Route.LoaderArgs) {
+export async function loader({ context, request, params }: Route.LoaderArgs) {
+  const { appContainer } = context.get(appContext);
   const locale = getLocale(request);
 
   const redisService = appContainer.find(TYPES.RedisService);

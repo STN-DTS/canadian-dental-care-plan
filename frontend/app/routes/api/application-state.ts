@@ -6,6 +6,7 @@ import * as z from 'zod';
 import type { Route } from './+types/application-state';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { ApplicationStateParams } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -13,7 +14,8 @@ import type { ApplicationStateParams } from '~/.server/routes/helpers/public-app
 const API_APPLICATION_STATE_ACTIONS = ['extend'] as const;
 export type ApiApplicationStateAction = (typeof API_APPLICATION_STATE_ACTIONS)[number];
 
-export async function action({ context: { appContainer, session }, request }: Route.ActionArgs) {
+export async function action({ context, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateRequestMethod({ request, allowedMethods: ['POST'] });
 

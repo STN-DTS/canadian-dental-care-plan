@@ -8,6 +8,7 @@ import { useApplicationFlowCheck } from '~/hooks/use-application-flow-check';
 import { useApplicationFlowStorage } from '~/hooks/use-application-flow-storage';
 
 vi.mock('react-router', () => ({
+  createContext: vi.fn(),
   useNavigate: vi.fn(),
   useNavigation: vi.fn(),
 }));

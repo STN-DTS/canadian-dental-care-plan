@@ -7,6 +7,7 @@ import * as z from 'zod';
 import type { Route } from './+types/renewal-selection';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import {
   getContextualAgeCategoryFromDate,
   getProtectedApplicationState,
@@ -37,7 +38,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ request, session });
 
@@ -86,7 +88,8 @@ function getEligibleApplicantsForRenewalSelection({ clientApplication }: Pick<Pr
   return eligibleApplicants;
 }
 
-export async function action({ context: { appContainer, session }, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ request, session });
 

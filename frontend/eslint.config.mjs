@@ -70,6 +70,10 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
+      // Rule: @typescript-eslint/no-unused-vars
+      // Note: you must disable the base rule as it can report incorrect errors
+      // https://typescript-eslint.io/rules/no-unused-vars/#how-to-use
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',

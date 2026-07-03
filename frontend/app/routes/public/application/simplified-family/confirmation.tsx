@@ -6,6 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { Route } from './+types/confirmation';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getEligibilityStatus } from '~/.server/routes/helpers/base-application-route-helpers';
 import { clearPublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { loadPublicApplicationSimplifiedFamilyState } from '~/.server/routes/helpers/public-application-simplified-family-route-helpers';
@@ -35,7 +36,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const state = loadPublicApplicationSimplifiedFamilyState({ params, request, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 
@@ -141,7 +143,8 @@ export async function loader({ context: { appContainer, session }, params, reque
   };
 }
 
-export async function action({ context: { appContainer, session }, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const state = loadPublicApplicationSimplifiedFamilyState({ params, request, session });
   validateApplicationFlow(state, params, ['simplified-family']);
 

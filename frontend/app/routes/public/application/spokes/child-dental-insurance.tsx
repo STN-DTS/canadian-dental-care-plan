@@ -8,6 +8,7 @@ import * as z from 'zod';
 import type { Route } from './+types/child-dental-insurance';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getPublicApplicationState, getSingleChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale.utils';
 import { transformFlattenedError } from '~/.server/utils/zod.utils';
@@ -44,7 +45,8 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return getTitleMetaTags(loaderData.meta.title, loaderData.meta.dcTermsTitle);
 });
 
-export async function loader({ context: { appContainer, session }, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, request }: Route.LoaderArgs) {
+  const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-children', 'full-family', 'simplified-children', 'simplified-family']);
   const childState = getSingleChildState({ params, session });
@@ -76,7 +78,8 @@ export async function loader({ context: { appContainer, session }, params, reque
   return { meta, defaultState: childState.dentalInsurance, childName, applicationFlow: `${state.inputModel}-${state.typeOfApplication}` };
 }
 
-export async function action({ context: { appContainer, session }, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-children', 'full-family', 'simplified-children', 'simplified-family']);
 

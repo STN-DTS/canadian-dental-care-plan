@@ -10,6 +10,7 @@ import * as z from 'zod';
 import type { Route } from './+types/contact-information';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { loadPublicApplicationSimplifiedAdultState } from '~/.server/routes/helpers/public-application-simplified-adult-route-helpers';
 import { isAddressSectionCompleted, isCommunicationPreferencesSectionCompleted, isPhoneNumberSectionCompleted } from '~/.server/routes/helpers/public-application-simplified-section-checks';
@@ -42,7 +43,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request, params }: Route.LoaderArgs) {
+export async function loader({ context, request, params }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const state = loadPublicApplicationSimplifiedAdultState({ params, request, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
@@ -117,7 +119,8 @@ export async function loader({ context: { appContainer, session }, request, para
   };
 }
 
-export async function action({ context: { appContainer, session }, params, request }: Route.ActionArgs) {
+export async function action({ context, params, request }: Route.ActionArgs) {
+  const { appContainer, session } = context.get(appContext);
   const state = loadPublicApplicationSimplifiedAdultState({ params, request, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 

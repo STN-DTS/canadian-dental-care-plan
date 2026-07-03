@@ -1,10 +1,9 @@
-import type { AppLoadContext } from 'react-router';
-
 import { UTCDate } from '@date-fns/utc';
 import type express from 'express';
 import type { SetOptional } from 'type-fest';
 
 import { getAppContainerProvider } from '~/.server/app.container';
+import type { AppContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
 import { randomString } from '~/utils/string-utils';
@@ -20,7 +19,7 @@ type RequestWithOptionalSession = SetOptional<Pick<express.Request, 'session'>, 
  * @param req - The Express request object.
  * @returns An AppContext instance containing the application context.
  */
-export function getAppContext(req: RequestWithOptionalSession): AppLoadContext {
+export function getAppContext(req: RequestWithOptionalSession): AppContext {
   const appContainer = getAppContainerProvider();
 
   // `request.session` may be undefined if session middleware is not applied,

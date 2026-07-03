@@ -6,10 +6,12 @@ import { Buffer } from 'node:buffer';
 import type { Route } from './+types/$id.download';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getLocale } from '~/.server/utils/locale.utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
 
-export async function loader({ context: { appContainer, session }, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('view-letters');
   await securityHandler.validateAuthSession({ request, session });

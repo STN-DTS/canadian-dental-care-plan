@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from './+types/index';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { isWithinRenewalPeriod, startProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale.utils';
@@ -28,7 +29,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request, params }: Route.LoaderArgs) {
+export async function loader({ context, request, params }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ request, session });
 

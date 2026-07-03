@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/eligibility-requirements';
 
+import { appContext } from '~/.server/context';
 import { isTaxFilingSectionCompleted, isTermsAndConditionsSectionCompleted } from '~/.server/routes/helpers/public-application-entry-section-checks';
 import { getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale.utils';
@@ -23,7 +24,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request, params }: Route.LoaderArgs) {
+export async function loader({ context, request, params }: Route.LoaderArgs) {
+  const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   const t = await getFixedT(request, ['application', 'gcweb']);
   const meta = {

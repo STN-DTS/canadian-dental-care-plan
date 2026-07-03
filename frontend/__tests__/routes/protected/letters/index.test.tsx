@@ -2,13 +2,16 @@ import type { RouterContextProvider } from 'react-router';
 
 import { None } from 'oxide.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mock, mockDeep } from 'vitest-mock-extended';
+import { mock } from 'vitest-mock-extended';
 
+import type { AppContainerProvider } from '~/.server/app-container.provider';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';
 import type { SecurityHandler } from '~/.server/routes/security';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
+import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
 vi.mock('~/.server/utils/locale.utils');
@@ -20,13 +23,13 @@ describe('Letters Page', () => {
 
   describe('loader()', () => {
     it('should return sorted letters', async () => {
-      const mockRouterContext = mockDeep<RouterContextProvider>();
+      const mockSession = mock<Session>();
+      mockSession.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
+      mockSession.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999', sub: '1111111' } as UserinfoToken);
+      mockSession.find.calledWith('applicant').mockReturnValueOnce(None);
 
-      mockRouterContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
-      mockRouterContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999', sub: '1111111' } as UserinfoToken);
-      mockRouterContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
-
-      mockRouterContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
+      const mockAppContainer = mock<AppContainerProvider>();
+      mockAppContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
         mock<SecurityHandler>({
           requireApplicant: async () =>
             await Promise.resolve({
@@ -47,13 +50,13 @@ describe('Letters Page', () => {
             }),
         }),
       );
-      mockRouterContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValueOnce({
+      mockAppContainer.get.calledWith(TYPES.ClientConfig).mockReturnValueOnce({
         SCCH_BASE_URI: 'https://api.example.com',
       } satisfies Partial<ClientConfig>);
-      mockRouterContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
+      mockAppContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
         createAudit: vi.fn(),
       } satisfies Partial<AuditService>);
-      mockRouterContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
+      mockAppContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
         findLettersByClientId: async () =>
           await Promise.resolve([
             { id: '1', date: '2024-12-25', letterTypeId: 'ACC' },
@@ -61,13 +64,19 @@ describe('Letters Page', () => {
             { id: '3', date: '2004-02-29', letterTypeId: 'DEN' },
           ]),
       } satisfies Partial<LetterService>);
-      mockRouterContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
+      mockAppContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
         listLetterTypes: async () =>
           await Promise.resolve([
             { id: 'ACC', nameEn: 'Accepted', nameFr: '(FR) Accepted' },
             { id: 'DEN', nameEn: 'Denied', nameFr: '(FR) Denied' },
           ]),
       } satisfies Partial<LetterTypeService>);
+
+      const mockRouterContext = mock<Readonly<RouterContextProvider>>();
+      mockRouterContext.get.calledWith(appContext).mockReturnValueOnce({
+        appContainer: mockAppContainer,
+        session: mockSession,
+      });
 
       const response = await loader({
         request: new Request('http://localhost/letters?sort=desc'),
@@ -86,13 +95,13 @@ describe('Letters Page', () => {
   });
 
   it('retrieves letter types', async () => {
-    const mockRouterContext = mockDeep<RouterContextProvider>();
+    const mockSession = mock<Session>();
+    mockSession.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
+    mockSession.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999' } as UserinfoToken);
+    mockSession.find.calledWith('applicant').mockReturnValueOnce(None);
 
-    mockRouterContext.session.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
-    mockRouterContext.session.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999' } as UserinfoToken);
-    mockRouterContext.session.find.calledWith('applicant').mockReturnValueOnce(None);
-
-    mockRouterContext.appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
+    const mockAppContainer = mock<AppContainerProvider>();
+    mockAppContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
       mock<SecurityHandler>({
         requireApplicant: async () =>
           await Promise.resolve({
@@ -113,13 +122,13 @@ describe('Letters Page', () => {
           }),
       }),
     );
-    mockRouterContext.appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({
+    mockAppContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({
       SCCH_BASE_URI: 'https://api.example.com',
     } satisfies Partial<ClientConfig>);
-    mockRouterContext.appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
+    mockAppContainer.get.calledWith(TYPES.AuditService).mockReturnValue({
       createAudit: vi.fn(),
     } satisfies Partial<AuditService>);
-    mockRouterContext.appContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
+    mockAppContainer.get.calledWith(TYPES.LetterService).mockReturnValue({
       findLettersByClientId: async () =>
         await Promise.resolve([
           { id: '1', date: '2024-12-25', letterTypeId: 'ACC' },
@@ -127,13 +136,19 @@ describe('Letters Page', () => {
           { id: '3', date: '2004-02-29', letterTypeId: 'DEN' },
         ]),
     } satisfies Partial<LetterService>);
-    mockRouterContext.appContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
+    mockAppContainer.get.calledWith(TYPES.LetterTypeService).mockReturnValue({
       listLetterTypes: async () =>
         await Promise.resolve([
           { id: 'ACC', nameEn: 'Accepted', nameFr: '(FR) Accepted' },
           { id: 'DEN', nameEn: 'Denied', nameFr: '(FR) Denied' },
         ]),
     } satisfies Partial<LetterTypeService>);
+
+    const mockRouterContext = mock<Readonly<RouterContextProvider>>();
+    mockRouterContext.get.calledWith(appContext).mockReturnValueOnce({
+      appContainer: mockAppContainer,
+      session: mockSession,
+    });
 
     const response = await loader({
       request: new Request('http://localhost/letters'),

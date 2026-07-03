@@ -10,6 +10,7 @@ import { PassThrough } from 'node:stream';
 import { I18nextProvider } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { generateContentSecurityPolicy } from '~/.server/utils/csp.utils';
 import { getLocale, initI18n } from '~/.server/utils/locale.utils';
@@ -29,7 +30,8 @@ import { randomHexString } from '~/utils/string-utils';
  * @see https://remix.run/docs/en/main/file-conventions/entry.server#handledatarequest
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function handleDataRequest(response: Response, { context: { appContainer }, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+export async function handleDataRequest(response: Response, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+  const { appContainer } = context.get(appContext);
   const log = createLogger('entry.server/handleDataRequest');
   log.debug('Touching session to extend its lifetime');
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
@@ -43,7 +45,8 @@ export async function handleDataRequest(response: Response, { context: { appCont
  *
  * @see https://remix.run/docs/en/main/file-conventions/entry.server#handleerror
  */
-export function handleError(error: unknown, { context: { appContainer }, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+export function handleError(error: unknown, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+  const { appContainer } = context.get(appContext);
   // note that you generally want to avoid logging when the request was aborted, since remix's
   // cancellation and race-condition handling can cause a lot of requests to be aborted
   const log = createLogger('entry.server/handleError');
@@ -59,7 +62,8 @@ export function handleError(error: unknown, { context: { appContainer }, request
   }
 }
 
-export default async function handleRequest(request: Request, responseStatusCode: number, responseHeaders: Headers, routerContext: EntryContext, { appContainer }: RouterContextProvider) {
+export default async function handleRequest(request: Request, responseStatusCode: number, responseHeaders: Headers, routerContext: EntryContext, context: RouterContextProvider) {
+  const { appContainer } = context.get(appContext);
   const log = createLogger('entry.server/handleRequest');
   const handlerFnName = isbot(request.headers.get('user-agent')) ? 'onAllReady' : 'onShellReady';
   log.debug(`Handling [${request.method}] request to [${request.url}] with handler function [${handlerFnName}]`);

@@ -6,6 +6,7 @@ import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/c
 import { Dialog } from '~/components/dialog';
 
 vi.mock('react-router', () => ({
+  createContext: vi.fn(),
   useFetcher: vi.fn(() => ({
     Form: vi.fn(({ children, method, noValidate }) => <form method={method}>{children}</form>),
     state: 'idle',

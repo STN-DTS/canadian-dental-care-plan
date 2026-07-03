@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from './+types/layout';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { NotFoundError, ProtectedLayout, ServerError, protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
 import { useApiSession } from '~/utils/api-session-utils';
@@ -19,8 +20,8 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return [{ name: 'dcterms.accessRights', content: '1' }];
 });
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function loader({ context: { appContainer, session }, request }: Route.LoaderArgs) {
+export function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer } = context.get(appContext);
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = appContainer.get(TYPES.ClientConfig);
   return { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS };
 }

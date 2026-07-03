@@ -7,6 +7,7 @@ import * as z from 'zod';
 import type { Route } from './+types/$';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { generateCryptoKey } from '~/.server/utils/crypto.utils';
 import type { MockName } from '~/.server/utils/env.utils';
@@ -50,7 +51,8 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
 export async function action({ context, params, request }: Route.ActionArgs) {
   validateRaoidcMockEnabled({ context });
 
-  const securityHandler = context.appContainer.get(TYPES.SecurityHandler);
+  const { appContainer } = context.get(appContext);
+  const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateRequestMethod({ request, allowedMethods: ['POST'] });
 
   const log = createLogger('oidc.$/action');
@@ -69,7 +71,8 @@ export async function action({ context, params, request }: Route.ActionArgs) {
 }
 
 function validateRaoidcMockEnabled({ context }: Pick<Route.LoaderArgs, 'context'>): void {
-  const { ENABLED_MOCKS } = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const { ENABLED_MOCKS } = appContainer.get(TYPES.ServerConfig);
   const mockName = 'raoidc' satisfies MockName;
 
   if (!ENABLED_MOCKS.includes(mockName)) {
@@ -83,7 +86,8 @@ function validateRaoidcMockEnabled({ context }: Pick<Route.LoaderArgs, 'context'
 // OIDC `/.well-known/openid-configuration` endpoint mock
 //
 function handleOpenidConfigurationRequest({ context }: Pick<Route.LoaderArgs, 'context'>): Response {
-  const { AUTH_RAOIDC_BASE_URL } = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const { AUTH_RAOIDC_BASE_URL } = appContainer.get(TYPES.ServerConfig);
   const ServerMetadata: ServerMetadata = {
     issuer: 'GC-ECAS-MOCK',
     authorization_endpoint: `${AUTH_RAOIDC_BASE_URL}/authorize`,
@@ -111,7 +115,8 @@ function handleOpenidConfigurationRequest({ context }: Pick<Route.LoaderArgs, 'c
 // OIDC `/jwks` endpoint mock
 //
 async function handleJwksRequest({ context }: Pick<Route.LoaderArgs, 'context'>): Promise<Response> {
-  const { AUTH_JWT_PUBLIC_KEY } = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const { AUTH_JWT_PUBLIC_KEY } = appContainer.get(TYPES.ServerConfig);
 
   const serverVerificationKey = await generateCryptoKey(AUTH_JWT_PUBLIC_KEY, 'verify');
   const publicJwk = await subtle.exportKey('jwk', serverVerificationKey);
@@ -125,7 +130,8 @@ async function handleJwksRequest({ context }: Pick<Route.LoaderArgs, 'context'>)
 // OIDC `/token` endpoint mock
 //
 async function handleTokenRequest({ context }: Pick<Route.LoaderArgs, 'context'>): Promise<Response> {
-  const { AUTH_JWT_PRIVATE_KEY, AUTH_JWT_PUBLIC_KEY } = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const { AUTH_JWT_PRIVATE_KEY, AUTH_JWT_PUBLIC_KEY } = appContainer.get(TYPES.ServerConfig);
 
   // RAOIDC returns an access token that is encrypted using its private key
   const encryptedAccessToken = await generateAccessToken(AUTH_JWT_PUBLIC_KEY, AUTH_JWT_PRIVATE_KEY);
@@ -147,7 +153,8 @@ async function handleTokenRequest({ context }: Pick<Route.LoaderArgs, 'context'>
 // OIDC `/userinfo` endpoint mock
 //
 async function handleUserInfoRequest({ context }: Pick<Route.LoaderArgs, 'context'>): Promise<Response> {
-  const { AUTH_JWT_PRIVATE_KEY, AUTH_JWT_PUBLIC_KEY } = context.appContainer.get(TYPES.ServerConfig);
+  const { appContainer } = context.get(appContext);
+  const { AUTH_JWT_PRIVATE_KEY, AUTH_JWT_PUBLIC_KEY } = appContainer.get(TYPES.ServerConfig);
 
   const encryptedUserinfoToken = await generateUserInfoToken(AUTH_JWT_PUBLIC_KEY, AUTH_JWT_PRIVATE_KEY);
 
@@ -169,7 +176,8 @@ function handleValidateSessionRequest(): Response {
 /**
  * @see https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint
  */
-function handleMockAuthorizeRequest({ context: { appContainer }, request }: Pick<Route.LoaderArgs, 'context' | 'request'>): Response {
+function handleMockAuthorizeRequest({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>): Response {
+  const { appContainer } = context.get(appContext);
   const log = createLogger('oidc.$/handleMockAuthorizeRequest');
   log.debug('Handling (mock) RAOIDC authorize request');
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);

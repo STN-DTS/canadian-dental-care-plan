@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from './+types/your-application';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { isNewOrReturningMemberSectionCompleted, isPersonalInformationSectionCompleted, isTypeOfApplicationSectionCompleted } from '~/.server/routes/helpers/protected-application-entry-section-checks';
 import type { ApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getInitialApplicationFlowUrl, getProtectedApplicationState, shouldSkipNewOrReturningMember, validateProtectedApplicationContext } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -31,7 +32,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request, params }: Route.LoaderArgs) {
+export async function loader({ context, request, params }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ request, session });
 

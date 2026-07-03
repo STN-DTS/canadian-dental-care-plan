@@ -6,6 +6,7 @@ import { RouterContextProvider } from 'react-router';
 
 import express from 'express';
 
+import { appContext } from '~/.server/context';
 import { getAppContext } from '~/.server/express-server/app-context';
 import { getEnv } from '~/.server/utils/env.utils';
 import { setSingleton } from '~/.server/utils/instance-registry';
@@ -19,11 +20,7 @@ app.use(
     mode: getEnv().NODE_ENV,
     getLoadContext: (req) => {
       const contextProvider = new RouterContextProvider();
-
-      // TODO: use React-Router's built-in context when migrating to React-Router v8
-      const appContext = getAppContext(req);
-      Object.assign(contextProvider, appContext);
-
+      contextProvider.set(appContext, getAppContext(req));
       return contextProvider;
     },
   }),

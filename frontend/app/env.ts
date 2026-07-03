@@ -1,15 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Namespace } from 'i18next';
 
-import type { AppContainerProvider } from '~/.server/app-container.provider';
-import type { Session } from '~/.server/web/session';
-
 declare module 'react-router' {
-  interface RouterContextProvider {
-    appContainer: AppContainerProvider;
-    session: Session;
-  }
-
   /**
    * Route handles should export an i18n namespace, if necessary.
    */

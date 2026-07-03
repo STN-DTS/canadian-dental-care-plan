@@ -5,12 +5,14 @@ import { isEmpty } from 'moderndash';
 import type { Route } from './+types/health';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 
 export async function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer } = context.get(appContext);
   const { include, exclude, timeout } = Object.fromEntries(new URL(request.url).searchParams);
 
-  const allHealthChecks = context.appContainer.findAll(TYPES.HealthCheck);
-  const buildInfoService = context.appContainer.get(TYPES.BuildInfoService);
+  const allHealthChecks = appContainer.findAll(TYPES.HealthCheck);
+  const buildInfoService = appContainer.get(TYPES.BuildInfoService);
 
   const { buildRevision: buildId, buildVersion: version } = buildInfoService.getBuildInfo();
 
@@ -35,9 +37,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
  * Returns true if the incoming request is authorized to view detailed responses.
  */
 async function isAuthorized({ context, request }: Pick<Route.LoaderArgs, 'context' | 'request'>): Promise<boolean> {
-  const bearerTokenResolver = context.appContainer.get(TYPES.BearerTokenResolver);
-  const serverConfig = context.appContainer.get(TYPES.ServerConfig);
-  const tokenRolesExtractor = context.appContainer.get(TYPES.HealthTokenRolesExtractor);
+  const { appContainer } = context.get(appContext);
+  const bearerTokenResolver = appContainer.get(TYPES.BearerTokenResolver);
+  const serverConfig = appContainer.get(TYPES.ServerConfig);
+  const tokenRolesExtractor = appContainer.get(TYPES.HealthTokenRolesExtractor);
 
   const token = bearerTokenResolver.resolve(request);
   const roles = await tokenRolesExtractor.extract(token);

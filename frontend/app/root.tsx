@@ -9,6 +9,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { Route } from './+types/root';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
 import { ClientEnv } from '~/components/client-env';
 import { InlineLink } from '~/components/inline-link';
@@ -59,7 +60,8 @@ export const headers: Route.HeadersFunction = () => {
   };
 };
 
-export async function loader({ context: { appContainer, session }, request }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const buildInfoService = appContainer.get(TYPES.BuildInfoService);
   const dynatraceService = appContainer.get(TYPES.DynatraceService);
   const requestUrl = new URL(request.url);

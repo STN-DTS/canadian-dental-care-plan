@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from './+types/index';
 
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { startApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -25,7 +26,8 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context: { appContainer, session }, request }: Route.LoaderArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
+  const { appContainer, session } = context.get(appContext);
   const t = await getFixedT(request, ['application', 'gcweb']);
   const locale = getLocale(request);
 
