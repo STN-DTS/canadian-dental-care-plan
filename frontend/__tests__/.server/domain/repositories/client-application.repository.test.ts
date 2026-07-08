@@ -140,9 +140,7 @@ describe('DefaultClientApplicationRepository', () => {
     it('should return client application when found (200)', async () => {
       const responseDataMock = {
         BenefitApplication: {
-          Applicant: {
-            /* mock data */
-          },
+          Applicant: {/* mock data */},
         },
       };
       const httpClientMock = mock<HttpClient>();

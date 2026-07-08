@@ -229,9 +229,7 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
  * Creates an encrypted access token in JWE format.
  */
 async function generateAccessToken(serverPublicKey: string, serverPrivateKey: string): Promise<string> {
-  const accessTokenPayload = {
-    /* intentionally left blank */
-  };
+  const accessTokenPayload = {/* intentionally left blank */};
 
   // prettier-ignore
   const accessToken = await new SignJWT(accessTokenPayload)
