@@ -12,6 +12,7 @@ import { I18nextProvider } from 'react-i18next';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
+import { createOtelInstrumentation } from '~/.server/observability/otel-instrumentation';
 import { generateContentSecurityPolicy } from '~/.server/utils/csp.utils';
 import { getLocale, initI18n } from '~/.server/utils/locale.utils';
 import { NonceProvider } from '~/components/nonce-context';
@@ -132,3 +133,5 @@ export default async function handleRequest(request: Request, responseStatusCode
     setTimeout(abort, 10_000);
   });
 }
+
+export const instrumentations = [createOtelInstrumentation()];

@@ -12,6 +12,7 @@ import type { InstrumentationServerHandlerResult, ServerInstrumentation } from '
 import { SpanKind, context } from '@opentelemetry/api';
 import type { SpanOptions } from '@opentelemetry/api';
 
+import { createLogger } from '~/.server/logging';
 import {
   ATTR_RR_MIDDLEWARE_INDEX,
   ATTR_RR_MIDDLEWARE_NAME,
@@ -30,6 +31,8 @@ import type { MiddlewareCounterStore } from '~/.server/utils/otel-instrumentatio
  * Creates an OpenTelemetry server instrumentation for React Router's instrumentation API.
  */
 export function createOtelInstrumentation(): ServerInstrumentation {
+  const log = createLogger('observability/otel-instrumentation/createOtelInstrumentation');
+  log.info('Creating OpenTelemetry instrumentation for React Router');
   return {
     handler({ instrument }) {
       instrument({
