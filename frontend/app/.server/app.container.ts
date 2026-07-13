@@ -1,3 +1,13 @@
+/**
+ * This module bootstraps the application by creating an Inversion of Control (IoC) container.
+ * It uses InversifyJS to initialize and manage dependency injection across various modules.
+ *
+ * The container is a singleton, ensuring that all parts of the application share
+ * the same instances of dependencies.
+ *
+ * A logger middleware is included to provide visibility into dependency resolution,
+ * which can be useful for debugging.
+ */
 import { Container } from 'inversify';
 
 import type { AppContainerProvider } from '~/.server/app-container.provider';
@@ -16,32 +26,13 @@ import {
 } from '~/.server/container-modules';
 import { createLogger } from '~/.server/logging';
 
-/**
- * This module bootstraps the application by creating an Inversion of Control (IoC) container.
- * It uses InversifyJS to initialize and manage dependency injection across various modules.
- *
- * The container is a singleton, ensuring that all parts of the application share
- * the same instances of dependencies.
- *
- * A logger middleware is included to provide visibility into dependency resolution,
- * which can be useful for debugging.
- */
-
-let appContainerInstance: Container | undefined;
 let appContainerProviderInstance: AppContainerProvider | undefined;
-
-/**
- * Returns the IoC app container singleton.
- */
-function getAppContainer() {
-  return (appContainerInstance ??= createContainer());
-}
 
 /**
  * Returns the AppContainerProvider singleton instance.
  */
-export function getAppContainerProvider() {
-  return (appContainerProviderInstance ??= new DefaultAppContainerProvider(getAppContainer()));
+export function appContainer() {
+  return (appContainerProviderInstance ??= new DefaultAppContainerProvider(createContainer()));
 }
 
 /**

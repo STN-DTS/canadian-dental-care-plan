@@ -2,7 +2,7 @@ import { UTCDate } from '@date-fns/utc';
 import type express from 'express';
 import type { SetOptional } from 'type-fest';
 
-import { getAppContainerProvider } from '~/.server/app.container';
+import { appContainer } from '~/.server/app.container';
 import type { AppContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
@@ -20,8 +20,6 @@ type RequestWithOptionalSession = SetOptional<Pick<express.Request, 'session'>, 
  * @returns An AppContext instance containing the application context.
  */
 export function getAppContext(req: RequestWithOptionalSession): AppContext {
-  const appContainer = getAppContainerProvider();
-
   // `request.session` may be undefined if session middleware is not applied,
   // so a fallback `NoopSession` is used in that case.
   const session = req.session ? new ExpressSession(req as Request) : new NoopSession();
@@ -40,5 +38,8 @@ export function getAppContext(req: RequestWithOptionalSession): AppContext {
     session.set('lastAccessTime', lastAccessTime);
   }
 
-  return { appContainer, session };
+  return {
+    appContainer: appContainer(),
+    session,
+  };
 }

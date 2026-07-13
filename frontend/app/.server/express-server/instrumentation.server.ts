@@ -2,7 +2,7 @@ import { matchRoutes } from 'react-router';
 
 import type { RequestHandler } from 'express';
 
-import { getAppContainerProvider } from '~/.server/app.container';
+import { appContainer } from '~/.server/app.container';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import { hasSingleton, singleton } from '~/.server/utils/instance-registry';
@@ -19,8 +19,7 @@ type CachedRouteId = string | null | undefined;
  */
 export function routeRequestCounter(): RequestHandler {
   const log = createLogger('express.server/routeRequestCounter');
-  const appContainer = getAppContainerProvider();
-  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  const instrumentationService = appContainer().get(TYPES.InstrumentationService);
 
   // Cache to store: normalizedPath -> routeId (or null/undefined if no match)
   // This Map persists across requests for this middleware instance.
