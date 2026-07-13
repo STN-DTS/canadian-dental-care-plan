@@ -7,7 +7,7 @@
  *   - https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry
  */
 import { invariant } from '@dts-stn/invariant';
-import type { Attributes, Counter, Histogram, MetricOptions, Span } from '@opentelemetry/api';
+import type { Attributes, Counter, Histogram, MetricOptions, Span, SpanOptions } from '@opentelemetry/api';
 import { metrics, trace } from '@opentelemetry/api';
 import { inject, injectable } from 'inversify';
 
@@ -46,10 +46,12 @@ export interface InstrumentationService {
   /**
    * Starts an active span.
    * @param name - The name of the span.
+   * @param options - Span options (attributes, kind, etc.).
    * @param fn - The function to execute within the span.
+   * @param scope - Optional instrumentation scope name (`otel.scope.name`); defaults to the service name.
    * @returns The result of the function.
    */
-  startActiveSpan<T extends (span: Span) => unknown>(name: string, fn: T): ReturnType<T>;
+  startActiveSpan<T extends (span: Span) => unknown>(name: string, options: SpanOptions, fn: T, scope?: string): ReturnType<T>;
 }
 
 type DefaultInstrumentationServiceServerConfig = Pick<ServerConfig, 'OTEL_SERVICE_NAME'>;
@@ -85,8 +87,8 @@ export class DefaultInstrumentationService implements InstrumentationService {
   /**
    * @see https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans
    */
-  startActiveSpan<T extends (span: Span) => unknown>(name: string, fn: T): ReturnType<T> {
-    return trace.getTracer(this.serverConfig.OTEL_SERVICE_NAME, this.buildInfo.buildVersion).startActiveSpan(name, fn);
+  startActiveSpan<T extends (span: Span) => unknown>(name: string, options: SpanOptions, fn: T, scope = this.serverConfig.OTEL_SERVICE_NAME): ReturnType<T> {
+    return trace.getTracer(scope, this.buildInfo.buildVersion).startActiveSpan(name, options, fn);
   }
 
   /**
