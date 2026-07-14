@@ -47,22 +47,26 @@ import {
  * @returns The React Router server instrumentation to register with the runtime.
  */
 export function createOtelInstrumentation(): ServerInstrumentation {
-  const log = createLogger('observability/otel-instrumentation/createOtelInstrumentation');
+  const log = createLogger('observability/otel-instrumentation');
   log.info('Creating OpenTelemetry instrumentation for React Router');
+
   return {
     handler({ instrument }) {
       instrument({
         // Top-level SERVER span for the whole request. Named `{method} {path}` up front, then
         // renamed to `{method} {route}` by enrichRequestSpan once the matched route is known.
-        async request(handler, { request }) {
-          const method = normalizeMethod(request.method);
-          const pathname = new URL(request.url).pathname;
+        async request(handler, { context, request }) {
+          if (!context) {
+            throw new Error('React Router "request" instrumentation is missing its context; cannot resolve the app container for OpenTelemetry spans');
+          }
 
           // Establish a per-request middleware counter so nested middleware spans can be ordered.
           const instrumentedHandler = async () => await withMiddlewareCounter(handler);
 
+          const method = normalizeMethod(request.method);
+          const pathname = new URL(request.url).pathname;
           const spanOptions: SpanOptions = { kind: SpanKind.SERVER, attributes: buildRequestAttributes(request) };
-          await otelSpan(`${request.method} ${pathname}`, spanOptions, instrumentedHandler, (span, result) => {
+          await otelSpan(context, `${request.method} ${pathname}`, spanOptions, instrumentedHandler, (span, result) => {
             enrichRequestSpan(span, method, result as InstrumentationServerHandlerResult);
           });
         },
@@ -71,7 +75,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
     route({ instrument, id }) {
       instrument({
         // INTERNAL span per route middleware, tagged with its execution order and function name.
-        async middleware(handler, { pattern, url, request, params }) {
+        async middleware(handler, { context, pattern, url, request, params }) {
           const index = nextMiddlewareIndex(id);
           const middlewareName = getMiddlewareName(id, index);
           const name = `middleware ${middlewareName ?? id}`;
@@ -83,23 +87,23 @@ export function createOtelInstrumentation(): ServerInstrumentation {
               ...(name ? { [ATTR_RR_MIDDLEWARE_NAME]: name } : {}),
             },
           };
-          await otelSpan(`middleware ${pattern}`, spanOptions, handler);
+          await otelSpan(context, `middleware ${pattern}`, spanOptions, handler);
         },
         // INTERNAL span per route loader.
-        async loader(handler, { pattern, url, request, params }) {
+        async loader(handler, { context, pattern, url, request, params }) {
           const spanOptions: SpanOptions = {
             kind: SpanKind.INTERNAL,
             attributes: buildRouteAttributes(id, pattern, url, request, params),
           };
-          await otelSpan(`loader ${pattern}`, spanOptions, handler);
+          await otelSpan(context, `loader ${pattern}`, spanOptions, handler);
         },
         // INTERNAL span per route action.
-        async action(handler, { pattern, url, request, params }) {
+        async action(handler, { context, pattern, url, request, params }) {
           const spanOptions: SpanOptions = {
             kind: SpanKind.INTERNAL,
             attributes: buildRouteAttributes(id, pattern, url, request, params),
           };
-          await otelSpan(`action ${pattern}`, spanOptions, handler);
+          await otelSpan(context, `action ${pattern}`, spanOptions, handler);
         },
       });
     },

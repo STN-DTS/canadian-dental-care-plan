@@ -13,7 +13,7 @@
  *
  * @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/
  */
-import type { InstrumentationHandlerResult, InstrumentationServerHandlerResult, Params } from 'react-router';
+import type { InstrumentationHandlerResult, InstrumentationServerHandlerResult, Params, RouterContextProvider } from 'react-router';
 
 import { SpanStatusCode, context, createContextKey } from '@opentelemetry/api';
 import type { Attributes, Span, SpanOptions } from '@opentelemetry/api';
@@ -31,13 +31,19 @@ import {
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions';
 
-import { appContainer } from '~/.server/app.container';
 import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
 import { singleton } from '~/.server/utils/instance-registry';
 
 // -----------------------------------------------------------------------------
 // Constants & types
 // -----------------------------------------------------------------------------
+
+/**
+ * Minimal read-only view of the router context provider exposed by React Router's instrumentation
+ * API, narrowed to the `get` accessor used to resolve the app container.
+ */
+type ReadonlyContext = Pick<RouterContextProvider, 'get'>;
 
 /**
  * Minimal read-only view of the request exposed by React Router's instrumentation API.
@@ -239,18 +245,21 @@ function removePort(address: string): string {
 /**
  * Wraps an instrumented handler in an active OpenTelemetry span.
  *
+ * @param context - The router context provider, used to resolve the app container.
  * @param name - The initial span name.
  * @param options - Span options (attributes, kind).
  * @param handler - The instrumented handler to execute within the span.
  * @param onResult - Optional callback to enrich the span from the handler result; when omitted, errors are recorded by default.
  */
 export async function otelSpan(
+  context: ReadonlyContext,
   name: string,
   options: SpanOptions,
   handler: () => Promise<InstrumentationServerHandlerResult | InstrumentationHandlerResult>,
   onResult?: (span: Span, result: InstrumentationServerHandlerResult | InstrumentationHandlerResult) => void,
 ) {
-  const instrumentationService = appContainer().get(TYPES.InstrumentationService);
+  const { appContainer } = context.get(appContext);
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   return await instrumentationService.startActiveSpan(
     name,
     options,
