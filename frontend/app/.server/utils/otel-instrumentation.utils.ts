@@ -6,6 +6,11 @@
  * spans that follow the HTTP semantic conventions (`http.*`, `url.*`, `server.*`), plus a few
  * custom `react_router.*` attributes (route id, matched URL, route params, middleware order/name).
  *
+ * Consumed by `otel-instrumentation.ts`, which wires these helpers to React Router's hooks.
+ *
+ * These helpers are not a copy of any single reference implementation; they draw on the approaches
+ * used by the OpenTelemetry HTTP instrumentation and adapt them to this app's spans and attributes.
+ *
  * @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/
  */
 import type { InstrumentationHandlerResult, InstrumentationServerHandlerResult, Params } from 'react-router';
@@ -29,6 +34,10 @@ import {
 import { appContainer } from '~/.server/app.container';
 import { TYPES } from '~/.server/constants';
 import { singleton } from '~/.server/utils/instance-registry';
+
+// -----------------------------------------------------------------------------
+// Constants & types
+// -----------------------------------------------------------------------------
 
 /**
  * Minimal read-only view of the request exposed by React Router's instrumentation API.
@@ -54,97 +63,48 @@ const KNOWN_METHODS = new Set(['CONNECT', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'P
 const INSTRUMENTATION_SCOPE = 'canadian-dental-care-plan/react-router';
 
 /**
- * Custom (non-semantic-convention) span attribute keys used by this instrumentation.
+ * The React Router route id of the matched route.
+ *
+ * @example routes/index
+ * @example routes/$lang.protected.dashboard
  */
 export const ATTR_RR_ROUTE_ID = 'react_router.route.id';
+
+/**
+ * The matched route URL, with React Router internals stripped.
+ *
+ * @example https://example.com/en/dashboard
+ */
 export const ATTR_RR_URL = 'react_router.url';
+
+/**
+ * Prefix for per-parameter attributes carrying the matched dynamic route params; the param name is
+ * appended to form the full attribute key.
+ *
+ * @example react_router.params.lang
+ * @example react_router.params.id
+ */
 export const ATTR_RR_PARAM_PREFIX = 'react_router.params.';
+
+/**
+ * The zero-based execution index of the middleware within its route's middleware chain.
+ *
+ * @example 0
+ * @example 2
+ */
 export const ATTR_RR_MIDDLEWARE_INDEX = 'react_router.middleware.index';
+
+/**
+ * The name of the middleware function, when not anonymous.
+ *
+ * @example securityHeadersMiddleware
+ * @example i18nextMiddleware
+ */
 export const ATTR_RR_MIDDLEWARE_NAME = 'react_router.middleware.name';
 
-/**
- * Per-request store tracking how many middleware have run for each route id, so that multiple
- * middleware on the same route produce distinct, ordered spans.
- */
-export type MiddlewareCounterStore = { counters: Record<string, number> };
-
-/**
- * OpenTelemetry context key holding the per-request {@link MiddlewareCounterStore}.
- */
-export const MIDDLEWARE_COUNTER_KEY = createContextKey('cdcp_react_router_middleware_counter');
-
-/**
- * Wraps an instrumented handler in an active OpenTelemetry span.
- *
- * @param name - The initial span name.
- * @param options - Span options (attributes, kind).
- * @param handler - The instrumented handler to execute within the span.
- * @param onResult - Optional callback to enrich the span from the handler result; when omitted, errors are recorded by default.
- */
-export async function otelSpan(
-  name: string,
-  options: SpanOptions,
-  handler: () => Promise<InstrumentationServerHandlerResult | InstrumentationHandlerResult>,
-  onResult?: (span: Span, result: InstrumentationServerHandlerResult | InstrumentationHandlerResult) => void,
-) {
-  const instrumentationService = appContainer().get(TYPES.InstrumentationService);
-  return await instrumentationService.startActiveSpan(
-    name,
-    options,
-    async function spanFn(span) {
-      const result = await handler();
-
-      if (onResult) {
-        onResult(span, result);
-      } else {
-        recordError(span, result.error);
-      }
-
-      span.end();
-    },
-    INSTRUMENTATION_SCOPE,
-  );
-}
-
-/**
- * Records the exception, error status, and `error.type` attribute on a span when a handler fails.
- */
-export function recordError(span: Span, error: Error | undefined): void {
-  if (error) {
-    span.recordException(error);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: 'internal_error' });
-    span.setAttribute(ATTR_ERROR_TYPE, error.name);
-  }
-}
-
-/**
- * Enriches the top-level request span with response metadata once the handler has completed:
- * status code, matched route (with span rename), normalized URL, route params, and any error.
- *
- * @param span - The active request span to enrich.
- * @param method - The normalized HTTP method, used to rebuild the span name as `{method} {route}`.
- * @param result - The server handler result carrying `statusCode`, `meta`, and `error`.
- */
-export function enrichRequestSpan(span: Span, method: string, result: InstrumentationServerHandlerResult): void {
-  const { error, statusCode, meta } = result;
-
-  span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, statusCode);
-
-  if (meta?.pattern) {
-    span.setAttribute(ATTR_HTTP_ROUTE, meta.pattern);
-    span.updateName(`${method} ${meta.pattern}`);
-  }
-
-  if (meta?.url) {
-    span.setAttribute(ATTR_RR_URL, meta.url.toString());
-  }
-
-  if (meta?.params) {
-    span.setAttributes(paramAttributes(meta.params));
-  }
-
-  recordError(span, error);
-}
+// -----------------------------------------------------------------------------
+// Attribute builders (pure — no OpenTelemetry span/container dependencies)
+// -----------------------------------------------------------------------------
 
 /**
  * Builds OpenTelemetry HTTP semantic-convention attributes for the top-level request span.
@@ -236,36 +196,9 @@ export function normalizeMethod(method: string): string {
 }
 
 /**
- * Returns the zero-based index of the next middleware to run for the given route within the current
- * request, incrementing the per-request counter held in the active OpenTelemetry context.
- *
- * @param routeId - The route id whose middleware chain is being counted.
- * @returns The zero-based middleware index; `0` when no per-request counter is active.
- */
-export function nextMiddlewareIndex(routeId: string): number {
-  const store = context.active().getValue(MIDDLEWARE_COUNTER_KEY) as MiddlewareCounterStore | undefined;
-  if (!store) {
-    return 0;
-  }
-  const index = store.counters[routeId] ?? 0;
-  store.counters[routeId] = index + 1;
-  return index;
-}
-
-/**
- * Resolves the name of the middleware at the given index for a route from the registered server
- * build, or `undefined` when the middleware function is anonymous.
- *
- * @param routeId - The route id owning the middleware chain.
- * @param index - The zero-based middleware position within that route.
- * @returns The middleware function name, or `undefined` if missing/anonymous.
- */
-export function getMiddlewareName(routeId: string, index: number): string | undefined {
-  return singleton('serverBuild').routes[routeId]?.module.middleware?.[index]?.name;
-}
-
-/**
- * Derives the remote client address from proxy headers (`forwarded`, then `x-forwarded-for`).
+ * Derives the remote client address from proxy headers, preferring `forwarded` over
+ * `x-forwarded-for`. Uses the left-most (original client) entry of whichever header is present, and
+ * strips any trailing port.
  */
 function getClientAddress(headers: Pick<Headers, 'get'>): string | undefined {
   const forwarded = headers.get('forwarded');
@@ -297,4 +230,137 @@ function removePort(address: string): string {
   // Only strip a port for IPv4 / hostnames (single colon); bare IPv6 has multiple colons.
   const colonCount = (address.match(/:/g) ?? []).length;
   return colonCount === 1 ? address.slice(0, address.indexOf(':')) : address;
+}
+
+// -----------------------------------------------------------------------------
+// Span lifecycle (OpenTelemetry span creation & enrichment)
+// -----------------------------------------------------------------------------
+
+/**
+ * Wraps an instrumented handler in an active OpenTelemetry span.
+ *
+ * @param name - The initial span name.
+ * @param options - Span options (attributes, kind).
+ * @param handler - The instrumented handler to execute within the span.
+ * @param onResult - Optional callback to enrich the span from the handler result; when omitted, errors are recorded by default.
+ */
+export async function otelSpan(
+  name: string,
+  options: SpanOptions,
+  handler: () => Promise<InstrumentationServerHandlerResult | InstrumentationHandlerResult>,
+  onResult?: (span: Span, result: InstrumentationServerHandlerResult | InstrumentationHandlerResult) => void,
+) {
+  const instrumentationService = appContainer().get(TYPES.InstrumentationService);
+  return await instrumentationService.startActiveSpan(
+    name,
+    options,
+    async function spanFn(span) {
+      const result = await handler();
+
+      if (onResult) {
+        onResult(span, result);
+      } else {
+        recordError(span, result.error);
+      }
+
+      span.end();
+    },
+    INSTRUMENTATION_SCOPE,
+  );
+}
+
+/**
+ * Records the exception, error status, and `error.type` attribute on a span when a handler fails.
+ */
+export function recordError(span: Span, error: Error | undefined): void {
+  if (error) {
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: 'internal_error' });
+    span.setAttribute(ATTR_ERROR_TYPE, error.name);
+  }
+}
+
+/**
+ * Enriches the top-level request span with response metadata once the handler has completed:
+ * status code, matched route (with span rename), normalized URL, route params, and any error.
+ *
+ * @param span - The active request span to enrich.
+ * @param method - The normalized HTTP method, used to rebuild the span name as `{method} {route}`.
+ * @param result - The server handler result carrying `statusCode`, `meta`, and `error`.
+ */
+export function enrichRequestSpan(span: Span, method: string, result: InstrumentationServerHandlerResult): void {
+  const { error, statusCode, meta } = result;
+
+  span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, statusCode);
+
+  if (meta?.pattern) {
+    span.setAttribute(ATTR_HTTP_ROUTE, meta.pattern);
+    span.updateName(`${method} ${meta.pattern}`);
+  }
+
+  if (meta?.url) {
+    span.setAttribute(ATTR_RR_URL, meta.url.toString());
+  }
+
+  if (meta?.params) {
+    span.setAttributes(paramAttributes(meta.params));
+  }
+
+  recordError(span, error);
+}
+
+// -----------------------------------------------------------------------------
+// Middleware-counter context (per-request ordering of middleware spans)
+// -----------------------------------------------------------------------------
+
+/**
+ * Per-request store tracking how many middleware have run for each route id, so that multiple
+ * middleware on the same route produce distinct, ordered spans.
+ */
+type MiddlewareCounterStore = { counters: Record<string, number> };
+
+/**
+ * OpenTelemetry context key holding the per-request {@link MiddlewareCounterStore}.
+ */
+const MIDDLEWARE_COUNTER_KEY = createContextKey('cdcp_react_router_middleware_counter');
+
+/**
+ * Runs the given handler with a fresh per-request middleware counter bound into the active
+ * OpenTelemetry context, so that {@link nextMiddlewareIndex} can order middleware spans.
+ *
+ * @param handler - The instrumented request handler to run within the counter context.
+ * @returns The handler result.
+ */
+export async function withMiddlewareCounter<T>(handler: () => Promise<T>): Promise<T> {
+  const counterStore: MiddlewareCounterStore = { counters: {} };
+  return await context.with(context.active().setValue(MIDDLEWARE_COUNTER_KEY, counterStore), handler);
+}
+
+/**
+ * Returns the zero-based index of the next middleware to run for the given route within the current
+ * request, incrementing the per-request counter held in the active OpenTelemetry context.
+ *
+ * @param routeId - The route id whose middleware chain is being counted.
+ * @returns The zero-based middleware index; `0` when no per-request counter is active.
+ */
+export function nextMiddlewareIndex(routeId: string): number {
+  const store = context.active().getValue(MIDDLEWARE_COUNTER_KEY) as MiddlewareCounterStore | undefined;
+  if (!store) {
+    return 0;
+  }
+  const index = store.counters[routeId] ?? 0;
+  store.counters[routeId] = index + 1;
+  return index;
+}
+
+/**
+ * Resolves the name of the middleware at the given index for a route from the registered server
+ * build, or `undefined` when the middleware function is anonymous.
+ *
+ * @param routeId - The route id owning the middleware chain.
+ * @param index - The zero-based middleware position within that route.
+ * @returns The middleware function name, or `undefined` if missing/anonymous.
+ */
+export function getMiddlewareName(routeId: string, index: number): string | undefined {
+  return singleton('serverBuild').routes[routeId]?.module.middleware?.[index]?.name;
 }

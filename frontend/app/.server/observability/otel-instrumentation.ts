@@ -1,22 +1,27 @@
 /**
- * This file provides an OpenTelemetry instrumentation for React Router's instrumentation API.
+ * @file
+ * OpenTelemetry server instrumentation for React Router's instrumentation API.
  *
- * References:
+ * Wires React Router's request/route instrumentation hooks to OpenTelemetry spans: a top-level
+ * `SERVER` span per request and `INTERNAL` child spans for each route middleware, loader, and
+ * action. Attribute building and span lifecycle live in `otel-instrumentation.utils`.
  *
- *   - https://reactrouter.com/how-to/instrumentation#opentelemetry-integration
- *   - https://github.com/open-telemetry/opentelemetry-js/tree/cf7c419ccacfd7340306bc81d5e142ef73e18f9d/experimental/packages/opentelemetry-instrumentation-http
- *   - https://github.com/getsentry/sentry-javascript/blob/0ea8a5168b9af98547ff3a812ddc8756288b0848/packages/react-router/src/server/createServerInstrumentation.ts
+ * This is not a copy of any single reference implementation; it draws on the approaches in the
+ * `@see` links below and adapts them to this app's spans and attributes.
+ *
+ * @see https://reactrouter.com/how-to/instrumentation#opentelemetry-integration
+ * @see https://github.com/open-telemetry/opentelemetry-js/tree/cf7c419ccacfd7340306bc81d5e142ef73e18f9d/experimental/packages/opentelemetry-instrumentation-http
+ * @see https://github.com/getsentry/sentry-javascript/blob/0ea8a5168b9af98547ff3a812ddc8756288b0848/packages/react-router/src/server/createServerInstrumentation.ts
  */
 import type { InstrumentationServerHandlerResult, ServerInstrumentation } from 'react-router';
 
-import { SpanKind, context } from '@opentelemetry/api';
+import { SpanKind } from '@opentelemetry/api';
 import type { SpanOptions } from '@opentelemetry/api';
 
 import { createLogger } from '~/.server/logging';
 import {
   ATTR_RR_MIDDLEWARE_INDEX,
   ATTR_RR_MIDDLEWARE_NAME,
-  MIDDLEWARE_COUNTER_KEY,
   buildRequestAttributes,
   buildRouteAttributes,
   enrichRequestSpan,
@@ -24,11 +29,22 @@ import {
   nextMiddlewareIndex,
   normalizeMethod,
   otelSpan,
+  withMiddlewareCounter,
 } from '~/.server/utils/otel-instrumentation.utils';
-import type { MiddlewareCounterStore } from '~/.server/utils/otel-instrumentation.utils';
 
 /**
  * Creates an OpenTelemetry server instrumentation for React Router's instrumentation API.
+ *
+ * Emits two levels of spans:
+ *
+ *   - a top-level `SERVER` span per request (named `{method} {path}`, later renamed to
+ *     `{method} {route}` once the route is matched), and
+ *   - `INTERNAL` child spans per route middleware, loader, and action (named `{phase} {pattern}`).
+ *
+ * Middleware spans additionally carry their execution order and name, tracked via a per-request
+ * counter established by {@link withMiddlewareCounter}.
+ *
+ * @returns The React Router server instrumentation to register with the runtime.
  */
 export function createOtelInstrumentation(): ServerInstrumentation {
   const log = createLogger('observability/otel-instrumentation/createOtelInstrumentation');
@@ -36,16 +52,14 @@ export function createOtelInstrumentation(): ServerInstrumentation {
   return {
     handler({ instrument }) {
       instrument({
-        // request instrumentation
+        // Top-level SERVER span for the whole request. Named `{method} {path}` up front, then
+        // renamed to `{method} {route}` by enrichRequestSpan once the matched route is known.
         async request(handler, { request }) {
           const method = normalizeMethod(request.method);
           const pathname = new URL(request.url).pathname;
 
           // Establish a per-request middleware counter so nested middleware spans can be ordered.
-          const counterStore: MiddlewareCounterStore = { counters: {} };
-          const instrumentedHandler = async () => {
-            return await context.with(context.active().setValue(MIDDLEWARE_COUNTER_KEY, counterStore), handler);
-          };
+          const instrumentedHandler = async () => await withMiddlewareCounter(handler);
 
           const spanOptions: SpanOptions = { kind: SpanKind.SERVER, attributes: buildRequestAttributes(request) };
           await otelSpan(`${request.method} ${pathname}`, spanOptions, instrumentedHandler, (span, result) => {
@@ -56,7 +70,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
     },
     route({ instrument, id }) {
       instrument({
-        // route middleware instrumentation
+        // INTERNAL span per route middleware, tagged with its execution order and function name.
         async middleware(handler, { pattern, url, request, params }) {
           const index = nextMiddlewareIndex(id);
           const middlewareName = getMiddlewareName(id, index);
@@ -71,7 +85,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
           };
           await otelSpan(`middleware ${pattern}`, spanOptions, handler);
         },
-        // route loader instrumentation
+        // INTERNAL span per route loader.
         async loader(handler, { pattern, url, request, params }) {
           const spanOptions: SpanOptions = {
             kind: SpanKind.INTERNAL,
@@ -79,7 +93,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
           };
           await otelSpan(`loader ${pattern}`, spanOptions, handler);
         },
-        // route action instrumentation
+        // INTERNAL span per route action.
         async action(handler, { pattern, url, request, params }) {
           const spanOptions: SpanOptions = {
             kind: SpanKind.INTERNAL,
