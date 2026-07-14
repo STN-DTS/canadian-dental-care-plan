@@ -13,6 +13,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { createOtelInstrumentation } from '~/.server/observability/otel-instrumentation';
+import { createRequestCounterInstrumentation } from '~/.server/observability/request-counter-instrumentation';
 import { generateContentSecurityPolicy } from '~/.server/utils/csp.utils';
 import { getLocale, initI18n } from '~/.server/utils/locale.utils';
 import { NonceProvider } from '~/components/nonce-context';
@@ -134,4 +135,4 @@ export default async function handleRequest(request: Request, responseStatusCode
   });
 }
 
-export const instrumentations = [createOtelInstrumentation()];
+export const instrumentations = [createOtelInstrumentation(), createRequestCounterInstrumentation()];

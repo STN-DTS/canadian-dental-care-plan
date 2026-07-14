@@ -2,7 +2,6 @@ import compression from 'compression';
 import express from 'express';
 import sourceMapSupport from 'source-map-support';
 
-import { routeRequestCounter } from '~/.server/express-server/instrumentation.server';
 import { logging, responseMaxListeners, securityHeaders, session } from '~/.server/express-server/middleware';
 import { globalErrorHandler } from '~/.server/express-server/request-handlers';
 import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
@@ -88,9 +87,6 @@ app.all(['/:lang/apply{/*splat}', '/:lang/demander{/*splat}'], (req, res) => {
   log.info('Redirecting public apply. request: [%s], redirectUrl: [%s]', req.originalUrl, redirectUrl);
   res.redirect(302, redirectUrl);
 });
-
-log.info('  ✓ registering route request counter');
-app.use(routeRequestCounter());
 
 // eslint-disable-next-line unicorn/prefer-ternary
 if (isProduction) {
