@@ -36,5 +36,5 @@ type NonceProviderProps = {
  * Should only be mounted in `entry.server.tsx` — the client relies on the context default (`""`).
  */
 export function NonceProvider({ children, nonce }: NonceProviderProps): JSX.Element {
-  return <NonceContext.Provider value={{ nonce }}>{children}</NonceContext.Provider>;
+  return <NonceContext value={{ nonce }}>{children}</NonceContext>;
 }

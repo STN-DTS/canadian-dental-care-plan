@@ -98,6 +98,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint-react/eslint-plugin": "^5.12.1",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.61.1",
     "@react-router/dev": "^8.2.0",
@@ -126,8 +127,6 @@
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-jsx-a11y-x": "^0.2.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-unicorn": "^65.0.1",
     "globals": "^17.7.0",
     "i18next-cli": "^1.65.0",

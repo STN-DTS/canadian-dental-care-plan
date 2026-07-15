@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { APP_LOCALES, getAltLanguage, getLanguage, getNamespaces, isAppLocale, removeLanguageFromPath, useAppLocale } from '~/utils/locale-utils';
+import { APP_LOCALES, getAltLanguage, getAppLocale, getLanguage, getNamespaces, isAppLocale, removeLanguageFromPath } from '~/utils/locale-utils';
 
 /*
  * @vitest-environment jsdom
@@ -91,14 +91,14 @@ describe('locale-utils', () => {
     });
   });
 
-  describe('useAppLocale', () => {
+  describe('getAppLocale', () => {
     it.each([
       { locale: 'en', expected: 'en' },
       { locale: 'fr', expected: 'fr' },
       { locale: 'es', expected: 'en' },
       { locale: '', expected: 'en' },
     ])('should return $expected for locale $locale', ({ locale, expected }) => {
-      expect(useAppLocale(locale)).toBe(expected);
+      expect(getAppLocale(locale)).toBe(expected);
     });
   });
 });

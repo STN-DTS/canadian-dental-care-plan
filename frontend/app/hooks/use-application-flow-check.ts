@@ -28,7 +28,7 @@ type UseApplicationFlowCheckArgs = {
  * @param indexRoutePath - Path to the application index page.
  */
 export function useApplicationFlowCheck({ id, indexRoutePath }: UseApplicationFlowCheckArgs) {
-  const isApplicationFlowCheckCompleted = useRef(false);
+  const isApplicationFlowCheckCompletedRef = useRef(false);
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isIdle = navigation.state === 'idle';
@@ -37,14 +37,14 @@ export function useApplicationFlowCheck({ id, indexRoutePath }: UseApplicationFl
   useEffect(() => {
     // reset the check completion status when the application ID changes, allowing the flow check
     // to run again for the new ID
-    isApplicationFlowCheckCompleted.current = false;
+    isApplicationFlowCheckCompletedRef.current = false;
   }, [id]);
 
   useEffect(() => {
     const shouldCheckApplicationFlow =
       isIdle && // wait for the router to be idle to avoid interrupting ongoing navigations
       applicationFlowStorageEnabled && // skip if flow storage is not available
-      !isApplicationFlowCheckCompleted.current; // skip if already checked
+      !isApplicationFlowCheckCompletedRef.current; // skip if already checked
 
     if (!shouldCheckApplicationFlow) return;
 
@@ -52,6 +52,6 @@ export function useApplicationFlowCheck({ id, indexRoutePath }: UseApplicationFl
       void navigate(indexRoutePath, { replace: true });
     }
 
-    isApplicationFlowCheckCompleted.current = true;
+    isApplicationFlowCheckCompletedRef.current = true;
   }, [applicationFlowStorageEnabled, applicationFlowStorageValue, indexRoutePath, isIdle, navigate]);
 }

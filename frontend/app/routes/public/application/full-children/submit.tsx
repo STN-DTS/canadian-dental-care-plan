@@ -52,10 +52,10 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.submit.pageTitle) }),
   };
 
-  const children = [];
-  for (const child of state.children) {
-    children.push(`${child.information.firstName} ${child.information.lastName}`);
-  }
+  const children = state.children.map((child) => ({
+    id: child.id,
+    name: `${child.information.firstName} ${child.information.lastName}`,
+  }));
 
   const { ENABLED_FEATURES } = appContainer.get(TYPES.ClientConfig);
 
@@ -175,8 +175,8 @@ export default function NewChildrenSubmit({ loaderData, params }: Route.Componen
               <div className="space-y-4">
                 <p>{t(($) => $.submit.youAreSubmitting)}</p>
                 <ul className="list-disc space-y-1 pl-7">
-                  {state.children.map((child, index) => (
-                    <li key={index}>{child}</li>
+                  {state.children.map((child) => (
+                    <li key={child.id}>{child.name}</li>
                   ))}
                 </ul>
               </div>

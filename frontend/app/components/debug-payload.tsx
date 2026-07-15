@@ -14,9 +14,10 @@ export function DebugPayload({ data, enableCopy }: DebugPayloadProps) {
   const json = JSON.stringify(data, null, 2);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setHasCopied(false);
     }, 2000);
+    return () => clearTimeout(timeoutId);
   }, [hasCopied]);
 
   const copyToClipboard = async () => {

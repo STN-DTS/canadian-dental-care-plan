@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useFetchers, useLocation, useNavigation } from 'react-router';
 
@@ -29,7 +29,6 @@ export interface SessionTimeoutProps extends Required<Pick<IIdleTimerProps, 'pro
  */
 const SessionTimeout = ({ promptBeforeIdle, timeout, onSessionEnd, onSessionExtend }: SessionTimeoutProps) => {
   const { t } = useTranslation('gcweb');
-  const [timeRemaining, setTimeRemaining] = useState('');
 
   const { activate, isPrompted, getRemainingTime } = useIdleTimer({
     // Disable default event listeners; The IdleTimer should only activate during route navigation and form
@@ -43,6 +42,16 @@ const SessionTimeout = ({ promptBeforeIdle, timeout, onSessionEnd, onSessionExte
     promptBeforeIdle,
     timeout,
   });
+
+  const formatRemainingTime = useCallback(() => {
+    const remainingTime = getRemainingTime();
+    const minutes = Math.floor(remainingTime / 60_000);
+    const seconds = Math.floor((remainingTime % 60_000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }, [getRemainingTime]);
+
+  // Initialize with the current remaining time so the first render is correct without setting state in an effect.
+  const [timeRemaining, setTimeRemaining] = useState(formatRemainingTime);
 
   // Track the current location and its key for detecting navigation changes.
   const location = useLocation();
@@ -114,21 +123,14 @@ const SessionTimeout = ({ promptBeforeIdle, timeout, onSessionEnd, onSessionExte
   }
 
   useEffect(() => {
-    const updateRemainingTime = () => {
-      const remainingTime = getRemainingTime();
-      const minutes = Math.floor(remainingTime / 60_000);
-      const seconds = Math.floor((remainingTime % 60_000) / 1000);
-      const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      setTimeRemaining(formattedTime);
-    };
-
-    const interval = setInterval(updateRemainingTime, 1000);
-    updateRemainingTime(); // Initial call to set the time immediately
+    const interval = setInterval(() => {
+      setTimeRemaining(formatRemainingTime());
+    }, 1000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [getRemainingTime]);
+  }, [formatRemainingTime]);
 
   return (
     <Dialog open={isPrompted()} onOpenChange={handleOnDialogOpenChange}>

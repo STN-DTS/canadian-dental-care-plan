@@ -29,12 +29,14 @@ describe('AppLink', () => {
   };
 
   it('should render correctly', () => {
-    render(<AppLink {...defaultProps} />);
+    const { children, ...rest } = defaultProps;
+    render(<AppLink {...rest}>{children}</AppLink>);
     expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 
   it('should resolve the `to` prop using getPathById when `routeId` is provided', () => {
-    render(<AppLink {...defaultProps} />);
+    const { children, ...rest } = defaultProps;
+    render(<AppLink {...rest}>{children}</AppLink>);
     expect(useHref).toHaveBeenCalledWith('/mock-path/test-route/', { relative: 'route' });
   });
 
@@ -52,7 +54,12 @@ describe('AppLink', () => {
 
   it('should call getPathById with the correct arguments', () => {
     const params = { lang: 'en' };
-    render(<AppLink {...defaultProps} params={params} />);
+    const { children, ...rest } = defaultProps;
+    render(
+      <AppLink {...rest} params={params}>
+        {children}
+      </AppLink>,
+    );
     expect(getPathById).toHaveBeenCalledWith('test-route', { lang: 'en' });
   });
 });

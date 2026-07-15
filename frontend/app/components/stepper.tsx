@@ -53,7 +53,7 @@ export function Stepper({ steps, activeStep, className, ...props }: StepperProps
       {steps.map((step, index) => {
         const status = getStatus(index);
         const isLast = index === steps.length - 1;
-        return <StepItem key={step.id ?? index} label={step.label} status={status} isLast={isLast} customIcon={step.icon} />;
+        return <StepItem key={step.id ?? step.label} label={step.label} status={status} isLast={isLast} customIcon={step.icon} />;
       })}
     </ol>
   );

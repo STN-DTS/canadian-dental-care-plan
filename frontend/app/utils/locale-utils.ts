@@ -157,16 +157,16 @@ export function removeLanguageFromPath(path: string) {
  *
  * @example
  * // Returns 'en'
- * useAppLocale('en');
+ * getAppLocale('en');
  *
  * @example
  * // Returns 'fr'
- * useAppLocale('fr');
+ * getAppLocale('fr');
  *
  * @example
  * // Returns 'en' for unsupported locale
- * useAppLocale('es');
+ * getAppLocale('es');
  */
-export function useAppLocale(locale: string): AppLocale {
+export function getAppLocale(locale: string): AppLocale {
   return locale === 'fr' ? 'fr' : 'en';
 }

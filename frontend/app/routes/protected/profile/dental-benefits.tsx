@@ -89,8 +89,8 @@ export default function ViewGovernmentDentalBenefits({ loaderData, params }: Rou
                 <p>{clientDentalBenefits && clientDentalBenefits.length > 0 ? t(($) => $.dentalBenefits.yes) : t(($) => $.dentalBenefits.no)}</p>
                 {clientDentalBenefits && clientDentalBenefits.length > 0 && (
                   <ul className="list-disc space-y-2 pl-10">
-                    {clientDentalBenefits.map((benefit, index) => (
-                      <li key={index}>{benefit}</li>
+                    {clientDentalBenefits.map((benefit) => (
+                      <li key={benefit}>{benefit}</li>
                     ))}
                   </ul>
                 )}

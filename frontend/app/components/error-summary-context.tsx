@@ -21,7 +21,7 @@
  * 4. Use `resetErrors()` to clear all visible errors when appropriate (reset, navigation, dismissal).
  */
 import type React from 'react';
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer } from 'react';
+import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useReducer } from 'react';
 import type { JSX } from 'react';
 
 import { generateId } from '~/utils/id.utils';
@@ -166,7 +166,7 @@ const ErrorSummaryContext = createContext<ErrorSummaryContextValue | undefined>(
  * @returns The current error summary context value, or `undefined` if not within a provider.
  */
 export function useErrorSummaryContext(): ErrorSummaryContextValue | undefined {
-  return useContext(ErrorSummaryContext);
+  return use(ErrorSummaryContext);
 }
 
 /**
@@ -230,10 +230,10 @@ export function ErrorSummaryProvider({ children, actionData }: ErrorSummaryProvi
   );
 
   return (
-    <ErrorSummaryContext.Provider value={contextValue}>
+    <ErrorSummaryContext value={contextValue}>
       {children}
       <ErrorSummaryCommitter />
-    </ErrorSummaryContext.Provider>
+    </ErrorSummaryContext>
   );
 }
 

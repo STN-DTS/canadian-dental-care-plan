@@ -10,12 +10,12 @@ import { useLocation } from 'react-router';
 export function RouteChangeAnnouncer() {
   const { pathname } = useLocation();
   // Skip initial render to avoid announcing the page title on first load/hydration.
-  const isFirstRender = useRef(true);
+  const isFirstRenderRef = useRef(true);
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
       return;
     }
 

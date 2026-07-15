@@ -43,7 +43,7 @@ interface DatePickerFieldProps {
 export const DatePickerField = ({ defaultValue, disabled, errorMessages, helpMessagePrimary, helpMessagePrimaryClassName, helpMessageSecondary, helpMessageSecondaryClassName, id, legend, names, required }: DatePickerFieldProps) => {
   const { currentLanguage } = useCurrentLanguage();
   const { t } = useTranslation('gcweb');
-  const [value] = useState(extractDateParts(defaultValue));
+  const [value] = useState(() => extractDateParts(defaultValue));
 
   const inputWrapperId = `date-picker-${id}`;
   const inputErrorId = `${inputWrapperId}-error`;

@@ -1,15 +1,14 @@
+import eslintReact from '@eslint-react/eslint-plugin';
 import eslint from '@eslint/js';
 import vitestPlugin from '@vitest/eslint-plugin';
+import * as tsResolver from 'eslint-import-resolver-typescript';
 import importXPlugin from 'eslint-plugin-import-x';
 import importZod from 'eslint-plugin-import-zod';
 import jsxA11yXPlugin from 'eslint-plugin-jsx-a11y-x';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import * as tsResolver from 'eslint-import-resolver-typescript';
 
 export default defineConfig(
   {
@@ -61,7 +60,6 @@ export default defineConfig(
       eslint.configs.recommended, //
       importXPlugin.flatConfigs.recommended,
       importZod.configs.recommended,
-      reactHooksPlugin.configs.flat['recommended-latest'],
       tseslint.configs.strict,
     ],
     rules: {
@@ -103,17 +101,17 @@ export default defineConfig(
     //
     // react
     //
-    files: ['**/*.tsx'],
+    files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['**/.server/**'],
     extends: [
       jsxA11yXPlugin.configs.recommended, //
-      reactPlugin.configs.flat.recommended,
-      reactPlugin.configs.flat['jsx-runtime'],
-      reactHooksPlugin.configs.flat['recommended-latest'],
+      eslintReact.configs['recommended-typescript'],
     ],
     rules: {
-      'react/no-unknown-property': ['error', { ignore: ['property', 'resource', 'typeof', 'vocab'] }],
-      'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
-      'react/prop-types': 'off',
+      '@eslint-react/dom-no-unknown-property': ['error', { ignore: ['property', 'resource', 'typeof', 'vocab'] }],
+      '@eslint-react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
+      // TODO: enable this rule once eslint upgrade to v10
+      '@eslint-react/static-components': 'off',
     },
     settings: {
       formComponents: ['Form'],

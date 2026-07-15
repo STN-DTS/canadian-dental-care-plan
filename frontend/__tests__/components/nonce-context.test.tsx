@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { use } from 'react';
 
 import { render, screen } from '@testing-library/react';
 
@@ -8,7 +8,7 @@ import { NonceContext, NonceProvider } from '~/components/nonce-context';
 
 describe('NonceContext', () => {
   it('should provide the NonceContext to its children', () => {
-    const TestComponent = () => <div>nonce is [{useContext(NonceContext).nonce}]</div>;
+    const TestComponent = () => <div>nonce is [{use(NonceContext).nonce}]</div>;
 
     render(
       <NonceProvider nonce={'0123456789ABCDEF'}>

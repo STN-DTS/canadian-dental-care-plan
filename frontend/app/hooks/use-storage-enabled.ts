@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useIsClient } from '~/hooks/use-is-client';
+import { isClient } from '~/utils/ssr-utils';
 
 /**
  * Check if a specific web storage type is available and usable. This hook tests the availability of `localStorage` or
@@ -12,10 +12,8 @@ import { useIsClient } from '~/hooks/use-is-client';
  * @returns A boolean indicating whether the specified storage type is enabled and functional.
  */
 export function useStorageEnabled(type: 'localStorage' | 'sessionStorage' = 'localStorage'): boolean {
-  const isClient = useIsClient();
-
   return useMemo<boolean>(() => {
-    if (!isClient) {
+    if (!isClient()) {
       return false;
     }
 
@@ -29,5 +27,5 @@ export function useStorageEnabled(type: 'localStorage' | 'sessionStorage' = 'loc
     } catch {
       return false;
     }
-  }, [isClient, type]);
+  }, [type]);
 }

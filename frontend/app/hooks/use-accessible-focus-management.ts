@@ -23,21 +23,21 @@ import { useLocation } from 'react-router';
  */
 export const useAccessibleFocusManagement = (focusableElementRef: RefObject<HTMLElement | null>) => {
   const { pathname } = useLocation();
-  const isFirstRender = useRef(true);
+  const isFirstRenderRef = useRef(true);
   // Tracks the latest input modality so focus management only runs for keyboard users.
-  const isKeyboardNavigation = useRef(false);
+  const isKeyboardNavigationRef = useRef(false);
 
   useEffect(() => {
     // Keyboard interaction enables route-change focus so keyboard/screen-reader users
     // are moved to the new page heading/context after navigation.
     function handleKeydown() {
-      isKeyboardNavigation.current = true;
+      isKeyboardNavigationRef.current = true;
     }
 
     // Pointer/touch interaction disables route-change focus to avoid showing focus rings
     // unexpectedly during mouse/touch navigation.
     function handlePointer() {
-      isKeyboardNavigation.current = false;
+      isKeyboardNavigationRef.current = false;
     }
 
     window.addEventListener('keydown', handleKeydown, true);
@@ -53,13 +53,13 @@ export const useAccessibleFocusManagement = (focusableElementRef: RefObject<HTML
 
   useEffect(() => {
     // Do not move focus on initial page load; only handle client-side route changes.
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
       return;
     }
 
     // Skip programmatic focus for non-keyboard navigation to reduce visual disruption.
-    if (!isKeyboardNavigation.current) {
+    if (!isKeyboardNavigationRef.current) {
       return;
     }
 

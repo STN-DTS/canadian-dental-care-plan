@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { use, useEffect } from 'react';
 
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useRouteLoaderData } from 'react-router';
 
@@ -95,7 +95,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 export default function App({ loaderData }: Route.ComponentProps) {
   const { dynatraceRumScript, env, origin } = loaderData;
 
-  const { nonce } = useContext(NonceContext);
+  const { nonce } = use(NonceContext);
   const location = useLocation();
   const { i18n } = useTranslation();
   const canonicalURL = useCanonicalURL(origin);
@@ -184,7 +184,7 @@ export function useFeature(feature: FeatureName) {
 }
 
 export function ErrorBoundary() {
-  const { nonce } = useContext(NonceContext);
+  const { nonce } = use(NonceContext);
   const { i18n } = useTranslation();
   const en = i18n.getFixedT('en', 'gcweb');
   const fr = i18n.getFixedT('fr', 'gcweb');

@@ -47,6 +47,7 @@ export function ZodConfig(props: ZodConfigProps): JSX.Element {
   return (
     <script
       {...props}
+      // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
       dangerouslySetInnerHTML={{
         __html: `globalThis.${ZOD_GLOBAL_CONFIG_KEY} = Object.assign(globalThis.${ZOD_GLOBAL_CONFIG_KEY} ?? {}, ${JSON.stringify(ZOD_CONFIG)});`,
       }}
