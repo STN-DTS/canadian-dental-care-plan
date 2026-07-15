@@ -2,7 +2,7 @@ import eslint from '@eslint/js';
 import vitestPlugin from '@vitest/eslint-plugin';
 import importXPlugin from 'eslint-plugin-import-x';
 import importZod from 'eslint-plugin-import-zod';
-import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import jsxA11yXPlugin from 'eslint-plugin-jsx-a11y-x';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import unicornPlugin from 'eslint-plugin-unicorn';
@@ -105,7 +105,7 @@ export default defineConfig(
     //
     files: ['**/*.tsx'],
     extends: [
-      jsxA11yPlugin.flatConfigs.recommended, //
+      jsxA11yXPlugin.configs.recommended, //
       reactPlugin.configs.flat.recommended,
       reactPlugin.configs.flat['jsx-runtime'],
       reactHooksPlugin.configs.flat['recommended-latest'],
