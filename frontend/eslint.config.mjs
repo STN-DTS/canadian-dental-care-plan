@@ -1,6 +1,6 @@
 import eslint from '@eslint/js';
 import vitestPlugin from '@vitest/eslint-plugin';
-import importPlugin from 'eslint-plugin-import';
+import importXPlugin from 'eslint-plugin-import-x';
 import importZod from 'eslint-plugin-import-zod';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import reactPlugin from 'eslint-plugin-react';
@@ -9,6 +9,7 @@ import unicornPlugin from 'eslint-plugin-unicorn';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import * as tsResolver from 'eslint-import-resolver-typescript';
 
 export default defineConfig(
   {
@@ -58,7 +59,7 @@ export default defineConfig(
     files: ['**/*.{ts,tsx}'],
     extends: [
       eslint.configs.recommended, //
-      importPlugin.flatConfigs.recommended,
+      importXPlugin.flatConfigs.recommended,
       importZod.configs.recommended,
       reactHooksPlugin.configs.flat['recommended-latest'],
       tseslint.configs.strict,
@@ -89,13 +90,12 @@ export default defineConfig(
       'no-return-await': 'off',
       '@typescript-eslint/return-await': ['error', 'always'],
       '@typescript-eslint/switch-exhaustiveness-check': ['error', { considerDefaultExhaustiveForUnions: true, requireDefaultForNonUnion: true }],
-      'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+      'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
     },
     settings: {
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-        },
+      'import-x/resolver': {
+        name: 'tsResolver',
+        resolver: tsResolver,
       },
     },
   },

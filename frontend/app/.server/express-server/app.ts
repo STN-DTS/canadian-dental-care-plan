@@ -15,7 +15,7 @@ export const app: express.Express = express();
 
 app.use(
   createRequestHandler({
-    // eslint-disable-next-line import/no-unresolved
+    // eslint-disable-next-line import-x/no-unresolved
     build: async () => setSingleton('serverBuild', await import('virtual:react-router/server-build')),
     mode: getEnv().NODE_ENV,
     getLoadContext: (req) => {
