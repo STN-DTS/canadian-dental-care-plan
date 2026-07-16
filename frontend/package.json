@@ -127,7 +127,7 @@
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-jsx-a11y-x": "^0.2.0",
-    "eslint-plugin-unicorn": "^65.0.1",
+    "eslint-plugin-unicorn": "^71.1.0",
     "globals": "^17.7.0",
     "i18next-cli": "^1.65.0",
     "jsdom": "^29.1.1",

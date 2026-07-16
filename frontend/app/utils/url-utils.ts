@@ -9,7 +9,7 @@ export function removePathSegment(url: string | URL, position: number) {
   const segments = urlObj.pathname.split('/');
   segments.splice(position + 1, 1);
   urlObj.pathname = segments.join('/');
-  return urlObj.toString();
+  return urlObj.href;
 }
 
 /**
@@ -26,7 +26,7 @@ export function replacePathSegment(url: string | URL, position: number, replacem
     segments[position + 1] = replacement;
   }
   urlObj.pathname = segments.join('/');
-  return urlObj.toString();
+  return urlObj.href;
 }
 
 type ParseUrlSuccess = { success: true; url: URL };

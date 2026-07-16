@@ -95,7 +95,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
         message: 'Failed to fetch evidentiary documents',
         status: response.status,
         statusText: response.statusText,
-        url: url.toString(),
+        url: url.href,
         clientId: findEvidentiaryDocumentsRequest.clientId,
         responseBody: await response.text(),
       });
@@ -149,7 +149,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
         message: 'Failed to upload evidentiary document metadata',
         status: response.status,
         statusText: response.statusText,
-        url: url.toString(),
+        url: url.href,
         clientId: createRequest.clientId,
         responseBody: await response.text(),
       });

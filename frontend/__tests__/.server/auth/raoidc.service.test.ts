@@ -72,7 +72,7 @@ describe('DefaultRaoidcService', () => {
       const mockCodeVerifier = 'mock_code_verifier';
       const mockState = 'mock_state';
       const mockAuthUrl = new URL('https://example.com/auth/auth');
-      const mockServerMetadata = mock<ServerMetadata>({ authorization_endpoint: mockAuthUrl.toString() });
+      const mockServerMetadata = mock<ServerMetadata>({ authorization_endpoint: mockAuthUrl.href });
       const mockJwkSet = mock<JWKSet>();
 
       vi.mocked(generateCodeChallenge).mockReturnValue({ codeChallenge: mockCodeChallenge, codeVerifier: mockCodeVerifier });

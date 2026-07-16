@@ -88,7 +88,6 @@ app.all(['/:lang/apply{/*splat}', '/:lang/demander{/*splat}'], (req, res) => {
   res.redirect(302, redirectUrl);
 });
 
-// eslint-disable-next-line unicorn/prefer-ternary
 if (isProduction) {
   await configureProductionServer(app);
 } else {

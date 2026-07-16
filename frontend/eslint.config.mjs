@@ -146,6 +146,45 @@ export default defineConfig(
           ignore: ['__tests__', '__mocks__'],
         },
       ],
+      // TODO: revisit and fix these rules if it makes sense to enable them
+      'unicorn/consistent-boolean-name': 'off',
+      'unicorn/max-nested-calls': 'off',
+      'unicorn/name-replacements': 'off',
+      'unicorn/consistent-class-member-order': 'off', // errors  23
+      'unicorn/consistent-conditional-object-spread': 'off', // errors  29
+      'unicorn/new-for-builtins': 'off', // errors   1
+      'unicorn/no-computed-property-existence-check': 'off', // errors   2
+      'unicorn/no-declarations-before-early-exit': 'off', // errors  21
+      'unicorn/no-duplicate-loops': 'off', // errors   1
+      'unicorn/no-global-object-property-assignment': 'off', // errors  11
+      'unicorn/no-negated-array-predicate': 'off', // errors   1
+      'unicorn/no-non-function-verb-prefix': 'off', // errors  11
+      'unicorn/no-nonstandard-builtin-properties': 'off', // errors   1
+      'unicorn/no-top-level-assignment-in-function': 'off', // errors   1
+      'unicorn/no-top-level-side-effects': 'off', // errors   2
+      'unicorn/no-unnecessary-boolean-comparison': 'off', // errors  63
+      'unicorn/no-unnecessary-fetch-options': 'off', // errors   2
+      'unicorn/no-unnecessary-global-this': 'off', // errors   2
+      'unicorn/no-unreadable-for-of-expression': 'off', // errors   1
+      'unicorn/no-unreadable-object-destructuring': 'off', // errors   1
+      'unicorn/no-unsafe-string-replacement': 'off', // errors   1
+      'unicorn/no-useless-coercion': 'off', // errors  13
+      'unicorn/no-useless-else': 'off', // errors   1
+      'unicorn/no-useless-template-literals': 'off', // errors   3
+      'unicorn/prefer-add-event-listener-options': 'off', // errors   3
+      'unicorn/prefer-array-from-map': 'off', // errors   1
+      'unicorn/prefer-await': 'off', // errors   6
+      'unicorn/prefer-continue': 'off', // errors   1
+      'unicorn/prefer-direct-iteration': 'off', // errors   1
+      'unicorn/prefer-early-return': 'off', // errors  12
+      'unicorn/prefer-global-number-constants': 'off', // errors   1
+      'unicorn/prefer-has-check': 'off', // errors   1
+      'unicorn/prefer-hoisting-branch-code': 'off', // errors   3
+      'unicorn/prefer-iterator-to-array': 'off', // errors   4
+      'unicorn/prefer-minimal-ternary': 'off', // errors 155
+      'unicorn/prefer-number-coercion': 'off', // errors   1
+      'unicorn/prefer-ternary': 'off', // errors   2
+      'unicorn/prefer-unicode-code-point-escapes': 'off', // errors 219
     },
   },
   //

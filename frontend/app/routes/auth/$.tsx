@@ -75,8 +75,8 @@ function handleLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' |
   const loginUrl = new URL(`/auth/login/${defaultProviderId}`, url);
   loginUrl.search = url.search;
 
-  log.debug('Redirecting to default provider handler: [%s]', loginUrl);
-  return redirectDocument(loginUrl.toString());
+  log.debug('Redirecting to default provider handler: [%s]', loginUrl.href);
+  return redirectDocument(loginUrl.href);
 }
 
 async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {

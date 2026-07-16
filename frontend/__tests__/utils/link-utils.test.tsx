@@ -29,7 +29,7 @@ describe('scrollAndFocusFromAnchorLink', () => {
 
     const url = new URL(window.location.href);
     url.hash = 'heading';
-    scrollAndFocusFromAnchorLink(url.toString());
+    scrollAndFocusFromAnchorLink(url.href);
 
     expect(actual).toBeInTheDocument();
     expect(actual).toHaveFocus();
@@ -67,7 +67,7 @@ describe('scrollAndFocusFromAnchorLink', () => {
 
     const url = new URL(window.location.href);
     url.hash = '';
-    scrollAndFocusFromAnchorLink(url.toString());
+    scrollAndFocusFromAnchorLink(url.href);
 
     expect(actual).toBeInTheDocument();
     expect(actual).not.toHaveFocus();
@@ -86,7 +86,7 @@ describe('scrollAndFocusFromAnchorLink', () => {
 
     const url = new URL(window.location.href);
     url.hash = 'retemele';
-    scrollAndFocusFromAnchorLink(url.toString());
+    scrollAndFocusFromAnchorLink(url.href);
 
     expect(actual).toBeInTheDocument();
     expect(actual).not.toHaveFocus();

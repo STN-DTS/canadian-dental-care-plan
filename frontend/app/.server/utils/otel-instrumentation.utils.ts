@@ -308,7 +308,7 @@ export function enrichRequestSpan(span: Span, method: string, result: Instrument
   }
 
   if (meta?.url) {
-    span.setAttribute(ATTR_RR_URL, meta.url.toString());
+    span.setAttribute(ATTR_RR_URL, meta.url.href);
   }
 
   if (meta?.params) {

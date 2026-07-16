@@ -14,7 +14,7 @@ export function useCanonicalURL(origin: string) {
   const url = new URL(pathname, origin);
   url.search = new URLSearchParams(search).toString();
 
-  return url.toString();
+  return url.href;
 }
 
 /**
@@ -29,7 +29,7 @@ export function useAlternateLanguages(origin: string, languages: ReadonlyArray<A
   return languages.map((lang) => {
     const url = new URL(`/${lang}${pathWithoutLang}`, origin);
     url.search = new URLSearchParams(search).toString();
-    return { href: url.toString(), hrefLang: lang };
+    return { href: url.href, hrefLang: lang };
   });
 }
 

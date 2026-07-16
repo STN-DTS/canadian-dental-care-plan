@@ -221,8 +221,8 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
   redirectUri.searchParams.set('code', generateRandomString(16));
   redirectUri.searchParams.set('state', result.data.state);
 
-  log.debug('Mock login successful; redirecting to [%s]', redirectUri.toString());
-  return redirectDocument(redirectUri.toString());
+  log.debug('Mock login successful; redirecting to [%s]', redirectUri.href);
+  return redirectDocument(redirectUri.href);
 }
 
 /**
