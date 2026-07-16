@@ -98,7 +98,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.13.1",
+    "@eslint-react/eslint-plugin": "^5.14.7",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@react-router/dev": "^8.2.0",
@@ -122,7 +122,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/eslint-plugin": "^1.6.23",
     "@vitest/ui": "^4.1.10",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "eslint-formatter-summary": "^2.0.2",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-import-x": "^4.17.1",
@@ -138,7 +138,7 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.2",
     "tailwindcss-animate": "^1.0.7",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.1",
     "type-fest": "^5.8.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.63.0",
