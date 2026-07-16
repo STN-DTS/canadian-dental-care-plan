@@ -98,7 +98,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.12.1",
+    "@eslint-react/eslint-plugin": "^5.13.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@react-router/dev": "^8.2.0",
