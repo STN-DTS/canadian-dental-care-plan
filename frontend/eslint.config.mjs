@@ -1,11 +1,11 @@
 import eslintReact from '@eslint-react/eslint-plugin';
-import eslint from '@eslint/js';
-import vitestPlugin from '@vitest/eslint-plugin';
+import js from '@eslint/js';
+import vitest from '@vitest/eslint-plugin';
 import * as tsResolver from 'eslint-import-resolver-typescript';
-import importXPlugin from 'eslint-plugin-import-x';
+import importX from 'eslint-plugin-import-x';
 import importZod from 'eslint-plugin-import-zod';
-import jsxA11yXPlugin from 'eslint-plugin-jsx-a11y-x';
-import unicornPlugin from 'eslint-plugin-unicorn';
+import jsxA11yX from 'eslint-plugin-jsx-a11y-x';
+import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -20,7 +20,7 @@ export default defineConfig(
       '**/tmp/',
     ],
   },
-  eslint.configs.recommended,
+  js.configs.recommended,
   {
     //
     // base config
@@ -49,7 +49,7 @@ export default defineConfig(
     // non-typescript
     //
     files: ['**/*.{js,cjs,mjs}'],
-    extends: [eslint.configs.recommended],
+    extends: [js.configs.recommended],
   },
   {
     //
@@ -57,8 +57,8 @@ export default defineConfig(
     //
     files: ['**/*.{ts,tsx}'],
     extends: [
-      eslint.configs.recommended, //
-      importXPlugin.flatConfigs.recommended,
+      js.configs.recommended, //
+      importX.flatConfigs.recommended,
       importZod.configs.recommended,
       tseslint.configs.strict,
     ],
@@ -104,7 +104,7 @@ export default defineConfig(
     files: ['**/*.ts', '**/*.tsx'],
     ignores: ['**/.server/**'],
     extends: [
-      jsxA11yXPlugin.configs.recommended, //
+      jsxA11yX.configs.recommended, //
       eslintReact.configs['recommended-typescript'],
     ],
     rules: {
@@ -128,7 +128,7 @@ export default defineConfig(
   // unicorn plugin
   // https://github.com/sindresorhus/eslint-plugin-unicorn
   //
-  unicornPlugin.configs.recommended,
+  unicorn.configs.recommended,
   {
     rules: {
       'unicorn/consistent-function-scoping': ['error', { checkArrowFunctions: false }],
@@ -155,10 +155,10 @@ export default defineConfig(
   {
     files: ['__tests__/**'],
     plugins: {
-      vitest: vitestPlugin,
+      vitest: vitest,
     },
     rules: {
-      ...vitestPlugin.configs.recommended.rules,
+      ...vitest.configs.recommended.rules,
       'vitest/prefer-called-exactly-once-with': 'off',
     },
     settings: {
@@ -168,7 +168,7 @@ export default defineConfig(
     },
     languageOptions: {
       globals: {
-        ...vitestPlugin.environments.env.globals,
+        ...vitest.environments.env.globals,
       },
     },
   },
