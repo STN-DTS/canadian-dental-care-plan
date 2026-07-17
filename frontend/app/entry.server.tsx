@@ -21,36 +21,24 @@ import { getNamespaces } from '~/utils/locale-utils';
 import { randomHexString } from '~/utils/string-utils';
 
 /**
- * We need to extend the server-side session lifetime whenever a client-side
- * navigation happens. Since all client-side navigation will make a data request
- * for the root loader, we can use the handleDataRequest function to effectively
- * 'touch' the session, extending it by the default session lifetime.
- *
- * Extending the session lifetime  update the TTL value of the session data when
- * using Redis as a backing store.
- *
- * @see https://remix.run/docs/en/main/file-conventions/entry.server#handledatarequest
+ * Counts requests handled through React Router's data request path, including
+ * client-side navigation requests.
  */
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function handleDataRequest(response: Response, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+export function handleDataRequest(response: Response, { request, params, context }: LoaderFunctionArgs | ActionFunctionArgs) {
   const { appContainer } = context.get(appContext);
-  const log = createLogger('entry.server/handleDataRequest');
-  log.debug('Touching session to extend its lifetime');
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('http.server.requests').add(1);
-
   return response;
 }
 
 /**
- * Log any errors using the application logger (Remix will log using console.error() by default, which we don't want).
- *
- * @see https://remix.run/docs/en/main/file-conventions/entry.server#handleerror
+ * Logs React Router request errors using the application logger instead of
+ * React Router's default console output.
  */
 export function handleError(error: unknown, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
   const { appContainer } = context.get(appContext);
-  // note that you generally want to avoid logging when the request was aborted, since remix's
-  // cancellation and race-condition handling can cause a lot of requests to be aborted
+  // Avoid logging aborted requests because React Router cancellation and
+  // race-condition handling can abort requests during normal operation.
   const log = createLogger('entry.server/handleError');
   if (!request.signal.aborted) {
     if (error instanceof Error) {
