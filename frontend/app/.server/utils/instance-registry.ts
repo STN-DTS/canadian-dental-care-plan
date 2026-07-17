@@ -23,12 +23,11 @@ import type { ClientEnv } from '~/utils/env-utils';
  * of the singleton instance associated with that name.
  */
 interface InstanceTypeMap {
+  agnosticRoutes: ReadonlyArray<RouteObject>;
   clientEnv: ClientEnv;
   loggingConfig: LoggingConfig;
   redisClient: RedisClient;
-  routes: readonly RouteObject[];
   serverBuild: ServerBuild;
-  serverRoute: ServerBuild;
   serverEnv: ServerEnv;
   winstonLogger: Logger;
 }
