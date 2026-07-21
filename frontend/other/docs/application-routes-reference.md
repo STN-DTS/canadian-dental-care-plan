@@ -355,6 +355,8 @@ Section for authenticated users to manage required documentation. Users can uplo
 | `/en/protected/documents/upload`       | Upload                 | `/fr/protege/documents/televerser` | Téléverser           |
 | `/en/protected/documents/not-required` | Documents not required | `/fr/protege/documents/non-requis` | Documents non requis |
 
+For upload flow implementation details, see [Document Upload Feature](./document-upload-feature.md).
+
 ---
 
 ### Letters
