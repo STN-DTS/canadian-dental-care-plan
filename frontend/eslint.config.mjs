@@ -132,20 +132,16 @@ export default defineConfig(
   {
     rules: {
       'unicorn/consistent-function-scoping': ['error', { checkArrowFunctions: false }],
+      'unicorn/filename-case': ['error', { case: 'kebabCase', ignore: ['__tests__', '__mocks__'] }],
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-array-reduce': 'off',
       'unicorn/no-null': 'off',
+      'unicorn/no-useless-promise-resolve-reject': 'off',
       'unicorn/no-useless-undefined': ['error', { checkArguments: false }],
       'unicorn/prefer-global-this': 'off',
+      'unicorn/prefer-simple-condition-first': 'off',
       'unicorn/prefer-structured-clone': 'off',
       'unicorn/prevent-abbreviations': 'off',
-      'unicorn/filename-case': [
-        'error',
-        {
-          case: 'kebabCase',
-          ignore: ['__tests__', '__mocks__'],
-        },
-      ],
       // TODO: revisit and fix these rules if it makes sense to enable them
       'unicorn/consistent-boolean-name': 'off',
       'unicorn/max-nested-calls': 'off',

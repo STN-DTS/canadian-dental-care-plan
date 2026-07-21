@@ -57,6 +57,7 @@ describe('<ClientEnv>', () => {
 
     const { container } = render(<ClientEnvComponent env={env} nonce={nonce} />);
 
+    // eslint-disable-next-line unicorn/prefer-dom-node-html-methods
     expect(container.innerHTML).toEqual(`<script nonce="${nonce}">window.env = ${JSON.stringify(env)}</script>`);
   });
 });
