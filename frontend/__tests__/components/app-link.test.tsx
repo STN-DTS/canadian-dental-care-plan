@@ -41,14 +41,22 @@ describe('AppLink', () => {
   });
 
   it('should render an external link correctly', () => {
-    const externalProps: AppLinkProps = { ...defaultProps, to: 'https://www.example.com' };
-    render(<AppLink {...externalProps} />);
+    const { children, ...restProps } = defaultProps;
+    render(
+      <AppLink {...restProps} to="https://www.example.com">
+        {children}
+      </AppLink>,
+    );
     expect(screen.getByText('Click me').closest('a')).toHaveAttribute('href', 'https://www.example.com');
   });
 
   it('should render the NewTabIndicator when newTabIndicator is true', () => {
-    const propsWithIndicator: AppLinkProps = { ...defaultProps, newTabIndicator: true };
-    render(<AppLink {...propsWithIndicator} />);
+    const { children, ...restProps } = defaultProps;
+    render(
+      <AppLink {...restProps} newTabIndicator={true}>
+        {children}
+      </AppLink>,
+    );
     expect(screen.getByText('(screenReader.newTab)')).toBeInTheDocument();
   });
 
