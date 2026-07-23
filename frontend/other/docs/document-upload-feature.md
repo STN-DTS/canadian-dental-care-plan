@@ -271,13 +271,13 @@ Power Platform later returns document metadata, client display names, and locali
 Technical reference for developers and integration teams. Key implementation files:
 
 - [`upload.tsx`](../../app/routes/protected/documents/upload.tsx): upload page access, validation, scan/upload orchestration, and metadata orchestration.
-- [`document-upload.service.ts`](../../app/.server/domain/services/document-upload.service.ts): EWDU service facade.
-- [`document-upload.repository.ts`](../../app/.server/domain/repositories/document-upload.repository.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.
-- [`document-upload.dto.ts`](../../app/.server/domain/dtos/document-upload.dto.ts): scan and upload DTO contracts.
-- [`document-upload.dto.mapper.ts`](../../app/.server/domain/mappers/document-upload.dto.mapper.ts): maps CDCP DTOs to EWDU request fields and resolves document-type codes.
-- [`evidentiary-document.repository.ts`](../../app/.server/domain/repositories/evidentiary-document.repository.ts): Power Platform metadata GET/POST operations.
-- [`evidentiary-document.service.ts`](../../app/.server/domain/services/evidentiary-document.service.ts): metadata service facade.
-- [`env.utils.ts`](../../app/.server/utils/env.utils.ts): server-side integration and upload configuration schema.
+- [`document-upload-service.ts`](../../app/.server/domain/services/document-upload-service.ts): EWDU service facade.
+- [`document-upload-repository.ts`](../../app/.server/domain/repositories/document-upload-repository.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.
+- [`document-upload-dto-ts`](../../app/.server/domain/dtos/document-upload-dto.ts): scan and upload DTO contracts.
+- [`document-upload-dto-mapper.ts`](../../app/.server/domain/mappers/document-upload-dto-mapper.ts): maps CDCP DTOs to EWDU request fields and resolves document-type codes.
+- [`evidentiary-document-repository.ts`](../../app/.server/domain/repositories/evidentiary-document-repository.ts): Power Platform metadata GET/POST operations.
+- [`evidentiary-document-service.ts`](../../app/.server/domain/services/evidentiary-document-service.ts): metadata service facade.
+- [`env.utils-ts`](../../app/.server/utils/env-utils.ts): server-side integration and upload configuration schema.
 - [`application-routes-reference.md`](./application-routes-reference.md): protected document route list.
 
 The production bindings are configured through Inversify. `DefaultDocumentUploadRepository` is used unless the `document-upload` mock is enabled; the mock returns successful scan and upload responses without calling EWDU.

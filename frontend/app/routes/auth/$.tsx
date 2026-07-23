@@ -9,8 +9,8 @@ import { TYPES } from '~/.server/constants';
  */
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
-import type { IdToken } from '~/.server/utils/raoidc.utils';
-import { generateCallbackUri } from '~/.server/utils/raoidc.utils';
+import type { IdToken } from '~/.server/utils/raoidc-utils';
+import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
 
 const defaultProviderId = 'raoidc';
 const defaultReturnUrl = '/';

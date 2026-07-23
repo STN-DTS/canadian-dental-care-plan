@@ -7,7 +7,7 @@ import type { Route } from './+types/dental-insurance-exit-application';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { clearProtectedApplicationState, getProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';

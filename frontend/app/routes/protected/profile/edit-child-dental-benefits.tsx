@@ -11,8 +11,8 @@ import type { Route } from './+types/edit-child-dental-benefits';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';

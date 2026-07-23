@@ -50,7 +50,7 @@ interface LoadStateArgs {
  * @returns The loaded state.
  */
 export function loadStatusState({ id, params, session }: LoadStateArgs): StatusState {
-  const log = createLogger('status-route-helpers.server/loadStatusState');
+  const log = createLogger('status-route-helpers/loadStatusState');
   const statusIndexUrl = getPathById('public/status/index', params);
 
   const parsedId = idSchema.safeParse(id);
@@ -84,7 +84,7 @@ interface SaveStateArgs {
  * @returns The new status state.
  */
 export function saveStatusState({ id, params, session, state }: SaveStateArgs) {
-  const log = createLogger('status-route-helpers.server/saveStatusState');
+  const log = createLogger('status-route-helpers/saveStatusState');
   const currentState = loadStatusState({ id, params, session });
 
   const newState = {
@@ -109,7 +109,7 @@ interface ClearStateArgs {
  * @param args - The arguments.
  */
 export function clearStatusState({ id, params, session }: ClearStateArgs) {
-  const log = createLogger('status-route-helpers.server/clearStatusState');
+  const log = createLogger('status-route-helpers/clearStatusState');
   const state = loadStatusState({ id, params, session });
   const sessionKey = getSessionKey(state.id);
   session.unset(sessionKey);
@@ -127,7 +127,7 @@ interface StartArgs {
  * @returns The initial status state.
  */
 export function startStatusState({ id, session }: StartArgs) {
-  const log = createLogger('status-route-helpers.server/startStatusState');
+  const log = createLogger('status-route-helpers/startStatusState');
   const parsedId = idSchema.parse(id);
 
   const initialState: StatusState = {

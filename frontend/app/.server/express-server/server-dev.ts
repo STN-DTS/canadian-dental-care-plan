@@ -2,7 +2,7 @@ import express from 'express';
 
 import { createLogger } from '~/.server/logging';
 
-const log = createLogger('express-dev.ts');
+const log = createLogger('express-dev');
 
 /**
  * Configures an Express development server for React-Router.

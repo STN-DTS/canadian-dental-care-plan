@@ -6,7 +6,7 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
-import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto.utils';
+import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 
 /**
  * JsonWebKey with an additional `kid` (key id) property.

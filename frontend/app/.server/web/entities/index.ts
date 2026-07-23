@@ -1,1 +1,1 @@
-export type * from './hcaptcha.entity';
+export type * from './hcaptcha-entity';

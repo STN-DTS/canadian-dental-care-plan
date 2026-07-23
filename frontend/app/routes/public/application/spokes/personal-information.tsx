@@ -13,8 +13,8 @@ import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos'
 import { isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationApplicantInformationState, PublicApplicationInputModelState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getPublicApplicationState, getPublicChildrenSins, getPublicPartnerSin, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
-import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Collapsible } from '~/components/collapsible';

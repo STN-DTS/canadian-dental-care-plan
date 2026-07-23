@@ -2,7 +2,7 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/unable-to-process-request';
 
-import { getFixedT } from '~/.server/utils/locale.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { InlineLink } from '~/components/inline-link';
 import { PublicLayout } from '~/components/layouts/public-layout';

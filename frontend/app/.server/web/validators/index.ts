@@ -1,3 +1,3 @@
-export * from './csrf-token.validator';
-export * from './hcaptcha.validator';
-export * from './raoidc-session.validator';
+export * from './csrf-token-validator';
+export * from './hcaptcha-validator';
+export * from './raoidc-session-validator';

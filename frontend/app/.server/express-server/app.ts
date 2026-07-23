@@ -10,9 +10,9 @@ import express from 'express';
 import { appContext } from '~/.server/context';
 import { getAppContext } from '~/.server/express-server/app-context';
 import { createLogger } from '~/.server/logging';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getEnv } from '~/.server/utils/env-utils';
 import { hasSingleton, setSingleton, singleton } from '~/.server/utils/instance-registry';
-import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build.utils';
+import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build-utils';
 
 const log = createLogger('app');
 

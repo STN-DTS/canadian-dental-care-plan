@@ -6,7 +6,7 @@ import type { Route } from './+types/renewal-submitted';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT } from '~/.server/utils/locale.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { InlineLink } from '~/components/inline-link';

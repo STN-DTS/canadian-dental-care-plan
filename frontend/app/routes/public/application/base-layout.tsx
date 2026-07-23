@@ -5,7 +5,7 @@ import type { Route } from './+types/base-layout';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
-import { getLocale } from '~/.server/utils/locale.utils';
+import { getLocale } from '~/.server/utils/locale-utils';
 import { KillswitchDialog } from '~/components/killswitch-dialog';
 import { PublicLayout, publicLayoutI18nNamespace } from '~/components/layouts/public-layout';
 import SessionTimeout from '~/components/session-timeout';

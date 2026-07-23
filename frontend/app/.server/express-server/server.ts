@@ -7,10 +7,10 @@ import { globalErrorHandler } from '~/.server/express-server/request-handlers';
 import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
 import { configureProductionServer, configureProductionStaticAssets } from '~/.server/express-server/server-prod';
 import { createLogger } from '~/.server/logging';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getEnv } from '~/.server/utils/env-utils';
 
 console.log('Starting Canadian Dental Care Plan server...');
-const log = createLogger('express.server');
+const log = createLogger('express');
 
 log.info('Validating runtime environment...');
 const environment = getEnv();

@@ -15,7 +15,7 @@ import {
   maritalStatusHasPartner,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 
-vi.mock('~/.server/utils/env.utils', () => ({
+vi.mock('~/.server/utils/env-utils', () => ({
   getEnv: vi.fn(() => ({
     ELIGIBILITY_STATUS_CODE_ELIGIBLE: 'ELIGIBLE',
     MARITAL_STATUS_CODE_COMMON_LAW: 'COMMON_LAW',

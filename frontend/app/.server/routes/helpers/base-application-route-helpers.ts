@@ -4,8 +4,8 @@ import validator from 'validator';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import type { DeclaredChange } from '~/.server/routes/helpers/declared-change-type';
-import { getCoveragePeriodFromTaxYear } from '~/.server/utils/coverage.utils';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getCoveragePeriodFromTaxYear } from '~/.server/utils/coverage-utils';
+import { getEnv } from '~/.server/utils/env-utils';
 import type { EligibilityType } from '~/components/eligibility';
 import { getAgeFromDateString } from '~/utils/date-utils';
 import { formatSin, isValidSin } from '~/utils/sin-utils';

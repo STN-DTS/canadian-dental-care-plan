@@ -1,4 +1,4 @@
-import { isValidId } from '~/utils/id.utils';
+import { isValidId } from '~/utils/id-utils';
 
 /**
  * Transforms a URL for Adobe Analytics by sanitizing path segments containing dynamic identifiers.

@@ -11,8 +11,8 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { isWithinRenewalPeriod, startProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import type { IdToken } from '~/.server/utils/raoidc.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { useApplicationFlowStorage } from '~/hooks';
 import { pageIds } from '~/page-ids';
@@ -21,7 +21,7 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
-import { secondsToMilliseconds } from '~/utils/units.utils';
+import { secondsToMilliseconds } from '~/utils/units-utils';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.index,

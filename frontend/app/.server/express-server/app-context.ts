@@ -2,13 +2,13 @@ import { UTCDate } from '@date-fns/utc';
 import type express from 'express';
 import type { SetOptional } from 'type-fest';
 
-import { appContainer } from '~/.server/app.container';
+import { appContainer } from '~/.server/app-container';
 import type { AppContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
 import { randomString } from '~/utils/string-utils';
 
-const log = createLogger('app-context.ts');
+const log = createLogger('app-context');
 
 type Request = express.Request;
 type RequestWithOptionalSession = SetOptional<Pick<express.Request, 'session'>, 'session'>;

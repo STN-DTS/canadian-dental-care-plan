@@ -9,8 +9,8 @@ import type { Route } from './+types/index';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { Collapsible } from '~/components/collapsible';
 import { CsrfTokenInput } from '~/components/csrf-token-input';

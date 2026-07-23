@@ -9,7 +9,7 @@ import type { Route } from './+types/eligibility';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { isWithinRenewalPeriod } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { DefinitionList, DefinitionListItem } from '~/components/definition-list';

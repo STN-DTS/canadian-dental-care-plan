@@ -21,8 +21,8 @@ import {
   saveProtectedApplicationState,
   validateApplicationFlow,
 } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Collapsible } from '~/components/collapsible';

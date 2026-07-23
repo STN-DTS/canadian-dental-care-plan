@@ -27,12 +27,12 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
-import { getEnv } from '~/.server/utils/env.utils';
-import { getLocaleFromParams } from '~/.server/utils/locale.utils';
-import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url.utils';
+import { getEnv } from '~/.server/utils/env-utils';
+import { getLocaleFromParams } from '~/.server/utils/locale-utils';
+import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url-utils';
 import type { Session } from '~/.server/web/session';
 import { getAgeFromDateString, parseDateString } from '~/utils/date-utils';
-import { generateId } from '~/utils/id.utils';
+import { generateId } from '~/utils/id-utils';
 import { getPathById } from '~/utils/route-utils';
 
 export type ProtectedApplicationStateSessionKey = `protected-application-flow-${string}`;
@@ -112,7 +112,7 @@ interface LoadStateArgs {
  * @returns The protected application state.
  */
 export function getProtectedApplicationState({ params, session }: LoadStateArgs): ProtectedApplicationState {
-  const log = createLogger('application-route-helpers.server/loadApplicationState');
+  const log = createLogger('protected-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
 
@@ -167,7 +167,7 @@ interface SaveProtectedApplicationStateArgs {
  * @returns The new protected application state.
  */
 export function saveProtectedApplicationState({ params, session, state }: SaveProtectedApplicationStateArgs): ProtectedApplicationState {
-  const log = createLogger('application-route-helpers.server/saveApplicationState');
+  const log = createLogger('protected-application-route-helpers/saveApplicationState');
   const currentState = getProtectedApplicationState({ params, session });
 
   const newState = {
@@ -193,7 +193,7 @@ interface ClearStateArgs {
  * @param args - The arguments.
  */
 export function clearProtectedApplicationState({ params, session }: ClearStateArgs): void {
-  const log = createLogger('application-route-helpers.server/clearApplicationState');
+  const log = createLogger('protected-application-route-helpers/clearApplicationState');
   const { id } = getProtectedApplicationState({ params, session });
 
   const sessionKey = getSessionKey(id);
@@ -323,7 +323,7 @@ export function validateApplicationFlow<TAllowedFlows extends ReadonlyArray<`${P
   params: Params,
   allowedFlows: TAllowedFlows,
 ): asserts state is OmitStrict<ProtectedApplicationState, 'context' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
-  const log = createLogger('application-route-helpers.server/validateApplicationFlow');
+  const log = createLogger('protected-application-route-helpers/validateApplicationFlow');
 
   const context = state.context;
   const type = state.typeOfApplication;
@@ -405,7 +405,7 @@ interface getSingleChildStateArgs {
  * @returns The loaded child state.
  */
 export function getSingleChildState({ params, session }: getSingleChildStateArgs) {
-  const log = createLogger('protected-application-route-helpers.server/ProtectedApplicationSingleChildState');
+  const log = createLogger('protected-application-route-helpers/ProtectedApplicationSingleChildState');
   const applicationState = getProtectedApplicationState({ params, session });
   const childId = params.childId;
   const childState = applicationState.children.find(({ id }) => id === childId);
@@ -493,7 +493,7 @@ export function validateProtectedApplicationContext<TExpectedContext extends Pro
 ): asserts state is Omit<ProtectedApplicationState, 'context'> & { context: TExpectedContext } {
   if (state.context !== expectedContext) {
     const redirectUrl = getInitialApplicationFlowUrl('entry', params);
-    const log = createLogger('protected-application-route-helpers.server/validateProtectedApplicationContext');
+    const log = createLogger('protected-application-route-helpers/validateProtectedApplicationContext');
     log.warn('Application context [%s] does not match expected context [%s]; redirecting to [%s], stateId: [%s]', state.context, expectedContext, redirectUrl, state.id);
     throw redirectDocument(redirectUrl);
   }

@@ -10,7 +10,7 @@ import type { Route } from './+types/session';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
-import { getApiSessionRedirectToUrl } from '~/.server/utils/api-session.utils';
+import { getApiSessionRedirectToUrl } from '~/.server/utils/api-session-utils';
 import { APP_LOCALES } from '~/utils/locale-utils';
 
 const API_SESSION_ACTIONS = ['end', 'extend'] as const;

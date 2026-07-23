@@ -1,6 +1,6 @@
 import { createContext } from 'react-router';
 
-import type { AppContainerProvider } from '~/.server/app-container.provider';
+import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { Session } from '~/.server/web/session';
 
 export type AppContext = {

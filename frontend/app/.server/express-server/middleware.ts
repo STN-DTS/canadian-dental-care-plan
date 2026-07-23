@@ -35,7 +35,7 @@ export function responseMaxListeners(maxListeners = 15): RequestHandler {
 
 // @see: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
 export function securityHeaders(): RequestHandler {
-  const log = createLogger('express.server/securityHeadersRequestHandler');
+  const log = createLogger('express/middleware/securityHeadersRequestHandler');
   const ignorePatterns: string[] = [];
 
   // prettier-ignore
@@ -72,7 +72,7 @@ export function securityHeaders(): RequestHandler {
 }
 
 export function logging(isProduction: boolean): RequestHandler {
-  const log = createLogger('express.server/loggingRequestHandler');
+  const log = createLogger('express/middleware/loggingRequestHandler');
   const ignorePatterns: string[] = ['/api/readyz'];
 
   const logFormat = isProduction ? 'tiny' : 'dev';
@@ -91,7 +91,7 @@ export function logging(isProduction: boolean): RequestHandler {
  * Configures session middleware, optionally skipping it for bots and specific paths.
  */
 export async function session(isProduction: boolean, serverConfig: ServerConfig): Promise<RequestHandler> {
-  const log = createLogger('express.server/sessionRequestHandler');
+  const log = createLogger('express/middleware/sessionRequestHandler');
 
   const ignorePatterns = [
     '/api/buildinfo', //

@@ -11,8 +11,8 @@ import type { Route } from './+types/verify-email';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import type { Session } from '~/.server/web/session';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';

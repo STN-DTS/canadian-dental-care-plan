@@ -1,1 +1,1 @@
-export * from './security.handler';
+export * from './security-handler';

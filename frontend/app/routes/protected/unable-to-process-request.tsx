@@ -4,8 +4,8 @@ import type { Route } from './+types/unable-to-process-request';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import type { IdToken } from '~/.server/utils/raoidc.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { InlineLink } from '~/components/inline-link';
 import { pageIds } from '~/page-ids';

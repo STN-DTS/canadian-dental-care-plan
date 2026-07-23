@@ -4,17 +4,17 @@ import { None } from 'oxide.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import type { AppContainerProvider } from '~/.server/app-container.provider';
+import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';
 import type { SecurityHandler } from '~/.server/routes/security';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
-vi.mock('~/.server/utils/locale.utils');
+vi.mock('~/.server/utils/locale-utils');
 
 describe('Letters Page', () => {
   afterEach(() => {

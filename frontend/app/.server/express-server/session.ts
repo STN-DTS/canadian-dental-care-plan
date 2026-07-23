@@ -12,7 +12,7 @@ import { createLogger } from '~/.server/logging';
  * up an automated task to purge expired sessions every 60 seconds.
  */
 export function createMemoryStore(): MemoryStore {
-  const log = createLogger('session.server/createMemoryStore');
+  const log = createLogger('express/session/createMemoryStore');
   log.info('      initializing new memory session store');
   const memoryStore = new MemoryStore();
 
@@ -28,7 +28,7 @@ export function createMemoryStore(): MemoryStore {
  * Redis client and session configuration from the provided server environment.
  */
 export async function createRedisStore(serverConfig: Pick<ServerConfig, 'SESSION_EXPIRES_SECONDS' | 'SESSION_KEY_PREFIX'>): Promise<RedisStore> {
-  const log = createLogger('session.server/createRedisStore');
+  const log = createLogger('express/session/createRedisStore');
   log.info('      initializing new Redis session store');
   const redisClient = await getRedisClient();
   return new RedisStore({
@@ -46,7 +46,7 @@ export async function createRedisStore(serverConfig: Pick<ServerConfig, 'SESSION
  * checking their expiration times, and removes any sessions that have expired.
  */
 function purgeExpiredSessions(memoryStore: MemoryStore): void {
-  const log = createLogger('session.server/purgeExpiredSessions');
+  const log = createLogger('express/session/purgeExpiredSessions');
   log.trace('Purging expired sessions');
 
   memoryStore.all((error, sessions) => {

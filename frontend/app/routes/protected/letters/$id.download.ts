@@ -7,8 +7,8 @@ import type { Route } from './+types/$id.download';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getLocale } from '~/.server/utils/locale.utils';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
+import { getLocale } from '~/.server/utils/locale-utils';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);

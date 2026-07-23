@@ -7,7 +7,7 @@ import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getEnv } from '~/.server/utils/env-utils';
 import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 

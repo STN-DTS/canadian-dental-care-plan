@@ -9,7 +9,7 @@ import type { Route } from './+types/index';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { startApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
-import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { useApplicationFlowStorage } from '~/hooks';
 import { pageIds } from '~/page-ids';
@@ -18,7 +18,7 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
-import { secondsToMilliseconds } from '~/utils/units.utils';
+import { secondsToMilliseconds } from '~/utils/units-utils';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.index,

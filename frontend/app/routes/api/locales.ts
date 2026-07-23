@@ -4,7 +4,7 @@ import type { Namespace } from 'i18next';
 
 import type { Route } from './+types/locales';
 
-import { initI18n } from '~/.server/utils/locale.utils';
+import { initI18n } from '~/.server/utils/locale-utils';
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const language = params.lng;

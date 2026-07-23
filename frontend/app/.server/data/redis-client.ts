@@ -4,7 +4,7 @@ import type { RedisClientType, RedisSentinelType } from 'redis';
 
 import type { ServerConfig } from '~/.server/configs';
 import { createLogger } from '~/.server/logging';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getEnv } from '~/.server/utils/env-utils';
 import { singleton } from '~/.server/utils/instance-registry';
 
 export type RedisClient = RedisClientType | RedisSentinelType;

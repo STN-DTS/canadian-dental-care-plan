@@ -1,2 +1,2 @@
-export * from './dynatrace.dto.mapper';
-export * from './hcaptcha.dto.mapper';
+export * from './dynatrace-dto-mapper';
+export * from './hcaptcha-dto-mapper';

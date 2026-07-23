@@ -8,9 +8,9 @@ import type { Route } from './+types/stub-login';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT } from '~/.server/utils/locale.utils';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc.utils';
-import { transformFlattenedError } from '~/.server/utils/zod.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
+import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { Button } from '~/components/buttons';
 import { ErrorSummary } from '~/components/error-summary';

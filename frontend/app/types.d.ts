@@ -2,8 +2,8 @@ import type { RouteModules } from 'react-router';
 
 import type { FlatNamespace } from 'i18next';
 
-import type { i18nResources } from '~/.server/i18n.resources';
-import type { ClientEnv } from '~/.server/utils/env.utils';
+import type { i18nResources } from '~/.server/i18n-resources';
+import type { ClientEnv } from '~/.server/utils/env-utils';
 import type { InstanceName } from '~/.server/utils/instance-registry';
 import type { APP_LOCALES } from '~/utils/locale-utils';
 

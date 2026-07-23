@@ -16,7 +16,7 @@ import {
   secondsToHours,
   secondsToMilliseconds,
   secondsToMinutes,
-} from '~/utils/units.utils';
+} from '~/utils/units-utils';
 
 describe('File Size Conversion Utilities', () => {
   describe('bytesToKilobytes', () => {

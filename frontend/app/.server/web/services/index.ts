@@ -1,2 +1,2 @@
-export * from './dynatrace.service';
-export * from './hcaptcha.service';
+export * from './dynatrace-service';
+export * from './hcaptcha-service';

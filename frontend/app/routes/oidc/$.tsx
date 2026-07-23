@@ -9,10 +9,10 @@ import type { Route } from './+types/$';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
-import { generateCryptoKey } from '~/.server/utils/crypto.utils';
-import type { MockName } from '~/.server/utils/env.utils';
-import type { ServerMetadata, TokenEndpointResponse, UserinfoResponse } from '~/.server/utils/raoidc.utils';
-import { generateRandomString } from '~/.server/utils/raoidc.utils';
+import { generateCryptoKey } from '~/.server/utils/crypto-utils';
+import type { MockName } from '~/.server/utils/env-utils';
+import type { ServerMetadata, TokenEndpointResponse, UserinfoResponse } from '~/.server/utils/raoidc-utils';
+import { generateRandomString } from '~/.server/utils/raoidc-utils';
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   validateRaoidcMockEnabled({ context });

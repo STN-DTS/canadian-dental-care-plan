@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { arrayBufferToBase64, findMimeType, getFileExtension, getMimeType, isValidExtension } from '~/utils/file.utils';
+import { arrayBufferToBase64, findMimeType, getFileExtension, getMimeType, isValidExtension } from '~/utils/file-utils';
 
-describe('file.utils', () => {
+describe('file-utils', () => {
   describe('findMimeType', () => {
     it('should return Some with MIME type for valid extension', () => {
       const result = findMimeType('.pdf');

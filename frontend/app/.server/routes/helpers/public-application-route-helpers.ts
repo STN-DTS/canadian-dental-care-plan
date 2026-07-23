@@ -26,12 +26,12 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
-import { getEnv } from '~/.server/utils/env.utils';
-import { getLocaleFromParams } from '~/.server/utils/locale.utils';
-import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url.utils';
+import { getEnv } from '~/.server/utils/env-utils';
+import { getLocaleFromParams } from '~/.server/utils/locale-utils';
+import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url-utils';
 import type { Session } from '~/.server/web/session';
 import { getAgeFromDateString, parseDateString } from '~/utils/date-utils';
-import { generateId } from '~/utils/id.utils';
+import { generateId } from '~/utils/id-utils';
 import { getPathById } from '~/utils/route-utils';
 
 export type PublicApplicationStateSessionKey = `public-application-flow-${string}`;
@@ -112,7 +112,7 @@ interface LoadStateArgs {
  * @returns The public application state.
  */
 export function getPublicApplicationState({ params, session }: LoadStateArgs): PublicApplicationState {
-  const log = createLogger('application-route-helpers.server/loadApplicationState');
+  const log = createLogger('public-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
 
@@ -167,7 +167,7 @@ interface SavePublicApplicationStateArgs {
  * @returns The new public application state.
  */
 export function savePublicApplicationState({ params, session, state }: SavePublicApplicationStateArgs): PublicApplicationState {
-  const log = createLogger('application-route-helpers.server/saveApplicationState');
+  const log = createLogger('public-application-route-helpers/saveApplicationState');
   const currentState = getPublicApplicationState({ params, session });
 
   const newState = {
@@ -193,7 +193,7 @@ interface ClearStateArgs {
  * @param args - The arguments.
  */
 export function clearPublicApplicationState({ params, session }: ClearStateArgs): void {
-  const log = createLogger('application-route-helpers.server/clearApplicationState');
+  const log = createLogger('public-application-route-helpers/clearApplicationState');
   const { id } = getPublicApplicationState({ params, session });
 
   const sessionKey = getSessionKey(id);
@@ -212,7 +212,7 @@ interface StartArgs {
  * @returns The initial application state.
  */
 export function startApplicationState({ applicationYear, session }: StartArgs): PublicApplicationState {
-  const log = createLogger('application-route-helpers.server/startApplicationState');
+  const log = createLogger('public-application-route-helpers/startApplicationState');
 
   const id = generateId();
   const initialState: PublicApplicationState = {
@@ -297,7 +297,7 @@ export function validateApplicationFlow<TAllowedFlows extends ReadonlyArray<`${P
   params: Params,
   allowedFlows: TAllowedFlows,
 ): asserts state is OmitStrict<PublicApplicationState, 'inputModel' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
-  const log = createLogger('application-route-helpers.server/validateApplicationFlow');
+  const log = createLogger('public-application-route-helpers/validateApplicationFlow');
 
   const inputModel = state.inputModel;
   const type = state.typeOfApplication;
@@ -380,7 +380,7 @@ interface getSingleChildStateArgs {
  * @returns The loaded child state.
  */
 export function getSingleChildState({ params, session }: getSingleChildStateArgs) {
-  const log = createLogger('public-application-route-helpers.server/publicApplicationSingleChildState');
+  const log = createLogger('public-application-route-helpers/publicApplicationSingleChildState');
   const applicationState = getPublicApplicationState({ params, session });
   const childId = params.childId;
   const childState = applicationState.children.find(({ id }) => id === childId);

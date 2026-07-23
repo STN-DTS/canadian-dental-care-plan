@@ -7,7 +7,7 @@ import type { Route } from './+types/application-delegate';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { clearPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale.utils';
+import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';

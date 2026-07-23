@@ -2,8 +2,8 @@ import type { ServerBuild } from 'react-router';
 
 import { describe, expect, test } from 'vitest';
 
-import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build.utils';
-import type { ServerRoute } from '~/.server/utils/server-build.utils';
+import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build-utils';
+import type { ServerRoute } from '~/.server/utils/server-build-utils';
 
 type ServerRouteManifest = NonNullable<ServerBuild['routes']>;
 

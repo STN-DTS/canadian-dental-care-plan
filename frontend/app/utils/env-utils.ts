@@ -2,7 +2,7 @@ import type { ReadonlyDeep } from 'type-fest';
 import * as z from 'zod';
 
 import { isValidTimeZone } from '~/utils/date-utils';
-import { isValidExtension } from '~/utils/file.utils';
+import { isValidExtension } from '~/utils/file-utils';
 
 const validFeatureNames = ['hcaptcha', 'killswitch-api', 'show-prototype-banner', 'stub-login', 'status', 'view-letters', 'view-payload', 'doc-upload'] as const;
 

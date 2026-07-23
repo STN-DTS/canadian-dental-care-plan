@@ -11,9 +11,9 @@ import {
   isMaritalStatusSectionCompleted,
   isPhoneNumberSectionCompleted,
 } from '~/.server/routes/helpers/public-application-full-section-checks';
-import { getEnv } from '~/.server/utils/env.utils';
+import { getEnv } from '~/.server/utils/env-utils';
 
-vi.mock('~/.server/utils/env.utils');
+vi.mock('~/.server/utils/env-utils');
 
 const APPLICATION_YEAR = { applicationYearId: 'year-2024', taxYear: '2025', dependentEligibilityEndDate: '2027-06-30' };
 

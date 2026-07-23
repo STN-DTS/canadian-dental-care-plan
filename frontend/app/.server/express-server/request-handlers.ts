@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { createLogger } from '~/.server/logging';
 
-const log = createLogger('request-handlers.server.ts');
+const log = createLogger('express/request-handlers');
 
 export function globalErrorHandler(): ErrorRequestHandler {
   return (error, request, response, next) => {

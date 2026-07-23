@@ -24,7 +24,7 @@ import type React from 'react';
 import { createContext, use, useCallback, useEffect, useLayoutEffect, useMemo, useReducer } from 'react';
 import type { JSX } from 'react';
 
-import { generateId } from '~/utils/id.utils';
+import { generateId } from '~/utils/id-utils';
 
 /**
  * Represents a single error message associated with a form field.

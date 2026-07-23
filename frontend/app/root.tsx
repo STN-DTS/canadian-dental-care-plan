@@ -10,7 +10,7 @@ import type { Route } from './+types/root';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { ClientEnv } from '~/components/client-env';
 import { InlineLink } from '~/components/inline-link';
 import { NonceContext } from '~/components/nonce-context';

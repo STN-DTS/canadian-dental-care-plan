@@ -30,7 +30,7 @@ import {
   normalizeMethod,
   otelSpan,
   withMiddlewareCounter,
-} from '~/.server/utils/otel-instrumentation.utils';
+} from '~/.server/utils/otel-instrumentation-utils';
 
 /**
  * Creates an OpenTelemetry server instrumentation for React Router's instrumentation API.

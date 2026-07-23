@@ -12,12 +12,12 @@ import * as z from 'zod';
 
 import type { Route } from './+types/upload';
 
-import type { AppContainerProvider } from '~/.server/app-container.provider';
+import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { DocumentUploadService } from '~/.server/domain/services';
-import { getFixedT, getLocale } from '~/.server/utils/locale.utils';
-import type { IdToken } from '~/.server/utils/raoidc.utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
+import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { Button, ButtonLink } from '~/components/buttons';
@@ -36,14 +36,14 @@ import { pageIds } from '~/page-ids';
 import { useClientEnv } from '~/root';
 import { expectDefined } from '~/utils/assert-utils';
 import { getClientEnv } from '~/utils/env-utils';
-import { arrayBufferToBase64, getFileExtension, getMimeType } from '~/utils/file.utils';
+import { arrayBufferToBase64, getFileExtension, getMimeType } from '~/utils/file-utils';
 import { getLanguage } from '~/utils/locale-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { cn } from '~/utils/tw-utils';
-import { bytesToFilesize, megabytesToBytes } from '~/utils/units.utils';
+import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 type FileStateWithDocumentType = FileState & { readonly documentType: string };
 
