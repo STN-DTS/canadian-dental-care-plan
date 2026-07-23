@@ -3,7 +3,7 @@ import { MemoryStore } from 'express-session';
 import { setInterval } from 'node:timers';
 
 import type { ServerConfig } from '~/.server/configs';
-import { getRedisClient } from '~/.server/data/redis.client';
+import { getRedisClient } from '~/.server/data/redis-client';
 import { createLogger } from '~/.server/logging';
 
 /**

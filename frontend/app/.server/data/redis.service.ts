@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 
-import { getRedisClient } from '~/.server/data/redis.client';
+import { getRedisClient } from '~/.server/data/redis-client';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 
