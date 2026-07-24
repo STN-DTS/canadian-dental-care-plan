@@ -24,37 +24,32 @@ describe('AppLink', () => {
   });
 
   const defaultProps: AppLinkProps = {
-    children: 'Click me',
     routeId: 'test-route',
   };
 
   it('should render correctly', () => {
-    const { children, ...rest } = defaultProps;
-    render(<AppLink {...rest}>{children}</AppLink>);
+    render(<AppLink {...defaultProps}>Click me</AppLink>);
     expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 
   it('should resolve the `to` prop using getPathById when `routeId` is provided', () => {
-    const { children, ...rest } = defaultProps;
-    render(<AppLink {...rest}>{children}</AppLink>);
+    render(<AppLink {...defaultProps}>Click me</AppLink>);
     expect(useHref).toHaveBeenCalledWith('/mock-path/test-route/', { relative: 'route' });
   });
 
   it('should render an external link correctly', () => {
-    const { children, ...restProps } = defaultProps;
     render(
-      <AppLink {...restProps} to="https://www.example.com">
-        {children}
+      <AppLink {...defaultProps} to="https://www.example.com">
+        Click me
       </AppLink>,
     );
     expect(screen.getByText('Click me').closest('a')).toHaveAttribute('href', 'https://www.example.com');
   });
 
   it('should render the NewTabIndicator when newTabIndicator is true', () => {
-    const { children, ...restProps } = defaultProps;
     render(
-      <AppLink {...restProps} newTabIndicator={true}>
-        {children}
+      <AppLink {...defaultProps} newTabIndicator={true}>
+        Click me
       </AppLink>,
     );
     expect(screen.getByText('(screenReader.newTab)')).toBeInTheDocument();
@@ -62,10 +57,9 @@ describe('AppLink', () => {
 
   it('should call getPathById with the correct arguments', () => {
     const params = { lang: 'en' };
-    const { children, ...rest } = defaultProps;
     render(
-      <AppLink {...rest} params={params}>
-        {children}
+      <AppLink {...defaultProps} params={params}>
+        Click me
       </AppLink>,
     );
     expect(getPathById).toHaveBeenCalledWith('test-route', { lang: 'en' });
