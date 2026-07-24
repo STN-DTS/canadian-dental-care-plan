@@ -1,12 +1,18 @@
 import { Outlet, data, isRouteErrorResponse, useParams, useRouteError } from 'react-router';
 
+import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
+
 import type { Route } from './+types/layout';
 
 import { createLogger } from '~/.server/logging';
 import { BilingualNotFoundError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
+import { csrfTokenMiddleware, getCsrfToken } from '~/middlewares/csrf-token.server';
+import { csrfMiddleware } from '~/middlewares/csrf.server';
 import { isAppLocale } from '~/utils/locale-utils';
 
-export function loader({ context, params, url }: Route.LoaderArgs) {
+export const middleware: Route.MiddlewareFunction[] = [csrfMiddleware, csrfTokenMiddleware];
+
+export function loader({ context, params }: Route.LoaderArgs) {
   const log = createLogger('public/layout/loader');
 
   if (!isAppLocale(params.lang)) {
@@ -14,7 +20,9 @@ export function loader({ context, params, url }: Route.LoaderArgs) {
     throw data(null, { status: 404 });
   }
 
-  return { lang: params.lang };
+  return {
+    csrfToken: getCsrfToken(context),
+  };
 }
 
 export function ErrorBoundary() {
@@ -30,10 +38,12 @@ export function ErrorBoundary() {
   return isAppLocale(lang) ? <ServerError error={error} /> : <ServerError error={error} />;
 }
 
-/**
- * Do-nothing parent route.
- * (placeholder for future code)
- */
-export default function Route({ loaderData, params }: Route.ComponentProps) {
-  return <Outlet />;
+export default function Route({ loaderData }: Route.ComponentProps) {
+  const { csrfToken } = loaderData;
+
+  return (
+    <AuthenticityTokenProvider token={csrfToken}>
+      <Outlet />
+    </AuthenticityTokenProvider>
+  );
 }
