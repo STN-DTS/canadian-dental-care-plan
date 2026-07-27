@@ -29,7 +29,6 @@ type SessionTypeMap = {
   authReturnUrl: string;
   authState: string;
   applicant: ApplicantDto;
-  csrfToken: string;
   idToken: IdToken;
   lastAccessTime: string;
   letters: ReadonlyArray<LetterDto>;

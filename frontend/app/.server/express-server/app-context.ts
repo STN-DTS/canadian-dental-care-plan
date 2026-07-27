@@ -6,7 +6,6 @@ import { appContainer } from '~/.server/app-container';
 import type { AppContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
-import { randomString } from '~/utils/string-utils';
 
 const log = createLogger('app-context');
 
@@ -25,14 +24,6 @@ export function getAppContext(req: RequestWithOptionalSession): AppContext {
   const session = req.session ? new ExpressSession(req as Request) : new NoopSession();
 
   if (session instanceof ExpressSession) {
-    // We use session-scoped CSRF tokens to ensure back button and multi-tab navigation still works.
-    // @see: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern
-    if (!session.has('csrfToken')) {
-      const csrfToken = randomString(32);
-      log.debug('Adding CSRF token [%s] to session', csrfToken);
-      session.set('csrfToken', csrfToken);
-    }
-
     const lastAccessTime = new UTCDate().toISOString();
     log.debug('Setting session.lastAccessTime to [%s]', lastAccessTime);
     session.set('lastAccessTime', lastAccessTime);
