@@ -21,6 +21,7 @@ import { ZodConfig } from '~/components/zod-config';
 import indexStyleSheet from '~/index.css?url';
 import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
+import { ClientHintCheck, getHints } from '~/utils/client-hints';
 import type { FeatureName } from '~/utils/env-utils';
 import { useTransformAdobeAnalyticsUrl } from '~/utils/route-utils';
 import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCanonicalURL } from '~/utils/seo-utils';
@@ -61,7 +62,7 @@ export const headers: Route.HeadersFunction = () => {
   };
 };
 
-export async function loader({ context, url }: Route.LoaderArgs) {
+export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
   const buildInfoService = appContainer.get(TYPES.BuildInfoService);
   const dynatraceService = appContainer.get(TYPES.DynatraceService);
@@ -86,6 +87,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     buildInfo,
     dynatraceRumScript,
     env,
+    hints: getHints(request),
     meta,
     origin,
   };
@@ -113,6 +115,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <html lang={i18n.language}>
       <head>
         <meta charSet="utf-8" />
+        <ClientHintCheck nonce={nonce} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <link rel="canonical" href={canonicalURL} />
@@ -159,6 +162,16 @@ function useRootLoaderData() {
 export function useClientEnv() {
   const rootLoaderData = useRootLoaderData();
   return rootLoaderData.env;
+}
+
+/**
+ * Retrieves client hints from the root route loader data.
+ *
+ * @returns The client hints detected for the current request.
+ */
+export function useHints() {
+  const rootLoaderData = useRootLoaderData();
+  return rootLoaderData.hints;
 }
 
 /**
