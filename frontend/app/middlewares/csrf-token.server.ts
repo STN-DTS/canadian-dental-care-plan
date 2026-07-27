@@ -3,6 +3,7 @@ import { createCookie } from 'react-router';
 import { createCsrfTokenMiddleware } from 'remix-utils/middleware/csrf-token';
 
 import { createLogger } from '~/.server/logging/logger-factory';
+import { CSRF_FORM_DATA_KEY } from '~/constants/csrf-token';
 
 const log = createLogger('middleware/csrf-token');
 
@@ -15,6 +16,7 @@ const csrfCookie = createCookie('__CDCP||csrf', {
 
 export const [csrfTokenMiddleware, getCsrfToken] = createCsrfTokenMiddleware({
   cookie: csrfCookie,
+  formDataKey: CSRF_FORM_DATA_KEY,
   onInvalidToken(error) {
     log.warn('Invalid CSRF token: %o', error);
     return new Response('Invalid CSRF token', { status: 403 });

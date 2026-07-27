@@ -25,6 +25,7 @@ import { ErrorSummaryProvider } from '~/components/error-summary-context';
 import { InlineLink } from '~/components/inline-link';
 import { InputField } from '~/components/input-field';
 import { LoadingButton } from '~/components/loading-button';
+import { CSRF_FORM_DATA_KEY } from '~/constants/csrf-token';
 import { useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import type { ProfileEmailContext } from '~/routes/protected/profile/email';
@@ -239,8 +240,8 @@ export default function ProtectedProfileVerifyEmail({ loaderData, params }: Rout
     const formData = new FormData();
     formData.append('_action', FORM_ACTION.request);
 
-    const csrfTokenInput = document.querySelector('input[name="_csrf"]') as HTMLInputElement;
-    formData.append('_csrf', csrfTokenInput.value);
+    const csrfTokenInput = document.querySelector(`input[name="${CSS.escape(CSRF_FORM_DATA_KEY)}"]`) as HTMLInputElement;
+    formData.append(CSRF_FORM_DATA_KEY, csrfTokenInput.value);
 
     void fetcher.submit(formData, { method: 'post' });
   }

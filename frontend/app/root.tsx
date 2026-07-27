@@ -5,6 +5,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useRouteL
 import { invariant } from '@dts-stn/invariant';
 import { config as fontAwesomeConfig } from '@fortawesome/fontawesome-svg-core';
 import { Trans, useTranslation } from 'react-i18next';
+import { useAuthenticityToken } from 'remix-utils/csrf/react';
 
 import type { Route } from './+types/root';
 
@@ -61,7 +62,7 @@ export const headers: Route.HeadersFunction = () => {
 };
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const buildInfoService = appContainer.get(TYPES.BuildInfoService);
   const dynatraceService = appContainer.get(TYPES.DynatraceService);
   const locale = getLocale(url);
@@ -80,11 +81,9 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.default),
   };
   const origin = url.origin;
-  const csrfToken = session.get('csrfToken');
 
   return {
     buildInfo,
-    csrfToken,
     dynatraceRumScript,
     env,
     meta,
@@ -163,13 +162,13 @@ export function useClientEnv() {
 }
 
 /**
- * A custom hook to retrieve the CSRF token from the route loader data.
+ * Returns the current CSRF authenticity token from the `remix-utils` CSRF context.
+ * Use the token when submitting form data that requires CSRF validation.
  *
- * @returns
+ * @returns The current CSRF authenticity token.
  */
 export function useCsrfToken() {
-  const rootLoaderData = useRootLoaderData();
-  return rootLoaderData.csrfToken;
+  return useAuthenticityToken();
 }
 
 /**

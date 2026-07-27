@@ -24,6 +24,7 @@ import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-context';
 import { InputField } from '~/components/input-field';
 import { LoadingButton } from '~/components/loading-button';
+import { CSRF_FORM_DATA_KEY } from '~/constants/csrf-token';
 import { useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { useCsrfToken } from '~/root';
@@ -215,7 +216,7 @@ export default function ApplicationVerifyEmail({ loaderData, params }: Route.Com
   function handleRequestNewCode() {
     const formData = new FormData();
     formData.append('_action', FORM_ACTION.request);
-    formData.append('_csrf', csrfToken);
+    formData.append(CSRF_FORM_DATA_KEY, csrfToken);
 
     void fetcher.submit(formData, { method: 'post' });
   }
@@ -271,7 +272,7 @@ export default function ApplicationVerifyEmail({ loaderData, params }: Route.Com
                 onClick={async () => {
                   const formData = new FormData();
                   formData.append('_action', FORM_ACTION.request);
-                  formData.append('_csrf', csrfToken);
+                  formData.append(CSRF_FORM_DATA_KEY, csrfToken);
 
                   await fetcher.submit(formData, { method: 'post' });
                 }}
