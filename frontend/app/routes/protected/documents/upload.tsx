@@ -335,6 +335,7 @@ async function uploadDocuments({ clientNumber, files, service, t, userId }: Uplo
         fileName: file.name,
         binary: arrayBufferToBase64(fileBuffer),
         uploadDate: new Date(),
+        lastModifiedDate: new Date(file.lastModified),
         userId,
       });
 

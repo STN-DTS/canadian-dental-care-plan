@@ -17,7 +17,10 @@ export type DocumentUploadRequestDto = Readonly<{
   /** Upload date */
   uploadDate: Date;
 
-  /** A unique identifier for the user making the request - used for auditing */
+  /** Original last-modified date of the selected file */
+  lastModifiedDate: Date;
+
+  /** A unique identifier for the user making the request - used for auditing and as TransactionEntryUserID */
   userId: string;
 }>;
 
