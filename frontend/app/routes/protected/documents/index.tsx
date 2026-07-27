@@ -11,7 +11,8 @@ import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/table';
 import { pageIds } from '~/page-ids';
-import { parseDateTimeString, toLocaleDateString } from '~/utils/date-utils';
+import { getHints } from '~/utils/client-hints';
+import { parseDateTimeString, toLocaleDateString, toLocaleString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
@@ -23,7 +24,7 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, url }: Route.LoaderArgs) {
+export async function loader({ context, params, request, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
@@ -47,14 +48,16 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const idToken: IdToken = session.get('idToken');
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: idToken.sub });
 
-  const { TIME_ZONE } = appContainer.get(TYPES.ClientConfig);
+  const { timeZone } = getHints(request);
 
   return {
     meta,
     documents: evidentiaryDocuments.map((document) => {
+      const mscaUploadDate = parseDateTimeString(document.mscaUploadDate);
       return {
         ...document,
-        mscaUploadDateFormatted: toLocaleDateString(parseDateTimeString(document.mscaUploadDate), locale, { timeZone: TIME_ZONE }),
+        mscaUploadDateFormatted: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
+        mscaUploadDateAriaLabel: toLocaleString(mscaUploadDate, locale, { timeZone }),
       };
     }),
     SCCH_BASE_URI,
@@ -85,10 +88,14 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
               <TableBody>
                 {documents.map((document) => (
                   <TableRow key={document.id} className="odd:bg-white even:bg-gray-50">
-                    <TableCell className="max-w-[200px] break-all">{document.fileName}</TableCell>
+                    <TableCell className="max-w-50 break-all">{document.fileName}</TableCell>
                     <TableCell>{`${document.client.firstName} ${document.client.lastName}`}</TableCell>
                     <TableCell>{document.documentType.name}</TableCell>
-                    <TableCell className="text-nowrap">{document.mscaUploadDateFormatted}</TableCell>
+                    <TableCell className="text-nowrap">
+                      <span aria-label={document.mscaUploadDateAriaLabel}>
+                        <time dateTime={document.mscaUploadDate}>{document.mscaUploadDateFormatted}</time>
+                      </span>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
