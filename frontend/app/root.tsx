@@ -17,6 +17,7 @@ import { InlineLink } from '~/components/inline-link';
 import { NonceContext } from '~/components/nonce-context';
 import { PageTitle } from '~/components/page-title';
 import { RouteChangeAnnouncer } from '~/components/route-change-announcer';
+import { TooltipProvider } from '~/components/tooltip';
 import { ZodConfig } from '~/components/zod-config';
 import indexStyleSheet from '~/index.css?url';
 import tailwindStyleSheet from '~/tailwind.css?url';
@@ -133,7 +134,9 @@ export default function App({ loaderData }: Route.ComponentProps) {
       </head>
       <body vocab="https://schema.org/" typeof="WebPage">
         <RouteChangeAnnouncer />
-        <Outlet />
+        <TooltipProvider>
+          <Outlet />
+        </TooltipProvider>
         <ScrollRestoration nonce={nonce} />
         <ClientEnv env={env} nonce={nonce} />
         <ZodConfig nonce={nonce} />
