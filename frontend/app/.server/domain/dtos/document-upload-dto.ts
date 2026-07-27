@@ -20,7 +20,7 @@ export type DocumentUploadRequestDto = Readonly<{
   /** Original last-modified date of the selected file */
   lastModifiedDate: Temporal.Instant;
 
-  /** A unique identifier for the user making the request - used for auditing and as TransactionEntryUserID */
+  /** A unique identifier for the user making the request - used for auditing and as transactionEntryUserID */
   userId: string;
 }>;
 
