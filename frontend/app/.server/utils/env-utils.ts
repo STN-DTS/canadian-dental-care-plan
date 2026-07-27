@@ -221,6 +221,11 @@ const serverEnv = clientEnvSchema.extend({
    */
   RENEWAL_PERIOD_END_DATE: z.iso.datetime().default('2026-06-02T03:59:59.999Z'),
 
+  // CSRF token and cookie configuration
+  CSRF_TOKEN_COOKIE_NAME: z.string().trim().min(1).default('__CDCP||csrf'),
+  CSRF_TOKEN_COOKIE_SECRET: z.string().trim().min(1).optional(),
+  CSRF_TOKEN_SECRET: z.string().trim().min(1).optional(),
+
   /**
    * Defines the duration (in seconds) the application killswitch remains active once engaged.
    *
