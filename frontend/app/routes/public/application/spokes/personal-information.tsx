@@ -1,7 +1,7 @@
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import { addMinutes } from 'date-fns';
+import { addHours, startOfHour } from 'date-fns';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -29,7 +29,7 @@ import { LoadingButton } from '~/components/loading-button';
 import { useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { isValidClientNumberRenewal, renewalCodeInputPatternFormat } from '~/utils/application-code-utils';
-import { extractDateParts, getAgeFromDateString, isPastDateString, isValidDateString, parseDateTimeString, toLocaleDateString } from '~/utils/date-utils';
+import { extractDateParts, getAgeFromDateString, isPastDateString, isValidDateString, parseDateTimeString, toLocaleDateString, toLocaleString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -216,10 +216,15 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
     if (clientApplicationRenewalEligibilityResult.result !== 'ELIGIBLE') {
       const renewalPeriodEndDate = parseDateTimeString(RENEWAL_PERIOD_END_DATE);
-      // Add one minute to ensure the intake start date is after the renewal period end date
-      const intakeStartDate = addMinutes(renewalPeriodEndDate, 1);
-      const startDate = toLocaleDateString(intakeStartDate, locale, { timeZone: TIME_ZONE });
-      return { status: 'client-not-found', startDate } as const;
+      // Move one hour past the renewal period end, then normalize the timestamp to the start of that hour.
+      const intakeStartDate = startOfHour(addHours<typeof renewalPeriodEndDate>(renewalPeriodEndDate, 1));
+
+      return {
+        status: 'client-not-found',
+        startDate: intakeStartDate.toISOString(),
+        startDateFormatted: toLocaleDateString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
+        startDateAriaLabel: toLocaleString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
+      } as const;
     }
 
     clientApplication = clientApplicationRenewalEligibilityResult.clientApplication;
@@ -276,7 +281,18 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
           </p>
           {fetcherDataWithStatus?.startDate !== undefined && (
             <p className="mb-2">
-              <Trans ns="applicationSpokes" i18nKey={($) => $.personalInformation.errorMessage.alert.applyDate} values={{ startDate: fetcherDataWithStatus.startDate }} components={{ strong: <strong /> }} />
+              <Trans
+                ns="applicationSpokes"
+                i18nKey={($) => $.personalInformation.errorMessage.alert.applyDate}
+                components={{
+                  strong: <strong />,
+                  startDate: (
+                    <span aria-label={fetcherDataWithStatus.startDateAriaLabel}>
+                      <time dateTime={fetcherDataWithStatus.startDate}>{fetcherDataWithStatus.startDateFormatted}</time>
+                    </span>
+                  ),
+                }}
+              />
             </p>
           )}
         </ErrorAlert>

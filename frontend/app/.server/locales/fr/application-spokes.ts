@@ -223,7 +223,7 @@ const ns = {
       alert: {
         heading: "Nous n'avons pas trouvé votre compte du Régime canadien de soins dentaires (RCSD) avec les renseignements que vous avez saisis.",
         detail: "Vérifiez que les renseignements saisis sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1-833-537-4342</noWrap> pour mettre à jour vos renseignements.",
-        applyDate: "<strong>Remarque\u00A0:</strong> Seuls les participants actuels du RCSD peuvent renouveler leur adhésion dès maintenant. Si vous ne participez pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du {{startDate}}.",
+        applyDate: "<strong>Remarque\u00A0:</strong> Seuls les participants actuels du RCSD peuvent renouveler leur adhésion dès maintenant. Si vous ne participez pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du <startDate />.",
       },
     },
   },

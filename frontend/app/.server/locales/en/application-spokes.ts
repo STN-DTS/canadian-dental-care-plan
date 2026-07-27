@@ -223,7 +223,7 @@ const ns = {
       alert: {
         heading: "We couldn't find your Canadian Dental Care Plan (CDCP) account with the information you entered.",
         detail: "Check that your information is correct and try again. If the problem continues, call us at <noWrap>1-833-537-4342</noWrap> to update your information.",
-        applyDate: "<strong>Note:</strong> Only current CDCP members can renew benefits now. If you are not enrolled, you can apply for the upcoming benefit year starting {{startDate}}.",
+        applyDate: "<strong>Note:</strong> Only current CDCP members can renew benefits now. If you are not enrolled, you can apply for the upcoming benefit year starting <startDate />.",
       },
     },
   },
