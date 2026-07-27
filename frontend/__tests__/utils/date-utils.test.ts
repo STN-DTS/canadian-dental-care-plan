@@ -17,6 +17,7 @@ import {
   parseDateString,
   parseDateTimeString,
   toLocaleDateString,
+  toLocaleString,
   useMonths,
 } from '~/utils/date-utils';
 
@@ -230,11 +231,11 @@ describe('useMonths', () => {
 
   describe('toLocaleDateString', () => {
     it('should return a formatted date given a UTC date object and an "en" locale', () => {
-      expect(toLocaleDateString(new UTCDate(2000, 0, 1), 'en')).toEqual('January 1, 2000');
+      expect(toLocaleDateString(new UTCDate(2000, 0, 1), 'en', { timeZone: 'UTC' })).toEqual('January 1, 2000');
     });
 
     it('should return a formatted date given a UTC date object and an "fr" locale', () => {
-      expect(toLocaleDateString(new UTCDate(2000, 0, 1), 'fr')).toEqual('1 janvier 2000');
+      expect(toLocaleDateString(new UTCDate(2000, 0, 1), 'fr', { timeZone: 'UTC' })).toEqual('1 janvier 2000');
     });
 
     it('should throw an error for an invalid Canadian locale', () => {
@@ -259,6 +260,24 @@ describe('useMonths', () => {
     it('should format date in French with a timeZone option', () => {
       // 2024-01-15 23:00 UTC is Jan 16 in Asia/Tokyo (UTC+9)
       expect(toLocaleDateString(new UTCDate('2024-01-15T23:00:00.000Z'), 'fr', { timeZone: 'Asia/Tokyo' })).toEqual('16 janvier 2024');
+    });
+  });
+
+  describe('toLocaleString', () => {
+    it('should format a localized date and time with the English locale default and timezone abbreviation', () => {
+      expect(toLocaleString(new UTCDate('2024-07-15T23:15:00.000Z'), 'en', { timeZone: 'Canada/Eastern' })).toEqual('July 15, 2024 at 7:15 p.m. EDT');
+    });
+
+    it('should format a localized date and time with the French locale default and timezone abbreviation', () => {
+      expect(toLocaleString(new UTCDate('2024-07-15T23:15:00.000Z'), 'fr', { timeZone: 'Canada/Eastern' })).toEqual('15 juillet 2024 à 19 h 15 HAE');
+    });
+
+    it('should use the timezone standard abbreviation outside daylight time', () => {
+      expect(toLocaleString(new UTCDate('2024-01-15T23:15:00.000Z'), 'en', { timeZone: 'Canada/Eastern' })).toEqual('January 15, 2024 at 6:15 p.m. EST');
+    });
+
+    it('should throw an error for an invalid Canadian locale', () => {
+      expect(() => toLocaleString(new UTCDate('2024-07-15T23:15:00.000Z'), 'xy', { timeZone: 'Canada/Eastern' })).toThrow();
     });
   });
 });

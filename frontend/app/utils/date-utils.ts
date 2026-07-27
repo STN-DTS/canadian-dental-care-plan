@@ -217,19 +217,37 @@ export function parseDateTimeString(dateTime: string) {
 }
 
 /**
- * Converts a UTC date to a localized date string using Canadian locale formats.
- * @param date - The UTC date to convert
- * @param locale - The language locale ('en' or 'fr' for English or French)
- * @param options - Optional Intl.DateTimeFormatOptions, specifically for timeZone configuration
- * @returns A localized date string formatted as "Month Day, Year" (e.g., "January 15, 2024" for English or "15 janvier 2024" for French)
- * @throws {Error} If the provided locale is not 'en' or 'fr' (case-insensitive)
+ * Formats a UTC date as a long Canadian date for the requested language.
+ *
+ * @param date UTC date to format.
+ * @param locale Language code. Supported values are `en` and `fr`.
+ * @param options Optional Intl time zone option. Use an IANA time zone such as `UTC` or `America/Toronto`.
+ * @returns Localized long date, such as `January 15, 2024` or `15 janvier 2024`.
+ * @throws {Error} If `locale` is not `en` or `fr`.
  * @example
- * const date = new Date('2024-01-15').toUTCDate();
- * const result = toLocaleDateString(date, 'en'); // "January 15, 2024"
+ * const date = new UTCDate('2024-01-15T00:00:00.000Z');
+ * const result = toLocaleDateString(date, 'en', { timeZone: 'UTC' }); // "January 15, 2024"
  */
 export function toLocaleDateString(date: UTCDate, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
   invariant(/^(en|fr)$/i.test(locale), `Canadian locale is invalid [${locale}]`);
-  return date.toLocaleDateString(`${locale}-CA`, { ...options, dateStyle: 'long' });
+  return date.toLocaleDateString(`${locale}-CA`, {
+    timeZone: options?.timeZone,
+    dateStyle: 'long',
+  });
+}
+
+export function toLocaleString(date: UTCDate, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
+  invariant(/^(en|fr)$/i.test(locale), `Canadian locale is invalid [${locale}]`);
+
+  return date.toLocaleString(`${locale}-CA`, {
+    timeZone: options?.timeZone,
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
 }
 
 /**
