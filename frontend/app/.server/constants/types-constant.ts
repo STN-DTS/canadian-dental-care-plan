@@ -97,7 +97,7 @@ import type { HCaptchaDtoMapper } from '~/.server/web/mappers';
 import type { DynatraceDtoMapper } from '~/.server/web/mappers/dynatrace-dto-mapper';
 import type { DynatraceRepository, HCaptchaRepository } from '~/.server/web/repositories';
 import type { DynatraceService, HCaptchaService } from '~/.server/web/services';
-import type { CsrfTokenValidator, HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
+import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 
 /**
  * Represents a type-safe service identifier used for dependency injection.
@@ -189,7 +189,6 @@ export const TYPES = assignServiceIdentifiers({
   CountryRepository: serviceId<CountryRepository>(),
   CountryService: serviceId<CountryService>(),
   CoverageService: serviceId<CoverageService>(),
-  CsrfTokenValidator: serviceId<CsrfTokenValidator>(),
   DocumentUploadDtoMapper: serviceId<DocumentUploadDtoMapper>(),
   DocumentUploadReasonDtoMapper: serviceId<DocumentUploadReasonDtoMapper>(),
   DocumentUploadReasonRepository: serviceId<DocumentUploadReasonRepository>(),

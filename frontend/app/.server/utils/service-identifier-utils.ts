@@ -37,7 +37,7 @@ export function serviceIdentifier<T>(identifier: string = 'unknown'): ServiceIde
  *   ProductService: {},
  *   web: {
  *     validators: {
- *       CsrfTokenValidator: {},
+ *       HCaptchaValidator: {},
  *     },
  *   },
  * };
@@ -45,7 +45,7 @@ export function serviceIdentifier<T>(identifier: string = 'unknown'): ServiceIde
  * const serviceIdentifiers = assignServiceIdentifiers(types);
  *
  * console.log(serviceIdentifiers.UserService); // Symbol(UserService)
- * console.log(serviceIdentifiers.web.validators.CsrfTokenValidator); // Symbol(web.validators.CsrfTokenValidator)
+ * console.log(serviceIdentifiers.web.validators.HCaptchaValidator); // Symbol(web.validators.HCaptchaValidator)
  * ```
  */
 export function assignServiceIdentifiers<T extends ServiceTypesMap>(types: T): T {

@@ -19,18 +19,18 @@ describe('serviceIdentifier function', () => {
 
 describe('assignServiceIdentifiers function', () => {
   it('should recursively assign unique service identifiers to each key in the types object', () => {
-    type CsrfTokenValidatorMock = unknown;
+    type WebValidatorMock = unknown;
     const TYPES = {
       web: {
         validators: {
-          CsrfTokenValidator: Symbol.for('CsrfTokenValidator') as unknown as ServiceIdentifier<CsrfTokenValidatorMock>,
+          WebValidatorMock: Symbol.for('WebValidatorMock') as unknown as ServiceIdentifier<WebValidatorMock>,
         },
       },
     };
 
     const serviceIdentifiers = assignServiceIdentifiers(TYPES);
 
-    expect(serviceIdentifiers.web.validators.CsrfTokenValidator).toBeTypeOf('symbol');
-    expect(String(serviceIdentifiers.web.validators.CsrfTokenValidator)).toBe('Symbol(web.validators.CsrfTokenValidator)');
+    expect(serviceIdentifiers.web.validators.WebValidatorMock).toBeTypeOf('symbol');
+    expect(String(serviceIdentifiers.web.validators.WebValidatorMock)).toBe('Symbol(web.validators.WebValidatorMock)');
   });
 });
