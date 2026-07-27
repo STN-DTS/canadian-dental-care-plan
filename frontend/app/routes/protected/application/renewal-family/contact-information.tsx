@@ -166,8 +166,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const formData = await request.formData();
 
-  securityHandler.validateCsrfToken({ formData, session });
-
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.PHONE_NUMBER_NOT_CHANGED) {

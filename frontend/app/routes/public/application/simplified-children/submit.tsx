@@ -83,7 +83,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const t = await getFixedT(url, 'applicationSimplifiedChild');
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
   await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
     clearPublicApplicationState({ params, session });
     throw redirect(getPathById('public/unable-to-process-request', params));

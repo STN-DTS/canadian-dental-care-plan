@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { useCsrfToken } from '~/root';
 
+vi.mock('remix-utils/csrf/react', () => ({
+  AuthenticityTokenInput: vi.fn(() => <input type="hidden" name="_authenticity_token" value="mock-authenticity-token" data-testid="authenticity-token-input" />),
+}));
+
 vi.mock('~/root', () => ({
   useCsrfToken: vi.fn(),
 }));

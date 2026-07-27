@@ -152,7 +152,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const formData = await request.formData();
-  securityHandler.validateCsrfToken({ formData, session });
 
   const clientApplication = await securityHandler.requireClientApplication({
     params,

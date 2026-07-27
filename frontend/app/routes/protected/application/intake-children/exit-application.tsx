@@ -49,10 +49,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const state = loadProtectedApplicationIntakeChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-children']);
 
-  const formData = await request.formData();
-
-  securityHandler.validateCsrfToken({ formData, session });
-
   const t = await getFixedT(url, 'protectedApplicationIntakeChild');
 
   clearProtectedApplicationState({ params, session });

@@ -5,7 +5,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/cannot-apply-child';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getAgeCategoryFromDateString } from '~/.server/routes/helpers/base-application-route-helpers';
 import { clearPublicApplicationState, getSingleChildState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -46,12 +45,8 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   return { isChildrenOrYouth, meta };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const formData = await request.formData();
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
+export async function action({ context, params, url }: Route.ActionArgs) {
+  const { session } = context.get(appContext);
 
   const t = await getFixedT(url, 'applicationSpokes');
 

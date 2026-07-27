@@ -44,11 +44,8 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family']);
 
-  const formData = await request.formData();
-
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ requestUrl: url, session });
-  securityHandler.validateCsrfToken({ formData, session });
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 

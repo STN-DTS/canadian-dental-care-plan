@@ -7,7 +7,6 @@ import * as z from 'zod';
 
 import type { Route } from './+types/terms-conditions';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getPublicApplicationState, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -60,14 +59,11 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { session } = context.get(appContext);
   getPublicApplicationState({ params, session });
 
   const formData = await request.formData();
   const t = await getFixedT(url, 'applicationSpokes');
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
 
   const consentSchema = z
     .object({

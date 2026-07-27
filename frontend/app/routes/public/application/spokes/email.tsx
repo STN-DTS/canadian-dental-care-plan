@@ -69,9 +69,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const formData = await request.formData();
 
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
-
   const t = await getFixedT(url, 'applicationSpokes');
 
   const applicationFlow: ApplicationFlow = `${state.inputModel}-${state.typeOfApplication}`;

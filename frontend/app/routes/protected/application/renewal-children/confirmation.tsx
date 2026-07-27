@@ -139,10 +139,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const state = loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-children']);
 
-  const formData = await request.formData();
-
-  securityHandler.validateCsrfToken({ formData, session });
-
   const t = await getFixedT(url, 'protectedApplicationRenewalChild');
 
   clearProtectedApplicationState({ params, session });

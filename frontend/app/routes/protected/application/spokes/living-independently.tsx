@@ -54,7 +54,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   await securityHandler.validateAuthSession({ requestUrl: url, session });
-  securityHandler.validateCsrfToken({ formData, session });
 
   const state = getProtectedApplicationState({ params, session });
 

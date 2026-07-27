@@ -82,7 +82,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationIntakeAdult');
 
-  securityHandler.validateCsrfToken({ formData, session });
   await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
     clearProtectedApplicationState({ params, session });
     throw redirect(getPathById('protected/unable-to-process-request', params));

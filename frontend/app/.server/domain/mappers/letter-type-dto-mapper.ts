@@ -1,7 +1,5 @@
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 
-import type { ServerConfig } from '~/.server/configs';
-import { TYPES } from '~/.server/constants';
 import type { LetterTypeDto, LetterTypeLocalizedDto } from '~/.server/domain/dtos';
 import type { LetterTypeEntity } from '~/.server/domain/entities';
 
@@ -12,16 +10,8 @@ export interface LetterTypeDtoMapper {
   mapLetterTypeEntitiesToLetterTypeDtos(LetterTypeEntities: ReadonlyArray<LetterTypeEntity>): ReadonlyArray<LetterTypeDto>;
 }
 
-type LetterTypeDtoMapperImpl_ServerConfig = Pick<ServerConfig, 'ENGLISH_LANGUAGE_CODE' | 'FRENCH_LANGUAGE_CODE'>;
-
 @injectable()
 export class DefaultLetterTypeDtoMapper implements LetterTypeDtoMapper {
-  private readonly serverConfig: LetterTypeDtoMapperImpl_ServerConfig;
-
-  constructor(@inject(TYPES.ServerConfig) serverConfig: LetterTypeDtoMapperImpl_ServerConfig) {
-    this.serverConfig = serverConfig;
-  }
-
   mapLetterTypeDtoToLetterTypeLocalizedDto(LetterTypeDto: LetterTypeDto, locale: AppLocale): LetterTypeLocalizedDto {
     const { nameEn, nameFr, ...rest } = LetterTypeDto;
     return {

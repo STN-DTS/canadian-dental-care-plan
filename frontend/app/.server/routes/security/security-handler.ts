@@ -11,7 +11,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
-import type { CsrfTokenValidator, HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
+import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 import type { FeatureName } from '~/utils/env-utils';
 import { getPathById } from '~/utils/route-utils';
 
@@ -116,15 +116,6 @@ export interface SecurityHandler {
   validateAuthSession(params: ValidateAuthSessionParams): Promise<void>;
 
   /**
-   * Validates the CSRF token in the request.
-   *
-   * @param params - Parameters containing the CSRF token from the request and session.
-   * @throws Throws a 403 Forbidden response if the CSRF token is invalid.
-   * @returns Resolves if the token is valid.
-   */
-  validateCsrfToken(params: ValidateCsrfTokenParams): void;
-
-  /**
    * Validates that a given feature is enabled.
    *
    * @param feature - The feature to validate.
@@ -186,7 +177,6 @@ export interface SecurityHandler {
 export class DefaultSecurityHandler implements SecurityHandler {
   private readonly log: Logger;
   private readonly serverConfig: Pick<ServerConfig, 'ENABLED_FEATURES' | 'ENROLLMENT_STATUS_CODE_ENROLLED'>;
-  private readonly csrfTokenValidator: CsrfTokenValidator;
   private readonly hCaptchaValidator: HCaptchaValidator;
   private readonly raoidcSessionValidator: RaoidcSessionValidator;
   private readonly clientApplicationService: ClientApplicationService;
@@ -195,7 +185,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
   constructor(
     @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'ENABLED_FEATURES' | 'ENROLLMENT_STATUS_CODE_ENROLLED'>,
-    @inject(TYPES.CsrfTokenValidator) csrfTokenValidator: CsrfTokenValidator,
     @inject(TYPES.HCaptchaValidator) hCaptchaValidator: HCaptchaValidator,
     @inject(TYPES.RaoidcSessionValidator) raoidcSessionValidator: RaoidcSessionValidator,
     @inject(TYPES.ClientApplicationService) clientApplicationService: ClientApplicationService,
@@ -204,7 +193,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
   ) {
     this.log = createLogger('DefaultSecurityHandler');
     this.serverConfig = serverConfig;
-    this.csrfTokenValidator = csrfTokenValidator;
     this.hCaptchaValidator = hCaptchaValidator;
     this.raoidcSessionValidator = raoidcSessionValidator;
     this.clientApplicationService = clientApplicationService;
@@ -231,29 +219,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
     }
 
     this.log.debug('RAOIDC session is valid');
-  }
-
-  /**
-   * Validates the CSRF token.
-   *
-   * @param params - Contains the CSRF token from the request and session to validate.
-   * @throws {Response} Throws a 403 Forbidden response if the CSRF token is invalid.
-   * @returns {void} Resolves if the token is valid.
-   */
-  validateCsrfToken({ formData, session }: ValidateCsrfTokenParams): void {
-    this.log.debug('Validating CSRF token');
-
-    const requestToken = String(formData.get('_csrf'));
-    const sessionToken = session.get('csrfToken');
-
-    const result = this.csrfTokenValidator.validateCsrfToken({ requestToken, sessionToken });
-
-    if (!result.isValid) {
-      this.log.debug('CSRF token is invalid; errorMessage: %s', result.errorMessage);
-      throw data('Invalid CSRF token', { status: 403 });
-    }
-
-    this.log.debug('CSRF token is valid');
   }
 
   /**

@@ -111,8 +111,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const formData = await request.formData();
 
-  securityHandler.validateCsrfToken({ formData, session });
-
   const childState = getSingleChildState({ params, session });
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 

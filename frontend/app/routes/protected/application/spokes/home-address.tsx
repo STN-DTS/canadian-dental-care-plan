@@ -101,7 +101,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
 
   const formData = await request.formData();
-  securityHandler.validateCsrfToken({ formData, session });
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
   const locale = getLocale(url);

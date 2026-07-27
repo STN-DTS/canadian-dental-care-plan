@@ -102,9 +102,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const addressValidationService = appContainer.get(TYPES.AddressValidationService);
   const countryService = appContainer.get(TYPES.CountryService);
   const provinceTerritoryStateService = appContainer.get(TYPES.ProvinceTerritoryStateService);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-
-  securityHandler.validateCsrfToken({ formData, session });
 
   const homeAddressValidator = appContainer.get(TYPES.HomeAddressValidatorFactory).createHomeAddressValidator(locale);
 

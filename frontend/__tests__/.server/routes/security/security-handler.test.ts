@@ -12,14 +12,13 @@ import type { ValidateRequestMethodParams } from '~/.server/routes/security';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
-import type { CsrfTokenValidator, HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
+import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 import type { FeatureName } from '~/utils/env-utils';
 
 vi.mock('~/.server/utils/ip-address-utils');
 
 describe('DefaultSecurityHandler', () => {
   let mockLogger: MockProxy<Logger>;
-  let mockCsrfTokenValidator: MockProxy<CsrfTokenValidator>;
   let mockHCaptchaValidator: MockProxy<HCaptchaValidator>;
   let mockRaoidcSessionValidator: MockProxy<RaoidcSessionValidator>;
   let mockClientApplicationService: MockProxy<ClientApplicationService>;
@@ -31,7 +30,6 @@ describe('DefaultSecurityHandler', () => {
     // Mocking the dependencies
     mockLogger = mock<Logger>();
     vi.mocked(createLogger).mockReturnValue(mockLogger);
-    mockCsrfTokenValidator = mock<CsrfTokenValidator>();
     mockHCaptchaValidator = mock<HCaptchaValidator>();
     mockRaoidcSessionValidator = mock<RaoidcSessionValidator>();
     mockClientApplicationService = mock<ClientApplicationService>();
@@ -41,7 +39,6 @@ describe('DefaultSecurityHandler', () => {
     // Creating an instance of DefaultSecurityHandler with the mocked dependencies
     securityHandler = new DefaultSecurityHandler(
       { ENABLED_FEATURES: ['hcaptcha'], ENROLLMENT_STATUS_CODE_ENROLLED: 'enrolled' }, // Mocked server config
-      mockCsrfTokenValidator,
       mockHCaptchaValidator,
       mockRaoidcSessionValidator,
       mockClientApplicationService,
@@ -88,49 +85,12 @@ describe('DefaultSecurityHandler', () => {
     });
   });
 
-  describe('validateCsrfToken', () => {
-    it('should throw a 403 error if the CSRF token is invalid', () => {
-      // Mocking the CSRF token validation to return an invalid result
-      mockCsrfTokenValidator.validateCsrfToken.mockReturnValue({ isValid: false, errorMessage: 'Invalid CSRF token' });
-
-      const mockFormData = mock<FormData>();
-      mockFormData.get.calledWith('_csrf').mockReturnValue('invalid-token');
-
-      const mockSession = mock<Session>();
-      mockSession.get.calledWith('csrfToken').mockReturnValue('session-token');
-
-      // Expect a 403 response if CSRF token is invalid
-      expect(() => securityHandler.validateCsrfToken({ formData: mockFormData, session: mockSession })).toThrowError(
-        expect.objectContaining({
-          data: 'Invalid CSRF token',
-          init: { status: 403 },
-          type: 'DataWithResponseInit',
-        }),
-      );
-    });
-
-    it('should not throw anything if the CSRF token is valid', () => {
-      // Mocking the CSRF token validation to return a valid result
-      mockCsrfTokenValidator.validateCsrfToken.mockReturnValue({ isValid: true });
-
-      const mockFormData = mock<FormData>();
-      mockFormData.get.calledWith('_csrf').mockReturnValue('valid-token');
-
-      const mockSession = mock<Session>();
-      mockSession.get.calledWith('csrfToken').mockReturnValue('valid-token');
-
-      // Expect no error if CSRF token is valid
-      expect(() => securityHandler.validateCsrfToken({ formData: mockFormData, session: mockSession })).not.toThrow();
-    });
-  });
-
   describe('validateFeatureEnabled', () => {
     it('should throw 404 if feature is not enabled', () => {
       const feature: FeatureName = 'status';
 
       const securityHandler = new DefaultSecurityHandler(
         { ENABLED_FEATURES: ['hcaptcha'], ENROLLMENT_STATUS_CODE_ENROLLED: 'enrolled' }, // Mocked server config
-        mockCsrfTokenValidator,
         mockHCaptchaValidator,
         mockRaoidcSessionValidator,
         mockClientApplicationService,
@@ -152,12 +112,10 @@ describe('DefaultSecurityHandler', () => {
 
       const securityHandler = new DefaultSecurityHandler(
         { ENABLED_FEATURES: ['hcaptcha'], ENROLLMENT_STATUS_CODE_ENROLLED: 'enrolled' }, // Mocked server config
-        mockCsrfTokenValidator,
         mockHCaptchaValidator,
         mockRaoidcSessionValidator,
         mockClientApplicationService,
         mockApplicantService,
-
         mockClientEligibilityService,
       );
 
@@ -193,12 +151,10 @@ describe('DefaultSecurityHandler', () => {
       // Mocking the server config to disable hCaptcha
       securityHandler = new DefaultSecurityHandler(
         { ENABLED_FEATURES: [], ENROLLMENT_STATUS_CODE_ENROLLED: 'enrolled' }, // hCaptcha feature is not enabled
-        mockCsrfTokenValidator,
         mockHCaptchaValidator,
         mockRaoidcSessionValidator,
         mockClientApplicationService,
         mockApplicantService,
-
         mockClientEligibilityService,
       );
 

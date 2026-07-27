@@ -9,7 +9,6 @@ import * as z from 'zod';
 
 import type { Route } from './+types/child-information';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { isChildOrYouth, isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getPublicApplicantSin, getPublicApplicationState, getPublicChildrenSins, getPublicPartnerSin, getSingleChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -94,14 +93,11 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { session } = context.get(appContext);
   const state = getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-children', 'full-family', 'simplified-children', 'simplified-family']);
 
   const formData = await request.formData();
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
 
   const childState = getSingleChildState({ params, session });
   const t = await getFixedT(url, 'applicationSpokes');

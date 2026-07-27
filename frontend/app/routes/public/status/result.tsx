@@ -65,7 +65,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('status');
-  securityHandler.validateCsrfToken({ formData, session });
 
   const statusStateId = getStatusStateIdFromUrl(url);
   const { id } = loadStatusState({ id: statusStateId, params, session });

@@ -110,9 +110,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   validateApplicationFlow(state, params, ['intake-family']);
 
   const formData = await request.formData();
-
-  securityHandler.validateCsrfToken({ formData, session });
-
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.add) {

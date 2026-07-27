@@ -4,7 +4,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/file-taxes';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { clearPublicApplicationState, getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -37,12 +36,8 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   return { meta, taxYear: applicationYear.taxYear };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const formData = await request.formData();
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
+export async function action({ context, params, url }: Route.ActionArgs) {
+  const { session } = context.get(appContext);
 
   const t = await getFixedT(url, 'application');
 

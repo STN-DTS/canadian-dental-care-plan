@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/exit-application';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadPublicApplicationFullChildState } from '~/.server/routes/helpers/public-application-full-child-route-helpers';
 import { clearPublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -38,15 +37,10 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   return { meta };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+export async function action({ context, params, url }: Route.ActionArgs) {
+  const { session } = context.get(appContext);
   const state = loadPublicApplicationFullChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-children']);
-
-  const formData = await request.formData();
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateCsrfToken({ formData, session });
 
   const t = await getFixedT(url, 'applicationFullChild');
 
