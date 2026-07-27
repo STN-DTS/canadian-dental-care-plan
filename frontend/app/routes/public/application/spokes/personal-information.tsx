@@ -20,6 +20,7 @@ import { ButtonLink } from '~/components/buttons';
 import { Collapsible } from '~/components/collapsible';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { DatePickerField } from '~/components/date-picker-field';
+import { DateTimeDisplay } from '~/components/date-time-display';
 import { useErrorAlert } from '~/components/error-alert';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-context';
@@ -221,9 +222,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
       return {
         status: 'client-not-found',
-        startDate: intakeStartDate.toISOString(),
-        startDateFormatted: toLocaleDateString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
-        startDateAriaLabel: toLocaleString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
+        intakeStartIsoTimestamp: intakeStartDate.toISOString(),
+        intakeStartDisplay: toLocaleDateString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
+        intakeStartTooltip: toLocaleString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
       } as const;
     }
 
@@ -279,7 +280,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
           <p className="mb-2">
             <Trans ns="applicationSpokes" i18nKey={($) => $.personalInformation.errorMessage.alert.detail} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
           </p>
-          {fetcherDataWithStatus?.startDate !== undefined && (
+          {fetcherDataWithStatus?.intakeStartIsoTimestamp !== undefined && (
             <p className="mb-2">
               <Trans
                 ns="applicationSpokes"
@@ -287,9 +288,9 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                 components={{
                   strong: <strong />,
                   startDate: (
-                    <span aria-label={fetcherDataWithStatus.startDateAriaLabel}>
-                      <time dateTime={fetcherDataWithStatus.startDate}>{fetcherDataWithStatus.startDateFormatted}</time>
-                    </span>
+                    <DateTimeDisplay isoTimestamp={fetcherDataWithStatus.intakeStartIsoTimestamp} tooltipText={fetcherDataWithStatus.intakeStartTooltip}>
+                      {fetcherDataWithStatus.intakeStartDisplay}
+                    </DateTimeDisplay>
                   ),
                 }}
               />

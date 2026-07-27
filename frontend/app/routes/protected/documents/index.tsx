@@ -9,6 +9,7 @@ import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
+import { DateTimeDisplay } from '~/components/date-time-display';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/table';
 import { pageIds } from '~/page-ids';
 import { getHints } from '~/utils/client-hints';
@@ -56,8 +57,9 @@ export async function loader({ context, params, request, url }: Route.LoaderArgs
       const mscaUploadDate = parseDateTimeString(document.mscaUploadDate);
       return {
         ...document,
-        mscaUploadDateFormatted: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
-        mscaUploadDateAriaLabel: toLocaleString(mscaUploadDate, locale, { timeZone }),
+        mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
+        mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
+        mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),
       };
     }),
     SCCH_BASE_URI,
@@ -92,9 +94,9 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
                     <TableCell>{`${document.client.firstName} ${document.client.lastName}`}</TableCell>
                     <TableCell>{document.documentType.name}</TableCell>
                     <TableCell className="text-nowrap">
-                      <span aria-label={document.mscaUploadDateAriaLabel}>
-                        <time dateTime={document.mscaUploadDate}>{document.mscaUploadDateFormatted}</time>
-                      </span>
+                      <DateTimeDisplay isoTimestamp={document.mscaUploadIsoTimestamp} tooltipText={document.mscaUploadDateTooltip}>
+                        {document.mscaUploadDateDisplay}
+                      </DateTimeDisplay>
                     </TableCell>
                   </TableRow>
                 ))}
