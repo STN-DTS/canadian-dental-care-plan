@@ -81,16 +81,18 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
     this.log.trace('Uploading document for filename [%s]', documentUploadRequestEntity.filename);
 
-    const url = `${this.baseUrl}/ScanAndSave`;
+    const url = `${this.baseUrl}/SPOUploadDocument`;
 
-    const response = await this.httpClient.instrumentedFetch('http.client.document-scan-api.scan-and-save.posts', url, {
+    const requestBody = this.addCredentialsToRequestBody(documentUploadRequestEntity);
+
+    const response = await this.httpClient.instrumentedFetch('http.client.document-scan-api.spo-upload-document.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
       },
-      body: JSON.stringify(this.addCredentialsToRequestBody(documentUploadRequestEntity)),
+      body: JSON.stringify(requestBody),
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
@@ -104,7 +106,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
 
     if (!response.ok) {
       this.log.error('%j', {
-        message: `Failed to 'POST' for document upload (ScanAndSave)`,
+        message: `Failed to 'POST' for document upload (SPOUploadDocument)`,
         status: response.status,
         statusText: response.statusText,
         url: url,

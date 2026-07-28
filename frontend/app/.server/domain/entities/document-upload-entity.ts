@@ -19,6 +19,10 @@ export type DocumentUploadRequestEntity = Readonly<{
   subjectPersonIdentificationID: string;
   documentCategoryText: string;
   originalDocumentCreationDate: string;
+  transactionEntryUserID: string;
+  originalDocumentLastModifiedDate: string;
+  persist: true;
+  commit: true;
 }>;
 
 export type DocumentScanRequestEntity = Readonly<{
