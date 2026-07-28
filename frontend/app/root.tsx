@@ -19,6 +19,7 @@ import { PageTitle } from '~/components/page-title';
 import { RouteChangeAnnouncer } from '~/components/route-change-announcer';
 import { TooltipProvider } from '~/components/tooltip';
 import { ZodConfig } from '~/components/zod-config';
+import { useNProgress } from '~/hooks/use-nprogress';
 import indexStyleSheet from '~/index.css?url';
 import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
@@ -96,6 +97,8 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
 
 export default function App({ loaderData }: Route.ComponentProps) {
   const { dynatraceRumScript, env, origin } = loaderData;
+
+  useNProgress();
 
   const { nonce } = use(NonceContext);
   const location = useLocation();
