@@ -50,7 +50,9 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
       documentCategoryText: evidentiaryDocumentType.code,
       originalDocumentCreationDate: documentUploadRequestDto.uploadDate.toISOString(),
       transactionEntryUserID: documentUploadRequestDto.userId,
-      originalDocumentLastModifiedDate: documentUploadRequestDto.lastModifiedDate.toString(),
+      originalDocumentLastModifiedDate: documentUploadRequestDto.lastModifiedDate.toISOString(),
+      persist: true,
+      commit: true,
     };
   }
 

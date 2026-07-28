@@ -83,11 +83,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
 
     const url = `${this.baseUrl}/SPOUploadDocument`;
 
-    const requestBody = {
-      ...this.addCredentialsToRequestBody(documentUploadRequestEntity),
-      persist: true,
-      Commit: true,
-    };
+    const requestBody = this.addCredentialsToRequestBody(documentUploadRequestEntity);
 
     const response = await this.httpClient.instrumentedFetch('http.client.document-scan-api.spo-upload-document.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
