@@ -14,22 +14,32 @@ export type LevelsConfig = {
   colors: Record<LogLevel, string>;
 };
 
+/**
+ * Winston logging configuration.
+ *
+ * Winston treats lower numeric values as higher-priority log levels. A logger
+ * configured with a level emits that level and every level with a lower value.
+ * For example, `LOG_LEVEL=info` emits `audit`, `error`, `warn`, and `info`.
+ * Colors map each custom level to Winston's colorize formatter.
+ */
 const levelsConfig = {
   levels: {
     audit: 0, // Highest priority - for security and compliance events
     error: 1, // Application errors requiring immediate attention
     warn: 2, // Warning conditions
     info: 3, // Informational messages highlighting application progress
-    debug: 4, // Detailed debug information
-    trace: 5, // Fine-grained debug information
+    http: 4, // HTTP request/response logs
+    debug: 5, // Detailed debug information
+    trace: 6, // Fine-grained debug information
   },
   colors: {
-    audit: 'magenta',
+    audit: 'grey',
     error: 'red',
     warn: 'yellow',
     info: 'green',
+    http: 'green',
     debug: 'blue',
-    trace: 'dim',
+    trace: 'magenta',
   },
 } as const satisfies LevelsConfig;
 

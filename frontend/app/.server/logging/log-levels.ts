@@ -1,17 +1,17 @@
 /**
- * Available log levels in order of increasing verbosity.
- * Each level includes messages from all levels above it, meaning:
- * - 'audit' includes 'error', 'warn', 'info', 'debug', and 'trace'
- * - 'error' includes 'warn', 'info', 'debug', and 'trace'
- * - 'warn' includes 'info', 'debug', and 'trace', etc.
+ * Available log levels ordered from most severe to most verbose.
+ * A configured level includes messages at that level and all more severe levels
+ * earlier in this list. For example, 'info' includes 'audit', 'error', 'warn',
+ * 'http', and 'info'.
  */
 export const logLevels = [
   'audit', // Critical system events requiring persistence
-  'error', // Runtime errors that may require immediate attention
-  'warn', // Warnings, potential issues that don't stop execution
-  'info', // General operational information about system status
   'debug', // Detailed information useful during development and debugging
+  'error', // Runtime errors that may require immediate attention
+  'http', // Morgan HTTP request/response logs written through logger.http()
+  'info', // General operational information about system status
   'trace', // Highly detailed tracing information, potentially performance-impacting
+  'warn', // Warnings, potential issues that don't stop execution
 ] as const;
 
 /**

@@ -42,6 +42,11 @@ export class DefaultLogger implements Logger {
     this.logInternal('audit', message, meta);
   }
 
+  http(message: unknown): void;
+  http(message: string, ...meta: unknown[]): void {
+    this.logInternal('http', message, meta);
+  }
+
   debug(message: unknown): void;
   debug(message: string, ...meta: unknown[]): void {
     this.logInternal('debug', message, meta);

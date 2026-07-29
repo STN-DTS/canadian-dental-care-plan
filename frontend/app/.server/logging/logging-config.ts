@@ -10,7 +10,7 @@ import { singleton } from '~/.server/utils/instance-registry';
  */
 export type LoggingConfig = {
   /**
-   * The minimum log level to output (from most to least severe: audit, error, warn, info, debug, trace).
+   * The minimum log level to output (from most to least severe: audit, error, warn, http, info, debug, trace).
    * Messages below this level will be filtered out.
    */
   LOG_LEVEL: LogLevel;
@@ -39,11 +39,11 @@ export type LoggingConfig = {
  * These values serve as fallbacks if environment variables are missing or invalid.
  *
  * The LOG_LEVEL defaults are environment-aware:
- * - 'info' in production (less verbose, better performance)
- * - 'debug' in development/test (more verbose for troubleshooting)
+ * - 'http' in production (less verbose, better performance)
+ * - 'debug' in development (more verbose for troubleshooting)
  */
 export const defaultsConfig = {
-  LOG_LEVEL: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  LOG_LEVEL: process.env.NODE_ENV === 'production' ? 'http' : 'debug',
   AUDIT_LOG_ENABLED: true,
   AUDIT_LOG_DIRNAME: 'logs',
   AUDIT_LOG_FILENAME: 'audit-%DATE%',
@@ -87,7 +87,7 @@ const loggingConfigSchema = z.object({
  * ```typescript
  * const config = getLoggingConfig();
  * console.log(`Current log level: ${config.LOG_LEVEL}`);
- *
+ * ```
  * @returns The validated logging configuration object with all required fields
  */
 export function getLoggingConfig(): LoggingConfig {
