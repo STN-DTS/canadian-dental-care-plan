@@ -12,9 +12,14 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-import { createLogger } from '~/.server/logging';
-
-const log = createLogger('opentelemetry');
+/**
+ * Uses console logging instead of Winston because the Winston import must occur after
+ * WinstonInstrumentation is created, as documented by the Winston instrumentation package:
+ * https://www.npmjs.com/package/@opentelemetry/instrumentation-winston
+ */
+function log(message: string, ...args: unknown[]): void {
+  console.info(`${new Date().toISOString()} [opentelemetry]: ${message}`, ...args);
+}
 
 /**
  * Gets the environment variable value, falling back to a default value if the environment variable is not set or is empty.
@@ -25,7 +30,7 @@ function getEnvValue(defaultValue: string, envVar?: string): string {
 
 function getMetricExporter(): PushMetricExporter {
   if (process.env.OTEL_USE_CONSOLE_EXPORTERS === 'true') {
-    log.info('Exporting metrics to console');
+    log('Exporting metrics to console');
     return new ConsoleMetricExporter();
   }
 
@@ -34,7 +39,7 @@ function getMetricExporter(): PushMetricExporter {
       throw new Error('OTEL_API_KEY must be configured when OTEL_METRICS_ENDPOINT is set');
     }
 
-    log.info(`Exporting metrics to %s`, process.env.OTEL_METRICS_ENDPOINT);
+    log(`Exporting metrics to %s`, process.env.OTEL_METRICS_ENDPOINT);
 
     return new OTLPMetricExporter({
       compression: CompressionAlgorithm.GZIP,
@@ -44,7 +49,7 @@ function getMetricExporter(): PushMetricExporter {
     });
   }
 
-  log.info('Metrics exporting is disabled; set OTEL_METRICS_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
+  log('Metrics exporting is disabled; set OTEL_METRICS_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
     // a no-op PushMetricExporter implementation
@@ -56,7 +61,7 @@ function getMetricExporter(): PushMetricExporter {
 
 function getTraceExporter(): SpanExporter {
   if (process.env.OTEL_USE_CONSOLE_EXPORTERS === 'true') {
-    log.info('Exporting traces to console');
+    log('Exporting traces to console');
     return new ConsoleSpanExporter();
   }
 
@@ -65,7 +70,7 @@ function getTraceExporter(): SpanExporter {
       throw new Error('OTEL_API_KEY must be configured when OTEL_TRACES_ENDPOINT is set');
     }
 
-    log.info('Exporting traces to %s', process.env.OTEL_TRACES_ENDPOINT);
+    log('Exporting traces to %s', process.env.OTEL_TRACES_ENDPOINT);
 
     return new OTLPTraceExporter({
       compression: CompressionAlgorithm.GZIP,
@@ -74,7 +79,7 @@ function getTraceExporter(): SpanExporter {
     });
   }
 
-  log.info('Traces exporting is disabled; set OTEL_TRACES_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
+  log('Traces exporting is disabled; set OTEL_TRACES_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
     // a no-op SpanExporter implementation
@@ -84,7 +89,7 @@ function getTraceExporter(): SpanExporter {
 }
 
 /**
- * Transforms a string into an ingeger.
+ * Transforms a string into an integer.
  * Will return undefined if the string can't be transformed.
  */
 function toNumber(str?: string): number | undefined {
@@ -92,13 +97,12 @@ function toNumber(str?: string): number | undefined {
   return Number.isNaN(num) ? undefined : num;
 }
 
-log.info('Initializing instrumentation');
+log('Initializing instrumentation');
 
-new NodeSDK({
+const sdk = new NodeSDK({
   instrumentations: [
     getNodeAutoInstrumentations({
-      // winston auto-instrumentation adds a lot of unwanted attributes to the logs
-      '@opentelemetry/instrumentation-winston': { enabled: false },
+      '@opentelemetry/instrumentation-winston': { disableLogSending: true },
     }),
   ],
 
@@ -116,4 +120,10 @@ new NodeSDK({
     }),
   ],
   traceExporter: getTraceExporter(),
-}).start();
+});
+
+sdk.start();
+process.once('beforeExit', async () => {
+  log('Shutting down instrumentation');
+  await sdk.shutdown();
+});
