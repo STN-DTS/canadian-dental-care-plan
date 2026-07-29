@@ -71,14 +71,16 @@ export function securityHeaders(): RequestHandler {
   };
 }
 
+type MorganFormat = 'combined' | 'common' | 'dev' | 'short' | 'tiny' | string;
+
 export function logging(isProduction: boolean): RequestHandler {
   const log = createLogger('express/middleware/loggingRequestHandler');
   const ignorePatterns: string[] = ['/api/readyz'];
 
-  const logFormat = isProduction ? 'tiny' : 'dev';
+  const logFormat: MorganFormat = isProduction ? 'tiny' : 'dev';
 
   const middleware = morganMiddleware(logFormat, {
-    stream: { write: (msg) => log.info(msg.trim()) },
+    stream: { write: (msg) => log.http(msg.trim()) },
   });
 
   return (request, response, next) => {
