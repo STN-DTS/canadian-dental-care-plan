@@ -12,7 +12,6 @@ import * as z from 'zod';
 
 import type { Route } from './+types/upload';
 
-import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { DocumentUploadService } from '~/.server/domain/services';
@@ -203,8 +202,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { errors: uploadResult.errors };
   }
 
-  await createMetadata({ appContainer, clientId: applicant, files, userId: idToken.sub });
-
   return redirect(getPathById('protected/documents/index', params));
 }
 
@@ -389,31 +386,6 @@ function processBatchResults(results: ReadonlyArray<{ id: string; error?: string
   }
 
   return { success: false, errors };
-}
-
-interface CreateMetadataArgs {
-  appContainer: AppContainerProvider;
-  clientId: string;
-  files: DocumentUploadSchemaOuput['files'];
-  userId: string;
-}
-
-async function createMetadata({ appContainer, clientId, files, userId }: CreateMetadataArgs) {
-  const reasons = await appContainer.get(TYPES.DocumentUploadReasonService).listDocumentUploadReasons();
-  const reasonId = expectDefined(reasons[0], 'Expected at least one document upload reason').id;
-  const recordSource = Number(appContainer.get(TYPES.ServerConfig).EWDU_RECORD_SOURCE_MSCA);
-  const evidentiaryDocumentService = appContainer.get(TYPES.EvidentiaryDocumentService);
-  return await evidentiaryDocumentService.createEvidentiaryDocumentMetadata({
-    clientId: clientId,
-    documents: Object.entries(files).map(([fileId, { file, documentType }]) => ({
-      fileName: file.name,
-      evidentiaryDocumentTypeId: documentType,
-      documentUploadReasonId: reasonId,
-      recordSource,
-      uploadDate: new Date(),
-    })),
-    userId: userId,
-  });
 }
 
 type CreateDocumentUploadSchemaArgs = {
