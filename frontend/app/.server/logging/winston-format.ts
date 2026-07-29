@@ -61,7 +61,7 @@ type FormatLabelsOptions = {
  * @returns A Winston formatter that formats the `info.label` field according to the specified options.
  */
 export function formatLabels(options?: FormatLabelsOptions): Logform.Format {
-  const { fallback = 'unlabeled', maxLength = 25 } = options ?? {};
+  const { fallback = 'unlabeled', maxLength = 20 } = options ?? {};
 
   return format((info) => {
     const rawLabel = String(info.label ?? fallback);
@@ -81,20 +81,30 @@ export function formatLabels(options?: FormatLabelsOptions): Logform.Format {
 /**
  * Formats Winston logs into a structured, human-readable console output.
  *
- * Creates a consistent output format with timestamp, level, label, message,
- * and any additional metadata. The output is visually aligned for improved readability,
- * with metadata displayed using Node.js's `util.inspect` when present.
+ * Creates a consistent output format with timestamp, level, optional trace context,
+ * label, message, and any additional metadata. Trace context uses the compact
+ * `[trace_id,span_id]` format and is omitted when neither identifier exists.
+ * `trace_flags` is intentionally excluded from the rendered output.
+ * Metadata is displayed using Node.js's `util.inspect` when present.
  *
  * Output format:
- *   "timestamp LEVEL --- [label]: message --- {metadata}"
+ *   "timestamp LEVEL [trace_id,span_id] [label] : message --- {metadata}"
+ *
+ * The trace context block and metadata suffix are optional.
  *
  * @returns A Winston formatter using printf for log message formatting
  */
 export function formatPrintf(): Logform.Format {
   return format.printf((info) => {
-    const { label, level, message, timestamp, ...rest } = info;
+    // Exclude trace_flags from generic metadata; it is intentionally not rendered.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { label, level, message, timestamp, trace_id, span_id, trace_flags, ...rest } = info;
 
-    let msg = `${timestamp} ${level} --- ${label}: ${message}`;
+    const traceContext = formatTraceContext(trace_id, span_id);
+
+    const formattedTraceContext = traceContext ? ` [${traceContext}]` : '';
+
+    let msg = `${timestamp} ${level}${formattedTraceContext} ${label} : ${message}`;
 
     // Append metadata if present, excluding Winston's internal properties
     if (!isEmpty(rest)) {
@@ -108,6 +118,40 @@ export function formatPrintf(): Logform.Format {
 
     return msg;
   });
+}
+
+/**
+ * Formats OpenTelemetry trace context as a compact comma-separated value list.
+ *
+ * Values are emitted in trace ID, span ID, and trace flags order. Missing values
+ * are omitted without leaving extra commas. Fixed conditional concatenation avoids
+ * temporary arrays and supports adding future context fields without changing the
+ * output contract.
+ *
+ * @param traceId - OpenTelemetry trace ID.
+ * @param spanId - OpenTelemetry span ID.
+ * @param traceFlags - Optional OpenTelemetry trace flags.
+ * @returns Formatted trace context, or an empty string when all values are missing.
+ */
+function formatTraceContext(traceId: unknown, spanId: unknown, traceFlags?: unknown): string {
+  let traceContext = '';
+  let hasValue = false;
+
+  if (traceId) {
+    traceContext += String(traceId);
+    hasValue = true;
+  }
+
+  if (spanId) {
+    traceContext += `${hasValue ? ',' : ''}${String(spanId)}`;
+    hasValue = true;
+  }
+
+  if (traceFlags) {
+    traceContext += `${hasValue ? ',' : ''}${String(traceFlags)}`;
+  }
+
+  return traceContext;
 }
 
 /**
