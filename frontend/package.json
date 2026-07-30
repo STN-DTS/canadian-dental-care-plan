@@ -4,7 +4,6 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "postinstall": "patch-package --patch-dir other/patches",
     "build": "npm run build:application && npm run build:server",
     "build:application": "react-router build",
     "build:server": "vite build --config ./vite.server.config.ts",
@@ -139,7 +138,6 @@
     "i18next-cli": "^1.67.3",
     "jsdom": "^29.1.1",
     "npm-run-all2": "^9.0.2",
-    "patch-package": "^8.0.1",
     "playwright-teamcity-reporter": "^1.0.5",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
@@ -162,5 +160,8 @@
     "esbuild": false,
     "protobufjs": false,
     "unrs-resolver": false
+  },
+  "patchedDependencies": {
+    "prettier-plugin-tailwindcss@0.8.1": "patches/prettier-plugin-tailwindcss@0.8.1.patch"
   }
 }

@@ -1,0 +1,49 @@
+--- a/dist/index.mjs	
++++ b/dist/index.mjs	
+@@ -294,12 +294,42 @@
+ 			if (plugin === null || plugin === void 0 || (_plugin$parsers2 = plugin.parsers) === null || _plugin$parsers2 === void 0 ? void 0 : _plugin$parsers2[name]) Object.assign(parser, plugin.parsers[name]);
+ 		}
+ 		return parser;
+ 	}
+-	parser.preprocess = async (code, options) => {
+-		let parser = await load(options);
+-		return parser.preprocess ? parser.preprocess(code, options) : code;
+-	};
++
++	// Patch the options to normalize plugin names for compatibility
++  // See: https://github.com/tailwindlabs/prettier-plugin-tailwindcss/pull/459
++  function patchOptions(options) {
++    const compatibleNames = opts.compatible ?? [];
++
++    const normalizePluginName = (pluginName) => {
++      const slashed = pluginName.replace(/\\/g, '/');
++      return compatibleNames.find((compatibleName) => slashed.includes(compatibleName)) ?? pluginName;
++    };
++
++    const patchedOptions = {
++      ...options,
++      plugins: options.plugins.map((plugin) => {
++        if (typeof plugin === 'string' || plugin instanceof URL || !plugin.name) {
++          return plugin;
++        }
++
++        return {
++          ...plugin,
++          name: normalizePluginName(plugin.name),
++        };
++      }),
++    };
++
++    return patchedOptions;
++  }
++
++  parser.preprocess = async (code, options) => {
++    const patchedOptions = patchOptions(options);
++    let parser = await load(patchedOptions);
++    return parser.preprocess ? parser.preprocess(code, patchedOptions) : code;
++  };
++
+ 	parser.parse = async (code, options) => {
+ 		let ast = await (await load(options)).parse(code, options, options);
+ 		let env = await loadTailwindCSS({
+ 			opts,
