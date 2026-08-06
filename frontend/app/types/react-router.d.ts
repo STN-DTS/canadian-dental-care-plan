@@ -22,5 +22,3 @@ declare module 'react-router' {
    */
   interface RouteModules extends Record<string, RouteModule | undefined> {}
 }
-
-export {}; // necessary for TS to treat this as a module

@@ -1,8 +1,11 @@
+/**
+ * Declares application-wide global types and runtime holders.
+ *
+ * Type-only imports make this file an external module, allowing its
+ * declarations to be exposed globally through `declare global`.
+ */
 import type { RouteModules } from 'react-router';
 
-import type { FlatNamespace } from 'i18next';
-
-import type { i18nResources } from '~/.server/i18n-resources';
 import type { ClientEnv } from '~/.server/utils/env-utils';
 import type { InstanceName } from '~/.server/utils/instance-registry';
 import type { APP_LOCALES } from '~/utils/locale-utils';
@@ -51,24 +54,4 @@ declare global {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type OmitStrict<T, K extends keyof T> = T extends any ? Pick<T, Exclude<keyof T, K>> : never;
-}
-
-declare module 'i18next' {
-  /**
-   * @see https://www.i18next.com/overview/typescript
-   * @see https://www.i18next.com/overview/typescript#selector-api
-   */
-  interface CustomTypeOptions {
-    enableSelector: true;
-    defaultNS: ExtractStrict<FlatNamespace, 'common'>;
-    resources: (typeof i18nResources)['en'];
-  }
-}
-
-/**
- * Declare additional properties on express session object using [declaration merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html).
- */
-declare module 'express-session' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface SessionData extends Record<string, unknown> {}
 }
