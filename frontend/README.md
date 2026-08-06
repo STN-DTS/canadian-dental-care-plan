@@ -28,6 +28,29 @@ npm start
 
 Now you'll need to pick a host to deploy it to.
 
+## OpenTelemetry ESM Bootstrap
+
+The server is an ECMAScript Module (ESM) application. OpenTelemetry must be
+preloaded before server modules import Express or other instrumented packages.
+The `dev`, `preview`, and `start` scripts already preload the OpenTelemetry
+bootstrap with Node's `--import` flag.
+
+Do not start the server entry point directly. Use the package scripts so the
+instrumentation loader runs before application imports:
+
+```sh
+npm run dev
+npm run preview
+npm start
+```
+
+See the [OpenTelemetry ESM support guidance](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md)
+for loader requirements and startup details.
+
+See [express.md](other/docs/express.md) for the named middleware
+wrapper pattern for preserving meaningful OpenTelemetry middleware metadata and
+span names.
+
 ### DIY
 
 If you're familiar with deploying node applications, the built-in Remix app server is production-ready.

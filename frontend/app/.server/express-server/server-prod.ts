@@ -2,7 +2,7 @@ import express from 'express';
 
 import { createLogger } from '~/.server/logging';
 
-const log = createLogger('express-prod');
+const log = createLogger('express/server-prod');
 
 /**
  * Configures an Express production server for React-Router.
@@ -10,11 +10,11 @@ const log = createLogger('express-prod');
  * @param app The Express application to configure.
  */
 export async function configureProductionServer(app: express.Express): Promise<void> {
-  log.info('  ✓ configuring express production server...');
+  log.info('Configuring express production server...');
 
   // React Router server build middleware must be added last to ensure that all other middlewares
   // (static assets, vite dev server, etc.) have a chance to handle the request first.
-  log.info('    ✓ React-Router Server build middleware (production)');
+  log.info('React-Router Server build middleware (production)');
 
   // Import prebuilt server app in production (path relative to ./build/server/server.js).
   const BUILD_PATH = './index.js'; // Short-circuit the type-checking of the built output.
@@ -22,9 +22,11 @@ export async function configureProductionServer(app: express.Express): Promise<v
     log.error('Failed to import prebuilt server app from %s', BUILD_PATH, error);
     throw error;
   });
-  app.use(buildServer.app);
 
-  log.info('    ✓ Express production server configured successfully.');
+  const buildServerMiddleware = buildServer.app;
+  app.use(buildServerMiddleware);
+
+  log.info('Express production server configured successfully.');
 }
 
 /**
@@ -33,13 +35,15 @@ export async function configureProductionServer(app: express.Express): Promise<v
  * @param app The Express application to configure.
  */
 export function configureProductionStaticAssets(app: express.Express): void {
-  log.info('  ✓ configuring express production server static assets...');
+  log.info('Configuring express production server static assets...');
 
-  log.info('    ✓ caching /assets for 1y');
-  app.use('/assets', express.static('./build/client/assets', { immutable: true, maxAge: '1y' }));
+  log.info('Caching /assets for 1y');
+  const staticAssetsMiddleware = express.static('./build/client/assets', { immutable: true, maxAge: '1y' });
+  app.use('/assets', staticAssetsMiddleware);
 
-  log.info('    ✓ caching remaining static content for 1y');
-  app.use(express.static('./build/client', { maxAge: '1y' }));
+  log.info('Caching remaining static content for 1y');
+  const staticClientMiddleware = express.static('./build/client', { maxAge: '1y' });
+  app.use(staticClientMiddleware);
 
-  log.info('    ✓ Express production server static assets configured successfully.');
+  log.info('Express production server static assets configured successfully.');
 }
