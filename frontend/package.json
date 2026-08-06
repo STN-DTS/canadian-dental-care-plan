@@ -70,7 +70,7 @@
     "i18next-http-backend": "^4.0.1",
     "inversify": "^8.2.3",
     "isbot": "^5.2.1",
-    "jose": "^6.2.7",
+    "jose": "^6.2.8",
     "libphonenumber-js": "^1.13.10",
     "markdown-to-jsx": "^9.10.1",
     "micro-memoize": "^5.1.2",
