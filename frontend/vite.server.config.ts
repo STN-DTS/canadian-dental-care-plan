@@ -27,7 +27,7 @@ export default defineConfig({
     rolldownOptions: {
       // Specifies the entry point for the server runtime.
       // This is the TypeScript file that Vite will start building from.
-      input: ['./app/.server/express-server/opentelemetry.ts', './app/.server/express-server/server.ts'],
+      input: ['./app/.server/express-server/opentelemetry.ts', './app/.server/express-server/opentelemetry-register.ts', './app/.server/express-server/server.ts'],
     },
 
     // Enables Server-Side Rendering (SSR) mode, optimizing the build process for Node.js.
