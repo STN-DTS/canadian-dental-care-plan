@@ -120,4 +120,4 @@ LABEL org.opencontainers.image.version=${BUILD_VERSION}
 ENV PORT=3000
 
 USER node
-CMD ["node", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
+CMD ["node", "--import", "./build/server/opentelemetry-register.js", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
