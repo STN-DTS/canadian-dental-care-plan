@@ -5,8 +5,8 @@ import { createLogger } from '~/.server/logging';
 
 const log = createLogger('express/request-handlers');
 
-export function globalErrorHandler(): ErrorRequestHandler {
-  return (error, request, response, next) => {
+export function createGlobalErrorHandler(): ErrorRequestHandler {
+  return function globalErrorHandler(error, request, response, next) {
     log.error(error);
 
     if (response.headersSent) {

@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
-import sessionMiddleware from 'express-session';
+import expressSession from 'express-session';
 import { minimatch } from 'minimatch';
-import morganMiddleware from 'morgan';
+import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -20,22 +20,29 @@ function shouldIgnore(ignorePatterns: string[], path: string): boolean {
 }
 
 /**
- * Multiple middleware (compression, morgan, express-session, etc.) each attach
- * internal 'finish' listeners to the response via on-finished, and our custom
- * routeRequestCounter adds one more. Combined, these exceed Node's default
- * limit of 10, triggering a MaxListenersExceededWarning. Raising to 15
- * accommodates all current listeners with headroom.
+ * Creates named middleware that increases the maximum number of listeners for the response object.
+ *
+ * This is useful when multiple middleware (compression, morgan, express-session, etc.) each attach
+ * internal 'finish' listeners to the response via on-finished, and our custom routeRequestCounter adds one more.
+ * Combined, these exceed Node's default limit of 10, triggering a MaxListenersExceededWarning.
+ * Raising to 15 accommodates all current listeners with headroom.
  */
-export function responseMaxListeners(maxListeners = 15): RequestHandler {
-  return (_req, res, next) => {
+export function createResponseMaxListenersMiddleware(maxListeners = 15): RequestHandler {
+  return function responseMaxListenersMiddleware(_req, res, next) {
     res.setMaxListeners(maxListeners);
     next();
   };
 }
 
-// @see: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
-export function securityHeaders(): RequestHandler {
-  const log = createLogger('express/middleware/securityHeadersRequestHandler');
+/**
+ * Creates named middleware that applies security response headers.
+ *
+ * Returned middleware can be registered directly with `app.use(...)`.
+ *
+ * @see: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
+ */
+export function createSecurityHeadersMiddleware(): RequestHandler {
+  const log = createLogger('express/middleware/securityHeadersMiddleware');
   const ignorePatterns: string[] = [];
 
   // prettier-ignore
@@ -50,7 +57,7 @@ export function securityHeaders(): RequestHandler {
     'screen-wake-lock=()',
   ].join(', ');
 
-  return (request, response, next) => {
+  return function securityHeadersMiddleware(request, response, next) {
     if (shouldIgnore(ignorePatterns, request.path)) {
       log.trace('Skipping adding security headers to response: [%s]', request.path);
       return next();
@@ -73,27 +80,36 @@ export function securityHeaders(): RequestHandler {
 
 type MorganFormat = 'combined' | 'common' | 'dev' | 'short' | 'tiny' | string;
 
-export function logging(isProduction: boolean): RequestHandler {
-  const log = createLogger('express/middleware/loggingRequestHandler');
-  const ignorePatterns: string[] = ['/api/readyz'];
-
+/**
+ * Creates named request-logger middleware with production-aware Morgan format.
+ *
+ * Health readiness requests are excluded from request logging.
+ */
+export function createRequestLoggerMiddleware(isProduction: boolean): RequestHandler {
+  const log = createLogger('express/middleware/requestLoggerMiddleware');
   const logFormat: MorganFormat = isProduction ? 'tiny' : 'dev';
 
-  const middleware = morganMiddleware(logFormat, {
+  const morganLoggerMiddleware = morgan(logFormat, {
     stream: { write: (msg) => log.http(msg.trim()) },
   });
 
-  return (request, response, next) => {
+  // List of paths to ignore for request logging. These are typically health check endpoints that
+  // are called frequently and can clutter the logs.
+  const ignorePatterns: string[] = ['/api/readyz'];
+
+  return function requestLoggerMiddleware(request, response, next) {
     if (shouldIgnore(ignorePatterns, request.path)) return next();
-    return middleware(request, response, next);
+    return morganLoggerMiddleware(request, response, next);
   };
 }
 
 /**
- * Configures session middleware, optionally skipping it for bots and specific paths.
+ * Creates named session middleware, optionally skipping it for bots and specific paths.
+ *
+ * Session store is selected from server configuration. Excluded paths bypass session setup.
  */
-export async function session(isProduction: boolean, serverConfig: ServerConfig): Promise<RequestHandler> {
-  const log = createLogger('express/middleware/sessionRequestHandler');
+export async function createSessionMiddleware(isProduction: boolean, serverConfig: ServerConfig): Promise<RequestHandler> {
+  const log = createLogger('express/middleware/sessionMiddleware');
 
   const ignorePatterns = [
     '/api/buildinfo', //
@@ -110,7 +126,7 @@ export async function session(isProduction: boolean, serverConfig: ServerConfig)
       ? await createRedisStore(serverConfig)
       : createMemoryStore();
 
-  const middleware = sessionMiddleware({
+  const generatedSessionMiddleware = expressSession({
     store: sessionStore,
     name: SESSION_COOKIE_NAME,
     secret: SESSION_COOKIE_SECRET,
@@ -128,12 +144,12 @@ export async function session(isProduction: boolean, serverConfig: ServerConfig)
     },
   });
 
-  return async (request, response, next) => {
+  return async function sessionMiddleware(request, response, next) {
     if (shouldIgnore(ignorePatterns, request.path)) {
       log.trace('Skipping session: [%s]', request.path);
       return next();
     }
 
-    return await middleware(request, response, next);
+    return await generatedSessionMiddleware(request, response, next);
   };
 }

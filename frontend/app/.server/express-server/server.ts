@@ -2,8 +2,8 @@ import compression from 'compression';
 import express from 'express';
 import sourceMapSupport from 'source-map-support';
 
-import { logging, responseMaxListeners, securityHeaders, session } from '~/.server/express-server/middleware';
-import { globalErrorHandler } from '~/.server/express-server/request-handlers';
+import { createRequestLoggerMiddleware, createResponseMaxListenersMiddleware, createSecurityHeadersMiddleware, createSessionMiddleware } from '~/.server/express-server/middleware';
+import { createGlobalErrorHandler } from '~/.server/express-server/request-handlers';
 import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
 import { configureProductionServer, configureProductionStaticAssets } from '~/.server/express-server/server-prod';
 import { createLogger } from '~/.server/logging';
@@ -25,22 +25,23 @@ sourceMapSupport.install();
 log.info(`Initializing %s mode express server...`, environment.NODE_ENV);
 const app = express();
 
-log.info('  ✓ disabling X-Powered-By response header');
+log.info('Disabling X-Powered-By response header');
 app.disable('x-powered-by');
 
-log.info('  ✓ enabling reverse proxy support');
+log.info('Enabling reverse proxy support');
 app.set('trust proxy', true);
 
-log.info('  ‼️ configuring express middlewares...');
+log.info('Configuring express middlewares...');
 
-log.info('    ✓ increasing response max listeners to prevent EventEmitter warnings');
-app.use(responseMaxListeners());
+log.info('Increasing response max listeners to prevent EventEmitter warnings');
+app.use(createResponseMaxListenersMiddleware());
 
-log.info('    ✓ compression middleware');
-app.use(compression());
+log.info('Compression middleware');
+const compressionMiddleware = compression();
+app.use(compressionMiddleware);
 
-log.info('    ✓ logging middleware');
-app.use(logging(isProduction));
+log.info('Logging middleware');
+app.use(createRequestLoggerMiddleware(isProduction));
 
 if (isProduction) {
   configureProductionStaticAssets(app);
@@ -48,11 +49,11 @@ if (isProduction) {
   configureDevStaticAssets(app);
 }
 
-log.info('    ✓ security headers middleware');
-app.use(securityHeaders());
+log.info('Security headers middleware');
+app.use(createSecurityHeadersMiddleware());
 
-log.info('    ✓ session middleware (%s)', environment.SESSION_STORAGE_TYPE);
-app.use(await session(isProduction, environment));
+log.info('Session middleware (%s)', environment.SESSION_STORAGE_TYPE);
+app.use(await createSessionMiddleware(isProduction, environment));
 
 /**
  * Redirect Protected Apply
@@ -94,8 +95,10 @@ if (isProduction) {
   await configureDevServer(app);
 }
 
-log.info('  ✓ registering global error handler');
-app.use(globalErrorHandler());
+log.info('Registering global error handler');
+app.use(createGlobalErrorHandler());
 
-log.info('Server initialization complete');
-app.listen(port, () => log.info(`Listening on http://localhost:${port}/`));
+log.info('Server initialization completed successfully. Listening on port %s', port);
+app.listen(port, () => {
+  log.info(`Listening on http://localhost:${port}/`);
+});
