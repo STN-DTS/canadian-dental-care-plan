@@ -181,6 +181,8 @@ export default defineConfig(
       'unicorn/prefer-number-coercion': 'off', // errors   1
       'unicorn/prefer-ternary': 'off', // errors   2
       'unicorn/prefer-unicode-code-point-escapes': 'off', // errors 219
+      // TODO: re-enable this rule once eslint-plugin-jsdoc is installed and configured
+      'unicorn/single-line-block-comment-style': 'off',
     },
   },
   //
