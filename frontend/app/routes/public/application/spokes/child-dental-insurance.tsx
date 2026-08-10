@@ -158,34 +158,34 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
             <CsrfTokenInput />
             <div className="my-6">
               <div className="mb-4 space-y-4">
-                <p>{t(($) => $.dentalInsurance.detail.additionalInfo.access)}</p>
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.access)}</p>
                 <ul className="list-disc space-y-1 pl-7">
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pension)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.organization)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.insurancePlan)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.health)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pension)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.organization)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.insurancePlan)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.health)}</li>
                 </ul>
-                <p>{t(($) => $.dentalInsurance.detail.additionalInfo.eligible)}</p>
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.eligible)}</p>
                 <ul className="list-disc space-y-1 pl-7">
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notUsed)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notEnrolled)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.premium)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notCovered)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.optedAfter)}</li>
-                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.optedBefore)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notUsed)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notEnrolled)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.premium)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notCovered)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.optedAfter)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.optedBefore)}</li>
                 </ul>
                 <p>
-                  <Trans ns="applicationSpokes" i18nKey={($) => $.dentalInsurance.detail.additionalInfo.note} />
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.note} />
                 </p>
                 <p>
-                  <Trans ns="applicationSpokes" i18nKey={($) => $.dentalInsurance.detail.additionalInfo.socialProgram} />
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.socialProgram} />
                 </p>
                 <p>
                   <Trans
                     ns="applicationSpokes"
-                    i18nKey={($) => $.dentalInsurance.detail.eligibility}
-                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
+                    i18nKey={($) => $.children.dentalInsurance.detail.eligibility}
+                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
                   />
                 </p>
               </div>
