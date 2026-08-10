@@ -141,20 +141,6 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
     setHasDentalInsurance(e.target.value === HAS_DENTAL_INSURANCE_OPTION.yes);
   }
 
-  const helpMessage = (
-    <div className="mb-4 space-y-4">
-      <ul className="list-disc space-y-1 pl-7 font-semibold">
-        <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.employer)}</li>
-        <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pension)}</li>
-        <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
-        <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.organization)}</li>
-        <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.company)}</li>
-      </ul>
-      <p className="font-semibold">{t(($) => $.dentalInsurance.detail.additionalInfo.eligible)}</p>
-      <p>{t(($) => $.dentalInsurance.detail.additionalInfo.access)}</p>
-    </div>
-  );
-
   const t4Href = <InlineLink to={t(($) => $.dentalInsurance.no.alertT4Href)} className="external-link" newTabIndicator target="_blank" />;
   const t4aHref = <InlineLink to={t(($) => $.dentalInsurance.no.alertT4aHref)} className="external-link" newTabIndicator target="_blank" />;
 
@@ -163,11 +149,43 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
       <AppPageTitle>{t(($) => $.dentalInsurance.title)}</AppPageTitle>
       <ErrorSummaryProvider actionData={fetcher.data}>
         <div className="max-w-prose">
-          <p className="mb-4 italic">{t(($) => $.requiredLabel, { ns: 'application' })}</p>
           <ErrorSummary />
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
             <div className="my-6">
+              <div className="mb-4 space-y-4">
+                <p>{t(($) => $.dentalInsurance.detail.additionalInfo.access)}</p>
+                <ul className="list-disc space-y-1 pl-7">
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pension)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.organization)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.insurancePlan)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.health)}</li>
+                </ul>
+                <p>{t(($) => $.dentalInsurance.detail.additionalInfo.eligible)}</p>
+                <ul className="list-disc space-y-1 pl-7">
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notUsed)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notEnrolled)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.premium)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.notCovered)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.optedAfter)}</li>
+                  <li>{t(($) => $.dentalInsurance.detail.additionalInfo.list.optedBefore)}</li>
+                </ul>
+                <p>
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.dentalInsurance.detail.additionalInfo.note} />
+                </p>
+                <p>
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.dentalInsurance.detail.additionalInfo.socialProgram} />
+                </p>
+                <p>
+                  <Trans
+                    ns="applicationSpokes"
+                    i18nKey={($) => $.dentalInsurance.detail.eligibility}
+                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
+                  />
+                </p>
+              </div>
+              <p className="my-8 italic">{t(($) => $.requiredLabel, { ns: 'application' })}</p>
               <InputRadios
                 id="has-dental-insurance"
                 name="hasDentalInsurance"
@@ -186,8 +204,6 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
                     onChange: handleOnHasDentalInsuranceChanged,
                   },
                 ]}
-                helpMessagePrimary={helpMessage}
-                helpMessagePrimaryClassName="text-black"
                 errorMessage={errors?.hasDentalInsurance}
                 required
               />
