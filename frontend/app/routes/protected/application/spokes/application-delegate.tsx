@@ -57,9 +57,7 @@ export default function ApplicationDelegate({ loaderData, params }: Route.Compon
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
-  const contactServiceCanada = <InlineLink to={t(($) => $.applicationDelegate.contactServiceCanadaHref)} className="external-link" newTabIndicator target="_blank" />;
   const preparingToApply = <InlineLink to={t(($) => $.applicationDelegate.preparingToApplyHref)} className="external-link" newTabIndicator target="_blank" />;
-  const noWrap = <span className="whitespace-nowrap" />;
 
   async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
@@ -72,12 +70,17 @@ export default function ApplicationDelegate({ loaderData, params }: Route.Compon
       <AppPageTitle>{t(($) => $.applicationDelegate.pageTitle)}</AppPageTitle>
       <div className="max-w-prose">
         <div className="mb-8 space-y-4">
+          <p>{t(($) => $.applicationDelegate.beforeSubmit)}</p>
+          <ul className="list-inside list-disc pl-4">
+            <li>{t(($) => $.applicationDelegate.legalRepresentative)}</li>
+            <li>{t(($) => $.applicationDelegate.powerOfAttorney)}</li>
+            <li>{t(($) => $.applicationDelegate.mandate)}</li>
+            <li>{t(($) => $.applicationDelegate.trusteeship)}</li>
+          </ul>
           <p>
-            <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.applicationDelegate.contactRepresentative} components={{ contactServiceCanada, noWrap }} />
+            <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.applicationDelegate.applyDelegate} components={{ preparingToApply }} />
           </p>
-          <p>
-            <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.applicationDelegate.prepareToApply} components={{ preparingToApply }} />
-          </p>
+          <p>{t(($) => $.applicationDelegate.contact)}</p>
         </div>
         <fetcher.Form method="post" onSubmit={handleSubmit} noValidate className="flex flex-wrap items-center gap-3">
           <CsrfTokenInput />
