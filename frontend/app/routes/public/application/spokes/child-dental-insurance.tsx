@@ -158,7 +158,7 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
             <CsrfTokenInput />
             <div className="my-6">
               <div className="mb-4 space-y-4">
-                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.access)}</p>
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.access, { childName })}</p>
                 <ul className="list-disc space-y-1 pl-7">
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pension)}</li>
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
@@ -166,7 +166,7 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.insurancePlan)}</li>
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.health)}</li>
                 </ul>
-                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.eligible)}</p>
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.eligible, { childName })}</p>
                 <ul className="list-disc space-y-1 pl-7">
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notUsed)}</li>
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notEnrolled)}</li>
@@ -176,10 +176,10 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                   <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.optedBefore)}</li>
                 </ul>
                 <p>
-                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.note} />
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.note} values={{ childName }} />
                 </p>
                 <p>
-                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.socialProgram} />
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.socialProgram} values={{ childName }} />
                 </p>
                 <p>
                   <Trans
