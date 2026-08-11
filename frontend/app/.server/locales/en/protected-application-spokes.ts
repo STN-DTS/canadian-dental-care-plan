@@ -48,7 +48,7 @@ const ns = {
     trusteeship: "trusteeship",
     contact: "You can also call Service Canada at 1\u2011833\u2011537\u20114342.",
     applyDelegate: "Visit <preparingToApply>apply through a delegate</preparingToApply> for more information on how to submit your proof and the next steps.",
-    preparingToApplyHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#helping",
+    preparingToApplyHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#h2.4",
     backBtn: "Back",
     exitBtn: "Exit application",
     exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",

@@ -48,7 +48,7 @@ const ns = {
     trusteeship: "tuteur",
     contact: "Vous pouvez aussi communiquer avec Service Canada au 1\u2011833\u2011537\u20114342.",
     applyDelegate: "Consultez <preparingToApply>présenter une demande par l'intermédiaire d'un délégué</preparingToApply> pour obtenir plus de renseignements sur la façon de soumettre votre preuve ainsi que sur les prochaines étapes.",
-    preparingToApplyHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#helping",
+    preparingToApplyHref: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html#h2.4",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html",

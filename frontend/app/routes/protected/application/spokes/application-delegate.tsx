@@ -80,6 +80,7 @@ export default function ApplicationDelegate({ loaderData, params }: Route.Compon
           <p>
             <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.applicationDelegate.applyDelegate} components={{ preparingToApply }} />
           </p>
+          <p>{t(($) => $.applicationDelegate.contact)}</p>
         </div>
         <fetcher.Form method="post" onSubmit={handleSubmit} noValidate className="flex flex-wrap items-center gap-3">
           <CsrfTokenInput />
