@@ -17,6 +17,7 @@ import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { InlineLink } from '~/components/inline-link';
 import { InputCheckbox } from '~/components/input-checkbox';
 import { InputRadios } from '~/components/input-radios';
 import { LoadingButton } from '~/components/loading-button';
@@ -147,29 +148,48 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
     setHasDentalInsurance(e.target.value === HAS_DENTAL_INSURANCE_OPTION.yes);
   }
 
-  const helpMessage = (
-    <div className="mb-4 space-y-4">
-      <ul className="list-disc space-y-1 pl-7 font-semibold">
-        <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.employer)}</li>
-        <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pension)}</li>
-        <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.organization)}</li>
-        <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.private)}</li>
-      </ul>
-      <p className="font-semibold">{t(($) => $.children.dentalInsurance.detail.additionalInfo.eligible)}</p>
-      <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.access)}</p>
-    </div>
-  );
-
   return (
     <>
       <AppPageTitle>{t(($) => $.children.dentalInsurance.title, { childName })}</AppPageTitle>
       <ErrorSummaryProvider actionData={fetcher.data}>
         <div className="max-w-prose">
-          <p className="mb-4 italic">{t(($) => $.requiredLabel, { ns: 'application' })}</p>
           <ErrorSummary />
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
             <div className="my-6">
+              <div className="mb-4 space-y-4">
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.access, { childName })}</p>
+                <ul className="list-disc space-y-1 pl-7">
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pension)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.pensionPlans)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.organization)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.insurancePlan)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.health)}</li>
+                </ul>
+                <p>{t(($) => $.children.dentalInsurance.detail.additionalInfo.eligible, { childName })}</p>
+                <ul className="list-disc space-y-1 pl-7">
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notUsed)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notEnrolled)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.premium)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.notCovered)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.optedAfter)}</li>
+                  <li>{t(($) => $.children.dentalInsurance.detail.additionalInfo.list.optedBefore)}</li>
+                </ul>
+                <p>
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.note} values={{ childName }} />
+                </p>
+                <p>
+                  <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.detail.additionalInfo.socialProgram} values={{ childName }} />
+                </p>
+                <p>
+                  <Trans
+                    ns="applicationSpokes"
+                    i18nKey={($) => $.children.dentalInsurance.detail.eligibility}
+                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
+                  />
+                </p>
+              </div>
+              <p className="my-8 italic">{t(($) => $.requiredLabel, { ns: 'application' })}</p>
               <InputRadios
                 id="has-dental-insurance"
                 name="hasDentalInsurance"
@@ -190,8 +210,6 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                     onChange: handleOnHasDentalInsuranceChanged,
                   },
                 ]}
-                helpMessagePrimary={helpMessage}
-                helpMessagePrimaryClassName="text-black"
                 errorMessage={errors?.hasDentalInsurance}
                 required
               />
