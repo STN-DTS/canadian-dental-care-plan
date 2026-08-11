@@ -51,7 +51,7 @@ const ns = {
     preparingToApplyHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#helping",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
-    exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
+    exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html",
   },
   termsConditions: {
     pageTitle: "Conditions d'utilisation et énoncé de confidentialité",
