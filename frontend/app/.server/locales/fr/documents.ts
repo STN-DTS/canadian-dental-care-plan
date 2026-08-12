@@ -65,8 +65,17 @@ const ns = {
     },
   },
   notRequired: {
-    pageTitle: "Documents non requis",
-    description: "Vous n'avez pas besoin de téléverser de documents pour le moment.",
+    pageTitle: "Aucun document requis",
+    description: "Vous n'avez pas besoin de soumettre de documents pour le moment.",
+    reasonsHeading: "Cela peut être parce que :",
+    reasons: {
+      processing: "votre demande est en cours de traitement",
+      processed: "votre demande a déjà été traitée et vous recevrez une lettre",
+      cancelled: "votre demande a été annulée parce que la date limite est dépassée et vous recevrez une lettre",
+    },
+    whatYouCanDoHeading: "Ce que vous pouvez faire",
+    statusChecker: "<statusCheckerLink>Vérifier l’état de votre demande</statusCheckerLink>",
+    letters: "Consulter vos <lettersLink>lettres</lettersLink> du Régime canadien de soins dentaires",
     returnButton: "Retour au tableau de bord",
   },
 } as const;
