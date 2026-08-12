@@ -23,7 +23,7 @@ const ns = {
       list: {
         eligibilityForm: "le <eligibilityFormLink>formulaire d'examen de l'admissibilité des membres du Régime canadien de soins dentaires (PDF)</eligibilityFormLink> complété (recommandé)",
         letter: "une lettre de votre employeur ou de votre régime de pension",
-        proof: "un document démontrant que vous n'avez pas accès à une assurance  ou à une couverture dentaire privée",
+        proof: "un document démontrant que vous n'avez pas accès à une assurance ou à une couverture dentaire privée",
       },
       mustInclude: "Tous les documents doivent inclure\u00A0:",
       mustIncludeList: {
