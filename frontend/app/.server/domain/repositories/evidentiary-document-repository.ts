@@ -207,42 +207,7 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
     this.log.debug('Fetch evidentiary documents for client: [%s]', findEvidentiaryDocumentsRequest.clientId);
     this.log.trace('Fetch evidentiary documents for request [%j]', findEvidentiaryDocumentsRequest);
 
-    const mockEvidentiaryDocumentEntities: ReadonlyArray<EvidentiaryDocumentEntity> = [
-      {
-        id: 'aff431b7-9bae-f011-bbd3-7c1e520630db',
-        fileName: 'Benefit Provider Letter.pdf',
-        clientId: findEvidentiaryDocumentsRequest.clientId,
-        documentTypeId: '70a54c5a-9f9f-f011-bbd2-7ced8d05477c',
-        mscaUploadDate: '2025-10-21T16:33:31Z',
-        client: {
-          id: findEvidentiaryDocumentsRequest.clientId,
-          firstName: 'Liam',
-          lastName: 'Anderson',
-        },
-        documentType: {
-          id: '70a54c5a-9f9f-f011-bbd2-7ced8d05477c',
-          nameEnglish: 'Benefit Provider Letter',
-          nameFrench: 'Benefit Provider Letter [FR]',
-        },
-      },
-      {
-        id: '01968123-96ae-f011-bbd3-7c1e52408057',
-        fileName: 'Employer Letter.pdf',
-        clientId: findEvidentiaryDocumentsRequest.clientId,
-        documentTypeId: 'de3c6d3c-9f9f-f011-bbd2-7ced8d05477c',
-        mscaUploadDate: '2025-10-21T15:53:11Z',
-        client: {
-          id: findEvidentiaryDocumentsRequest.clientId,
-          firstName: 'Liam',
-          lastName: 'Anderson',
-        },
-        documentType: {
-          id: 'de3c6d3c-9f9f-f011-bbd2-7ced8d05477c',
-          nameEnglish: 'Employer Letter',
-          nameFrench: 'Employer Letter [FR]',
-        },
-      },
-    ];
+    const mockEvidentiaryDocumentEntities: ReadonlyArray<EvidentiaryDocumentEntity> = [];
 
     this.log.trace('Returning evidentiary documents [%j]', mockEvidentiaryDocumentEntities);
     return await Promise.resolve(mockEvidentiaryDocumentEntities);

@@ -1,5 +1,5 @@
 import { invariant } from '@dts-stn/invariant';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/index';
 
@@ -10,6 +10,7 @@ import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { DateTimeDisplay } from '~/components/date-time-display';
+import { InlineLink } from '~/components/inline-link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/table';
 import { pageIds } from '~/page-ids';
 import { getHints } from '~/utils/client-hints';
@@ -104,11 +105,25 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
             </Table>
           )}
         </div>
-        <div>
-          <ButtonLink id="upload-button" routeId="protected/documents/upload" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
-            {t(($) => $.index.uploadDocuments)}
-          </ButtonLink>
-        </div>
+        {!hasDocuments && (
+          <div className="space-y-4">
+            <h2 className="font-lato text-2xl font-bold">{t(($) => $.index.whatYouCanDoHeading)}</h2>
+            <p>
+              <Trans
+                ns="documents"
+                i18nKey={($) => $.index.whatYouCanDo}
+                components={{ uploadLink: <InlineLink routeId="protected/documents/upload" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit documents - Submitted documents click" /> }}
+              />
+            </p>
+          </div>
+        )}
+        {hasDocuments && (
+          <div>
+            <ButtonLink id="upload-button" routeId="protected/documents/upload" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
+              {t(($) => $.index.uploadDocuments)}
+            </ButtonLink>
+          </div>
+        )}
         <div>
           <ButtonLink
             id="back-button"
