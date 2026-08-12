@@ -65,8 +65,17 @@ const ns = {
     },
   },
   notRequired: {
-    pageTitle: "Documents not required",
-    description: "You do not need to upload any documents at this time.",
+    pageTitle: "No documents needed",
+    description: "You do not need to submit documents right now.",
+    reasonsHeading: "This may be because:",
+    reasons: {
+      processing: "your application is being processed",
+      processed: "your application has already been processed and you’ll get a letter",
+      cancelled: "your application was cancelled because the deadline passed and you’ll get a letter",
+    },
+    whatYouCanDoHeading: "What you can do",
+    statusChecker: "Use the <statusCheckerLink>status checker</statusCheckerLink> to verify the status of your application",
+    letters: "Access your <lettersLink>letters</lettersLink> from the Canadian Dental Care Plan",
     returnButton: "Return to dashboard",
   },
 } as const;
