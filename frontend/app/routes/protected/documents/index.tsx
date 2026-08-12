@@ -112,7 +112,7 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
               <Trans
                 ns="documents"
                 i18nKey={($) => $.index.whatYouCanDo}
-                components={{ uploadLink: <InlineLink routeId="protected/documents/upload" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit documents - Submitted documents click" /> }}
+                components={{ uploadLink: <InlineLink routeId="protected/documents/upload" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click" /> }}
               />
             </p>
           </div>
