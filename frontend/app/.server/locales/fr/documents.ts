@@ -1,8 +1,10 @@
 const ns = {
   index: {
-    pageTitle: "Documents soumis",
+    pageTitle: "Consulter mes documents",
     hasDocuments: "Vous avez soumis les documents suivants pour le Régime canadien de soins dentaires\u00A0:",
-    noDocuments: "Vous n'avez soumis aucun document pour le Régime canadien de soins dentaires.",
+    noDocuments: "Aucun document n'a été téléversé. Si vous avez soumis récemment des documents, il pourrait y avoir un court délai avant qu'ils n'apparaissent ici.",
+    whatYouCanDoHeading: "Ce que vous pouvez faire",
+    whatYouCanDo: "Vous pouvez <uploadLink>soumettre des documents</uploadLink> si vous en avez à téléverser.",
     uploadDocuments: "Téléverser des documents",
     returnDashboard: "Retour au tableau de bord",
     receivedStatusPending: "En attente",
