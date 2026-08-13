@@ -32,6 +32,7 @@ type SessionTypeMap = {
   idToken: IdToken;
   lastAccessTime: string;
   letters: ReadonlyArray<LetterDto>;
+  submittedDocuments: ReadonlyArray<string>;
   userInfoToken: UserinfoToken;
   profileEmailAddressFlowState: {
     emailAddress: string;

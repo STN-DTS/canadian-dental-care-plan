@@ -74,8 +74,20 @@ const ns = {
       cancelled: "votre demande a été annulée parce que la date limite est dépassée et vous recevrez une lettre",
     },
     whatYouCanDoHeading: "Ce que vous pouvez faire",
-    statusChecker: "<statusCheckerLink>Vérifier l’état de votre demande</statusCheckerLink>",
+    statusChecker: "<statusCheckerLink>Vérifier l'état de votre demande</statusCheckerLink>",
     letters: "Consulter vos <lettersLink>lettres</lettersLink> du Régime canadien de soins dentaires",
+    returnButton: "Retour au tableau de bord",
+  },
+  submitted: {
+    pageTitle: "Vos documents sont soumis",
+    alertHeading: "Nous avons reçu vos documents",
+    youSubmitted: "Vous avez soumis :",
+    delayNote: "Il pourrait y avoir un court délai avant que vos documents n’apparaissent dans votre compte.",
+    nextStepsHeading: "Prochaines étapes",
+    nextSteps: {
+      review: "Nous examinerons les documents soumis.",
+      letter: "Nous vous enverrons une lettre pour vous informer si vous êtes admissible ou non au Régime canadien de soins dentaires.",
+    },
     returnButton: "Retour au tableau de bord",
   },
 } as const;
