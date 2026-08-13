@@ -78,6 +78,18 @@ const ns = {
     letters: "Access your <lettersLink>letters</lettersLink> from the Canadian Dental Care Plan",
     returnButton: "Return to dashboard",
   },
+  submitted: {
+    pageTitle: "Documents submitted",
+    alertHeading: "We received your documents",
+    youSubmitted: "You submitted:",
+    delayNote: "There could be a short delay with your documents appearing in your account.",
+    nextStepsHeading: "Next steps",
+    nextSteps: {
+      review: "We'll review the documents submitted.",
+      letter: "We'll send you a letter to let you know whether or not you are eligible for the Canadian Dental Care Plan.",
+    },
+    returnButton: "Return to dashboard",
+  },
 } as const;
 
 export default ns;

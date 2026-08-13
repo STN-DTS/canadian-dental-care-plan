@@ -181,7 +181,12 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { errors: uploadResult.errors };
   }
 
-  return redirect(getPathById('protected/documents/index', params));
+  session.set(
+    'submittedDocuments',
+    Object.values(files).map(({ file }) => file.name),
+  );
+
+  return redirect(getPathById('protected/documents/submitted', params));
 }
 
 async function validateUploadForm(

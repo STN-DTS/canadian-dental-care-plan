@@ -91,6 +91,7 @@ export const pageIds = {
       index: 'CDCP-PROT-DOCS-0001',
       upload: 'CDCP-PROT-DOCS-0002',
       notRequired: 'CDCP-PROT-DOCS-0003',
+      submitted: 'CDCP-PROT-DOCS-0004',
     },
     letters: {
       index: 'CDCP-PROT-0015',
