@@ -39,11 +39,10 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   return { meta, SCCH_BASE_URI };
 }
 
-export default function DataUnavailable({ loaderData, params }: Route.ComponentProps) {
+export default function DataUnavailable({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation(['dataUnavailable', 'gcweb']);
   const { SCCH_BASE_URI } = loaderData;
 
-  const statusCheckerLink = <InlineLink routeId="public/status/index" className="external-link" newTabIndicator target="_blank" params={params} />;
   const cdcpLink = <InlineLink to={t(($) => $.doYouQualifyHref)} className="external-link" newTabIndicator target="_blank" />;
   const contactLink = <InlineLink to={t(($) => $.contactUsHref)} className="external-link" newTabIndicator target="_blank" />;
 
@@ -52,14 +51,13 @@ export default function DataUnavailable({ loaderData, params }: Route.ComponentP
       <AppPageTitle>{t(($) => $.pageTitle)}</AppPageTitle>
       <div className="max-w-prose">
         <div className="space-y-4">
+          <p>{t(($) => $.notEnrolled)}</p>
+          <p>{t(($) => $.recentlyApplied)}</p>
           <p>
-            <Trans ns="dataUnavailable" i18nKey={($) => $.serviceEligible} components={{ statusCheckerLink }} />
+            <Trans ns="dataUnavailable" i18nKey={($) => $.howToApply} components={{ cdcpLink }} />
           </p>
           <p>
-            <Trans ns="dataUnavailable" i18nKey={($) => $.otherEnquiry} components={{ cdcpLink }} />
-          </p>
-          <p>
-            <Trans ns="dataUnavailable" i18nKey={($) => $.serviceDelay} components={{ contactLink }} />
+            <Trans ns="dataUnavailable" i18nKey={($) => $.otherEnquiry} components={{ contactLink }} />
           </p>
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
