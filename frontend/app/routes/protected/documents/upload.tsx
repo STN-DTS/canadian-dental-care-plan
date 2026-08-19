@@ -50,6 +50,42 @@ type DocumentUploadSchema = ReturnType<typeof createDocumentUploadSchema>;
 type DocumentUploadSchemaOuput = z.output<DocumentUploadSchema>;
 type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOuput>;
 
+/**
+ * Route middleware that gates the document upload route for both the loader and the action.
+ *
+ * A client may only upload evidentiary documentation when their profile has at least one
+ * application paused due to a T4 mismatch. Otherwise, redirect to the not-required page.
+ */
+const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ context, params, request }) => {
+  const { appContainer, session } = context.get(appContext);
+  const securityHandler = appContainer.get(TYPES.SecurityHandler);
+  const requestUrl = new URL(request.url);
+
+  securityHandler.validateFeatureEnabled('doc-upload');
+  await securityHandler.validateAuthSession({ requestUrl, session });
+
+  const clientApplication = await securityHandler.requireClientApplication({
+    params,
+    requestUrl,
+    session,
+    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
+  });
+
+  await securityHandler.requireEnrolledApplicant({
+    clientNumber: clientApplication.applicantInformation.clientNumber,
+    params,
+    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
+  });
+
+  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).getAppealUploadEligibility(clientApplication.applicantInformation.clientNumber);
+
+  if (!appealUploadEligibility?.eligible) {
+    throw redirect(getPathById('protected/documents/not-required', params));
+  }
+};
+
+export const middleware: Route.MiddlewareFunction[] = [appealUploadEligibilityMiddleware];
+
 export const handle = {
   i18nPreloadNamespace: ['documents', 'gcweb'],
   layoutOptions: { breadcrumbs: <LayoutBreadcrumbs /> },
@@ -90,14 +126,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     params,
     options: { redirectUrl: getPathById('protected/documents/not-required', params) },
   });
-
-  // A client may only upload evidentiary documentation when their profile has at least one
-  // application paused due to a T4 mismatch. Otherwise, redirect to the not-required page.
-  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).getAppealUploadEligibility(clientApplication.applicantInformation.clientNumber);
-
-  if (!appealUploadEligibility?.eligible) {
-    throw redirect(getPathById('protected/documents/not-required', params));
-  }
 
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
