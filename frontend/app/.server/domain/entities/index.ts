@@ -1,4 +1,5 @@
 export type * from './address-validation-entity';
+export type * from './appeal-upload-eligibility-entity';
 export type * from './applicant-entity';
 export type * from './application-status-entity';
 export type * from './application-year-entity';

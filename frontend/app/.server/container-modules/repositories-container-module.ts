@@ -5,6 +5,7 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import {
   DefaultAddressValidationRepository,
+  DefaultAppealUploadEligibilityRepository,
   DefaultApplicantRepository,
   DefaultApplicationStatusRepository,
   DefaultApplicationYearRepository,
@@ -25,6 +26,7 @@ import {
   DefaultProvinceTerritoryStateRepository,
   DefaultVerificationCodeRepository,
   MockAddressValidationRepository,
+  MockAppealUploadEligibilityRepository,
   MockApplicantRepository,
   MockApplicationStatusRepository,
   MockApplicationYearRepository,
@@ -80,6 +82,11 @@ export function createRepositoriesContainerModule(serverConfig: Pick<ServerConfi
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationRepository).to(DefaultAddressValidationRepository).when(isMockEnabled(serverConfig, 'wsaddress', false));
     options.bind(TYPES.AddressValidationRepository).to(MockAddressValidationRepository).when(isMockEnabled(serverConfig, 'wsaddress', true));
+
+    // TODO: confirm the correct mock flag for appeal upload eligibility. Reusing 'evidentiary-document'
+    // since it is part of the same document-upload feature; a dedicated MockName may be warranted.
+    options.bind(TYPES.AppealUploadEligibilityRepository).to(DefaultAppealUploadEligibilityRepository).when(isMockEnabled(serverConfig, 'evidentiary-document', false));
+    options.bind(TYPES.AppealUploadEligibilityRepository).to(MockAppealUploadEligibilityRepository).when(isMockEnabled(serverConfig, 'evidentiary-document', true));
 
     options.bind(TYPES.ApplicantRepository).to(DefaultApplicantRepository).when(isMockEnabled(serverConfig, 'power-platform', false));
     options.bind(TYPES.ApplicantRepository).to(MockApplicantRepository).when(isMockEnabled(serverConfig, 'power-platform', true));

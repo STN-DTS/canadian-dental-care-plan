@@ -1,0 +1,19 @@
+{
+  "@odata.context": "https://canadadental-uat.crm3.dynamics.com/api/data/v9.2/$metadata#esdc_clients(esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon,esdc_esdc_dentalapplicant_Clientid_esdc_client(esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value))/$entity",
+  "@odata.etag": "W/\"280561340\"",
+  "esdc_suspendedon": null,
+  "esdc_clientid": "6578bb39-ee97-f011-b41b-7c1e52063166",
+  "esdc_socialinsurancenumber": "558912549",
+  "esdc_clientnumber": "10000000002",
+  "statecode": 0,
+  "esdc_applicanttype": 775170000,
+  "statuscode": 1,
+  "esdc_esdc_dentalapplicant_Clientid_esdc_client": [
+    {
+      "@odata.etag": "W/\"119010126\"",
+      "_esdc_dentalapplicationid_value": "2070d7ee-00ba-ee11-9079-000d3a09d132",
+      "_esdc_pendingstatusid_value": null,
+      "esdc_dentalapplicantid": "2870d7ee-00ba-ee11-9079-000d3a09d132"
+    }
+  ]
+}

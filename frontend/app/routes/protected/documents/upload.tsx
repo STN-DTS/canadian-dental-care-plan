@@ -91,6 +91,14 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     options: { redirectUrl: getPathById('protected/documents/not-required', params) },
   });
 
+  // A client may only upload evidentiary documentation when their profile has at least one
+  // application paused due to a T4 mismatch. Otherwise, redirect to the not-required page.
+  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).getAppealUploadEligibility(clientApplication.applicantInformation.clientNumber);
+
+  if (!appealUploadEligibility?.eligible) {
+    throw redirect(getPathById('protected/documents/not-required', params));
+  }
+
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
 

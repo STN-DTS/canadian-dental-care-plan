@@ -1,4 +1,5 @@
 export type * from './address-validation-dto';
+export type * from './appeal-upload-eligibility-dto';
 export type * from './applicant-dto';
 export type * from './application-status-dto';
 export type * from './application-year-dto';
