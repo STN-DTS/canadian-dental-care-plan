@@ -78,6 +78,7 @@ interface ValidateProtectedApplicationRenewalChildStateForReviewArgs {
 
 export function validateProtectedApplicationRenewalChildStateForReview({ params, state }: ValidateProtectedApplicationRenewalChildStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     clientApplication,
@@ -165,6 +166,7 @@ export function validateProtectedApplicationRenewalChildStateForReview({ params,
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -187,7 +189,7 @@ export function validateProtectedApplicationRenewalChildStateForReview({ params,
     submissionInfo,
     termsAndConditions,
     typeOfApplication,
-  };
+  } as const;
 }
 
 interface ValidateChildrenStateForReviewArgs {
@@ -240,6 +242,6 @@ function validateChildrenStateForReview({ childrenState, state, params }: Valida
       dentalInsurance,
       id,
       information,
-    };
+    } as const;
   });
 }

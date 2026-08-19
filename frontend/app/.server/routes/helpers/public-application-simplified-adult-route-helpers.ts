@@ -79,6 +79,7 @@ interface ValidatePublicRenewAdultStateForReviewArgs {
 
 export function validatePublicRenewAdultStateForReview({ params, state }: ValidatePublicRenewAdultStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     clientApplication,
@@ -194,6 +195,7 @@ export function validatePublicRenewAdultStateForReview({ params, state }: Valida
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -219,5 +221,5 @@ export function validatePublicRenewAdultStateForReview({ params, state }: Valida
     inputModel,
     typeOfApplication,
     children,
-  };
+  } as const;
 }

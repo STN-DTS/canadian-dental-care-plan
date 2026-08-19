@@ -193,5 +193,5 @@ export function validateProtectedApplicationIntakeAdultStateForReview({ params, 
     typeOfApplication,
     clientApplication,
     newOrReturningMember,
-  };
+  } as const;
 }

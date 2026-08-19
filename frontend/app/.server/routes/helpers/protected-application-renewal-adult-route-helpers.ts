@@ -78,6 +78,7 @@ interface ValidateProtectedRenewAdultStateForReviewArgs {
 
 export function validateProtectedRenewAdultStateForReview({ params, state }: ValidateProtectedRenewAdultStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     clientApplication,
@@ -171,6 +172,7 @@ export function validateProtectedRenewAdultStateForReview({ params, state }: Val
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -195,5 +197,5 @@ export function validateProtectedRenewAdultStateForReview({ params, state }: Val
     termsAndConditions,
     typeOfApplication,
     children,
-  };
+  } as const;
 }

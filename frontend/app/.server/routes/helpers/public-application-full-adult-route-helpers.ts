@@ -72,6 +72,7 @@ interface ValidatePublicApplicationFullAdultStateForReviewArgs {
 
 export function validatePublicApplicationFullAdultStateForReview({ params, state }: ValidatePublicApplicationFullAdultStateForReviewArgs) {
   const {
+    channelCode,
     context,
     applicantInformation,
     applicationYear,
@@ -182,6 +183,7 @@ export function validatePublicApplicationFullAdultStateForReview({ params, state
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -207,5 +209,5 @@ export function validatePublicApplicationFullAdultStateForReview({ params, state
     typeOfApplication,
     clientApplication,
     newOrReturningMember,
-  };
+  } as const;
 }

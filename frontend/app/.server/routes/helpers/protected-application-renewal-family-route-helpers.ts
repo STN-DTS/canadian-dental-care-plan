@@ -78,6 +78,7 @@ interface ValidateProtectedApplicationFamilyStateForReviewArgs {
 
 export function validateProtectedApplicationFamilyStateForReview({ params, state }: ValidateProtectedApplicationFamilyStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     context,
@@ -180,6 +181,7 @@ export function validateProtectedApplicationFamilyStateForReview({ params, state
   const children = validateChildrenStateForReview({ childrenState: state.children, state, params });
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -204,7 +206,7 @@ export function validateProtectedApplicationFamilyStateForReview({ params, state
     submissionInfo,
     termsAndConditions,
     typeOfApplication,
-  };
+  } as const;
 }
 
 interface ValidateChildrenStateForReviewArgs {
@@ -257,6 +259,6 @@ function validateChildrenStateForReview({ childrenState, state, params }: Valida
       dentalBenefits,
       dentalInsurance,
       information,
-    };
+    } as const;
   });
 }

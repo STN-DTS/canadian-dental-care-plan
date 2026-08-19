@@ -194,7 +194,7 @@ export function validateProtectedApplicationFamilyStateForReview({ params, state
     termsAndConditions,
     typeOfApplication,
     newOrReturningMember,
-  };
+  } as const;
 }
 
 interface ValidateChildrenStateForReviewArgs {
@@ -243,6 +243,6 @@ function validateChildrenStateForReview({ applicationYear, childrenState, params
       dentalBenefits,
       dentalInsurance,
       information,
-    };
+    } as const;
   });
 }

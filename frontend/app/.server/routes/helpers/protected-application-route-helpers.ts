@@ -297,7 +297,7 @@ export function getChildrenState<TState extends Pick<ProtectedApplicationState, 
 type ExtractStateFromApplicationFlow<S extends string> = S extends `${infer I}-${infer T}` //
   ? I extends ProtectedApplicationContextState
     ? T extends ProtectedApplicationTypeOfApplicationState
-      ? { context: I; typeOfApplication: T }
+      ? { readonly context: I; readonly typeOfApplication: T }
       : never
     : never
   : never;
@@ -318,11 +318,10 @@ type ExtractStateFromApplicationFlow<S extends string> = S extends `${infer I}-$
  * validateApplicationFlow(state, params, ['intake-adult', 'renewal-children']);
  * ```
  */
-export function validateApplicationFlow<TAllowedFlows extends ReadonlyArray<`${ProtectedApplicationContextState}-${ProtectedApplicationTypeOfApplicationState}`>>(
-  state: Pick<ProtectedApplicationState, 'clientApplication' | 'context' | 'typeOfApplication' | 'id'>,
-  params: Params,
-  allowedFlows: TAllowedFlows,
-): asserts state is OmitStrict<ProtectedApplicationState, 'context' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
+export function validateApplicationFlow<
+  TState extends Pick<ProtectedApplicationState, 'clientApplication' | 'context' | 'typeOfApplication' | 'id'>,
+  TAllowedFlows extends ReadonlyArray<`${ProtectedApplicationContextState}-${ProtectedApplicationTypeOfApplicationState}`>,
+>(state: TState, params: Params, allowedFlows: TAllowedFlows): asserts state is OmitStrict<TState, 'context' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
   const log = createLogger('protected-application-route-helpers/validateApplicationFlow');
 
   const context = state.context;
@@ -486,11 +485,11 @@ export function getDeclaredChangeValueOrClientValue<T>(declaredChange: { hasChan
  * Validates if the protected application state context matches the expected context. If the context
  * does not match, it redirects to the initial application flow URL.
  */
-export function validateProtectedApplicationContext<TExpectedContext extends ProtectedApplicationState['context']>(
-  state: ProtectedApplicationState,
+export function validateProtectedApplicationContext<TState extends ProtectedApplicationState, TExpectedContext extends TState['context']>(
+  state: TState,
   params: ApplicationStateParams,
   expectedContext: TExpectedContext,
-): asserts state is Omit<ProtectedApplicationState, 'context'> & { context: TExpectedContext } {
+): asserts state is TState & { readonly context: TExpectedContext } {
   if (state.context !== expectedContext) {
     const redirectUrl = getInitialApplicationFlowUrl('entry', params);
     const log = createLogger('protected-application-route-helpers/validateProtectedApplicationContext');

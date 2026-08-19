@@ -79,6 +79,7 @@ interface ValidatePublicApplicationSimplifiedChildStateForReviewArgs {
 
 export function validatePublicApplicationSimplifiedChildStateForReview({ params, state }: ValidatePublicApplicationSimplifiedChildStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     clientApplication,
@@ -188,6 +189,7 @@ export function validatePublicApplicationSimplifiedChildStateForReview({ params,
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
@@ -211,7 +213,7 @@ export function validatePublicApplicationSimplifiedChildStateForReview({ params,
     termsAndConditions,
     inputModel,
     typeOfApplication,
-  };
+  } as const;
 }
 
 interface ValidateChildrenStateForReviewArgs {
@@ -264,6 +266,6 @@ function validateChildrenStateForReview({ childrenState, state, params }: Valida
       dentalInsurance,
       id,
       information,
-    };
+    } as const;
   });
 }

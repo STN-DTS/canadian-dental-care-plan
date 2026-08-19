@@ -271,7 +271,7 @@ export function getChildrenState<TState extends Pick<PublicApplicationState, 'ch
 type ExtractStateFromApplicationFlow<S extends string> = S extends `${infer I}-${infer T}` //
   ? I extends PublicApplicationInputModelState
     ? T extends PublicApplicationTypeOfApplicationState
-      ? { inputModel: I; typeOfApplication: T }
+      ? { readonly inputModel: I; readonly typeOfApplication: T }
       : never
     : never
   : never;
@@ -292,11 +292,10 @@ type ExtractStateFromApplicationFlow<S extends string> = S extends `${infer I}-$
  * validateApplicationFlow(state, params, ['full-adult', 'simplified-children']);
  * ```
  */
-export function validateApplicationFlow<TAllowedFlows extends ReadonlyArray<`${PublicApplicationInputModelState}-${PublicApplicationTypeOfApplicationState}`>>(
-  state: Pick<PublicApplicationState, 'inputModel' | 'typeOfApplication' | 'clientApplication' | 'id'>,
-  params: Params,
-  allowedFlows: TAllowedFlows,
-): asserts state is OmitStrict<PublicApplicationState, 'inputModel' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
+export function validateApplicationFlow<
+  TState extends Pick<PublicApplicationState, 'inputModel' | 'typeOfApplication' | 'clientApplication' | 'id'>,
+  TAllowedFlows extends ReadonlyArray<`${PublicApplicationInputModelState}-${PublicApplicationTypeOfApplicationState}`>,
+>(state: TState, params: Params, allowedFlows: TAllowedFlows): asserts state is OmitStrict<TState, 'inputModel' | 'typeOfApplication'> & ExtractStateFromApplicationFlow<TAllowedFlows[number]> {
   const log = createLogger('public-application-route-helpers/validateApplicationFlow');
 
   const inputModel = state.inputModel;
