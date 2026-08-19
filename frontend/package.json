@@ -63,7 +63,7 @@
     "eslint-plugin-import-zod": "^1.2.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
-    "fast-xml-parser": "^5.10.1",
+    "fast-xml-parser": "^5.11.0",
     "file-type": "^22.0.2",
     "filesize": "^11.0.22",
     "i18next": "^26.3.6",
