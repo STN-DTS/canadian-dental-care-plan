@@ -35,8 +35,6 @@ export class DefaultAppealUploadEligibilityService implements AppealUploadEligib
   async getAppealUploadEligibility(clientNumber: string): Promise<AppealUploadEligibilityDto | null> {
     this.log.trace('Getting appeal upload eligibility for client number: [%s]', clientNumber);
 
-    // TODO: consider memoized caching (see DefaultEvidentiaryDocumentTypeService) if eligibility
-    // lookups become hot; requires an appropriate cache TTL config value.
     const appealUploadEligibilityResponseEntityOption = await this.appealUploadEligibilityRepository.findAppealUploadEligibilityByClientNumber(clientNumber);
 
     if (appealUploadEligibilityResponseEntityOption.isNone()) {

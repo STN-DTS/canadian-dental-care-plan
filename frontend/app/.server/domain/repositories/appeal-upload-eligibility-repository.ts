@@ -61,15 +61,6 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
 
     const url = new URL(`${this.baseUrl}/esdc_clients(esdc_clientnumber='${encodeURIComponent(clientNumber)}')`);
     url.searchParams.set('$select', 'esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon');
-    // The expanded esdc_esdc_dentalapplicant_Clientid_esdc_client collection represents the client's
-    // applications that are paused due to a T4 mismatch. A non-empty collection means the client is
-    // eligible to upload evidentiary documentation.
-    //
-    // TODO: confirm the server-side $filter that restricts this collection to T4-mismatch-paused
-    // applications. The real payload shows _esdc_pendingstatusid_value as `null | number`, so the
-    // previously assumed `_esdc_pendingstatusid_value eq '<guid>'` filter was incorrect and has been
-    // removed. Confirm with the API team whether the filtering is applied by the endpoint itself or
-    // must be supplied here.
     url.searchParams.set('$expand', 'esdc_esdc_dentalapplicant_Clientid_esdc_client($select=esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value)');
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.appeal-upload-eligible.get', url, {
@@ -87,8 +78,6 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
       },
     });
 
-    // TODO: confirm how the service signals "client not found". This assumes a 404; the service
-    // may instead return 200 with an empty body/collection, in which case this needs adjusting.
     if (response.status === HttpStatusCodes.NOT_FOUND) {
       this.log.debug('No client found for appeal upload eligibility; clientNumber: [%s]', clientNumber);
       return None;
@@ -129,10 +118,6 @@ export class MockAppealUploadEligibilityRepository implements AppealUploadEligib
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching mock appeal upload eligibility for client number: [%s]', clientNumber);
 
-    // The fixture is a real UAT payload (client 59373339201) populated with one T4-mismatch-paused
-    // application so it represents an *eligible* client for local testing.
-    // TODO: consider supporting multiple mock clients (eligible / not-eligible) once the upload
-    // flow needs to exercise the ineligible path.
     const appealUploadEligibilityResponseEntity = appealUploadEligibilityJsonDataSource as AppealUploadEligibilityResponseEntity;
 
     if (appealUploadEligibilityResponseEntity.esdc_clientnumber !== clientNumber) {
