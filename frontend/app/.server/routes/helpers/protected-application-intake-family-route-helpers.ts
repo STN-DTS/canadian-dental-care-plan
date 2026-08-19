@@ -71,6 +71,7 @@ interface ValidateProtectedApplicationFamilyStateForReviewArgs {
 
 export function validateProtectedApplicationFamilyStateForReview({ params, state }: ValidateProtectedApplicationFamilyStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     context,
@@ -168,6 +169,7 @@ export function validateProtectedApplicationFamilyStateForReview({ params, state
   const children = validateChildrenStateForReview({ applicationYear, childrenState: state.children, params });
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,

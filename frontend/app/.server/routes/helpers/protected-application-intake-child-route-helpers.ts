@@ -71,6 +71,7 @@ interface ValidateProtectedApplicationIntakeChildStateForReviewArgs {
 
 export function validateProtectedApplicationIntakeChildStateForReview({ params, state }: ValidateProtectedApplicationIntakeChildStateForReviewArgs) {
   const {
+    channelCode,
     applicantInformation,
     applicationYear,
     context,
@@ -158,6 +159,7 @@ export function validateProtectedApplicationIntakeChildStateForReview({ params, 
   }
 
   return {
+    channelCode,
     ageCategory,
     applicantInformation,
     applicationYear,
