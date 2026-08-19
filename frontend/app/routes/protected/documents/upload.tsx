@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
 
-import { redirect, useFetcher } from 'react-router';
+import { createContext, redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { fileTypeFromBuffer } from 'file-type';
@@ -13,6 +13,7 @@ import type { Route } from './+types/upload';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import type { ClientApplicationDto } from '~/.server/domain/dtos';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
@@ -51,6 +52,14 @@ type DocumentUploadSchemaOuput = z.output<DocumentUploadSchema>;
 type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOuput>;
 
 /**
+ * React Router context that holds the validated {@link ClientApplicationDto} resolved by
+ * {@link appealUploadEligibilityMiddleware}. The loader and action retrieve it from here to
+ * reuse the already-validated application instead of repeating the security checks and making
+ * another call to the Interop API.
+ */
+const ClientApplicationContext = createContext<ClientApplicationDto>();
+
+/**
  * Route middleware that gates the document upload route for both the loader and the action.
  *
  * A client may only upload evidentiary documentation when their profile has at least one
@@ -82,6 +91,8 @@ const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ con
   if (!appealUploadEligibility?.eligible) {
     throw redirect(getPathById('protected/documents/not-required', params));
   }
+
+  context.set(ClientApplicationContext, clientApplication);
 };
 
 export const middleware: Route.MiddlewareFunction[] = [appealUploadEligibilityMiddleware];
@@ -110,22 +121,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
-
-  const clientApplication = await securityHandler.requireClientApplication({
-    params,
-    requestUrl: url,
-    session,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
-
-  await securityHandler.requireEnrolledApplicant({
-    clientNumber: clientApplication.applicantInformation.clientNumber,
-    params,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
 
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
@@ -167,24 +162,9 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const clientApplication = context.get(ClientApplicationContext);
 
   const formData = await request.formData();
-
-  const clientApplication = await securityHandler.requireClientApplication({
-    params,
-    requestUrl: url,
-    session,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
-
-  await securityHandler.requireEnrolledApplicant({
-    clientNumber: clientApplication.applicantInformation.clientNumber,
-    params,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
 
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
