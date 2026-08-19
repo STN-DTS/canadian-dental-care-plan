@@ -3,6 +3,7 @@ import { ContainerModule } from 'inversify';
 import { TYPES } from '~/.server/constants';
 import {
   DefaultAddressValidationDtoMapper,
+  DefaultAppealUploadEligibilityDtoMapper,
   DefaultApplicantDtoMapper,
   DefaultApplicationStatusDtoMapper,
   DefaultApplicationYearDtoMapper,
@@ -38,6 +39,7 @@ import { DefaultDynatraceDtoMapper, DefaultHCaptchaDtoMapper } from '~/.server/w
 export function createMappersContainerModule(): ContainerModule {
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationDtoMapper).to(DefaultAddressValidationDtoMapper);
+    options.bind(TYPES.AppealUploadEligibilityDtoMapper).to(DefaultAppealUploadEligibilityDtoMapper);
     options.bind(TYPES.ApplicantDtoMapper).to(DefaultApplicantDtoMapper);
     options.bind(TYPES.ApplicationStatusDtoMapper).to(DefaultApplicationStatusDtoMapper);
     options.bind(TYPES.ApplicationYearDtoMapper).to(DefaultApplicationYearDtoMapper);

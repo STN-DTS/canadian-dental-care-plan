@@ -1,4 +1,5 @@
 export * from './address-validation-dto-mapper';
+export * from './appeal-upload-eligibility-dto-mapper';
 export * from './applicant-dto-mapper';
 export * from './application-status-dto-mapper';
 export * from './application-year-dto-mapper';

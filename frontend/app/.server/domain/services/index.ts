@@ -1,4 +1,5 @@
 export * from './address-validation-service';
+export * from './appeal-upload-eligibility-service';
 export * from './applicant-service';
 export * from './application-status-service';
 export * from './application-year-service';

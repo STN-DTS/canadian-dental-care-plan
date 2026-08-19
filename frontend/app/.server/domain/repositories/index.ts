@@ -1,4 +1,5 @@
 export * from './address-validation-repository';
+export * from './appeal-upload-eligibility-repository';
 export * from './applicant-repository';
 export * from './application-status-repository';
 export * from './application-year-repository';

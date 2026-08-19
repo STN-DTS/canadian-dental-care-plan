@@ -8,6 +8,7 @@ import type { BuildInfoService } from '~/.server/core';
 import type { RedisService } from '~/.server/data';
 import type {
   AddressValidationDtoMapper,
+  AppealUploadEligibilityDtoMapper,
   ApplicantDtoMapper,
   ApplicationStatusDtoMapper,
   ApplicationYearDtoMapper,
@@ -36,6 +37,7 @@ import type {
 } from '~/.server/domain/mappers';
 import type {
   AddressValidationRepository,
+  AppealUploadEligibilityRepository,
   ApplicantRepository,
   ApplicationStatusRepository,
   ApplicationYearRepository,
@@ -58,6 +60,7 @@ import type {
 } from '~/.server/domain/repositories';
 import type {
   AddressValidationService,
+  AppealUploadEligibilityService,
   ApplicantService,
   ApplicationStatusService,
   ApplicationYearService,
@@ -153,6 +156,9 @@ export const TYPES = assignServiceIdentifiers({
   AddressValidationRepository: serviceId<AddressValidationRepository>(),
   AddressValidationService: serviceId<AddressValidationService>(),
   AddressValidatorFactory: serviceId<AddressValidatorFactory>(),
+  AppealUploadEligibilityDtoMapper: serviceId<AppealUploadEligibilityDtoMapper>(),
+  AppealUploadEligibilityRepository: serviceId<AppealUploadEligibilityRepository>(),
+  AppealUploadEligibilityService: serviceId<AppealUploadEligibilityService>(),
   ApplicantDtoMapper: serviceId<ApplicantDtoMapper>(),
   ApplicantRepository: serviceId<ApplicantRepository>(),
   ApplicantService: serviceId<ApplicantService>(),
