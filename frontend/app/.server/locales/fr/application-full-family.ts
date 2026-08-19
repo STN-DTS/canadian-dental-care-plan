@@ -78,7 +78,7 @@ const ns = {
       renewal: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans les 30 jours civils pour vous informer de votre admissibilité au régime.",
       intake: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans un délai de 30 jours civils avec plus d'informations et les prochaines étapes, au besoin.",
     },
-    proofOfCoverage: "Si l'un de vos feuillets T4 ou T4A indique que vous avez accès à une assurance ou une couverture dentaire offerte par un employeur ou un régime de pension, vous pourriez devoir fournir une preuve que vous n'êtes pas couvert(e).",
+    proofOfCoverage: "Si l'un de vos feuillets T4 ou T4A indique que vous avez accès à une assurance ou une couverture dentaire, vous devrez fournir une preuve que vous n'êtes pas couverts. Cette preuve s'applique à vos feuillets fiscaux et, le cas échéant, à ceux de votre conjoint ou de votre conjoint de fait.",
     checkStatus: "Consulter l'état de votre demande",
     cdcpChecker: "Vous pouvez consulter le <cdcpLink>Vérificateur de l'état d'une demande du Régime canadien de soins dentaires</cdcpLink> ou composer le <noWrap>1-833-537-4342</noWrap> pour suivre l'état de votre demande.",
     useCode: "Vous aurez besoin de votre code de demande ou de votre numéro d'identification du membre.",

@@ -78,7 +78,7 @@ const ns = {
       renewal: "We have received your application. You will be sent a letter within 30 calendar days to let you know if you are eligible for the plan.",
       intake: "We have received your application. You will be sent a letter within 30 calendar days with more information and any next steps.",
     },
-    proofOfCoverage: "If any of your T4 or T4A documents show you have access to employer or pension sponsored dental insurance or coverage, you may be asked to provide proof that you're not covered.",
+    proofOfCoverage: "If any of your T4 or T4A tax slips show you have access to dental insurance or coverage you'll be asked to provide proof that you're not covered. This applies to your tax slips, and if applicable, your spouse's or common-law partner's tax slips.",
     checkStatus: "Check the status of your application",
     cdcpChecker: "You can use the <cdcpLink>Canadian Dental Care Plan Status Checker</cdcpLink> or call <noWrap>1-833-537-4342</noWrap> to track the progress of your application.",
     useCode: "You will need your application code or member ID.",
