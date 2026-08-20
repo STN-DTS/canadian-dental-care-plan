@@ -43,7 +43,6 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {

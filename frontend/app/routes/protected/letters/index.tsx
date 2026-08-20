@@ -53,7 +53,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('view-letters');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
   const sortParam = url.searchParams.get('sort');

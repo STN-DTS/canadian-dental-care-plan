@@ -31,8 +31,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = loadProtectedApplicationIntakeAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-adult']);

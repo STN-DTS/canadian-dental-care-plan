@@ -4,8 +4,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/renewal-submitted';
 
-import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
@@ -23,11 +21,7 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
-
+export async function loader({ url }: Route.LoaderArgs) {
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.renewalSubmitted.pageTitle) }),
@@ -36,11 +30,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   return { meta };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
-
+export async function action({ url }: Route.ActionArgs) {
   const t = await getFixedT(url, 'protectedApplication');
   return redirect(t(($) => $.renewalSubmitted.exitBtnLink));
 }

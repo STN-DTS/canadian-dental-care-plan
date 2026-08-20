@@ -42,8 +42,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const state = loadProtectedApplicationRenewalAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);
@@ -126,9 +124,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = loadProtectedApplicationRenewalAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);

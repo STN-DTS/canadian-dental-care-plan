@@ -30,7 +30,6 @@ export async function loader({ context, params, request, url }: Route.LoaderArgs
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const locale = getLocale(url);
 
   const userInfoToken: UserinfoToken = session.get('userInfoToken');

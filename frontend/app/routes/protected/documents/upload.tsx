@@ -71,7 +71,6 @@ const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ con
   const requestUrl = new URL(request.url);
 
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl, session });
 
   const clientApplication = await securityHandler.requireClientApplication({
     params,

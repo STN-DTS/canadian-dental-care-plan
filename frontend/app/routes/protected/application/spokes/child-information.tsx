@@ -8,7 +8,6 @@ import * as z from 'zod';
 
 import type { Route } from './+types/child-information';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { isChildOrYouth, isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ProtectedApplicationChildInformationState, ProtectedApplicationChildSinState } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -60,9 +59,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 });
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);
@@ -102,9 +99,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);

@@ -22,8 +22,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const t = await getFixedT(url, ['unableToProcessRequest', 'gcweb']);
   const meta = {

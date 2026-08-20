@@ -67,7 +67,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
@@ -105,7 +104,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const locale = getLocale(url);
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
 
   const clientConfig = appContainer.get(TYPES.ClientConfig);

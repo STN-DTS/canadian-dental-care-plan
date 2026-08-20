@@ -14,7 +14,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('view-letters');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   if (!params.id) {
     throw data(null, { status: 400 });

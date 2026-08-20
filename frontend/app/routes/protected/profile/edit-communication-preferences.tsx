@@ -64,7 +64,6 @@ function isClientApplicationEmailAddressVerified(clientApplication: PickDeep<Cli
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
@@ -101,7 +100,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
   const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 

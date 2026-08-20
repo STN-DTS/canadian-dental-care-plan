@@ -60,9 +60,7 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
@@ -86,9 +84,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
 
   const formData = await request.formData();
-
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 

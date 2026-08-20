@@ -46,7 +46,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
 
   const submittedDocuments = session.find('submittedDocuments').unwrapOr([]);
 

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/exit-application';
 
-import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationIntakeChildState } from '~/.server/routes/helpers/protected-application-intake-child-route-helpers';
 import { clearProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -27,9 +26,7 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = loadProtectedApplicationIntakeChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-children']);
@@ -42,9 +39,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateAuthSession({ requestUrl: url, session });
+  const { session } = context.get(appContext);
 
   const state = loadProtectedApplicationIntakeChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-children']);
