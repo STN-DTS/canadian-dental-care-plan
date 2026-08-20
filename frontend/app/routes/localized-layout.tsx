@@ -1,4 +1,4 @@
-import { Outlet, data, isRouteErrorResponse, useParams, useRouteError } from 'react-router';
+import { Outlet, data, isRouteErrorResponse } from 'react-router';
 
 import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
@@ -42,9 +42,8 @@ export default function LocalizedLayout({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const params = useParams();
+export function ErrorBoundary({ error, params }: Route.ErrorBoundaryProps) {
+  console.error('Root ErrorBoundary error:', error);
   const lang = params.lang;
 
   if (isRouteErrorResponse(error) && error.status === 404) {

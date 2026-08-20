@@ -1,6 +1,7 @@
 import { use, useEffect } from 'react';
 
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useRouteLoaderData } from 'react-router';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useLocation, useRouteLoaderData } from 'react-router';
+import type { Params } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
 import { config as fontAwesomeConfig } from '@fortawesome/fontawesome-svg-core';
@@ -14,6 +15,7 @@ import { appContext } from '~/.server/context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { ClientEnv } from '~/components/client-env';
 import { InlineLink } from '~/components/inline-link';
+import { BilingualNotFoundError, NotFoundError } from '~/components/layouts/public-layout';
 import { NonceContext } from '~/components/nonce-context';
 import { PageTitle } from '~/components/page-title';
 import { RouteChangeAnnouncer } from '~/components/route-change-announcer';
@@ -25,6 +27,7 @@ import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { ClientHintCheck, getHints } from '~/utils/client-hints';
 import type { FeatureName } from '~/utils/env-utils';
+import { isAppLocale } from '~/utils/locale-utils';
 import { useTransformAdobeAnalyticsUrl } from '~/utils/route-utils';
 import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCanonicalURL } from '~/utils/seo-utils';
 
@@ -201,14 +204,19 @@ export function useFeature(feature: FeatureName) {
   return clientEnv.ENABLED_FEATURES.includes(feature);
 }
 
-export function ErrorBoundary() {
+export function ErrorBoundary({ error, params }: Route.ErrorBoundaryProps) {
+  console.error('Root ErrorBoundary error:', error);
   const { nonce } = use(NonceContext);
-  const { i18n } = useTranslation();
-  const en = i18n.getFixedT('en', 'gcweb');
-  const fr = i18n.getFixedT('fr', 'gcweb');
+
+  let locale: AppLocale = 'en';
+  const isNotFoundRouteErrorResponse = isRouteErrorResponse(error) && error.status === 404;
+
+  if (isNotFoundRouteErrorResponse) {
+    locale = isAppLocale(params.lang) ? params.lang : 'en';
+  }
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -216,64 +224,85 @@ export function ErrorBoundary() {
         <Links nonce={nonce} />
       </head>
       <body vocab="https://schema.org/" typeof="WebPage">
-        <header className="border-b-[3px] border-slate-700 print:hidden">
-          <div id="wb-bnr">
-            <div className="container flex items-center justify-between gap-6 py-2.5 sm:py-3.5">
-              <div property="publisher" typeof="GovernmentOrganization">
-                <a href="https://canada.ca/" property="url">
-                  <img className="h-8 w-auto" src="/assets/sig-blk-en.svg" alt={`${en(($) => $.header.govtOfCanadaText)} / ${fr(($) => $.header.govtOfCanadaText)}`} property="logo" width="300" height="28" decoding="async" />
-                </a>
-                <meta property="name" content={`${en(($) => $.header.govtOfCanadaText)} / ${fr(($) => $.header.govtOfCanadaText)}`} />
-                <meta property="areaServed" typeof="Country" content="Canada" />
-                <link property="logo" href="/assets/wmms-blk.svg" />
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="container" property="mainContentOfPage" resource="#wb-main" typeof="WebPageElement">
-          <div className="grid grid-cols-1 gap-6 py-2.5 sm:grid-cols-2 sm:py-3.5">
-            <div id="english" lang="en">
-              <PageTitle className="my-8">
-                <span>{en(($) => $.serverError.pageTitle)}</span>
-                <small className="block text-2xl font-normal text-neutral-500">{en(($) => $.serverError.pageSubtitle)}</small>
-              </PageTitle>
-              <p className="mb-8 text-lg text-gray-500">{en(($) => $.serverError.pageMessage)}</p>
-              <ul className="list-disc space-y-2 pl-10">
-                <li>{en(($) => $.serverError.option01)}</li>
-                <li>
-                  <Trans t={en} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
-                </li>
-              </ul>
-            </div>
-            <div id="french" lang="fr">
-              <PageTitle className="my-8">
-                <span>{fr(($) => $.serverError.pageTitle)}</span>
-                <small className="block text-2xl font-normal text-neutral-500">{fr(($) => $.serverError.pageSubtitle)}</small>
-              </PageTitle>
-              <p className="mb-8 text-lg text-gray-500">{fr(($) => $.serverError.pageMessage)}</p>
-              <ul className="list-disc space-y-2 pl-10">
-                <li>{fr(($) => $.serverError.option01)}</li>
-                <li>
-                  <Trans t={fr} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
-                </li>
-              </ul>
-            </div>
-          </div>
-        </main>
-        <footer id="wb-info" tabIndex={-1} className="bg-stone-50 print:hidden">
-          <div className="container flex items-center justify-end gap-6 py-2.5 sm:py-3.5">
-            <div>
-              <h2 className="sr-only">
-                <span lang="en">{en(($) => $.footer.aboutSite)}</span> / <span lang="fr">{fr(($) => $.footer.aboutSite)}</span>
-              </h2>
-              <div>
-                <img src="/assets/wmms-blk.svg" alt={`${en(($) => $.footer.gcSymbol)} / ${fr(($) => $.footer.gcSymbol)}`} width={300} height={71} className="h-10 w-auto" />
-              </div>
-            </div>
-          </div>
-        </footer>
+        \{isNotFoundRouteErrorResponse ? <RootNotFound params={params} error={error} /> : <RootServerError />}
         <ZodConfig nonce={nonce} />
       </body>
     </html>
+  );
+}
+
+type RootNotFoundProps = {
+  params: Params;
+  error: unknown;
+};
+
+function RootNotFound({ params, error }: RootNotFoundProps) {
+  return isAppLocale(params.lang) ? <NotFoundError error={error} /> : <BilingualNotFoundError error={error} />;
+}
+
+function RootServerError() {
+  const { i18n } = useTranslation();
+  const en = i18n.getFixedT('en', 'gcweb');
+  const fr = i18n.getFixedT('fr', 'gcweb');
+
+  return (
+    <>
+      <header className="border-b-[3px] border-slate-700 print:hidden">
+        <div id="wb-bnr">
+          <div className="container flex items-center justify-between gap-6 py-2.5 sm:py-3.5">
+            <div property="publisher" typeof="GovernmentOrganization">
+              <a href="https://canada.ca/" property="url">
+                <img className="h-8 w-auto" src="/assets/sig-blk-en.svg" alt={`${en(($) => $.header.govtOfCanadaText)} / ${fr(($) => $.header.govtOfCanadaText)}`} property="logo" width="300" height="28" decoding="async" />
+              </a>
+              <meta property="name" content={`${en(($) => $.header.govtOfCanadaText)} / ${fr(($) => $.header.govtOfCanadaText)}`} />
+              <meta property="areaServed" typeof="Country" content="Canada" />
+              <link property="logo" href="/assets/wmms-blk.svg" />
+            </div>
+          </div>
+        </div>
+      </header>
+      <main className="container" property="mainContentOfPage" resource="#wb-main" typeof="WebPageElement">
+        <div className="grid grid-cols-1 gap-6 py-2.5 sm:grid-cols-2 sm:py-3.5">
+          <div id="english" lang="en">
+            <PageTitle className="my-8">
+              <span>{en(($) => $.serverError.pageTitle)}</span>
+              <small className="block text-2xl font-normal text-neutral-500">{en(($) => $.serverError.pageSubtitle)}</small>
+            </PageTitle>
+            <p className="mb-8 text-lg text-gray-500">{en(($) => $.serverError.pageMessage)}</p>
+            <ul className="list-disc space-y-2 pl-10">
+              <li>{en(($) => $.serverError.option01)}</li>
+              <li>
+                <Trans t={en} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
+              </li>
+            </ul>
+          </div>
+          <div id="french" lang="fr">
+            <PageTitle className="my-8">
+              <span>{fr(($) => $.serverError.pageTitle)}</span>
+              <small className="block text-2xl font-normal text-neutral-500">{fr(($) => $.serverError.pageSubtitle)}</small>
+            </PageTitle>
+            <p className="mb-8 text-lg text-gray-500">{fr(($) => $.serverError.pageMessage)}</p>
+            <ul className="list-disc space-y-2 pl-10">
+              <li>{fr(($) => $.serverError.option01)}</li>
+              <li>
+                <Trans t={fr} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
+              </li>
+            </ul>
+          </div>
+        </div>
+      </main>
+      <footer id="wb-info" tabIndex={-1} className="bg-stone-50 print:hidden">
+        <div className="container flex items-center justify-end gap-6 py-2.5 sm:py-3.5">
+          <div>
+            <h2 className="sr-only">
+              <span lang="en">{en(($) => $.footer.aboutSite)}</span> / <span lang="fr">{fr(($) => $.footer.aboutSite)}</span>
+            </h2>
+            <div>
+              <img src="/assets/wmms-blk.svg" alt={`${en(($) => $.footer.gcSymbol)} / ${fr(($) => $.footer.gcSymbol)}`} width={300} height={71} className="h-10 w-auto" />
+            </div>
+          </div>
+        </div>
+      </footer>
+    </>
   );
 }
