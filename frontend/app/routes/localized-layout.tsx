@@ -1,11 +1,11 @@
-import { Outlet, data, isRouteErrorResponse, useParams, useRouteError } from 'react-router';
+import { Outlet, data, isRouteErrorResponse } from 'react-router';
 
 import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
 import type { Route } from './+types/localized-layout';
 
 import { createLogger } from '~/.server/logging';
-import { BilingualNotFoundError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
+import { BilingualNotFoundError, BilingualServerError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
 import { csrfTokenMiddleware, getCsrfToken } from '~/middlewares/csrf-token.server';
 import { csrfMiddleware } from '~/middlewares/csrf.server';
 import { isAppLocale } from '~/utils/locale-utils';
@@ -42,15 +42,12 @@ export default function LocalizedLayout({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const params = useParams();
+export function ErrorBoundary({ error, params }: Route.ErrorBoundaryProps) {
   const lang = params.lang;
 
   if (isRouteErrorResponse(error) && error.status === 404) {
     return isAppLocale(lang) ? <NotFoundError error={error} /> : <BilingualNotFoundError error={error} />;
   }
 
-  // TODO :: GjB :: create bilingual 500 page
-  return isAppLocale(lang) ? <ServerError error={error} /> : <ServerError error={error} />;
+  return isAppLocale(lang) ? <ServerError error={error} /> : <BilingualServerError error={error} />;
 }

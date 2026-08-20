@@ -1,4 +1,4 @@
-import { Outlet, isRouteErrorResponse, useNavigate, useRouteError } from 'react-router';
+import { Outlet, isRouteErrorResponse, useNavigate } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
 
@@ -22,16 +22,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return [{ name: 'dcterms.accessRights', content: '1' }];
 });
 
-export function ErrorBoundary() {
-  const error = useRouteError();
-
-  if (isRouteErrorResponse(error) && error.status === 404) {
-    return <NotFoundError error={error} />;
-  }
-
-  return <ServerError error={error} />;
-}
-
 export default function Layout() {
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = useClientEnv();
   const navigate = useNavigate();
@@ -52,4 +42,12 @@ export default function Layout() {
       <Outlet />
     </ProtectedLayout>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return <NotFoundError error={error} />;
+  }
+
+  return <ServerError error={error} />;
 }
