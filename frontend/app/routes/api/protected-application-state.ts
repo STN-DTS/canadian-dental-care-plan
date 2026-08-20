@@ -10,9 +10,12 @@ import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { saveProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ApplicationStateParams } from '~/.server/routes/helpers/protected-application-route-helpers';
+import { authMiddleware } from '~/middlewares/auth.server';
 
 const API_PROTECTED_APPLICATION_STATE_ACTIONS = ['extend'] as const;
 export type ApiProtectedApplicationStateAction = (typeof API_PROTECTED_APPLICATION_STATE_ACTIONS)[number];
+
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 export async function action({ context, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
