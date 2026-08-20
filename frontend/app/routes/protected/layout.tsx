@@ -1,21 +1,18 @@
 import { Outlet, isRouteErrorResponse, useNavigate, useRouteError } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
-import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
 import type { Route } from './+types/layout';
 
 import { NotFoundError, ProtectedLayout, ServerError, protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
 import { authMiddleware } from '~/middlewares/auth.server';
-import { csrfTokenMiddleware, getCsrfToken } from '~/middlewares/csrf-token.server';
-import { csrfMiddleware } from '~/middlewares/csrf.server';
 import { useClientEnv } from '~/root';
 import { useApiSession } from '~/utils/api-session-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 
-export const middleware: Route.MiddlewareFunction[] = [authMiddleware, csrfMiddleware, csrfTokenMiddleware];
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 export const handle = {
   i18nPreloadNamespace: protectedLayoutI18nNamespace,
@@ -24,12 +21,6 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
   return [{ name: 'dcterms.accessRights', content: '1' }];
 });
-
-export function loader({ context }: Route.LoaderArgs) {
-  return {
-    csrfToken: getCsrfToken(context),
-  };
-}
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -41,8 +32,7 @@ export function ErrorBoundary() {
   return <ServerError error={error} />;
 }
 
-export default function Layout({ loaderData }: Route.ComponentProps) {
-  const { csrfToken } = loaderData;
+export default function Layout() {
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = useClientEnv();
   const navigate = useNavigate();
   const apiSession = useApiSession();
@@ -57,11 +47,9 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <AuthenticityTokenProvider token={csrfToken}>
-      <ProtectedLayout>
-        <SessionTimeout promptBeforeIdle={SESSION_TIMEOUT_PROMPT_SECONDS * 1000} timeout={SESSION_TIMEOUT_SECONDS * 1000} onSessionEnd={handleOnSessionEnd} onSessionExtend={handleOnSessionExtend} />
-        <Outlet />
-      </ProtectedLayout>
-    </AuthenticityTokenProvider>
+    <ProtectedLayout>
+      <SessionTimeout promptBeforeIdle={SESSION_TIMEOUT_PROMPT_SECONDS * 1000} timeout={SESSION_TIMEOUT_SECONDS * 1000} onSessionEnd={handleOnSessionEnd} onSessionExtend={handleOnSessionExtend} />
+      <Outlet />
+    </ProtectedLayout>
   );
 }

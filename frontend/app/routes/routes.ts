@@ -55,6 +55,11 @@ export const routes = [
  * Route config for localized routes.
  */
 export const i18nRoutes = [
-  ...publicRoutes, //
-  ...protectedRoutes,
+  {
+    file: 'routes/localized-layout.tsx',
+    children: [
+      ...publicRoutes, //
+      ...protectedRoutes,
+    ],
+  },
 ] as const satisfies I18nRoute[];

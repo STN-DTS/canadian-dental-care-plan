@@ -18,6 +18,7 @@ import { ErrorSummaryProvider } from '~/components/error-summary-context';
 import { InputField } from '~/components/input-field';
 import { InputPatternField } from '~/components/input-pattern-field';
 import { InputSelect } from '~/components/input-select';
+import { PublicLayout } from '~/components/layouts/public-layout';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -153,7 +154,7 @@ export default function StubLogin({ loaderData, params }: Route.ComponentProps) 
   const errors = fetcher.data?.errors;
 
   return (
-    <>
+    <PublicLayout>
       <AppPageTitle>{t(($) => $.index.pageTitle)}</AppPageTitle>
       <div className="max-w-prose">
         <ErrorSummaryProvider actionData={fetcher.data}>
@@ -216,6 +217,6 @@ export default function StubLogin({ loaderData, params }: Route.ComponentProps) 
           </fetcher.Form>
         </ErrorSummaryProvider>
       </div>
-    </>
+    </PublicLayout>
   );
 }

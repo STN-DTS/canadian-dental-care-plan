@@ -282,6 +282,11 @@ export const routes = [
         file: 'routes/public/unable-to-process-request.tsx',
         paths: { en: '/:lang/unable-to-process-request', fr: '/:lang/impossible-de-traiter-la-demande' },
       },
+      {
+        id: 'public/stub-login',
+        file: 'routes/public/stub-login.tsx',
+        paths: { en: '/:lang/stub-login', fr: '/:lang/connexion-simulee' },
+      },
     ],
   },
 ] as const satisfies I18nRoute[];
