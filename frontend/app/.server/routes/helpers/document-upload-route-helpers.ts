@@ -8,9 +8,15 @@ import { getPathById } from '~/utils/route-utils';
 
 export type DocumentUploadStateSessionKey = `document-upload-flow-${string}`;
 
+export interface SubmittedDocument {
+  readonly fileName: string;
+  readonly documentType: string;
+  readonly fileSize: number;
+}
+
 export interface DocumentUploadState {
   readonly id: string;
-  readonly submittedDocuments: ReadonlyArray<string>;
+  readonly submittedDocuments: ReadonlyArray<SubmittedDocument>;
 }
 
 /**
@@ -71,7 +77,7 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
 interface StartStateArgs {
   id: string;
   session: Session;
-  submittedDocuments: ReadonlyArray<string>;
+  submittedDocuments: ReadonlyArray<SubmittedDocument>;
 }
 
 /**

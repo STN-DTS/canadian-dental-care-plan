@@ -75,7 +75,7 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
           <p className="mb-2">{t(($) => $.submitted.youSubmitted)}</p>
           <ul className="list-none space-y-1">
             {submittedDocuments.map((document) => (
-              <li key={document}>{document}</li>
+              <li key={document.fileName}>{document.fileName}</li>
             ))}
           </ul>
           <p className="mt-2">{t(($) => $.submitted.delayNote)}</p>

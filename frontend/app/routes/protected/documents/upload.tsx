@@ -202,7 +202,11 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   startDocumentUploadState({
     id,
     session,
-    submittedDocuments: Object.values(files).map(({ file }) => file.name),
+    submittedDocuments: Object.values(files).map(({ file, documentType }) => ({
+      fileName: file.name,
+      documentType,
+      fileSize: file.size,
+    })),
   });
 
   return redirect(getDocumentUploadSubmittedUrl({ id, params }));
