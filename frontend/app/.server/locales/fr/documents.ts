@@ -52,19 +52,11 @@ const ns = {
     errorMessage: {
       fileRequired: "Sélectionnez un fichier.",
       documentTypeRequired: "Sélectionnez un type de document pour le fichier «\u00A0{{filename}}\u00A0».",
-      invalidFileType: {
-        heading: "Type de fichier non pris en charge",
-        message: "Le type de fichier que vous tentez de téléverser n'est pas pris en charge. Vous pouvez téléverser un fichier dans l'un des formats suivants\u00A0: {{extensions}}",
-      },
-      tooManyFiles: {
-        heading: "Trop de fichiers téléversés",
-        message: "Vous pouvez téléverser un maximum de {{count}} fichiers à la fois. Soumettez vos documents actuels avant de télécharger des fichiers supplémentaires.",
-      },
+      invalidFileType: "Le fichier «\u00A0{{filename}}\u00A0» n'est pas pris en charge. Vous pouvez téléverser un fichier dans l'un des formats suivants\u00A0: {{extensions}}",
       duplicateFile: "Le fichier «\u00A0{{filename}}\u00A0» a déjà été sélectionné.",
-      fileTooLarge: {
-        heading: "Fichier trop volumineux",
-        message: "Le fichier que vous tentez de téléverser est trop volumineux. Assurez-vous que la taille est inférieure à {{filesize}}.",
-      },
+      tooManyFiles_one: "Un maximum d'un fichier peut être téléversé à la fois. Supprimez au moins un fichier pour continuer.",
+      tooManyFiles_other: "Un maximum de {{count}} fichiers peut être téléversé à la fois. Supprimez au moins un fichier pour continuer.",
+      fileTooLarge: "Le fichier «\u00A0{{filename}}\u00A0» est trop volumineux. Assurez-vous que la taille du fichier est inférieure à {{filesize}}.",
       scanFailed: "(L'analyse de fichier(s) a échoué: {{error}} (Code: {{code}})",
       scanIncomplete: "L'analyse de fichier(s) n'a pas pu être effectuée.",
       scanError: "Erreur lors de l'analyse de fichier(s).",

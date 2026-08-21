@@ -52,19 +52,11 @@ const ns = {
     errorMessage: {
       fileRequired: "Select a file.",
       documentTypeRequired: "Select a document type for file “{{filename}}”.",
-      invalidFileType: {
-        heading: "File type not supported",
-        message: "The file type you’re trying to upload is not supported. You can upload a file in one of the following formats: {{extensions}}",
-      },
-      tooManyFiles: {
-        heading: "Too many files uploaded",
-        message: "You can upload up to {{count}} documents at a time. Submit your current documents before uploading more.",
-      },
+      invalidFileType: "File “{{filename}}” is not supported. You can upload a file in one of the following formats: {{extensions}}",
+      tooManyFiles_one: "A maximum of one file can be uploaded at a time. Remove at least one file to continue.",
+      tooManyFiles_other: "A maximum of {{count}} files can be uploaded at a time. Remove at least one file to continue.",
       duplicateFile: "File “{{filename}}” has already been selected.",
-      fileTooLarge: {
-        heading: "File too large",
-        message: "The file you are trying to upload is too large. Make sure the file size is less than {{filesize}}.",
-      },
+      fileTooLarge: "File “{{filename}}” is too large. Make sure the file size is less than {{filesize}}.",
       scanFailed: "File(s) scan failed: {{error}} (Code: {{code}})",
       scanIncomplete: "File(s) scan could not be completed.",
       scanError: "Error during file(s) scanning.",
