@@ -15,6 +15,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
 import type { DocumentUploadService } from '~/.server/domain/services';
+import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -196,12 +197,18 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { errors: uploadResult.errors };
   }
 
-  session.set(
-    'submittedDocuments',
-    Object.values(files).map(({ file }) => file.name),
-  );
+  const id = crypto.randomUUID();
+  startDocumentUploadState({
+    id,
+    session,
+    submittedDocuments: Object.values(files).map(({ file, documentType }) => ({
+      fileName: file.name,
+      documentType,
+      fileSize: file.size,
+    })),
+  });
 
-  return redirect(getPathById('protected/documents/submitted', params));
+  return redirect(getDocumentUploadSubmittedUrl({ id, params }));
 }
 
 async function validateUploadForm(
