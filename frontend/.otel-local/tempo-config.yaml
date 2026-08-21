@@ -1,0 +1,22 @@
+# Local Tempo configuration for OTLP trace-export testing.
+# Tempo runs in monolithic mode and stores trace blocks on the tempo-data volume.
+
+target: all
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo

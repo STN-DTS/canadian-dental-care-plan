@@ -1,0 +1,88 @@
+# Local-only observability stack for testing the host frontend's OTLP logs,
+# metrics, and traces. The frontend sends all signals to Alloy, which routes
+# logs to Loki, metrics to Prometheus, and traces to Tempo. Grafana provides UI.
+# This file starts observability services; it does not start the frontend.
+services:
+  loki:
+    # Stores OTLP logs forwarded by Alloy.
+    image: docker.io/grafana/loki:3.5.0
+    container_name: canadian-dental-care-plan-loki
+    command:
+      - -config.file=/etc/loki/config.yaml
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./.otel-local/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+
+  prometheus:
+    # Stores metrics forwarded by Alloy using Prometheus remote write.
+    image: docker.io/prom/prometheus:latest
+    container_name: canadian-dental-care-plan-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./.otel-local/prometheus-config.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  tempo:
+    # Stores traces forwarded by Alloy over OTLP/HTTP.
+    image: docker.io/grafana/tempo:latest
+    container_name: canadian-dental-care-plan-tempo
+    command:
+      - -config.file=/etc/tempo/tempo.yaml
+    ports:
+      - '3200:3200'
+    volumes:
+      - ./.otel-local/tempo-config.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+  alloy:
+    # Receives all OTLP/HTTP signals from the host frontend on port 4318.
+    image: docker.io/grafana/alloy:latest
+    container_name: canadian-dental-care-plan-alloy
+    command:
+      - run
+      - --stability.level=experimental
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy
+      - /etc/alloy/config.alloy
+    ports:
+      - '4318:4318'
+      - '12345:12345'
+    volumes:
+      - ./.otel-local/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+
+  grafana:
+    # Provides the local UI for exploring logs, metrics, and traces.
+    image: docker.io/grafana/grafana:latest
+    container_name: canadian-dental-care-plan-grafana
+    environment:
+      GF_FEATURE_TOGGLES_ENABLE: grafanaAdvisor
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - '3001:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./.otel-local/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+
+volumes:
+  # Named volumes retain service state when `podman compose down` removes
+  # containers and network. Use `down -v` only to delete local telemetry data.
+  alloy-data:
+  grafana-data:
+  loki-data:
+  prometheus-data:
+  tempo-data:

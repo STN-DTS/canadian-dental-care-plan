@@ -1,0 +1,10 @@
+# Local Prometheus configuration for OTLP metric-export testing.
+# Metrics arrive through Alloy's Prometheus remote-write receiver.
+
+global:
+  scrape_interval: 15s
+
+storage:
+  tsdb:
+    # Allow minor timestamp reordering from batched local telemetry.
+    out_of_order_time_window: 30m

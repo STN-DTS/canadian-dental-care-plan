@@ -51,6 +51,94 @@ See [express.md](other/docs/express.md) for the named middleware
 wrapper pattern for preserving meaningful OpenTelemetry middleware metadata and
 span names.
 
+### Local OTLP stack
+
+The repository includes a local-only Podman Compose stack for testing all
+application telemetry signals:
+
+- Grafana Alloy receives OTLP/HTTP from the frontend.
+- Loki stores logs.
+- Prometheus stores metrics.
+- Tempo stores traces.
+- Grafana provides one UI for all three backends.
+
+#### Start stack
+
+```sh
+podman compose -f compose.otel-local.yaml up -d
+```
+
+Add these values to frontend `.env` before starting the server. They point to
+Alloy, not directly to Loki, Prometheus, or Tempo:
+
+```sh
+OTEL_API_KEY=local
+OTEL_LOGS_ENDPOINT=http://127.0.0.1:4318/v1/logs
+OTEL_METRICS_ENDPOINT=http://127.0.0.1:4318/v1/metrics
+OTEL_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
+OTEL_USE_CONSOLE_EXPORTERS=false
+```
+
+`OTEL_API_KEY=local` satisfies the frontend's local OTLP authentication
+requirement. Local Alloy does not require authentication and ignores this
+development-only header.
+
+Start the frontend with:
+
+```sh
+npm run dev
+```
+
+Open Grafana at `http://localhost:3001`. New stacks use `admin` / `admin`.
+Loki, Prometheus, and Tempo data sources are provisioned automatically.
+
+#### Stop and preserve data
+
+Named volumes store Alloy queue state, Grafana configuration, Loki logs,
+Prometheus metrics, and Tempo traces. Normal stop, restart, and container
+recreation preserve these volumes:
+
+```sh
+# Stop containers; keep containers and volumes.
+podman compose -f compose.otel-local.yaml stop
+
+# Restart stopped containers.
+podman compose -f compose.otel-local.yaml start
+
+# Remove containers and network; keep named volumes.
+podman compose -f compose.otel-local.yaml down
+
+# Recreate containers while reusing existing volumes.
+podman compose -f compose.otel-local.yaml up -d
+```
+
+#### Delete data
+
+Warning: `down -v` permanently deletes local telemetry volumes. Use only when
+resetting the local observability stack is intentional:
+
+```sh
+podman compose -f compose.otel-local.yaml down -v
+```
+
+#### Inspect and back up data
+
+Compose may prefix volume names with the project directory. List the actual
+names before inspecting or exporting them:
+
+```sh
+podman volume ls
+podman volume inspect <volume-name>
+podman volume export <volume-name> --output <volume-name>.tar
+```
+
+Restore a volume after creating an empty volume with the same name:
+
+```sh
+podman volume create <volume-name>
+podman volume import <volume-name> <volume-name>.tar
+```
+
 ### DIY
 
 If you're familiar with deploying node applications, the built-in Remix app server is production-ready.

@@ -1,0 +1,70 @@
+// Local pipeline used to test frontend OTLP log, metric, and trace exporting.
+// The frontend runs on the host. Alloy receives its OTLP/HTTP signals through
+// published port 4318 and routes each signal to its local Grafana backend.
+
+otelcol.receiver.otlp "frontend" {
+  http {
+    // The frontend sends signals to http://127.0.0.1:4318/v1/{logs,metrics,traces}.
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    logs = [otelcol.processor.batch.logs.input]
+    metrics = [otelcol.processor.deltatocumulative.metrics.input]
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+otelcol.processor.batch "logs" {
+  // Batch records before forwarding to reduce request frequency.
+  output {
+    logs = [otelcol.exporter.otlphttp.loki.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  // Batch spans before forwarding to reduce request frequency.
+  output {
+    traces = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.processor.deltatocumulative "metrics" {
+  // The frontend exports DELTA metrics; Prometheus requires cumulative metrics.
+  output {
+    metrics = [otelcol.exporter.prometheus.metrics.input]
+  }
+}
+
+otelcol.exporter.otlphttp "loki" {
+  client {
+    // Loki exposes its OTLP/HTTP ingestion endpoint under /otlp.
+    endpoint = "http://loki:3100/otlp"
+
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.prometheus "metrics" {
+  // Convert OTLP metrics into Prometheus samples before remote writing.
+  forward_to = [prometheus.remote_write.metrics.receiver]
+}
+
+prometheus.remote_write "metrics" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client {
+    // Tempo exposes its OTLP/HTTP receiver on port 4318.
+    endpoint = "http://tempo:4318"
+
+    tls {
+      insecure = true
+    }
+  }
+}
