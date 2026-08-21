@@ -1,13 +1,12 @@
 import type { JSX } from 'react';
 
-import { redirect } from 'react-router';
-
 import { useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/submitted';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getDocumentUploadStateIdFromUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -17,7 +16,6 @@ import { ContextualAlert } from '~/components/contextual-alert';
 import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
-import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 
 export const handle = {
@@ -48,11 +46,8 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   securityHandler.validateFeatureEnabled('doc-upload');
   await securityHandler.validateAuthSession({ requestUrl: url, session });
 
-  const submittedDocuments = session.find('submittedDocuments').unwrapOr([]);
-
-  if (submittedDocuments.length === 0) {
-    throw redirect(getPathById('protected/documents/index', params));
-  }
+  const documentUploadStateId = getDocumentUploadStateIdFromUrl(url);
+  const { submittedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {

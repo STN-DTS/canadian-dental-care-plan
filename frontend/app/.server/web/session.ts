@@ -7,6 +7,7 @@ import validator from 'validator';
 import type { ApplicantDto, LetterDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { StatusState, StatusStateSessionKey } from '~/.server/routes/helpers/status-route-helpers';
@@ -25,6 +26,8 @@ type SessionTypeMap = {
 } & {
   [K in StatusStateSessionKey]: StatusState;
 } & {
+  [K in DocumentUploadStateSessionKey]: DocumentUploadState;
+} & {
   authCodeVerifier: string;
   authReturnUrl: string;
   authState: string;
@@ -32,7 +35,6 @@ type SessionTypeMap = {
   idToken: IdToken;
   lastAccessTime: string;
   letters: ReadonlyArray<LetterDto>;
-  submittedDocuments: ReadonlyArray<string>;
   userInfoToken: UserinfoToken;
   profileEmailAddressFlowState: {
     emailAddress: string;
