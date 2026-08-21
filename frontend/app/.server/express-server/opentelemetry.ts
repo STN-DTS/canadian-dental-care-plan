@@ -1,9 +1,12 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { ExportResultCode } from '@opentelemetry/core';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
 import { resourceFromAttributes } from '@opentelemetry/resources';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
 import { AggregationTemporality, ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -92,12 +95,65 @@ function toNumber(str?: string): number | undefined {
   return Number.isNaN(num) ? undefined : num;
 }
 
+/**
+ * Creates a BatchLogRecordProcessor that exports logs to an OTLP collector when
+ * OTEL_LOGS_ENDPOINT is configured. Returns an empty array when the endpoint is
+ * absent so the existing stdout/file transports continue operating unchanged.
+ *
+ * The initialisation is wrapped in a try/catch so that any misconfiguration or
+ * exporter setup error is logged and does NOT prevent the application from starting.
+ *
+ * Authentication is provided via OTEL_LOGS_AUTHORIZATION as a full header value
+ * (e.g. "******" or "Api-Token <token>") to remain collector-agnostic.
+ * It is intentionally separate from OTEL_API_KEY to avoid sending Dynatrace
+ * credentials to a different backend.
+ */
+function getLogRecordProcessors(): LogRecordProcessor[] {
+  const endpoint = process.env.OTEL_LOGS_ENDPOINT;
+
+  if (!endpoint) {
+    log.debug('Log exporting is disabled; set OTEL_LOGS_ENDPOINT to enable.');
+    return [];
+  }
+
+  try {
+    const headers: Record<string, string> = {};
+
+    if (process.env.OTEL_LOGS_AUTHORIZATION) {
+      headers.Authorization = process.env.OTEL_LOGS_AUTHORIZATION;
+    }
+
+    log.info('Exporting logs to %s', endpoint);
+
+    const exporter = new OTLPLogExporter({
+      compression: CompressionAlgorithm.GZIP,
+      headers,
+      url: endpoint,
+    });
+
+    return [
+      new BatchLogRecordProcessor({
+        exporter,
+        exportTimeoutMillis: toNumber(process.env.OTEL_LOGS_EXPORT_TIMEOUT_MILLIS) ?? 5000,
+        maxExportBatchSize: toNumber(process.env.OTEL_LOGS_MAX_EXPORT_BATCH_SIZE) ?? 512,
+        maxQueueSize: toNumber(process.env.OTEL_LOGS_MAX_QUEUE_SIZE) ?? 2048,
+        scheduledDelayMillis: toNumber(process.env.OTEL_LOGS_EXPORT_INTERVAL_MILLIS) ?? 5000,
+      }),
+    ];
+  } catch (error) {
+    log.error('Failed to initialize log exporter; log exporting will be disabled. Error: %s', error);
+    return [];
+  }
+}
+
 log.info('Initializing instrumentation');
+
+const logRecordProcessors = getLogRecordProcessors();
 
 const sdk = new NodeSDK({
   instrumentations: [
     getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-winston': { disableLogSending: true },
+      '@opentelemetry/instrumentation-winston': { disableLogSending: logRecordProcessors.length === 0 },
     }),
   ],
 
@@ -114,11 +170,14 @@ const sdk = new NodeSDK({
       exportTimeoutMillis: toNumber(process.env.OTEL_METRICS_EXPORT_TIMEOUT_MILLIS),
     }),
   ],
+  logRecordProcessors,
   traceExporter: getTraceExporter(),
 });
 
 sdk.start();
 process.once('beforeExit', async () => {
   log.info('Shutting down instrumentation');
-  await sdk.shutdown();
+  await sdk.shutdown().catch((error) => {
+    log.error('Error during instrumentation shutdown: %s', error);
+  });
 });
