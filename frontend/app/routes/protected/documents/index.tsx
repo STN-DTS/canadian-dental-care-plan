@@ -82,17 +82,17 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
               <TableHeader>
                 <TableRow>
                   <TableHead>{t(($) => $.index.tableHeaders.fileName)}</TableHead>
-                  <TableHead>{t(($) => $.index.tableHeaders.applicant)}</TableHead>
                   <TableHead>{t(($) => $.index.tableHeaders.typeOfDocument)}</TableHead>
-                  <TableHead>{t(($) => $.index.tableHeaders.dateUploaded)}</TableHead>
+                  <TableHead>{t(($) => $.index.tableHeaders.submittedBy)}</TableHead>
+                  <TableHead>{t(($) => $.index.tableHeaders.dateReceived)}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {documents.map((document) => (
                   <TableRow key={document.id} className="odd:bg-white even:bg-gray-50">
                     <TableCell className="max-w-50 break-all">{document.fileName}</TableCell>
-                    <TableCell>{`${document.client.firstName} ${document.client.lastName}`}</TableCell>
                     <TableCell>{document.documentType.name}</TableCell>
+                    <TableCell>{`${document.client.firstName} ${document.client.lastName}`}</TableCell>
                     <TableCell className="text-nowrap">
                       <DateTimeDisplay isoTimestamp={document.mscaUploadIsoTimestamp} tooltipText={document.mscaUploadDateTooltip}>
                         {document.mscaUploadDateDisplay}
