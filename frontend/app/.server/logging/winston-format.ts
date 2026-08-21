@@ -168,23 +168,111 @@ function formatTraceContext(traceId: unknown, spanId: unknown, traceFlags?: unkn
 const SIN_PATTERN = /(?<!["\d])("?)(\d{3}[\s-]?\d{3}[\s-]?(\d{3}))\1(?!["\d])/g;
 
 /**
- * Winston format transform that masks SIN values in log messages after splat
- * interpolation has already expanded all %s/%j tokens into the message string.
- * This provides a safety net so that SINs are never emitted to any transport,
- * regardless of how individual log call sites are written.
+ * Recursively sanitizes values before Winston sends them to transports.
+ *
+ * Strings are scanned for valid SINs and replaced with their masked form.
+ * Safe-integer values are checked as unformatted SINs, while arrays and plain
+ * objects are copied and sanitized recursively. Other values, including class
+ * instances and Winston's symbol-keyed fields, are returned unchanged.
+ *
+ * @param value - The log message or metadata value to sanitize.
+ * @param seen - Previously sanitized containers, used to preserve shared and circular references.
+ * @returns A sanitized value, or the original value when no supported masking applies.
+ */
+function sanitizeSensitiveValue(value: unknown, seen: WeakMap<object, unknown>): unknown {
+  if (typeof value === 'string') {
+    // Regex consumes optional surrounding quotes so JSON strings are not double-quoted.
+    return value.replaceAll(SIN_PATTERN, (_match, _quote, sin, last3: string) => {
+      return isValidSin(sin) ? `"***-***-${last3}"` : _match;
+    });
+  }
+
+  if (typeof value === 'number' && Number.isSafeInteger(value)) {
+    // Unsafe integers may have lost digits during coercion, so never classify them as SINs.
+    const sin = String(value);
+
+    if (isValidSin(sin)) {
+      return `"***-***-${sin.slice(-3)}"`;
+    }
+  }
+
+  if (Array.isArray(value)) {
+    // Register container before descending so self-references resolve without recursion overflow.
+    const existing = seen.get(value);
+    if (existing) {
+      return existing;
+    }
+
+    const sanitized: unknown[] = [];
+    seen.set(value, sanitized);
+
+    for (const [index, item] of value.entries()) {
+      sanitized[index] = sanitizeSensitiveValue(item, seen);
+    }
+
+    return sanitized;
+  }
+
+  if (value !== null && typeof value === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+
+    if (prototype === Object.prototype || prototype === null) {
+      // Preserve null-prototype records and register output before traversing circular properties.
+      const existing = seen.get(value);
+      if (existing) {
+        return existing;
+      }
+
+      const sanitized = Object.create(prototype) as Record<string, unknown>;
+      seen.set(value, sanitized);
+
+      for (const [key, nestedValue] of Object.entries(value)) {
+        // defineProperty avoids treating a user-provided "__proto__" key as a prototype mutation.
+        Object.defineProperty(sanitized, key, {
+          configurable: true,
+          enumerable: true,
+          value: sanitizeSensitiveValue(nestedValue, seen),
+          writable: true,
+        });
+      }
+
+      return sanitized;
+    }
+  }
+
+  return value;
+}
+
+/**
+ * Winston format transform that sanitizes every enumerable string-keyed field
+ * on an `info` object before transports receive it. It should run after
+ * `format.splat()` so interpolated `%s`/`%j` values are included in `message`.
+ *
+ * Strings and safe-integer SINs are masked directly. Arrays and plain objects
+ * are copied and sanitized recursively. Non-plain objects and symbol-keyed
+ * fields are left unchanged.
  *
  * Candidate matches are verified with `isValidSin` (Luhn checksum + format rules)
  * to avoid masking legitimate 9-digit reference codes and option-set IDs.
  *
- * The replacement is always emitted as a quoted string (e.g. `"***-***-782"`) because
- * the masked value is not a valid number type. Surrounding quotes from the original match
- * are consumed by the regex so that a string SIN (`"123456782"`) is never double-quoted.
+ * Masked values are emitted as quoted strings (for example, `"***-***-782"`)
+ * because a masked SIN is no longer a valid number. Existing quotes around
+ * string SINs are consumed so values are not double-quoted.
+ *
+ * @returns A Winston format that returns the sanitized `info` object.
  */
 export const formatSensitiveData = format((info) => {
-  if (typeof info.message === 'string') {
-    info.message = info.message.replaceAll(SIN_PATTERN, (_match, _quote, sin, last3: string) => {
-      return isValidSin(sin) ? `"***-***-${last3}"` : _match;
-    });
+  const seen = new WeakMap<object, unknown>();
+
+  // Object.keys intentionally excludes Winston's symbol-keyed internal fields.
+  for (const key of Object.keys(info)) {
+    info[key] = sanitizeSensitiveValue(info[key], seen);
   }
+
+  // SPLAT retains original interpolation and metadata arguments after format.splat().
+  if (SPLAT in info) {
+    info[SPLAT] = sanitizeSensitiveValue(info[SPLAT], seen);
+  }
+
   return info;
 });

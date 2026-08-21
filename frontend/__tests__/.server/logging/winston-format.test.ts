@@ -1,17 +1,37 @@
-import type { TransformableInfo } from 'logform';
-import { MESSAGE } from 'triple-beam';
+import type { Format, TransformableInfo } from 'logform';
+import { LEVEL, MESSAGE, SPLAT } from 'triple-beam';
 import { describe, expect, it } from 'vitest';
 
 import { formatPrintf, formatSensitiveData } from '~/.server/logging/winston-format';
 
+function createInfo(values: Partial<TransformableInfo> = {}): TransformableInfo {
+  const info: TransformableInfo = {
+    [LEVEL]: 'debug',
+    level: 'debug',
+    message: undefined,
+    ...values,
+  };
+
+  info[LEVEL] = info.level;
+  return info;
+}
+
+function transformInfo(formatter: Format, info: TransformableInfo): TransformableInfo {
+  const transformed = formatter.transform(info);
+
+  if (typeof transformed === 'boolean') {
+    throw new TypeError('Expected formatter to return log info.');
+  }
+
+  return transformed;
+}
+
 function mask(message: unknown): unknown {
-  const info = formatSensitiveData().transform({ level: 'debug', message } as TransformableInfo);
-  return (info as TransformableInfo).message;
+  return transformInfo(formatSensitiveData(), createInfo({ message })).message;
 }
 
 function print(info: Partial<TransformableInfo>): string {
-  const formatted = formatPrintf().transform(info as TransformableInfo);
-  const output = formatted as TransformableInfo;
+  const output = transformInfo(formatPrintf(), createInfo(info));
   const ansiEscapePattern = new RegExp(`${String.fromCodePoint(27)}${String.raw`\[[0-?]*[ -/]*[@-~]`}`, 'g');
   return String(output[MESSAGE]).replaceAll(ansiEscapePattern, '');
 }
@@ -136,7 +156,59 @@ describe('formatSensitiveData', () => {
   });
 
   it('returns info unchanged when message is not a string', () => {
-    const info = formatSensitiveData().transform({ level: 'debug', message: 42 } as unknown as TransformableInfo);
-    expect((info as TransformableInfo).message).toBe(42);
+    const info = transformInfo(formatSensitiveData(), createInfo({ message: 42 }));
+    expect(info.message).toBe(42);
+  });
+
+  it('masks SINs in metadata', () => {
+    const info = transformInfo(formatSensitiveData(), createInfo({ message: 'Application received', sin: '123456782' }));
+
+    expect(info.sin).toBe('"***-***-782"');
+  });
+
+  it('masks numeric SINs in metadata', () => {
+    const info = transformInfo(formatSensitiveData(), createInfo({ message: 'Application received', sin: 123_456_782 }));
+
+    expect(info.sin).toBe('"***-***-782"');
+  });
+
+  it('masks SINs in nested metadata and arrays', () => {
+    const info = transformInfo(
+      formatSensitiveData(),
+      createInfo({
+        applicant: { sin: '123456782' },
+        dependants: [{ sin: '987654324' }],
+        level: 'debug',
+        message: 'Application received',
+      }),
+    );
+
+    expect(info.applicant).toEqual({ sin: '"***-***-782"' });
+    expect(info.dependants).toEqual([{ sin: '"***-***-324"' }]);
+  });
+
+  it('masks SINs in SPLAT arguments', () => {
+    const info = transformInfo(
+      formatSensitiveData(),
+      createInfo({
+        message: 'Application received',
+        [SPLAT]: ['123456782', { sin: '987654324' }],
+      }),
+    );
+
+    expect(info[SPLAT]).toEqual(['"***-***-782"', { sin: '"***-***-324"' }]);
+  });
+
+  it('does not add SPLAT when log has no extra arguments', () => {
+    const info = transformInfo(formatSensitiveData(), createInfo({ message: 'Application received' }));
+
+    expect(SPLAT in info).toBe(false);
+  });
+
+  it('handles circular metadata', () => {
+    const metadata: Record<string, unknown> = { sin: '123456782' };
+    metadata.self = metadata;
+
+    expect(() => transformInfo(formatSensitiveData(), createInfo({ message: 'Application received', metadata }))).not.toThrow();
   });
 });
