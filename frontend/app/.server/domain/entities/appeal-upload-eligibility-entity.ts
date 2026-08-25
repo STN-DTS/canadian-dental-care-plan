@@ -23,6 +23,11 @@ export type AppealUploadEligibilityResponseEntity = ReadonlyDeep<{
   }>;
   esdc_socialinsurancenumber: string;
   esdc_suspendedon: null | string;
+  /**
+   * Dynamics 365 standard state code:
+   * 0 = Active
+   * 1 = Inactive
+   */
   statecode: number;
   statuscode: number;
 }>;

@@ -1,61 +1,69 @@
 {
-  "@odata.context": "https://canadadental-uat.crm3.dynamics.com/api/data/v9.2/$metadata#esdc_evidentiarydocumenttypes(esdc_evidentiarydocumenttypeid,esdc_value,esdc_nameenglish,esdc_namefrench)",
+  "@odata.context": "https://canadadental-uat.crm3.dynamics.com/api/data/v9.2/$metadata#esdc_evidentiarydocumenttypes(esdc_evidentiarydocumenttypeid,esdc_value,esdc_nameenglish,esdc_namefrench,statecode)",
   "value": [
     {
-      "@odata.etag": "W/\"258946848\"",
-      "esdc_namefrench": "Record of Employment (ROE) [FR]",
-      "esdc_evidentiarydocumenttypeid": "e6706125-9e9f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"283814228\"",
+      "esdc_nameenglish": "Canadian Dental Care Plan Eligibility Review Form",
+      "esdc_namefrench": "Formulaire d’examen de l’admissibilité des membres du Régime canadien de soins dentaires",
+      "esdc_evidentiarydocumenttypeid": "3fa18881-0d60-f111-ab0c-6045bdf9c6da",
+      "esdc_value": "007",
+      "statecode": 0
+    },
+    {
+      "@odata.etag": "W/\"281271107\"",
       "esdc_nameenglish": "Record of Employment (ROE)",
-      "esdc_value": "002"
+      "esdc_namefrench": "Relevé d’emploi (RE)",
+      "esdc_evidentiarydocumenttypeid": "e6706125-9e9f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "002",
+      "statecode": 0
     },
     {
-      "@odata.etag": "W/\"258946851\"",
-      "esdc_namefrench": "T4/T4A [FR]",
-      "esdc_evidentiarydocumenttypeid": "366fffa1-9e9f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281680378\"",
       "esdc_nameenglish": "T4/T4A",
-      "esdc_value": "003"
+      "esdc_namefrench": "T4/T4A",
+      "esdc_evidentiarydocumenttypeid": "366fffa1-9e9f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "003",
+      "statecode": 1
     },
     {
-      "@odata.etag": "W/\"258946853\"",
-      "esdc_namefrench": "Employer Letter [FR]",
-      "esdc_evidentiarydocumenttypeid": "de3c6d3c-9f9f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281271111\"",
       "esdc_nameenglish": "Employer Letter",
-      "esdc_value": "004"
+      "esdc_namefrench": "Lettre – employeur",
+      "esdc_evidentiarydocumenttypeid": "de3c6d3c-9f9f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "004",
+      "statecode": 0
     },
     {
-      "@odata.etag": "W/\"258946855\"",
-      "esdc_namefrench": "Benefit Provider Letter [FR]",
-      "esdc_evidentiarydocumenttypeid": "70a54c5a-9f9f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281271113\"",
       "esdc_nameenglish": "Benefit Provider Letter",
-      "esdc_value": "005"
+      "esdc_namefrench": "Lettre – fournisseur de prestations",
+      "esdc_evidentiarydocumenttypeid": "70a54c5a-9f9f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "005",
+      "statecode": 0
     },
     {
-      "@odata.etag": "W/\"258946857\"",
-      "esdc_namefrench": "Employer/Benefit Provider Email [FR]",
-      "esdc_evidentiarydocumenttypeid": "31cb26b3-9f9f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281271108\"",
       "esdc_nameenglish": "Employer/Benefit Provider Email",
-      "esdc_value": "006"
+      "esdc_namefrench": "Courriel – employeur/fournisseur de services",
+      "esdc_evidentiarydocumenttypeid": "31cb26b3-9f9f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "006",
+      "statecode": 0
     },
     {
-      "@odata.etag": "W/\"258946859\"",
-      "esdc_namefrench": "Notice of Eligibility [FR]",
-      "esdc_evidentiarydocumenttypeid": "9f9d1cc5-9f9f-f011-bbd2-7ced8d05477c",
-      "esdc_nameenglish": "Notice of Eligibility",
-      "esdc_value": "100"
-    },
-    {
-      "@odata.etag": "W/\"258946861\"",
-      "esdc_namefrench": "Multiple evidence items [FR]",
-      "esdc_evidentiarydocumenttypeid": "93b9c6c5-a09f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281271112\"",
       "esdc_nameenglish": "Multiple evidence items",
-      "esdc_value": "997"
+      "esdc_namefrench": "Éléments de preuve multiples",
+      "esdc_evidentiarydocumenttypeid": "93b9c6c5-a09f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "997",
+      "statecode": 0
     },
     {
-      "@odata.etag": "W/\"258946863\"",
-      "esdc_namefrench": "Other [FR]",
-      "esdc_evidentiarydocumenttypeid": "27c7afd7-a09f-f011-bbd2-7ced8d05477c",
+      "@odata.etag": "W/\"281271110\"",
       "esdc_nameenglish": "Other",
-      "esdc_value": "998"
+      "esdc_namefrench": "Autre",
+      "esdc_evidentiarydocumenttypeid": "27c7afd7-a09f-f011-bbd2-7ced8d05477c",
+      "esdc_value": "998",
+      "statecode": 0
     }
   ]
 }
