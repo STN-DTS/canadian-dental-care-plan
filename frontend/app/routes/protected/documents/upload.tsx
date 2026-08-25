@@ -32,6 +32,7 @@ import { InputLegend } from '~/components/input-legend';
 import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
+import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
 import { useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { useClientEnv } from '~/root';
@@ -125,7 +126,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
 
-  const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypes(locale);
+  const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypesByStatus(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, locale);
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
   const idToken: IdToken = session.get('idToken');
