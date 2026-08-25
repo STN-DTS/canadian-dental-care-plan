@@ -54,4 +54,19 @@ declare global {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type OmitStrict<T, K extends keyof T> = T extends any ? Pick<T, Exclude<keyof T, K>> : never;
+
+  /**
+   * Compile-time-only marker used to distinguish otherwise compatible types.
+   */
+  declare const brand: unique symbol;
+
+  /**
+   * Adds a compile-time identity to a value without changing its runtime type.
+   *
+   * Values with the same underlying type but different names are not
+   * interchangeable.
+   */
+  type Brand<Value, Name extends string> = Value & {
+    readonly [brand]: Name;
+  };
 }
