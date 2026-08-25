@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { EvidentiaryDocumentTypeDto, EvidentiaryDocumentTypeLocalizedDto } from '~/.server/domain/dtos';
 import type { EvidentiaryDocumentTypeEntity } from '~/.server/domain/entities';
+import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 export interface EvidentiaryDocumentTypeDtoMapper {
   mapEvidentiaryDocumentTypeDtoToEvidentiaryDocumentTypeLocalizedDto(evidentiaryDocumentTypeDto: EvidentiaryDocumentTypeDto, locale: AppLocale): EvidentiaryDocumentTypeLocalizedDto;
@@ -30,6 +31,7 @@ export class DefaultEvidentiaryDocumentTypeDtoMapper implements EvidentiaryDocum
       code: evidentiaryDocumentTypeEntity.esdc_value,
       nameEn: evidentiaryDocumentTypeEntity.esdc_nameenglish,
       nameFr: evidentiaryDocumentTypeEntity.esdc_namefrench,
+      status: evidentiaryDocumentTypeEntity.statecode as EvidentiaryDocumentTypeStatus,
     };
   }
 

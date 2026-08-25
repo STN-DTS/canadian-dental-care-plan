@@ -1,3 +1,5 @@
+import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
+
 /**
  * Represents a Data Transfer Object (DTO) for a evidentiary document type.
  */
@@ -13,6 +15,9 @@ export type EvidentiaryDocumentTypeDto = Readonly<{
 
   /** Evidentiary document type in French. */
   nameFr: string;
+
+  /** Status of the evidentiary document type. */
+  status: EvidentiaryDocumentTypeStatus;
 }>;
 
 /**
