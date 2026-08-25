@@ -73,7 +73,7 @@
     "import-in-the-middle": "^3.3.3",
     "inversify": "^8.2.3",
     "isbot": "^5.2.1",
-    "jose": "^6.2.9",
+    "jose": "^6.2.10",
     "libphonenumber-js": "^1.13.11",
     "markdown-to-jsx": "^9.10.2",
     "micro-memoize": "^5.1.2",
