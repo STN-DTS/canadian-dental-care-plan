@@ -215,7 +215,7 @@ export default function ProtectedRenewChildChildrensApplication({ loaderData, pa
               <Card className="my-4">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.sinCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.sinCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>
                     <StatusTag status="optional" />
@@ -227,7 +227,7 @@ export default function ProtectedRenewChildChildrensApplication({ loaderData, pa
               <Card className="my-4">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.parentGuardianCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.parentGuardianCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>{sections.parentGuardian.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>
@@ -237,7 +237,7 @@ export default function ProtectedRenewChildChildrensApplication({ loaderData, pa
               <Card className="my-4">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.childDentalInsuranceCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.childDentalInsuranceCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>{sections.dentalInsurance.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>
@@ -247,7 +247,7 @@ export default function ProtectedRenewChildChildrensApplication({ loaderData, pa
               <Card className="my-4">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.childDentalBenefitsCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.childDentalBenefitsCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>{sections.dentalBenefits.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>

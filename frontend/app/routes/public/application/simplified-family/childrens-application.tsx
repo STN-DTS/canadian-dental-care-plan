@@ -200,11 +200,11 @@ export default function RenewFamilyChildrensApplication({ loaderData, params }: 
               <Card className="my-2">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>
+                    <h3>
                       {t(($) => $.childrensApplication.childInformationCardTitle, {
                         childNumber: index + 1,
                       })}
-                    </h2>
+                    </h3>
                   </CardTitle>
                   <CardAction>{sections.childInformation.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>
@@ -243,7 +243,7 @@ export default function RenewFamilyChildrensApplication({ loaderData, params }: 
               <Card className="my-2">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.childDentalInsuranceCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.childDentalInsuranceCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>{sections.dentalInsurance.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>
@@ -277,7 +277,7 @@ export default function RenewFamilyChildrensApplication({ loaderData, params }: 
               <Card className="my-2">
                 <CardHeader>
                   <CardTitle asChild>
-                    <h2>{t(($) => $.childrensApplication.childDentalBenefitsCardTitle)}</h2>
+                    <h3>{t(($) => $.childrensApplication.childDentalBenefitsCardTitle)}</h3>
                   </CardTitle>
                   <CardAction>{sections.dentalBenefits.completed && <StatusTag status="complete" />}</CardAction>
                 </CardHeader>
