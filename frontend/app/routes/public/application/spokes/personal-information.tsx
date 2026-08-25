@@ -14,6 +14,7 @@ import { isSinReserved } from '~/.server/routes/helpers/base-application-route-h
 import type { PublicApplicationApplicantInformationState, PublicApplicationInputModelState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getPublicApplicationState, getPublicChildrenSins, getPublicPartnerSin, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
+import { stripHtml } from '~/.server/utils/string-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
@@ -55,6 +56,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   return {
     state: state.applicantInformation,
     isRenewalContext: state.context === 'renewal',
+    nameInstructionsAriaDescription: stripHtml(t(($) => $.personalInformation.nameInstructions)),
     meta,
   };
 }
@@ -262,7 +264,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
 export default function ApplicationPersonalInformation({ loaderData, params }: Route.ComponentProps) {
   const { t } = useTranslation(['applicationSpokes', 'application']);
-  const { state, isRenewalContext } = loaderData;
+  const { state, isRenewalContext, nameInstructionsAriaDescription } = loaderData;
 
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
@@ -326,7 +328,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.firstName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={t(($) => $.personalInformation.nameInstructionsAriaDescription)}
+                  aria-description={nameInstructionsAriaDescription}
                   autoComplete="given-name"
                   defaultValue={state?.firstName ?? ''}
                   errorMessage={errors?.firstName}
@@ -338,7 +340,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.lastName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={t(($) => $.personalInformation.nameInstructionsAriaDescription)}
+                  aria-description={nameInstructionsAriaDescription}
                   autoComplete="family-name"
                   defaultValue={state?.lastName ?? ''}
                   errorMessage={errors?.lastName}

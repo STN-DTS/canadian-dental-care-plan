@@ -209,7 +209,6 @@ const ns = {
     dob: "Date of birth",
     singleLegalName: "If you have one legal name",
     nameInstructions: "If you have only one legal name, enter it in <strong>both</strong> the first and last name fields.",
-    nameInstructionsAriaDescription: "If you have only one legal name, enter it in both the first and last name fields.",
     backBtn: "Back",
     saveBtn: "Save",
     helpMessage: {
