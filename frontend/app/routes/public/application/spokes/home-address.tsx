@@ -264,73 +264,71 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
           <ErrorSummary />
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
-            <fieldset className="mb-8">
-              <div className="space-y-6">
-                <InputSanitizeField
-                  id="homeAddress"
-                  name="address"
-                  className="w-full"
-                  label={t(($) => $.address.addressField.address)}
-                  helpMessagePrimary={t(($) => $.address.addressField.addressHelp)}
-                  helpMessagePrimaryClassName="text-black"
-                  maxLength={100}
-                  autoComplete="address-line1"
-                  defaultValue={defaultState.address}
-                  errorMessage={errors?.address}
-                  required
-                />
-                <InputSanitizeField
-                  id="home-apartment"
-                  name="apartment"
-                  className="w-full"
-                  label={t(($) => $.address.addressField.apartment)}
-                  maxLength={100}
-                  helpMessagePrimary={t(($) => $.address.addressField.apartmentHelp)}
-                  helpMessagePrimaryClassName="text-black"
-                  autoComplete="address-line2"
-                  defaultValue=""
-                  errorMessage={errors?.apartment}
-                />
-                <InputSanitizeField id="home-city" name="city" className="w-full" label={t(($) => $.address.addressField.city)} maxLength={100} autoComplete="address-level2" defaultValue={defaultState.city} errorMessage={errors?.city} required />
-                <InputSanitizeField
-                  id="home-postal-code"
-                  name="postalZipCode"
-                  className="w-full sm:w-1/2"
-                  label={isPostalCodeRequired ? t(($) => $.address.addressField.postalCode) : t(($) => $.address.addressField.postalCodeOptional)}
-                  maxLength={100}
-                  autoComplete="postal-code"
-                  defaultValue={defaultState.postalCode ?? ''}
-                  errorMessage={errors?.postalZipCode}
-                  required={isPostalCodeRequired}
-                  helpMessagePrimary={postalCodeHelpMessage}
-                  helpMessagePrimaryClassName="text-black"
-                />
-                {homeRegions.length > 0 && (
-                  <InputSelect
-                    id="home-province"
-                    name="provinceStateId"
-                    className="w-full sm:w-1/2"
-                    label={t(($) => $.address.addressField.province)}
-                    defaultValue={defaultState.province}
-                    errorMessage={errors?.provinceStateId}
-                    options={[dummyOption, ...homeRegions]}
-                    required
-                  />
-                )}
+            <div className="mb-8 space-y-6">
+              <InputSanitizeField
+                id="homeAddress"
+                name="address"
+                className="w-full"
+                label={t(($) => $.address.addressField.address)}
+                helpMessagePrimary={t(($) => $.address.addressField.addressHelp)}
+                helpMessagePrimaryClassName="text-black"
+                maxLength={100}
+                autoComplete="address-line1"
+                defaultValue={defaultState.address}
+                errorMessage={errors?.address}
+                required
+              />
+              <InputSanitizeField
+                id="home-apartment"
+                name="apartment"
+                className="w-full"
+                label={t(($) => $.address.addressField.apartment)}
+                maxLength={100}
+                helpMessagePrimary={t(($) => $.address.addressField.apartmentHelp)}
+                helpMessagePrimaryClassName="text-black"
+                autoComplete="address-line2"
+                defaultValue=""
+                errorMessage={errors?.apartment}
+              />
+              <InputSanitizeField id="home-city" name="city" className="w-full" label={t(($) => $.address.addressField.city)} maxLength={100} autoComplete="address-level2" defaultValue={defaultState.city} errorMessage={errors?.city} required />
+              <InputSanitizeField
+                id="home-postal-code"
+                name="postalZipCode"
+                className="w-full sm:w-1/2"
+                label={isPostalCodeRequired ? t(($) => $.address.addressField.postalCode) : t(($) => $.address.addressField.postalCodeOptional)}
+                maxLength={100}
+                autoComplete="postal-code"
+                defaultValue={defaultState.postalCode ?? ''}
+                errorMessage={errors?.postalZipCode}
+                required={isPostalCodeRequired}
+                helpMessagePrimary={postalCodeHelpMessage}
+                helpMessagePrimaryClassName="text-black"
+              />
+              {homeRegions.length > 0 && (
                 <InputSelect
-                  id="home-country"
-                  name="countryId"
+                  id="home-province"
+                  name="provinceStateId"
                   className="w-full sm:w-1/2"
-                  label={t(($) => $.address.addressField.country)}
-                  autoComplete="country"
-                  defaultValue={defaultState.country ?? ''}
-                  errorMessage={errors?.countryId}
-                  options={countries}
-                  onChange={homeCountryChangeHandler}
+                  label={t(($) => $.address.addressField.province)}
+                  defaultValue={defaultState.province}
+                  errorMessage={errors?.provinceStateId}
+                  options={[dummyOption, ...homeRegions]}
                   required
                 />
-              </div>
-            </fieldset>
+              )}
+              <InputSelect
+                id="home-country"
+                name="countryId"
+                className="w-full sm:w-1/2"
+                label={t(($) => $.address.addressField.country)}
+                autoComplete="country"
+                defaultValue={defaultState.country ?? ''}
+                errorMessage={errors?.countryId}
+                options={countries}
+                onChange={homeCountryChangeHandler}
+                required
+              />
+            </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <Dialog open={addressDialogContent !== undefined} onOpenChange={onDialogOpenChangeHandler}>
                 <DialogTrigger asChild>

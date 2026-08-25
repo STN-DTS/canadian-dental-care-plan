@@ -303,76 +303,74 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
           <ErrorSummary />
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
-            <fieldset className="mb-6">
-              <div className="space-y-6">
-                <InputSanitizeField
-                  id="mailingAddress"
-                  name="address"
-                  className="w-full"
-                  label={t(($) => $.address.addressField.address)}
-                  maxLength={100}
-                  helpMessagePrimary={t(($) => $.address.addressField.addressHelp)}
-                  helpMessagePrimaryClassName="text-black"
-                  autoComplete="address-line1"
-                  defaultValue={defaultState.address}
-                  errorMessage={errors?.address}
-                  required
-                />
-                <InputSanitizeField
-                  id="mailing-apartment"
-                  name="apartment"
-                  className="w-full"
-                  label={t(($) => $.address.addressField.apartment)}
-                  maxLength={100}
-                  helpMessagePrimary={t(($) => $.address.addressField.apartmentHelp)}
-                  helpMessagePrimaryClassName="text-black"
-                  autoComplete="address-line2"
-                  defaultValue=""
-                  errorMessage={errors?.apartment}
-                />
-                <InputSanitizeField id="mailing-city" name="city" className="w-full" label={t(($) => $.address.addressField.city)} maxLength={100} autoComplete="address-level2" defaultValue={defaultState.city} errorMessage={errors?.city} required />
-                <InputSanitizeField
-                  id="mailing-postal-code"
-                  name="postalZipCode"
-                  className="w-full sm:w-1/2"
-                  label={isPostalCodeRequired ? t(($) => $.address.addressField.postalCode) : t(($) => $.address.addressField.postalCodeOptional)}
-                  maxLength={100}
-                  autoComplete="postal-code"
-                  defaultValue={defaultState.postalCode}
-                  errorMessage={errors?.postalZipCode}
-                  required={isPostalCodeRequired}
-                  helpMessagePrimary={postalCodeHelpMessage}
-                  helpMessagePrimaryClassName="text-black"
-                />
-                {mailingRegions.length > 0 && (
-                  <InputSelect
-                    id="mailing-province"
-                    name="provinceStateId"
-                    className="w-full sm:w-1/2"
-                    label={t(($) => $.address.addressField.province)}
-                    defaultValue={defaultState.province}
-                    errorMessage={errors?.provinceStateId}
-                    options={[dummyOption, ...mailingRegions]}
-                    required
-                  />
-                )}
+            <div className="mb-8 space-y-6">
+              <InputSanitizeField
+                id="mailingAddress"
+                name="address"
+                className="w-full"
+                label={t(($) => $.address.addressField.address)}
+                maxLength={100}
+                helpMessagePrimary={t(($) => $.address.addressField.addressHelp)}
+                helpMessagePrimaryClassName="text-black"
+                autoComplete="address-line1"
+                defaultValue={defaultState.address}
+                errorMessage={errors?.address}
+                required
+              />
+              <InputSanitizeField
+                id="mailing-apartment"
+                name="apartment"
+                className="w-full"
+                label={t(($) => $.address.addressField.apartment)}
+                maxLength={100}
+                helpMessagePrimary={t(($) => $.address.addressField.apartmentHelp)}
+                helpMessagePrimaryClassName="text-black"
+                autoComplete="address-line2"
+                defaultValue=""
+                errorMessage={errors?.apartment}
+              />
+              <InputSanitizeField id="mailing-city" name="city" className="w-full" label={t(($) => $.address.addressField.city)} maxLength={100} autoComplete="address-level2" defaultValue={defaultState.city} errorMessage={errors?.city} required />
+              <InputSanitizeField
+                id="mailing-postal-code"
+                name="postalZipCode"
+                className="w-full sm:w-1/2"
+                label={isPostalCodeRequired ? t(($) => $.address.addressField.postalCode) : t(($) => $.address.addressField.postalCodeOptional)}
+                maxLength={100}
+                autoComplete="postal-code"
+                defaultValue={defaultState.postalCode}
+                errorMessage={errors?.postalZipCode}
+                required={isPostalCodeRequired}
+                helpMessagePrimary={postalCodeHelpMessage}
+                helpMessagePrimaryClassName="text-black"
+              />
+              {mailingRegions.length > 0 && (
                 <InputSelect
-                  id="mailing-country"
-                  name="countryId"
+                  id="mailing-province"
+                  name="provinceStateId"
                   className="w-full sm:w-1/2"
-                  label={t(($) => $.address.addressField.country)}
-                  autoComplete="country"
-                  defaultValue={defaultState.country}
-                  errorMessage={errors?.countryId}
-                  options={countries}
-                  onChange={mailingCountryChangeHandler}
+                  label={t(($) => $.address.addressField.province)}
+                  defaultValue={defaultState.province}
+                  errorMessage={errors?.provinceStateId}
+                  options={[dummyOption, ...mailingRegions]}
                   required
                 />
-                <InputCheckbox id="sync-addresses" name="syncAddresses" value="true" checked={copyAddressChecked} onChange={checkHandler}>
-                  {t(($) => $.address.homeAddress.useMailingAddress)}
-                </InputCheckbox>
-              </div>
-            </fieldset>
+              )}
+              <InputSelect
+                id="mailing-country"
+                name="countryId"
+                className="w-full sm:w-1/2"
+                label={t(($) => $.address.addressField.country)}
+                autoComplete="country"
+                defaultValue={defaultState.country}
+                errorMessage={errors?.countryId}
+                options={countries}
+                onChange={mailingCountryChangeHandler}
+                required
+              />
+              <InputCheckbox id="sync-addresses" name="syncAddresses" value="true" checked={copyAddressChecked} onChange={checkHandler}>
+                {t(($) => $.address.homeAddress.useMailingAddress)}
+              </InputCheckbox>
+            </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <Dialog open={addressDialogContent !== undefined} onOpenChange={onDialogOpenChangeHandler}>
                 <DialogTrigger asChild>

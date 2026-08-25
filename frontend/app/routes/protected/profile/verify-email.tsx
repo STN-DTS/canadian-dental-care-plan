@@ -272,7 +272,7 @@ export default function ProtectedProfileVerifyEmail({ loaderData, params }: Rout
           <ErrorSummary />
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
-            <fieldset className="mb-6">
+            <div className="mb-6">
               <p className="mb-4">
                 {t(($) => $.verifyEmail.verificationCode, {
                   email: email,
@@ -300,7 +300,7 @@ export default function ProtectedProfileVerifyEmail({ loaderData, params }: Rout
               >
                 {t(($) => $.verifyEmail.requestNewCode)}
               </LoadingButton>
-            </fieldset>
+            </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <LoadingButton
                 variant="primary"
