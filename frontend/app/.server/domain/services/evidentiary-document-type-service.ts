@@ -10,6 +10,7 @@ import type { EvidentiaryDocumentTypeDtoMapper } from '~/.server/domain/mappers'
 import type { EvidentiaryDocumentTypeRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 /**
  * Service interface for managing evidentiary document type data.
@@ -21,6 +22,14 @@ export interface EvidentiaryDocumentTypeService {
    * @returns An array of evidentiary document type DTOs.
    */
   listEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>>;
+
+  /**
+   * Retrieves evidentiary document types with the specified status.
+   *
+   * @param status - The status of the evidentiary document types to retrieve.
+   * @returns Evidentiary document type DTOs with the specified status.
+   */
+  listEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>>;
 
   /**
    * Retrieves a specific evidentiary document type by its ID.
@@ -38,6 +47,15 @@ export interface EvidentiaryDocumentTypeService {
    * @returns An array of evidentiary document type DTOs in the specified locale.
    */
   listLocalizedEvidentiaryDocumentTypes(locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>>;
+
+  /**
+   * Retrieves localized evidentiary document types with the specified status.
+   *
+   * @param status - The status of the evidentiary document types to retrieve.
+   * @param locale - The desired locale (e.g., 'en' or 'fr').
+   * @returns Localized evidentiary document type DTOs with the specified status.
+   */
+  listLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>>;
 
   /**
    * Retrieves a specific evidentiary document type by its ID in the specified locale.
@@ -104,6 +122,14 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return evidentiaryDocumentTypeDtos;
   }
 
+  async listEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>> {
+    this.log.trace('Getting evidentiary document types with status: [%s]', status);
+    const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
+    const filteredEvidentiaryDocumentTypeDtos = evidentiaryDocumentTypeDtos.filter(({ status: dtoStatus }) => dtoStatus === status);
+    this.log.trace('Returning evidentiary document types with status: [%s]: [%j]', status, filteredEvidentiaryDocumentTypeDtos);
+    return filteredEvidentiaryDocumentTypeDtos;
+  }
+
   async getEvidentiaryDocumentTypeById(id: string): Promise<EvidentiaryDocumentTypeDto> {
     this.log.trace('Getting evidentiary document type with id: [%s]', id);
 
@@ -124,6 +150,14 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
     const localizedEvidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos, locale);
     this.log.trace('Returning localized evidentiary document types: [%j]', localizedEvidentiaryDocumentTypeDtos);
+    return localizedEvidentiaryDocumentTypeDtos;
+  }
+
+  async listLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
+    this.log.trace('Getting localized evidentiary document types with status: [%s] and locale: [%s]', status, locale);
+    const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypesByStatus(status);
+    const localizedEvidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos, locale);
+    this.log.trace('Returning localized evidentiary document types with status: [%s]: [%j]', status, localizedEvidentiaryDocumentTypeDtos);
     return localizedEvidentiaryDocumentTypeDtos;
   }
 
