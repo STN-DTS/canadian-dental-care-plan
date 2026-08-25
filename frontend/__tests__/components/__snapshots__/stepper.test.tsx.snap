@@ -31,7 +31,7 @@ exports[`Stepper > renders correctly when all steps are completed > expected htm
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
       >
         Step 1
         <span
@@ -67,7 +67,7 @@ exports[`Stepper > renders correctly when all steps are completed > expected htm
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
       >
         Step 2
         <span
@@ -99,7 +99,7 @@ exports[`Stepper > renders correctly when all steps are completed > expected htm
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
       >
         Step 3
         <span
@@ -145,7 +145,7 @@ exports[`Stepper > renders correctly with active step 1 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap font-semibold text-blue-600"
+        class="wrap-break-words grow text-left text-sm transition-colors duration-200 font-semibold text-blue-600"
       >
         Step 1
       </span>
@@ -176,7 +176,7 @@ exports[`Stepper > renders correctly with active step 1 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap text-black/60"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Step 2
         <span
@@ -208,7 +208,7 @@ exports[`Stepper > renders correctly with active step 1 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap text-black/60"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Step 3
         <span
@@ -253,7 +253,7 @@ exports[`Stepper > renders correctly with active step 2 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
       >
         Step 1
         <span
@@ -290,7 +290,7 @@ exports[`Stepper > renders correctly with active step 2 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap font-semibold text-blue-600"
+        class="wrap-break-words grow text-left text-sm transition-colors duration-200 font-semibold text-blue-600"
       >
         Step 2
       </span>
@@ -317,7 +317,7 @@ exports[`Stepper > renders correctly with active step 2 > expected html 1`] = `
         </svg>
       </div>
       <span
-        class="grow overflow-hidden text-left text-sm font-medium text-nowrap text-ellipsis transition-colors duration-200 sm:overflow-auto sm:text-wrap text-black/60"
+        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Step 3
         <span
