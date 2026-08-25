@@ -326,7 +326,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.firstName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={t(($) => $.personalInformation.nameInstructions)}
+                  aria-describedby="name-instructions-content"
                   autoComplete="given-name"
                   defaultValue={state?.firstName ?? ''}
                   errorMessage={errors?.firstName}
@@ -338,7 +338,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.lastName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={t(($) => $.personalInformation.nameInstructions)}
+                  aria-describedby="name-instructions-content"
                   autoComplete="family-name"
                   defaultValue={state?.lastName ?? ''}
                   errorMessage={errors?.lastName}
