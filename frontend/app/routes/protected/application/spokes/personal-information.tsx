@@ -18,7 +18,6 @@ import {
   validateProtectedApplicationContext,
 } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import { stripHtml } from '~/.server/utils/string-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
@@ -59,7 +58,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   return {
     state: state.applicantInformation,
-    nameInstructionsAriaDescription: stripHtml(t(($) => $.personalInformation.nameInstructions)),
     meta,
   };
 }
@@ -213,7 +211,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
 export default function ApplicationPersonalInformation({ loaderData, params }: Route.ComponentProps) {
   const { t } = useTranslation(['protectedApplicationSpokes', 'protectedApplication']);
-  const { state, nameInstructionsAriaDescription } = loaderData;
+  const { state } = loaderData;
 
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
@@ -238,7 +236,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.firstName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={nameInstructionsAriaDescription}
+                  aria-describedby="name-instructions-content"
                   autoComplete="given-name"
                   defaultValue={state?.firstName ?? ''}
                   errorMessage={errors?.firstName}
@@ -250,7 +248,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
                   label={t(($) => $.personalInformation.lastName)}
                   className="w-full"
                   maxLength={100}
-                  aria-description={nameInstructionsAriaDescription}
+                  aria-describedby="name-instructions-content"
                   autoComplete="family-name"
                   defaultValue={state?.lastName ?? ''}
                   errorMessage={errors?.lastName}
