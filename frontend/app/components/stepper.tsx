@@ -93,7 +93,7 @@ function StepItem({ label, status, isLast, customIcon }: StepItemProps) {
         )}
       </div>
       {/* Label */}
-      <span className={cn('wrap-break-words grow text-left text-sm font-medium transition-colors duration-200', status === 'upcoming' && 'text-black/60', status === 'current' && 'font-semibold text-blue-600')}>
+      <span className={cn('text-sm font-medium transition-colors duration-200', status === 'upcoming' && 'text-black/60', status === 'current' && 'font-semibold text-blue-600')}>
         {label}
         {status === 'completed' && <span className="sr-only">{t(($) => $.stepper.status.completed)}</span>}
         {status === 'upcoming' && <span className="sr-only">{t(($) => $.stepper.status.upcoming)}</span>}

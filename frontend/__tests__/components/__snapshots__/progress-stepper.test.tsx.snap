@@ -31,7 +31,7 @@ exports[`ProgressStepper > renders correctly when all steps are completed (activ
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         First Step
         <span
@@ -67,7 +67,7 @@ exports[`ProgressStepper > renders correctly when all steps are completed (activ
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         Second Step
         <span
@@ -99,7 +99,7 @@ exports[`ProgressStepper > renders correctly when all steps are completed (activ
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         Third Step
         <span
@@ -145,7 +145,7 @@ exports[`ProgressStepper > renders correctly with the first step active > expect
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm transition-colors duration-200 font-semibold text-blue-600"
+        class="text-sm transition-colors duration-200 font-semibold text-blue-600"
       >
         First Step
       </span>
@@ -176,7 +176,7 @@ exports[`ProgressStepper > renders correctly with the first step active > expect
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
+        class="text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Second Step
         <span
@@ -208,7 +208,7 @@ exports[`ProgressStepper > renders correctly with the first step active > expect
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
+        class="text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Third Step
         <span
@@ -253,7 +253,7 @@ exports[`ProgressStepper > renders correctly with the last step active > expecte
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         First Step
         <span
@@ -289,7 +289,7 @@ exports[`ProgressStepper > renders correctly with the last step active > expecte
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         Second Step
         <span
@@ -322,7 +322,7 @@ exports[`ProgressStepper > renders correctly with the last step active > expecte
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm transition-colors duration-200 font-semibold text-blue-600"
+        class="text-sm transition-colors duration-200 font-semibold text-blue-600"
       >
         Third Step
       </span>
@@ -362,7 +362,7 @@ exports[`ProgressStepper > renders correctly with the second step active > expec
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200"
+        class="text-sm font-medium transition-colors duration-200"
       >
         First Step
         <span
@@ -399,7 +399,7 @@ exports[`ProgressStepper > renders correctly with the second step active > expec
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm transition-colors duration-200 font-semibold text-blue-600"
+        class="text-sm transition-colors duration-200 font-semibold text-blue-600"
       >
         Second Step
       </span>
@@ -426,7 +426,7 @@ exports[`ProgressStepper > renders correctly with the second step active > expec
         </svg>
       </div>
       <span
-        class="wrap-break-words grow text-left text-sm font-medium transition-colors duration-200 text-black/60"
+        class="text-sm font-medium transition-colors duration-200 text-black/60"
       >
         Third Step
         <span
