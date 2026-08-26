@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 import { redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
@@ -144,11 +146,30 @@ export default function ProtectedNewChildChildrensApplication({ loaderData, para
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
+  const [announcement, setAnnouncement] = useState('');
+  const previousChildCountRef = useRef(state.children.length);
+
+  useEffect(() => {
+    const previousChildCount = previousChildCountRef.current;
+    const currentChildCount = state.children.length;
+
+    if (currentChildCount > previousChildCount) {
+      setAnnouncement(t(($) => $.childrensApplication.childAdded));
+    } else if (currentChildCount < previousChildCount) {
+      setAnnouncement(t(($) => $.childrensApplication.childRemoved));
+    }
+
+    previousChildCountRef.current = currentChildCount;
+  }, [state.children.length, t]);
+
   const allChildrenCompleted = state.children.length > 0 && childrenSections.every((child) => Object.values(child.sections).every((section) => section.completed));
 
   return (
     <>
       <AppPageTitle>{t(($) => $.childrensApplication.pageTitle)}</AppPageTitle>
+      <div aria-live="polite" aria-atomic="true" role="status" className="sr-only">
+        {announcement}
+      </div>
       <ProgressStepper activeStep="childrensApplication" className="mb-8" />
       <div className="max-w-prose space-y-8">
         {state.children.map((child, index) => {

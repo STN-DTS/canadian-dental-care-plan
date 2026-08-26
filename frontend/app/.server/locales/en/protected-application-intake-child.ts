@@ -182,6 +182,8 @@ const ns = {
     removeChild: "Remove child",
     removeChildAccessibleName: "Remove child {{childNumber}}",
     removeChildAccessibleNameWithName: "Remove child {{childNumber}}, {{childName}}",
+    childAdded: "A child has been added to your application.",
+    childRemoved: "A child has been removed from your application.",
   },
 } as const;
 

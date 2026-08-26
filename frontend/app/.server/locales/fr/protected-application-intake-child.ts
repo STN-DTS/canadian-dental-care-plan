@@ -182,6 +182,8 @@ const ns = {
     removeChild: "Retirer l'enfant",
     removeChildAccessibleName: "Retirer l'enfant {{childNumber}}",
     removeChildAccessibleNameWithName: "Retirer l'enfant {{childNumber}}, {{childName}}",
+    childAdded: "Un enfant a été ajouté à votre demande.",
+    childRemoved: "Un enfant a été retiré de votre demande.",
   },
 } as const;
 
