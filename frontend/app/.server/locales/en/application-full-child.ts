@@ -181,6 +181,7 @@ const ns = {
     backBtn: "Parent or legal guardian information",
     submitBtn: "Submit",
     addChild: "Add a child",
+    addChildAccessibleName: "Add child {{childNumber}}",
     removeChild: "Remove child",
   },
 } as const;

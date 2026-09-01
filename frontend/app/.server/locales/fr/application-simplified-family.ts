@@ -95,6 +95,7 @@ const ns = {
     backBtn: "Votre accès à une assurance dentaire",
     submitBtn: "Soumettre la demande",
     addChild: "Ajouter un enfant",
+    addChildAccessibleName: "Ajouter l'enfant {{childNumber}}",
     removeChild: "Retirer l'enfant",
     noChange: "Pas de mise à jour.",
   },
