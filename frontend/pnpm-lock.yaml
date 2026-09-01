@@ -166,6 +166,9 @@ importers:
       '@opentelemetry/sdk-node':
         specifier: ^0.221.0
         version: 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+      '@opentelemetry/semantic-conventions':
+        specifier: ^1.43.0
+        version: 1.43.0
       '@oslojs/crypto':
         specifier: ^1.0.1
         version: 1.0.1
