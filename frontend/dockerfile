@@ -85,7 +85,7 @@ COPY --chown=node:node ./vite.config.ts ./vite.config.ts
 COPY --chown=node:node ./vite.server.config.ts ./vite.server.config.ts
 
 USER node
-RUN pnpm run build
+RUN pnpm --config.verify-deps-before-run=false run build
 
 # ---------------------------------------------------------------------------- #
 
