@@ -104,5 +104,5 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend/
       - name: Build Docker image
-        run: pnpm run build:docker
+        run: podman build --file dockerfile .
         working-directory: frontend/
