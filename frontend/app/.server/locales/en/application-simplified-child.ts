@@ -104,6 +104,8 @@ const ns = {
     addChild: "Add a child",
     addChildAccessibleName: "Add child {{childNumber}}",
     removeChild: "Remove child",
+    removeChildAccessibleName: "Remove child {{childNumber}}",
+    removeChildAccessibleNameWithName: "Remove child {{childNumber}}, {{childName}}",
     noChange: "No update.",
   },
   confirm: {

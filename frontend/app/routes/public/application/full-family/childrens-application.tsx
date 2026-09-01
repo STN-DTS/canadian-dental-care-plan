@@ -308,6 +308,7 @@ export default function NewFamilyChildrensApplication({ loaderData, params }: Ro
                     disabled={isSubmitting}
                     variant="secondary"
                     size="sm"
+                    aria-label={child.information ? t(($) => $.childrensApplication.removeChildAccessibleNameWithName, { childNumber: index + 1, childName }) : t(($) => $.childrensApplication.removeChildAccessibleName, { childNumber: index + 1 })}
                     data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Full_Family:Remove child - Child(ren) application click"
                   >
                     {t(($) => $.childrensApplication.removeChild)}

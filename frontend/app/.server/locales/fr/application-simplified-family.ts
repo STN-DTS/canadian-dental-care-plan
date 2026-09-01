@@ -97,6 +97,8 @@ const ns = {
     addChild: "Ajouter un enfant",
     addChildAccessibleName: "Ajouter l'enfant {{childNumber}}",
     removeChild: "Retirer l'enfant",
+    removeChildAccessibleName: "Retirer l'enfant {{childNumber}}",
+    removeChildAccessibleNameWithName: "Retirer l'enfant {{childNumber}}, {{childName}}",
     noChange: "Pas de mise à jour.",
   },
   submit: {
