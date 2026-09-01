@@ -301,6 +301,18 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
             <div className="mb-8 space-y-6">
+              <InputSelect
+                id="mailing-country"
+                name="countryId"
+                className="w-full sm:w-1/2"
+                label={t(($) => $.address.addressField.country)}
+                autoComplete="country"
+                defaultValue={defaultState.country}
+                errorMessage={errors?.countryId}
+                options={countries}
+                onChange={mailingCountryChangeHandler}
+                required
+              />
               <InputSanitizeField
                 id="mailingAddress"
                 name="address"
@@ -352,18 +364,6 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
                   required
                 />
               )}
-              <InputSelect
-                id="mailing-country"
-                name="countryId"
-                className="w-full sm:w-1/2"
-                label={t(($) => $.address.addressField.country)}
-                autoComplete="country"
-                defaultValue={defaultState.country}
-                errorMessage={errors?.countryId}
-                options={countries}
-                onChange={mailingCountryChangeHandler}
-                required
-              />
               <InputCheckbox id="sync-addresses" name="syncAddresses" value="true" checked={copyAddressChecked} onChange={checkHandler}>
                 {t(($) => $.address.homeAddress.useMailingAddress)}
               </InputCheckbox>
