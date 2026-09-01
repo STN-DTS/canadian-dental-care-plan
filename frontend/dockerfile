@@ -29,8 +29,8 @@ ENV NODE_ENV production
 
 # ---------------------------------------------------------------------------- #
 
-# Stage: Package Manager
-# Install the version declared by package.json for dependency installation.
+# Stage: pnpm
+# Resolve the package manager version declared in the root package.json once.
 FROM base AS pnpm
 
 WORKDIR /home/node
@@ -40,8 +40,8 @@ RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
 # ---------------------------------------------------------------------------- #
 
 # Stage: Dependencies
-# This stage installs all project dependencies, including development packages.
-# These dependencies are used for building and testing the application in subsequent stages.
+# This stage installs the full workspace dependency set, including development
+# packages required to build the application.
 FROM pnpm AS deps
 
 WORKDIR /home/node
@@ -49,13 +49,13 @@ COPY --chown=node:node ./patches/ ./patches/
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 USER node
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Runtime Dependencies
-# This stage removes development dependencies, keeping only the runtime dependencies.
-# This minimizes the final image size and reduces the attack surface for production environments.
+# This stage installs only production dependencies for the final image.
+# Excluding development packages reduces image size and attack surface.
 FROM pnpm AS runtime-deps
 
 WORKDIR /home/node
@@ -63,13 +63,12 @@ COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 USER node
-RUN pnpm prune --prod
+RUN pnpm install --frozen-lockfile --prod
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Build
-# This stage compiles the application, generating production-ready build artifacts.
-# It includes metadata for build traceability and installs additional tools as needed.
+# This stage compiles the application and generates production-ready artifacts.
 FROM pnpm AS build
 
 WORKDIR /home/node
