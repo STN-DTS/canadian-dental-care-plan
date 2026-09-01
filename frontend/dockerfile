@@ -45,8 +45,8 @@ RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
 FROM pnpm AS deps
 
 WORKDIR /home/node
-COPY --chown=node:node ./patches/ ./patches/
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node ./patches/ ./patches/
 
 USER node
 RUN pnpm install --frozen-lockfile
@@ -61,6 +61,7 @@ FROM pnpm AS runtime-deps
 WORKDIR /home/node
 COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node ./patches/ ./patches/
 
 USER node
 RUN pnpm install --frozen-lockfile --prod
