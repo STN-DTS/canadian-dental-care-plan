@@ -1,0 +1,36 @@
+# Explicitly prevent these packages from running installation/build scripts.
+# https://pnpm.io/settings#allowbuilds
+allowBuilds:
+  '@swc/core': false
+  esbuild: false
+  protobufjs: false
+  unrs-resolver: false
+
+# Blocks exotic subdependencies to prevent unexpected or potentially unsafe packages from being installed.
+# https://pnpm.io/settings#blockexoticsubdeps
+blockExoticSubdeps: true
+
+# Enforces strict engine compatibility for all packages.
+# https://pnpm.io/settings/cli#enginestrict
+engineStrict: true
+
+# Delays installation of newly published packages by 3 days (4320 minutes),
+# giving time for the community and security tools to detect compromised releases.
+# https://pnpm.io/settings#minimumreleaseage
+minimumReleaseAge: 4320
+
+# Patches specific dependencies to apply custom fixes or modifications.
+# https://pnpm.io/settings#patcheddependencies
+patchedDependencies:
+  prettier-plugin-tailwindcss@0.8.1: patches/prettier-plugin-tailwindcss@0.8.1.patch
+
+# Fails installation if a package's trust level has decreased compared to previous releases
+# (e.g. a previously verified publisher is replaced by an unverified one).
+# https://pnpm.io/settings#trustpolicy
+trustPolicy: no-downgrade
+
+# Exclude specific packages from the trust policy checks, allowing them to be installed
+# even if their trust level has decreased.
+# https://pnpm.io/settings#trustpolicyexclude
+trustPolicyExclude:
+  - "semver@6.3.1" # See https://github.com/npm/node-semver/issues/838

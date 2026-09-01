@@ -89,7 +89,7 @@
     "react-idle-timer": "^5.7.3",
     "react-number-format": "^5.4.5",
     "react-phone-number-input": "^3.4.18",
-    "react-router": "^8.3.0",
+    "react-router": "^8.3.1",
     "redis": "^6.2.1",
     "reflect-metadata": "^0.2.2",
     "remix-utils": "^10.0.0",
@@ -153,9 +153,10 @@
     "vitest-mock-extended": "^5.1.1"
   },
   "engines": {
-    "node": ">=26.0.0",
-    "npm": ">=11.16.0"
+    "node": ">=26.0.0 <27.0.0",
+    "pnpm": ">=12.0.0 <13.0.0"
   },
+  "packageManager": "pnpm@12.1.0",
   "allowScripts": {
     "@swc/core": false,
     "esbuild": false,
