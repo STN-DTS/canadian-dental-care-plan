@@ -180,6 +180,8 @@ export default function RenewFamilyChildrensApplication({ loaderData, params }: 
           invariant(sections, `Expected child sections to be defined for child ${child.id}`);
           const completedSectionsCount = Object.values(sections).filter((section) => section.completed).length;
 
+          const deleteAriaLabel = child.information ? t(($) => $.childrensApplication.removeChildAccessibleNameWithName, { childNumber: index + 1, childName }) : t(($) => $.childrensApplication.removeChildAccessibleName, { childNumber: index + 1 });
+
           return (
             <div key={child.id}>
               <h2 className="font-lato mb-4 text-2xl font-bold">
@@ -371,7 +373,7 @@ export default function RenewFamilyChildrensApplication({ loaderData, params }: 
                     disabled={isSubmitting}
                     variant="secondary"
                     size="sm"
-                    aria-label={child.information ? t(($) => $.childrensApplication.removeChildAccessibleNameWithName, { childNumber: index + 1, childName }) : t(($) => $.childrensApplication.removeChildAccessibleName, { childNumber: index + 1 })}
+                    aria-label={deleteAriaLabel}
                     data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Renewal Form-Family:Remove child - Child(ren) application click"
                   >
                     {t(($) => $.childrensApplication.removeChild)}

@@ -159,6 +159,8 @@ export default function NewChildChildrensApplication({ loaderData, params }: Rou
           const sectionCompletedCount = Object.values(sections).filter((section) => section.completed).length;
           const sectionsCount = Object.values(sections).length;
 
+          const deleteAriaLabel = child.information ? t(($) => $.childrensApplication.removeChildAccessibleNameWithName, { childNumber: index + 1, childName }) : t(($) => $.childrensApplication.removeChildAccessibleName, { childNumber: index + 1 });
+
           return (
             <div key={child.id}>
               <h2 className="font-lato mb-4 text-2xl font-bold">
@@ -329,7 +331,7 @@ export default function NewChildChildrensApplication({ loaderData, params }: Rou
                     disabled={isSubmitting}
                     variant="secondary"
                     size="sm"
-                    aria-label={child.information ? t(($) => $.childrensApplication.removeChildAccessibleNameWithName, { childNumber: index + 1, childName }) : t(($) => $.childrensApplication.removeChildAccessibleName, { childNumber: index + 1 })}
+                    aria-label={deleteAriaLabel}
                     data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Full_Child:Remove child - Child(ren) application click"
                   >
                     {t(($) => $.childrensApplication.removeChild)}
