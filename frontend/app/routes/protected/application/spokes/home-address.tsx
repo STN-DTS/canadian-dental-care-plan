@@ -268,6 +268,18 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
             <div className="mb-8 space-y-6">
+              <InputSelect
+                id="home-country"
+                name="countryId"
+                className="w-full sm:w-1/2"
+                label={t(($) => $.address.addressField.country)}
+                autoComplete="country"
+                defaultValue={defaultState.country ?? ''}
+                errorMessage={errors?.countryId}
+                options={countries}
+                onChange={homeCountryChangeHandler}
+                required
+              />
               <InputSanitizeField
                 id="homeAddress"
                 name="address"
@@ -319,18 +331,6 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
                   required
                 />
               )}
-              <InputSelect
-                id="home-country"
-                name="countryId"
-                className="w-full sm:w-1/2"
-                label={t(($) => $.address.addressField.country)}
-                autoComplete="country"
-                defaultValue={defaultState.country ?? ''}
-                errorMessage={errors?.countryId}
-                options={countries}
-                onChange={homeCountryChangeHandler}
-                required
-              />
             </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <Dialog open={addressDialogContent !== undefined} onOpenChange={onDialogOpenChangeHandler}>
