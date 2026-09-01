@@ -2,7 +2,7 @@ name: Nightly e2e tests (main & release)
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   workflow_dispatch: {}
 
 env:
@@ -18,12 +18,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26.x
-      - run: npm clean-install
+          node-version-file: frontend/package.json
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
         working-directory: frontend/
-      - run: npm run build
+      - name: Verify versions
+        run: |
+          node -v
+          pnpm -v
         working-directory: frontend/
-      - run: npx playwright install chromium --with-deps
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
         working-directory: frontend/
-      - run: npm run test:e2e
+      - name: Build frontend
+        run: pnpm run build
+        working-directory: frontend/
+      - name: Install Playwright dependencies
+        run: pnpm exec playwright install chromium --with-deps
+        working-directory: frontend/
+      - name: Run e2e tests
+        run: pnpm run test:e2e
         working-directory: frontend/

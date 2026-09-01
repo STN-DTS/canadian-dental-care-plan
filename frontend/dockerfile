@@ -24,48 +24,59 @@
 
 
 # Base image used for all future stages
-FROM docker.io/node:26.8.1-trixie-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
+FROM docker.io/library/node:26.8.1-trixie-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
 ENV NODE_ENV production
+
+# ---------------------------------------------------------------------------- #
+
+# Stage: Package Manager
+# Install the version declared by package.json for dependency installation.
+FROM base AS pnpm
+
+WORKDIR /home/node
+COPY --chown=node:node package.json ./package.json
+RUN npm install --global "$(node -p 'require("./package.json").packageManager')" && pnpm --version
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Dependencies
 # This stage installs all project dependencies, including development packages.
 # These dependencies are used for building and testing the application in subsequent stages.
-FROM base as deps
+FROM pnpm AS deps
 
 WORKDIR /home/node
 COPY --chown=node:node ./patches/ ./patches/
-COPY --chown=node:node .npmrc package.json package-lock.json ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 USER node
-RUN npm clean-install --include dev
+RUN pnpm install --frozen-lockfile --prod=false
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Runtime Dependencies
 # This stage removes development dependencies, keeping only the runtime dependencies.
 # This minimizes the final image size and reduces the attack surface for production environments.
-FROM base as runtime-deps
+FROM pnpm AS runtime-deps
 
 WORKDIR /home/node
 COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
-COPY --chown=node:node package.json package-lock.json ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 USER node
-RUN npm prune --production
+RUN pnpm prune --prod
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Build
 # This stage compiles the application, generating production-ready build artifacts.
 # It includes metadata for build traceability and installs additional tools as needed.
-FROM base as build
+FROM pnpm AS build
 
 WORKDIR /home/node
 COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
 COPY --from=deps --chown=node:node /home/node/package.json ./package.json
-COPY --from=deps --chown=node:node /home/node/package-lock.json ./package-lock.json
+COPY --from=deps --chown=node:node /home/node/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=deps --chown=node:node /home/node/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --chown=node:node ./app/ ./app/
 COPY --chown=node:node ./public/ ./public/
 COPY --chown=node:node ./react-router.config.ts ./react-router.config.ts
@@ -74,14 +85,14 @@ COPY --chown=node:node ./vite.config.ts ./vite.config.ts
 COPY --chown=node:node ./vite.server.config.ts ./vite.server.config.ts
 
 USER node
-RUN npm run build
+RUN pnpm run build
 
 # ---------------------------------------------------------------------------- #
 
 # Stage: Final Production Image
 # The final image is optimized for running the application in production.
 # It contains only the runtime dependencies and compiled application code.
-FROM base as final
+FROM base AS final
 
 WORKDIR /home/node
 

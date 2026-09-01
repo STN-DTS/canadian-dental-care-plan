@@ -6,14 +6,14 @@
   "configurations": [
     {
       "name": "Debug CDCP frontend",
-      "command": "npm run dev",
+      "command": "pnpm run dev",
       "request": "launch",
       "type": "node-terminal",
       "cwd": "${workspaceFolder}"
     },
     {
       "name": "Debug CDCP frontend unit tests",
-      "command": "npm run test:unit",
+      "command": "pnpm run test:unit",
       "request": "launch",
       "type": "node-terminal",
       "cwd": "${workspaceFolder}"
