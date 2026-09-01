@@ -232,6 +232,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
   const [selectedMailingCountry, setSelectedMailingCountry] = useState(defaultState.country ?? CANADA_COUNTRY_ID);
   const [copyAddressChecked, setCopyAddressChecked] = useState(defaultState.isHomeAddressSameAsMailingAddress === true);
   const [addressDialogContent, setAddressDialogContent] = useState<AddressResponse>();
+  const [countryChangeAnnouncement, setCountryChangeAnnouncement] = useState('');
   const mailingCountryRegions = useMemo(() => regionList.filter(({ countryId }) => countryId === selectedMailingCountry), [regionList, selectedMailingCountry]);
 
   const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : undefined;
@@ -257,7 +258,24 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
   }
 
   const mailingCountryChangeHandler = (event: React.SyntheticEvent<HTMLSelectElement>) => {
-    setSelectedMailingCountry(event.currentTarget.value);
+    const countryId = event.currentTarget.value;
+    setSelectedMailingCountry(countryId);
+
+    // Announce the resulting form changes to assistive technology. Changing the country
+    // updates the province/state field visibility and the postal code field's required
+    // state, so screen reader users are informed of these otherwise silent changes.
+    const countryName = countryList.find(({ id }) => id === countryId)?.name;
+    const hasRegions = regionList.some((region) => region.countryId === countryId);
+    const postalCodeRequired = [CANADA_COUNTRY_ID, USA_COUNTRY_ID].includes(countryId);
+    const announcement = [
+      t(($) => $.address.addressField.countryChangedAnnouncement, { country: countryName ?? '' }),
+      hasRegions ? t(($) => $.address.addressField.provinceFieldRequiredAnnouncement) : undefined,
+      postalCodeRequired ? t(($) => $.address.addressField.postalCodeRequiredAnnouncement) : t(($) => $.address.addressField.postalCodeOptionalAnnouncement),
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    setCountryChangeAnnouncement(announcement);
   };
 
   const countries = useMemo<InputOptionProps[]>(() => {
@@ -366,6 +384,9 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
               <InputCheckbox id="sync-addresses" name="syncAddresses" value="true" checked={copyAddressChecked} onChange={checkHandler}>
                 {t(($) => $.address.homeAddress.useMailingAddress)}
               </InputCheckbox>
+            </div>
+            <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
+              {countryChangeAnnouncement}
             </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <Dialog open={addressDialogContent !== undefined} onOpenChange={onDialogOpenChangeHandler}>
