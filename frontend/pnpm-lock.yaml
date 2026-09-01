@@ -106,7 +106,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  prettier-plugin-tailwindcss@0.8.1: f675c9dbb9db0ee224b9390af118956c8a063844fed2e6e2e6ba89d537a77b9e
+  prettier-plugin-tailwindcss@0.8.1: e9f69af9405d75630de3a73e5181b4696ee67099effc64895c47ea16e18f9cdf
 
 importers:
 
@@ -466,7 +466,7 @@ importers:
         version: 3.9.6
       prettier-plugin-tailwindcss:
         specifier: ^0.8.1
-        version: 0.8.1(patch_hash=f675c9dbb9db0ee224b9390af118956c8a063844fed2e6e2e6ba89d537a77b9e)(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.9.6)(supports-color@7.2.0))(prettier@3.9.6)
+        version: 0.8.1(patch_hash=e9f69af9405d75630de3a73e5181b4696ee67099effc64895c47ea16e18f9cdf)(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.9.6)(supports-color@7.2.0))(prettier@3.9.6)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -9424,7 +9424,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-tailwindcss@0.8.1(patch_hash=f675c9dbb9db0ee224b9390af118956c8a063844fed2e6e2e6ba89d537a77b9e)(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.9.6)(supports-color@7.2.0))(prettier@3.9.6):
+  prettier-plugin-tailwindcss@0.8.1(patch_hash=e9f69af9405d75630de3a73e5181b4696ee67099effc64895c47ea16e18f9cdf)(@trivago/prettier-plugin-sort-imports@6.0.2(prettier@3.9.6)(supports-color@7.2.0))(prettier@3.9.6):
     dependencies:
       prettier: 3.9.6
     optionalDependencies:
