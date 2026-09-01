@@ -1,5 +1,6 @@
---- a/dist/index.mjs	
-+++ b/dist/index.mjs	
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
 @@ -294,12 +294,42 @@
  			if (plugin === null || plugin === void 0 || (_plugin$parsers2 = plugin.parsers) === null || _plugin$parsers2 === void 0 ? void 0 : _plugin$parsers2[name]) Object.assign(parser, plugin.parsers[name]);
  		}
