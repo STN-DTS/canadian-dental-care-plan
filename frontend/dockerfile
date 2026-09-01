@@ -3,6 +3,14 @@
 # Dockerfile to build the Canadian Dental Care Plan frontend.
 # Directive order is optimized for Docker layer caching.
 #
+# The following arguments should be set at build time, although sane defaults
+# are provided:
+#
+#     - BUILD_DATE
+#     - BUILD_ID
+#     - BUILD_REVISION
+#     - BUILD_VERSION
+#
 # Example:
 #
 #   docker build . \
@@ -11,6 +19,8 @@
 #     --build-arg BUILD_ID="0001" \
 #     --build-arg BUILD_REVISION="$(git rev-parse --short=8 HEAD)" \
 #     --build-arg BUILD_VERSION="1.0.0"
+#
+#   docker inspect canadian-dental-care-plan
 #
 #   docker run --init --interactive --tty --rm \
 #     --publish 3000:3000 \
@@ -21,7 +31,7 @@
 
 # ---------------------------------------------------------------------------- #
 # Stage: Base
-# Base image and environment shared by build and runtime stages.
+# Base image used by all subsequent stages.
 # ---------------------------------------------------------------------------- #
 
 FROM docker.io/library/node:26.8.1-trixie-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
@@ -31,7 +41,7 @@ WORKDIR /home/node
 
 # ---------------------------------------------------------------------------- #
 # Stage: pnpm
-# Install the pnpm version specified by package.json and fetch the dependencies.
+# Install the pnpm version declared by package.json.
 # ---------------------------------------------------------------------------- #
 
 FROM base AS pnpm
@@ -42,12 +52,7 @@ RUN npm install --global --allow-scripts=pnpm \
         "$(node -p 'require("./package.json").packageManager')" \
     && pnpm --version
 
-COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --chown=node:node patches/ ./patches/
-
 USER node
-
-RUN pnpm fetch
 
 
 # ---------------------------------------------------------------------------- #
@@ -58,17 +63,21 @@ RUN pnpm fetch
 
 FROM pnpm AS deps
 
-RUN pnpm install --frozen-lockfile --offline
+COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node patches/ ./patches/
+
+RUN pnpm install --frozen-lockfile
 
 
 # ---------------------------------------------------------------------------- #
 # Stage: Runtime Dependencies
-# Install only production dependencies for the final runtime image.
+# Derive the production dependency tree from the completed installation by
+# removing development dependencies.
 # ---------------------------------------------------------------------------- #
 
-FROM pnpm AS runtime-deps
+FROM deps AS runtime-deps
 
-RUN pnpm install --frozen-lockfile --prod --offline
+RUN pnpm prune --prod
 
 
 # ---------------------------------------------------------------------------- #
@@ -125,9 +134,9 @@ LABEL org.opencontainers.image.authors="${IMAGE_AUTHORS}" \
       org.opencontainers.image.vendor="${IMAGE_VENDOR}" \
       org.opencontainers.image.version="${BUILD_VERSION}"
 
-# Production packages are required because the server build preserves bare
-# package imports. package.json is retained for package-level Node settings,
-# including "type": "module".
+# The server build preserves bare package imports, so production node_modules
+# must be included. package.json is retained for Node package settings such as
+# "type": "module".
 COPY --from=runtime-deps --chown=node:node /home/node/node_modules/ ./node_modules/
 COPY --from=runtime-deps --chown=node:node /home/node/package.json ./package.json
 COPY --from=build --chown=node:node /home/node/public/ ./public/
