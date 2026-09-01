@@ -271,6 +271,9 @@ importers:
       libphonenumber-js:
         specifier: ^1.13.12
         version: 1.13.12
+      logform:
+        specifier: ^2.7.0
+        version: 2.7.0
       markdown-to-jsx:
         specifier: ^9.10.2
         version: 9.10.2(react@19.2.8)
@@ -386,6 +389,9 @@ importers:
       '@types/compression':
         specifier: ^1.8.1
         version: 1.8.1
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
       '@types/express-session':
         specifier: ^1.19.0
         version: 1.19.0
