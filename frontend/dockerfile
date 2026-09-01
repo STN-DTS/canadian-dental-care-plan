@@ -1,105 +1,100 @@
-# Dockerfile to build Canadian Dental Care Plan frontend. Note that the order of
-# directives in this file should be optimized to take advantage of docker's
-# layering mechanics. Carefully think before you edit this file.
-#
-# The following arguments should be set at build time, however sane defaults are
-# also provded:
-#
-#     - BUILD_DATE
-#     - BUILD_ID
-#     - BUILD_REVISION
-#     - BUILD_VERSION
-#
-# example commands:
-#
-# 	$ docker build . --tag canadian-dental-care-plan \
-# 	      --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-# 	      --build-arg BUILD_ID="0001" \
-# 	      --build-arg BUILD_REVISION="$(git rev-parse --short=8 HEAD)" \
-# 	      --build-arg BUILD_VERSION="1.0.0"
-# 	$ docker inspect canadian-dental-care-plan
-# 	$ docker run --init --interactive --tty --rm --publish 3000:3000 --env-file .env --name canadian-dental-care-plan canadian-dental-care-plan
-#
+# syntax=docker/dockerfile:1
 
+# Dockerfile to build the Canadian Dental Care Plan frontend.
+# Directive order is optimized for Docker layer caching.
+#
+# Example:
+#
+#   docker build . \
+#     --tag canadian-dental-care-plan \
+#     --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+#     --build-arg BUILD_ID="0001" \
+#     --build-arg BUILD_REVISION="$(git rev-parse --short=8 HEAD)" \
+#     --build-arg BUILD_VERSION="1.0.0"
+#
+#   docker run --init --interactive --tty --rm \
+#     --publish 3000:3000 \
+#     --env-file .env \
+#     --name canadian-dental-care-plan \
+#     canadian-dental-care-plan
 
-
-# Base image used for all future stages
-FROM docker.io/library/node:26.8.1-trixie-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
-ENV NODE_ENV production
 
 # ---------------------------------------------------------------------------- #
+# Stage: Base
+# Base image and environment shared by build and runtime stages.
+# ---------------------------------------------------------------------------- #
 
+FROM docker.io/library/node:26.8.1-trixie-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
+
+WORKDIR /home/node
+
+
+# ---------------------------------------------------------------------------- #
 # Stage: pnpm
-# Resolve the package manager version declared in the root package.json once.
+# Install the pnpm version specified by package.json and fetch the dependencies.
+# ---------------------------------------------------------------------------- #
+
 FROM base AS pnpm
 
-WORKDIR /home/node
-COPY --chown=node:node package.json ./package.json
-RUN npm install --global "$(node -p 'require("./package.json").packageManager')" && pnpm --version
+COPY --chown=node:node package.json ./
+
+RUN npm install --global --allow-scripts=pnpm \
+        "$(node -p 'require("./package.json").packageManager')" \
+    && pnpm --version
+
+COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node patches/ ./patches/
+
+USER node
+
+RUN pnpm fetch
+
 
 # ---------------------------------------------------------------------------- #
-
 # Stage: Dependencies
-# This stage installs the full workspace dependency set, including development
-# packages required to build the application.
+# Install the complete dependency set, including development dependencies
+# required to build the application.
+# ---------------------------------------------------------------------------- #
+
 FROM pnpm AS deps
 
-WORKDIR /home/node
-COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --chown=node:node ./patches/ ./patches/
+RUN pnpm install --frozen-lockfile --offline
 
-USER node
-RUN pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------- #
-
 # Stage: Runtime Dependencies
-# This stage installs only production dependencies for the final image.
-# Excluding development packages reduces image size and attack surface.
+# Install only production dependencies for the final runtime image.
+# ---------------------------------------------------------------------------- #
+
 FROM pnpm AS runtime-deps
 
-WORKDIR /home/node
-COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
-COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --chown=node:node ./patches/ ./patches/
+RUN pnpm install --frozen-lockfile --prod --offline
 
-USER node
-RUN pnpm install --frozen-lockfile --prod
 
 # ---------------------------------------------------------------------------- #
-
 # Stage: Build
-# This stage compiles the application and generates production-ready artifacts.
-FROM pnpm AS build
+# Compile the application and generate production-ready artifacts.
+# ---------------------------------------------------------------------------- #
 
-WORKDIR /home/node
-COPY --from=deps --chown=node:node /home/node/node_modules/ ./node_modules/
-COPY --from=deps --chown=node:node /home/node/package.json ./package.json
-COPY --from=deps --chown=node:node /home/node/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=deps --chown=node:node /home/node/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --chown=node:node ./app/ ./app/
-COPY --chown=node:node ./public/ ./public/
-COPY --chown=node:node ./react-router.config.ts ./react-router.config.ts
-COPY --chown=node:node ./tsconfig.json ./tsconfig.json
-COPY --chown=node:node ./vite.config.ts ./vite.config.ts
-COPY --chown=node:node ./vite.server.config.ts ./vite.server.config.ts
+FROM deps AS build
 
-USER node
+COPY --chown=node:node app/ ./app/
+COPY --chown=node:node public/ ./public/
+COPY --chown=node:node react-router.config.ts ./
+COPY --chown=node:node tsconfig.json ./
+COPY --chown=node:node vite.config.ts ./
+COPY --chown=node:node vite.server.config.ts ./
+
 RUN pnpm --config.verify-deps-before-run=false run build
 
+
+# ---------------------------------------------------------------------------- #
+# Stage: Final Production Image
+# Include only production dependencies, runtime metadata, public assets, and
+# compiled application code.
 # ---------------------------------------------------------------------------- #
 
-# Stage: Final Production Image
-# The final image is optimized for running the application in production.
-# It contains only the runtime dependencies and compiled application code.
 FROM base AS final
-
-WORKDIR /home/node
-
-# COPY files in order of least → most likely to change to maximize layer caching
-COPY --from=runtime-deps --chown=node:node /home/node/node_modules/ ./node_modules/
-COPY --from=build --chown=node:node /home/node/build/ ./build/
-COPY --from=build --chown=node:node /home/node/public/ ./public/
 
 ARG BUILD_DATE="1970-01-01T00:00:00.000Z"
 ARG BUILD_ID="000000"
@@ -111,24 +106,33 @@ ARG IMAGE_TITLE="Canadian Dental Care Plan"
 ARG IMAGE_URL="https://github.com/STN-DTS/canadian-dental-care-plan/"
 ARG IMAGE_VENDOR="Employment and Social Development Canada"
 
-ENV BUILD_DATE=${BUILD_DATE}
-ENV BUILD_ID=${BUILD_ID}
-ENV BUILD_REVISION=${BUILD_REVISION}
-ENV BUILD_VERSION=${BUILD_VERSION}
-ENV OTEL_SERVICE_VERSION=${BUILD_VERSION}
+ENV BUILD_DATE="${BUILD_DATE}" \
+    BUILD_ID="${BUILD_ID}" \
+    BUILD_REVISION="${BUILD_REVISION}" \
+    BUILD_VERSION="${BUILD_VERSION}" \
+    OTEL_SERVICE_VERSION="${BUILD_VERSION}" \
+    NODE_ENV="production" \
+    PORT="3000"
 
-# Add labels for OCI compliance, describing the build details and image metadata
-# see: https://github.com/opencontainers/image-spec/blob/main/annotations.md
-LABEL org.opencontainers.image.authors=${IMAGE_AUTHORS}
-LABEL org.opencontainers.image.created=${BUILD_DATE}
-LABEL org.opencontainers.image.description=${IMAGE_DESCRIPTION}
-LABEL org.opencontainers.image.revision=${BUILD_REVISION}
-LABEL org.opencontainers.image.title=${IMAGE_TITLE}
-LABEL org.opencontainers.image.url=${IMAGE_URL}
-LABEL org.opencontainers.image.vendor=${IMAGE_VENDOR}
-LABEL org.opencontainers.image.version=${BUILD_VERSION}
+# OCI image metadata:
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md
+LABEL org.opencontainers.image.authors="${IMAGE_AUTHORS}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.description="${IMAGE_DESCRIPTION}" \
+      org.opencontainers.image.revision="${BUILD_REVISION}" \
+      org.opencontainers.image.title="${IMAGE_TITLE}" \
+      org.opencontainers.image.url="${IMAGE_URL}" \
+      org.opencontainers.image.vendor="${IMAGE_VENDOR}" \
+      org.opencontainers.image.version="${BUILD_VERSION}"
 
-ENV PORT=3000
+# Production packages are required because the server build preserves bare
+# package imports. package.json is retained for package-level Node settings,
+# including "type": "module".
+COPY --from=runtime-deps --chown=node:node /home/node/node_modules/ ./node_modules/
+COPY --from=runtime-deps --chown=node:node /home/node/package.json ./package.json
+COPY --from=build --chown=node:node /home/node/public/ ./public/
+COPY --from=build --chown=node:node /home/node/build/ ./build/
 
 USER node
+
 CMD ["node", "--import", "./build/server/opentelemetry-register.js", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
