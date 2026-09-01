@@ -201,6 +201,7 @@ const ns = {
     backBtn: "Your access to dental insurance",
     submitBtn: "Submit",
     addChild: "Add a child",
+    addChildAccessibleName: "Add child {{childNumber}}",
     removeChild: "Remove child",
   },
   exitApplication: {

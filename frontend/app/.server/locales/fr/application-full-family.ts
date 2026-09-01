@@ -201,6 +201,7 @@ const ns = {
     backBtn: "Votre accès à une assurance dentaire",
     submitBtn: "Soumettre",
     addChild: "Ajouter un enfant",
+    addChildAccessibleName: "Ajouter l'enfant {{childNumber}}",
     removeChild: "Retirer l'enfant",
   },
   exitApplication: {

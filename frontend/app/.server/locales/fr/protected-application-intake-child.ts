@@ -178,6 +178,7 @@ const ns = {
     backBtn: "Renseignements sur le parent ou le tuteur légal",
     submitBtn: "Soumettre la demande",
     addChild: "Ajouter un enfant",
+    addChildAccessibleName: "Ajouter l'enfant {{childNumber}}",
     removeChild: "Retirer l'enfant",
   },
 } as const;

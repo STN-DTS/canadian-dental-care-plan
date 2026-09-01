@@ -319,7 +319,15 @@ export default function ProtectedNewFamilyChildrensApplication({ loaderData, par
         })}
         <fetcher.Form method="post" noValidate>
           <CsrfTokenInput />
-          <Button variant="primary" id="add-child" name="_action" value={FORM_ACTION.add} disabled={isSubmitting} data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Protected-Intake_Family:Add child - Child(ren) application click">
+          <Button
+            variant="primary"
+            id="add-child"
+            name="_action"
+            value={FORM_ACTION.add}
+            disabled={isSubmitting}
+            aria-label={t(($) => $.childrensApplication.addChildAccessibleName, { childNumber: state.children.length + 1 })}
+            data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Protected-Intake_Family:Add child - Child(ren) application click"
+          >
             {t(($) => $.childrensApplication.addChild)}
           </Button>
         </fetcher.Form>
