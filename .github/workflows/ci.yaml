@@ -53,22 +53,33 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26.x
-      - run: npm clean-install
+          node-version-file: frontend/package.json
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
         working-directory: frontend/
-      - run: npm run format:check
+      - name: Verify versions
+        run: |
+          node -v
+          pnpm -v
         working-directory: frontend/
-      - run: npm run typecheck
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
         working-directory: frontend/
-      - run: npm run lint:eslint
+      - run: pnpm run format:check
         working-directory: frontend/
-      - run: npm run test:unit:coverage
+      - run: pnpm run typecheck
         working-directory: frontend/
-      - run: npm run build
+      - run: pnpm run lint:eslint
         working-directory: frontend/
-      - run: npx playwright install chromium --with-deps
+      - run: pnpm run test:unit:coverage
         working-directory: frontend/
-      - run: npm run test:e2e:smoke
+      - run: pnpm run build
+        working-directory: frontend/
+      - run: pnpm exec playwright install chromium --with-deps
+        working-directory: frontend/
+      - run: pnpm run test:e2e:smoke
         working-directory: frontend/
   build-frontend:
     runs-on: ubuntu-latest
@@ -78,8 +89,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26.x
-      - run: npm clean-install
+          node-version-file: frontend/package.json
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
         working-directory: frontend/
-      - run: podman build --file dockerfile .
+      - name: Verify versions
+        run: |
+          node -v
+          pnpm -v
+        working-directory: frontend/
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend/
+      - name: Build Docker image
+        run: podman build --file dockerfile .
         working-directory: frontend/

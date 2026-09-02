@@ -4,12 +4,12 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "npm run build:application && npm run build:server",
+    "build": "pnpm run build:application && pnpm run build:server",
     "build:application": "react-router build",
     "build:server": "vite build --config ./vite.server.config.ts",
     "dbg": "cross-env NODE_ENV=development tsx --conditions development --inspect --env-file-if-exists=./.env --import ./app/.server/express-server/opentelemetry-register.ts --import ./app/.server/express-server/opentelemetry.ts ./app/.server/express-server/server.ts",
     "dev": "cross-env NODE_ENV=development tsx --conditions development --env-file-if-exists=./.env --import ./app/.server/express-server/opentelemetry-register.ts --import ./app/.server/express-server/opentelemetry.ts ./app/.server/express-server/server.ts",
-    "preview": "npm run build && cross-env NODE_ENV=production SESSION_COOKIE_SECURE=false node --env-file-if-exists=./.env --import ./build/server/opentelemetry-register.js --import ./build/server/opentelemetry.js ./build/server/server.js",
+    "preview": "pnpm run build && cross-env NODE_ENV=production SESSION_COOKIE_SECURE=false node --env-file-if-exists=./.env --import ./build/server/opentelemetry-register.js --import ./build/server/opentelemetry.js ./build/server/server.js",
     "start": "cross-env NODE_ENV=production node --import ./build/server/opentelemetry-register.js --import ./build/server/opentelemetry.js ./build/server/server.js",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",
@@ -39,12 +39,17 @@
     "@hcaptcha/react-hcaptcha": "^2.2.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.79.0",
+    "@opentelemetry/core": "^2.10.0",
     "@opentelemetry/exporter-logs-otlp-proto": "^0.221.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.221.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.221.0",
+    "@opentelemetry/otlp-exporter-base": "^0.221.0",
+    "@opentelemetry/resources": "^2.10.0",
     "@opentelemetry/sdk-logs": "^0.221.0",
     "@opentelemetry/sdk-metrics": "^2.10.0",
     "@opentelemetry/sdk-node": "^0.221.0",
+    "@opentelemetry/sdk-trace-base": "^2.10.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.23",
@@ -75,6 +80,7 @@
     "isbot": "^5.2.2",
     "jose": "^6.2.10",
     "libphonenumber-js": "^1.13.12",
+    "logform": "^2.7.0",
     "markdown-to-jsx": "^9.10.2",
     "micro-memoize": "^5.1.2",
     "mime": "^4.1.0",
@@ -89,7 +95,7 @@
     "react-idle-timer": "^5.7.3",
     "react-number-format": "^5.4.5",
     "react-phone-number-input": "^3.4.18",
-    "react-router": "^8.3.0",
+    "react-router": "^8.3.1",
     "redis": "^6.2.1",
     "reflect-metadata": "^0.2.2",
     "remix-utils": "^10.0.0",
@@ -115,6 +121,7 @@
     "@testing-library/user-event": "^14.6.6",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/compression": "^1.8.1",
+    "@types/express": "^5.0.6",
     "@types/express-session": "^1.19.0",
     "@types/jsdom": "^30.0.0",
     "@types/morgan": "^1.9.10",
@@ -153,16 +160,14 @@
     "vitest-mock-extended": "^5.1.1"
   },
   "engines": {
-    "node": ">=26.0.0",
-    "npm": ">=11.16.0"
+    "node": ">=26.0.0 <27.0.0",
+    "pnpm": ">=12.0.0 <13.0.0"
   },
+  "packageManager": "pnpm@12.1.0",
   "allowScripts": {
     "@swc/core": false,
     "esbuild": false,
     "protobufjs": false,
     "unrs-resolver": false
-  },
-  "patchedDependencies": {
-    "prettier-plugin-tailwindcss@0.8.1": "patches/prettier-plugin-tailwindcss@0.8.1.patch"
   }
 }
