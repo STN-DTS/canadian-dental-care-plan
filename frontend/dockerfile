@@ -48,8 +48,7 @@ FROM base AS pnpm
 
 COPY --chown=node:node package.json ./
 
-RUN npm install --global --allow-scripts=pnpm \
-        "$(node -p 'require("./package.json").packageManager')" \
+RUN npm install --global "$(node -p 'require("./package.json").packageManager')" \
     && pnpm --version
 
 USER node
