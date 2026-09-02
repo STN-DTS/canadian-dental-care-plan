@@ -102,7 +102,7 @@
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "winston-error-format": "^3.0.2",
-    "zod": "^4.5.2"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.18.6",
