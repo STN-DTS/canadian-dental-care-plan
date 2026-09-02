@@ -202,6 +202,7 @@ const ns = {
     removeChild: "Retirer l'enfant",
     removeChildAccessibleName: "Retirer l'enfant {{childNumber}}",
     removeChildAccessibleNameWithName: "Retirer l'enfant {{childNumber}}, {{childName}}",
+    childAddedAnnouncement: "L'enfant {{childNumber}} a été ajouté avec succès.",
   },
   exitApplication: {
     pageTitle: "Quitter la demande",

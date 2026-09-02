@@ -2,6 +2,7 @@ import { redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { announce } from '@react-aria/live-announcer';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -20,7 +21,7 @@ import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { DefinitionList, DefinitionListItem } from '~/components/definition-list';
 import { NavigationButtonLink } from '~/components/navigation-buttons';
 import { StatusTag } from '~/components/status-tag';
-import { useCurrentLanguage, useFetcherSubmissionState } from '~/hooks';
+import { useCurrentLanguage, useFetcherActionComplete, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { ProgressStepper } from '~/routes/public/application/full-children/progress-stepper';
 import { parseDateString, toLocaleDateString } from '~/utils/date-utils';
@@ -118,20 +119,20 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         children: children,
       },
     });
+
+    return { operation: FORM_ACTION.add, childId, childNumber: children.length };
   }
 
-  if (formAction === FORM_ACTION.remove) {
-    const removeChildId = formData.get('childId');
-    const children = [...state.children].filter((child) => child.id !== removeChildId);
+  const removeChildId = formData.get('childId');
+  const children = [...state.children].filter((child) => child.id !== removeChildId);
 
-    savePublicApplicationState({
-      params,
-      session,
-      state: {
-        children: children,
-      },
-    });
-  }
+  savePublicApplicationState({
+    params,
+    session,
+    state: {
+      children: children,
+    },
+  });
 
   return redirect(getPathById(`public/application/$id/${state.inputModel}-${state.typeOfApplication}/childrens-application`, params));
 }
@@ -142,6 +143,16 @@ export default function NewChildChildrensApplication({ loaderData, params }: Rou
   const { t } = useTranslation(['applicationFullChild', 'application', 'common']);
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
+
+  useFetcherActionComplete(fetcher, (actionData) => {
+    announce(
+      t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
+      'polite',
+    );
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
+    });
+  });
 
   const allChildrenCompleted = state.children.length > 0 && childrenSections.every((child) => Object.values(child.sections).every((section) => section.completed));
 
@@ -163,7 +174,7 @@ export default function NewChildChildrensApplication({ loaderData, params }: Rou
 
           return (
             <div key={child.id}>
-              <h2 className="font-lato mb-4 text-2xl font-bold">
+              <h2 id={`child-heading-${child.id}`} tabIndex={-1} className="font-lato mb-4 text-2xl font-bold">
                 {t(($) => $.childrensApplication.childTitle, {
                   childNumber: index + 1,
                 })}
