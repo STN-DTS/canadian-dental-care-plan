@@ -4,6 +4,7 @@ export * from './use-browser-compatibility-banner-storage';
 export * from './use-browser-compatibility-banner';
 export * from './use-browser-validation';
 export * from './use-current-language';
+export * from './use-fetcher-action-complete';
 export * from './use-fetcher-submission-state';
 export * from './use-sections-status';
 export * from './use-storage-enabled';
