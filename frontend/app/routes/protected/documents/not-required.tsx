@@ -39,10 +39,11 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, url }: Route.LoaderArgs) {
+export async function loader({ context, url, params }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
+  await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {

@@ -44,6 +44,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
   securityHandler.validateFeatureEnabled('doc-upload');
+  await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
   const documentUploadStateId = getDocumentUploadStateIdFromUrl(url);
   const { submittedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });

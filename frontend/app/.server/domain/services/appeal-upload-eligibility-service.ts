@@ -1,4 +1,6 @@
 import { inject, injectable } from 'inversify';
+import { None, Some } from 'oxide.ts';
+import type { Option } from 'oxide.ts';
 
 import { TYPES } from '~/.server/constants';
 import type { AppealUploadEligibilityDto } from '~/.server/domain/dtos';
@@ -15,9 +17,9 @@ export interface AppealUploadEligibilityService {
    * Determines whether a client is eligible to upload appeal documents.
    *
    * @param clientNumber - The client number to check eligibility for.
-   * @returns The eligibility DTO, or `null` if no matching client was found.
+   * @returns `Some` containing the eligibility DTO, or `None` if no matching client was found.
    */
-  getAppealUploadEligibility(clientNumber: string): Promise<AppealUploadEligibilityDto | null>;
+  findAppealUploadEligibility(clientNumber: string): Promise<Option<AppealUploadEligibilityDto>>;
 }
 
 @injectable()
@@ -32,19 +34,19 @@ export class DefaultAppealUploadEligibilityService implements AppealUploadEligib
     this.appealUploadEligibilityRepository = appealUploadEligibilityRepository;
   }
 
-  async getAppealUploadEligibility(clientNumber: string): Promise<AppealUploadEligibilityDto | null> {
+  async findAppealUploadEligibility(clientNumber: string): Promise<Option<AppealUploadEligibilityDto>> {
     this.log.trace('Getting appeal upload eligibility for client number: [%s]', clientNumber);
 
     const appealUploadEligibilityResponseEntityOption = await this.appealUploadEligibilityRepository.findAppealUploadEligibilityByClientNumber(clientNumber);
 
     if (appealUploadEligibilityResponseEntityOption.isNone()) {
       this.log.debug('No client record found; treating as ineligible; clientNumber: [%s]', clientNumber);
-      return null;
+      return None;
     }
 
     const appealUploadEligibilityDto = this.appealUploadEligibilityDtoMapper.mapAppealUploadEligibilityResponseEntityToAppealUploadEligibilityDto(appealUploadEligibilityResponseEntityOption.unwrap());
 
     this.log.trace('Returning appeal upload eligibility: [%j]', appealUploadEligibilityDto);
-    return appealUploadEligibilityDto;
+    return Some(appealUploadEligibilityDto);
   }
 }

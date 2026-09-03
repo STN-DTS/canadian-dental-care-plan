@@ -13,7 +13,7 @@ import type { Route } from './+types/upload';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import type { ClientApplicationDto } from '~/.server/domain/dtos';
+import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
@@ -54,46 +54,38 @@ type DocumentUploadSchemaOuput = z.output<DocumentUploadSchema>;
 type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOuput>;
 
 /**
- * React Router context that holds the validated {@link ClientApplicationDto} resolved by
- * {@link appealUploadEligibilityMiddleware}. The loader and action retrieve it from here to
- * reuse the already-validated application instead of repeating the security checks and making
- * another call to the Interop API.
+ * React Router context containing the validated {@link ApplicantDto} resolved by
+ * {@link appealUploadEligibilityMiddleware}. The action retrieves it to avoid repeating the
+ * security checks or making another Interop API call.
  */
-const ClientApplicationContext = createContext<ClientApplicationDto>();
+// eslint-disable-next-line @eslint-react/naming-convention-context-name
+const applicantContext = createContext<ApplicantDto>();
 
 /**
- * Route middleware that gates the document upload route for both the loader and the action.
+ * Middleware that permits access to the document upload route only for eligible applicants.
  *
- * A client may only upload evidentiary documentation when their profile has at least one
- * application paused due to a T4 mismatch. Otherwise, redirect to the not-required page.
+ * Applicants must have at least one application paused due to a T4 mismatch. Ineligible
+ * applicants are redirected to the not-required page.
  */
-const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ context, params, request }) => {
+const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ context, params, url }) => {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const requestUrl = new URL(request.url);
 
+  // Ensure document upload is enabled.
   securityHandler.validateFeatureEnabled('doc-upload');
 
-  const clientApplication = await securityHandler.requireClientApplication({
-    params,
-    requestUrl,
-    session,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
+  // Resolve the authenticated applicant.
+  const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
-  await securityHandler.requireEnrolledApplicant({
-    clientNumber: clientApplication.applicantInformation.clientNumber,
-    params,
-    options: { redirectUrl: getPathById('protected/documents/not-required', params) },
-  });
+  // Resolve the applicant's appeal-upload eligibility.
+  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).findAppealUploadEligibility(applicant.clientNumber);
 
-  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).getAppealUploadEligibility(clientApplication.applicantInformation.clientNumber);
-
-  if (!appealUploadEligibility?.eligible) {
+  // Redirect ineligible applicants.
+  if (appealUploadEligibility.isNone() || !appealUploadEligibility.unwrap().eligible) {
     throw redirect(getPathById('protected/documents/not-required', params));
   }
 
-  context.set(ClientApplicationContext, clientApplication);
+  context.set(applicantContext, applicant);
 };
 
 export const middleware: Route.MiddlewareFunction[] = [appealUploadEligibilityMiddleware];
@@ -163,7 +155,7 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const clientApplication = context.get(ClientApplicationContext);
+  const applicant = context.get(applicantContext);
 
   const formData = await request.formData();
 
@@ -191,7 +183,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { errors: scanResult.errors };
   }
 
-  const clientNumber = clientApplication.applicantInformation.clientNumber;
+  const clientNumber = applicant.clientNumber;
   const uploadResult = await uploadDocuments({ clientNumber, files: files, service: uploadService, t, userId: idToken.sub });
 
   if (!uploadResult.success) {
