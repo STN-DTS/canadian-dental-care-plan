@@ -1,4 +1,4 @@
-import { redirect, useFetcher } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
@@ -27,7 +27,6 @@ import { ProgressStepper } from '~/routes/protected/application/intake-family/pr
 import { parseDateString, toLocaleDateString } from '~/utils/date-utils';
 import { generateId } from '~/utils/id-utils';
 import { mergeMeta } from '~/utils/meta-utils';
-import { getPathById } from '~/utils/route-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
@@ -125,7 +124,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   const removeChildId = formData.get('childId');
-  const children = [...state.children].filter((child) => child.id !== removeChildId);
+  const removedIndex = state.children.findIndex((child) => child.id === removeChildId);
+  const removedChild = state.children[removedIndex];
+  const removedChildName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
+  const children = state.children.filter((child) => child.id !== removeChildId);
 
   saveProtectedApplicationState({
     params,
@@ -135,7 +137,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     },
   });
 
-  return redirect(getPathById(`protected/application/$id/${state.context}-${state.typeOfApplication}/childrens-application`, params));
+  return { operation: FORM_ACTION.remove, childNumber: removedIndex + 1, childName: removedChildName, removedIndex };
 }
 
 export default function ProtectedNewFamilyChildrensApplication({ loaderData, params }: Route.ComponentProps) {
@@ -146,12 +148,33 @@ export default function ProtectedNewFamilyChildrensApplication({ loaderData, par
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
   useFetcherActionComplete(fetcher, (actionData) => {
+    if (actionData.operation === FORM_ACTION.add) {
+      announce(
+        t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
+        'polite',
+      );
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
     announce(
-      t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
+      actionData.childName
+        ? t(($) => $.childrensApplication.childRemovedAnnouncementWithName, { childNumber: actionData.childNumber, childName: actionData.childName })
+        : t(($) => $.childrensApplication.childRemovedAnnouncement, { childNumber: actionData.childNumber }),
       'polite',
     );
     window.requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
+      const nextChild = state.children[actionData.removedIndex];
+      const previousChild = state.children[actionData.removedIndex - 1];
+      if (nextChild) {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(nextChild.id)}`)?.focus({ preventScroll: true });
+      } else if (previousChild) {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(previousChild.id)}`)?.focus({ preventScroll: true });
+      } else {
+        document.querySelector<HTMLElement>('#add-child')?.focus({ preventScroll: true });
+      }
     });
   });
 
