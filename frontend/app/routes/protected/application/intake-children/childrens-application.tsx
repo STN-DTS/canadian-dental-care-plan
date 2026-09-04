@@ -1,4 +1,4 @@
-import { redirect, useFetcher } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
@@ -12,7 +12,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationIntakeChildState } from '~/.server/routes/helpers/protected-application-intake-child-route-helpers';
 import { isChildDentalBenefitsSectionCompleted, isChildDentalInsuranceSectionCompleted, isChildInformationSectionCompleted } from '~/.server/routes/helpers/protected-application-intake-section-checks';
-import { saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
+import { removeChildState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { Button, ButtonLink } from '~/components/buttons';
@@ -27,7 +27,6 @@ import { ProgressStepper } from '~/routes/protected/application/intake-children/
 import { parseDateString, toLocaleDateString } from '~/utils/date-utils';
 import { generateId } from '~/utils/id-utils';
 import { mergeMeta } from '~/utils/meta-utils';
-import { getPathById } from '~/utils/route-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
@@ -124,18 +123,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { operation: FORM_ACTION.add, childId, childNumber: children.length };
   }
 
-  const removeChildId = formData.get('childId');
-  const children = [...state.children].filter((child) => child.id !== removeChildId);
+  const removeChildId = String(formData.get('childId'));
+  const { removedIndex, childNumber, childName } = removeChildState({ params, session, childId: removeChildId });
 
-  saveProtectedApplicationState({
-    params,
-    session,
-    state: {
-      children: children,
-    },
-  });
-
-  return redirect(getPathById(`protected/application/$id/${state.context}-${state.typeOfApplication}/childrens-application`, params));
+  return { operation: FORM_ACTION.remove, childNumber, childName, removedIndex };
 }
 
 export default function ProtectedNewChildChildrensApplication({ loaderData, params }: Route.ComponentProps) {
@@ -146,12 +137,33 @@ export default function ProtectedNewChildChildrensApplication({ loaderData, para
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
   useFetcherActionComplete(fetcher, (actionData) => {
+    if (actionData.operation === FORM_ACTION.add) {
+      announce(
+        t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
+        'polite',
+      );
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
     announce(
-      t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
+      actionData.childName
+        ? t(($) => $.childrensApplication.childRemovedAnnouncementWithName, { childNumber: actionData.childNumber, childName: actionData.childName })
+        : t(($) => $.childrensApplication.childRemovedAnnouncement, { childNumber: actionData.childNumber }),
       'polite',
     );
     window.requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
+      const nextChild = state.children[actionData.removedIndex];
+      const previousChild = state.children[actionData.removedIndex - 1];
+      if (nextChild) {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(nextChild.id)}`)?.focus({ preventScroll: true });
+      } else if (previousChild) {
+        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(previousChild.id)}`)?.focus({ preventScroll: true });
+      } else {
+        document.querySelector<HTMLElement>('#add-child')?.focus({ preventScroll: true });
+      }
     });
   });
 

@@ -100,6 +100,8 @@ const ns = {
     removeChildAccessibleName: "Remove child {{childNumber}}",
     removeChildAccessibleNameWithName: "Remove child {{childNumber}}, {{childName}}",
     childAddedAnnouncement: "Child {{childNumber}} was added successfully.",
+    childRemovedAnnouncement: "Child {{childNumber}} was removed successfully.",
+    childRemovedAnnouncementWithName: "Child {{childNumber}}, {{childName}}, was removed successfully.",
     noChange: "No update.",
   },
   submit: {
