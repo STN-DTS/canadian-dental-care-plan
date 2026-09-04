@@ -6,7 +6,9 @@ import { mock } from 'vitest-mock-extended';
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { userContext } from '~/.server/context/user-context';
 import type { SecurityHandler } from '~/.server/routes/security';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { authMiddleware } from '~/middlewares/auth.server';
 
@@ -18,6 +20,14 @@ describe('authMiddleware', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValue(securityHandler);
+    session.get.calledWith('idToken').mockReturnValue({ sub: 'user-123' } as IdToken);
+    session.get.calledWith('userInfoToken').mockReturnValue({
+      birthdate: '1990-01-01',
+      locale: 'fr',
+      mocked: true,
+      sin: '999999999',
+      sub: 'user-123',
+    } as UserinfoToken);
   });
 
   function createMiddlewareArgs(url: URL, method = 'GET'): Parameters<typeof authMiddleware>[0] {
@@ -37,11 +47,19 @@ describe('authMiddleware', () => {
     const url = new URL('https://localhost:3000/fr/protege/documents?ref=header');
     const response = new Response(null, { status: 204 });
     const next = vi.fn().mockResolvedValue(response);
+    const args = createMiddlewareArgs(url);
 
-    const result = await authMiddleware(createMiddlewareArgs(url), next);
+    const result = await authMiddleware(args, next);
 
     expect(securityHandler.validateAuthSession).toHaveBeenCalledOnce();
     expect(securityHandler.validateAuthSession).toHaveBeenCalledWith({ requestUrl: url, session });
+    expect(args.context.get(userContext)).toEqual({
+      birthdate: '1990-01-01',
+      id: 'user-123',
+      locale: 'fr',
+      mocked: true,
+      sin: '999999999',
+    });
     expect(next).toHaveBeenCalledOnce();
     expect(result).toBe(response);
   });

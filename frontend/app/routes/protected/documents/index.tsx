@@ -1,12 +1,12 @@
-import { invariant } from '@dts-stn/invariant';
 import { Trans, useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/index';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getApplicant } from '~/.server/context/applicant-context';
+import { getUser } from '~/.server/context/user-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { DateTimeDisplay } from '~/components/date-time-display';
@@ -26,30 +26,23 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, request, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateFeatureEnabled('doc-upload');
+export async function loader({ context, request, url }: Route.LoaderArgs) {
+  const { appContainer } = context.get(appContext);
+  const applicant = getApplicant(context);
+  const user = getUser(context);
   const locale = getLocale(url);
 
-  const userInfoToken: UserinfoToken = session.get('userInfoToken');
-  invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
-
-  const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
-
   const evidentiaryDocumentService = appContainer.get(TYPES.EvidentiaryDocumentService);
-  const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId, userId: userInfoToken.sub }, locale);
+  const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId, userId: user.id }, locale);
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
-
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: idToken.sub });
-
   const { timeZone } = getHints(request);
+
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: user.id });
 
   return {
     meta,

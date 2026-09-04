@@ -6,8 +6,8 @@ import type { Route } from './+types/not-required';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getUser } from '~/.server/context/user-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
@@ -40,10 +40,7 @@ function LayoutBreadcrumbs(): JSX.Element {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url, params }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.requireApplicant({ params, requestUrl: url, session });
+  const { appContainer } = context.get(appContext);
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
@@ -52,8 +49,8 @@ export async function loader({ context, url, params }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-not-required', { userId: idToken.sub });
+  const user = getUser(context);
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-not-required', { userId: user.id });
 
   return { meta, SCCH_BASE_URI };
 }

@@ -6,9 +6,9 @@ import type { Route } from './+types/submitted';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getUser } from '~/.server/context/user-context';
 import { getDocumentUploadStateIdFromUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
@@ -42,9 +42,6 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  securityHandler.validateFeatureEnabled('doc-upload');
-  await securityHandler.requireApplicant({ params, requestUrl: url, session });
 
   const documentUploadStateId = getDocumentUploadStateIdFromUrl(url);
   const { submittedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });
@@ -56,8 +53,8 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted', { userId: idToken.sub });
+  const user = getUser(context);
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted', { userId: user.id });
 
   return { meta, submittedDocuments, SCCH_BASE_URI };
 }

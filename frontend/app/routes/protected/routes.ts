@@ -326,24 +326,30 @@ export const routes = [
         paths: { en: '/:lang/protected/data-unavailable', fr: '/:lang/protege/donnees-indisponibles' },
       },
       {
-        id: 'protected/documents/index',
-        file: 'routes/protected/documents/index.tsx',
-        paths: { en: '/:lang/protected/documents', fr: '/:lang/protege/documents' },
-      },
-      {
-        id: 'protected/documents/upload',
-        file: 'routes/protected/documents/upload.tsx',
-        paths: { en: '/:lang/protected/documents/upload', fr: '/:lang/protege/documents/televerser' },
-      },
-      {
-        id: 'protected/documents/not-required',
-        file: 'routes/protected/documents/not-required.tsx',
-        paths: { en: '/:lang/protected/documents/not-required', fr: '/:lang/protege/documents/non-requis' },
-      },
-      {
-        id: 'protected/documents/submitted',
-        file: 'routes/protected/documents/submitted.tsx',
-        paths: { en: '/:lang/protected/documents/submitted', fr: '/:lang/protege/documents/soumis' },
+        id: 'protected/documents/layout',
+        file: 'routes/protected/documents/layout.tsx',
+        children: [
+          {
+            id: 'protected/documents/index',
+            file: 'routes/protected/documents/index.tsx',
+            paths: { en: '/:lang/protected/documents', fr: '/:lang/protege/documents' },
+          },
+          {
+            id: 'protected/documents/upload',
+            file: 'routes/protected/documents/upload.tsx',
+            paths: { en: '/:lang/protected/documents/upload', fr: '/:lang/protege/documents/televerser' },
+          },
+          {
+            id: 'protected/documents/not-required',
+            file: 'routes/protected/documents/not-required.tsx',
+            paths: { en: '/:lang/protected/documents/not-required', fr: '/:lang/protege/documents/non-requis' },
+          },
+          {
+            id: 'protected/documents/submitted',
+            file: 'routes/protected/documents/submitted.tsx',
+            paths: { en: '/:lang/protected/documents/submitted', fr: '/:lang/protege/documents/soumis' },
+          },
+        ],
       },
       {
         id: 'protected/unable-to-process-request',

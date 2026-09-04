@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
 
-import { createContext, redirect, useFetcher } from 'react-router';
+import { redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { fileTypeFromBuffer } from 'file-type';
@@ -13,11 +13,11 @@ import type { Route } from './+types/upload';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import type { ApplicantDto } from '~/.server/domain/dtos';
+import { getApplicant } from '~/.server/context/applicant-context';
+import { getUser } from '~/.server/context/user-context';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { Button, ButtonLink } from '~/components/buttons';
@@ -54,38 +54,22 @@ type DocumentUploadSchemaOuput = z.output<DocumentUploadSchema>;
 type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOuput>;
 
 /**
- * React Router context containing the validated {@link ApplicantDto} resolved by
- * {@link appealUploadEligibilityMiddleware}. The action retrieves it to avoid repeating the
- * security checks or making another Interop API call.
- */
-// eslint-disable-next-line @eslint-react/naming-convention-context-name
-const applicantContext = createContext<ApplicantDto>();
-
-/**
  * Middleware that permits access to the document upload route only for eligible applicants.
  *
  * Applicants must have at least one application paused due to a T4 mismatch. Ineligible
  * applicants are redirected to the not-required page.
  */
 const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ context, params, url }) => {
-  const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
+  const { appContainer } = context.get(appContext);
+  const applicant = getApplicant(context);
 
-  // Ensure document upload is enabled.
-  securityHandler.validateFeatureEnabled('doc-upload');
-
-  // Resolve the authenticated applicant.
-  const applicant = await securityHandler.requireApplicant({ params, requestUrl: url, session });
-
-  // Resolve the applicant's appeal-upload eligibility.
-  const appealUploadEligibility = await appContainer.get(TYPES.AppealUploadEligibilityService).findAppealUploadEligibility(applicant.clientNumber);
+  const appealUploadEligibilityService = appContainer.get(TYPES.AppealUploadEligibilityService);
+  const appealUploadEligibility = await appealUploadEligibilityService.findAppealUploadEligibility(applicant.clientNumber);
 
   // Redirect ineligible applicants.
   if (appealUploadEligibility.isNone() || !appealUploadEligibility.unwrap().eligible) {
     throw redirect(getPathById('protected/documents/not-required', params));
   }
-
-  context.set(applicantContext, applicant);
 };
 
 export const middleware: Route.MiddlewareFunction[] = [appealUploadEligibilityMiddleware];
@@ -113,7 +97,7 @@ function LayoutBreadcrumbs(): JSX.Element {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
 
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
@@ -121,9 +105,9 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypesByStatus(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, locale);
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
-  const idToken: IdToken = session.get('idToken');
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload', { userId: idToken.sub });
+  const user = getUser(context);
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload', { userId: user.id });
 
   return {
     meta: {
@@ -155,14 +139,14 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const applicant = context.get(applicantContext);
+  const applicant = getApplicant(context);
 
   const formData = await request.formData();
 
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const config = appContainer.get(TYPES.ClientConfig);
-  const idToken: IdToken = session.get('idToken');
+  const user = getUser(context);
   const allowedExtensions = config.DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS;
 
   const validationResult = await validateUploadForm(formData, locale, t, {
@@ -178,13 +162,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { files } = validationResult.data;
   const uploadService = appContainer.get(TYPES.DocumentUploadService);
 
-  const scanResult = await scanDocuments({ allowedExtensions, files, userId: idToken.sub, service: uploadService, t });
+  const scanResult = await scanDocuments({ allowedExtensions, files, userId: user.id, service: uploadService, t });
   if (!scanResult.success) {
     return { errors: scanResult.errors };
   }
 
   const clientNumber = applicant.clientNumber;
-  const uploadResult = await uploadDocuments({ clientNumber, files: files, service: uploadService, t, userId: idToken.sub });
+  const uploadResult = await uploadDocuments({ clientNumber, files: files, service: uploadService, t, userId: user.id });
 
   if (!uploadResult.success) {
     return { errors: uploadResult.errors };
