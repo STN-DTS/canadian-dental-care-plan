@@ -16,6 +16,7 @@ import { createOtelInstrumentation } from '~/.server/observability/otel-instrume
 import { createRequestCounterInstrumentation } from '~/.server/observability/request-counter-instrumentation';
 import { generateContentSecurityPolicy } from '~/.server/utils/csp-utils';
 import { getLocale, initI18n } from '~/.server/utils/locale-utils';
+import { ClientEnvProvider } from '~/components/client-env-context';
 import { NonceProvider } from '~/components/nonce-context';
 import { getNamespaces } from '~/utils/locale-utils';
 import { randomHexString } from '~/utils/string-utils';
@@ -64,6 +65,7 @@ export default async function handleRequest(request: Request, responseStatusCode
   const routes = Object.values(routerContext.routeModules);
   const i18n = await initI18n(locale, getNamespaces(routes));
   const nonce = randomHexString(32);
+  const env = appContainer.get(TYPES.ClientConfig);
 
   return await new Promise((resolve, reject) => {
     const userAgent = request.headers.get('user-agent');
@@ -80,7 +82,9 @@ export default async function handleRequest(request: Request, responseStatusCode
     const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={i18n}>
         <NonceProvider nonce={nonce}>
-          <ServerRouter context={routerContext} url={request.url} nonce={nonce} />
+          <ClientEnvProvider env={env}>
+            <ServerRouter context={routerContext} url={request.url} nonce={nonce} />
+          </ClientEnvProvider>
         </NonceProvider>
       </I18nextProvider>,
       {

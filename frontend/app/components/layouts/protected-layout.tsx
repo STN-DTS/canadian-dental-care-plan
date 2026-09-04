@@ -11,6 +11,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { AppLink } from '~/components/app-link';
 import { Banner } from '~/components/banner';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
+import { BrowserCompatibilityBanner } from '~/components/browser-compatibility-banner';
 import { ButtonLink } from '~/components/buttons';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/dropdown-menu';
 import { InlineLink } from '~/components/inline-link';
@@ -18,8 +19,7 @@ import { PageDetails } from '~/components/page-details';
 import { PageHeaderBrand } from '~/components/page-header-brand';
 import { PageTitle } from '~/components/page-title';
 import { SkipNavigationLinks } from '~/components/skip-navigation-links';
-import { useBrowserCompatiblityBanner } from '~/hooks';
-import { useFeature } from '~/root';
+import { useFeature } from '~/hooks';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { getClientEnv } from '~/utils/env-utils';
 import { useLayoutOptions } from '~/utils/route-utils';
@@ -105,12 +105,11 @@ function NavigationMenu() {
 function PageHeader() {
   const { t } = useTranslation(protectedLayoutI18nNamespace);
   const { SCCH_BASE_URI } = getClientEnv();
-  const browserCompatiblityBanner = useBrowserCompatiblityBanner();
 
   return (
     <header>
       <SkipNavigationLinks />
-      {browserCompatiblityBanner}
+      <BrowserCompatibilityBanner />
       {useFeature('show-prototype-banner') && <Banner alert={t(($) => $.header.banner.alert)} description={t(($) => $.header.banner.desc)} />}
       <PageHeaderBrand />
       <section className="bg-gray-700 text-white">

@@ -6,8 +6,8 @@ import type { Route } from './+types/layout';
 
 import { NotFoundError, ProtectedLayout, ServerError, protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
+import { useClientEnv } from '~/hooks';
 import { authMiddleware } from '~/middlewares/auth.server';
-import { useClientEnv } from '~/root';
 import { useApiSession } from '~/utils/api-session-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';

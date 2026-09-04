@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { useHCaptcha } from '~/hooks/use-hcaptcha';
 
-vi.mock('~/root', () => ({
+vi.mock(import('~/hooks/use-client-env'), () => ({
   useClientEnv: vi.fn().mockReturnValue({ HCAPTCHA_SITE_KEY: 'test-site-key' }),
 }));
 

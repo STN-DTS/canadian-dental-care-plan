@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`BrowserCompatibilityBanner > should render the BrowserCompatibilityBanner > expected html 1`] = `
+exports[`BrowserCompatibilityBannerView > should render the BrowserCompatibilityBannerView > expected html 1`] = `
 <div>
   <div
     class="bg-red-50 shadow-md"

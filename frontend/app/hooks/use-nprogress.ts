@@ -3,6 +3,11 @@ import { useEffect, useRef } from 'react';
 import NProgress from 'nprogress';
 import { useGlobalNavigationState } from 'remix-utils/use-global-navigation-state';
 
+/**
+ * Shows the global navigation progress bar after a configurable delay.
+ *
+ * @param delay Delay in milliseconds before showing the progress bar.
+ */
 export function useNProgress(delay = 500) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startedRef = useRef(false);

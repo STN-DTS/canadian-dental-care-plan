@@ -1,11 +1,9 @@
-import { use, useEffect } from 'react';
+import { useEffect } from 'react';
 
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useLocation, useRouteLoaderData } from 'react-router';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useLocation } from 'react-router';
 
-import { invariant } from '@dts-stn/invariant';
 import { config as fontAwesomeConfig } from '@fortawesome/fontawesome-svg-core';
 import { useTranslation } from 'react-i18next';
-import { useAuthenticityToken } from 'remix-utils/csrf/react';
 
 import type { Route } from './+types/root';
 
@@ -14,16 +12,15 @@ import { appContext } from '~/.server/context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { ClientEnv } from '~/components/client-env';
 import { BilingualNotFoundError, BilingualServerError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
-import { NonceContext } from '~/components/nonce-context';
 import { RouteChangeAnnouncer } from '~/components/route-change-announcer';
 import { TooltipProvider } from '~/components/tooltip';
 import { ZodConfig } from '~/components/zod-config';
+import { useNonce } from '~/hooks/use-nonce';
 import { useNProgress } from '~/hooks/use-nprogress';
 import indexStyleSheet from '~/index.css?url';
 import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { ClientHintCheck, getHints } from '~/utils/client-hints';
-import type { FeatureName } from '~/utils/env-utils';
 import { isAppLocale } from '~/utils/locale-utils';
 import { useTransformAdobeAnalyticsUrl } from '~/utils/route-utils';
 import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCanonicalURL } from '~/utils/seo-utils';
@@ -100,7 +97,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   useNProgress();
 
-  const { nonce } = use(NonceContext);
+  const nonce = useNonce();
   const location = useLocation();
   const { i18n } = useTranslation();
   const canonicalURL = useCanonicalURL(origin);
@@ -149,60 +146,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
   );
 }
 
-/**
- * A custom hook to retrieve the loader data for the 'root' route.
- *
- * @returns The loader data for the 'root' route, or `undefined` if not available.
- */
-function useRootLoaderData() {
-  const rootLoaderData = useRouteLoaderData<typeof loader>('root');
-  invariant(rootLoaderData, 'Expected rootLoaderData to be defined');
-  return rootLoaderData;
-}
-
-/**
- * A custom hook to retrieve client-side environment variables from the route loader data.
- *
- * @returns The `env` object containing client-side environment variables, or `undefined` if not available.
- */
-export function useClientEnv() {
-  const rootLoaderData = useRootLoaderData();
-  return rootLoaderData.env;
-}
-
-/**
- * Retrieves client hints from the root route loader data.
- *
- * @returns The client hints detected for the current request.
- */
-export function useHints() {
-  const rootLoaderData = useRootLoaderData();
-  return rootLoaderData.hints;
-}
-
-/**
- * Returns the current CSRF authenticity token from the `remix-utils` CSRF context.
- * Use the token when submitting form data that requires CSRF validation.
- *
- * @returns The current CSRF authenticity token.
- */
-export function useCsrfToken() {
-  return useAuthenticityToken();
-}
-
-/**
- * A custom hook to check if a feature is enabled.
- *
- * @param feature The name of the feature to check.
- * @returns `true` if the feature is enabled, `false` otherwise.
- */
-export function useFeature(feature: FeatureName) {
-  const clientEnv = useClientEnv();
-  return clientEnv.ENABLED_FEATURES.includes(feature);
-}
-
 export function ErrorBoundary({ error, params }: Route.ErrorBoundaryProps) {
-  const { nonce } = use(NonceContext);
+  const nonce = useNonce();
 
   const hasAppLocale = isAppLocale(params.lang);
   const locale = hasAppLocale ? params.lang : 'en';

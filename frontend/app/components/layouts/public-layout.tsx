@@ -8,13 +8,13 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Banner } from '~/components/banner';
 import { PublicBreadcrumbs } from '~/components/breadcrumbs';
+import { BrowserCompatibilityBanner } from '~/components/browser-compatibility-banner';
 import { InlineLink } from '~/components/inline-link';
 import { PageDetails } from '~/components/page-details';
 import { PageHeaderBrand } from '~/components/page-header-brand';
 import { PageTitle } from '~/components/page-title';
 import { SkipNavigationLinks } from '~/components/skip-navigation-links';
-import { useBrowserCompatiblityBanner, useCurrentLanguage } from '~/hooks';
-import { useFeature } from '~/root';
+import { useCurrentLanguage, useFeature } from '~/hooks';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { getClientEnv } from '~/utils/env-utils';
 import { useLayoutOptions } from '~/utils/route-utils';
@@ -43,7 +43,6 @@ function PageHeader() {
   const { currentLanguage } = useCurrentLanguage();
   const { t } = useTranslation(publicLayoutI18nNamespace);
   const { HEADER_LOGO_URL_EN, HEADER_LOGO_URL_FR } = getClientEnv();
-  const browserCompatiblityBanner = useBrowserCompatiblityBanner();
 
   // Select the correct logo URL based on the current language
   const headerLogoUrl = currentLanguage === 'fr' ? HEADER_LOGO_URL_FR : HEADER_LOGO_URL_EN;
@@ -51,7 +50,7 @@ function PageHeader() {
   return (
     <header className="border-b-[3px] border-slate-700 print:hidden">
       <SkipNavigationLinks />
-      {browserCompatiblityBanner}
+      <BrowserCompatibilityBanner />
       {useFeature('show-prototype-banner') && <Banner alert={t(($) => $.header.banner.alert)} description={t(($) => $.header.banner.desc)} />}
       <PageHeaderBrand headerLogoUrl={headerLogoUrl} />
     </header>
