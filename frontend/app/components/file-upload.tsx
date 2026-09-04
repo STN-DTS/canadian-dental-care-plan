@@ -433,7 +433,6 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
   const DropzonePrimitive = asChild ? Slot : 'div';
 
   return (
-    // eslint-disable-next-line jsx-a11y-x/role-supports-aria-props
     <DropzonePrimitive
       role="region"
       id={context.dropzoneId}
@@ -504,7 +503,6 @@ function FileUploadList(props: FileUploadListProps) {
   const ListPrimitive = asChild ? Slot : 'div';
 
   return (
-    // eslint-disable-next-line jsx-a11y-x/role-supports-aria-props
     <ListPrimitive
       role="list"
       id={context.listId}

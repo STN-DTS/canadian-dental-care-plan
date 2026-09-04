@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LEVEL, SPLAT } from 'triple-beam';
 import type winston from 'winston';
 

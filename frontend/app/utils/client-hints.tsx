@@ -34,7 +34,6 @@ export function ClientHintCheck({ nonce }: { nonce: string }) {
     <script
       nonce={nonce}
       // The package generates this static client-hint check script.
-      // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
       dangerouslySetInnerHTML={{ __html: getClientHintUtils().getClientHintCheckScript() }}
     />
   );

@@ -165,7 +165,6 @@ describe('DefaultApplicantDtoMapper', () => {
         BenefitApplication: {
           Applicant: {
             ...mockBaseEntity.BenefitApplication.Applicant,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             PersonName: [{ PersonGivenName: ['John'], PersonSurName: undefined as any }],
           },
         },

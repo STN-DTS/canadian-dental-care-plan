@@ -11,6 +11,5 @@ interface ClientEnvProps extends ComponentPropsWithoutRef<'script'> {
  * environment variables that are considered publicly safe (via `window.env`).
  */
 export function ClientEnv({ env, ...props }: ClientEnvProps) {
-  // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
   return <script {...props} dangerouslySetInnerHTML={{ __html: `window.env = ${JSON.stringify(env)}` }} suppressHydrationWarning />;
 }

@@ -71,7 +71,7 @@ jobs:
         working-directory: frontend/
       - run: pnpm run typecheck
         working-directory: frontend/
-      - run: pnpm run lint:eslint
+      - run: pnpm run lint:oxlint
         working-directory: frontend/
       - run: pnpm run test:unit:coverage
         working-directory: frontend/

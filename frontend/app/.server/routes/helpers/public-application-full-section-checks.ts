@@ -86,8 +86,7 @@ export function isMaritalStatusSectionCompleted(state: Pick<PublicApplicationSta
 export function isChildInformationSectionCompleted(state: Pick<PublicApplicationState, 'context' | 'applicationYear' | 'clientApplication'>, child: Pick<PublicApplicationChildState, 'information'>): boolean {
   // TODO: Check with age category and live independently status
   return (
-    child.information !== undefined && //
-    child.information.isParent &&
+    child.information?.isParent === true &&
     isValidDateString(child.information.dateOfBirth) &&
     isChildOrYouth(child.information.dateOfBirth, state.applicationYear) &&
     isChildClientNumberValid(state.context, state.clientApplication, child.information.memberId)

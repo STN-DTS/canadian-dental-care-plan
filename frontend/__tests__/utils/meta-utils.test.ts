@@ -12,7 +12,6 @@ describe('mergeMeta', () => {
       { name: 'description', content: 'Parent Description' },
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type MetaArgs = GetAnnotations<any>['MetaArgs'];
 
     const args: MetaArgs = {

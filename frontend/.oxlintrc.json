@@ -1,0 +1,74 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "vitest"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2023": true,
+    "node": true
+  },
+  "ignorePatterns": [".react-router/", "build/", "coverage/", "playwright-report/", "tmp/"],
+  "options": {
+    "reportUnusedDisableDirectives": "error",
+    "typeAware": true
+  },
+  "overrides": [
+    {
+      "files": ["app/components/file-upload.tsx"],
+      "rules": {
+        "jsx-a11y/role-supports-aria-props": "off"
+      }
+    }
+  ],
+  "rules": {
+    "eslint/no-param-reassign": "error",
+    "eslint/no-unused-vars": ["error", { "args": "none" }],
+    "typescript/await-thenable": "error",
+    "typescript/consistent-type-exports": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "typescript/promise-function-async": "error",
+    "typescript/require-await": "error",
+    "typescript/return-await": ["error", "always"],
+    "typescript/switch-exhaustiveness-check": ["error", { "considerDefaultExhaustiveForUnions": true, "requireDefaultForNonUnion": true }],
+    "typescript/unbound-method": "off",
+    "typescript/restrict-template-expressions": "off",
+    "typescript/no-redundant-type-constituents": "off",
+    "typescript/no-base-to-string": "off",
+    "typescript/no-misused-spread": "off",
+    "typescript/no-useless-default-assignment": "off",
+    "react/no-unknown-property": ["error", { "ignore": ["property", "resource", "typeof", "vocab"] }],
+    "react/jsx-no-useless-fragment": ["error", { "allowExpressions": true }],
+    "react/immutability": "off",
+    "jsx-a11y/no-redundant-roles": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "vitest/require-mock-type-parameters": "off",
+    "vitest/require-to-throw-message": "off",
+    "unicorn/consistent-function-scoping": ["error", { "checkArrowFunctions": false }],
+    "unicorn/filename-case": ["error", { "case": "kebabCase", "ignore": ["__tests__", "__mocks__"] }],
+    "unicorn/no-array-callback-reference": "off",
+    "unicorn/no-array-reduce": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-useless-promise-resolve-reject": "off",
+    "unicorn/no-useless-undefined": ["error", { "checkArguments": false }],
+    "unicorn/prefer-global-this": "off",
+    "unicorn/prefer-structured-clone": "off"
+  },
+  "settings": {
+    "react": {
+      "formComponents": ["Form"],
+      "linkComponents": [
+        { "name": "Link", "linkAttribute": "to" },
+        { "name": "NavLink", "linkAttribute": "to" }
+      ]
+    },
+    "vitest": {
+      "typecheck": true
+    }
+  }
+}
