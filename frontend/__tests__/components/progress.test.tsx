@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Progress } from '~/components/progress';
 
-vi.mock('~/hooks', () => ({
+vi.mock(import('~/hooks'), () => ({
   useCurrentLanguage: vi.fn().mockReturnValue({
     currentLanguage: 'en',
     altLanguage: 'fr',

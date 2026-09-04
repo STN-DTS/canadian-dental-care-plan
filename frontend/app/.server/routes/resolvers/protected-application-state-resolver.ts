@@ -1,7 +1,6 @@
 import { invariant } from '@dts-stn/invariant';
 import { inject, injectable } from 'inversify';
 import type { PickDeep, SetRequired } from 'type-fest';
-import validator from 'validator';
 
 import { TYPES } from '~/.server/constants';
 import type {
@@ -25,6 +24,7 @@ import type {
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
+import { isEmail } from '~/utils/string-utils';
 
 export interface ProtectedApplicationStateResolver {
   /**
@@ -375,7 +375,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
   resolveEmailValue(state: PickDeep<ProtectedApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 
-    const hasValidEmailInState = typeof state.email === 'string' && validator.isEmail(state.email) && state.emailVerified === true;
+    const hasValidEmailInState = typeof state.email === 'string' && isEmail(state.email) && state.emailVerified === true;
     return hasValidEmailInState ? state.email : state.clientApplication?.contactInformation.email;
   }
 

@@ -2,7 +2,6 @@ import type { Request } from 'express';
 import assert from 'node:assert';
 import type { Option } from 'oxide.ts';
 import { None, Some } from 'oxide.ts';
-import validator from 'validator';
 
 import type { ApplicantDto, LetterDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
@@ -12,6 +11,7 @@ import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } f
 import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { StatusState, StatusStateSessionKey } from '~/.server/routes/helpers/status-route-helpers';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
+import { isEmpty } from '~/utils/string-utils';
 
 /**
  * Defines the mapping of valid session keys to their corresponding value types.
@@ -294,7 +294,7 @@ export class ExpressSession implements Session {
   }
 
   protected sanitizeKey(key: string): string {
-    assert.ok(!validator.isEmpty(key, { ignore_whitespace: true }), 'Session key cannot be empty');
+    assert.ok(!isEmpty(key, { ignore_whitespace: true }), 'Session key cannot be empty');
     let sanitized = key.replaceAll(/[^a-zA-Z0-9_$]/g, '_');
     if (!/^[a-zA-Z_$]/.test(sanitized)) {
       sanitized = '_' + sanitized;

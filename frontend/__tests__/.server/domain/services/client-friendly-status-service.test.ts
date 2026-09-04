@@ -10,7 +10,7 @@ import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositori
 import type { ClientFriendlyStatusServiceImpl_ServerConfig } from '~/.server/domain/services';
 import { DefaultClientFriendlyStatusService } from '~/.server/domain/services';
 
-vi.mock('micro-memoize');
+vi.mock(import('micro-memoize'));
 
 describe('DefaultClientFriendlyStatusService', () => {
   const mockServerConfig: ClientFriendlyStatusServiceImpl_ServerConfig = {

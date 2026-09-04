@@ -6,19 +6,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PageHeaderBrand } from '~/components/page-header-brand';
 
-vi.mock('~/components/language-switcher', () => ({
+vi.mock(import('~/components/language-switcher'), () => ({
   LanguageSwitcher: vi.fn().mockImplementation(({ children }) => <div>{children}</div>),
 }));
 
-vi.mock('~/hooks', () => ({
+vi.mock(import('~/hooks'), () => ({
   useCurrentLanguage: vi.fn().mockReturnValue({
     currentLanguage: 'en',
     altLanguage: 'fr',
   }),
 }));
 
-vi.mock('~/utils/locale-utils.ts', () => ({
-  getAltLanguage: (lang: string) => lang,
+vi.mock(import('~/utils/locale-utils'), () => ({
+  getAltLanguage: vi.fn().mockImplementation((lang: string) => lang),
 }));
 
 describe('PageHeaderBrand', () => {

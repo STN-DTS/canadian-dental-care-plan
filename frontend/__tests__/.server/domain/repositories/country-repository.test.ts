@@ -8,25 +8,28 @@ import { DefaultCountryRepository, MockCountryRepository } from '~/.server/domai
 import type { HttpClient } from '~/.server/http';
 
 const dataSource = vi.hoisted(() => ({
-  default: {
-    value: [
-      {
-        esdc_countryid: '1',
-        esdc_nameenglish: 'Canada English',
-        esdc_namefrench: 'Canada Français',
-        esdc_countrycodealpha3: 'CAN',
-      },
-      {
-        esdc_countryid: '2',
-        esdc_nameenglish: 'United States English',
-        esdc_namefrench: 'États-Unis Français',
-        esdc_countrycodealpha3: 'USA',
-      },
-    ],
-  },
+  '@odata.context': 'https://api.example.com/api/data/v9.2/$metadata#esdc_countries',
+  value: [
+    {
+      '@odata.etag': 'W/"00000001"',
+      esdc_countryid: '1',
+      esdc_nameenglish: 'Canada English',
+      esdc_namefrench: 'Canada Français',
+      esdc_countrycodealpha3: 'CAN',
+    },
+    {
+      '@odata.etag': 'W/"00000002"',
+      esdc_countryid: '2',
+      esdc_nameenglish: 'United States English',
+      esdc_namefrench: 'États-Unis Français',
+      esdc_countrycodealpha3: 'USA',
+    },
+  ],
 }));
 
-vi.mock('~/.server/resources/power-platform/country.json', () => dataSource);
+vi.mock(import('~/.server/resources/power-platform/country.json'), () => ({
+  default: dataSource,
+}));
 
 describe('DefaultCountryRepository', () => {
   let serverConfigMock: DefaultCountryRepositoryServerConfig;
@@ -49,12 +52,14 @@ describe('DefaultCountryRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
           esdc_countrycodealpha3: 'CAN',
           esdc_countryid: '1',
           esdc_nameenglish: 'Canada English',
           esdc_namefrench: 'Canada Français',
         },
         {
+          '@odata.etag': 'W/"00000002"',
           esdc_countrycodealpha3: 'USA',
           esdc_countryid: '2',
           esdc_nameenglish: 'United States English',
@@ -95,6 +100,7 @@ describe('DefaultCountryRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
           esdc_countrycodealpha3: 'CAN',
           esdc_countryid: '1',
           esdc_nameenglish: 'Canada English',
@@ -145,12 +151,14 @@ describe('MockCountryRepository', () => {
 
     expect(countries).toEqual([
       {
+        '@odata.etag': 'W/"00000001"',
         esdc_countryid: '1',
         esdc_nameenglish: 'Canada English',
         esdc_namefrench: 'Canada Français',
         esdc_countrycodealpha3: 'CAN',
       },
       {
+        '@odata.etag': 'W/"00000002"',
         esdc_countryid: '2',
         esdc_nameenglish: 'United States English',
         esdc_namefrench: 'États-Unis Français',
@@ -160,7 +168,7 @@ describe('MockCountryRepository', () => {
   });
 
   it('should handle empty countries data', async () => {
-    vi.spyOn(dataSource, 'default', 'get').mockReturnValueOnce({ value: [] });
+    vi.spyOn(dataSource, 'value', 'get').mockReturnValueOnce([]);
 
     const repository = new MockCountryRepository();
 
@@ -175,6 +183,7 @@ describe('MockCountryRepository', () => {
     const country = await repository.findCountryById('1');
 
     expect(country.unwrap()).toEqual({
+      '@odata.etag': 'W/"00000001"',
       esdc_countryid: '1',
       esdc_nameenglish: 'Canada English',
       esdc_namefrench: 'Canada Français',

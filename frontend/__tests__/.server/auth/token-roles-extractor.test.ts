@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import { DefaultTokenRolesExtractor } from '~/.server/auth/token-roles-extractor';
 
-vi.mock('jose', () => ({
+vi.mock(import('jose'), () => ({
   createRemoteJWKSet: vi.fn(),
   decodeJwt: vi.fn(),
   jwtVerify: vi.fn(),

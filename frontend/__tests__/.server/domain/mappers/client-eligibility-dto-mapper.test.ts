@@ -6,7 +6,7 @@ import type { ClientEligibilityEntity } from '~/.server/domain/entities/client-e
 import { DefaultClientEligibilityDtoMapper } from '~/.server/domain/mappers/client-eligibility-dto-mapper';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 
-vi.mock('~/.server/utils/coverage-utils');
+vi.mock(import('~/.server/utils/coverage-utils'));
 
 describe('DefaultClientEligibilityDtoMapper', () => {
   let mapper: DefaultClientEligibilityDtoMapper;

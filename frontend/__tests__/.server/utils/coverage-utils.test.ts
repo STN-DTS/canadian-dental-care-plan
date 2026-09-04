@@ -1,13 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ServerConfig } from '~/.server/configs';
 import { getCoveragePeriodFromTaxYear, isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 
-vi.mock('~/.server/utils/env-utils', () => ({
-  getEnv: vi.fn(() => ({
+const mockServerConfig = await vi.hoisted(async () => {
+  const { mock } = await import('vitest-mock-extended');
+  return mock<ServerConfig>({
     COVERAGE_TIER_CODE_TIER_1: 'TIER_1',
     COVERAGE_TIER_CODE_TIER_2: 'TIER_2',
     COVERAGE_TIER_CODE_TIER_3: 'TIER_3',
-  })),
+  });
+});
+
+vi.mock(import('~/.server/utils/env-utils'), () => ({
+  getEnv: vi.fn(() => mockServerConfig),
 }));
 
 describe('coverage-utils', () => {

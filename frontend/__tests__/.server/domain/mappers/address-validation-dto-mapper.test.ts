@@ -6,7 +6,7 @@ import type { AddressCorrectionResultEntity } from '~/.server/domain/entities';
 import { DefaultAddressValidationDtoMapper } from '~/.server/domain/mappers';
 import { formatPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
 
-vi.mock('~/.server/utils/postal-zip-code-utils');
+vi.mock(import('~/.server/utils/postal-zip-code-utils'));
 
 describe('DefaultAddressValidationDtoMapper', () => {
   const mockServerConfig: Pick<ServerConfig, 'CANADA_COUNTRY_ID'> = { CANADA_COUNTRY_ID: 'CA' };

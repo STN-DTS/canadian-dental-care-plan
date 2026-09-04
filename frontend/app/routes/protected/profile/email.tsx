@@ -3,7 +3,6 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
-import validator from 'validator';
 import * as z from 'zod';
 
 import type { Route } from './+types/email';
@@ -26,6 +25,7 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+import { isEmail } from '~/utils/string-utils';
 
 // prettier-ignore
 const profileEmailContextSchema = z
@@ -123,7 +123,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       .min(1)
       .max(64)
       .refine(
-        (val) => validator.isEmail(val),
+        (val) => isEmail(val),
         t(($) => $.email.errorMessage.emailValid),
       ),
   });

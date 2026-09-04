@@ -1,6 +1,5 @@
 import { invariant } from '@dts-stn/invariant';
 import { injectable } from 'inversify';
-import validator from 'validator';
 
 import type { BenefitApplicationApplicantInformationDto, BenefitApplicationCommunicationPreferencesDto, BenefitApplicationDto, BenefitApplicationEmailDto } from '~/.server/domain/dtos';
 import { checkValidAndVerifiedEmailAddress, isEmailAddressRequired } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -19,6 +18,7 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getContextualAgeCategoryFromDate } from '~/.server/routes/helpers/public-application-route-helpers';
+import { isEmpty } from '~/utils/string-utils';
 
 export interface ApplicationAdultState {
   channelCode: BaseApplicationChannelCodeState;
@@ -311,11 +311,11 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     invariant(dentalBenefitsState.value, 'Expected dentalBenefitsState.value to be defined');
     const dentalBenefits = [];
 
-    if (dentalBenefitsState.value.hasFederalBenefits && dentalBenefitsState.value.federalSocialProgram && !validator.isEmpty(dentalBenefitsState.value.federalSocialProgram)) {
+    if (dentalBenefitsState.value.hasFederalBenefits && dentalBenefitsState.value.federalSocialProgram && !isEmpty(dentalBenefitsState.value.federalSocialProgram)) {
       dentalBenefits.push(dentalBenefitsState.value.federalSocialProgram);
     }
 
-    if (dentalBenefitsState.value.hasProvincialTerritorialBenefits && dentalBenefitsState.value.provincialTerritorialSocialProgram && !validator.isEmpty(dentalBenefitsState.value.provincialTerritorialSocialProgram)) {
+    if (dentalBenefitsState.value.hasProvincialTerritorialBenefits && dentalBenefitsState.value.provincialTerritorialSocialProgram && !isEmpty(dentalBenefitsState.value.provincialTerritorialSocialProgram)) {
       dentalBenefits.push(dentalBenefitsState.value.provincialTerritorialSocialProgram);
     }
 

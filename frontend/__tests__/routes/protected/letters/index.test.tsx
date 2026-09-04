@@ -14,7 +14,7 @@ import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
-vi.mock('~/.server/utils/locale-utils');
+vi.mock(import('~/.server/utils/locale-utils'));
 
 describe('Letters Page', () => {
   afterEach(() => {

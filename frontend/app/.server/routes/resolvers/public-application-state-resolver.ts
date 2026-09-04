@@ -1,7 +1,6 @@
 import { invariant } from '@dts-stn/invariant';
 import { inject, injectable } from 'inversify';
 import type { PickDeep, SetRequired } from 'type-fest';
-import validator from 'validator';
 
 import { TYPES } from '~/.server/constants';
 import type {
@@ -25,6 +24,7 @@ import type {
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
+import { isEmail } from '~/utils/string-utils';
 
 export interface PublicApplicationStateResolver {
   /**
@@ -374,7 +374,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
   resolveEmailValue(state: PickDeep<PublicApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 
-    const hasValidEmailInState = typeof state.email === 'string' && validator.isEmail(state.email) && state.emailVerified === true;
+    const hasValidEmailInState = typeof state.email === 'string' && isEmail(state.email) && state.emailVerified === true;
     return hasValidEmailInState ? state.email : state.clientApplication?.contactInformation.email;
   }
 

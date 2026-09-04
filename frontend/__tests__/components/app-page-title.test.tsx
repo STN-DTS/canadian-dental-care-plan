@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AppPageTitle } from '~/components/app-page-title';
 
-vi.mock('~/hooks', () => ({
+vi.mock(import('~/hooks'), () => ({
   useAccessibleFocusManagement: vi.fn(),
 }));
 

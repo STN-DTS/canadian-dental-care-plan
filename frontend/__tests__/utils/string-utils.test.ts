@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { expandTemplate, formatAddress, formatPercent, hasDigits, isAllValidInputCharacters, normalizeHyphens, padWithZero, randomHexString, randomString, removeInvalidInputCharacters } from '~/utils/string-utils';
+import { expandTemplate, formatAddress, formatPercent, hasDigits, isAllValidInputCharacters, isEmail, isEmpty, isURL, normalizeHyphens, padWithZero, randomHexString, randomString, removeInvalidInputCharacters } from '~/utils/string-utils';
+
+describe('validator wrappers', () => {
+  it('validates email addresses', () => {
+    expect(isEmail('person@example.ca')).toBe(true);
+    expect(isEmail('invalid-email')).toBe(false);
+  });
+
+  it('validates empty strings with options', () => {
+    expect(isEmpty('')).toBe(true);
+    expect(isEmpty(' ', { ignore_whitespace: true })).toBe(true);
+    expect(isEmpty('value')).toBe(false);
+  });
+
+  it('validates URLs', () => {
+    expect(isURL('https://www.canada.ca')).toBe(true);
+    expect(isURL('not a url')).toBe(false);
+  });
+});
 
 describe('expandTemplate', () => {
   it('should expand a template', () => {

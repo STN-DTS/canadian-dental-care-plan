@@ -4,7 +4,7 @@ import { getEnv } from '~/.server/utils/env-utils';
 import { getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl } from '~/.server/utils/url-utils';
 
 // Mock the getEnv function
-vi.mock('~/.server/utils/env-utils', () => ({
+vi.mock(import('~/.server/utils/env-utils'), () => ({
   getEnv: vi.fn(),
 }));
 

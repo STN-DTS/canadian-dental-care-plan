@@ -1,7 +1,6 @@
 import { redirect } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import validator from 'validator';
 
 import { createLogger } from '~/.server/logging';
 import { getAllowedTypeOfApplication, isChildClientNumberValid, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -9,6 +8,7 @@ import type { ApplicationStateParams, ProtectedApplicationChildrenState, Protect
 import { getChildrenState, getContextualAgeCategoryFromDate, getProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
+import { isEmail } from '~/utils/string-utils';
 
 type ProtectedApplicationRenewalChildState = OmitStrict<ProtectedApplicationState, 'clientApplication'> & {
   clientApplication: NonNullable<ProtectedApplicationState['clientApplication']>;
@@ -161,7 +161,7 @@ export function validateProtectedApplicationRenewalChildStateForReview({ params,
     throw redirect(getPathById('protected/application/$id/renewal-children/parent-or-guardian', params));
   }
 
-  if (!email || !validator.isEmail(email) || !emailVerified) {
+  if (!email || !isEmail(email) || !emailVerified) {
     throw redirect(getPathById('protected/application/$id/renewal-children/parent-or-guardian', params));
   }
 

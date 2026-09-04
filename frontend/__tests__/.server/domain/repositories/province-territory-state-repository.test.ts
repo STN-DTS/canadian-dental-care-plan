@@ -7,31 +7,38 @@ import { DefaultProvinceTerritoryStateRepository, MockProvinceTerritoryStateRepo
 import type { HttpClient } from '~/.server/http';
 
 const dataSource = vi.hoisted(() => ({
-  default: {
-    value: [
-      {
-        esdc_ProvinceTerritoryState_Countryid_esd: [
-          {
-            esdc_provinceterritorystateid: '1',
-            _esdc_countryid_value: '10',
-            esdc_nameenglish: 'Alabama',
-            esdc_namefrench: 'Alabama',
-            esdc_internationalalphacode: 'AL',
-          },
-          {
-            esdc_provinceterritorystateid: '2',
-            _esdc_countryid_value: '10',
-            esdc_nameenglish: 'Alaska',
-            esdc_namefrench: 'Alaska',
-            esdc_internationalalphacode: 'AK',
-          },
-        ],
-      },
-    ],
-  },
+  '@odata.context': 'https://api.example.com/$metadata#esdc_countries',
+  value: [
+    {
+      '@odata.etag': 'W/"00000000"',
+      esdc_countryid: 'country-id',
+      esdc_groupkey: 'common',
+      esdc_ProvinceTerritoryState_Countryid_esd: [
+        {
+          '@odata.etag': 'W/"00000001"',
+          esdc_provinceterritorystateid: '1',
+          _esdc_countryid_value: '10',
+          esdc_nameenglish: 'Alabama',
+          esdc_namefrench: 'Alabama',
+          esdc_internationalalphacode: 'AL',
+        },
+        {
+          '@odata.etag': 'W/"00000002"',
+          esdc_provinceterritorystateid: '2',
+          _esdc_countryid_value: '10',
+          esdc_nameenglish: 'Alaska',
+          esdc_namefrench: 'Alaska',
+          esdc_internationalalphacode: 'AK',
+        },
+      ],
+      'esdc_ProvinceTerritoryState_Countryid_esd@odata.nextLink': 'https://api.example.com/api/data/v9.2/esdc_countries(0cf5389e-97ae-eb11-8236-000d3af4bfc3)/esdc_ProvinceTerritoryState_Countryid_esd',
+    },
+  ],
 }));
 
-vi.mock('~/.server/resources/power-platform/province-territory-state.json', () => dataSource);
+vi.mock(import('~/.server/resources/power-platform/province-territory-state.json'), () => ({
+  default: dataSource,
+}));
 
 describe('DefaultProvinceTerritoryStateRepository', () => {
   let serverConfigMock: DefaultProvinceTerritoryStateRepositoryServerConfig;
@@ -56,6 +63,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
         {
           esdc_ProvinceTerritoryState_Countryid_esd: [
             {
+              '@odata.etag': 'W/"00000001"',
               _esdc_countryid_value: '10',
               esdc_internationalalphacode: 'AL',
               esdc_nameenglish: 'Alabama',
@@ -63,6 +71,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
               esdc_provinceterritorystateid: '1',
             },
             {
+              '@odata.etag': 'W/"00000002"',
               _esdc_countryid_value: '10',
               esdc_internationalalphacode: 'AK',
               esdc_nameenglish: 'Alaska',
@@ -110,6 +119,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
         {
           esdc_ProvinceTerritoryState_Countryid_esd: [
             {
+              '@odata.etag': 'W/"00000001"',
               _esdc_countryid_value: '10',
               esdc_internationalalphacode: 'AL',
               esdc_nameenglish: 'Alabama',
@@ -117,6 +127,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
               esdc_provinceterritorystateid: '1',
             },
             {
+              '@odata.etag': 'W/"00000002"',
               _esdc_countryid_value: '10',
               esdc_internationalalphacode: 'AK',
               esdc_nameenglish: 'Alaska',
@@ -172,6 +183,7 @@ describe('MockProvinceTerritoryStateRepository', () => {
 
     expect(provinceTerritoryStates).toEqual([
       {
+        '@odata.etag': 'W/"00000001"',
         esdc_provinceterritorystateid: '1',
         _esdc_countryid_value: '10',
         esdc_nameenglish: 'Alabama',
@@ -179,6 +191,7 @@ describe('MockProvinceTerritoryStateRepository', () => {
         esdc_internationalalphacode: 'AL',
       },
       {
+        '@odata.etag': 'W/"00000002"',
         esdc_provinceterritorystateid: '2',
         _esdc_countryid_value: '10',
         esdc_nameenglish: 'Alaska',
@@ -189,7 +202,7 @@ describe('MockProvinceTerritoryStateRepository', () => {
   });
 
   it('should handle empty province territory states data', async () => {
-    vi.spyOn(dataSource, 'default', 'get').mockReturnValueOnce({ value: [] });
+    vi.spyOn(dataSource, 'value', 'get').mockReturnValueOnce([]);
 
     const repository = new MockProvinceTerritoryStateRepository();
 
@@ -204,6 +217,7 @@ describe('MockProvinceTerritoryStateRepository', () => {
     const provinceTerritoryState = await repository.findProvinceTerritoryStateById('1');
 
     expect(provinceTerritoryState.unwrap()).toEqual({
+      '@odata.etag': 'W/"00000001"',
       esdc_provinceterritorystateid: '1',
       _esdc_countryid_value: '10',
       esdc_nameenglish: 'Alabama',

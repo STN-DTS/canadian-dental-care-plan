@@ -10,7 +10,7 @@ import type { CountryRepository } from '~/.server/domain/repositories';
 import type { CountryServiceImpl_ServiceConfig } from '~/.server/domain/services';
 import { DefaultCountryService } from '~/.server/domain/services';
 
-vi.mock('micro-memoize');
+vi.mock(import('micro-memoize'));
 
 describe('DefaultCountryService', () => {
   const mockServerConfig: CountryServiceImpl_ServiceConfig = {

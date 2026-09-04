@@ -9,8 +9,8 @@ import type { ClientEligibilityService } from '~/.server/domain/services';
 import { isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 
-vi.mock('~/.server/routes/helpers/base-application-route-helpers');
-vi.mock('~/.server/utils/coverage-utils');
+vi.mock(import('~/.server/routes/helpers/base-application-route-helpers'));
+vi.mock(import('~/.server/utils/coverage-utils'));
 
 const SERVER_CONFIG = {
   ELIGIBILITY_STATUS_CODE_ELIGIBLE: 'eligible',

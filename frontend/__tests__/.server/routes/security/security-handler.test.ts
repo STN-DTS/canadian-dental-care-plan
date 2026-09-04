@@ -15,7 +15,7 @@ import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 import type { FeatureName } from '~/utils/env-utils';
 
-vi.mock('~/.server/utils/ip-address-utils');
+vi.mock(import('~/.server/utils/ip-address-utils'));
 
 describe('DefaultSecurityHandler', () => {
   let mockLogger: MockProxy<Logger>;

@@ -1,7 +1,6 @@
 import { invariant } from '@dts-stn/invariant';
 import { injectable } from 'inversify';
 import type { ReadonlyDeep } from 'type-fest';
-import validator from 'validator';
 
 import type {
   BenefitRenewalApplicantInformationDto,
@@ -32,6 +31,7 @@ import type {
   BaseApplicationTermsAndConditionsState,
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
+import { isEmpty } from '~/utils/string-utils';
 
 export interface BenefitRenewalAdultState {
   channelCode: BaseApplicationChannelCodeState;
@@ -685,11 +685,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
 
     const dentalBenefits = [];
 
-    if (renewedDentalBenefits.value.hasFederalBenefits && renewedDentalBenefits.value.federalSocialProgram && !validator.isEmpty(renewedDentalBenefits.value.federalSocialProgram)) {
+    if (renewedDentalBenefits.value.hasFederalBenefits && renewedDentalBenefits.value.federalSocialProgram && !isEmpty(renewedDentalBenefits.value.federalSocialProgram)) {
       dentalBenefits.push(renewedDentalBenefits.value.federalSocialProgram);
     }
 
-    if (renewedDentalBenefits.value.hasProvincialTerritorialBenefits && renewedDentalBenefits.value.provincialTerritorialSocialProgram && !validator.isEmpty(renewedDentalBenefits.value.provincialTerritorialSocialProgram)) {
+    if (renewedDentalBenefits.value.hasProvincialTerritorialBenefits && renewedDentalBenefits.value.provincialTerritorialSocialProgram && !isEmpty(renewedDentalBenefits.value.provincialTerritorialSocialProgram)) {
       dentalBenefits.push(renewedDentalBenefits.value.provincialTerritorialSocialProgram);
     }
 

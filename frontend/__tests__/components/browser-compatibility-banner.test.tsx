@@ -7,8 +7,8 @@ import { BrowserCompatibilityBanner, BrowserCompatibilityBannerView } from '~/co
 import { useBrowserCompatibilityBannerStorage } from '~/hooks/use-browser-compatibility-banner-storage';
 import { useBrowserValidation } from '~/hooks/use-browser-validation';
 
-vi.mock('~/hooks/use-browser-compatibility-banner-storage');
-vi.mock('~/hooks/use-browser-validation');
+vi.mock(import('~/hooks/use-browser-compatibility-banner-storage'));
+vi.mock(import('~/hooks/use-browser-validation'));
 
 describe('BrowserCompatibilityBannerView', () => {
   it('should render the BrowserCompatibilityBannerView', () => {

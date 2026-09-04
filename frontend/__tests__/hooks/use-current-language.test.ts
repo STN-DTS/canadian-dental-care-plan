@@ -6,11 +6,11 @@ import { mock } from 'vitest-mock-extended';
 import { useCurrentLanguage } from '~/hooks/use-current-language';
 import { getAltLanguage, getLanguage } from '~/utils/locale-utils';
 
-vi.mock('react-router', () => ({
+vi.mock(import('react-router'), () => ({
   useLocation: vi.fn(),
 }));
 
-vi.mock('~/utils/locale-utils', () => ({
+vi.mock(import('~/utils/locale-utils'), () => ({
   getLanguage: vi.fn(),
   getAltLanguage: vi.fn(),
 }));

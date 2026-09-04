@@ -9,7 +9,7 @@ import type { ProvincialGovernmentInsurancePlanDtoMapper } from '~/.server/domai
 import type { GovernmentInsurancePlanRepository } from '~/.server/domain/repositories';
 import { DefaultProvincialGovernmentInsurancePlanService } from '~/.server/domain/services';
 
-vi.mock('micro-memoize');
+vi.mock(import('micro-memoize'));
 
 describe('DefaultProvincialGovernmentInsurancePlanService', () => {
   const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCIAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'> = {

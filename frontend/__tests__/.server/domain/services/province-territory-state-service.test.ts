@@ -10,7 +10,7 @@ import type { ProvinceTerritoryStateDtoMapper } from '~/.server/domain/mappers';
 import type { ProvinceTerritoryStateRepository } from '~/.server/domain/repositories';
 import { DefaultProvinceTerritoryStateService } from '~/.server/domain/services';
 
-vi.mock('micro-memoize');
+vi.mock(import('micro-memoize'));
 
 describe('DefaultProvinceTerritoryStateService', () => {
   const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS'> = {

@@ -4,7 +4,7 @@ import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import { randomString } from '~/utils/string-utils';
 
-vi.mock('~/utils/string-utils');
+vi.mock(import('~/utils/string-utils'));
 
 describe('AppError', () => {
   it('should create a AppError with default values', () => {

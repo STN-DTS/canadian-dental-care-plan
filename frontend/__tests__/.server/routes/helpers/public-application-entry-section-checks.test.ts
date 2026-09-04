@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAllowedTypeOfApplication } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getTypeOfApplicationSectionCompletionResult, isPersonalInformationSectionCompleted, isTaxFilingSectionCompleted, isTermsAndConditionsSectionCompleted } from '~/.server/routes/helpers/public-application-entry-section-checks';
 
-vi.mock('~/.server/routes/helpers/base-application-route-helpers', async (importOriginal) => ({
+vi.mock(import('~/.server/routes/helpers/base-application-route-helpers'), async (importOriginal) => ({
   ...(await importOriginal()),
   getAllowedTypeOfApplication: vi.fn(),
 }));

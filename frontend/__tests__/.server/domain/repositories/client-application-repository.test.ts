@@ -30,12 +30,12 @@ const clientApplicationItaJsonDataSource = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('~/.server/resources/power-platform/client-application.json', () => ({
-  default: clientApplicationJsonDataSource,
+vi.mock(import('~/.server/resources/power-platform/client-application.json'), () => ({
+  default: mock(clientApplicationJsonDataSource),
 }));
 
-vi.mock('~/.server/resources/power-platform/client-application-ita.json', () => ({
-  default: clientApplicationItaJsonDataSource,
+vi.mock(import('~/.server/resources/power-platform/client-application-ita.json'), () => ({
+  default: mock(clientApplicationItaJsonDataSource),
 }));
 
 describe('DefaultClientApplicationRepository', () => {

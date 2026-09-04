@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SkipNavigationLinks } from '~/components/skip-navigation-links';
 import { scrollAndFocusFromAnchorLink } from '~/utils/link-utils';
 
-vi.mock('~/utils/link-utils', () => ({
+vi.mock(import('~/utils/link-utils'), () => ({
   scrollAndFocusFromAnchorLink: vi.fn(),
 }));
 

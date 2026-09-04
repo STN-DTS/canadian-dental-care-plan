@@ -1,6 +1,5 @@
 // Shared state field types for Public/Protected ApplicationState
 import type { PickDeep, ReadonlyDeep } from 'type-fest';
-import validator from 'validator';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import type { DeclaredChange } from '~/.server/routes/helpers/declared-change-type';
@@ -9,6 +8,7 @@ import { getEnv } from '~/.server/utils/env-utils';
 import type { EligibilityType } from '~/components/eligibility';
 import { getAgeFromDateString } from '~/utils/date-utils';
 import { formatSin, isValidSin } from '~/utils/sin-utils';
+import { isEmail } from '~/utils/string-utils';
 
 /**
  * The channel through which the application is being submitted, either 'protected' for authenticated
@@ -453,7 +453,7 @@ type CheckValidAndVerifiedEmailAddressArgs = {
  *  email address and its verification status.
  */
 export function checkValidAndVerifiedEmailAddress({ email, emailVerified }: CheckValidAndVerifiedEmailAddressArgs): CheckValidAndVerifiedEmailAddressResult {
-  if (typeof email === 'string' && validator.isEmail(email) && emailVerified === true) {
+  if (typeof email === 'string' && isEmail(email) && emailVerified === true) {
     // The email is valid and verified, return success with the email and verification status.
     return { success: true, email, emailVerified };
   }

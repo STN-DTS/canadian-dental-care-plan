@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PageDetails } from '~/components/page-details';
 import { useBuildInfo, usePageIdentifier } from '~/utils/route-utils';
 
-vi.mock('~/utils/route-utils');
+vi.mock(import('~/utils/route-utils'));
 
 describe('PageDetails', () => {
   beforeEach(() => {

@@ -1,17 +1,17 @@
 import { render } from '@testing-library/react';
 
+import type { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ButtonEndIcon, ButtonStartIcon } from '~/components/button-icons';
 
 // Mock FontAwesomeIcon to avoid rendering actual icons in tests
-vi.mock('@fortawesome/react-fontawesome', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  FontAwesomeIcon: ({ className, icon, ['aria-label']: ariaLabel }: any) => (
+vi.mock(import('@fortawesome/react-fontawesome'), () => ({
+  FontAwesomeIcon: vi.fn<typeof FontAwesomeIcon>().mockImplementation(({ className, icon, ['aria-label']: ariaLabel }) => (
     <div className={className} aria-label={ariaLabel}>
       {JSON.stringify(icon)}
     </div>
-  ),
+  )),
 }));
 
 describe('ButtonStartIcon', () => {

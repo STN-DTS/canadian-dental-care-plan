@@ -4,7 +4,7 @@ import { getApiSessionRedirectToUrl } from '~/.server/utils/api-session-utils';
 import { getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl } from '~/.server/utils/url-utils';
 import type { ApiSessionRedirectTo } from '~/routes/api/session';
 
-vi.mock('~/.server/utils/url-utils', () => ({
+vi.mock(import('~/.server/utils/url-utils'), () => ({
   getCdcpWebsiteApplyUrl: vi.fn(),
   getCdcpWebsiteStatusUrl: vi.fn(),
   getCdcpWebsiteUrl: vi.fn(),

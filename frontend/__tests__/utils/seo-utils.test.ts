@@ -10,9 +10,9 @@ import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCan
  * @vitest-environment jsdom
  */
 
-vi.mock('react-router');
-vi.mock('~/utils/env-utils');
-vi.mock('~/utils/route-utils');
+vi.mock(import('react-router'));
+vi.mock(import('~/utils/env-utils'));
+vi.mock(import('~/utils/route-utils'));
 
 describe('useCanonicalURL', () => {
   afterEach(() => {

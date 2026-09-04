@@ -1,6 +1,5 @@
 import { formatISO } from 'date-fns';
 import { inject, injectable } from 'inversify';
-import validator from 'validator';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -20,6 +19,7 @@ import type { BenefitRenewalRequestEntity, BenefitRenewalResponseEntity } from '
 import { expectDefined } from '~/utils/assert-utils';
 import { parseDateString } from '~/utils/date-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
+import { isEmail, isEmpty } from '~/utils/string-utils';
 
 export interface BenefitRenewalDtoMapper {
   mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto): BenefitRenewalRequestEntity;
@@ -147,7 +147,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
           PersonContactInformation: [
             {
               Address: [this.toMailingAddress(contactInformation), this.toHomeAddress(contactInformation)],
-              EmailAddress: emailAddress.value && validator.isEmail(emailAddress.value) ? [{ EmailAddressID: emailAddress.value }] : [],
+              EmailAddress: emailAddress.value && isEmail(emailAddress.value) ? [{ EmailAddressID: emailAddress.value }] : [],
               TelephoneNumber: this.toTelephoneNumber(contactInformation),
             },
           ],
@@ -281,7 +281,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
   private toTelephoneNumber({ phoneNumber, phoneNumberAlt }: BenefitRenewalContactInformationDto) {
     const telephoneNumber = [];
 
-    if (phoneNumber && !validator.isEmpty(phoneNumber)) {
+    if (phoneNumber && !isEmpty(phoneNumber)) {
       telephoneNumber.push({
         TelephoneNumberCategoryCode: {
           ReferenceDataID: phoneNumber,
@@ -290,7 +290,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
       });
     }
 
-    if (phoneNumberAlt && !validator.isEmpty(phoneNumberAlt)) {
+    if (phoneNumberAlt && !isEmpty(phoneNumberAlt)) {
       telephoneNumber.push({
         TelephoneNumberCategoryCode: {
           ReferenceDataID: phoneNumberAlt,

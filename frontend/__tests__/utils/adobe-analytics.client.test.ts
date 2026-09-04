@@ -7,7 +7,7 @@ import { getClientEnv } from '~/utils/env-utils';
  * @vitest-environment jsdom
  */
 
-vi.mock('~/utils/env-utils');
+vi.mock(import('~/utils/env-utils'));
 
 describe('isConfigured', () => {
   afterEach(() => {

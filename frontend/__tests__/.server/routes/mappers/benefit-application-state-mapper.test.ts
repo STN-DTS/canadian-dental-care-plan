@@ -5,12 +5,8 @@ import { getContextualAgeCategoryFromDate } from '~/.server/routes/helpers/publi
 import { DefaultBenefitApplicationStateMapper } from '~/.server/routes/mappers/benefit-application-state-mapper';
 import type { ApplicationAdultState, ApplicationChildrenState, ApplicationFamilyState } from '~/.server/routes/mappers/benefit-application-state-mapper';
 
-vi.mock('validator', () => ({
-  default: { isEmpty: vi.fn().mockReturnValue(false) },
-}));
-
-vi.mock('~/.server/routes/helpers/base-application-route-helpers');
-vi.mock('~/.server/routes/helpers/public-application-route-helpers');
+vi.mock(import('~/.server/routes/helpers/base-application-route-helpers'));
+vi.mock(import('~/.server/routes/helpers/public-application-route-helpers'));
 
 // ============================================================================
 // Test Data Constants

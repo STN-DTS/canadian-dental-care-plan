@@ -1,13 +1,12 @@
 import { redirect } from 'react-router';
 
-import validator from 'validator';
-
 import { createLogger } from '~/.server/logging';
 import { getAllowedTypeOfApplication, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ApplicationStateParams, ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
+import { isEmail } from '~/utils/string-utils';
 
 interface LoadProtectedApplicationIntakeAdultStateArgs {
   params: ApplicationStateParams;
@@ -155,7 +154,7 @@ export function validateProtectedApplicationIntakeAdultStateForReview({ params, 
     throw redirect(getPathById('protected/application/$id/intake-adult/contact-information', params));
   }
 
-  if (!email || !validator.isEmail(email) || !emailVerified) {
+  if (!email || !isEmail(email) || !emailVerified) {
     throw redirect(getPathById('protected/application/$id/intake-adult/contact-information', params));
   }
 

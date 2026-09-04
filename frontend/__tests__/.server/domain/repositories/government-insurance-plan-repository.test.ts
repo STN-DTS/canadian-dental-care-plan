@@ -7,37 +7,46 @@ import type { DefaultGovernmentInsurancePlanRepositoryServerConfig } from '~/.se
 import type { HttpClient } from '~/.server/http';
 
 const dataSource = vi.hoisted(() => ({
-  default: {
-    value: [
-      {
-        esdc_governmentinsuranceplanid: '1',
-        esdc_nameenglish: 'First Provincial Insurance Plan',
-        esdc_namefrench: "Premier plan d'assurance provincial",
-        _esdc_provinceterritorystateid_value: '10',
-      },
-      {
-        esdc_governmentinsuranceplanid: '2',
-        esdc_nameenglish: 'Second Provincial Insurance Plan',
-        esdc_namefrench: "Deuxième plan d'assurance provincial",
-        _esdc_provinceterritorystateid_value: '20',
-      },
-      {
-        esdc_governmentinsuranceplanid: '3',
-        esdc_nameenglish: 'First Insurance Plan Federal',
-        esdc_namefrench: "Premier plan d'assurance fédéral",
-        _esdc_provinceterritorystateid_value: null,
-      },
-      {
-        esdc_governmentinsuranceplanid: '4',
-        esdc_nameenglish: 'Second Insurance Plan Federal',
-        esdc_namefrench: "Deuxième plan d'assurance fédéral",
-        _esdc_provinceterritorystateid_value: null,
-      },
-    ],
-  },
+  '@odata.context': 'https://api.example.com/api/data/v9.2/$metadata#esdc_governmentinsuranceplans',
+  value: [
+    {
+      '@odata.etag': 'W/"00000001"',
+      esdc_code: '01',
+      esdc_governmentinsuranceplanid: '1',
+      esdc_nameenglish: 'First Provincial Insurance Plan',
+      esdc_namefrench: "Premier plan d'assurance provincial",
+      _esdc_provinceterritorystateid_value: '10',
+    },
+    {
+      '@odata.etag': 'W/"00000002"',
+      esdc_code: '02',
+      esdc_governmentinsuranceplanid: '2',
+      esdc_nameenglish: 'Second Provincial Insurance Plan',
+      esdc_namefrench: "Deuxième plan d'assurance provincial",
+      _esdc_provinceterritorystateid_value: '20',
+    },
+    {
+      '@odata.etag': 'W/"00000003"',
+      esdc_code: '03',
+      esdc_governmentinsuranceplanid: '3',
+      esdc_nameenglish: 'First Insurance Plan Federal',
+      esdc_namefrench: "Premier plan d'assurance fédéral",
+      _esdc_provinceterritorystateid_value: null,
+    },
+    {
+      '@odata.etag': 'W/"00000004"',
+      esdc_code: '04',
+      esdc_governmentinsuranceplanid: '4',
+      esdc_nameenglish: 'Second Insurance Plan Federal',
+      esdc_namefrench: "Deuxième plan d'assurance fédéral",
+      _esdc_provinceterritorystateid_value: null,
+    },
+  ],
 }));
 
-vi.mock('~/.server/resources/power-platform/government-insurance-plan.json', () => dataSource);
+vi.mock(import('~/.server/resources/power-platform/government-insurance-plan.json'), () => ({
+  default: dataSource,
+}));
 
 describe('DefaultGovernmentInsurancePlanRepository', () => {
   let serverConfigMock: DefaultGovernmentInsurancePlanRepositoryServerConfig;
@@ -60,12 +69,16 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
+          esdc_code: '01',
           esdc_governmentinsuranceplanid: '0',
           esdc_nameenglish: 'name english',
           esdc_namefrench: 'name french',
           _esdc_provinceterritorystateid_value: null,
         },
         {
+          '@odata.etag': 'W/"00000002"',
+          esdc_code: '02',
           esdc_governmentinsuranceplanid: '1',
           esdc_nameenglish: 'name english',
           esdc_namefrench: 'name french',
@@ -107,12 +120,16 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
+          esdc_code: '01',
           esdc_governmentinsuranceplanid: '0',
           esdc_nameenglish: 'name english',
           esdc_namefrench: 'name french',
           _esdc_provinceterritorystateid_value: null,
         },
         {
+          '@odata.etag': 'W/"00000002"',
+          esdc_code: '02',
           esdc_governmentinsuranceplanid: '1',
           esdc_nameenglish: 'name english',
           esdc_namefrench: 'name french',
@@ -164,24 +181,32 @@ describe('MockGovernmentInsurancePlanRepository', () => {
 
     expect(governmentInsurancePlans).toEqual([
       {
+        '@odata.etag': 'W/"00000001"',
+        esdc_code: '01',
         esdc_governmentinsuranceplanid: '1',
         esdc_nameenglish: 'First Provincial Insurance Plan',
         esdc_namefrench: "Premier plan d'assurance provincial",
         _esdc_provinceterritorystateid_value: '10',
       },
       {
+        '@odata.etag': 'W/"00000002"',
+        esdc_code: '02',
         esdc_governmentinsuranceplanid: '2',
         esdc_nameenglish: 'Second Provincial Insurance Plan',
         esdc_namefrench: "Deuxième plan d'assurance provincial",
         _esdc_provinceterritorystateid_value: '20',
       },
       {
+        '@odata.etag': 'W/"00000003"',
+        esdc_code: '03',
         esdc_governmentinsuranceplanid: '3',
         esdc_nameenglish: 'First Insurance Plan Federal',
         esdc_namefrench: "Premier plan d'assurance fédéral",
         _esdc_provinceterritorystateid_value: null,
       },
       {
+        '@odata.etag': 'W/"00000004"',
+        esdc_code: '04',
         esdc_governmentinsuranceplanid: '4',
         esdc_nameenglish: 'Second Insurance Plan Federal',
         esdc_namefrench: "Deuxième plan d'assurance fédéral",
@@ -191,7 +216,7 @@ describe('MockGovernmentInsurancePlanRepository', () => {
   });
 
   it('should handle empty government insurance plans data', async () => {
-    vi.spyOn(dataSource, 'default', 'get').mockReturnValueOnce({ value: [] });
+    vi.spyOn(dataSource, 'value', 'get').mockReturnValueOnce([]);
 
     const repository = new MockGovernmentInsurancePlanRepository();
 
@@ -206,6 +231,8 @@ describe('MockGovernmentInsurancePlanRepository', () => {
     const governmentInsurancePlan = await repository.findGovernmentInsurancePlanById('3');
 
     expect(governmentInsurancePlan.unwrap()).toEqual({
+      '@odata.etag': 'W/"00000003"',
+      esdc_code: '03',
       esdc_governmentinsuranceplanid: '3',
       esdc_nameenglish: 'First Insurance Plan Federal',
       esdc_namefrench: "Premier plan d'assurance fédéral",

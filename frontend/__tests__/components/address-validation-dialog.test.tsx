@@ -1,19 +1,35 @@
 import { render } from '@testing-library/react';
 
+import type { Form, useFetcher } from 'react-router';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import { Dialog } from '~/components/dialog';
 
-vi.mock('react-router', () => ({
-  createContext: vi.fn(),
-  useFetcher: vi.fn(() => ({
-    Form: vi.fn(({ children, method, noValidate }) => <form method={method}>{children}</form>),
-    state: 'idle',
-  })),
-}));
+vi.mock(import('react-router'), () => {
+  return {
+    createContext: vi.fn(),
+    useFetcher: vi.fn<typeof useFetcher<undefined>>().mockImplementation(() => ({
+      data: undefined,
+      Form: vi.fn<typeof Form>().mockImplementation(({ children, method }) => {
+        return <form method={method}>{children}</form>;
+      }),
+      formAction: undefined,
+      formData: undefined,
+      formEncType: undefined,
+      formMethod: undefined,
+      json: undefined,
+      load: vi.fn(),
+      reset: vi.fn(),
+      state: 'idle',
+      submit: vi.fn(),
+      text: undefined,
+    })),
+  };
+});
 
-vi.mock('~/components/csrf-token-input');
+vi.mock(import('~/components/csrf-token-input'));
 
 describe('AddressInvalidDialogContent', () => {
   it('should render the AddressInvalidDialogContent', async () => {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { formatPostalCode, isValidCanadianPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
 
-vi.mock('~/.server/utils/env-utils', () => ({
+vi.mock(import('~/.server/utils/env-utils'), () => ({
   getEnv: vi.fn().mockReturnValue({
     CANADA_COUNTRY_ID: 'CA',
     USA_COUNTRY_ID: 'US',

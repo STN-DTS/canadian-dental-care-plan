@@ -1,6 +1,5 @@
-import isURL from 'validator/lib/isURL';
-
 import { getClientEnv } from '~/utils/env-utils';
+import { isURL } from '~/utils/string-utils';
 
 /** The shape of the `window.adobeDataLayer` object injected by the Adobe Analytics script. */
 type AdobeDataLayer = { push?: (object: Record<string, string | Record<string, string>>) => void };

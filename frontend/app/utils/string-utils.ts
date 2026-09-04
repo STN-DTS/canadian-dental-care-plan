@@ -1,3 +1,43 @@
+import validatorIsEmail from 'validator/es/lib/isEmail';
+import validatorIsEmpty from 'validator/es/lib/isEmpty';
+import validatorIsURL from 'validator/es/lib/isURL';
+
+/**
+ * Checks whether a string is a valid email address.
+ * Uses validator's tree-shakeable `isEmail` ES module.
+ *
+ * @param value - String to validate.
+ * @param options - Optional validator email rules.
+ * @returns `true` when the string is a valid email address.
+ */
+export function isEmail(value: string, options?: validator.IsEmailOptions) {
+  return validatorIsEmail(value, options);
+}
+
+/**
+ * Checks whether a string is empty.
+ * Uses validator's tree-shakeable `isEmpty` ES module.
+ *
+ * @param value - String to validate.
+ * @param options - Optional whitespace handling rules.
+ * @returns `true` when the string is empty under the supplied rules.
+ */
+export function isEmpty(value: string, options?: validator.IsEmptyOptions) {
+  return validatorIsEmpty(value, options);
+}
+
+/**
+ * Checks whether a string is a valid URL.
+ * Uses validator's tree-shakeable `isURL` ES module.
+ *
+ * @param value - String to validate.
+ * @param options - Optional validator URL rules.
+ * @returns `true` when the string is a valid URL.
+ */
+export function isURL(value: string, options?: validator.IsURLOptions) {
+  return validatorIsURL(value, options);
+}
+
 /**
  * Expand the given string template using the provided variables.
  * A string template uses handlebar notation to denote placeholders. For example:

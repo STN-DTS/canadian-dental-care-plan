@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { CSRF_FORM_DATA_KEY } from '~/constants/csrf-token';
 
-vi.mock('remix-utils/csrf/react', () => ({
+vi.mock(import('remix-utils/csrf/react'), () => ({
   AuthenticityTokenInput: vi.fn((props) => <input {...props} name={CSRF_FORM_DATA_KEY} type="hidden" value="mock-csrf-token" />),
 }));
 

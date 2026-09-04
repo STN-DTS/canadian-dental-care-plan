@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getEnv } from '~/.server/utils/env-utils';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 
-vi.mock('~/.server/utils/env-utils', () => ({
+vi.mock(import('~/.server/utils/env-utils'), () => ({
   getEnv: vi.fn(),
 }));
 

@@ -7,13 +7,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useApplicationFlowCheck } from '~/hooks/use-application-flow-check';
 import { useApplicationFlowStorage } from '~/hooks/use-application-flow-storage';
 
-vi.mock('react-router', () => ({
+vi.mock(import('react-router'), () => ({
   createContext: vi.fn(),
   useNavigate: vi.fn(),
   useNavigation: vi.fn(),
 }));
 
-vi.mock('~/hooks/use-application-flow-storage', () => ({
+vi.mock(import('~/hooks/use-application-flow-storage'), () => ({
   useApplicationFlowStorage: vi.fn(),
 }));
 

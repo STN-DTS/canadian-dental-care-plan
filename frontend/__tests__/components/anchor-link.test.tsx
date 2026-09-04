@@ -6,7 +6,7 @@ import { AnchorLink } from '~/components/anchor-link';
 import type { AnchorLinkProps } from '~/components/anchor-link';
 import { scrollAndFocusFromAnchorLink } from '~/utils/link-utils';
 
-vi.mock('~/utils/link-utils', () => ({
+vi.mock(import('~/utils/link-utils'), () => ({
   scrollAndFocusFromAnchorLink: vi.fn(),
 }));
 

@@ -5,7 +5,7 @@ import type { ClientApplicationEntity, ClientApplicationSinRequestEntity } from 
 import { DefaultClientApplicationDtoMapper } from '~/.server/domain/mappers';
 import type { DefaultClientApplicationDtoMapper_ServerConfig } from '~/.server/domain/mappers';
 
-vi.mock('~/.server/utils/coverage-utils', () => ({
+vi.mock(import('~/.server/utils/coverage-utils'), () => ({
   isValidCoverageCopayTierCode: (code: string) => ['Tier 1', 'Tier 2', 'Tier 3'].includes(code),
 }));
 

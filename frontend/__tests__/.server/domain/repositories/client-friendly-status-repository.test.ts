@@ -8,23 +8,26 @@ import { DefaultClientFriendlyStatusRepository, MockClientFriendlyStatusReposito
 import type { HttpClient } from '~/.server/http';
 
 const dataSource = vi.hoisted(() => ({
-  default: {
-    value: [
-      {
-        esdc_clientfriendlystatusid: '1',
-        esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
-        esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',
-      },
-      {
-        esdc_clientfriendlystatusid: '2',
-        esdc_descriptionenglish: 'We reviewed your application for the Canadian Dental Care Plan.',
-        esdc_descriptionfrench: "Nous avons examiné votre demande d'adhésion au Régime canadien de soins dentaires.",
-      },
-    ],
-  },
+  '@odata.context': 'https://canadadental-uat.crm3.dynamics.com/api/data/v9.2/$metadata#esdc_clientfriendlystatuses(esdc_clientfriendlystatusid,esdc_descriptionenglish,esdc_descriptionfrench)',
+  value: [
+    {
+      '@odata.etag': 'W/"00000001"',
+      esdc_clientfriendlystatusid: '1',
+      esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
+      esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',
+    },
+    {
+      '@odata.etag': 'W/"00000002"',
+      esdc_clientfriendlystatusid: '2',
+      esdc_descriptionenglish: 'We reviewed your application for the Canadian Dental Care Plan.',
+      esdc_descriptionfrench: "Nous avons examiné votre demande d'adhésion au Régime canadien de soins dentaires.",
+    },
+  ],
 }));
 
-vi.mock('~/.server/resources/power-platform/client-friendly-status.json', () => dataSource);
+vi.mock(import('~/.server/resources/power-platform/client-friendly-status.json'), () => ({
+  default: dataSource,
+}));
 
 describe('DefaultClientFriendlyStatusRepository', () => {
   let serverConfigMock: DefaultClientFriendlyStatusRepositoryServerConfig;
@@ -47,6 +50,7 @@ describe('DefaultClientFriendlyStatusRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
           esdc_clientfriendlystatusid: '1',
           esdc_descriptionenglish: 'english',
           esdc_descriptionfrench: 'french',
@@ -86,6 +90,7 @@ describe('DefaultClientFriendlyStatusRepository', () => {
     const responseDataMock = {
       value: [
         {
+          '@odata.etag': 'W/"00000001"',
           esdc_clientfriendlystatusid: '1',
           esdc_descriptionenglish: 'english',
           esdc_descriptionfrench: 'french',
@@ -135,11 +140,13 @@ describe('MockClientFriendlyStatusRepository', () => {
 
     expect(clientFriendlyStatuses).toEqual([
       {
+        '@odata.etag': 'W/"00000001"',
         esdc_clientfriendlystatusid: '1',
         esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
         esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',
       },
       {
+        '@odata.etag': 'W/"00000002"',
         esdc_clientfriendlystatusid: '2',
         esdc_descriptionenglish: 'We reviewed your application for the Canadian Dental Care Plan.',
         esdc_descriptionfrench: "Nous avons examiné votre demande d'adhésion au Régime canadien de soins dentaires.",
@@ -148,7 +155,7 @@ describe('MockClientFriendlyStatusRepository', () => {
   });
 
   it('should handle empty client friendly statuses data', async () => {
-    vi.spyOn(dataSource, 'default', 'get').mockReturnValueOnce({ value: [] });
+    vi.spyOn(dataSource, 'value', 'get').mockReturnValueOnce([]);
 
     const repository = new MockClientFriendlyStatusRepository();
 
@@ -163,6 +170,7 @@ describe('MockClientFriendlyStatusRepository', () => {
     const clientFriendlyStatus = await repository.findClientFriendlyStatusById('1');
 
     expect(clientFriendlyStatus.unwrap()).toEqual({
+      '@odata.etag': 'W/"00000001"',
       esdc_clientfriendlystatusid: '1',
       esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
       esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',

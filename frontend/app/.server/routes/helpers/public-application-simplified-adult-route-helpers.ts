@@ -1,7 +1,6 @@
 import { redirect } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import validator from 'validator';
 
 import { createLogger } from '~/.server/logging';
 import { getAllowedTypeOfApplication } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -10,6 +9,7 @@ import { getContextualAgeCategoryFromDate, getPublicApplicationState } from '~/.
 import { getEnv } from '~/.server/utils/env-utils';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
+import { isEmail } from '~/utils/string-utils';
 
 type PublicApplicationRenewalAdultState = OmitStrict<PublicApplicationState, 'clientApplication'> & {
   clientApplication: NonNullable<PublicApplicationState['clientApplication']>;
@@ -175,7 +175,7 @@ export function validatePublicRenewAdultStateForReview({ params, state }: Valida
   const isEmailRequired = resolvedSunLifePreferredMethod === COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID || resolvedGovernmentOfCanadaPreferredMethod === COMMUNICATION_METHOD_GC_DIGITAL_ID;
   const resolvedEmail = communicationPreferences.hasChanged ? email : clientApplication.contactInformation.email;
   const resolvedEmailVerified = communicationPreferences.hasChanged ? emailVerified : clientApplication.contactInformation.emailVerified;
-  const hasValidVerifiedEmail = resolvedEmail !== undefined && validator.isEmail(resolvedEmail) && resolvedEmailVerified === true;
+  const hasValidVerifiedEmail = resolvedEmail !== undefined && isEmail(resolvedEmail) && resolvedEmailVerified === true;
 
   if (isEmailRequired && !hasValidVerifiedEmail) {
     throw redirect(getPathById('public/application/$id/simplified-adult/contact-information', params));

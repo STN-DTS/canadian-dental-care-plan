@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
+import type { Link } from 'react-router';
 import { useHref } from 'react-router';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -8,12 +9,12 @@ import { AppLink } from '~/components/app-link';
 import type { AppLinkProps } from '~/components/app-link';
 import { getPathById } from '~/utils/route-utils';
 
-vi.mock('react-router', () => ({
-  Link: vi.fn(({ children }) => <a href="https://www.example.com">{children}</a>),
-  useHref: vi.fn((to) => to),
+vi.mock(import('react-router'), () => ({
+  Link: vi.fn<typeof Link>().mockImplementation(({ children }) => <a href="https://www.example.com">{children}</a>),
+  useHref: vi.fn<typeof useHref>((to) => to.toString()),
 }));
 
-vi.mock('~/utils/route-utils', () => ({
+vi.mock(import('~/utils/route-utils'), () => ({
   getPathById: vi.fn((routeId, params) => `/mock-path/${routeId}/${params?.lang ?? ''}`),
 }));
 

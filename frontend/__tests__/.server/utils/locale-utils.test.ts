@@ -7,7 +7,7 @@ import { getFixedT, getLocale, getLocaleFromParams, initI18n } from '~/.server/u
 // rather than the mocked version to ensure real behavior is tested.
 vi.unmock('react-i18next');
 
-vi.mock('~/.server/utils/env-utils', () => ({
+vi.mock(import('~/.server/utils/env-utils'), () => ({
   getEnv: vi.fn(),
 }));
 

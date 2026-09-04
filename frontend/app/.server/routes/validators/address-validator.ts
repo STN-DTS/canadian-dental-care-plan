@@ -1,11 +1,10 @@
-import validator from 'validator';
 import * as z from 'zod';
 
 import type { ServerConfig } from '~/.server/configs';
 import type { InvalidResult, ValidResult } from '~/.server/routes/validators/types-validator';
 import { formatPostalCode, isValidCanadianPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
-import { isAllValidInputCharacters } from '~/utils/string-utils';
+import { isAllValidInputCharacters, isEmpty } from '~/utils/string-utils';
 
 /**
  * Interface for Address input data.
@@ -134,7 +133,7 @@ export class DefaultAddressValidator {
         const isUSA = country === USA_COUNTRY_ID;
 
         // Province/State validation for Canada and USA
-        if ((isCanada || isUSA) && (!provinceState || validator.isEmpty(provinceState))) {
+        if ((isCanada || isUSA) && (!provinceState || isEmpty(provinceState))) {
           ctx.addIssue({
             code: 'custom',
             message: this.errorMessages.provinceState.required,
@@ -143,7 +142,7 @@ export class DefaultAddressValidator {
         }
 
         // Postal/Zip Code validation for Canada and USA
-        if ((isCanada || isUSA) && (!postalZipCode || validator.isEmpty(postalZipCode))) {
+        if ((isCanada || isUSA) && (!postalZipCode || isEmpty(postalZipCode))) {
           ctx.addIssue({
             code: 'custom',
             message: this.errorMessages.postalZipCode.required,

@@ -1,9 +1,8 @@
-import validator from 'validator';
-
 import { isChildClientNumberValid, isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationChildState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
 import { isValidDateString } from '~/utils/date-utils';
+import { isEmail } from '~/utils/string-utils';
 
 /**
  * Checks if the phone number section is completed for full application.
@@ -48,7 +47,7 @@ export function isCommunicationPreferencesSectionCompleted(state: Pick<PublicApp
     return true; // email not required, section is complete
   }
 
-  return state.email !== undefined && validator.isEmail(state.email) && state.emailVerified === true;
+  return state.email !== undefined && isEmail(state.email) && state.emailVerified === true;
 }
 
 /**

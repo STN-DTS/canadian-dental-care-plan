@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRedisClient } from '~/.server/data/redis-client';
 import { DefaultRedisService } from '~/.server/data/redis-service';
 
-vi.mock('~/.server/data/redis-client');
+vi.mock(import('~/.server/data/redis-client'));
 
 describe('DefaultRedisService', () => {
   beforeEach(() => {

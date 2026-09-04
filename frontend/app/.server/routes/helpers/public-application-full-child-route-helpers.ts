@@ -1,7 +1,5 @@
 import { redirect } from 'react-router';
 
-import validator from 'validator';
-
 import { createLogger } from '~/.server/logging';
 import { getAllowedTypeOfApplication, isChildClientNumberValid, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ApplicationStateParams, PublicApplicationChildrenState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -9,6 +7,7 @@ import { getChildrenState, getContextualAgeCategoryFromDate, getPublicApplicatio
 import { getEnv } from '~/.server/utils/env-utils';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
+import { isEmail } from '~/utils/string-utils';
 
 interface LoadPublicApplicationFullChildStateArgs {
   params: ApplicationStateParams;
@@ -168,7 +167,7 @@ export function validatePublicApplicationFullChildStateForReview({ params, state
   }
 
   const isEmailRequired = communicationPreferences.value.preferredMethod === COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID || communicationPreferences.value.preferredNotificationMethod === COMMUNICATION_METHOD_GC_DIGITAL_ID;
-  const hasValidVerifiedEmail = email !== undefined && validator.isEmail(email) && emailVerified === true;
+  const hasValidVerifiedEmail = email !== undefined && isEmail(email) && emailVerified === true;
 
   if (isEmailRequired && !hasValidVerifiedEmail) {
     throw redirect(getPathById('public/application/$id/full-children/parent-or-guardian', params));

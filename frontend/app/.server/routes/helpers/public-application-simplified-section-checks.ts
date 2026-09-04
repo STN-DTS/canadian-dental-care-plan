@@ -1,10 +1,10 @@
 import type { PickDeep, SetRequired } from 'type-fest';
-import validator from 'validator';
 
 import { isChildClientNumberValid, isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationChildState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
 import { isValidDateString } from '~/utils/date-utils';
+import { isEmail } from '~/utils/string-utils';
 
 /**
  * Checks if the phone number section is completed for simplified application.
@@ -112,7 +112,7 @@ export function isCommunicationPreferencesSectionCompleted({
 
   const resolvedEmail = communicationPreferences.hasChanged ? email : clientApplication.contactInformation.email;
   const resolvedEmailVerified = communicationPreferences.hasChanged ? emailVerified : clientApplication.contactInformation.emailVerified;
-  return resolvedEmail !== undefined && validator.isEmail(resolvedEmail) && resolvedEmailVerified === true;
+  return resolvedEmail !== undefined && isEmail(resolvedEmail) && resolvedEmailVerified === true;
 }
 
 /**

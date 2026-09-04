@@ -3,14 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchServerMetadata, generateAuthorizationRequest, generateCallbackUri, generateCodeChallenge, generateRandomNonce, generateRandomState, generateRandomString, validateSession } from '~/.server/utils/raoidc-utils';
 
-vi.mock('~/utils/logging.server', () => ({
-  createLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    trace: vi.fn(),
-  }),
-}));
-
 describe('raoidc-utils', () => {
   afterEach(() => {
     vi.clearAllMocks();

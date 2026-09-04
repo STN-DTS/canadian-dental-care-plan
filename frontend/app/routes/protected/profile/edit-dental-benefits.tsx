@@ -4,7 +4,6 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { Trans, useTranslation } from 'react-i18next';
-import validator from 'validator';
 import * as z from 'zod';
 
 import type { Route } from './+types/edit-dental-benefits';
@@ -28,6 +27,7 @@ import { mergeMeta } from '~/utils/meta-utils';
 import { getPathById } from '~/utils/route-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+import { isEmpty } from '~/utils/string-utils';
 
 const FORM_ACTION = {
   continue: 'continue',
@@ -133,7 +133,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       federalSocialProgram: z.string().trim().optional(),
     })
     .superRefine((val, ctx) => {
-      if (val.hasFederalBenefits && (!val.federalSocialProgram || validator.isEmpty(val.federalSocialProgram))) {
+      if (val.hasFederalBenefits && (!val.federalSocialProgram || isEmpty(val.federalSocialProgram))) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.editDentalBenefits.errorMessage.federalBenefitProgramRequired),
@@ -158,13 +158,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     })
     .superRefine((val, ctx) => {
       if (val.hasProvincialTerritorialBenefits) {
-        if (!val.province || validator.isEmpty(val.province)) {
+        if (!val.province || isEmpty(val.province)) {
           ctx.addIssue({
             code: 'custom',
             message: t(($) => $.editDentalBenefits.errorMessage.provincialTerritorialRequired),
             path: ['province'],
           });
-        } else if (!val.provincialTerritorialSocialProgram || validator.isEmpty(val.provincialTerritorialSocialProgram)) {
+        } else if (!val.provincialTerritorialSocialProgram || isEmpty(val.provincialTerritorialSocialProgram)) {
           ctx.addIssue({
             code: 'custom',
             message: t(($) => $.editDentalBenefits.errorMessage.provincialBenefitProgramRequired),

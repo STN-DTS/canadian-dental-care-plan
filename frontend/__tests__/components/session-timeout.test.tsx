@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionTimeoutProps } from '~/components/session-timeout';
 import SessionTimeout from '~/components/session-timeout';
 
-vi.mock('react-idle-timer');
+vi.mock(import('react-idle-timer'));
 
 describe('SessionTimeout', () => {
   const mockActivate = vi.fn();

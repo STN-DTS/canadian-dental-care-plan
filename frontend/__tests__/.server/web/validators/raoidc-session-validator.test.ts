@@ -11,7 +11,7 @@ import { validateSession } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { DefaultRaoidcSessionValidator } from '~/.server/web/validators';
 
-vi.mock('~/.server/utils/raoidc-utils');
+vi.mock(import('~/.server/utils/raoidc-utils'));
 
 describe('DefaultRaoidcSessionValidator', () => {
   let mockHttpClient: MockProxy<HttpClient>;

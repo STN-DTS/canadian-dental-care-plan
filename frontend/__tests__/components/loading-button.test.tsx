@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { LoadingButton } from '~/components/loading-button';
 
-vi.mock('~/components/button-icons', () => ({
+vi.mock(import('~/components/button-icons'), () => ({
   ButtonStartIcon: (props: any) => (
     <div data-testid="button-start-icon">
       <i className={`fa ${props.icon.iconName}`} data-testid="font-awesome-icon"></i>
@@ -19,7 +19,7 @@ vi.mock('~/components/button-icons', () => ({
   ),
 }));
 
-vi.mock('~/components/buttons', () => ({
+vi.mock(import('~/components/buttons'), () => ({
   Button: (props: any) => <button {...props} />,
 }));
 

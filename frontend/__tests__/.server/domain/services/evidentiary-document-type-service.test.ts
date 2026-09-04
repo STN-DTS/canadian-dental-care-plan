@@ -9,7 +9,7 @@ import type { EvidentiaryDocumentTypeRepository } from '~/.server/domain/reposit
 import { DefaultEvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
 
-vi.mock('micro-memoize');
+vi.mock(import('micro-memoize'));
 
 describe('DefaultEvidentiaryDocumentTypeService', () => {
   const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'> = {
