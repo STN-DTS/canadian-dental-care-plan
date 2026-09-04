@@ -11,7 +11,7 @@ import type { Route } from './+types/childrens-application';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
+import { removeChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { loadPublicApplicationSimplifiedFamilyState } from '~/.server/routes/helpers/public-application-simplified-family-route-helpers';
 import { isChildDentalBenefitsSectionCompleted, isChildDentalInsuranceSectionCompleted, isChildInformationSectionCompleted } from '~/.server/routes/helpers/public-application-simplified-section-checks';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
@@ -126,21 +126,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   if (formAction === FORM_ACTION.remove) {
-    const removeChildId = formData.get('childId');
-    const removedIndex = state.children.findIndex((child) => child.id === removeChildId);
-    const removedChild = state.children[removedIndex];
-    const removedChildName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
-    const children = state.children.filter((child) => child.id !== removeChildId);
+    const removeChildId = String(formData.get('childId'));
+    const { removedIndex, childNumber, childName } = removeChildState({ params, session, childId: removeChildId });
 
-    savePublicApplicationState({
-      params,
-      session,
-      state: {
-        children: children,
-      },
-    });
-
-    return { operation: FORM_ACTION.remove, childNumber: removedIndex + 1, childName: removedChildName, removedIndex };
+    return { operation: FORM_ACTION.remove, childNumber, childName, removedIndex };
   }
 
   const childId = formData.get('childId');

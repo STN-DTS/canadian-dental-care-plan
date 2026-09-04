@@ -424,6 +424,29 @@ export function getSingleChildState({ params, session }: getSingleChildStateArgs
   };
 }
 
+interface RemoveChildStateArgs {
+  params: ApplicationStateParams;
+  session: Session;
+  childId: string;
+}
+
+/**
+ * Removes a single child from protected application state and saves the updated state.
+ * @param args - The arguments.
+ * @returns Metadata about the removed child: its zero-based index, one-based number, and derived full name (if available).
+ */
+export function removeChildState({ params, session, childId }: RemoveChildStateArgs) {
+  const applicationState = getProtectedApplicationState({ params, session });
+  const removedIndex = applicationState.children.findIndex((child) => child.id === childId);
+  const removedChild = applicationState.children[removedIndex];
+  const childName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
+  const children = applicationState.children.filter((child) => child.id !== childId);
+
+  saveProtectedApplicationState({ params, session, state: { children } });
+
+  return { removedIndex, childNumber: removedIndex + 1, childName };
+}
+
 /**
  * Checks if the provided date falls within the configured renewal period.
  *

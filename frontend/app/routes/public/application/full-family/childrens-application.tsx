@@ -12,7 +12,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadPublicApplicationFullFamilyState } from '~/.server/routes/helpers/public-application-full-family-route-helpers';
 import { isChildDentalBenefitsSectionCompleted, isChildDentalInsuranceSectionCompleted, isChildInformationSectionCompleted } from '~/.server/routes/helpers/public-application-full-section-checks';
-import { savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
+import { removeChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { Button, ButtonLink } from '~/components/buttons';
@@ -123,21 +123,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { operation: FORM_ACTION.add, childId, childNumber: children.length };
   }
 
-  const removeChildId = formData.get('childId');
-  const removedIndex = state.children.findIndex((child) => child.id === removeChildId);
-  const removedChild = state.children[removedIndex];
-  const removedChildName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
-  const children = state.children.filter((child) => child.id !== removeChildId);
+  const removeChildId = String(formData.get('childId'));
+  const { removedIndex, childNumber, childName } = removeChildState({ params, session, childId: removeChildId });
 
-  savePublicApplicationState({
-    params,
-    session,
-    state: {
-      children: children,
-    },
-  });
-
-  return { operation: FORM_ACTION.remove, childNumber: removedIndex + 1, childName: removedChildName, removedIndex };
+  return { operation: FORM_ACTION.remove, childNumber, childName, removedIndex };
 }
 
 export default function NewFamilyChildrensApplication({ loaderData, params }: Route.ComponentProps) {
