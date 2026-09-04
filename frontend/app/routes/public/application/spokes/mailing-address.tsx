@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
+import { announce } from '@react-aria/live-announcer';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -232,7 +233,6 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
   const [selectedMailingCountry, setSelectedMailingCountry] = useState(defaultState.country ?? CANADA_COUNTRY_ID);
   const [copyAddressChecked, setCopyAddressChecked] = useState(defaultState.isHomeAddressSameAsMailingAddress === true);
   const [addressDialogContent, setAddressDialogContent] = useState<AddressResponse>();
-  const [countryChangeAnnouncement, setCountryChangeAnnouncement] = useState('');
   const mailingCountryRegions = useMemo(() => regionList.filter(({ countryId }) => countryId === selectedMailingCountry), [regionList, selectedMailingCountry]);
 
   const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : undefined;
@@ -275,7 +275,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
       .filter(Boolean)
       .join(' ');
 
-    setCountryChangeAnnouncement(announcement);
+    announce(announcement, 'polite');
   };
 
   const countries = useMemo<InputOptionProps[]>(() => {
@@ -384,9 +384,6 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
               <InputCheckbox id="sync-addresses" name="syncAddresses" value="true" checked={copyAddressChecked} onChange={checkHandler}>
                 {t(($) => $.address.homeAddress.useMailingAddress)}
               </InputCheckbox>
-            </div>
-            <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
-              {countryChangeAnnouncement}
             </div>
             <div className="flex flex-row-reverse flex-wrap items-center justify-end gap-3">
               <Dialog open={addressDialogContent !== undefined} onOpenChange={onDialogOpenChangeHandler}>
