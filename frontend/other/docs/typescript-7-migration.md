@@ -15,9 +15,7 @@ checking semantics are intentionally kept compatible with TypeScript 6, but
   - `target` set to `"ES2022"` (not `"es5"`)
   - `esModuleInterop` and `allowSyntheticDefaultImports` are not explicitly set
     to `false`
-  - `types` is already an explicit list (`["node", "vite/client",
-"@testing-library/jest-dom"]`), which matches TypeScript 7's new default of
-    `[]` (no auto-discovery from `node_modules/@types`)
+  - `types` is already an explicit list (`["node", "vite/client", "@testing-library/jest-dom"]`), which matches TypeScript 7's new default of `[]` (no auto-discovery from `node_modules/@types`)
   - `strict` is already `true`
   - `noEmit: true`, so the new requirement to set `rootDir` explicitly when
     emitting output does not apply
