@@ -44,6 +44,11 @@ export default defineConfig({
     // This is crucial for maintaining clean and manageable import paths in the server code.
     tsconfigPaths: true,
   },
+  ssr: {
+    // Bundle `validator` for SSR instead of externalizing it. As a CommonJS module, it cannot be
+    // tree-shaken as an ES module, and bundling it avoids SSR compatibility issues.
+    noExternal: ['validator'],
+  },
 });
 
 /**
