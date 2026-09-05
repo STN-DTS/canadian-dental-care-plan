@@ -44,20 +44,13 @@
     "typescript/no-useless-default-assignment": "off",
     "react/no-unknown-property": ["error", { "ignore": ["property", "resource", "typeof", "vocab"] }],
     "react/jsx-no-useless-fragment": ["error", { "allowExpressions": true }],
-    "react/immutability": "off",
     "jsx-a11y/no-redundant-roles": "off",
     "jsx-a11y/prefer-tag-over-role": "off",
     "vitest/require-mock-type-parameters": "off",
     "vitest/require-to-throw-message": "off",
     "unicorn/consistent-function-scoping": ["error", { "checkArrowFunctions": false }],
     "unicorn/filename-case": ["error", { "case": "kebabCase", "ignore": ["__tests__", "__mocks__"] }],
-    "unicorn/no-array-callback-reference": "off",
-    "unicorn/no-array-reduce": "off",
-    "unicorn/no-null": "off",
-    "unicorn/no-useless-promise-resolve-reject": "off",
-    "unicorn/no-useless-undefined": ["error", { "checkArguments": false }],
-    "unicorn/prefer-global-this": "off",
-    "unicorn/prefer-structured-clone": "off"
+    "unicorn/no-useless-undefined": ["error", { "checkArguments": false }]
   },
   "settings": {
     "react": {
