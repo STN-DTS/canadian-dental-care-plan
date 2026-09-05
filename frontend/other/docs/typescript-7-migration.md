@@ -9,12 +9,10 @@ checking semantics are intentionally kept compatible with TypeScript 6, but
 ## What changed in this repository
 
 - `typescript` was bumped from `^6.0.3` to `^7.0.2` in `frontend/package.json`.
-- No `tsconfig.json` changes were required. `frontend/tsconfig.json` already
-  avoided every option TypeScript 7 removes:
+- `frontend/tsconfig.json` already avoided every option TypeScript 7 removes:
   - no `baseUrl` (`paths` are already relative to the tsconfig directory)
   - `moduleResolution: "bundler"` (not the removed `"node"`/`"node10"`/`"classic"`)
-  - `target`/`module` already set to `"ES2022"` (not `"es5"` or a removed
-    `module` value such as `"amd"`/`"umd"`/`"system"`/`"none"`)
+  - `target` set to `"ES2022"` (not `"es5"`)
   - `esModuleInterop` and `allowSyntheticDefaultImports` are not explicitly set
     to `false`
   - `types` is already an explicit list (`["node", "vite/client",
@@ -23,6 +21,16 @@ checking semantics are intentionally kept compatible with TypeScript 6, but
   - `strict` is already `true`
   - `noEmit: true`, so the new requirement to set `rootDir` explicitly when
     emitting output does not apply
+- As a follow-up cleanup, `tsconfig.json` was also modernized:
+  - `module` changed from `"ES2022"` to `"ESNext"`, the conventional value for
+    bundler-based projects (`moduleResolution: "bundler"`). `target` stays
+    `"ES2022"` to match Vite's `build.target` and the Node.js engine
+    requirement.
+  - `lib` simplified from `["DOM", "ES2023", "ESNext.Temporal"]` to `["DOM",
+"ESNext"]` — the `ESNext` lib bundle already includes the Temporal API, so
+    the separate `ESNext.Temporal` entry was redundant.
+  - Removed the redundant `"strictNullChecks": true`, which `"strict": true`
+    already implies.
 - No Vite configuration changes were required. `vite.config.ts` and
   `vite.server.config.ts` already resolve TypeScript path aliases through
   Vite's built-in `resolve.tsconfigPaths` option rather than the

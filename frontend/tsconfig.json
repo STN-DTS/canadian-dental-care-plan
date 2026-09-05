@@ -1,10 +1,10 @@
 {
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
   "compilerOptions": {
-    "lib": ["DOM", "ES2023", "ESNext.Temporal"],
+    "lib": ["DOM", "ESNext"],
     "types": ["node", "vite/client", "@testing-library/jest-dom"],
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "rootDirs": [".", "./.react-router/types"],
@@ -17,7 +17,6 @@
     "skipLibCheck": true,
     "strict": true,
     "allowJs": true,
-    "strictNullChecks": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
