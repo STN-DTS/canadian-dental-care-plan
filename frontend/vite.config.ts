@@ -45,6 +45,11 @@ export default defineConfig({
       port: 3001,
     },
   },
+  ssr: {
+    // Bundle `validator` for SSR instead of externalizing it. As a CommonJS module, it cannot be
+    // tree-shaken as an ES module, and bundling it avoids SSR compatibility issues.
+    noExternal: ['validator'],
+  },
   //
   // Vitest config. For more test configuration, see vitest.workspace.ts
   // see: https://vitest.dev/config/
