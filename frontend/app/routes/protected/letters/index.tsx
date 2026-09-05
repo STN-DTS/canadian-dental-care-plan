@@ -20,7 +20,6 @@ import { InlineLink } from '~/components/inline-link';
 import { InputSelect } from '~/components/input-select';
 import { useCurrentLanguage } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { getNameByLanguage } from '~/utils/locale-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
@@ -127,7 +126,7 @@ export default function LettersIndex({ loaderData, params }: Route.ComponentProp
             {letters.map((letter) => {
               const letterType = letterTypes.find(({ id }) => id === letter.letterTypeId);
               const gcAnalyticsCustomClickValue = `ESDC-EDSC:CDCP Letters Click:${letterType?.nameEn ?? letter.letterTypeId}`;
-              const letterName = letterType ? getNameByLanguage(currentLanguage, letterType) : letter.letterTypeId;
+              const letterName = letterType ? (currentLanguage === 'fr' ? letterType.nameFr : letterType.nameEn) : letter.letterTypeId;
 
               return (
                 <li key={letter.id} className="py-4 sm:py-6">

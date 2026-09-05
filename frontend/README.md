@@ -82,8 +82,9 @@ Available commands:
 - `pnpm run preview`: build and run production-style server
 - `pnpm start`: run existing production build
 - `pnpm run typecheck`: generate route types and run TypeScript checks
-- `pnpm run lint`: run Prettier, TypeScript, and ESLint checks
-- `pnpm run lint:fix`: apply formatting and ESLint fixes
+- `pnpm run lint`: run Prettier, TypeScript, and Oxlint checks
+- `pnpm run lint:fix`: apply formatting and Oxlint fixes
+- `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript Go-based type-aware checks
 - `pnpm run test:unit`: run Vitest in watch mode
 - `pnpm run test:unit:coverage`: run Vitest with coverage
 - `pnpm run test:e2e`: run Playwright end-to-end tests
@@ -96,6 +97,17 @@ Run end-to-end tests against a fresh production build:
 pnpm run build
 pnpm run test:e2e
 ```
+
+## Linting
+
+Oxlint replaces ESLint and `typescript-eslint`; `oxlint-tsgolint` provides the
+type-aware rules using TypeScript Go. Prettier remains responsible for formatting,
+and `tsc` remains responsible for project type checking. The configuration retains
+the prior core, TypeScript, React, JSX accessibility, Unicorn, and Vitest intent
+where Oxlint has an equivalent. `eslint-plugin-import-zod`,
+`import-x/consistent-type-specifier-style`, and the remaining `@eslint-react`
+specialized rules have no Oxlint equivalent and are not enforced. The scoped
+`file-upload.tsx` accessibility exception is retained in `.oxlintrc.json`.
 
 ## Code organization
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { Namespace } from 'i18next';
 
 declare module 'react-router' {

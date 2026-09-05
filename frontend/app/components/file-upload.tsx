@@ -375,6 +375,7 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
         dataTransfer.items.add(file);
       }
 
+      // oxlint-disable-next-line react/immutability
       inputElement.files = dataTransfer.files;
       inputElement.dispatchEvent(new Event('change', { bubbles: true }));
     },
@@ -412,6 +413,7 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
         dataTransfer.items.add(file);
       }
 
+      // oxlint-disable-next-line react/immutability
       inputElement.files = dataTransfer.files;
       inputElement.dispatchEvent(new Event('change', { bubbles: true }));
     },
@@ -433,7 +435,6 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
   const DropzonePrimitive = asChild ? Slot : 'div';
 
   return (
-    // eslint-disable-next-line jsx-a11y-x/role-supports-aria-props
     <DropzonePrimitive
       role="region"
       id={context.dropzoneId}
@@ -504,7 +505,6 @@ function FileUploadList(props: FileUploadListProps) {
   const ListPrimitive = asChild ? Slot : 'div';
 
   return (
-    // eslint-disable-next-line jsx-a11y-x/role-supports-aria-props
     <ListPrimitive
       role="list"
       id={context.listId}

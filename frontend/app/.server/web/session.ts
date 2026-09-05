@@ -181,7 +181,7 @@ export class ExpressSession implements Session {
   }
 
   private get session(): Request['session'] {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!this.req.session) {
       throw new Error('req.session object is undefined. Session might have been destroyed.');
     }
@@ -239,7 +239,6 @@ export class ExpressSession implements Session {
 
     const sanitizedKey = this.sanitizeKey(key);
     this.assertNotReservedKey(sanitizedKey);
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this.session[sanitizedKey];
     this.log.trace('Session [%s]: Unset key "%s"', this.id, key);
     return true;

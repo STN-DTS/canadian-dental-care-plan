@@ -31,7 +31,6 @@ import type { GetAnnotations } from 'react-router/internal';
  * ```
  * The resulting meta will contain both `title: 'My Leaf Route'` and `description: 'This is the parent route'`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mergeMeta<TMetaArgs extends GetAnnotations<any>['MetaArgs'], TMetaDescriptors extends MetaDescriptor[]>(leafMetaFn: (args: TMetaArgs) => TMetaDescriptors): (args: TMetaArgs) => TMetaDescriptors {
   return (args) => {
     const leafMeta = leafMetaFn(args);

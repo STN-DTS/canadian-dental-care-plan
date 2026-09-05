@@ -23,7 +23,6 @@ app.disable('x-powered-by');
 
 const reactRouterMiddleware = createRequestHandler({
   async build(): Promise<ServerBuild> {
-    // eslint-disable-next-line import-x/no-unresolved
     const serverBuild = (await import('virtual:react-router/server-build')) as ServerBuild;
     const registeredBuild = hasSingleton('serverBuild') ? singleton('serverBuild') : undefined;
 

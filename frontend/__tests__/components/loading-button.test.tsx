@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen } from '@testing-library/react';
 
 import { faCheck } from '@fortawesome/free-solid-svg-icons';

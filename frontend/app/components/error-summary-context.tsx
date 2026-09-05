@@ -118,10 +118,8 @@ function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSummaryActio
     }
 
     default: {
-      throw new Error(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        `Unhandled action type: ${(action as any).type}. Valid action types are: \`COMMIT_ERRORS\`, \`PUSH_ERROR\`, \`RESET_ERRORS\`, \`START_ERROR_TRANSACTION\`.`,
-      );
+      // @ts-expect-error: Exhaustive switch narrows action to `never`; retain this runtime guard for unhandled actions.
+      throw new Error(`Unhandled action type: ${action.type}. Valid action types are: \`COMMIT_ERRORS\`, \`PUSH_ERROR\`, \`RESET_ERRORS\`, \`START_ERROR_TRANSACTION\`.`);
     }
   }
 }
