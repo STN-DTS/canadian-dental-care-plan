@@ -12,7 +12,7 @@ The application supports English and French journeys to:
 
 - React 19 and React Router 8 with server-side rendering
 - Express 5 and Node.js ESM
-- TypeScript 6 and Vite 8
+- TypeScript 7 and Vite 8
 - Tailwind CSS 4
 - i18next and react-i18next
 - Zod for validation
@@ -108,6 +108,9 @@ where Oxlint has an equivalent. `eslint-plugin-import-zod`,
 `import-x/consistent-type-specifier-style`, and the remaining `@eslint-react`
 specialized rules have no Oxlint equivalent and are not enforced. The scoped
 `file-upload.tsx` accessibility exception is retained in `.oxlintrc.json`.
+
+See [`other/docs/typescript-7-migration.md`](./other/docs/typescript-7-migration.md)
+for TypeScript 7 breaking changes, defaults, and compatibility notes.
 
 ## Code organization
 
