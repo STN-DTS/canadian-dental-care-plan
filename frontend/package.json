@@ -144,7 +144,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.13",
     "type-fest": "^5.8.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
     "vitest-mock-extended": "^5.1.1"
