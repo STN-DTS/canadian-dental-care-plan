@@ -1,7 +1,7 @@
 {
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
   "compilerOptions": {
-    "lib": ["DOM", "ESNext", "ESNext.Temporal"],
+    "lib": ["DOM", "ES2023", "ESNext.Temporal"],
     "types": ["node", "vite/client", "@testing-library/jest-dom"],
     "target": "ES2022",
     "module": "ESNext",
