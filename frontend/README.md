@@ -84,7 +84,7 @@ Available commands:
 - `pnpm run typecheck`: generate route types and run TypeScript checks
 - `pnpm run lint`: run Prettier, TypeScript, and Oxlint checks
 - `pnpm run lint:fix`: apply formatting and Oxlint fixes
-- `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript 7-compatible type-aware checks
+- `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript Go-based type-aware checks
 - `pnpm run test:unit`: run Vitest in watch mode
 - `pnpm run test:unit:coverage`: run Vitest with coverage
 - `pnpm run test:e2e`: run Playwright end-to-end tests
