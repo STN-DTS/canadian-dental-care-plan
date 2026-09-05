@@ -89,7 +89,9 @@ export class DefaultLogger implements Logger {
     // Scenario 1: Logging with an object (messageOrObject is an object)
     if (splat.length === 0 && typeof messageOrObject === 'object' && messageOrObject !== null && !Array.isArray(messageOrObject)) {
       const entry = Object.assign(messageOrObject, baseEntry); // Merge object and base entry.
-      this.logger.log(entry as any); // Log the merged entry.
+      // Object-style entries may omit `message`; Winston logs their structured fields directly.
+      // @ts-ignore: Winston's type requires `message`, but this object-style entry is valid at runtime.
+      this.logger.log(entry); // Log the merged entry.
       return;
     }
 

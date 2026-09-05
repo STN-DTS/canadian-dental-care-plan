@@ -165,7 +165,13 @@ describe('DefaultApplicantDtoMapper', () => {
         BenefitApplication: {
           Applicant: {
             ...mockBaseEntity.BenefitApplication.Applicant,
-            PersonName: [{ PersonGivenName: ['John'], PersonSurName: undefined as any }],
+            PersonName: [
+              {
+                PersonGivenName: ['John'],
+                // @ts-ignore: ts(2322) - force PersonSurName to be undefined to test the error handling
+                PersonSurName: undefined,
+              },
+            ],
           },
         },
       };

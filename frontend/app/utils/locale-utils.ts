@@ -133,15 +133,6 @@ export async function initI18n(namespaces: ReadonlyArray<string>) {
 }
 
 /**
- * Returns translation based off provided locale
- *
- * @returns either the english translation or the french translation.
- */
-export function getNameByLanguage<T extends { nameEn: string; nameFr: string } | { nameEn?: string; nameFr?: string }>(language: string, obj: T): T extends { nameEn: infer N; nameFr: infer F } ? (typeof language extends 'fr' ? F : N) : never {
-  return (language === 'fr' ? obj.nameFr : obj.nameEn) as any;
-}
-
-/**
  * Indiscriminately removes the language from a path.
  */
 export function removeLanguageFromPath(path: string) {

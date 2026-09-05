@@ -316,7 +316,15 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
       });
 
       it('throws on an unrecognised typeOfApplication (exhaustive guard)', async () => {
-        await expect(mapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(makeClientApplication({ typeOfApplication: 'unknown' as any }), APPLICATION_YEAR)).rejects.toThrow("Unexpected typeOfApplication: 'unknown'");
+        await expect(
+          mapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(
+            makeClientApplication({
+              // @ts-ignore: ts(2322) - force an unrecognised typeOfApplication to test the exhaustive guard
+              typeOfApplication: 'unknown',
+            }),
+            APPLICATION_YEAR,
+          ),
+        ).rejects.toThrow("Unexpected typeOfApplication: 'unknown'");
       });
 
       describe('typeOfApplication: adult', () => {
