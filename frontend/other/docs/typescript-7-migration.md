@@ -26,9 +26,7 @@ checking semantics are intentionally kept compatible with TypeScript 6, but
     bundler-based projects (`moduleResolution: "bundler"`). `target` stays
     `"ES2022"` to match Vite's `build.target` and the Node.js engine
     requirement.
-  - `lib` simplified from `["DOM", "ES2023", "ESNext.Temporal"]` to `["DOM",
-"ESNext"]` — the `ESNext` lib bundle already includes the Temporal API, so
-    the separate `ESNext.Temporal` entry was redundant.
+  - `lib` simplified from `["DOM", "ES2023", "ESNext.Temporal"]` to `["DOM", "ESNext", "ESNext.Temporal"]` — `ESNext` covers the modern ECMAScript built-ins; keep `ESNext.Temporal` explicit since the codebase uses `Temporal`.
   - Removed the redundant `"strictNullChecks": true`, which `"strict": true`
     already implies.
 - No Vite configuration changes were required. `vite.config.ts` and
