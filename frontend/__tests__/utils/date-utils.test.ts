@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 
 import { UTCDate } from '@date-fns/utc';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   extractDateParts,
@@ -26,12 +26,7 @@ import {
  */
 
 beforeEach(() => {
-  vi.useFakeTimers();
-  vi.setSystemTime('2024-01-01');
-});
-
-afterEach(() => {
-  vi.useRealTimers();
+  vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2024-01-01', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
 });
 
 describe('extractDateParts', () => {

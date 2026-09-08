@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   isPersonalInformationSectionCompleted,
@@ -26,11 +26,7 @@ describe('isTypeOfApplicationSectionCompleted', () => {
 
 describe('isPersonalInformationSectionCompleted', () => {
   beforeEach(() => {
-    vi.spyOn(Temporal.Now, 'plainDateISO').mockReturnValue(Temporal.PlainDate.from('2026-03-04'));
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
   });
 
   it('should return false when applicantInformation is undefined', () => {
@@ -207,11 +203,7 @@ describe('isTaxFilingSectionCompleted', () => {
 
 describe('isRenewalSelectionCompleted', () => {
   beforeEach(() => {
-    vi.spyOn(Temporal.Now, 'plainDateISO').mockReturnValue(Temporal.PlainDate.from('2026-03-04'));
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
   });
 
   it('should return false when applicantClientIdsToRenew is undefined', () => {

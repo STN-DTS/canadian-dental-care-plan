@@ -18,7 +18,6 @@ describe('DebugPayload', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.resetAllMocks();
-    vi.useRealTimers();
   });
 
   it('renders JSON data correctly', () => {

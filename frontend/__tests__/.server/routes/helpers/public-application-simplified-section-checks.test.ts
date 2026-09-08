@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import {
@@ -527,11 +527,7 @@ describe('public-application-simplified-section-checks', () => {
 
   describe('isChildInformationSectionCompleted', () => {
     beforeEach(() => {
-      vi.spyOn(Temporal.Now, 'plainDateISO').mockReturnValue(Temporal.PlainDate.from('2026-03-04'));
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
+      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
     });
 
     it('should return true when child information is defined with valid date of birth', () => {

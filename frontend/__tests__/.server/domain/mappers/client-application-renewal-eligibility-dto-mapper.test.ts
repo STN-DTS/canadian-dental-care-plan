@@ -143,7 +143,6 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.useRealTimers();
   });
 
   describe('mapApplicantDtoToClientApplicationRenewalEligibilityDto', () => {

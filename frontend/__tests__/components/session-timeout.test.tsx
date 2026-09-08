@@ -106,7 +106,5 @@ describe('SessionTimeout', () => {
     });
 
     expect(screen.getByText(`{"key":"sessionTimeout.description","options":{"timeRemaining":"0:49"}}`)).toBeInTheDocument();
-
-    vi.useRealTimers();
   });
 });

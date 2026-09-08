@@ -20,7 +20,6 @@ describe('safePrint', () => {
       value: originalPrint,
     });
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   it('calls onUnavailable when print is not available', () => {

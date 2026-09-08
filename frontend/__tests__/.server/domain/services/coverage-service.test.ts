@@ -65,8 +65,7 @@ describe('DefaultCoverageService', () => {
 
   describe('getCurrentCoverage', () => {
     it('should return coverage for current date', () => {
-      const mockDate = new Date('2024-08-15');
-      vi.setSystemTime(mockDate);
+      vi.useFakeTimers({ now: new Date('2024-08-15') });
 
       const result = service.getCurrentCoverage();
 
@@ -77,8 +76,6 @@ describe('DefaultCoverageService', () => {
         startYear: 2024,
         taxationYear: 2023,
       });
-
-      vi.useRealTimers();
     });
   });
 });

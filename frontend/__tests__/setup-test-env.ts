@@ -8,4 +8,5 @@ vi.mock(import('~/.server/logging'));
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
