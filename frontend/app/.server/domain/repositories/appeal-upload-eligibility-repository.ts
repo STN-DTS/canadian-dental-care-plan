@@ -62,7 +62,10 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
 
     const url = new URL(`${this.baseUrl}/esdc_clients(esdc_clientnumber='${encodeURIComponent(clientNumber)}')`);
     url.searchParams.set('$select', 'esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon');
-    url.searchParams.set('$expand', 'esdc_esdc_dentalapplicant_Clientid_esdc_client($select=esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value)');
+    url.searchParams.set(
+      '$expand',
+      "esdc_esdc_dentalapplicant_Clientid_esdc_client($select=esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value;$filter=statuscode eq 775170001 and _esdc_pendingstatusid_value eq 'DA499A30-71C1-F011-8544-7C1E520630DB'),esdc_workitem_Clientid_esdc_client($select=esdc_workitemid,_esdc_workitemtypeid_value,statecode,statuscode;$filter=statecode eq 0)",
+    );
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.appeal-upload-eligible.get', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
