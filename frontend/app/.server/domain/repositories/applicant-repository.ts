@@ -271,7 +271,7 @@ export class MockApplicantRepository implements ApplicantRepository {
       homeAddressCountryReferenceId: '0cf5389e-97ae-eb11-8236-000d3af4bfc3',
       homeAddressPostalCode: 'M5V 3A8',
       sameHomeAndMailingAddress: false,
-      clientNumber: '81234567890',
+      clientNumber: '10000000002',
       clientId: '17cdea07-2f83-ee11-8179-000d3a09d7c6',
       applicantId: '4635f70b-2f83-ee11-8179-000d3a09d137',
       applicantCategoryCode: '775170000',

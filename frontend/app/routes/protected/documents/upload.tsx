@@ -64,9 +64,10 @@ const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ con
 
   const appealUploadEligibilityService = appContainer.get(TYPES.AppealUploadEligibilityService);
   const appealUploadEligibility = await appealUploadEligibilityService.findAppealUploadEligibility(applicant.clientNumber);
+  const canUploadAppealDocuments = appealUploadEligibility.isSome() && appealUploadEligibility.unwrap().canUploadAppealDocuments;
 
   // Redirect ineligible applicants.
-  if (appealUploadEligibility.isNone() || !appealUploadEligibility.unwrap().eligible) {
+  if (!canUploadAppealDocuments) {
     throw redirect(getPathById('protected/documents/not-required', params));
   }
 };
@@ -139,15 +140,13 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
   const applicant = getApplicant(context);
-
-  const formData = await request.formData();
-
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const config = appContainer.get(TYPES.ClientConfig);
   const user = getUser(context);
   const allowedExtensions = config.DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS;
 
+  const formData = await request.formData();
   const validationResult = await validateUploadForm(formData, locale, t, {
     allowedExtensions,
     maxSizeMB: config.DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB,

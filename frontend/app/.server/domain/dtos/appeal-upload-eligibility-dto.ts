@@ -1,14 +1,17 @@
 /**
- * Represents a Data Transfer Object (DTO) describing whether a client is eligible
- * to upload appeal documents.
+ * Describes whether a CDCP client accessing MSCA may upload evidentiary
+ * documentation.
+ *
+ * Eligibility requires the client's profile to have at least one application
+ * paused due to a T4 mismatch.
  */
 export type AppealUploadEligibilityDto = Readonly<{
-  /** Client GUID — needed downstream for the actual upload (esdc_clients(<id>)). */
+  /** Client GUID used by downstream document-upload operations. */
   clientId: string;
 
-  /** The client number the eligibility was looked up with. */
+  /** Client number used to perform the eligibility lookup. */
   clientNumber: string;
 
-  /** Whether the client is permitted to upload appeal documents. */
-  eligible: boolean;
+  /** Whether the client may upload evidentiary documentation. */
+  canUploadAppealDocuments: boolean;
 }>;
