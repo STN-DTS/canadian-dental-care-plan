@@ -3,6 +3,7 @@
   "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "vitest"],
   "categories": {
     "correctness": "error",
+    "nursery": "error",
     "perf": "error"
   },
   "env": {
