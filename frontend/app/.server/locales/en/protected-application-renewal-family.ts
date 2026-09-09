@@ -209,7 +209,7 @@ const ns = {
     },
     survey: {
       title: "Give us feedback on your application experience",
-      info: "You can help us improve the Canada Dental Care Plan with a short survey. This will take just 3 to 5 minutes of your time. The survey will open in a new window.",
+      info: "You can help us improve the Canadian Dental Care Plan with a short survey. This will take just 3 to 5 minutes of your time. The survey will open in a new window.",
       button: "Take the survey",
     },
   },
