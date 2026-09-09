@@ -13,6 +13,7 @@ import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { Button } from '~/components/buttons';
+import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-context';
 import { InputField } from '~/components/input-field';
@@ -160,6 +161,7 @@ export default function StubLogin({ loaderData, params }: Route.ComponentProps) 
         <ErrorSummaryProvider actionData={fetcher.data}>
           <ErrorSummary />
           <fetcher.Form method="post" noValidate className="space-y-6">
+            <CsrfTokenInput />
             <InputPatternField id="sin" name="sin" format={sinInputPatternFormat} label={t(($) => $.index.sin)} required inputMode="numeric" defaultValue={defaultValues.sin} errorMessage={errors?.sin} />
             <InputSelect
               id="destination-page"
