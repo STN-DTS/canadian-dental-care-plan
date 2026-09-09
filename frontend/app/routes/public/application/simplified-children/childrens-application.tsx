@@ -141,7 +141,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       children: state.children.map((child) => {
         if (child.id !== childId) return child;
         return {
-          ...child,
+          id: child.id,
+          dentalInsurance: child.dentalInsurance,
+          information: child.information,
           dentalBenefits: { hasChanged: false },
         };
       }),

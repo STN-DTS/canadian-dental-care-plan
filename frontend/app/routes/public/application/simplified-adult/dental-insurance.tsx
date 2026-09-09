@@ -57,30 +57,26 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const federalGovernmentInsurancePlans = await federalGovernmentInsurancePlanService.listAndSortLocalizedFederalGovernmentInsurancePlans(locale);
   const provincialGovernmentInsurancePlans = await provincialGovernmentInsurancePlanService.listAndSortLocalizedProvincialGovernmentInsurancePlans(locale);
 
-  const clientDentalBenefits = state.clientApplication.dentalBenefits?.reduce<PublicApplicationDentalFederalBenefitsState & PublicApplicationDentalProvincialTerritorialBenefitsState>(
-    (benefits, planId) => {
-      const federalProgram = federalGovernmentInsurancePlans.find(({ id }) => id === planId);
-      if (federalProgram) {
-        return {
-          ...benefits,
-          hasFederalBenefits: true,
-          federalSocialProgram: federalProgram.name,
-        };
-      }
+  type ClientDentalBenefits = PublicApplicationDentalFederalBenefitsState & PublicApplicationDentalProvincialTerritorialBenefitsState;
+  const clientDentalBenefits = state.clientApplication.dentalBenefits?.reduce<ClientDentalBenefits>((benefits, planId) => {
+    const federalProgram = federalGovernmentInsurancePlans.find(({ id }) => id === planId);
+    if (federalProgram) {
+      return Object.assign<ClientDentalBenefits, PublicApplicationDentalFederalBenefitsState>(benefits, {
+        hasFederalBenefits: true,
+        federalSocialProgram: federalProgram.name,
+      });
+    }
 
-      const provincialProgram = provincialGovernmentInsurancePlans.find(({ id }) => id === planId);
-      if (provincialProgram) {
-        return {
-          ...benefits,
-          hasProvincialTerritorialBenefits: true,
-          provincialTerritorialSocialProgram: provincialProgram.name,
-        };
-      }
+    const provincialProgram = provincialGovernmentInsurancePlans.find(({ id }) => id === planId);
+    if (provincialProgram) {
+      return Object.assign<ClientDentalBenefits, PublicApplicationDentalProvincialTerritorialBenefitsState>(benefits, {
+        hasProvincialTerritorialBenefits: true,
+        provincialTerritorialSocialProgram: provincialProgram.name,
+      });
+    }
 
-      return benefits;
-    },
-    {} as PublicApplicationDentalFederalBenefitsState & PublicApplicationDentalProvincialTerritorialBenefitsState,
-  );
+    return benefits;
+  }, {} as ClientDentalBenefits);
 
   const selectedFederalGovernmentInsurancePlan = state.dentalBenefits?.value?.federalSocialProgram ? federalGovernmentInsurancePlans.find(({ id }) => id === state.dentalBenefits?.value?.federalSocialProgram) : undefined;
   const selectedProvincialBenefit = state.dentalBenefits?.value?.provincialTerritorialSocialProgram ? provincialGovernmentInsurancePlans.find(({ id }) => id === state.dentalBenefits?.value?.provincialTerritorialSocialProgram) : undefined;

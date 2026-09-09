@@ -2,7 +2,8 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "vitest"],
   "categories": {
-    "correctness": "error"
+    "correctness": "error",
+    "perf": "error"
   },
   "env": {
     "browser": true,

@@ -45,8 +45,6 @@ export interface LayoutOptions {
   breadcrumbs?: ReactNode;
 }
 
-const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {};
-
 /**
  * Common data returned from a route's handle object.
  */
@@ -112,13 +110,16 @@ export function usePageIdentifier() {
 }
 
 export function useLayoutOptions(): LayoutOptions {
+  // Initialize default layout options to be used as the base for
+  // merging with route-specific options.
+  const defaultOptions: LayoutOptions = {};
   return useMatches()
     .map(({ handle }) => handle as RouteHandleData | undefined)
     .map((handle) => handle?.layoutOptions)
     .filter((options) => options !== undefined)
     .reduce<LayoutOptions>((merged, current) => {
-      return { ...merged, ...current };
-    }, DEFAULT_LAYOUT_OPTIONS);
+      return Object.assign<LayoutOptions, Partial<LayoutOptions>>(merged, current);
+    }, defaultOptions);
 }
 
 export function findRouteById(id: string, routes: I18nRoute[] = i18nRoutes): I18nPageRoute | undefined {

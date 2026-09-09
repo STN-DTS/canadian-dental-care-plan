@@ -33,10 +33,7 @@ export function createServerRoutes(serverRouteManifest: ServerRouteManifest): Se
  */
 function buildRouteTreeRecursive(parentId: string, routesByParentId: Record<string, ServerRouteManifestEntry[]>): ServerRoute[] {
   const childEntries = routesByParentId[parentId] ?? [];
-  return childEntries.map((routeEntry) => ({
-    ...routeEntry,
-    children: buildRouteTreeRecursive(routeEntry.id, routesByParentId),
-  }));
+  return childEntries.map((routeEntry) => Object.assign<ServerRouteManifestEntry, OmitStrict<ServerRoute, keyof ServerRouteManifestEntry>>(routeEntry, { children: buildRouteTreeRecursive(routeEntry.id, routesByParentId) }));
 }
 
 /**

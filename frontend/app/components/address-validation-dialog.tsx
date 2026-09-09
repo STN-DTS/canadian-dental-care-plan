@@ -123,7 +123,8 @@ export function AddressSuggestionDialogContent({ enteredAddress, suggestedAddres
               ),
             },
           ].map((option) => ({
-            ...option,
+            value: option.value,
+            children: option.children,
             onChange: (e) => {
               setSelectedAddressSuggestionOption(e.target.value as AddressSelectionOption);
             },

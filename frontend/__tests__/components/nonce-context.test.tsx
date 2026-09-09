@@ -8,7 +8,7 @@ import { NonceContext, NonceProvider } from '~/components/nonce-context';
 
 describe('NonceContext', () => {
   it('should provide the NonceContext to its children', () => {
-    const TestComponent = () => <div>nonce is [{use(NonceContext).nonce}]</div>;
+    const TestComponent = () => <div>nonce is [{use(NonceContext)}]</div>;
 
     render(
       <NonceProvider nonce={'0123456789ABCDEF'}>

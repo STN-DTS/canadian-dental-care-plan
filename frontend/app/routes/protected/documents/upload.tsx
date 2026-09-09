@@ -200,16 +200,18 @@ async function validateUploadForm(
   const documentTypes = formData.getAll('file_document_type') as string[];
 
   // Build files record
-  const files: Record<string, { file: File; fileBuffer: ArrayBuffer; fileHash: string; documentType: string }> = {};
-
-  for (const [i, fileId] of fileIds.entries()) {
-    const file = expectDefined(fileObjects[i], 'Expected file object at index ' + i);
-    const fileBuffer = await file.arrayBuffer();
-    const fileHashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
-    const fileHash = [...new Uint8Array(fileHashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
-    const documentType = documentTypes[i] ?? '';
-    files[fileId] = { file, fileBuffer, fileHash, documentType };
-  }
+  const files: Record<string, { file: File; fileBuffer: ArrayBuffer; fileHash: string; documentType: string }> = Object.fromEntries(
+    await Promise.all(
+      fileIds.map(async (fileId, i) => {
+        const file = expectDefined(fileObjects[i], 'Expected file object at index ' + i);
+        const fileBuffer = await file.arrayBuffer();
+        const fileHashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
+        const fileHash = [...new Uint8Array(fileHashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
+        const documentType = documentTypes[i] ?? '';
+        return [fileId, { file, fileBuffer, fileHash, documentType }] as const;
+      }),
+    ),
+  );
 
   // Build final data object
   const data = {

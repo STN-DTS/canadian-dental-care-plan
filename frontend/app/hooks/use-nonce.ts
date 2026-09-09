@@ -8,5 +8,5 @@ import { NonceContext } from '~/components/nonce-context';
  * @returns The server-provided nonce, or an empty string on the client.
  */
 export function useNonce(): string {
-  return use(NonceContext).nonce;
+  return use(NonceContext);
 }

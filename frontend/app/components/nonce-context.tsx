@@ -1,13 +1,6 @@
 import { createContext } from 'react';
 import type { JSX, ReactNode } from 'react';
 
-type NonceContextValue = {
-  /**
-   * The CSP nonce for this request.
-   */
-  nonce: string;
-};
-
 /**
  * Context for providing a CSP nonce value to components that render inline `<script>` or `<style>` elements.
  *
@@ -22,7 +15,7 @@ type NonceContextValue = {
  *
  * @see https://www.w3.org/TR/CSP3/#security-nonces (nonce hiding)
  */
-export const NonceContext = createContext<NonceContextValue>({ nonce: '' });
+export const NonceContext = createContext<string>('');
 
 type NonceProviderProps = {
   children?: ReactNode;
@@ -36,5 +29,5 @@ type NonceProviderProps = {
  * Should only be mounted in `entry.server.tsx` — the client relies on the context default (`""`).
  */
 export function NonceProvider({ children, nonce }: NonceProviderProps): JSX.Element {
-  return <NonceContext value={{ nonce }}>{children}</NonceContext>;
+  return <NonceContext.Provider value={nonce}>{children}</NonceContext.Provider>;
 }

@@ -49,7 +49,10 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
     documents: evidentiaryDocuments.map((document) => {
       const mscaUploadDate = parseDateTimeString(document.mscaUploadDate);
       return {
-        ...document,
+        id: document.id,
+        fileName: document.fileName,
+        documentType: document.documentType,
+        client: document.client,
         mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
         mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
         mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),
