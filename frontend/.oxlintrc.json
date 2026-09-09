@@ -50,7 +50,8 @@
     "vitest/require-to-throw-message": "off",
     "unicorn/consistent-function-scoping": ["error", { "checkArrowFunctions": false }],
     "unicorn/filename-case": ["error", { "case": "kebabCase", "ignore": ["__tests__", "__mocks__"] }],
-    "unicorn/no-useless-undefined": ["error", { "checkArguments": false }]
+    "unicorn/no-useless-undefined": ["error", { "checkArguments": false }],
+    "import/no-duplicates": "error"
   },
   "settings": {
     "react": {
