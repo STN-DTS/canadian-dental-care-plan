@@ -122,7 +122,7 @@
     "@types/express-session": "^1.19.0",
     "@types/jsdom": "^30.0.0",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/nprogress": "^0.2.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
