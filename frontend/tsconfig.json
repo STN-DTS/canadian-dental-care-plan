@@ -1,26 +1,56 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
   "compilerOptions": {
-    "lib": ["DOM", "ES2023", "ESNext.Temporal"],
-    "types": ["node", "vite/client", "@testing-library/jest-dom"],
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
+    // Required for React Router route module type safety:
+    // https://reactrouter.com/how-to/route-module-type-safety
     "rootDirs": [".", "./.react-router/types"],
+
+    // Resolve `~/...` imports from the app directory.
     "paths": {
       "~/*": ["./app/*"]
     },
-    "verbatimModuleSyntax": true,
+
+    // Environment Settings
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // TypeScript compatibility target for type-checking.
+    // JavaScript output targets are configured by Vite.
+    "target": "es2022",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022",
+      // Array APIs introduced in ES2023, including `Array.prototype.toSorted()`.
+      "ES2023.Array",
+      // Temporal type declarations. Runtime usage requires Node.js 26 or equivalent support.
+      // Use only in server-side code and tests; this setting does not enforce that boundary.
+      "ESNext.Temporal"
+    ],
+    "types": ["node", "vite/client", "@testing-library/jest-dom"],
+
+    // Typecheck-Only Project
     "noEmit": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "allowJs": true,
-    "emitDecoratorMetadata": true,
+
+    // JSX and Server Language Features
+    "jsx": "react-jsx",
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Stricter Typechecking Options
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+
+    // Recommended Options
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+
+    // Additional Safety Options
     "forceConsistentCasingInFileNames": true,
-    "erasableSyntaxOnly": true,
-    "noUncheckedIndexedAccess": true
+    "erasableSyntaxOnly": true
   }
 }

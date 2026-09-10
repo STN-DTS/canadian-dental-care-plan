@@ -11,6 +11,7 @@ import { coverageConfigDefaults } from 'vitest/config';
  */
 export default defineConfig({
   build: {
+    // Target ES2022 syntax for older browser support.
     target: 'es2022',
   },
   envDir: false,
