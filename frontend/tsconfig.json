@@ -2,20 +2,18 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
   "compilerOptions": {
+    // Project Structure
     // Required for React Router route module type safety:
-    // https://reactrouter.com/how-to/route-module-type-safety
     "rootDirs": [".", "./.react-router/types"],
 
-    // Resolve `~/...` imports from the app directory.
+    // Module Resolution
     "paths": {
       "~/*": ["./app/*"]
     },
-
-    // Environment Settings
     "module": "esnext",
     "moduleResolution": "bundler",
-    // TypeScript compatibility target for type-checking.
-    // JavaScript output targets are configured by Vite.
+
+    // Language and Environment
     "target": "es2022",
     "lib": [
       "DOM",
@@ -27,30 +25,29 @@
       // Use only in server-side code and tests; this setting does not enforce that boundary.
       "ESNext.Temporal"
     ],
-    "types": ["node", "vite/client", "@testing-library/jest-dom"],
-
-    // Typecheck-Only Project
-    "noEmit": true,
-    "resolveJsonModule": true,
-
-    // JSX and Server Language Features
     "jsx": "react-jsx",
+    // Enable decorator syntax and emit design-type metadata for InversifyJS dependency injection.
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
 
-    // Stricter Typechecking Options
-    "strict": true,
+    // Type Inclusion
+    "types": ["node", "vite/client", "@testing-library/jest-dom"],
+
+    // Emit and JSON Modules
+    "noEmit": true,
+    "resolveJsonModule": true,
+
+    // Type Checking
     "noUncheckedIndexedAccess": true,
 
-    // Recommended Options
+    // Interop Constraints
     "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
 
-    // Additional Safety Options
-    "forceConsistentCasingInFileNames": true,
-    "erasableSyntaxOnly": true
+    // Module Detection
+    "moduleDetection": "force",
+
+    // Completeness
+    "skipLibCheck": true
   }
 }
