@@ -71,7 +71,7 @@ const ns = {
     reasons: {
       processing: "votre demande est en cours de traitement",
       processed: "votre demande a déjà été traitée et vous recevrez une lettre",
-      cancelled: "votre demande a été annulée parce que la date limite est dépassée et vous recevrez une lettre",
+      cancelled: "votre demande a été annulée parce que la date limite est dépassée",
     },
     whatYouCanDoHeading: "Ce que vous pouvez faire",
     statusChecker: "<statusCheckerLink>Vérifier l'état de votre demande</statusCheckerLink>",
@@ -82,7 +82,7 @@ const ns = {
     pageTitle: "Vos documents sont soumis",
     alertHeading: "Nous avons reçu vos documents",
     youSubmitted: "Vous avez soumis :",
-    delayNote: "Il pourrait y avoir un court délai avant que vos documents n’apparaissent dans votre compte.",
+    delayNote: "Il pourrait y avoir un court délai avant que vos documents n'apparaissent dans votre compte.",
     nextStepsHeading: "Prochaines étapes",
     nextSteps: {
       review: "Nous examinerons les documents soumis.",

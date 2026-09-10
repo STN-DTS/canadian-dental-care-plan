@@ -70,8 +70,8 @@ const ns = {
     reasonsHeading: "This may be because:",
     reasons: {
       processing: "your application is being processed",
-      processed: "your application has already been processed and you’ll get a letter",
-      cancelled: "your application was cancelled because the deadline passed and you’ll get a letter",
+      processed: "your application has already been processed and you'll get a letter",
+      cancelled: "your application was cancelled because the deadline passed",
     },
     whatYouCanDoHeading: "What you can do",
     statusChecker: "Use the <statusCheckerLink>status checker</statusCheckerLink> to verify the status of your application",

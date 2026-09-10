@@ -380,7 +380,7 @@ const ns = {
     continue: "Continuer",
     cannotValidate: {
       heading: "Je ne peux pas valider mon adresse courriel",
-      detail: "Vous devez saisir et valider votre adresse courriel pour présenter une demande en ligne. Si vous n’êtes pas en mesure de valider votre adresse courriel, vous pouvez tout de même faire une demande au Régime canadien de soins dentaires en communiquant avec Service Canada au 1\u2011833\u2011537\u20114342",
+      detail: "Vous devez saisir et valider votre adresse courriel pour présenter une demande en ligne. Si vous n'êtes pas en mesure de valider votre adresse courriel, vous pouvez tout de même faire une demande au Régime canadien de soins dentaires en communiquant avec Service Canada au 1\u2011833\u2011537\u20114342",
     },
     errorMessage: {
       verificationCodeRequired: "Entrez le code de vérification de 5 chiffres",
