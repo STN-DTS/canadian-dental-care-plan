@@ -51,11 +51,5 @@ export function buildAddressCountryChangeAnnouncement({ countryId, countryList, 
   const hasRegions = regionList.some((region) => region.countryId === countryId);
   const postalCodeRequired = postalCodeRequiredCountryIds.includes(countryId);
 
-  return [
-    messages.countryChanged(countryName),
-    hasRegions ? messages.provinceFieldRequired : messages.provinceFieldNotRequired,
-    postalCodeRequired ? messages.postalCodeRequired : messages.postalCodeOptional,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  return [messages.countryChanged(countryName), hasRegions ? messages.provinceFieldRequired : messages.provinceFieldNotRequired, postalCodeRequired ? messages.postalCodeRequired : messages.postalCodeOptional].filter(Boolean).join(' ');
 }
