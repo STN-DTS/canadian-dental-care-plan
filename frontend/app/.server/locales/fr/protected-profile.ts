@@ -229,6 +229,11 @@ const ns = {
     selectOne: "Sélectionnez une option",
     postalCodeHelp: "Format\u00A0: A1A 1A1. Les lettres D, F, I, O, Q ou U ne peuvent pas être utilisées.",
     postalCodeHelpUs: "Format\u00A0: 12345 ou 12345-6789",
+    countryChangedAnnouncement: "Le formulaire d'adresse a été mis à jour pour {{country}}.",
+    provinceFieldRequiredAnnouncement: "Le champ province, territoire, état ou région est maintenant requis.",
+    provinceFieldNotRequiredAnnouncement: "Le champ province, territoire, état ou région n'est pas requis pour le pays sélectionné.",
+    postalCodeRequiredAnnouncement: "Le champ code postal ou code ZIP est maintenant requis.",
+    postalCodeOptionalAnnouncement: "Le champ code postal ou code ZIP est maintenant facultatif.",
   },
   homeAddress: {
     pageTitle: "Adresse du domicile",
@@ -246,6 +251,11 @@ const ns = {
     selectOne: "Sélectionnez une option",
     postalCodeHelp: "Format\u00A0: A1A 1A1. Les lettres D, F, I, O, Q ou U ne peuvent pas être utilisées.",
     postalCodeHelpUs: "Format\u00A0: 12345 ou 12345-6789",
+    countryChangedAnnouncement: "Le formulaire d'adresse a été mis à jour pour {{country}}.",
+    provinceFieldRequiredAnnouncement: "Le champ province, territoire, état ou région est maintenant requis.",
+    provinceFieldNotRequiredAnnouncement: "Le champ province, territoire, état ou région n'est pas requis pour le pays sélectionné.",
+    postalCodeRequiredAnnouncement: "Le champ code postal ou code ZIP est maintenant requis.",
+    postalCodeOptionalAnnouncement: "Le champ code postal ou code ZIP est maintenant facultatif.",
   },
 } as const;
 

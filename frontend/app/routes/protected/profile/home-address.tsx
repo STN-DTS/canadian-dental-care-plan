@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
+import { announce } from '@react-aria/live-announcer';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -27,6 +28,7 @@ import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
+import { buildAddressCountryChangeAnnouncement } from '~/utils/address-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -257,7 +259,26 @@ export default function EditHomeAddress({ loaderData, params }: Route.ComponentP
   }
 
   const homeCountryChangeHandler = (event: React.SyntheticEvent<HTMLSelectElement>) => {
-    setSelectedHomeCountry(event.currentTarget.value);
+    const countryId = event.currentTarget.value;
+    setSelectedHomeCountry(countryId);
+
+    // Announce the resulting form changes to assistive technology so screen reader users are
+    // informed of the otherwise silent province/state visibility and postal code required changes.
+    const announcement = buildAddressCountryChangeAnnouncement({
+      countryId,
+      countryList,
+      regionList,
+      postalCodeRequiredCountryIds: [CANADA_COUNTRY_ID, USA_COUNTRY_ID],
+      messages: {
+        countryChanged: (country) => t(($) => $.homeAddress.countryChangedAnnouncement, { country }),
+        provinceFieldRequired: t(($) => $.homeAddress.provinceFieldRequiredAnnouncement),
+        provinceFieldNotRequired: t(($) => $.homeAddress.provinceFieldNotRequiredAnnouncement),
+        postalCodeRequired: t(($) => $.homeAddress.postalCodeRequiredAnnouncement),
+        postalCodeOptional: t(($) => $.homeAddress.postalCodeOptionalAnnouncement),
+      },
+    });
+
+    announce(announcement, 'polite');
   };
 
   const countries = useMemo<InputOptionProps[]>(() => {

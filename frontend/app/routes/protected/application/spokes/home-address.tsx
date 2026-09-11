@@ -237,7 +237,13 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
       countryList,
       regionList,
       postalCodeRequiredCountryIds: [CANADA_COUNTRY_ID, USA_COUNTRY_ID],
-      t,
+      messages: {
+        countryChanged: (country) => t(($) => $.address.addressField.countryChangedAnnouncement, { country }),
+        provinceFieldRequired: t(($) => $.address.addressField.provinceFieldRequiredAnnouncement),
+        provinceFieldNotRequired: t(($) => $.address.addressField.provinceFieldNotRequiredAnnouncement),
+        postalCodeRequired: t(($) => $.address.addressField.postalCodeRequiredAnnouncement),
+        postalCodeOptional: t(($) => $.address.addressField.postalCodeOptionalAnnouncement),
+      },
     });
 
     announce(announcement, 'polite');
