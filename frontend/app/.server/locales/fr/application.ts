@@ -50,7 +50,8 @@ const ns = {
     taxNotFiled: "Vous, et votre époux ou épouse ou conjoint ou conjointe de fait, le cas échéant, n'avez pas encore reçu votre avis de cotisation pour {{taxYear}} de l'Agence du revenu du Canada.",
     unableToAssess: "Nous utilisons vos renseignements fiscaux pour confirmer que vous répondez aux exigences de revenu et de résidence du Régime canadien de soins dentaires.",
     taxInfo: "Pour en savoir plus sur la production de votre déclaration de revenus, consultez la page <taxInfo>Préparez-vous à produire une déclaration de revenus</taxInfo>.",
-    applyAfter: "Vous pouvez présenter une demande d'adhésion au régime <strong>après</strong> que vous ou votre époux, épouse, conjoint de fait ou conjointe de fait avez <strong>produit votre déclaration de revenus</strong> et reçu votre avis de cotisation.",
+    applyAfter:
+      "Vous pouvez présenter une demande d'adhésion au régime <strong>après</strong> que vous ou votre époux, épouse, conjoint de fait ou conjointe de fait avez <strong>produit votre déclaration de revenus</strong> et reçu votre avis de cotisation.",
     taxInfoHref: "https://www.canada.ca/fr/services/impots/impot-sur-le-revenu/impot-sur-le-revenu-des-particuliers/preparez-vous-impots.html",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",

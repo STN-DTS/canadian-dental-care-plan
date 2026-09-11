@@ -52,7 +52,7 @@ function addUniqueMeta(acc: MetaDescriptor[] | undefined, parentMeta: MetaDescri
 }
 
 function isMetaEqual(meta1: MetaDescriptor, meta2: MetaDescriptor): boolean {
-  // prettier-ignore
+  // oxfmt-ignore
   return ('name' in meta1 && 'name' in meta2 && meta1.name === meta2.name) ||
     ('property' in meta1 && 'property' in meta2 && meta1.property === meta2.property) ||
     ('title' in meta1 && 'title' in meta2);

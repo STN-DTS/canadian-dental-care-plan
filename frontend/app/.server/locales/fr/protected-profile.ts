@@ -7,7 +7,8 @@ const ns = {
     pageTitle: "Admissibilité des membres",
     details: "Les membres doivent toujours vérifier leur couverture et confirmer avec leur professionnel de la santé bucco-dentaire quels frais, le cas échéant, ne seront pas couverts par le Régime canadien de soins dentaires avant de recevoir des soins.",
     currentYear: "Année de prestations en cours",
-    currentYearDetails: "La date de début de la couverture en cours dépend du moment où vous avez présenté votre demande ou renouvelé votre couverture. Veuillez vous référer à la lettre envoyée par Service Canada. La dernière journée de couverture est le 30 juin {{end}}.",
+    currentYearDetails:
+      "La date de début de la couverture en cours dépend du moment où vous avez présenté votre demande ou renouvelé votre couverture. Veuillez vous référer à la lettre envoyée par Service Canada. La dernière journée de couverture est le 30 juin {{end}}.",
     benefitYearRange: "(1er juillet {{start}} au 30 juin {{end}})",
     nextYear: "Prochaine année de prestations",
     eligible: "Admissible",
@@ -29,7 +30,8 @@ const ns = {
     pageTitle: "Autres prestations dentaires gouvernementales",
     haveAccess: "Accès à d'autres prestations dentaires gouvernementales",
     accessToDental: "L'accès à une assurance dentaire dans le cadre d'un programme social provincial, territorial ou fédéral n'aura aucune incidence sur votre admissibilité au Régime canadien de soins dentaires.",
-    eligibilityCriteria: "Si vous répondez à tous les critères d'admissibilité, votre couverture sera coordonnée entre les régimes afin qu'il n'y ait pas de lacunes ou de dédoublement dans la couverture. Gardez vos renseignements à jour afin de garantir le bon déroulement de cette coordination.",
+    eligibilityCriteria:
+      "Si vous répondez à tous les critères d'admissibilité, votre couverture sera coordonnée entre les régimes afin qu'il n'y ait pas de lacunes ou de dédoublement dans la couverture. Gardez vos renseignements à jour afin de garantir le bon déroulement de cette coordination.",
     yes: "Oui",
     no: "Non",
     updateLinkText: "Modifier la réponse à «\u00A0Accès à des prestations dentaires gouvernementales\u00A0»",
@@ -148,8 +150,10 @@ const ns = {
     optionYes: "Oui",
     optionNo: "Non",
     addPhoneNumber: "L'ajout de votre numéro de téléphone nous permet de vous joindre rapidement en cas de problème avec votre demande. Si vous n'indiquez pas de numéro, nous vous contacterons par courrier.",
-    helpMessage: "Les numéros de téléphone canadiens doivent comporter 10 chiffres (par exemple\u00A0: 800\u2011622\u20116232). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
-    helpMessageAlt: "Pour le numéro de téléphone secondaire, saisissez 10 chiffres s'il s'agit d'un numéro canadien (par exemple\u00A0: 800\u2011598\u20114567). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
+    helpMessage:
+      "Les numéros de téléphone canadiens doivent comporter 10 chiffres (par exemple\u00A0: 800\u2011622\u20116232). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
+    helpMessageAlt:
+      "Pour le numéro de téléphone secondaire, saisissez 10 chiffres s'il s'agit d'un numéro canadien (par exemple\u00A0: 800\u2011598\u20114567). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
     errorMessage: {
       phoneNumberValid: "Un numéro du Canada a 10 chiffres. Par exemple\u00A0: 800\u2011622\u20116232. Si c'est un numéro d'un autre pays, ajoutez un + puis le code du pays.",
       phoneNumberValidInternational: "Un numéro du Canada a 10 chiffres. Par exemple\u00A0: 800\u2011622\u20116232. Si c'est un numéro d'un autre pays, ajoutez un + puis le code du pays.",
@@ -191,7 +195,8 @@ const ns = {
     pageTitle: "Confirmation de votre adresse courriel",
     verificationCode: "Un courriel contenant un code a été envoyé à {{email}}. Veuillez saisir le code de vérification à 5 chiffres et sélectionner «\u00A0Continuer\u00A0».",
     requestNew: "Il est possible que vous receviez le courriel au bout de 60 secondes. Si vous ne le voyez pas, consultez vos courriels indésirables. Si le code ne se trouve pas dans ce dossier, vous pouvez en demander un nouveau.",
-    unableToVerify: "Si vous n'êtes pas en mesure de confirmer votre adresse courriel, cliquez sur «\u00A0Retour\u00A0» pour mettre à jour votre adresse courriel ou <communicationLink>modifier vos préférences en matière de communication</communicationLink>.",
+    unableToVerify:
+      "Si vous n'êtes pas en mesure de confirmer votre adresse courriel, cliquez sur «\u00A0Retour\u00A0» pour mettre à jour votre adresse courriel ou <communicationLink>modifier vos préférences en matière de communication</communicationLink>.",
     verificationCodeLabel: "Code de vérification",
     requestNewCode: "Demander un nouveau code",
     back: "Retour",

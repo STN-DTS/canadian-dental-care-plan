@@ -1,8 +1,13 @@
 {
   "editor.codeActionsOnSave": {
-    "source.fixAll": "always"
+    "source.fixAll.oxc": "explicit",
+    "source.fixAll.ts": "explicit",
+    // Let Oxfmt handle import sorting instead of VS Code.
+    "source.sortImports": "never",
+    // Let Oxfmt handle import organization instead of VS Code.
+    "source.organizeImports": "never"
   },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
   // always import files from the root (~) of the project

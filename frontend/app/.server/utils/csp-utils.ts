@@ -25,7 +25,7 @@ export function generateContentSecurityPolicy(nonce: string) {
   const isDevelopment = NODE_ENV === 'development';
 
   const contentSecurityPolicy = [
-    // prettier-ignore
+    // oxfmt-ignore
     `base-uri 'none'`,
     `default-src 'none'`,
     `connect-src 'self' ${hcaptchaCSP.connectSrc} ${adobeAnalyticsCSP.connectSrc}` + (isDevelopment ? ' ws://localhost:3001' : ''),

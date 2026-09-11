@@ -60,7 +60,7 @@ function sessionTypeIs(serverConfig: Pick<ServerConfig, 'SESSION_STORAGE_TYPE'>,
  * Defines the container module for service bindings.
  */
 export function createServicesContainerModule(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS' | 'SESSION_STORAGE_TYPE'>): ContainerModule {
-  // prettier-ignore
+  // oxfmt-ignore
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationService).to(DefaultAddressValidationService);
     options.bind(TYPES.AppealUploadEligibilityService).to(DefaultAppealUploadEligibilityService);

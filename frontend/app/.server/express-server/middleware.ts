@@ -45,7 +45,7 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
   const log = createLogger('express/middleware/securityHeadersMiddleware');
   const ignorePatterns: string[] = [];
 
-  // prettier-ignore
+  // oxfmt-ignore
   const permissionsPolicy = [
     'camera=()',
     'display-capture=()',

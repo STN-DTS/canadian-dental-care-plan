@@ -73,11 +73,14 @@ const ns = {
     pleaseReview: "Veuillez vérifier votre demande pour vous assurer que tous les renseignements sont exacts.",
     reviewApplication: "Vérifier la demande",
     submitYourApplication: "Soumettre votre demande",
-    bySubmitting: "En soumettant la demande, vous confirmez que tous les renseignements fournis sont exacts. Ces renseignements seront vérifiés au moyen de votre numéro d'assurance sociale (NAS) et des dossiers de l'Agence du revenu du Canada (ARC). Si des renseignements sont incorrects, vous pourriez perdre votre couverture.",
-    reviewEligibilityCriteria: "Veuillez consulter les <eligibilityLink>critères d'admissibilité</eligibilityLink> du Régime canadien de soins dentaires (RCSD) et confirmer que vous répondez à toutes les exigences. Si vous êtes jugé(e) inadmissible au RCSD à tout moment au cours de l'année de versement des prestations, vous pourriez devoir rembourser la totalité des coûts des soins dentaires reçus dans le cadre du régime.",
+    bySubmitting:
+      "En soumettant la demande, vous confirmez que tous les renseignements fournis sont exacts. Ces renseignements seront vérifiés au moyen de votre numéro d'assurance sociale (NAS) et des dossiers de l'Agence du revenu du Canada (ARC). Si des renseignements sont incorrects, vous pourriez perdre votre couverture.",
+    reviewEligibilityCriteria:
+      "Veuillez consulter les <eligibilityLink>critères d'admissibilité</eligibilityLink> du Régime canadien de soins dentaires (RCSD) et confirmer que vous répondez à toutes les exigences. Si vous êtes jugé(e) inadmissible au RCSD à tout moment au cours de l'année de versement des prestations, vous pourriez devoir rembourser la totalité des coûts des soins dentaires reçus dans le cadre du régime.",
     doYouQualifyHref: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html",
     infoIsCorrect: "Je confirme que tous les renseignements fournis dans la demande sont exacts et je comprends qu'ils seront comparés avec mes renseignements fiscaux.",
-    iUnderstand: "Je comprends les critères d'admissibilité du RCSD. Je reconnais que si je suis jugé(e) inadmissible à tout moment pendant l'année de versement des prestations, en raison de renseignements incorrects que j'ai moi-même fournis, je devrai rembourser les coûts des soins dentaires reçus dans le cadre du régime.",
+    iUnderstand:
+      "Je comprends les critères d'admissibilité du RCSD. Je reconnais que si je suis jugé(e) inadmissible à tout moment pendant l'année de versement des prestations, en raison de renseignements incorrects que j'ai moi-même fournis, je devrai rembourser les coûts des soins dentaires reçus dans le cadre du régime.",
     errorMessage: {
       acknowledgeInfoRequired: "Vous devez confirmer que tous les renseignements fournis sont exacts pour continuer.",
       acknowledgeCriteriaRequired: "Vous devez confirmer que vous comprenez les critères d'admissibilité pour continuer.",
@@ -107,7 +110,8 @@ const ns = {
       renewal: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans les 30 jours civils pour vous informer de votre admissibilité au régime.",
       intake: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans un délai de 30 jours civils avec plus d'informations et les prochaines étapes, au besoin.",
     },
-    proofOfCoverage: "Si l'un de vos feuillets T4 ou T4A indique que vous avez accès à une assurance ou une couverture dentaire, vous devrez fournir une preuve que vous n'êtes pas couverts. Cette preuve s'applique à vos feuillets fiscaux et, le cas échéant, à ceux de votre conjoint ou de votre conjoint de fait.",
+    proofOfCoverage:
+      "Si l'un de vos feuillets T4 ou T4A indique que vous avez accès à une assurance ou une couverture dentaire, vous devrez fournir une preuve que vous n'êtes pas couverts. Cette preuve s'applique à vos feuillets fiscaux et, le cas échéant, à ceux de votre conjoint ou de votre conjoint de fait.",
     checkStatus: "Consulter l'état de votre demande",
     cdcpChecker: "Vous pouvez consulter le <cdcpLink>Vérificateur de l'état d'une demande du Régime canadien de soins dentaires</cdcpLink> ou composer le <noWrap>1-833-537-4342</noWrap> pour suivre l'état de votre demande.",
     useCode: "Vous aurez besoin de votre code de demande ou de votre numéro d'identification du membre.",
@@ -120,8 +124,10 @@ const ns = {
     mscaLinkAccount: "https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html",
     mscaLinkChecker: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html#etat",
     howInsurance: "Comment utiliser le Régime canadien de soins dentaires",
-    eligibleText: "Si vous êtes admissible au régime, nous communiquerons vos renseignements à la Sun Life. La Sun Life vous enverra une trousse de bienvenue par la poste. Cette trousse de bienvenue comprendra votre carte de membre et des renseignements sur le Régime canadien de soins dentaires, y compris la date de début de votre couverture.",
-    moreInfoCdcp: "Le Régime canadien de soins dentaires aidera à payer une partie des coûts d'un large éventail de services de santé buccodentaire, mais il se peut qu'il ne paie pas la totalité du montant. Avant de recevoir des soins dentaires, vous devriez toujours demander à votre fournisseur de soins buccodentaires s'il y a des frais que le régime n'assumera pas.",
+    eligibleText:
+      "Si vous êtes admissible au régime, nous communiquerons vos renseignements à la Sun Life. La Sun Life vous enverra une trousse de bienvenue par la poste. Cette trousse de bienvenue comprendra votre carte de membre et des renseignements sur le Régime canadien de soins dentaires, y compris la date de début de votre couverture.",
+    moreInfoCdcp:
+      "Le Régime canadien de soins dentaires aidera à payer une partie des coûts d'un large éventail de services de santé buccodentaire, mais il se peut qu'il ne paie pas la totalité du montant. Avant de recevoir des soins dentaires, vous devriez toujours demander à votre fournisseur de soins buccodentaires s'il y a des frais que le régime n'assumera pas.",
     moreInfoService: "Pour en savoir plus sur le Régime canadien de soins dentaires, consultez le site Web du <dentalContactUsLink>Régime canadien de soins dentaires - Canada.ca</dentalContactUsLink>.",
     dentalLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html",
     applicationSumm: "Sommaire de la demande",

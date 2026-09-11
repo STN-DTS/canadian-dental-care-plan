@@ -151,7 +151,7 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
   const discoveryUrl = authServerUrl + '/.well-known/openid-configuration';
   log.info('Fetching OIDC server metadata from [%s]', discoveryUrl);
 
-  // prettier-ignore
+  // oxfmt-ignore
   const discoveryResponse = fetchFn
     ? await fetchFn(discoveryUrl)
     : await fetch(discoveryUrl);
@@ -167,7 +167,7 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
   const jwksUrl = serverMetadata.jwks_uri;
   log.info('Fetching OIDC server public keys from [%s]', jwksUrl);
 
-  // prettier-ignore
+  // oxfmt-ignore
   const jwksResponse = fetchFn
     ? await fetchFn(serverMetadata.jwks_uri)
     : await fetch(serverMetadata.jwks_uri);
@@ -238,7 +238,7 @@ export async function fetchAccessToken(serverMetadata: ServerMetadata, serverJwk
     }).toString(),
   };
 
-  // prettier-ignore
+  // oxfmt-ignore
   const response = fetchFn
     ? await fetchFn(serverMetadata.token_endpoint, fetchOptions)
     : await fetch(serverMetadata.token_endpoint, fetchOptions);
@@ -273,7 +273,7 @@ export async function fetchUserInfo(userinfoUri: string, serverJwks: JWKSet, acc
     },
   };
 
-  // prettier-ignore
+  // oxfmt-ignore
   const response = fetchFn
     ? await fetchFn(userinfoUri, fetchOptions)
     : await fetch(userinfoUri, fetchOptions);
@@ -308,7 +308,7 @@ export async function validateSession(authUrl: string, clientId: string, session
   validateUrl.searchParams.set('client_id', clientId);
   validateUrl.searchParams.set('shared_session_id', sessionId);
 
-  // prettier-ignore
+  // oxfmt-ignore
   const response = fetchFn
     ? await fetchFn(validateUrl)
     : await fetch(validateUrl);
@@ -353,7 +353,7 @@ async function createClientAssertion(issuer: string, client: ClientMetadata) {
     sub: client.clientId,
   };
 
-  // prettier-ignore
+  // oxfmt-ignore
   return await new SignJWT(payload)
     .setProtectedHeader(header)
     .sign(client.privateSigningKey);

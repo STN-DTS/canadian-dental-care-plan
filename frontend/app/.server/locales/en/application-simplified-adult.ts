@@ -71,11 +71,14 @@ const ns = {
     pleaseReview: "Please review your application to make sure all the information is correct.",
     reviewApplication: "Review application",
     submitYourApplication: "Submit your application",
-    bySubmitting: "By submitting the application, you're confirming that all information you've shared is correct. This information will be verified against your Social Insurance Number (SIN) and Canada Revenue Agency (CRA) records. If any information provided is incorrect, you could lose your coverage.",
-    reviewEligibilityCriteria: "Please review the Canadian Dental Care Plan (CDCP) <eligibilityLink>eligibility criteria</eligibilityLink> and confirm that you meet all requirements. If you are found to be ineligible for the CDCP at any time during the benefit year, you may need to repay the full costs of dental care you received under the plan.",
+    bySubmitting:
+      "By submitting the application, you're confirming that all information you've shared is correct. This information will be verified against your Social Insurance Number (SIN) and Canada Revenue Agency (CRA) records. If any information provided is incorrect, you could lose your coverage.",
+    reviewEligibilityCriteria:
+      "Please review the Canadian Dental Care Plan (CDCP) <eligibilityLink>eligibility criteria</eligibilityLink> and confirm that you meet all requirements. If you are found to be ineligible for the CDCP at any time during the benefit year, you may need to repay the full costs of dental care you received under the plan.",
     doYouQualifyHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html",
     infoIsCorrect: "I confirm that all the information provided in the application is correct, and understand that it will be verified against my tax information.",
-    iUnderstand: "I understand the CDCP eligibility criteria, and I acknowledge that if I am found to be ineligible at any point during the benefit year, based on incorrect information I provided, I will need to repay the cost of any dental care received under the plan.",
+    iUnderstand:
+      "I understand the CDCP eligibility criteria, and I acknowledge that if I am found to be ineligible at any point during the benefit year, based on incorrect information I provided, I will need to repay the cost of any dental care received under the plan.",
     errorMessage: {
       acknowledgeInfoRequired: "You must confirm that all information provided is correct to proceed",
       acknowledgeCriteriaRequired: "You must confirm that you understand the eligibility criteria to proceed",
@@ -94,7 +97,8 @@ const ns = {
     printBtn: "Print or save",
     printUnavailable: "Printing is not available at this time. Please take note of your application code and review the information you submitted before leaving this page, as it will no longer be accessible.",
     whatsNext: "Confirm your eligibility and coverage level",
-    beginProcess: "Always confirm your eligibility and coverage level prior to receiving care. You can confirm this information by using the <cdcpLink>Status Checker</cdcpLink> or signing in to your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>.",
+    beginProcess:
+      "Always confirm your eligibility and coverage level prior to receiving care. You can confirm this information by using the <cdcpLink>Status Checker</cdcpLink> or signing in to your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>.",
     getUpdatesTitle: "Get updates quickly and securely",
     getUpdatesText: 'Register for a <mscaLinkAccount>MSCA</mscaLinkAccount> and select "Online" as your preferred method of communication to receive important information about the Canadian Dental Care Plan. By signing up, you can also:',
     view: "View your member status",
@@ -103,8 +107,10 @@ const ns = {
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     mscaLinkChecker: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#status",
     howInsurance: "How do I use my Canadian Dental Care Plan benefits",
-    eligibleText: "If deemed eligible we'll share your information with Sun Life. Sun Life will send you a welcome package by mail. This welcome package will include your member card and information about the Canadian Dental Care Plan, including your coverage start date.",
-    moreInfoCdcp: "The Canadian Dental Care Plan will help pay for a portion of the cost for a wide range of oral health services, but may not pay the full amount. Before receiving oral health care, you should also ask your oral health provider about any costs that won't be covered by the plan.",
+    eligibleText:
+      "If deemed eligible we'll share your information with Sun Life. Sun Life will send you a welcome package by mail. This welcome package will include your member card and information about the Canadian Dental Care Plan, including your coverage start date.",
+    moreInfoCdcp:
+      "The Canadian Dental Care Plan will help pay for a portion of the cost for a wide range of oral health services, but may not pay the full amount. Before receiving oral health care, you should also ask your oral health provider about any costs that won't be covered by the plan.",
     moreInfoService: "For more information about the Canadian Dental Care Plan, visit <dentalContactUsLink>Canadian Dental Care Plan - Canada.ca</dentalContactUsLink>.",
     dentalLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html",
     applicationSumm: "Application summary",

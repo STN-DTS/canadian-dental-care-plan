@@ -69,7 +69,8 @@ const ns = {
     eligible: {
       title: "Vous êtes admissible",
       description: "Continuez d'utiliser vos prestations, mais tenez compte des changements possibles à votre niveau de couverture.",
-      instructions: "Vous pouvez vérifier votre niveau de couverture dans la lettre d'invitation au renouvellement envoyée par Service Canada. Cette lettre peut également être consultée dans <mscaLink>Mon dossier Service Canada (MDSC)</mscaLink>. Aucune autre communication ne sera envoyée.",
+      instructions:
+        "Vous pouvez vérifier votre niveau de couverture dans la lettre d'invitation au renouvellement envoyée par Service Canada. Cette lettre peut également être consultée dans <mscaLink>Mon dossier Service Canada (MDSC)</mscaLink>. Aucune autre communication ne sera envoyée.",
     },
     ineligible: {
       title: "Vous n'êtes pas admissible",
@@ -77,9 +78,11 @@ const ns = {
     },
     eligibleProof: {
       title: "Vous êtes admissible - des pièces justificatives pourraient être exigées",
-      description: "L'un ou plusieurs de vos feuillets T4 ou T4A de 2025 indiquent que vous avez accès à une assurance dentaire privée au 31 décembre 2025. Nous pourrions vous demander une preuve démontrant que vous n'avez pas accès à une assurance ou à une couverture dentaire privée. Le cas échéant, nous communiquerons avec vous.",
+      description:
+        "L'un ou plusieurs de vos feuillets T4 ou T4A de 2025 indiquent que vous avez accès à une assurance dentaire privée au 31 décembre 2025. Nous pourrions vous demander une preuve démontrant que vous n'avez pas accès à une assurance ou à une couverture dentaire privée. Le cas échéant, nous communiquerons avec vous.",
       continue: "Si vous n'avez pas accès à une assurance ou à une couverture dentaire privée, continuez d'utiliser vos prestations actuelles, tout en tenant compte de tout changement éventuel dans votre niveau de couverture.",
-      instructions: "Vous pouvez vérifier votre niveau de couverture dans la lettre d'invitation au renouvellement envoyée par Service Canada. Cette lettre peut également être consultée dans <mscaLink>Mon dossier Service Canada (MDSC)</mscaLink>. Aucune autre communication ne sera envoyée.",
+      instructions:
+        "Vous pouvez vérifier votre niveau de couverture dans la lettre d'invitation au renouvellement envoyée par Service Canada. Cette lettre peut également être consultée dans <mscaLink>Mon dossier Service Canada (MDSC)</mscaLink>. Aucune autre communication ne sera envoyée.",
     },
     mscaLink: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
   },

@@ -77,7 +77,8 @@ const ns = {
     },
     eligibleProof: {
       title: "You are eligible - Proof may be required",
-      description: "One or more of your 2025 T4 or T4A documents shows that you have access to private dental insurance, as of December 31, 2025. We may ask you to provide proof that you do not have access to private dental insurance or coverage. We'll contact you again if this is the case.",
+      description:
+        "One or more of your 2025 T4 or T4A documents shows that you have access to private dental insurance, as of December 31, 2025. We may ask you to provide proof that you do not have access to private dental insurance or coverage. We'll contact you again if this is the case.",
       continue: "If you do not have access to private dental insurance or coverage, continue to use your benefits but be aware of any changes in your coverage level.",
       instructions: "You can confirm your coverage level on the invitation to renew letter sent by Service Canada. This letter can also be viewed in <mscaLink>My Service Canada Account (MSCA)</mscaLink>. No further communication will be sent.",
     },

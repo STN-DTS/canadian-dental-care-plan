@@ -20,7 +20,7 @@ const toBoolean = (val?: string) => val === 'true';
  * Environment variables that are safe to expose publicly to the client.
  * ⚠️ IMPORTANT: DO NOT PUT SENSITIVE CONFIGURATIONS HERE ⚠️
  */
-// prettier-ignore
+// oxfmt-ignore
 export const clientEnvSchema = z.object({
   // Adobe Analytics scripts
   ADOBE_ANALYTICS_SRC: z.url().optional(),

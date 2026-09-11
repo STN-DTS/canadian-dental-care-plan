@@ -54,7 +54,8 @@ const ns = {
     taxNotFiled: "Vous, et votre époux ou épouse ou conjoint ou conjointe de fait, le cas échéant, n'avez pas encore reçu votre avis de cotisation pour {{taxYear}} de l'Agence du revenu du Canada.",
     unableToAssess: "Nous utilisons vos renseignements fiscaux pour confirmer que vous répondez aux exigences de revenu et de résidence du Régime canadien de soins dentaires.",
     taxInfo: "Pour en savoir plus sur la production de votre déclaration de revenus, consultez la page <taxInfo>Préparez-vous à produire une déclaration de revenus</taxInfo>.",
-    applyAfter: "Vous pouvez présenter une demande d'adhésion au régime <strong>après</strong> que vous ou votre époux, épouse, conjoint de fait ou conjointe de fait avez <strong>produit votre déclaration de revenus</strong> et reçu votre avis de cotisation.",
+    applyAfter:
+      "Vous pouvez présenter une demande d'adhésion au régime <strong>après</strong> que vous ou votre époux, épouse, conjoint de fait ou conjointe de fait avez <strong>produit votre déclaration de revenus</strong> et reçu votre avis de cotisation.",
     taxInfoHref: "https://www.canada.ca/fr/services/impots/impot-sur-le-revenu/impot-sur-le-revenu-des-particuliers/preparez-vous-impots.html",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
@@ -111,7 +112,8 @@ const ns = {
     pageTitle: "Demande de renouvellement déjà soumise",
     recordsShowApplicationSubmitted: "Nos dossiers indiquent qu'une demande a déjà été soumise. Nous vous informerons si d'autres renseignements sont requis.",
     statusCheckerInfo: "Vous pouvez consulter l'état de votre demande au moyen du <statusCheckerLink>Vérificateur de l'état</statusCheckerLink>.",
-    updateProfileInfo: "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1-833-537-4342</noWrap>.",
+    updateProfileInfo:
+      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1-833-537-4342</noWrap>.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",

@@ -45,7 +45,7 @@ const toNumber = (val?: string) => (val ? Number.parseInt(val) : undefined);
 /**
  * Environment variables that will be available to server only.
  */
-// prettier-ignore
+// oxfmt-ignore
 const serverEnv = clientEnvSchema.extend({
   NODE_ENV: z.enum(['production', 'development', 'test']),
 

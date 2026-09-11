@@ -25,7 +25,7 @@ The application supports English and French journeys to:
 ### Requirements
 
 - Node.js `>=26.0.0 <27.0.0`
-- pnpm `>=12.0.0 <13.0.0`
+- Corepack and pnpm `>=12.0.0 <13.0.0`
 - Podman for the optional local telemetry stack
 
 Versions are enforced in `package.json`.
@@ -33,9 +33,13 @@ Versions are enforced in `package.json`.
 ### Install
 
 ```sh
+npm install --global corepack@latest
+corepack enable pnpm
 pnpm install
 cp .env.example .env
 ```
+
+Corepack uses the `packageManager` version pinned in `package.json`.
 
 PowerShell equivalent:
 
@@ -82,7 +86,7 @@ Available commands:
 - `pnpm run preview`: build and run production-style server
 - `pnpm start`: run existing production build
 - `pnpm run typecheck`: generate route types and run TypeScript checks
-- `pnpm run lint`: run Prettier, TypeScript, and Oxlint checks
+- `pnpm run lint`: run Oxfmt, TypeScript, and Oxlint checks
 - `pnpm run lint:fix`: apply formatting and Oxlint fixes
 - `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript Go-based type-aware checks
 - `pnpm run test:unit`: run Vitest in watch mode
@@ -100,17 +104,9 @@ pnpm run test:e2e
 
 ## Linting
 
-Oxlint replaces ESLint and `typescript-eslint`; `oxlint-tsgolint` provides the
-type-aware rules using TypeScript Go. Prettier remains responsible for formatting,
-and `tsc` remains responsible for project type checking. The configuration retains
-the prior core, TypeScript, React, JSX accessibility, Unicorn, and Vitest intent
-where Oxlint has an equivalent. `eslint-plugin-import-zod`,
-`import-x/consistent-type-specifier-style`, and the remaining `@eslint-react`
-specialized rules have no Oxlint equivalent and are not enforced. The scoped
-`file-upload.tsx` accessibility exception is retained in `.oxlintrc.json`.
-
-See [`other/docs/typescript-7-migration.md`](./other/docs/typescript-7-migration.md)
-for TypeScript 7 breaking changes, defaults, and compatibility notes.
+Oxlint provides syntax and type-aware linting, Oxfmt handles formatting, and
+TypeScript performs project type checking. Configuration lives in
+`oxlint.config.ts`, `oxfmt.config.ts`, and `tsconfig.json`.
 
 ## Code organization
 
@@ -186,3 +182,4 @@ scripts preload the required OpenTelemetry modules.
 - [Document upload](other/docs/document-upload-feature.md)
 - [Local observability](other/docs/observability.md)
 - [Express conventions](other/docs/express.md)
+- [TypeScript 7 migration notes](other/docs/typescript-7-migration.md)

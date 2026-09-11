@@ -45,7 +45,7 @@ export function Breadcrumbs({ className, items }: BreadcrumbsProps) {
 function Breadcrumb({ children, routeId, to }: { children: ReactNode; routeId?: string; to?: To }) {
   const params = useParams();
 
-  // prettier-ignore
+  // oxfmt-ignore
   return routeId === undefined && to === undefined
     ? <span property="name">{children}</span>
     : <InlineLink routeId={routeId} params={params} to={to} property="item" typeof="WebPage"><span property="name">{children}</span></InlineLink>;

@@ -150,7 +150,8 @@ const ns = {
     newTab: "opens in a new tab",
   },
   browserCompatibilityBanner: {
-    content: "You are using an older browser that is incompatible with this website. Some important features might not work, and you could have trouble completing the form. Try updating your browser to a newer version for a better experience. You may need to update your device or use a different one.",
+    content:
+      "You are using an older browser that is incompatible with this website. Some important features might not work, and you could have trouble completing the form. Try updating your browser to a newer version for a better experience. You may need to update your device or use a different one.",
     contact: "If the issue continues, contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
     dismiss: "Dismiss",
     title: "Update your browser",

@@ -14,7 +14,7 @@ describe('crypto-utils', () => {
   });
 
   it('should convert a public key from PEM format to an encryption CryptoKey', async () => {
-    // prettier-ignore
+    // oxfmt-ignore
     const publicKeyPem =
       'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTuqIc+mTb2MqHo5ayy41fN0Dp' +
       'XlEf7Tqefsd8rdKXm9eRQMGlGRV+dv00YHwfNB0HUmTidSkW0bsJ0QHH6oPfcILM' +
@@ -30,7 +30,7 @@ describe('crypto-utils', () => {
   });
 
   it('should convert a public key from PEM format to an verification CryptoKey', async () => {
-    // prettier-ignore
+    // oxfmt-ignore
     const publicKeyPem =
       'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTuqIc+mTb2MqHo5ayy41fN0Dp' +
       'XlEf7Tqefsd8rdKXm9eRQMGlGRV+dv00YHwfNB0HUmTidSkW0bsJ0QHH6oPfcILM' +
@@ -46,7 +46,7 @@ describe('crypto-utils', () => {
   });
 
   it('should convert a private key from PEM format to a decryption CryptoKey', async () => {
-    // prettier-ignore
+    // oxfmt-ignore
     const privateKeyPem =
       'MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAO8MlyeMy5eFk0+2' +
       'D3Bfuoc1G3ca7o+5BEnWxHdwnZ/V2BVqmjQ/a7Gopxdu/VCU93NLO9Ao9seVU1hB' +
@@ -72,7 +72,7 @@ describe('crypto-utils', () => {
   });
 
   it('should convert a private key from PEM format to a signing CryptoKey', async () => {
-    // prettier-ignore
+    // oxfmt-ignore
     const privateKeyPem =
       'MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAO8MlyeMy5eFk0+2' +
       'D3Bfuoc1G3ca7o+5BEnWxHdwnZ/V2BVqmjQ/a7Gopxdu/VCU93NLO9Ao9seVU1hB' +

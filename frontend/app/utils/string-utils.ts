@@ -216,7 +216,7 @@ interface FormatAddressArguments {
 export function formatAddress({ address, city, country, provinceState, postalZipCode, apartment, format = 'standard' }: FormatAddressArguments): string {
   const formattedAddressLine = formatAddressLine({ address, apartment });
 
-  // prettier-ignore
+  // oxfmt-ignore
   const lines = format === 'alternative'
     ? [
       formattedAddressLine,

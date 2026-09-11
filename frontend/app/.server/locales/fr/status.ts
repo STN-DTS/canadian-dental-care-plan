@@ -11,7 +11,8 @@ const ns = {
     summary: "Conditions générales d'utilisation",
     heading: "Conditions d'utilisation du vérificateur de l'état d'une demande du Régime canadien de soins dentaires",
     thankYou: "Merci d'utiliser le vérificateur de l'état d'une demande du Régime canadien de soins dentaires. Nous avons établi conditions d'utilisation de ce service («\u00A0conditions d'utilisation\u00A0»). Veuillez les lire attentivement.",
-    legalTerms: "<strong>VEUILLEZ LIRE ATTENTIVEMENT</strong> Les présentes conditions d'utilisation du vérificateur de l'état d'une demande du Régime canadien de soins dentaires (RCSD) contiennent des renseignements sur vos droits et obligations juridiques et régissent votre utilisation du vérificateur de l'état d'une demande. Les présentes conditions d'utilisation doivent être lues en parallèle avec celles du site Web <canadaTermsConditions>Canada.ca</canadaTermsConditions>. En cas de divergence, les présentes conditions d'utilisation ont préséance sur celles du site Web Canada.ca.",
+    legalTerms:
+      "<strong>VEUILLEZ LIRE ATTENTIVEMENT</strong> Les présentes conditions d'utilisation du vérificateur de l'état d'une demande du Régime canadien de soins dentaires (RCSD) contiennent des renseignements sur vos droits et obligations juridiques et régissent votre utilisation du vérificateur de l'état d'une demande. Les présentes conditions d'utilisation doivent être lues en parallèle avec celles du site Web <canadaTermsConditions>Canada.ca</canadaTermsConditions>. En cas de divergence, les présentes conditions d'utilisation ont préséance sur celles du site Web Canada.ca.",
     accessTerms: "Votre accès au vérificateur de l'état d'une demande et votre utilisation de celle-ci, y compris tout le contenu, sont assujettis à (1) votre acceptation des présentes conditions d'utilisation et (2) votre respect de celles-ci.",
     maintenance: "Il peut arriver que le système soit indisponible pour des raisons de maintenance.",
     inactive: "Si vous restez inactif pendant 15 minutes alors que vous utilisez le vérificateur de la demande, votre séance prendra fin et vous perdrez tous les renseignements que vous avez saisis.",
@@ -19,25 +20,33 @@ const ns = {
     esdcDefinitionClarification: "Aux fins des présentes conditions d'utilisation, «\u00A0EDSC\u00A0» s'entend de Sa Majesté le Roi du chef du Canada, représenté par le ministre de l'Emploi et du Développement social du Canada.",
     statusChecker: {
       heading: "Conditions d'utilisation du vérificateur de l'état d'une demande",
-      selfAgreement: "Votre utilisation du vérificateur de l'état d'une demande en ligne signifie que vous avez lu et accepté les présentes conditions d'utilisation ainsi que l'énoncé de confidentialité. Si, à tout moment, vous cessez d'accepter l'une ou l'autre des conditions d'utilisation, vous devez renoncer à utiliser le vérificateur de l'état d'une demande.",
-      onBehalfOfSomeoneElse: "Si vous utilisez le vérificateur de l'état d'une demande au nom d'une autre personne, en l'utilisant, vous attestez que vous avez toute autorité, et la permission requises pour accepter les conditions d'utilisation au nom de cette personne.",
-      atYourOwnRisk: "Si vous utilisez un ordinateur partagé ou une connexion Internet partagée, vous utilisez ce service à vos propres risques et vous devrez protéger toutes vos informations personnelles. Si vous utilisez un ordinateur public, assurez-vous de fermer le navigateur ou de vous déconnecter lorsque vous avez terminé.",
+      selfAgreement:
+        "Votre utilisation du vérificateur de l'état d'une demande en ligne signifie que vous avez lu et accepté les présentes conditions d'utilisation ainsi que l'énoncé de confidentialité. Si, à tout moment, vous cessez d'accepter l'une ou l'autre des conditions d'utilisation, vous devez renoncer à utiliser le vérificateur de l'état d'une demande.",
+      onBehalfOfSomeoneElse:
+        "Si vous utilisez le vérificateur de l'état d'une demande au nom d'une autre personne, en l'utilisant, vous attestez que vous avez toute autorité, et la permission requises pour accepter les conditions d'utilisation au nom de cette personne.",
+      atYourOwnRisk:
+        "Si vous utilisez un ordinateur partagé ou une connexion Internet partagée, vous utilisez ce service à vos propres risques et vous devrez protéger toutes vos informations personnelles. Si vous utilisez un ordinateur public, assurez-vous de fermer le navigateur ou de vous déconnecter lorsque vous avez terminé.",
       onlyUse: "N'utilisez cet outil que dans le but pour lequel il a été conçu.",
       msdc: "EDSC utilise les services de Microsoft Corporation pour exécuter le vérificateur de l'état d'une demande. Les centres de données Microsoft utilisés par EDSC sont au Canada conformément à l'entente sur les <microsoftServiceAgreement>conditions de service de Microsoft Corporation</microsoftServiceAgreement>.",
       antibot: "EDSC utilise les services de protection contre les robots hCaptcha pour nos outils en ligne conformément aux <hcaptchaTermsOfService>conditions de services</hcaptchaTermsOfService> de hCaptcha.",
     },
     changesToTheseTermsOfUse: {
       heading: "Vous exonèrez, par les présentes, EDSC de toute responsabilité de cet ordre.",
-      esdcTermsAmendmentPolicy: "Modifications apportées aux présentes conditions d'utilisation EDSC peut modifier les présentes conditions d'utilisation en tout temps et sans préavis. De telles modifications entreront en vigueur immédiatement à la date de leur publication. Lorsque vous utilisez le vérificateur de l'état d'une demande, vous acceptez de respecter les conditions d'utilisation modifiées. Il vous incombe de vous assurer de comprendre et de retenir ces conditions.",
+      esdcTermsAmendmentPolicy:
+        "Modifications apportées aux présentes conditions d'utilisation EDSC peut modifier les présentes conditions d'utilisation en tout temps et sans préavis. De telles modifications entreront en vigueur immédiatement à la date de leur publication. Lorsque vous utilisez le vérificateur de l'état d'une demande, vous acceptez de respecter les conditions d'utilisation modifiées. Il vous incombe de vous assurer de comprendre et de retenir ces conditions.",
     },
   },
   privacyNoticeStatement: {
     summary: "Énoncé de confidentialité",
-    collectionOfUse: "La collecte et l'utilisation de vos renseignements personnels sont autorisées en vertu de la <cite>Loi sur le ministère de la Santé</cite>, de la <cite>Loi sur les mesures de soins dentaires</cite>, de la <cite>Loi sur la protection des renseignements personnels</cite>, de la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite> et d'autres lois applicables.",
+    collectionOfUse:
+      "La collecte et l'utilisation de vos renseignements personnels sont autorisées en vertu de la <cite>Loi sur le ministère de la Santé</cite>, de la <cite>Loi sur les mesures de soins dentaires</cite>, de la <cite>Loi sur la protection des renseignements personnels</cite>, de la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite> et d'autres lois applicables.",
     providedInformation: "Les renseignements fournis ne donneront jamais lieu à des décisions administratives vous concernant.",
-    thirdPartyProvider: "EDSC exécute cette application en utilisant les services du fournisseur tiers Microsoft Corporation, qui peut être soumis à des lois étrangères. Pour obtenir de plus amples renseignements, veuillez consulter la <microsoftDataPrivacyPolicy>politique de confidentialité des données et les principes de confidentialité de Microsoft</microsoftDataPrivacyPolicy>.",
-    personalInformation: "Vos renseignements personnels sont administrés conformément à ce que prévoient la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite>, la <cite>Loi sur la protection des renseignements personnels</cite> ainsi que d'autres lois applicables. En vertu de la <cite>Loi sur la protection des renseignements personnels</cite>, vous avez le droit à la protection de vos renseignements personnels, à l'accès à ceux-ci et, le cas échéant, à la correction de vos renseignements personnels lorsque vous estimez qu'il y a une erreur ou une omission.",
-    reportAConcern: "Si vous n'êtes pas satisfait de nos réponses à vos préoccupations en matière de protection de la vie privée, vous avez le droit de déposer une plainte auprès du Commissaire à la protection de la vie privée du Canada concernant le traitement de vos renseignements personnels à la page suivante\u00A0: <fileacomplaint>Signaler un problème</fileacomplaint>.",
+    thirdPartyProvider:
+      "EDSC exécute cette application en utilisant les services du fournisseur tiers Microsoft Corporation, qui peut être soumis à des lois étrangères. Pour obtenir de plus amples renseignements, veuillez consulter la <microsoftDataPrivacyPolicy>politique de confidentialité des données et les principes de confidentialité de Microsoft</microsoftDataPrivacyPolicy>.",
+    personalInformation:
+      "Vos renseignements personnels sont administrés conformément à ce que prévoient la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite>, la <cite>Loi sur la protection des renseignements personnels</cite> ainsi que d'autres lois applicables. En vertu de la <cite>Loi sur la protection des renseignements personnels</cite>, vous avez le droit à la protection de vos renseignements personnels, à l'accès à ceux-ci et, le cas échéant, à la correction de vos renseignements personnels lorsque vous estimez qu'il y a une erreur ou une omission.",
+    reportAConcern:
+      "Si vous n'êtes pas satisfait de nos réponses à vos préoccupations en matière de protection de la vie privée, vous avez le droit de déposer une plainte auprès du Commissaire à la protection de la vie privée du Canada concernant le traitement de vos renseignements personnels à la page suivante\u00A0: <fileacomplaint>Signaler un problème</fileacomplaint>.",
   },
   links: {
     fileComplaint: "https://www.priv.gc.ca/fr/signaler-un-probleme/",

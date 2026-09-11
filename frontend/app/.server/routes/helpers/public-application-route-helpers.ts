@@ -249,7 +249,7 @@ export function isNewChildState(child: PublicApplicationChildState) {
 }
 
 export function getChildrenState<TState extends Pick<PublicApplicationState, 'children'>>(state: TState, includesNewChildState: boolean = false) {
-  // prettier-ignore
+  // oxfmt-ignore
   return includesNewChildState
     ? state.children
     : state.children.filter((child) => isNewChildState(child) === false);

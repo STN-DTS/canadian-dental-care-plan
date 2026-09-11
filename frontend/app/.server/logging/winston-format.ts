@@ -67,7 +67,7 @@ export function formatLabels(options?: FormatLabelsOptions): Logform.Format {
     const rawLabel = String(info.label ?? fallback);
 
     // Format label with truncation and padding
-    // prettier-ignore
+    // oxfmt-ignore
     const paddedOrTruncated = rawLabel.length > maxLength
       ? '…' + rawLabel.slice(rawLabel.length - (maxLength - 1)) // Leave space for ellipsis
       : rawLabel.padStart(maxLength);

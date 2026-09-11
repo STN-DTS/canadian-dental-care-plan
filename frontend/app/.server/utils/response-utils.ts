@@ -12,7 +12,7 @@ export const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);
  * Checks if a given value is a Response object.
  */
 export function isResponse(value: unknown): value is Response {
-  // prettier-ignore
+  // oxfmt-ignore
   return (
     value != null &&
     typeof value === "object" &&
@@ -37,7 +37,7 @@ export function isRedirectStatusCode(statusCode: number): boolean {
  * @returns True if the value is a redirect Response object, false otherwise.
  */
 export function isRedirectResponse(value: unknown): value is Response {
-  // prettier-ignore
+  // oxfmt-ignore
   return (
     isResponse(value) &&
     isRedirectStatusCode(value.status) &&

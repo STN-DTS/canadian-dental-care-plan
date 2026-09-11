@@ -27,7 +27,7 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isEmail } from '~/utils/string-utils';
 
-// prettier-ignore
+// oxfmt-ignore
 const profileEmailContextSchema = z
   .object({
     context: z.literal('contact').optional(),

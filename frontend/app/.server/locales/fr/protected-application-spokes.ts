@@ -62,17 +62,23 @@ const ns = {
     reviewStatements: "Lisez les énoncés ci-dessous.",
     termsAndConditionsOfUse: {
       summary: "Conditions d'utilisation",
-      onlineApplicationLegalTerms: "<strong>VEUILLEZ LIRE ATTENTIVEMENT.</strong> Les présentes conditions (les conditions d'utilisation) relatives à la demande en ligne du Régime canadien de soins dentaires («\u00A0RCSD\u00A0») («\u00A0la demande\u00A0») contiennent des renseignements sur les droits et responsabilités juridiques et régissent votre utilisation de la demande. Les présentes conditions d'utilisation doivent être lues en parallèle avec <canadaTermsConditions>celles du site Web Canada.ca</canadaTermsConditions>. En cas de différence, les présentes conditions d'utilisation l'emportent sur les conditions d'utilisation sur le site Canada.ca.",
+      onlineApplicationLegalTerms:
+        "<strong>VEUILLEZ LIRE ATTENTIVEMENT.</strong> Les présentes conditions (les conditions d'utilisation) relatives à la demande en ligne du Régime canadien de soins dentaires («\u00A0RCSD\u00A0») («\u00A0la demande\u00A0») contiennent des renseignements sur les droits et responsabilités juridiques et régissent votre utilisation de la demande. Les présentes conditions d'utilisation doivent être lues en parallèle avec <canadaTermsConditions>celles du site Web Canada.ca</canadaTermsConditions>. En cas de différence, les présentes conditions d'utilisation l'emportent sur les conditions d'utilisation sur le site Canada.ca.",
       esdcDefinitionClarification: "Aux fins des présentes conditions d'utilisation, «\u00A0EDSC\u00A0» est le ministre de l'Emploi et du Développement social du Canada représentant Sa Majesté le Roi du chef Canada.",
       onlineApplication: {
         heading: "Conditions d'utilisation de la demande",
-        selfAgreement: "En utilisant cette demande, vous confirmez que vous avez lu et que vous acceptez les présentes conditions d'utilisation et l'énoncé de confidentialité. Si vous retirez votre accord sur ces conditions d'utilisation à tout moment, vous devez cesser immédiatement d'utiliser la demande.",
+        selfAgreement:
+          "En utilisant cette demande, vous confirmez que vous avez lu et que vous acceptez les présentes conditions d'utilisation et l'énoncé de confidentialité. Si vous retirez votre accord sur ces conditions d'utilisation à tout moment, vous devez cesser immédiatement d'utiliser la demande.",
         timeout: "Si vous restez inactif pendant 15 minutes, votre session prendra fin et vous perdrez tous les renseignements que vous avez saisis.",
-        incorrectInformation: "Vous êtes responsable de l'exactitude des renseignements que vous saisissez dans l'application. Si vous entrez des renseignements erronés et que vous, ou les personnes au nom desquelles vous faites la demande, êtes jugé non admissible, le coût des soins dentaires reçus dans le cadre du régime devra être remboursé.",
-        onBehalfOfSomeoneElse: "Si vous utilisez l'application au nom d'une personne mineure, en utilisant l'application, vous certifiez alors que vous avez toutes autorisations nécessaires pour accepter les conditions d'utilisation au nom de cette personne, et que vous acceptez les conditions au nom de la personne que vous représentez.",
-        atYourOwnRisk: "Si vous utilisez un ordinateur ou une connexion internet partagés, vous utilisez l'application à vos propres risques. Fermez l'application et déconnectez-vous de l'ordinateur après l'utilisation afin de protéger les renseignements personnels que vous aurez saisis.",
+        incorrectInformation:
+          "Vous êtes responsable de l'exactitude des renseignements que vous saisissez dans l'application. Si vous entrez des renseignements erronés et que vous, ou les personnes au nom desquelles vous faites la demande, êtes jugé non admissible, le coût des soins dentaires reçus dans le cadre du régime devra être remboursé.",
+        onBehalfOfSomeoneElse:
+          "Si vous utilisez l'application au nom d'une personne mineure, en utilisant l'application, vous certifiez alors que vous avez toutes autorisations nécessaires pour accepter les conditions d'utilisation au nom de cette personne, et que vous acceptez les conditions au nom de la personne que vous représentez.",
+        atYourOwnRisk:
+          "Si vous utilisez un ordinateur ou une connexion internet partagés, vous utilisez l'application à vos propres risques. Fermez l'application et déconnectez-vous de l'ordinateur après l'utilisation afin de protéger les renseignements personnels que vous aurez saisis.",
         msdc: "EDSC utilise les services de Microsoft Corporation pour exécuter l'application. Les centres de données Microsoft utilisés par EDSC sont situés au Canada, conformément à <microsoftDataPrivacyPolicy>l'accord sur les conditions de service de Microsoft Corporation</microsoftDataPrivacyPolicy>.",
-        antibot: "EDSC utilise les services anti-robots hCaptcha pour ses outils en ligne, conformément aux <hcaptchaTermsOfService>conditions de service de hCaptcha</hcaptchaTermsOfService>. Les conditions de service de hCaptcha sont disponibles en anglais seulement.",
+        antibot:
+          "EDSC utilise les services anti-robots hCaptcha pour ses outils en ligne, conformément aux <hcaptchaTermsOfService>conditions de service de hCaptcha</hcaptchaTermsOfService>. Les conditions de service de hCaptcha sont disponibles en anglais seulement.",
       },
       changesToTheseTermsOfUse: {
         esdcTermsAmendmentPolicy: "EDSC peut mettre à jour les présentes conditions d'utilisation sans préavis; les modifications prennent effet dès leur publication.",
@@ -82,24 +88,33 @@ const ns = {
       summary: "Énoncé de confidentialité",
       personalInformation: {
         heading: "Renseignements personnels",
-        serviceCanadaApplicationAdministration: "Service Canada, qui fait partie d'Emploi et Développement social Canada («\u00A0EDSC\u00A0»), traite les demandes d'adhésion et de renouvellement des membres du Régime canadien de soins dentaires («\u00A0RCSD\u00A0»), répond aux questions posées sur les demandes et fournit des services liés à l'examen de l'admissibilité des membres pour le RCSD, en vertu d'une entente avec Santé Canada («\u00A0SC\u00A0»). Veuillez noter que les renouvellements peuvent se faire soit au moyen d'un processus clair nécessitant une intervention du client, soit dans les années à venir, automatiquement en fonction d'une réévaluation de l'admissibilité.",
-        serviceCanadaInformationCollection: "Service Canada recueillera et utilisera les renseignements personnels que vous avez fournis dans votre demande du RCSD, ainsi que des renseignements personnels limités recueillis dans votre déclaration d'impôts par l'intermédiaire de l'Agence du revenu du Canada («\u00A0ARC\u00A0») dans le cadre des processus d'inscription des membres mentionnés ci-dessus.",
-        participation: "La participation au RCSD est volontaire. Toutefois, si vous ne fournissez pas les renseignements personnels nécessaires, vous ne pourrez pas participer au RCSD. Si vous êtes un membre actuel du RCSD et que vous souhaitez vous retirer du programme, <contactServiceCanada>communiquez avec Service Canada</contactServiceCanada> en composant le 1-833-537-4342; pour le service de téléscripteur (ATS), composez le 1-833-6262. Vous pouvez aussi vous rendre dans un Centre Service Canada.",
-        policyAnalysis: "EDSC peut utiliser ou communiquer les renseignements que vous fournissez pour les activités d'analyse des politiques, de recherche, de surveillance et d'évaluation au sein d'EDSC, de SC et de Statistique Canada. Ces utilisations ou activités n'auront aucune incidence sur les décisions administratives prises à votre sujet ou au sujet d'autres personnes pour qui vous faites la demande.",
+        serviceCanadaApplicationAdministration:
+          "Service Canada, qui fait partie d'Emploi et Développement social Canada («\u00A0EDSC\u00A0»), traite les demandes d'adhésion et de renouvellement des membres du Régime canadien de soins dentaires («\u00A0RCSD\u00A0»), répond aux questions posées sur les demandes et fournit des services liés à l'examen de l'admissibilité des membres pour le RCSD, en vertu d'une entente avec Santé Canada («\u00A0SC\u00A0»). Veuillez noter que les renouvellements peuvent se faire soit au moyen d'un processus clair nécessitant une intervention du client, soit dans les années à venir, automatiquement en fonction d'une réévaluation de l'admissibilité.",
+        serviceCanadaInformationCollection:
+          "Service Canada recueillera et utilisera les renseignements personnels que vous avez fournis dans votre demande du RCSD, ainsi que des renseignements personnels limités recueillis dans votre déclaration d'impôts par l'intermédiaire de l'Agence du revenu du Canada («\u00A0ARC\u00A0») dans le cadre des processus d'inscription des membres mentionnés ci-dessus.",
+        participation:
+          "La participation au RCSD est volontaire. Toutefois, si vous ne fournissez pas les renseignements personnels nécessaires, vous ne pourrez pas participer au RCSD. Si vous êtes un membre actuel du RCSD et que vous souhaitez vous retirer du programme, <contactServiceCanada>communiquez avec Service Canada</contactServiceCanada> en composant le 1-833-537-4342; pour le service de téléscripteur (ATS), composez le 1-833-6262. Vous pouvez aussi vous rendre dans un Centre Service Canada.",
+        policyAnalysis:
+          "EDSC peut utiliser ou communiquer les renseignements que vous fournissez pour les activités d'analyse des politiques, de recherche, de surveillance et d'évaluation au sein d'EDSC, de SC et de Statistique Canada. Ces utilisations ou activités n'auront aucune incidence sur les décisions administratives prises à votre sujet ou au sujet d'autres personnes pour qui vous faites la demande.",
         digitalCommunications: "Si vous choisissez de recevoir des communications numériques, votre adresse de courriel sera utilisée pour vous envoyer des avis au sujet du RCSD.",
-        collectionUse: "La collecte, l'utilisation et la divulgation de vos renseignements personnels sont autorisées en vertu de la <cite>Loi sur le ministère de la Santé</cite>, la <cite>Loi sur les mesures de soins dentaires</cite>, la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite> et la <cite>Loi de l'impôt sur le revenu</cite>, entre autres, et sont protégées par les dispositions de la <cite>Loi sur la protection des renseignements personnels</cite>.",
-        microsoftPolicy: "EDSC exécute ce processus de demande en utilisant les services du fournisseur tiers Microsoft Corporation, qui peut être soumis à des lois étrangères. Vous trouverez de plus amples renseignements en consultant cette page Web\u00A0: <microsoftDataPrivacyPolicy>Politique de protection des données et principes de confidentialité de Microsoft</microsoftDataPrivacyPolicy>.",
+        collectionUse:
+          "La collecte, l'utilisation et la divulgation de vos renseignements personnels sont autorisées en vertu de la <cite>Loi sur le ministère de la Santé</cite>, la <cite>Loi sur les mesures de soins dentaires</cite>, la <cite>Loi sur le ministère de l'Emploi et du Développement social</cite> et la <cite>Loi de l'impôt sur le revenu</cite>, entre autres, et sont protégées par les dispositions de la <cite>Loi sur la protection des renseignements personnels</cite>.",
+        microsoftPolicy:
+          "EDSC exécute ce processus de demande en utilisant les services du fournisseur tiers Microsoft Corporation, qui peut être soumis à des lois étrangères. Vous trouverez de plus amples renseignements en consultant cette page Web\u00A0: <microsoftDataPrivacyPolicy>Politique de protection des données et principes de confidentialité de Microsoft</microsoftDataPrivacyPolicy>.",
       },
       howWeProtectYourPrivacy: {
         heading: "Droits applicables et comment communiquer avec nous",
-        personalInformationRightsAndAccess: "Tout le monde a droit à la protection de ses renseignements personnels, à l'accès à ceux-ci et, s'il y a lieu, à leur correction. Ils sont conservés dans les fichiers de renseignements personnels (FRP) suivants\u00A0:",
+        personalInformationRightsAndAccess:
+          "Tout le monde a droit à la protection de ses renseignements personnels, à l'accès à ceux-ci et, s'il y a lieu, à leur correction. Ils sont conservés dans les fichiers de renseignements personnels (FRP) suivants\u00A0:",
         personalInformationBanks: {
           esdcPpu712: "<esdcPib>FRP du RCSD d'EDSC</esdcPib> (ESDC PPU 712)",
           hcPpu440: "<hcPib>Le FRP du RCSD de SC</hcPib> (HC PPU 440)",
         },
-        infoSourceAccess: "Vous pouvez apprendre comment accéder à cette information dans la publication du gouvernement intitulée <infosource>Info Source</infosource>. Vous pouvez également accéder à Info Source en ligne dans n'importe quel Centre Service Canada.",
+        infoSourceAccess:
+          "Vous pouvez apprendre comment accéder à cette information dans la publication du gouvernement intitulée <infosource>Info Source</infosource>. Vous pouvez également accéder à Info Source en ligne dans n'importe quel Centre Service Canada.",
         privacyContact: "Pour toute question relative à la protection des renseignements personnels concernant une demande, <contactServiceCanada>contactez Service Canada</contactServiceCanada> en composant le 1-833-537-4342.",
-        personalInformationHandlingComplaintProcess: "Si vous n'êtes pas en mesure de régler un problème relatif à la protection de la vie privée, ou si vous n'êtes pas satisfait de la façon dont vos renseignements personnels ont été traités par EDSC, vous pouvez communiquer avec le Commissariat à la protection de la vie privée du Canada (CPVP) pour <fileacomplaint>déposer une plainte</fileacomplaint>.",
+        personalInformationHandlingComplaintProcess:
+          "Si vous n'êtes pas en mesure de régler un problème relatif à la protection de la vie privée, ou si vous n'êtes pas satisfait de la façon dont vos renseignements personnels ont été traités par EDSC, vous pouvez communiquer avec le Commissariat à la protection de la vie privée du Canada (CPVP) pour <fileacomplaint>déposer une plainte</fileacomplaint>.",
         privacyProtection: "Pour plus de renseignements sur la protection de la vie privée dans le RCSD, consultez la <cdcpPrivacyPolicy>page sur la protection de la vie privée</cdcpPrivacyPolicy> du RCSD.",
       },
     },
@@ -107,20 +122,26 @@ const ns = {
       summary: "Communication de vos renseignements",
       governmentOfCanadaAndSunLife: {
         heading: "Gouvernement du Canada et Sun Life",
-        shareInfo: "Emploi et Développement social Canada (EDSC) peut communiquer les renseignements personnels que vous fournissez à Santé Canada (SC) et à l'Agence du revenu du Canada (ARC) pour valider votre admissibilité et inscrire les participants au Régime canadien de soins dentaires (RCSD).",
-        policyAnalysis: "EDSC peut utiliser ou communiquer les renseignements que vous fournissez pour les activités d'analyse des politiques, de recherche, de surveillance et d'évaluation au sein d'EDSC, de SC et de Statistique Canada. Ces utilisations ou activités n'auront aucune incidence sur les décisions administratives prises à votre sujet ou au sujet d'autres personnes pour qui vous faites la demande.",
+        shareInfo:
+          "Emploi et Développement social Canada (EDSC) peut communiquer les renseignements personnels que vous fournissez à Santé Canada (SC) et à l'Agence du revenu du Canada (ARC) pour valider votre admissibilité et inscrire les participants au Régime canadien de soins dentaires (RCSD).",
+        policyAnalysis:
+          "EDSC peut utiliser ou communiquer les renseignements que vous fournissez pour les activités d'analyse des politiques, de recherche, de surveillance et d'évaluation au sein d'EDSC, de SC et de Statistique Canada. Ces utilisations ou activités n'auront aucune incidence sur les décisions administratives prises à votre sujet ou au sujet d'autres personnes pour qui vous faites la demande.",
         sendLetters: "EDSC ou SC peut partager vos renseignements personnels avec Services publics et Approvisionnement Canada dans le but de vous envoyer des lettres du RCSD.",
-        discloseInfo: "Vos renseignements personnels peuvent également être divulgués à la Sun Life, à l'administrateur des prestations du RCSD et aux agents et fournisseurs de services de la Sun Life aux fins de souscription, de vérification, d'administration, de décision et d'enquête concernant les prestations versées au titre du RCSD.",
-        sunLifeAuthorization: "La Sun Life est autorisée à recueillir, à utiliser et à partager des renseignements personnels à toute personne ou organisation, y compris les fournisseurs de soins de santé buccodentaire, les établissements, les services d'enquête et le RCSD, aux fins de l'administration du programme, de la vérification, du traitement et de la validation des demandes de règlement et de la sécurité des patients/clients.",
+        discloseInfo:
+          "Vos renseignements personnels peuvent également être divulgués à la Sun Life, à l'administrateur des prestations du RCSD et aux agents et fournisseurs de services de la Sun Life aux fins de souscription, de vérification, d'administration, de décision et d'enquête concernant les prestations versées au titre du RCSD.",
+        sunLifeAuthorization:
+          "La Sun Life est autorisée à recueillir, à utiliser et à partager des renseignements personnels à toute personne ou organisation, y compris les fournisseurs de soins de santé buccodentaire, les établissements, les services d'enquête et le RCSD, aux fins de l'administration du programme, de la vérification, du traitement et de la validation des demandes de règlement et de la sécurité des patients/clients.",
       },
       sharingOfInformationAndOralHealthProviders: {
         heading: "Fournisseurs de soins buccodentaires",
-        enrolConsent: "En vous inscrivant au RCSD ou en y inscrivant d'autres personnes, vous consentez à ce que les fournisseurs de soins de santé buccodentaire divulguent tous les renseignements personnels dont Sun Life aurait besoin pour l'administration du programme, de la vérification et de la gestion des demandes de règlement, et de la sécurité des patients/clients. Ces renseignements peuvent comprendre, sans s'y limiter, des détails sur les services fournis, des données cliniques sur le patient et les paiements. SC peut également partager des renseignements personnels limités avec des prestataires de soins de santé buccodentaire lorsque cela présente un avantage évident pour vous ou pour les personnes que vous avez sollicitées en leur nom.",
+        enrolConsent:
+          "En vous inscrivant au RCSD ou en y inscrivant d'autres personnes, vous consentez à ce que les fournisseurs de soins de santé buccodentaire divulguent tous les renseignements personnels dont Sun Life aurait besoin pour l'administration du programme, de la vérification et de la gestion des demandes de règlement, et de la sécurité des patients/clients. Ces renseignements peuvent comprendre, sans s'y limiter, des détails sur les services fournis, des données cliniques sur le patient et les paiements. SC peut également partager des renseignements personnels limités avec des prestataires de soins de santé buccodentaire lorsque cela présente un avantage évident pour vous ou pour les personnes que vous avez sollicitées en leur nom.",
         consideredMinor: "Si vous êtes considéré comme mineur dans votre province ou territoire, vos renseignements peuvent également être communiqués à vos parents ou tuteurs légaux.",
       },
     },
     apply: {
-      applicationConsent: "En continuant à utiliser cette demande, vous confirmez que vous avez lu, compris et accepté les présentes conditions d'utilisation et l'énoncé de confidentialité. Vous consentez également à ce que les renseignements personnels que vous avez fournis aux fins énumérées ci-dessus soient partagés.",
+      applicationConsent:
+        "En continuant à utiliser cette demande, vous confirmez que vous avez lu, compris et accepté les présentes conditions d'utilisation et l'énoncé de confidentialité. Vous consentez également à ce que les renseignements personnels que vous avez fournis aux fins énumérées ci-dessus soient partagés.",
       backButton: "Retour",
       link: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html",
       continueButton: "Continuer",
@@ -147,7 +168,8 @@ const ns = {
         acknowledgeTermsRequired: "Vous devez lire les modalités d'utilisation avant de poursuivre",
         acknowledgePrivacyRequired: "Vous devez lire l'énoncé de confidentialité avant de poursuivre",
         shareDataRequired: "Vous devez consentir à la communication de vos renseignements avant de poursuivre",
-        consentRequired: "Vous devez accepter les Conditions générales et la Déclaration de confidentialité, ainsi que consentir à la divulgation de vos renseignements personnels. Pour adhérer au Régime canadien de soins dentaires, vous devez accepter les Conditions générales et la Déclaration de confidentialité. Vous devez également consentir à la divulgation de vos renseignements personnels aux fins indiquées.",
+        consentRequired:
+          "Vous devez accepter les Conditions générales et la Déclaration de confidentialité, ainsi que consentir à la divulgation de vos renseignements personnels. Pour adhérer au Régime canadien de soins dentaires, vous devez accepter les Conditions générales et la Déclaration de confidentialité. Vous devez également consentir à la divulgation de vos renseignements personnels aux fins indiquées.",
       },
     },
   },
@@ -176,7 +198,8 @@ const ns = {
         note: "<strong>Remarque\u00A0:</strong> Si vous avez renoncé à une couverture dentaire de votre régime de retraite avant le 11 décembre 2023 et que vous ne pouvez pas y adhérer de nouveau, vous n'êtes pas considéré comme ayant accès à une assurance ou à une couverture dentaire privée.",
         eligible: "Nous considérons que vous avez accès à une assurance ou à une couverture dentaire privée même si\u00A0:",
         access: "Avoir accès à une assurance ou à une couverture dentaire privée pour les soins dentaires signifie que vous êtes couvert par\u00A0:",
-        socialProgram: "<strong>Couverture offerte par les programmes sociaux gouvernementaux\u00A0:</strong> Si vous avez une assurance ou une couverture dentaire dans le cadre d'un programme social provincial, territorial ou fédéral, vous pourriez tout de même être admissible au RCSD. Les services dentaires fournis dans le cadre des programmes sociaux gouvernementaux ne sont pas considérés comme une assurance ou une couverture dentaire privée.",
+        socialProgram:
+          "<strong>Couverture offerte par les programmes sociaux gouvernementaux\u00A0:</strong> Si vous avez une assurance ou une couverture dentaire dans le cadre d'un programme social provincial, territorial ou fédéral, vous pourriez tout de même être admissible au RCSD. Les services dentaires fournis dans le cadre des programmes sociaux gouvernementaux ne sont pas considérés comme une assurance ou une couverture dentaire privée.",
       },
       eligibility: "Pour en savoir plus, consultez les <eligibilityCriteria>critères d'admissibilité au Régime canadien de soins dentaires</eligibilityCriteria>.",
       eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html",
@@ -188,9 +211,12 @@ const ns = {
     },
     no: {
       alertTitle: "Confirmation de l'assurance dentaire",
-      alertBody: "Nous confirmerons votre réponse en examinant vos feuillets <t4Href>T4 (case 45)</t4Href> ou <t4aHref>T4A (case 015)</t4aHref>. Si le document indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'êtes pas couvert(e).",
-      alertT4Href: "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/t4-etat-remuneration-payee.html",
-      alertT4aHref: "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/feuillet-t4a.html",
+      alertBody:
+        "Nous confirmerons votre réponse en examinant vos feuillets <t4Href>T4 (case 45)</t4Href> ou <t4aHref>T4A (case 015)</t4aHref>. Si le document indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'êtes pas couvert(e).",
+      alertT4Href:
+        "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/t4-etat-remuneration-payee.html",
+      alertT4aHref:
+        "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/feuillet-t4a.html",
       confirmation: "Je comprends qu'on pourrait me demander de fournir la preuve que je n'ai pas accès à une assurance ou à une couverture dentaire.",
     },
     errorMessage: {
@@ -202,7 +228,8 @@ const ns = {
     pageTitle: "Renseignements personnels",
     memberId: "Numéro d'identification du membre",
     formInstructionsSin: "Entrez votre nom exactement tel qu'il apparaît sur votre carte d'assurance sociale ou sur les lettres du Régime canadien de soins dentaires (RCSD).",
-    formInstructionsInfo: "Nous utiliserons les renseignements que vous avez fournis pour vérifier votre identité. Tout écart entre les renseignements et votre numéro d'assurance sociale ou l'information figurant à votre dossier du RCSD pourrait retarder le traitement de votre demande.",
+    formInstructionsInfo:
+      "Nous utiliserons les renseignements que vous avez fournis pour vérifier votre identité. Tout écart entre les renseignements et votre numéro d'assurance sociale ou l'information figurant à votre dossier du RCSD pourrait retarder le traitement de votre demande.",
     sin: "Numéro d'assurance sociale (NAS)",
     lastName: "Nom de famille",
     firstName: "Prénom",
@@ -287,7 +314,8 @@ const ns = {
   parentOrGuardian: {
     pageTitle: "Le parent ou le tuteur légal doit présenter la demande",
     unableToApply: "Vous avez moins de 18 ans. Un parent ou tuteur légal doit présenter la demande pour vous.",
-    applyForYourself: "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
+    applyForYourself:
+      "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",
@@ -303,8 +331,10 @@ const ns = {
     serviceCanada: "Par téléphone\u00A0: contactez Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
     inPerson: "En personne\u00A0: <findOffice>trouvez un bureau de Service Canada</findOffice>.",
     officeLink: "https://bureaux.service.canada.ca/fr",
-    helpMessage: "Les numéros de téléphone canadiens doivent comporter 10 chiffres (par exemple\u00A0: 800\u2011622\u20116232). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
-    helpMessageAlt: "Pour le numéro de téléphone secondaire, saisissez 10 chiffres s'il s'agit d'un numéro canadien (par exemple\u00A0: 800\u2011598\u20114567). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
+    helpMessage:
+      "Les numéros de téléphone canadiens doivent comporter 10 chiffres (par exemple\u00A0: 800\u2011622\u20116232). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
+    helpMessageAlt:
+      "Pour le numéro de téléphone secondaire, saisissez 10 chiffres s'il s'agit d'un numéro canadien (par exemple\u00A0: 800\u2011598\u20114567). S'il s'agit d'un numéro provenant d'un autre pays, ajoutez un signe +, puis le code du pays (par exemple\u00A0: +44\u00A020\u00A07946\u00A00958).",
     errorMessage: {
       phoneNumberValid: "Un numéro du Canada a 10 chiffres. Par exemple\u00A0: 800\u2011622\u20116232. Si c'est un numéro d'un autre pays, ajoutez un + puis le code du pays.",
       phoneNumberValidInternational: "Un numéro du Canada a 10 chiffres. Par exemple\u00A0: 800\u2011622\u20116232. Si c'est un numéro d'un autre pays, ajoutez un + puis le code du pays.",
@@ -359,7 +389,8 @@ const ns = {
   },
   email: {
     pageTitle: "Adresse courriel",
-    emailNotification: "Les messages du gouvernement du Canada concernant votre Régime canadien de soins dentaires (RCSD) seront transmis par l'intermédiaire de votre Mon dossier Service Canada (MDSC). Lorsqu'une nouvelle lettre est publiée dans MDSC, nous vous ferons parvenir une notification par courriel à cette adresse.",
+    emailNotification:
+      "Les messages du gouvernement du Canada concernant votre Régime canadien de soins dentaires (RCSD) seront transmis par l'intermédiaire de votre Mon dossier Service Canada (MDSC). Lorsqu'une nouvelle lettre est publiée dans MDSC, nous vous ferons parvenir une notification par courriel à cette adresse.",
     enterEmail: "Entrez l'adresse courriel que vous souhaitez utiliser pour recevoir les notifications concernant votre compte du RCSD et, si vous avez choisi le courriel, vos communications avec la Sun Life.",
     updateCommunicationPreference: "Vous pouvez modifier vos préférences de communication en tout temps dans MDSC.",
     emailLegend: "Adresse courriel",
@@ -380,7 +411,8 @@ const ns = {
     continue: "Continuer",
     cannotValidate: {
       heading: "Je ne peux pas valider mon adresse courriel",
-      detail: "Vous devez saisir et valider votre adresse courriel pour présenter une demande en ligne. Si vous n'êtes pas en mesure de valider votre adresse courriel, vous pouvez tout de même faire une demande au Régime canadien de soins dentaires en communiquant avec Service Canada au 1\u2011833\u2011537\u20114342",
+      detail:
+        "Vous devez saisir et valider votre adresse courriel pour présenter une demande en ligne. Si vous n'êtes pas en mesure de valider votre adresse courriel, vous pouvez tout de même faire une demande au Régime canadien de soins dentaires en communiquant avec Service Canada au 1\u2011833\u2011537\u20114342",
     },
     errorMessage: {
       verificationCodeRequired: "Entrez le code de vérification de 5 chiffres",
@@ -445,7 +477,8 @@ const ns = {
           heading: "Nous n'avons pas trouvé le compte du Régime canadien de soins dentaires (RCSD) de votre enfant avec les renseignements que vous avez saisis.",
           detail: "Vérifiez que les renseignements concernant l'enfant sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1-833-537-4342</noWrap> pour mettre à jour vos renseignements.",
           detailAdultMustApply: "Si l'enfant a 18 ans, la demande doit être présentée en son nom.",
-          applyDate: "Remarque \u00A0: seuls les participants actuels de RCSD peuvent renouveler leur adhésion dès maintenant. Si votre enfant ne participe pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du 2 juin 2026.",
+          applyDate:
+            "Remarque \u00A0: seuls les participants actuels de RCSD peuvent renouveler leur adhésion dès maintenant. Si votre enfant ne participe pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du 2 juin 2026.",
         },
       },
     },
@@ -459,7 +492,8 @@ const ns = {
     cannotApplyChild: {
       pageTitle: "Votre enfant doit présenter une demande",
       ineligibleToApply: "Votre enfant a 18 ans ou plus. Votre enfant doit présenter sa propre demande au titre du Régime canadien de soins dentaires.",
-      eligibilityInfo: "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
+      eligibilityInfo:
+        "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
       backBtn: "Retour",
       exitBtn: "Quitter la demande",
       exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",
@@ -524,7 +558,8 @@ const ns = {
           note: "<strong>Remarque\u00A0:</strong> Si vous avez renoncé à la couverture dentaire de votre régime de retraite avant le 11 décembre 2023 et que vous ne pouvez pas y adhérer de nouveau, {{childName}} n'est pas considéré comme ayant accès à une assurance ou à une couverture dentaire privée.",
           eligible: "Nous considérons que {{childName}} a accès à une assurance ou à une couverture dentaire privée même si\u00A0:",
           access: "Avoir accès à une assurance ou à une couverture dentaire privée pour les soins dentaires signifie que {{childName}} est couvert par\u00A0:",
-          socialProgram: "<strong>Couverture offerte par les programmes sociaux gouvernementaux\u00A0:</strong> Si {{childName}} a une assurance ou une couverture dentaire dans le cadre d'un programme social provincial, territorial ou fédéral, il ou elle pourrait tout de même être admissible au RCSD. Les services dentaires fournis dans le cadre des programmes sociaux gouvernementaux ne sont pas considérés comme une assurance ou une couverture dentaire privée.",
+          socialProgram:
+            "<strong>Couverture offerte par les programmes sociaux gouvernementaux\u00A0:</strong> Si {{childName}} a une assurance ou une couverture dentaire dans le cadre d'un programme social provincial, territorial ou fédéral, il ou elle pourrait tout de même être admissible au RCSD. Les services dentaires fournis dans le cadre des programmes sociaux gouvernementaux ne sont pas considérés comme une assurance ou une couverture dentaire privée.",
         },
         eligibility: "Pour en savoir plus, consultez les <eligibilityCriteria>critères d'admissibilité au Régime canadien de soins dentaires</eligibilityCriteria>.",
         eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html",

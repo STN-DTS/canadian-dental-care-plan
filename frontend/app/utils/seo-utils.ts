@@ -41,7 +41,7 @@ export function useAlternateLanguages(origin: string, languages: ReadonlyArray<A
 export function getTitleMetaTags(title: string, dcTermsTitle?: string) {
   const normalizedTitle = normalizeSpaces(title);
   const normalizedDcTermsTitle = dcTermsTitle ? normalizeSpaces(dcTermsTitle) : normalizedTitle;
-  // prettier-ignore
+  // oxfmt-ignore
   return [
     { title: normalizedTitle },
     { property: 'og:title', content: normalizedTitle },

@@ -231,12 +231,12 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
 async function generateAccessToken(serverPublicKey: string, serverPrivateKey: string): Promise<string> {
   const accessTokenPayload = {/* intentionally left blank */};
 
-  // prettier-ignore
+  // oxfmt-ignore
   const accessToken = await new SignJWT(accessTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
     .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
 
-  // prettier-ignore
+  // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(accessToken))
     .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
     .encrypt(await generateCryptoKey(serverPublicKey, 'encrypt'));
@@ -254,12 +254,12 @@ async function generateIdToken(clientPublicKey: string, serverPrivateKey: string
     sub: '76c48130-e1d4-4c2f-8dd0-1c17f9bbb4f6',
   };
 
-  // prettier-ignore
+  // oxfmt-ignore
   const idToken = await new SignJWT(idTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
     .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
 
-  // prettier-ignore
+  // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(idToken))
     .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
     .encrypt(await generateCryptoKey(clientPublicKey, 'encrypt'));
@@ -280,12 +280,12 @@ async function generateUserInfoToken(clientPublicKey: string, serverPrivateKey: 
     sub: '76c48130-e1d4-4c2f-8dd0-1c17f9bbb4f6',
   };
 
-  // prettier-ignore
+  // oxfmt-ignore
   const userinfoToken = await new SignJWT(userinfoTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
     .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
 
-  // prettier-ignore
+  // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(userinfoToken))
     .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
     .encrypt(await generateCryptoKey(clientPublicKey, 'encrypt'));

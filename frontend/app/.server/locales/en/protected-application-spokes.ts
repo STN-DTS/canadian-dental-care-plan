@@ -62,14 +62,17 @@ const ns = {
     reviewStatements: "Review the statements below.",
     termsAndConditionsOfUse: {
       summary: "Terms and Conditions of Use",
-      onlineApplicationLegalTerms: "<strong>PLEASE READ CAREFULLY.</strong> These Terms and Conditions (“Terms”) for the Canadian Dental Care Plan (“CDCP”) Online Application (“the Application”) contain information about the legal rights and responsibilities and govern your use of the Application. These Terms should be read together with the <canadaTermsConditions>Canada.ca website Terms and Conditions</canadaTermsConditions>. If there are differences, these Terms override the Canada.ca Terms and Conditions.",
+      onlineApplicationLegalTerms:
+        "<strong>PLEASE READ CAREFULLY.</strong> These Terms and Conditions (“Terms”) for the Canadian Dental Care Plan (“CDCP”) Online Application (“the Application”) contain information about the legal rights and responsibilities and govern your use of the Application. These Terms should be read together with the <canadaTermsConditions>Canada.ca website Terms and Conditions</canadaTermsConditions>. If there are differences, these Terms override the Canada.ca Terms and Conditions.",
       esdcDefinitionClarification: "In these Terms, ESDC refers to the Minister of Employment and Social Development, representing His Majesty the King in Right of Canada.",
       onlineApplication: {
         heading: "Terms of Use for the Online Application:",
         selfAgreement: "By using this application, you confirm that you have read and agree to these Terms and the Privacy Notice. If you withdraw your agreement to these Terms at any time, you must stop use of the Application immediately.",
         timeout: "If you are inactive for 15 minutes, your session will end, and you will lose any information you entered.",
-        incorrectInformation: "You are responsible for ensuring that the information that you enter in the Application is correct. If you enter incorrect information and you, or the persons on behalf you are applying, are determined ineligible, the cost of any dental care received under the plan will need to be repaid.",
-        onBehalfOfSomeoneElse: "If you are using the Application on behalf of a minor, by using the Application, you confirm that you have all the necessary authority to agree to the Terms on behalf of that individual, and that you agree to the Terms on behalf of the individual you are representing.",
+        incorrectInformation:
+          "You are responsible for ensuring that the information that you enter in the Application is correct. If you enter incorrect information and you, or the persons on behalf you are applying, are determined ineligible, the cost of any dental care received under the plan will need to be repaid.",
+        onBehalfOfSomeoneElse:
+          "If you are using the Application on behalf of a minor, by using the Application, you confirm that you have all the necessary authority to agree to the Terms on behalf of that individual, and that you agree to the Terms on behalf of the individual you are representing.",
         atYourOwnRisk: "If you are using a shared computer or internet connection, you are using the Application at your own risk. Close the application and log out of the computer after use to protect the personal information you entered.",
         msdc: "ESDC uses services from Microsoft Corporation to run the Application. The Microsoft data centres used by ESDC are located in Canada in accordance with <microsoftDataPrivacyPolicy>Microsoft Corporation's Terms of Service Agreement</microsoftDataPrivacyPolicy>.",
         antibot: "ESDC uses hCaptcha anti-bot services for our online tools in accordance with <hcaptchaTermsOfService>hCaptcha's Terms of Service</hcaptchaTermsOfService>.",
@@ -82,13 +85,19 @@ const ns = {
       summary: "Privacy Notice Statement",
       personalInformation: {
         heading: "Personal Information",
-        serviceCanadaApplicationAdministration: "Service Canada, which is part of Employment and Social Development Canada (“ESDC”), processes Canadian Dental Care Plan (“CDCP”) member applications and renewals, answers questions from application, and provides member eligibility review-related services for the CDCP, under agreement with Health Canada (“HC”). Please note, renewals may occur either through an explicit process requiring client action, or in future years, automatically based on an eligibility reassessment.",
-        serviceCanadaInformationCollection: "Service Canada will collect and use the personal information you include in your CDCP application, and limited personal information collected through your tax return via the Canada Revenue Agency (“CRA”) as part of the member enrolment processes mentioned above.",
-        participation: "Participation in the CDCP is voluntary. However, if you do not provide the necessary personal information, you can not participate in the CDCP. If you are a current CDCP member and wish to withdraw from the program, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1-833-537-4342; for TTY (teletypewriter) service call 1-833-6262. You can also visit a Service Canada Centre.",
-        policyAnalysis: "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
+        serviceCanadaApplicationAdministration:
+          "Service Canada, which is part of Employment and Social Development Canada (“ESDC”), processes Canadian Dental Care Plan (“CDCP”) member applications and renewals, answers questions from application, and provides member eligibility review-related services for the CDCP, under agreement with Health Canada (“HC”). Please note, renewals may occur either through an explicit process requiring client action, or in future years, automatically based on an eligibility reassessment.",
+        serviceCanadaInformationCollection:
+          "Service Canada will collect and use the personal information you include in your CDCP application, and limited personal information collected through your tax return via the Canada Revenue Agency (“CRA”) as part of the member enrolment processes mentioned above.",
+        participation:
+          "Participation in the CDCP is voluntary. However, if you do not provide the necessary personal information, you can not participate in the CDCP. If you are a current CDCP member and wish to withdraw from the program, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1-833-537-4342; for TTY (teletypewriter) service call 1-833-6262. You can also visit a Service Canada Centre.",
+        policyAnalysis:
+          "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
         digitalCommunications: "If you opt to receive digital communications, your email address will be used to send you notifications regarding the CDCP.",
-        collectionUse: "The collection, use, and disclosure of your personal information is authorized by the <cite>Department of Health Act</cite>, the <cite>Dental Care Measures Act</cite>, the <cite>Department of Employment and Social Development Act</cite>, the <cite>Income Tax Act</cite>, among others, and is protected by the provisions of the <cite>Privacy Act</cite>.",
-        microsoftPolicy: "ESDC carries out this application process using services from a third-party provider, Microsoft Corporation, which may be subject to foreign laws. For more information, see <microsoftDataPrivacyPolicy>Microsoft Data Privacy Policy and Privacy Principles</microsoftDataPrivacyPolicy>.",
+        collectionUse:
+          "The collection, use, and disclosure of your personal information is authorized by the <cite>Department of Health Act</cite>, the <cite>Dental Care Measures Act</cite>, the <cite>Department of Employment and Social Development Act</cite>, the <cite>Income Tax Act</cite>, among others, and is protected by the provisions of the <cite>Privacy Act</cite>.",
+        microsoftPolicy:
+          "ESDC carries out this application process using services from a third-party provider, Microsoft Corporation, which may be subject to foreign laws. For more information, see <microsoftDataPrivacyPolicy>Microsoft Data Privacy Policy and Privacy Principles</microsoftDataPrivacyPolicy>.",
       },
       howWeProtectYourPrivacy: {
         heading: "Applicable rights and how to contact us",
@@ -99,7 +108,8 @@ const ns = {
         },
         infoSourceAccess: "You can learn how to access this information in the government publication called <infosource>Info Source</infosource>. You can also access Info Source online at any Service Canada Centre.",
         privacyContact: "For privacy related questions related to an application, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1-833-537-4342.",
-        personalInformationHandlingComplaintProcess: "If you are unable to resolve a privacy issue, or do not agree with the way your personal information was handled by ESDC, you can contact the Office of the Privacy Commissioner of Canada (OPC) to <fileacomplaint>file a complaint</fileacomplaint>.",
+        personalInformationHandlingComplaintProcess:
+          "If you are unable to resolve a privacy issue, or do not agree with the way your personal information was handled by ESDC, you can contact the Office of the Privacy Commissioner of Canada (OPC) to <fileacomplaint>file a complaint</fileacomplaint>.",
         privacyProtection: "For more information about privacy protection in the CDCP, visit the CDCP <cdcpPrivacyPolicy>privacy page</cdcpPrivacyPolicy>.",
       },
     },
@@ -107,20 +117,26 @@ const ns = {
       summary: "Sharing your information",
       governmentOfCanadaAndSunLife: {
         heading: "Government of Canada and Sun Life",
-        shareInfo: "Employment and Social Development Canada (“ESDC”) may share the personal information you provide with Health Canada (“HC”), and the Canada Revenue Agency (“CRA”) to validate eligibility and register individuals for the Canadian Dental Care Plan (“CDCP”).",
-        policyAnalysis: "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
+        shareInfo:
+          "Employment and Social Development Canada (“ESDC”) may share the personal information you provide with Health Canada (“HC”), and the Canada Revenue Agency (“CRA”) to validate eligibility and register individuals for the Canadian Dental Care Plan (“CDCP”).",
+        policyAnalysis:
+          "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
         sendLetters: "ESDC or HC may share your personal information with Public Service and Procurement Canada for the purpose of sending CDCP letters to you.",
-        discloseInfo: "Personal information may also be shared with Sun Life, the CDCP benefits administrator, and Sun Life's agents and service providers for the purpose of underwriting, verification, administration, adjudication and investigation of claims under the CDCP.",
-        sunLifeAuthorization: "Sun Life is authorized to collect, use, and share personal information to any person or organization, including oral health providers, institutions, investigative services, and the CDCP, for the purposes of program administration, audit, claims processing and verification, and patient/client safety.",
+        discloseInfo:
+          "Personal information may also be shared with Sun Life, the CDCP benefits administrator, and Sun Life's agents and service providers for the purpose of underwriting, verification, administration, adjudication and investigation of claims under the CDCP.",
+        sunLifeAuthorization:
+          "Sun Life is authorized to collect, use, and share personal information to any person or organization, including oral health providers, institutions, investigative services, and the CDCP, for the purposes of program administration, audit, claims processing and verification, and patient/client safety.",
       },
       sharingOfInformationAndOralHealthProviders: {
         heading: "Oral Health Providers",
-        enrolConsent: "By enrolling yourself or others in the CDCP, you provide your consent to the oral health providers to disclose all personal information that may be required to Sun Life for the purposes of program administration, conducting claims verifications, managing claims, and patient/client safety. This information may include, but is not limited to, details of the services provided, patient clinical data, and payments. HC may also share limited personal information with oral health providers where doing so would be of clear benefit to you or those who you have applied on their behalf.",
+        enrolConsent:
+          "By enrolling yourself or others in the CDCP, you provide your consent to the oral health providers to disclose all personal information that may be required to Sun Life for the purposes of program administration, conducting claims verifications, managing claims, and patient/client safety. This information may include, but is not limited to, details of the services provided, patient clinical data, and payments. HC may also share limited personal information with oral health providers where doing so would be of clear benefit to you or those who you have applied on their behalf.",
         consideredMinor: "If you are considered a minor in your province or territory, your information can also be shared with your parents or legal guardians.",
       },
     },
     apply: {
-      applicationConsent: "By continuing with this application, you confirm that you have read, understood, and agree to these Terms and Privacy Notice Statement. You also consent to the sharing of personal information you have provided for the purposes listed above.",
+      applicationConsent:
+        "By continuing with this application, you confirm that you have read, understood, and agree to these Terms and Privacy Notice Statement. You also consent to the sharing of personal information you have provided for the purposes listed above.",
       backButton: "Back",
       link: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html",
       continueButton: "Continue",
@@ -147,7 +163,8 @@ const ns = {
         acknowledgeTermsRequired: "You must read the Terms and Conditions to proceed",
         acknowledgePrivacyRequired: "You must read the Privacy Notice Statement to proceed",
         shareDataRequired: "You must consent to the sharing of your data to proceed",
-        consentRequired: "You must agree to the Terms and Conditions and Privacy Notice Statement, and consent to the sharing of your information. To apply for the Canadian Dental Care Plan, you must agree to the Terms and Conditions and Privacy Notice Statement. You must also consent to the sharing of your personal information for the purposes listed.",
+        consentRequired:
+          "You must agree to the Terms and Conditions and Privacy Notice Statement, and consent to the sharing of your information. To apply for the Canadian Dental Care Plan, you must agree to the Terms and Conditions and Privacy Notice Statement. You must also consent to the sharing of your personal information for the purposes listed.",
       },
     },
   },
@@ -176,7 +193,8 @@ const ns = {
         note: "<strong>Note:</strong> If you opted out of your pension's dental coverage before December 11, 2023 and you cannot rejoin the plan, you are not considered to have access to private dental insurance or coverage.",
         eligible: "We consider you to have access to private dental insurance or coverage even if:",
         access: "Having access to private dental insurance or coverage means that you are covered under:",
-        socialProgram: "<strong>Coverage of dental services through government social programs:</strong> If you have dental insurance or coverage through a provincial, territorial or federal government social program, you could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
+        socialProgram:
+          "<strong>Coverage of dental services through government social programs:</strong> If you have dental insurance or coverage through a provincial, territorial or federal government social program, you could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
       },
       eligibility: "You can review the <eligibilityCriteria>Canadian Dental Care Plan eligibility criteria</eligibilityCriteria> for more information",
       eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
@@ -188,7 +206,8 @@ const ns = {
     },
     no: {
       alertTitle: "Dental insurance confirmation",
-      alertBody: "We'll confirm your response using any <t4Href>T4 (box 45)</t4Href> or <t4aHref>T4A (box 015)</t4aHref> documents you may have. If the document shows you have access to employer or pension sponsored dental insurance or coverage, you may be asked to provide proof that you're not covered.",
+      alertBody:
+        "We'll confirm your response using any <t4Href>T4 (box 45)</t4Href> or <t4aHref>T4A (box 015)</t4aHref> documents you may have. If the document shows you have access to employer or pension sponsored dental insurance or coverage, you may be asked to provide proof that you're not covered.",
       alertT4Href: "https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/tax-slips/understand-your-tax-slips/t4-slips/t4-statement-remuneration-paid.html",
       alertT4aHref: "https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/tax-slips/understand-your-tax-slips/t4-slips/t4a-slip.html",
       confirmation: "I understand that I may be asked to provide proof that I do not have access to dental insurance or coverage.",
@@ -304,7 +323,8 @@ const ns = {
     inPerson: "In-person: <findOffice>find a Service Canada office</findOffice>",
     officeLink: "https://offices.service.canada.ca/en",
     helpMessage: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
-    helpMessageAlt: "For the alternate phone number, enter 10 digits if it's a Canadian number (for example: 800\u2011598\u20114567). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
+    helpMessageAlt:
+      "For the alternate phone number, enter 10 digits if it's a Canadian number (for example: 800\u2011598\u20114567). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
     errorMessage: {
       phoneNumberValid: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code.",
       phoneNumberValidInternational: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code.",
@@ -359,7 +379,8 @@ const ns = {
   },
   email: {
     pageTitle: "Email address",
-    emailNotification: "Messages from the Government of Canada about your Canadian Dental Care Plan (CDCP) will be delivered through your My Service Canada Account (MSCA). When a new letter is posted in MSCA, we'll send an email notification to this address.",
+    emailNotification:
+      "Messages from the Government of Canada about your Canadian Dental Care Plan (CDCP) will be delivered through your My Service Canada Account (MSCA). When a new letter is posted in MSCA, we'll send an email notification to this address.",
     enterEmail: "Enter the email address you want to use to receive notifications about your CDCP account and if you selected email, your communications with Sun Life.",
     updateCommunicationPreference: "You can update your communication preferences at any time in MSCA.",
     emailLegend: "Email address",
@@ -459,7 +480,8 @@ const ns = {
     cannotApplyChild: {
       pageTitle: "Your child must apply",
       ineligibleToApply: "Your child is 18 years or older. Your child must submit their own application to the Canadian Dental Care Plan.",
-      eligibilityInfo: "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
+      eligibilityInfo:
+        "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
       backBtn: "Back",
       exitBtn: "Exit application",
       exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
@@ -524,7 +546,8 @@ const ns = {
           note: "<strong>Note:</strong> If you opted out of your pension's dental coverage before December 11, 2023 and you cannot rejoin the plan, {{childName}} is not considered to have access to private dental insurance or coverage.",
           eligible: "We consider {{childName}} to have access to private dental insurance or coverage even if:",
           access: "Having access to private dental insurance or coverage means that {{childName}} is covered under:",
-          socialProgram: "<strong>Coverage of dental services through government social programs:</strong> If {{childName}} has dental insurance or coverage through a provincial, territorial or federal government social program, they could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
+          socialProgram:
+            "<strong>Coverage of dental services through government social programs:</strong> If {{childName}} has dental insurance or coverage through a provincial, territorial or federal government social program, they could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
         },
         eligibility: "You can review the <eligibilityCriteria>Canadian Dental Care Plan eligibility criteria</eligibilityCriteria> for more information",
         eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",

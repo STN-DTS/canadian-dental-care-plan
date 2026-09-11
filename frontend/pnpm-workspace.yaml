@@ -21,9 +21,6 @@ minimumReleaseAge: 4320
 
 # Patches specific dependencies to apply custom fixes or modifications.
 # https://pnpm.io/settings#patcheddependencies
-patchedDependencies:
-  prettier-plugin-tailwindcss@0.8.1: patches/prettier-plugin-tailwindcss@0.8.1.patch
-
 # Fails installation if a package's trust level has decreased compared to previous releases
 # (e.g. a previously verified publisher is replaced by an unverified one).
 # https://pnpm.io/settings#trustpolicy

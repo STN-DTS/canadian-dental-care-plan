@@ -78,7 +78,7 @@ function isMockEnabled(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS'>, mockNa
  * Defines the container module for repository bindings.
  */
 export function createRepositoriesContainerModule(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS'>): ContainerModule {
-  // prettier-ignore
+  // oxfmt-ignore
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationRepository).to(DefaultAddressValidationRepository).when(isMockEnabled(serverConfig, 'wsaddress', false));
     options.bind(TYPES.AddressValidationRepository).to(MockAddressValidationRepository).when(isMockEnabled(serverConfig, 'wsaddress', true));

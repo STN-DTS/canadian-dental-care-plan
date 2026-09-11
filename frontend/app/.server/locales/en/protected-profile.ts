@@ -29,7 +29,8 @@ const ns = {
     pageTitle: "Other government dental benefits",
     haveAccess: "Access to other government dental benefits",
     accessToDental: "Access to dental coverage through a provincial, territorial, or federal government social program does not impact your eligibility for the Canadian Dental Care Plan.",
-    eligibilityCriteria: "If you meet all the eligibility criteria, your coverage will be coordinated between the plans to ensure there are no gaps or duplication in coverage. Keep your information updated to help make sure this coordination is done correctly.",
+    eligibilityCriteria:
+      "If you meet all the eligibility criteria, your coverage will be coordinated between the plans to ensure there are no gaps or duplication in coverage. Keep your information updated to help make sure this coordination is done correctly.",
     yes: "Yes",
     no: "No",
     updateLinkText: "Change access to other government dental benefits",
@@ -149,7 +150,8 @@ const ns = {
     optionNo: "No",
     addPhoneNumber: "Adding your phone number helps us reach you quickly if there's a problem with your application. If you don't give a number, we'll contact you by mail.",
     helpMessage: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
-    helpMessageAlt: "For the alternate phone number, enter 10 digits if it's a Canadian number (for example: 800\u2011598\u20114567). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
+    helpMessageAlt:
+      "For the alternate phone number, enter 10 digits if it's a Canadian number (for example: 800\u2011598\u20114567). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
     errorMessage: {
       phoneNumberValid: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code.",
       phoneNumberValidInternational: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code.",
