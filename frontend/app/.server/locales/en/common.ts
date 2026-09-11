@@ -1,4 +1,11 @@
 const ns = {
+  address: {
+    countryChangedAnnouncement: "The address form has been updated for {{country}}.",
+    provinceFieldRequiredAnnouncement: "The province, territory, state, or region field is now required.",
+    provinceFieldNotRequiredAnnouncement: "The province, territory, state, or region field is not required for the selected country.",
+    postalCodeRequiredAnnouncement: "The postal code or ZIP field is now required.",
+    postalCodeOptionalAnnouncement: "The postal code or ZIP field is now optional.",
+  },
   dialog: {
     addressSuggestion: {
       addressSelectionLegend: "Please select an address option below:",

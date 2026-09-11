@@ -4,7 +4,6 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import { announce } from '@react-aria/live-announcer';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -27,9 +26,8 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSanitizeField } from '~/components/input-sanitize-field';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
-import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useAddressCountryChangeAnnouncement, useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { buildAddressCountryChangeAnnouncement } from '~/utils/address-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -247,6 +245,7 @@ export default function EditMailingAddress({ loaderData, params }: Route.Compone
   const { t } = useTranslation('protectedProfile');
   const { defaultState, countryList, regionList } = loaderData;
   const { CANADA_COUNTRY_ID, USA_COUNTRY_ID } = useClientEnv();
+  const announceAddressCountryChange = useAddressCountryChangeAnnouncement();
 
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
@@ -284,21 +283,12 @@ export default function EditMailingAddress({ loaderData, params }: Route.Compone
 
     // Announce the resulting form changes to assistive technology so screen reader users are
     // informed of the otherwise silent province/state visibility and postal code required changes.
-    const announcement = buildAddressCountryChangeAnnouncement({
+    announceAddressCountryChange({
       countryId,
       countryList,
       regionList,
       postalCodeRequiredCountryIds: [CANADA_COUNTRY_ID, USA_COUNTRY_ID],
-      messages: {
-        countryChanged: (country) => t(($) => $.mailingAddress.countryChangedAnnouncement, { country }),
-        provinceFieldRequired: t(($) => $.mailingAddress.provinceFieldRequiredAnnouncement),
-        provinceFieldNotRequired: t(($) => $.mailingAddress.provinceFieldNotRequiredAnnouncement),
-        postalCodeRequired: t(($) => $.mailingAddress.postalCodeRequiredAnnouncement),
-        postalCodeOptional: t(($) => $.mailingAddress.postalCodeOptionalAnnouncement),
-      },
     });
-
-    announce(announcement, 'polite');
   };
 
   const countries = useMemo<InputOptionProps[]>(() => {
