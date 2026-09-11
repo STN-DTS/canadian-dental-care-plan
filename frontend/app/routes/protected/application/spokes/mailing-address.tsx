@@ -272,7 +272,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
     const postalCodeRequired = [CANADA_COUNTRY_ID, USA_COUNTRY_ID].includes(countryId);
     const announcement = [
       t(($) => $.address.addressField.countryChangedAnnouncement, { country: countryName ?? '' }),
-      hasRegions ? t(($) => $.address.addressField.provinceFieldRequiredAnnouncement) : undefined,
+      hasRegions ? t(($) => $.address.addressField.provinceFieldRequiredAnnouncement) : t(($) => $.address.addressField.provinceFieldNotRequiredAnnouncement),
       postalCodeRequired ? t(($) => $.address.addressField.postalCodeRequiredAnnouncement) : t(($) => $.address.addressField.postalCodeOptionalAnnouncement),
     ]
       .filter(Boolean)

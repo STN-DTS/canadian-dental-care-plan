@@ -342,6 +342,7 @@ const ns = {
       postalCodeHelpUs: "Format\u00A0: 12345 ou 12345-6789",
       countryChangedAnnouncement: "Le formulaire d'adresse a été mis à jour pour\u00A0: {{country}}.",
       provinceFieldRequiredAnnouncement: "Le champ province, territoire, état ou région est maintenant obligatoire.",
+      provinceFieldNotRequiredAnnouncement: "Le champ province, territoire, état ou région n'est pas requis pour le pays sélectionné.",
       postalCodeRequiredAnnouncement: "Le champ code postal est maintenant obligatoire.",
       postalCodeOptionalAnnouncement: "Le champ code postal est maintenant facultatif.",
     },
