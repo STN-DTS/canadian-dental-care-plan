@@ -29,6 +29,7 @@ import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
+import { buildAddressCountryChangeAnnouncement } from '~/utils/address-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -261,19 +262,15 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
     const countryId = event.currentTarget.value;
     setSelectedMailingCountry(countryId);
 
-    // Announce the resulting form changes to assistive technology. Changing the country
-    // updates the province/state field visibility and the postal code field's required
-    // state, so screen reader users are informed of these otherwise silent changes.
-    const countryName = countryList.find(({ id }) => id === countryId)?.name;
-    const hasRegions = regionList.some((region) => region.countryId === countryId);
-    const postalCodeRequired = [CANADA_COUNTRY_ID, USA_COUNTRY_ID].includes(countryId);
-    const announcement = [
-      t(($) => $.address.addressField.countryChangedAnnouncement, { country: countryName ?? '' }),
-      hasRegions ? t(($) => $.address.addressField.provinceFieldRequiredAnnouncement) : t(($) => $.address.addressField.provinceFieldNotRequiredAnnouncement),
-      postalCodeRequired ? t(($) => $.address.addressField.postalCodeRequiredAnnouncement) : t(($) => $.address.addressField.postalCodeOptionalAnnouncement),
-    ]
-      .filter(Boolean)
-      .join(' ');
+    // Announce the resulting form changes to assistive technology so screen reader users are
+    // informed of the otherwise silent province/state visibility and postal code required changes.
+    const announcement = buildAddressCountryChangeAnnouncement({
+      countryId,
+      countryList,
+      regionList,
+      postalCodeRequiredCountryIds: [CANADA_COUNTRY_ID, USA_COUNTRY_ID],
+      t,
+    });
 
     announce(announcement, 'polite');
   };
