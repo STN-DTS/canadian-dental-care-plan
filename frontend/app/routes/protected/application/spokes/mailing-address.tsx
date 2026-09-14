@@ -26,7 +26,7 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSanitizeField } from '~/components/input-sanitize-field';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
-import { useAddressCountryChangeAnnouncement, useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useAddressCountryChangeAnnouncement, useClientEnv, useFetcherSubmissionState, usePostalCodeRequiredCountryIds } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -230,6 +230,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
   const { defaultState, countryList, regionList, applicationFlow } = loaderData;
   const { CANADA_COUNTRY_ID, USA_COUNTRY_ID } = useClientEnv();
   const announceAddressCountryChange = useAddressCountryChangeAnnouncement();
+  const postalCodeRequiredCountryIds = usePostalCodeRequiredCountryIds();
 
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
@@ -270,7 +271,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
       countryId,
       countryList,
       regionList,
-      postalCodeRequiredCountryIds: [CANADA_COUNTRY_ID, USA_COUNTRY_ID],
+      postalCodeRequiredCountryIds,
     });
   };
 
@@ -286,7 +287,7 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
     value: '',
   };
 
-  const isPostalCodeRequired = [CANADA_COUNTRY_ID, USA_COUNTRY_ID].includes(selectedMailingCountry);
+  const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedMailingCountry);
 
   let postalCodeHelpMessage: string | undefined;
   switch (selectedMailingCountry) {
