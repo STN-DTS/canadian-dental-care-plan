@@ -46,6 +46,8 @@ const ns = {
     fileName: "Nom du fichier",
     remove: "Supprimer le fichier",
     documentType: "Type de document",
+    fileAddedAnnouncement: "Le fichier «\u00A0{{fileName}}\u00A0» a été ajouté avec succès.",
+    fileRemovedAnnouncement: "Le fichier «\u00A0{{fileName}}\u00A0» a été supprimé avec succès.",
     submit: "Soumettre",
     selectOne: "Sélectionnez une option",
     returnDashboard: "Retour au tableau de bord",
