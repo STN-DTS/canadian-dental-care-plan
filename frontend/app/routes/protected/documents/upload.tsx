@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { announce } from '@react-aria/live-announcer';
 import { fileTypeFromBuffer } from 'file-type';
 import type { TFunction } from 'i18next';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
@@ -110,9 +111,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload', { userId: user.id });
 
   return {
-    meta: {
-      title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }),
-    },
+    meta: { title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }) },
     documentTypes,
     SCCH_BASE_URI,
   };
@@ -462,6 +461,25 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
 
   const handleFileChange = (files: ReadonlyArray<FileState>) => {
+    // Announce add/remove file actions to assistive technology since the file list updates without a
+    // page navigation, which would otherwise be a silent DOM change for screen reader users.
+    const previousIds = new Set(filesWithTypes.map((item) => item.id));
+    const currentIds = new Set(files.map((file) => file.id));
+
+    for (const { file } of files.filter((file) => !previousIds.has(file.id))) {
+      announce(
+        t(($) => $.upload.fileAddedAnnouncement, { fileName: file.name }),
+        'polite',
+      );
+    }
+
+    for (const { file } of filesWithTypes.filter((item) => !currentIds.has(item.id))) {
+      announce(
+        t(($) => $.upload.fileRemovedAnnouncement, { fileName: file.name }),
+        'polite',
+      );
+    }
+
     setFilesWithTypes((prev) => {
       const prevMap = new Map(prev.map((item) => [item.id, item]));
       const newItems: FileStateWithDocumentType[] = [];
