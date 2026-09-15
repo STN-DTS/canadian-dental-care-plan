@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { announce } from '@react-aria/live-announcer';
 import { fileTypeFromBuffer } from 'file-type';
 import type { TFunction } from 'i18next';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
@@ -111,7 +112,10 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   return {
     meta: {
-      title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }),
+      title: t(($) => $.meta.title.mscaTemplate, {
+        ns: 'gcweb',
+        title: t(($) => $.upload.pageTitle),
+      }),
     },
     documentTypes,
     SCCH_BASE_URI,
@@ -160,13 +164,25 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { files } = validationResult.data;
   const uploadService = appContainer.get(TYPES.DocumentUploadService);
 
-  const scanResult = await scanDocuments({ allowedExtensions, files, userId: user.id, service: uploadService, t });
+  const scanResult = await scanDocuments({
+    allowedExtensions,
+    files,
+    userId: user.id,
+    service: uploadService,
+    t,
+  });
   if (!scanResult.success) {
     return { errors: scanResult.errors };
   }
 
   const clientNumber = applicant.clientNumber;
-  const uploadResult = await uploadDocuments({ clientNumber, files: files, service: uploadService, t, userId: user.id });
+  const uploadResult = await uploadDocuments({
+    clientNumber,
+    files: files,
+    service: uploadService,
+    t,
+    userId: user.id,
+  });
 
   if (!uploadResult.success) {
     return { errors: uploadResult.errors };
@@ -190,9 +206,19 @@ async function validateUploadForm(
   formData: FormData,
   locale: string,
   t: TFunction<'documents'>,
-  config: { allowedExtensions: readonly string[]; maxSizeMB: number; maxCount: number },
+  config: {
+    allowedExtensions: readonly string[];
+    maxSizeMB: number;
+    maxCount: number;
+  },
 ): Promise<{ success: true; data: DocumentUploadSchemaOuput } | { success: false; errors: DocumentUploadSchemaErrorTree }> {
-  const schema = createDocumentUploadSchema({ locale, t, allowedExtensions: config.allowedExtensions, maxFileSizeInMB: config.maxSizeMB, maxFileCount: config.maxCount });
+  const schema = createDocumentUploadSchema({
+    locale,
+    t,
+    allowedExtensions: config.allowedExtensions,
+    maxFileSizeInMB: config.maxSizeMB,
+    maxFileCount: config.maxCount,
+  });
 
   // Parse form data into expected structure
   const fileIds = formData.getAll('file_id') as string[];
@@ -200,7 +226,15 @@ async function validateUploadForm(
   const documentTypes = formData.getAll('file_document_type') as string[];
 
   // Build files record
-  const files: Record<string, { file: File; fileBuffer: ArrayBuffer; fileHash: string; documentType: string }> = Object.fromEntries(
+  const files: Record<
+    string,
+    {
+      file: File;
+      fileBuffer: ArrayBuffer;
+      fileHash: string;
+      documentType: string;
+    }
+  > = Object.fromEntries(
     await Promise.all(
       fileIds.map(async (fileId, i) => {
         const file = expectDefined(fileObjects[i], 'Expected file object at index ' + i);
@@ -436,7 +470,9 @@ function createDocumentUploadSchema({ locale, t, allowedExtensions, maxFileSizeI
           if (seenFiles.has(fileKey)) {
             ctx.addIssue({
               code: 'custom',
-              message: t(($) => $.upload.errorMessage.duplicateFile, { filename: file.name }),
+              message: t(($) => $.upload.errorMessage.duplicateFile, {
+                filename: file.name,
+              }),
               path: [id, 'file'],
             });
           } else {
@@ -462,6 +498,25 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
 
   const handleFileChange = (files: ReadonlyArray<FileState>) => {
+    // Announce add/remove file actions to assistive technology since the file list updates without a
+    // page navigation, which would otherwise be a silent DOM change for screen reader users.
+    const previousIds = new Set(filesWithTypes.map((item) => item.id));
+    const currentIds = new Set(files.map((file) => file.id));
+
+    for (const { file } of files.filter((file) => !previousIds.has(file.id))) {
+      announce(
+        t(($) => $.upload.fileAddedAnnouncement, { fileName: file.name }),
+        'polite',
+      );
+    }
+
+    for (const { file } of filesWithTypes.filter((item) => !currentIds.has(item.id))) {
+      announce(
+        t(($) => $.upload.fileRemovedAnnouncement, { fileName: file.name }),
+        'polite',
+      );
+    }
+
     setFilesWithTypes((prev) => {
       const prevMap = new Map(prev.map((item) => [item.id, item]));
       const newItems: FileStateWithDocumentType[] = [];
@@ -492,7 +547,10 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
       formData.append('file_document_type', documentType);
     }
 
-    await fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
+    await fetcher.submit(formData, {
+      method: 'post',
+      encType: 'multipart/form-data',
+    });
   };
 
   const docTypeOptions = useMemo<InputOptionProps[]>(() => {
@@ -540,7 +598,11 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
                 <fieldset>
                   <InputLegend className="mb-2">{t(($) => $.upload.uploadFiles.chooseFile)}</InputLegend>
                   <ul className="mb-2 list-disc space-y-1 pl-7">
-                    <li>{t(($) => $.upload.uploadFiles.maxFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })}</li>
+                    <li>
+                      {t(($) => $.upload.uploadFiles.maxFiles, {
+                        count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
+                      })}
+                    </li>
                     <li>
                       {t(($) => $.upload.uploadFiles.maxSize, {
                         filesize: bytesToFilesize(megabytesToBytes(env.DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB), `${i18n.language}-CA`),

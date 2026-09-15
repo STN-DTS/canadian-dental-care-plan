@@ -46,6 +46,8 @@ const ns = {
     fileName: "File name",
     remove: "Remove",
     documentType: "Document Type",
+    fileAddedAnnouncement: "File “{{fileName}}” was added successfully.",
+    fileRemovedAnnouncement: "File “{{fileName}}” was removed successfully.",
     submit: "Submit",
     selectOne: "Select one",
     returnDashboard: "Return to dashboard",
