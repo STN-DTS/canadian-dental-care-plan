@@ -25,7 +25,7 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSanitizeField } from '~/components/input-sanitize-field';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
-import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useAddressCountryChangeAnnouncement, useClientEnv, useFetcherSubmissionState, usePostalCodeRequiredCountryIds } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -197,6 +197,8 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
   const { t } = useTranslation(['applicationSpokes', 'application']);
   const { defaultState, countryList, regionList } = loaderData;
   const { CANADA_COUNTRY_ID, USA_COUNTRY_ID } = useClientEnv();
+  const announceAddressCountryChange = useAddressCountryChangeAnnouncement();
+  const postalCodeRequiredCountryIds = usePostalCodeRequiredCountryIds();
 
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
@@ -222,7 +224,17 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
     }
   }
   const homeCountryChangeHandler = (event: React.SyntheticEvent<HTMLSelectElement>) => {
-    setSelectedHomeCountry(event.currentTarget.value);
+    const countryId = event.currentTarget.value;
+    setSelectedHomeCountry(countryId);
+
+    // Announce the resulting form changes to assistive technology so screen reader users are
+    // informed of the otherwise silent province/state visibility and postal code required changes.
+    announceAddressCountryChange({
+      countryId,
+      countryList,
+      regionList,
+      postalCodeRequiredCountryIds,
+    });
   };
 
   const countries = useMemo<InputOptionProps[]>(() => {
@@ -236,7 +248,7 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
     value: '',
   };
 
-  const isPostalCodeRequired = [CANADA_COUNTRY_ID, USA_COUNTRY_ID].includes(selectedHomeCountry);
+  const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedHomeCountry);
 
   let postalCodeHelpMessage: string | undefined;
   switch (selectedHomeCountry) {
