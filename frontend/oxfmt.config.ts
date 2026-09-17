@@ -42,7 +42,7 @@ export default defineConfig({
   sortTailwindcss: {
     functions: ['clsx', 'cn', 'cva'],
   },
-  ignorePatterns: ['**/public/build/', '**/public/theme/', '**/tmp/', 'pnpm-lock.yaml', 'package-lock.json', 'yarn.lock'],
+  ignorePatterns: ['**/public/build/', '**/public/theme/', '**/tmp/'],
   overrides: [
     {
       files: ['app/.server/locales/**/*.ts'],
