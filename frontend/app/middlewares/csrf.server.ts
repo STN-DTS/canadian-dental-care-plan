@@ -2,7 +2,6 @@
  * Configures origin-based CSRF protection using `remix-utils`.
  *
  * Requests from untrusted origins are logged and rejected with a 403 response.
- * The middleware is registered by the public and protected layouts.
  *
  * @see https://sergiodxa.github.io/remix-utils/modules/Middleware_CSRF.html
  */

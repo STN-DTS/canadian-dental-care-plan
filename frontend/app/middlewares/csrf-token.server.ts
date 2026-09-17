@@ -9,10 +9,6 @@
  * Router at runtime. Keep these packages in the application dependencies even
  * though the Oslo packages are used indirectly through `remix-utils`.
  *
- * The middleware is registered by the public and protected layouts, so it
- * validates actions in those route trees only. Actions outside those trees are
- * not validated by this middleware.
- *
  * @see https://sergiodxa.github.io/remix-utils/modules/Middleware_CSRF-Token.html
  */
 import { createCookie } from 'react-router';
