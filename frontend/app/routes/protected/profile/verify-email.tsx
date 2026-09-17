@@ -11,6 +11,7 @@ import type { Route } from './+types/verify-email';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getClientApplication } from '~/.server/context/client-application-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import type { Session } from '~/.server/web/session';
@@ -71,8 +72,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  getClientApplication(context);
 
   const profileEmailAddressFlowState = requireProfileEmailAddressFlowState({ session, params });
 
@@ -106,8 +106,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const profileEmailAddressFlowState = requireProfileEmailAddressFlowState({ session, params });
 

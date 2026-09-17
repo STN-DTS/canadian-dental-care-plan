@@ -11,6 +11,7 @@ import type { Route } from './+types/mailing-address';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getClientApplication } from '~/.server/context/client-application-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import type { AddressInvalidResponse, AddressResponse, AddressSuggestionResponse, CanadianAddress } from '~/components/address-validation-dialog';
@@ -63,10 +64,9 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, url }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
   const locale = getLocale(url);
@@ -102,8 +102,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const locale = getLocale(url);
 
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const clientConfig = appContainer.get(TYPES.ClientConfig);
   const addressValidationService = appContainer.get(TYPES.AddressValidationService);
