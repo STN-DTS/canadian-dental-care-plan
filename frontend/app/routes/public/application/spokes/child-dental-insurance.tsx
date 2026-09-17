@@ -116,12 +116,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   });
 
   if (!parsedDataResult.success) {
-    return data(
-      {
-        errors: transformFlattenedError(z.flattenError(parsedDataResult.error)),
-      },
-      { status: 400 },
-    );
+    return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
   savePublicApplicationState({
