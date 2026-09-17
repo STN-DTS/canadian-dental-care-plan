@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
 import { anyArray, anyObject, mock } from 'vitest-mock-extended';
 
-import type { ClientApplicationDto } from '~/.server/domain/dtos';
+import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ApplicantService, ClientApplicationService, ClientEligibilityService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -309,6 +309,72 @@ describe('DefaultSecurityHandler', () => {
 
       const clientApplication = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession });
       expect(clientApplication).toBe(mockClientApplication);
+    });
+  });
+
+  describe('requireApplicant', () => {
+    it('should return and cache an applicant without an assigned type', async () => {
+      const mockSession = mock<Session>();
+      mockSession.id = 'session-id';
+      mockSession.has.calledWith('applicant').mockReturnValue(false);
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+
+      const applicant = mock<ApplicantDto>({ applicantType: undefined, clientNumber: 'client-number' });
+      mockApplicantService.findApplicantBySin.mockResolvedValue(Some(applicant));
+
+      const result = await securityHandler.requireApplicant({
+        requestUrl: new URL('https://localhost:3000/en/protected/documents'),
+        params: { lang: 'en' },
+        session: mockSession,
+      });
+
+      expect(result).toBe(applicant);
+      expect(mockApplicantService.findApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
+      expect(mockSession.set).toHaveBeenCalledWith('applicant', applicant);
+    });
+  });
+
+  describe('requireProgramApplicant', () => {
+    it('should return an applicant with an assigned type', async () => {
+      const session = mock<Session>();
+      session.id = 'session-id';
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
+      mockApplicantService.findProgramApplicantBySin.mockResolvedValue(Some(programApplicant));
+
+      const result = await securityHandler.requireProgramApplicant({
+        requestUrl: new URL('https://localhost:3000/en/protected/application'),
+        params: { lang: 'en' },
+        session,
+      });
+
+      expect(result).toBe(programApplicant);
+      expect(mockApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(session.set).toHaveBeenCalledWith('applicant', programApplicant);
+    });
+
+    it('should redirect when no program applicant is found', async () => {
+      const session = mock<Session>();
+      session.id = 'session-id';
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      mockApplicantService.findProgramApplicantBySin.mockResolvedValue(None);
+
+      const error = await securityHandler
+        .requireProgramApplicant({
+          requestUrl: new URL('https://localhost:3000/en/protected/application'),
+          params: { lang: 'en' },
+          session,
+        })
+        .catch((error_) => error_);
+
+      expect(error).toBeInstanceOf(Response);
+      expect((error as Response).status).toBe(302);
+      expect((error as Response).headers.get('Location')).toBe('/en/protected/data-unavailable');
+      expect(mockApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
     });
   });
 

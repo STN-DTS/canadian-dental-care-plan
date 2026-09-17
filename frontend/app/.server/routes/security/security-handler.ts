@@ -5,7 +5,7 @@ import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { ApplicantDto, ClientApplicationDto } from '~/.server/domain/dtos';
+import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ApplicantService, ClientApplicationService, ClientEligibilityService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -152,13 +152,22 @@ export interface SecurityHandler {
   requireClientApplication(params: RequireClientApplicationParams): Promise<ClientApplicationDto>;
 
   /**
-   * Ensures that the user has a applicant associated with their SIN.
+   * Ensures that the user has an applicant associated with their SIN.
    *
    * @param args - Parameters containing the request, session, and route params.
    * @throws Throws a redirect response if no applicant is found.
    * @returns Resolves with the applicant DTO if found.
    */
   requireApplicant(args: RequireApplicantArgs): Promise<ApplicantDto>;
+
+  /**
+   * Ensures that the user has a program applicant associated with their SIN.
+   *
+   * @param args - Parameters containing the request, session, and route params.
+   * @throws Throws a redirect response if no applicant is found or the applicant has no assigned type.
+   * @returns Resolves with the program applicant DTO if found.
+   */
+  requireProgramApplicant(args: RequireApplicantArgs): Promise<ProgramApplicantDto>;
 
   /**
    * Ensures that the applicant with the given client number is enrolled.
@@ -344,6 +353,36 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     this.log.debug('Applicant found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
     return applicant;
+  }
+
+  async requireProgramApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ProgramApplicantDto> {
+    this.log.debug('Requiring program applicant for session [%s]', session.id);
+
+    const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
+
+    if (!userInfoToken?.sin) {
+      this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
+      const { pathname, searchParams } = requestUrl;
+      const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
+      throw redirectDocument(`/auth/login?returnto=${returnTo}`);
+    }
+
+    const programApplicantOption = await this.applicantService.findProgramApplicantBySin({
+      sin: userInfoToken.sin,
+      userId: userInfoToken.sub,
+    });
+
+    if (programApplicantOption.isNone()) {
+      this.log.debug('No program applicant found for SIN [***-***-%s]; session [%s]; redirecting to data unavailable', userInfoToken.sin.slice(-3), session.id);
+      throw redirect(getPathById('protected/data-unavailable', params));
+    }
+
+    const programApplicant = programApplicantOption.unwrap();
+
+    session.set('applicant', programApplicant);
+
+    this.log.debug('Program applicant found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
+    return programApplicant;
   }
 
   async requireEnrolledApplicant({ clientNumber, params, options = {} }: RequireEnrolledApplicantArgs): Promise<void> {
