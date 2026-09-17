@@ -1,6 +1,5 @@
 import type { RouterContextProvider } from 'react-router';
 
-import { None } from 'oxide.ts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -8,13 +7,32 @@ import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { programApplicantContext } from '~/.server/context/applicant-context';
+import type { ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';
-import type { SecurityHandler } from '~/.server/routes/security';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
 vi.mock(import('~/.server/utils/locale-utils'));
+
+const programApplicant = {
+  applicantType: 'general',
+  clientId: 'some-client-id',
+  clientNumber: 'some-client-number',
+  dateOfBirth: '2000-01-01',
+  firstName: 'John',
+  lastName: 'Doe',
+  socialInsuranceNumber: '999999999',
+  communicationPreferences: {},
+  contactInformation: {
+    mailingAddress: {
+      address: '123 Main St',
+      city: 'Anytown',
+      country: 'Canada',
+    },
+  },
+} satisfies ProgramApplicantDto;
 
 describe('Letters Page', () => {
   afterEach(() => {
@@ -26,30 +44,8 @@ describe('Letters Page', () => {
       const mockSession = mock<Session>();
       mockSession.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
       mockSession.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999', sub: '1111111' } as UserinfoToken);
-      mockSession.find.calledWith('applicant').mockReturnValueOnce(None);
 
       const mockAppContainer = mock<AppContainerProvider>();
-      mockAppContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
-        mock<SecurityHandler>({
-          requireApplicant: async () =>
-            await Promise.resolve({
-              clientId: 'some-client-id',
-              clientNumber: 'some-client-number',
-              dateOfBirth: '2000-01-01',
-              firstName: 'John',
-              lastName: 'Doe',
-              socialInsuranceNumber: '999999999',
-              communicationPreferences: {},
-              contactInformation: {
-                mailingAddress: {
-                  address: '123 Main St',
-                  city: 'Anytown',
-                  country: 'Canada',
-                },
-              },
-            }),
-        }),
-      );
       mockAppContainer.get.calledWith(TYPES.ClientConfig).mockReturnValueOnce({
         SCCH_BASE_URI: 'https://api.example.com',
       } satisfies Partial<ClientConfig>);
@@ -77,6 +73,7 @@ describe('Letters Page', () => {
         appContainer: mockAppContainer,
         session: mockSession,
       });
+      mockRouterContext.get.calledWith(programApplicantContext).mockReturnValueOnce(programApplicant);
 
       const response = await loader({
         request: new Request('http://localhost/letters?sort=desc'),
@@ -98,30 +95,8 @@ describe('Letters Page', () => {
     const mockSession = mock<Session>();
     mockSession.get.calledWith('idToken').mockReturnValueOnce({ sub: '00000000-0000-0000-0000-000000000000' } as IdToken);
     mockSession.get.calledWith('userInfoToken').mockReturnValueOnce({ sin: '999999999' } as UserinfoToken);
-    mockSession.find.calledWith('applicant').mockReturnValueOnce(None);
 
     const mockAppContainer = mock<AppContainerProvider>();
-    mockAppContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValueOnce(
-      mock<SecurityHandler>({
-        requireApplicant: async () =>
-          await Promise.resolve({
-            clientId: 'some-client-id',
-            clientNumber: 'some-client-number',
-            dateOfBirth: '2000-01-01',
-            firstName: 'John',
-            lastName: 'Doe',
-            socialInsuranceNumber: '999999999',
-            communicationPreferences: {},
-            contactInformation: {
-              mailingAddress: {
-                address: '123 Main St',
-                city: 'Anytown',
-                country: 'Canada',
-              },
-            },
-          }),
-      }),
-    );
     mockAppContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({
       SCCH_BASE_URI: 'https://api.example.com',
     } satisfies Partial<ClientConfig>);
@@ -149,6 +124,7 @@ describe('Letters Page', () => {
       appContainer: mockAppContainer,
       session: mockSession,
     });
+    mockRouterContext.get.calledWith(programApplicantContext).mockReturnValueOnce(programApplicant);
 
     const response = await loader({
       request: new Request('http://localhost/letters'),

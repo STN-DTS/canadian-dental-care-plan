@@ -357,14 +357,20 @@ export const routes = [
         paths: { en: '/:lang/protected/unable-to-process-request', fr: '/:lang/protege/impossible-de-traiter-la-demande' },
       },
       {
-        id: 'protected/letters/index',
-        file: 'routes/protected/letters/index.tsx',
-        paths: { en: '/:lang/protected/letters', fr: '/:lang/protege/lettres' },
-      },
-      {
-        id: 'protected/letters/$id.download',
-        file: 'routes/protected/letters/$id.download.ts',
-        paths: { en: '/:lang/protected/letters/:id/download', fr: '/:lang/protege/lettres/:id/telecharger' },
+        id: 'protected/letters/layout',
+        file: 'routes/protected/letters/layout.tsx',
+        children: [
+          {
+            id: 'protected/letters/index',
+            file: 'routes/protected/letters/index.tsx',
+            paths: { en: '/:lang/protected/letters', fr: '/:lang/protege/lettres' },
+          },
+          {
+            id: 'protected/letters/$id.download',
+            file: 'routes/protected/letters/$id.download.ts',
+            paths: { en: '/:lang/protected/letters/:id/download', fr: '/:lang/protege/lettres/:id/telecharger' },
+          },
+        ],
       },
       {
         id: 'protected/profile/eligibility',
