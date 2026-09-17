@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { announce } from '@react-aria/live-announcer';
 import { fileTypeFromBuffer } from 'file-type';
 import type { TFunction } from 'i18next';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
@@ -110,9 +111,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload', { userId: user.id });
 
   return {
-    meta: {
-      title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }),
-    },
+    meta: { title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }) },
     documentTypes,
     SCCH_BASE_URI,
   };
@@ -462,6 +461,35 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
 
   const handleFileChange = (files: ReadonlyArray<FileState>) => {
+    // Announce add/remove file actions to assistive technology since the file list updates without a
+    // page navigation, which would otherwise be a silent DOM change for screen reader users.
+    const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
+    const currentFileIds = new Set(files.map(({ id }) => id));
+    const addedFiles = files.filter(({ id }) => !previousFileIds.has(id));
+    const removedFiles = filesWithTypes.filter(({ id }) => !currentFileIds.has(id));
+
+    const addedFile = addedFiles[0];
+    if (addedFile) {
+      announce(
+        t(($) => $.upload.fileAddedAnnouncement, {
+          count: addedFiles.length,
+          fileName: addedFile.file.name,
+        }),
+        'polite',
+      );
+    }
+
+    const removedFile = removedFiles[0];
+    if (removedFile) {
+      announce(
+        t(($) => $.upload.fileRemovedAnnouncement, {
+          count: removedFiles.length,
+          fileName: removedFile.file.name,
+        }),
+        'polite',
+      );
+    }
+
     setFilesWithTypes((prev) => {
       const prevMap = new Map(prev.map((item) => [item.id, item]));
       const newItems: FileStateWithDocumentType[] = [];
