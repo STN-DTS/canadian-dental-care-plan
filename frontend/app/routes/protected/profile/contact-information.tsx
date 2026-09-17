@@ -6,6 +6,7 @@ import type { Route } from './+types/contact-information';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getClientApplication } from '~/.server/context/client-application-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { Address } from '~/components/address';
 import type { AddressDetails } from '~/components/address';
@@ -26,10 +27,9 @@ export const handle = {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function loader({ context, params, url }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
   const meta = {
