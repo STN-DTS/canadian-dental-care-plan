@@ -11,6 +11,7 @@ import type { Route } from './+types/edit-communication-preferences';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getClientApplication } from '~/.server/context/client-application-context';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
@@ -60,10 +61,9 @@ function isClientApplicationEmailAddressVerified(clientApplication: PickDeep<Cli
   return hasEmailAddress && emailAddressVerified;
 }
 
-export async function loader({ context, params, url }: Route.LoaderArgs) {
+export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
@@ -98,8 +98,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
   const t = await getFixedT(url, 'protectedProfile');
