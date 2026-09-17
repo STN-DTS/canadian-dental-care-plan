@@ -75,7 +75,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }),
   };
 
-  return { meta, defaultState: childState.dentalInsurance, childName, applicationFlow: `${state.inputModel}-${state.typeOfApplication}` };
+  return {
+    meta,
+    defaultState: childState.dentalInsurance,
+    childName,
+    applicationFlow: `${state.inputModel}-${state.typeOfApplication}`,
+  };
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
@@ -116,7 +121,12 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   });
 
   if (!parsedDataResult.success) {
-    return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
+    return data(
+      {
+        errors: transformFlattenedError(z.flattenError(parsedDataResult.error)),
+      },
+      { status: 400 },
+    );
   }
 
   savePublicApplicationState({
@@ -185,7 +195,9 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                   <Trans
                     ns="applicationSpokes"
                     i18nKey={($) => $.children.dentalInsurance.detail.eligibility}
-                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
+                    components={{
+                      eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" />,
+                    }}
                   />
                 </p>
               </div>
@@ -198,13 +210,13 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                 })}
                 options={[
                   {
-                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} />,
+                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.yes,
                     defaultChecked: defaultState?.hasDentalInsurance === true,
                     onChange: handleOnHasDentalInsuranceChanged,
                   },
                   {
-                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} />,
+                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.no,
                     defaultChecked: defaultState?.hasDentalInsurance === false,
                     onChange: handleOnHasDentalInsuranceChanged,
