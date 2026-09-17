@@ -349,11 +349,14 @@ Streamlined hub and spoke renewal journey for members renewing coverage for them
 
 Section for authenticated users to manage required documentation. Users can upload supporting documents for their application or view information about documents not required.
 
+These routes require the document-upload feature and a resolved applicant. Applicants without an applicant category can still access the document flow.
+
 | English URL                            | English Title          | French URL                         | French Title         |
 | -------------------------------------- | ---------------------- | ---------------------------------- | -------------------- |
 | `/en/protected/documents`              | Documents              | `/fr/protege/documents`            | Documents            |
 | `/en/protected/documents/upload`       | Upload                 | `/fr/protege/documents/televerser` | Téléverser           |
 | `/en/protected/documents/not-required` | Documents not required | `/fr/protege/documents/non-requis` | Documents non requis |
+| `/en/protected/documents/submitted`    | Documents submitted    | `/fr/protege/documents/soumis`     | Documents soumis     |
 
 For upload flow implementation details, see [Document Upload Feature](./document-upload-feature.md).
 
@@ -362,6 +365,8 @@ For upload flow implementation details, see [Document Upload Feature](./document
 ### Letters
 
 Archive of official correspondence sent to the member from the Government of Canada regarding their CDCP application and membership.
+
+These routes require the view-letters feature and a program applicant. Applicants without an applicant category cannot access the letter flow.
 
 | English URL                          | English Title | French URL                            | French Title |
 | ------------------------------------ | ------------- | ------------------------------------- | ------------ |
@@ -373,6 +378,8 @@ Archive of official correspondence sent to the member from the Government of Can
 ### Profile
 
 Personal information hub where authenticated members can view and update their account details, eligibility status, communication preferences, and contact information. Provides a centralized location for all profile-related management.
+
+These routes require a resolved client application, which is shared across the profile flow.
 
 | English URL                                            | English Title             | French URL                                                   | French Title                       |
 | ------------------------------------------------------ | ------------------------- | ------------------------------------------------------------ | ---------------------------------- |
