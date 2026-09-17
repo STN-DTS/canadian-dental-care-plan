@@ -170,7 +170,7 @@ const ns = {
   },
   dentalInsurance: {
     title: "Access to private dental insurance or coverage",
-    legend: "Do you have access to private dental insurance or coverage through any of the following:",
+    legend: "Do you have access to private dental insurance or coverage?",
     optionYes: "<strong>Yes</strong>, I have access to private dental insurance or coverage",
     optionNo: "<strong>No</strong>, I do not have access to private dental insurance or coverage",
     backBtn: "Back",
