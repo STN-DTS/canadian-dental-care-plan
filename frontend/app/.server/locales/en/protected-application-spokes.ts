@@ -523,8 +523,8 @@ const ns = {
     dentalInsurance: {
       title: "Access to private dental insurance or coverage for {{childName}}",
       legend: "Does {{childName}} have private dental insurance or coverage through any of the following:",
-      optionYes: "<strong>Yes</strong>, this child has access to private dental insurance or coverage",
-      optionNo: "<strong>No</strong>, this child does not have access to private dental insurance or coverage",
+      optionYes: "<strong>Yes</strong>, {{childName}} has access to private dental insurance or coverage",
+      optionNo: "<strong>No</strong>, {{childName}} does not have access to private dental insurance or coverage",
       dentalInsuranceEligibilityConfirmation: "I understand that {{childName}} is not eligible for the Canadian Dental Care Plan if they have access to dental insurance or coverage.",
       backBtn: "Back",
       saveBtn: "Save",
