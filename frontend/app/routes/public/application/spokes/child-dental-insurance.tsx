@@ -75,12 +75,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }),
   };
 
-  return {
-    meta,
-    defaultState: childState.dentalInsurance,
-    childName,
-    applicationFlow: `${state.inputModel}-${state.typeOfApplication}`,
-  };
+  return { meta, defaultState: childState.dentalInsurance, childName, applicationFlow: `${state.inputModel}-${state.typeOfApplication}` };
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
@@ -195,9 +190,7 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                   <Trans
                     ns="applicationSpokes"
                     i18nKey={($) => $.children.dentalInsurance.detail.eligibility}
-                    components={{
-                      eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" />,
-                    }}
+                    components={{ eligibilityCriteria: <InlineLink to={t(($) => $.children.dentalInsurance.detail.eligibilityLink)} className="external-link" newTabIndicator target="_blank" /> }}
                   />
                 </p>
               </div>
