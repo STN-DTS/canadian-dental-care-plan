@@ -1,4 +1,4 @@
-import type { ReadonlyDeep } from 'type-fest';
+import type { ReadonlyDeep, SetRequired } from 'type-fest';
 
 export type FindApplicantByBasicInfoDto = Readonly<{
   clientNumber: string;
@@ -61,6 +61,9 @@ export type ApplicantDto = ReadonlyDeep<{
   /** The contact information of the applicant */
   contactInformation: ApplicantContactInformationDto;
 }>;
+
+/** An applicant recognized as a program participant. */
+export type ProgramApplicantDto = SetRequired<ApplicantDto, 'applicantType'>;
 
 export type ApplicantCommunicationPreferencesDto = ReadonlyDeep<{
   preferredLanguage?: string;
