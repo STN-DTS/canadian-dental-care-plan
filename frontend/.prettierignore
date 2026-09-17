@@ -1,8 +1,0 @@
-**/public/build/
-**/public/theme/
-**/tmp/
-
-# Ignore lock files for PNPM, NPM and YARN
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
