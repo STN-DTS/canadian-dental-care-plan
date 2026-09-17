@@ -200,13 +200,13 @@ export default function ChildDentalInsurance({ loaderData, params }: Route.Compo
                 })}
                 options={[
                   {
-                    children: <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} />,
+                    children: <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.yes,
                     defaultChecked: defaultState?.hasDentalInsurance === true,
                     onChange: handleOnHasDentalInsuranceChanged,
                   },
                   {
-                    children: <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} />,
+                    children: <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.no,
                     defaultChecked: defaultState?.hasDentalInsurance === false,
                     onChange: handleOnHasDentalInsuranceChanged,
