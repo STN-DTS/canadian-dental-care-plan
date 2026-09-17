@@ -10,6 +10,7 @@ import type { Route } from './+types/edit-child-dental-benefits';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+import { getClientApplication } from '~/.server/context/client-application-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -73,8 +74,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const child = clientApplication.children.find((child) => child.information.clientId === params.childId);
 
@@ -127,8 +127,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
-  const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  const clientApplication = await securityHandler.requireClientApplication({ params, requestUrl: url, session });
+  const clientApplication = getClientApplication(context);
 
   const child = clientApplication.children.find((child) => child.information.clientId === params.childId);
 
