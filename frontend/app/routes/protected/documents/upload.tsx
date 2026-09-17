@@ -463,19 +463,29 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
   const handleFileChange = (files: ReadonlyArray<FileState>) => {
     // Announce add/remove file actions to assistive technology since the file list updates without a
     // page navigation, which would otherwise be a silent DOM change for screen reader users.
-    const previousIds = new Set(filesWithTypes.map((item) => item.id));
-    const currentIds = new Set(files.map((file) => file.id));
+    const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
+    const currentFileIds = new Set(files.map(({ id }) => id));
+    const addedFiles = files.filter(({ id }) => !previousFileIds.has(id));
+    const removedFiles = filesWithTypes.filter(({ id }) => !currentFileIds.has(id));
 
-    for (const { file } of files.filter((file) => !previousIds.has(file.id))) {
+    const addedFile = addedFiles[0];
+    if (addedFile) {
       announce(
-        t(($) => $.upload.fileAddedAnnouncement, { fileName: file.name }),
+        t(($) => $.upload.fileAddedAnnouncement, {
+          count: addedFiles.length,
+          fileName: addedFile.file.name,
+        }),
         'polite',
       );
     }
 
-    for (const { file } of filesWithTypes.filter((item) => !currentIds.has(item.id))) {
+    const removedFile = removedFiles[0];
+    if (removedFile) {
       announce(
-        t(($) => $.upload.fileRemovedAnnouncement, { fileName: file.name }),
+        t(($) => $.upload.fileRemovedAnnouncement, {
+          count: removedFiles.length,
+          fileName: removedFile.file.name,
+        }),
         'polite',
       );
     }
