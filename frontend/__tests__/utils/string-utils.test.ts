@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { expandTemplate, formatAddress, formatPercent, hasDigits, isAllValidInputCharacters, isEmail, isEmpty, isURL, normalizeHyphens, padWithZero, randomHexString, randomString, removeInvalidInputCharacters } from '~/utils/string-utils';
+import { expandTemplate, formatAddress, formatList, formatPercent, hasDigits, isAllValidInputCharacters, isEmail, isEmpty, isURL, normalizeHyphens, padWithZero, randomHexString, randomString, removeInvalidInputCharacters } from '~/utils/string-utils';
 
 describe('validator wrappers', () => {
   it('validates email addresses', () => {
@@ -145,6 +145,27 @@ describe('formatPercent', () => {
 
   it('should throw an error for invalid Canadian locale', () => {
     expect(() => formatPercent(0, 'xy')).toThrowError();
+  });
+});
+
+describe('formatList', () => {
+  it.each([
+    [[], ''],
+    [['alpha'], 'alpha'],
+    [['alpha', 'beta'], 'alpha and beta'],
+    [['alpha', 'beta', 'gamma'], 'alpha, beta and gamma'],
+  ] as const)('should format %j in English', (values, expected) => {
+    expect(formatList(values, 'en')).toBe(expected);
+  });
+
+  it('should format a list in French', () => {
+    expect(formatList(['alpha', 'beta', 'gamma'] as const, 'fr')).toBe('alpha, beta et gamma');
+  });
+
+  it('should map a readonly list of values to strings', () => {
+    const values = [{ name: 'alpha' }, { name: 'beta' }] as const;
+
+    expect(formatList(values, 'en', ({ name }) => name)).toBe('alpha and beta');
   });
 });
 

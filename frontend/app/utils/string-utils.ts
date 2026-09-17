@@ -129,6 +129,38 @@ export function formatPercent(value: number, locale: string) {
 }
 
 /**
+ * Formats strings as a locale-aware Canadian conjunction list.
+ *
+ * @param values - Readonly strings to format.
+ * @param locale - Language code used to build the Canadian locale, such as `en` or `fr`.
+ * @returns Values joined using locale-specific list punctuation and conjunctions.
+ */
+export function formatList(values: readonly string[], locale: string): string;
+
+/**
+ * Maps values to display text and formats them as a locale-aware Canadian conjunction list.
+ *
+ * @param values - Readonly values to format.
+ * @param locale - Language code used to build the Canadian locale, such as `en` or `fr`.
+ * @param map - Mapper from each value to its display text.
+ * @returns Mapped values joined using locale-specific list punctuation and conjunctions.
+ */
+export function formatList<T>(values: readonly T[], locale: string, map: (value: T) => string): string;
+
+/**
+ * Formats values as a locale-aware Canadian conjunction list, optionally mapping them to display text.
+ *
+ * @param values - Readonly values to format.
+ * @param locale - Language code used to build the Canadian locale, such as `en` or `fr`.
+ * @param map - Optional mapper from each value to its display text.
+ * @returns Mapped values joined using locale-specific list punctuation and conjunctions.
+ */
+export function formatList<T>(values: readonly T[], locale: string, map?: (value: T) => string): string {
+  const formattedValues = map ? values.map(map) : (values as readonly string[]);
+  return new Intl.ListFormat(`${locale}-CA`, { style: 'long', type: 'conjunction' }).format(formattedValues);
+}
+
+/**
  * Extracts only digits from a string by removing all non-digit characters
  * @param input - The input string to process
  * @returns A string containing only digits (0-9)
