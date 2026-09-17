@@ -177,6 +177,7 @@ scripts preload the required OpenTelemetry modules.
 - [Contributing](CONTRIBUTING.md)
 - [React Router documentation](https://reactrouter.com/)
 - [Application routes reference](other/docs/application-routes-reference.md)
+- [React Router middleware](other/docs/middleware.md)
 - [Authentication](other/docs/authentication.md)
 - [Member eligibility](other/docs/member-eligibility-feature.md)
 - [Document upload](other/docs/document-upload-feature.md)
