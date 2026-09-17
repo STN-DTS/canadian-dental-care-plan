@@ -25,6 +25,15 @@ export type FindApplicantBySinRequestDto = Readonly<{
  * Represents a Data Transfer Object (DTO) for an applicant.
  */
 export type ApplicantDto = ReadonlyDeep<{
+  /**
+   * The applicant type returned by Power Platform, when assigned.
+   *
+   * Power Platform assigns this value only after the applicant successfully
+   * completes an application for the first time. It may be undefined until
+   * then.
+   */
+  applicantType?: string;
+
   /** The client ID of the applicant. */
   clientId: string;
 

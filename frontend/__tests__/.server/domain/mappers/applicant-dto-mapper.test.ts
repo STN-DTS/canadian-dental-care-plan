@@ -85,6 +85,7 @@ describe('DefaultApplicantDtoMapper', () => {
     it('should successfully map valid ApplicantResponseEntity to ApplicantDto', () => {
       const result = mapper.mapApplicantResponseEntityToApplicantDto(mockBaseEntity);
       expect(result).toEqual<ApplicantDto>({
+        applicantType: 'SomeCategory',
         clientId: '12345',
         clientNumber: '67890',
         communicationPreferences: {
@@ -119,6 +120,21 @@ describe('DefaultApplicantDtoMapper', () => {
         maritalStatus: 'Single',
         socialInsuranceNumber: '123456789',
       });
+    });
+
+    it('should map an empty ApplicantCategoryCode to an undefined applicantType', () => {
+      const mockEntity: ApplicantResponseEntity = {
+        BenefitApplication: {
+          Applicant: {
+            ...mockBaseEntity.BenefitApplication.Applicant,
+            ApplicantCategoryCode: {},
+          },
+        },
+      };
+
+      const result = mapper.mapApplicantResponseEntityToApplicantDto(mockEntity);
+
+      expect(result.applicantType).toBeUndefined();
     });
 
     it('should throw error when clientId is not found', () => {

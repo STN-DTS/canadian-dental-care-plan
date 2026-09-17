@@ -27,8 +27,15 @@ export type FindApplicantBySinRequestEntity = ReadonlyDeep<{
 export type ApplicantResponseEntity = ReadonlyDeep<{
   BenefitApplication: {
     Applicant: {
+      /**
+       * Interop maps the Power Platform `esdc_applicanttype` field to
+       * `ApplicantCategoryCode.ReferenceDataID`. Power Platform assigns this
+       * value only after the applicant successfully completes an application
+       * for the first time. When the source field is null, Interop may return
+       * an empty `ApplicantCategoryCode` object.
+       */
       ApplicantCategoryCode: {
-        ReferenceDataID: string;
+        ReferenceDataID?: string;
       };
       ClientIdentification: Array<{
         IdentificationID: string;

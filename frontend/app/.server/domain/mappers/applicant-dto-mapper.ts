@@ -88,6 +88,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     }
 
     return {
+      applicantType: applicant.ApplicantCategoryCode.ReferenceDataID,
       clientId: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined'),
       clientNumber: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client Number')?.IdentificationID, 'Expected clientNumber to be defined'),
       dateOfBirth: applicant.PersonBirthDate.date,
