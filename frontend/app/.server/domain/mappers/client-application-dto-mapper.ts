@@ -3,20 +3,20 @@ import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { ApplicantDto, ClientApplicationBasicInfoRequestDto, ClientApplicationDto, ClientApplicationSinRequestDto } from '~/.server/domain/dtos';
+import type { ClientApplicationBasicInfoRequestDto, ClientApplicationDto, ClientApplicationSinRequestDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationEntity, ClientApplicationSinRequestEntity } from '~/.server/domain/entities';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 import { expectDefined } from '~/utils/assert-utils';
 
-interface MapApplicantDtoToClientApplicationDtoArgs {
-  applicantDto: ApplicantDto;
+interface MapProgramApplicantDtoToClientApplicationDtoArgs {
+  programApplicantDto: ProgramApplicantDto;
   applicationYearId: string;
   typeOfApplication: 'adult' | 'children' | 'family';
 }
 export interface ClientApplicationDtoMapper {
-  mapApplicantDtoToClientApplicationDto(args: MapApplicantDtoToClientApplicationDtoArgs): ClientApplicationDto;
+  mapProgramApplicantDtoToClientApplicationDto(args: MapProgramApplicantDtoToClientApplicationDtoArgs): ClientApplicationDto;
   mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): ClientApplicationBasicInfoRequestEntity;
   mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): ClientApplicationSinRequestEntity;
   mapClientApplicationEntityToClientApplicationDto(clientApplicationEntity: ClientApplicationEntity): ClientApplicationDto;
@@ -42,33 +42,33 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
     this.serverConfig = serverConfig;
   }
 
-  mapApplicantDtoToClientApplicationDto(args: MapApplicantDtoToClientApplicationDtoArgs): ClientApplicationDto {
-    const { applicantDto, applicationYearId, typeOfApplication } = args;
+  mapProgramApplicantDtoToClientApplicationDto(args: MapProgramApplicantDtoToClientApplicationDtoArgs): ClientApplicationDto {
+    const { programApplicantDto, applicationYearId, typeOfApplication } = args;
     return {
       applicationYearId,
       applicantInformation: {
-        firstName: applicantDto.firstName,
-        lastName: applicantDto.lastName,
-        maritalStatus: applicantDto.maritalStatus,
-        clientId: applicantDto.clientId,
-        clientNumber: applicantDto.clientNumber,
-        // children may not have SIN provided, but the field is required in ClientApplicantInformationDto for mapping
-        // to ClientApplicationEntity
-        socialInsuranceNumber: applicantDto.socialInsuranceNumber ?? '',
+        firstName: programApplicantDto.firstName,
+        lastName: programApplicantDto.lastName,
+        maritalStatus: programApplicantDto.maritalStatus,
+        clientId: programApplicantDto.clientId,
+        clientNumber: programApplicantDto.clientNumber,
+        // Some program applicants, such as dependants, may not have a SIN, but the field is required in
+        // ClientApplicantInformationDto for mapping to ClientApplicationEntity.
+        socialInsuranceNumber: programApplicantDto.socialInsuranceNumber ?? '',
       },
       communicationPreferences: {
-        preferredLanguage: applicantDto.communicationPreferences.preferredLanguage,
-        preferredMethodSunLife: applicantDto.communicationPreferences.preferredMethodSunLife,
-        preferredMethodGovernmentOfCanada: applicantDto.communicationPreferences.preferredMethodGovernmentOfCanada,
+        preferredLanguage: programApplicantDto.communicationPreferences.preferredLanguage,
+        preferredMethodSunLife: programApplicantDto.communicationPreferences.preferredMethodSunLife,
+        preferredMethodGovernmentOfCanada: programApplicantDto.communicationPreferences.preferredMethodGovernmentOfCanada,
       },
       contactInformation: {
-        homeAddress: applicantDto.contactInformation.homeAddress,
-        mailingAddress: applicantDto.contactInformation.mailingAddress,
-        phoneNumber: applicantDto.contactInformation.phoneNumber,
-        phoneNumberAlt: applicantDto.contactInformation.phoneNumberAlt,
-        email: applicantDto.contactInformation.email,
+        homeAddress: programApplicantDto.contactInformation.homeAddress,
+        mailingAddress: programApplicantDto.contactInformation.mailingAddress,
+        phoneNumber: programApplicantDto.contactInformation.phoneNumber,
+        phoneNumberAlt: programApplicantDto.contactInformation.phoneNumberAlt,
+        email: programApplicantDto.contactInformation.email,
       },
-      dateOfBirth: applicantDto.dateOfBirth,
+      dateOfBirth: programApplicantDto.dateOfBirth,
       typeOfApplication: typeOfApplication,
       children: [],
     };

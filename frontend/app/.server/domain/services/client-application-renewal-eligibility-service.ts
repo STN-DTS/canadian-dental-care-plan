@@ -73,9 +73,9 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       return clientApplicationRenewalEligibilityDto;
     }
 
-    // If no client application is found with the provided basic info and SIN, we check if an
-    // applicant exists with that basic info
-    const applicantOption = await this.applicantService.findApplicantByBasicInfo({
+    // If no client application is found with the provided basic info and SIN, check whether a
+    // program applicant exists with that basic info.
+    const programApplicantOption = await this.applicantService.findProgramApplicantByBasicInfo({
       clientNumber: request.clientNumber,
       dateOfBirth: request.dateOfBirth,
       firstName: request.firstName,
@@ -83,24 +83,24 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       userId: request.userId,
     });
 
-    if (applicantOption.isNone()) {
-      this.log.debug('Applicant is None for provided basic info, returning not found result');
+    if (programApplicantOption.isNone()) {
+      this.log.debug('Program applicant is None for provided basic info, returning not found result');
       return { result: 'INELIGIBLE-APPLICANT-NOT-FOUND' };
     }
 
-    const applicant = applicantOption.unwrap();
+    const programApplicant = programApplicantOption.unwrap();
 
-    if (!applicant.socialInsuranceNumber) {
-      this.log.trace('Applicant found with basic info, but no SIN on file to compare against, skipping SIN check. Basic info: [%j]', request);
-    } else if (sanitizeSin(applicant.socialInsuranceNumber) !== sanitizeSin(request.sin)) {
-      this.log.trace('Applicant found with basic info, but SIN does not match. Basic info: [%j], SIN: [***-***-%s]', request, request.sin.slice(-3));
+    if (!programApplicant.socialInsuranceNumber) {
+      this.log.trace('Program applicant found with basic info, but no SIN on file to compare against, skipping SIN check. Basic info: [%j]', request);
+    } else if (sanitizeSin(programApplicant.socialInsuranceNumber) !== sanitizeSin(request.sin)) {
+      this.log.trace('Program applicant found with basic info, but SIN does not match. Basic info: [%j], SIN: [***-***-%s]', request, request.sin.slice(-3));
       return { result: 'INELIGIBLE-APPLICANT-SIN-MISMATCH' };
     }
 
     const applicationYear = request.applicationYear;
-    this.log.debug('Applicant found for provided basic info and SIN, returning eligibility result based on applicant');
-    this.log.trace('Applicant found for provided basic info and SIN: [%j], applicationYear: [%j]', applicant, applicationYear);
-    return await this.clientApplicationRenewalEligibilityDtoMapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicant, applicationYear);
+    this.log.debug('Program applicant found for provided basic info and SIN, returning eligibility result based on program applicant');
+    this.log.trace('Program applicant found for provided basic info and SIN: [%j], applicationYear: [%j]', programApplicant, applicationYear);
+    return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);
   }
 
   async getClientApplicationRenewalEligibilityBySin(request: ClientApplicationRenewalEligibilitySinRequestDto): Promise<ClientApplicationRenewalEligibilityDto> {
@@ -121,21 +121,21 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       return clientApplicationRenewalEligibilityDto;
     }
 
-    // If no client application is found with the provided SIN, we check if an applicant exists with that SIN
-    const applicantOption = await this.applicantService.findApplicantBySin({
+    // If no client application is found with the provided SIN, we check if a program applicant exists with that SIN
+    const programApplicantOption = await this.applicantService.findProgramApplicantBySin({
       sin: request.sin,
       userId: request.userId,
     });
 
-    if (applicantOption.isNone()) {
-      this.log.debug('Applicant is None for provided SIN, returning not found result');
+    if (programApplicantOption.isNone()) {
+      this.log.debug('Program applicant is None for provided SIN, returning not found result');
       return { result: 'INELIGIBLE-APPLICANT-NOT-FOUND' };
     }
 
     const applicationYear = request.applicationYear;
-    const applicant = applicantOption.unwrap();
-    this.log.debug('Applicant found for provided SIN, returning eligibility result based on applicant');
-    this.log.trace('Applicant found for provided SIN: [%j], applicationYear: [%j]', applicant, applicationYear);
-    return await this.clientApplicationRenewalEligibilityDtoMapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicant, applicationYear);
+    const programApplicant = programApplicantOption.unwrap();
+    this.log.debug('Program applicant found for provided SIN, returning eligibility result based on program applicant');
+    this.log.trace('Program applicant found for provided SIN: [%j], applicationYear: [%j]', programApplicant, applicationYear);
+    return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);
   }
 }

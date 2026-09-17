@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { ApplicantDto, ClientApplicationDto, ClientApplicationRenewalEligibilityDto, ClientEligibilityDto } from '~/.server/domain/dtos';
+import type { ClientApplicationDto, ClientApplicationRenewalEligibilityDto, ClientEligibilityDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ClientApplicationDtoMapper } from '~/.server/domain/mappers/client-application-dto-mapper';
 import type { ClientEligibilityService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
@@ -12,12 +12,12 @@ import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 
 export interface ClientApplicationRenewalEligibilityDtoMapper {
   /**
-   * Maps an applicant DTO to a client application renewal eligibility DTO.
-   * @param applicantDto - The applicant DTO.
+   * Maps a program applicant DTO to a client application renewal eligibility DTO.
+   * @param programApplicantDto - The program applicant DTO.
    * @param applicationYear - The application year object containing `applicationYearId` and `taxYear`.
    * @returns A promise resolving to a `ClientApplicationRenewalEligibilityDto`.
    */
-  mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicantDto: ApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto>;
+  mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto: ProgramApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto>;
 
   /**
    * Maps a client application DTO option to a renewal eligibility DTO.
@@ -49,18 +49,18 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     this.serverConfig = serverConfig;
   }
 
-  async mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicantDto: ApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto> {
-    this.log.trace('Mapping applicant dto to client application renewal eligibility dto: [%j]', applicantDto);
+  async mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto: ProgramApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto> {
+    this.log.trace('Mapping program applicant dto to client application renewal eligibility dto: [%j]', programApplicantDto);
 
-    const isChildOrYouthAtIntake = isChildOrYouth(applicantDto.dateOfBirth, applicationYear);
-    this.log.trace('Applicant age category: [%s], date of birth: [%s]', isChildOrYouthAtIntake ? 'child/youth' : 'adult', applicantDto.dateOfBirth);
+    const isChildOrYouthAtIntake = isChildOrYouth(programApplicantDto.dateOfBirth, applicationYear);
+    this.log.trace('Program applicant age category: [%s], date of birth: [%s]', isChildOrYouthAtIntake ? 'child/youth' : 'adult', programApplicantDto.dateOfBirth);
 
     if (isChildOrYouthAtIntake) {
       this.log.debug('Applicant age is child/youth at intake, returning ineligible result');
       return { result: 'INELIGIBLE-APPLICANT-IS-CHILD-OR-YOUTH-AT-INTAKE' };
     }
 
-    const clientApplicationDto = this.clientApplicationDtoMapper.mapApplicantDtoToClientApplicationDto({ applicantDto, applicationYearId: applicationYear.applicationYearId, typeOfApplication: 'adult' });
+    const clientApplicationDto = this.clientApplicationDtoMapper.mapProgramApplicantDtoToClientApplicationDto({ programApplicantDto: programApplicantDto, applicationYearId: applicationYear.applicationYearId, typeOfApplication: 'adult' });
     return await this.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(clientApplicationDto, applicationYear, 'New');
   }
 

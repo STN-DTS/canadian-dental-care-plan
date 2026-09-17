@@ -2,7 +2,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mock } from 'vitest-mock-extended';
 import type { MockProxy } from 'vitest-mock-extended';
 
-import type { ApplicantDto, ClientApplicationDto, ClientChildDto, ClientEligibilityDto } from '~/.server/domain/dtos';
+import type { ClientApplicationDto, ClientChildDto, ClientEligibilityDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ClientApplicationDtoMapper } from '~/.server/domain/mappers';
 import { DefaultClientApplicationRenewalEligibilityDtoMapper } from '~/.server/domain/mappers/client-application-renewal-eligibility-dto-mapper';
 import type { ClientEligibilityService } from '~/.server/domain/services';
@@ -96,14 +96,15 @@ function makeEligibility(
   };
 }
 
-/** Builds a minimal ApplicantDto with optional overrides. */
-function makeApplicant(overrides: Partial<ApplicantDto> = {}): ApplicantDto {
+/** Builds a minimal ProgramApplicantDto with optional overrides. */
+function makeProgramApplicant(overrides: Partial<ProgramApplicantDto> = {}): ProgramApplicantDto {
   return {
     clientId: 'id-001',
     clientNumber: 'client-001',
     dateOfBirth: '2008-04-15', // turns 18 on 2026-04-15 (the faked clock date)
     firstName: 'John',
     lastName: 'Doe',
+    applicantType: 'individual',
     communicationPreferences: {},
     contactInformation: {
       mailingAddress: {
@@ -128,7 +129,7 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
     vi.useFakeTimers({ now: new Date('2026-04-15') });
 
     mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>({
-      mapApplicantDtoToClientApplicationDto: vi.fn(),
+      mapProgramApplicantDtoToClientApplicationDto: vi.fn(),
     });
 
     mockClientEligibilityService = mock<ClientEligibilityService>({
@@ -145,23 +146,23 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
     vi.clearAllMocks();
   });
 
-  describe('mapApplicantDtoToClientApplicationRenewalEligibilityDto', () => {
+  describe('mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto', () => {
     describe('INELIGIBLE-APPLICANT-IS-CHILD-OR-YOUTH-AT-INTAKE', () => {
       it('returns INELIGIBLE-APPLICANT-IS-CHILD-OR-YOUTH-AT-INTAKE when isChildOrYouth returns true for intake', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(true);
-        const result = await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(makeApplicant(), APPLICATION_YEAR);
+        const result = await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(makeProgramApplicant(), APPLICATION_YEAR);
         expect(result.result).toBe('INELIGIBLE-APPLICANT-IS-CHILD-OR-YOUTH-AT-INTAKE');
       });
 
       it('calls isChildOrYouth with the applicant date of birth and intake context', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(true);
-        await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(makeApplicant({ dateOfBirth: '2010-05-20' }), APPLICATION_YEAR);
+        await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(makeProgramApplicant({ dateOfBirth: '2010-05-20' }), APPLICATION_YEAR);
         expect(isChildOrYouth).toHaveBeenCalledWith('2010-05-20', APPLICATION_YEAR);
       });
 
       it('does not include clientApplication in the result', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(true);
-        const result = await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(makeApplicant(), APPLICATION_YEAR);
+        const result = await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(makeProgramApplicant(), APPLICATION_YEAR);
         assert(result.result === 'INELIGIBLE-APPLICANT-IS-CHILD-OR-YOUTH-AT-INTAKE');
         expect(result.clientApplication).toBeUndefined();
       });
@@ -170,25 +171,25 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
     describe('delegation to mapClientApplicationDtoToClientApplicationRenewalEligibilityDto', () => {
       it('delegates when applicant is not a child or youth at intake and passes the downstream result through', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(false);
-        const applicantDto = makeApplicant();
+        const programApplicantDto = makeProgramApplicant();
         const clientApplicationDto = makeClientApplication();
-        mockClientApplicationDtoMapper.mapApplicantDtoToClientApplicationDto.mockReturnValue(clientApplicationDto);
+        mockClientApplicationDtoMapper.mapProgramApplicantDtoToClientApplicationDto.mockReturnValue(clientApplicationDto);
         mockClientEligibilityService.listClientEligibilitiesByClientNumbers.mockResolvedValue(new Map([['client-001', makeEligibility('client-001')]]));
 
-        const result = await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicantDto, APPLICATION_YEAR);
+        const result = await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto, APPLICATION_YEAR);
 
-        expect(mockClientApplicationDtoMapper.mapApplicantDtoToClientApplicationDto).toHaveBeenCalledWith({ applicantDto, applicationYearId: 'year-2024', typeOfApplication: 'adult' });
+        expect(mockClientApplicationDtoMapper.mapProgramApplicantDtoToClientApplicationDto).toHaveBeenCalledWith({ programApplicantDto, applicationYearId: 'year-2024', typeOfApplication: 'adult' });
         expect(result.result).toBe('ELIGIBLE');
       });
 
-      it('sets applicationCategoryCodeName to New when coming through mapApplicantDtoToClientApplicationRenewalEligibilityDto', async () => {
+      it('sets applicationCategoryCodeName to New when coming through mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(false);
-        const applicantDto = makeApplicant();
+        const programApplicantDto = makeProgramApplicant();
         const clientApplicationDto = makeClientApplication();
-        mockClientApplicationDtoMapper.mapApplicantDtoToClientApplicationDto.mockReturnValue(clientApplicationDto);
+        mockClientApplicationDtoMapper.mapProgramApplicantDtoToClientApplicationDto.mockReturnValue(clientApplicationDto);
         mockClientEligibilityService.listClientEligibilitiesByClientNumbers.mockResolvedValue(new Map([['client-001', makeEligibility('client-001')]]));
 
-        const result = await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicantDto, APPLICATION_YEAR);
+        const result = await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto, APPLICATION_YEAR);
 
         assert(result.result === 'ELIGIBLE');
         expect(result.clientApplication.applicationCategoryCodeName).toBe('New');
@@ -196,11 +197,11 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
 
       it('passes a downstream ineligible result through unchanged', async () => {
         vi.mocked(isChildOrYouth).mockReturnValue(false);
-        const applicantDto = makeApplicant();
-        mockClientApplicationDtoMapper.mapApplicantDtoToClientApplicationDto.mockReturnValue(makeClientApplication());
+        const programApplicantDto = makeProgramApplicant();
+        mockClientApplicationDtoMapper.mapProgramApplicantDtoToClientApplicationDto.mockReturnValue(makeClientApplication());
         mockClientEligibilityService.listClientEligibilitiesByClientNumbers.mockResolvedValue(new Map([['client-001', makeEligibility('client-001', { enrollmentStatusCode: 'not-enrolled' })]]));
 
-        const result = await mapper.mapApplicantDtoToClientApplicationRenewalEligibilityDto(applicantDto, APPLICATION_YEAR);
+        const result = await mapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto, APPLICATION_YEAR);
 
         expect(result.result).toBe('INELIGIBLE-NOT-ENROLLED');
       });

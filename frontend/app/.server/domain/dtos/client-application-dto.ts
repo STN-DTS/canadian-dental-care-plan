@@ -44,7 +44,7 @@ export type ClientApplicantInformationDto = Readonly<{
    */
   maritalStatus?: string;
   /**
-   * The client’s Social Insurance Number (SIN). This may be empty if the data is mapped from an ApplicantDto,
+   * The client’s Social Insurance Number (SIN). This may be empty if the data is mapped from a ProgramApplicantDto,
    * where the SIN is optional, particularly for some dependent applicants who are not required to provide a SIN.
    */
   socialInsuranceNumber: string;
