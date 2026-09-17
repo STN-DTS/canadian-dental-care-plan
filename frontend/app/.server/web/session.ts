@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import type { Option } from 'oxide.ts';
 import { None, Some } from 'oxide.ts';
 
-import type { ApplicantDto, LetterDto } from '~/.server/domain/dtos';
+import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
@@ -28,14 +28,13 @@ type SessionTypeMap = {
 } & {
   [K in DocumentUploadStateSessionKey]: DocumentUploadState;
 } & {
+  applicant: ApplicantDto;
   authCodeVerifier: string;
   authReturnUrl: string;
   authState: string;
-  applicant: ApplicantDto;
   idToken: IdToken;
   lastAccessTime: string;
   letters: ReadonlyArray<LetterDto>;
-  userInfoToken: UserinfoToken;
   profileEmailAddressFlowState: {
     emailAddress: string;
     verificationCode: string;
@@ -54,6 +53,8 @@ type SessionTypeMap = {
         preferredMethodGovernmentOfCanada: string;
       }
   );
+  programApplicant: ProgramApplicantDto;
+  userInfoToken: UserinfoToken;
 };
 
 /**

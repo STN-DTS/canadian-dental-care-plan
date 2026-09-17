@@ -367,6 +367,12 @@ export class DefaultSecurityHandler implements SecurityHandler {
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
 
+    if (session.has('programApplicant')) {
+      const programApplicant = session.get('programApplicant');
+      this.log.debug('Program applicant found in session [%s]', session.id);
+      return programApplicant;
+    }
+
     const programApplicantOption = await this.applicantService.findProgramApplicantBySin({
       sin: userInfoToken.sin,
       userId: userInfoToken.sub,
@@ -379,7 +385,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     const programApplicant = programApplicantOption.unwrap();
 
-    session.set('applicant', programApplicant);
+    session.set('programApplicant', programApplicant);
 
     this.log.debug('Program applicant found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
     return programApplicant;

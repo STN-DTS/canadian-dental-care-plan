@@ -340,6 +340,7 @@ describe('DefaultSecurityHandler', () => {
     it('should return an applicant with an assigned type', async () => {
       const session = mock<Session>();
       session.id = 'session-id';
+      session.has.calledWith('programApplicant').mockReturnValue(false);
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
@@ -353,7 +354,26 @@ describe('DefaultSecurityHandler', () => {
 
       expect(result).toBe(programApplicant);
       expect(mockApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
-      expect(session.set).toHaveBeenCalledWith('applicant', programApplicant);
+      expect(session.set).toHaveBeenCalledWith('programApplicant', programApplicant);
+    });
+
+    it('should return a program applicant from the session', async () => {
+      const session = mock<Session>();
+      session.id = 'session-id';
+      session.has.calledWith('programApplicant').mockReturnValue(true);
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
+      session.get.calledWith('programApplicant').mockReturnValue(programApplicant);
+
+      const result = await securityHandler.requireProgramApplicant({
+        requestUrl: new URL('https://localhost:3000/en/protected/application'),
+        params: { lang: 'en' },
+        session,
+      });
+
+      expect(result).toBe(programApplicant);
+      expect(mockApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
     });
 
     it('should redirect when no program applicant is found', async () => {
