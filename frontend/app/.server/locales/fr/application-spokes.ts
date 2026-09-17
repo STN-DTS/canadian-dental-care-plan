@@ -175,7 +175,7 @@ const ns = {
   },
   dentalInsurance: {
     title: "Accès à une assurance ou à une couverture dentaire privée",
-    legend: "Avez-vous accès à une assurance ou à une couverture dentaire privée par l'un des moyens suivants\u00A0:",
+    legend: "Avez-vous accès à une assurance ou à une couverture dentaire privée\u00A0?",
     optionYes: "<strong>Oui</strong>, j'ai accès à une assurance ou à une couverture dentaire privée",
     optionNo: "<strong>Non</strong>, je n'ai pas accès à une assurance ou à une couverture dentaire privée",
     backBtn: "Retour",
