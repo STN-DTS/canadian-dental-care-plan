@@ -373,69 +373,75 @@ export const routes = [
         ],
       },
       {
-        id: 'protected/profile/eligibility',
-        file: 'routes/protected/profile/eligibility.tsx',
-        paths: { en: '/:lang/protected/profile/eligibility', fr: '/:lang/protege/profil/admissibilite' },
-      },
-      {
-        id: 'protected/profile/applicant-information',
-        file: 'routes/protected/profile/applicant-information.tsx',
-        paths: { en: '/:lang/protected/profile/applicant', fr: '/:lang/protege/profil/demandeur' },
-      },
-      {
-        id: 'protected/profile/dental-benefits',
-        file: 'routes/protected/profile/dental-benefits.tsx',
-        paths: { en: '/:lang/protected/profile/dental-benefits', fr: '/:lang/protege/profil/prestations-dentaires' },
-      },
-      {
-        id: 'protected/profile/dental-benefits/edit',
-        file: 'routes/protected/profile/edit-dental-benefits.tsx',
-        paths: { en: '/:lang/protected/profile/dental-benefits/edit', fr: '/:lang/protege/profil/prestations-dentaires/modifier' },
-      },
-      {
-        id: 'protected/profile/dental-benefits/:childId/edit',
-        file: 'routes/protected/profile/edit-child-dental-benefits.tsx',
-        paths: { en: '/:lang/protected/profile/dental-benefits/:childId/edit', fr: '/:lang/protege/profil/prestations-dentaires/:childId/modifier' },
-      },
-      {
-        id: 'protected/profile/communication-preferences',
-        file: 'routes/protected/profile/communication-preferences.tsx',
-        paths: { en: '/:lang/protected/profile/communication-preferences', fr: '/:lang/protege/profil/preferences-communication' },
-      },
-      {
-        id: 'protected/profile/communication-preferences/edit',
-        file: 'routes/protected/profile/edit-communication-preferences.tsx',
-        paths: { en: '/:lang/protected/profile/communication-preferences/edit', fr: '/:lang/protege/profil/preferences-communication/modifier' },
-      },
-      {
-        id: 'protected/profile/contact/phone',
-        file: 'routes/protected/profile/phone-number.tsx',
-        paths: { en: '/:lang/protected/profile/contact/phone', fr: '/:lang/protege/profil/coordonnees/telephone' },
-      },
-      {
-        id: 'protected/profile/contact-information',
-        file: 'routes/protected/profile/contact-information.tsx',
-        paths: { en: '/:lang/protected/profile/contact', fr: '/:lang/protege/profil/coordonnees' },
-      },
-      {
-        id: 'protected/profile/contact/email-address',
-        file: 'routes/protected/profile/email.tsx',
-        paths: { en: '/:lang/protected/profile/contact/email-address', fr: '/:lang/protege/profil/coordonnees/adresse-courriel' },
-      },
-      {
-        id: 'protected/profile/contact/email-address/verify',
-        file: 'routes/protected/profile/verify-email.tsx',
-        paths: { en: '/:lang/protected/profile/contact/email-address/verify', fr: '/:lang/protege/profil/coordonnees/adresse-courriel/verifier' },
-      },
-      {
-        id: 'protected/profile/contact/mailing-address',
-        file: 'routes/protected/profile/mailing-address.tsx',
-        paths: { en: '/:lang/protected/profile/contact/mailing-address', fr: '/:lang/protege/profil/coordonnees/adresse-postale' },
-      },
-      {
-        id: 'protected/profile/contact/home-address',
-        file: 'routes/protected/profile/home-address.tsx',
-        paths: { en: '/:lang/protected/profile/contact/home-address', fr: '/:lang/protege/profil/coordonnees/adresse-domicile' },
+        id: 'protected/profile/layout',
+        file: 'routes/protected/profile/layout.tsx',
+        children: [
+          {
+            id: 'protected/profile/eligibility',
+            file: 'routes/protected/profile/eligibility.tsx',
+            paths: { en: '/:lang/protected/profile/eligibility', fr: '/:lang/protege/profil/admissibilite' },
+          },
+          {
+            id: 'protected/profile/applicant-information',
+            file: 'routes/protected/profile/applicant-information.tsx',
+            paths: { en: '/:lang/protected/profile/applicant', fr: '/:lang/protege/profil/demandeur' },
+          },
+          {
+            id: 'protected/profile/dental-benefits',
+            file: 'routes/protected/profile/dental-benefits.tsx',
+            paths: { en: '/:lang/protected/profile/dental-benefits', fr: '/:lang/protege/profil/prestations-dentaires' },
+          },
+          {
+            id: 'protected/profile/dental-benefits/edit',
+            file: 'routes/protected/profile/edit-dental-benefits.tsx',
+            paths: { en: '/:lang/protected/profile/dental-benefits/edit', fr: '/:lang/protege/profil/prestations-dentaires/modifier' },
+          },
+          {
+            id: 'protected/profile/dental-benefits/:childId/edit',
+            file: 'routes/protected/profile/edit-child-dental-benefits.tsx',
+            paths: { en: '/:lang/protected/profile/dental-benefits/:childId/edit', fr: '/:lang/protege/profil/prestations-dentaires/:childId/modifier' },
+          },
+          {
+            id: 'protected/profile/communication-preferences',
+            file: 'routes/protected/profile/communication-preferences.tsx',
+            paths: { en: '/:lang/protected/profile/communication-preferences', fr: '/:lang/protege/profil/preferences-communication' },
+          },
+          {
+            id: 'protected/profile/communication-preferences/edit',
+            file: 'routes/protected/profile/edit-communication-preferences.tsx',
+            paths: { en: '/:lang/protected/profile/communication-preferences/edit', fr: '/:lang/protege/profil/preferences-communication/modifier' },
+          },
+          {
+            id: 'protected/profile/contact/phone',
+            file: 'routes/protected/profile/phone-number.tsx',
+            paths: { en: '/:lang/protected/profile/contact/phone', fr: '/:lang/protege/profil/coordonnees/telephone' },
+          },
+          {
+            id: 'protected/profile/contact-information',
+            file: 'routes/protected/profile/contact-information.tsx',
+            paths: { en: '/:lang/protected/profile/contact', fr: '/:lang/protege/profil/coordonnees' },
+          },
+          {
+            id: 'protected/profile/contact/email-address',
+            file: 'routes/protected/profile/email.tsx',
+            paths: { en: '/:lang/protected/profile/contact/email-address', fr: '/:lang/protege/profil/coordonnees/adresse-courriel' },
+          },
+          {
+            id: 'protected/profile/contact/email-address/verify',
+            file: 'routes/protected/profile/verify-email.tsx',
+            paths: { en: '/:lang/protected/profile/contact/email-address/verify', fr: '/:lang/protege/profil/coordonnees/adresse-courriel/verifier' },
+          },
+          {
+            id: 'protected/profile/contact/mailing-address',
+            file: 'routes/protected/profile/mailing-address.tsx',
+            paths: { en: '/:lang/protected/profile/contact/mailing-address', fr: '/:lang/protege/profil/coordonnees/adresse-postale' },
+          },
+          {
+            id: 'protected/profile/contact/home-address',
+            file: 'routes/protected/profile/home-address.tsx',
+            paths: { en: '/:lang/protected/profile/contact/home-address', fr: '/:lang/protege/profil/coordonnees/adresse-domicile' },
+          },
+        ],
       },
     ],
   },
