@@ -2,20 +2,21 @@
   "folders": [
     {
       "name": "Frontend",
-      "path": "frontend"
+      "path": "frontend",
     },
     {
       "name": "GitOps",
-      "path": "gitops"
+      "path": "gitops",
     },
     {
       "name": "Infrastructure",
-      "path": "infrastructure"
-    }
+      "path": "infrastructure",
+    },
   ],
   "settings": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "files.trimTrailingWhitespace": true,
     "tailwindCSS.classFunctions": ["clsx", "cn", "cva"],
-    "tailwindCSS.experimental.configFile": "frontend/app/tailwind.css"
-  }
+    "tailwindCSS.experimental.configFile": "frontend/app/tailwind.css",
+  },
 }
