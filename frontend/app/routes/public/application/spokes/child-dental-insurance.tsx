@@ -198,13 +198,13 @@ export default function AccessToDentalInsuranceQuestion({ loaderData, params }: 
                 })}
                 options={[
                   {
-                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} />,
+                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionYes} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.yes,
                     defaultChecked: defaultState?.hasDentalInsurance === true,
                     onChange: handleOnHasDentalInsuranceChanged,
                   },
                   {
-                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} />,
+                    children: <Trans ns="applicationSpokes" i18nKey={($) => $.children.dentalInsurance.optionNo} values={{ childName }} />,
                     value: HAS_DENTAL_INSURANCE_OPTION.no,
                     defaultChecked: defaultState?.hasDentalInsurance === false,
                     onChange: handleOnHasDentalInsuranceChanged,

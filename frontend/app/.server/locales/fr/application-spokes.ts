@@ -542,8 +542,8 @@ const ns = {
     dentalInsurance: {
       title: "Accès à une assurance ou à une couverture dentaire privée pour {{childName}}",
       legend: "{{childName}} a-t-il ou a-t-elle accès à une assurance ou à une couverture dentaire privée par l'un des moyens suivants\u00A0:",
-      optionYes: "<strong>Oui</strong>, cet enfant a accès à une assurance ou à une couverture dentaire privée",
-      optionNo: "<strong>Non</strong>, cet enfant n'a pas accès à une assurance ou à une couverture dentaire privée",
+      optionYes: "<strong>Oui</strong>, {{childName}} a accès à une assurance ou à une couverture dentaire privée",
+      optionNo: "<strong>Non</strong>, {{childName}} n'a pas accès à une assurance ou à une couverture dentaire privée",
       dentalInsuranceEligibilityConfirmation: "Je comprends que {{childName}} n'est pas admissible au Régime canadien de soins dentaires s'il ou elle a accès à une assurance ou à une couverture dentaire.",
       backBtn: "Retour",
       saveBtn: "Sauvegarder",
