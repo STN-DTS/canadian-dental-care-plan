@@ -1,38 +1,38 @@
 import { injectable } from 'inversify';
 
-import type { ApplicantDto, FindApplicantByBasicInfoDto, FindApplicantBySinRequestDto } from '~/.server/domain/dtos';
+import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinRequestDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, FindApplicantBySinRequestEntity } from '~/.server/domain/entities';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { expectDefined } from '~/utils/assert-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
-/** Maps applicant lookup DTOs and repository responses between domain layers. */
-export interface ApplicantDtoMapper {
+/** Maps program applicant lookup DTOs and repository responses between domain layers. */
+export interface ProgramApplicantDtoMapper {
   /** Maps basic identity details to an applicant repository request. */
-  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity;
+  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindProgramApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity;
 
   /** Maps and sanitizes a SIN lookup to an applicant repository request. */
-  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity;
+  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindProgramApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity;
 
   /**
-   * Maps an applicant response while omitting incomplete optional addresses.
+   * Maps a repository response to the strict program applicant contract.
    *
-   * @throws When required client identifiers or name fields are missing.
+   * @throws When the applicant type, mailing address, client identifiers, or name fields are missing.
    */
-  mapApplicantResponseEntityToApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ApplicantDto;
+  mapApplicantResponseEntityToProgramApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ProgramApplicantDto;
 }
 
-/** Default mapper for applicant lookup requests and responses. */
+/** Default mapper for program applicant lookup requests and responses. */
 @injectable()
-export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
+export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapper {
   private readonly log: Logger;
 
   constructor() {
-    this.log = createLogger('DefaultApplicantDtoMapper');
+    this.log = createLogger('DefaultProgramApplicantDtoMapper');
   }
 
-  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
+  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindProgramApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
     return {
       Applicant: {
         PersonName: {
@@ -52,7 +52,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     };
   }
 
-  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
+  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindProgramApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
     return {
       Applicant: {
         PersonSINIdentification: {
@@ -62,15 +62,13 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     };
   }
 
-  mapApplicantResponseEntityToApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ApplicantDto {
+  mapApplicantResponseEntityToProgramApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ProgramApplicantDto {
     const applicant = applicantResponseEntity.BenefitApplication.Applicant;
     const clientId = expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined');
     const personContactInformation = applicant.PersonContactInformation[0];
     const primaryPhone = personContactInformation?.TelephoneNumber.find((phone) => phone.TelephoneNumberCategoryCode.ReferenceDataName === 'Primary');
     const alternatePhone = personContactInformation?.TelephoneNumber.find((phone) => phone.TelephoneNumberCategoryCode.ReferenceDataName === 'Alternate');
     const emailAddress = personContactInformation?.EmailAddress[0];
-
-    // Include an address only when every required normalized field is available.
     const homeAddress = personContactInformation?.Address.find((address) => address.AddressCategoryCode.ReferenceDataName === 'Home');
     const isHomeAddressDefined = homeAddress !== undefined && !!homeAddress.AddressStreet.StreetName && !!homeAddress.AddressCityName && !!homeAddress.AddressCountry.CountryCode.ReferenceDataID;
 
@@ -79,16 +77,16 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     }
 
     const mailingAddress = personContactInformation?.Address.find((address) => address.AddressCategoryCode.ReferenceDataName === 'Mailing');
-
     const isMailingAddressDefined = mailingAddress !== undefined && !!mailingAddress.AddressStreet.StreetName && !!mailingAddress.AddressCityName && !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isMailingAddressDefined) {
-      this.log.warn('Mailing address for client %s is missing required fields. Mailing address will be omitted from the response.', clientId);
+      this.log.error('Mailing address for client %s is missing required fields and is required for this operation.', clientId);
+      throw new Error(`Mailing address for client ${clientId} is missing required fields`);
     }
 
     return {
-      applicantType: applicant.ApplicantCategoryCode.ReferenceDataID,
-      clientId: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined'),
+      applicantType: expectDefined(applicant.ApplicantCategoryCode.ReferenceDataID, 'Expected applicant.ApplicantCategoryCode.ReferenceDataID to be defined'),
+      clientId,
       clientNumber: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client Number')?.IdentificationID, 'Expected clientNumber to be defined'),
       dateOfBirth: applicant.PersonBirthDate.date,
       firstName: expectDefined(applicant.PersonName[0]?.PersonGivenName[0], 'Expected applicant.PersonName[0].PersonGivenName[0] to be defined'),
@@ -106,16 +104,14 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
               province: homeAddress.AddressProvince.ProvinceCode.ReferenceDataID,
             }
           : undefined,
-        mailingAddress: isMailingAddressDefined
-          ? {
-              address: mailingAddress.AddressStreet.StreetName,
-              apartment: mailingAddress.AddressSecondaryUnitText,
-              city: mailingAddress.AddressCityName,
-              country: mailingAddress.AddressCountry.CountryCode.ReferenceDataID,
-              postalCode: mailingAddress.AddressPostalCode,
-              province: mailingAddress.AddressProvince.ProvinceCode.ReferenceDataID,
-            }
-          : undefined,
+        mailingAddress: {
+          address: mailingAddress.AddressStreet.StreetName,
+          apartment: mailingAddress.AddressSecondaryUnitText,
+          city: mailingAddress.AddressCityName,
+          country: mailingAddress.AddressCountry.CountryCode.ReferenceDataID,
+          postalCode: mailingAddress.AddressPostalCode,
+          province: mailingAddress.AddressProvince.ProvinceCode.ReferenceDataID,
+        },
         phoneNumber: primaryPhone?.FullTelephoneNumber?.TelephoneNumberFullID,
         phoneNumberAlt: alternatePhone?.FullTelephoneNumber?.TelephoneNumberFullID,
         email: emailAddress?.EmailAddressID,

@@ -32,6 +32,7 @@ import {
   DefaultLetterTypeService,
   DefaultMaritalStatusService,
   DefaultProfileService,
+  DefaultProgramApplicantService,
   DefaultProvinceTerritoryStateService,
   DefaultProvincialGovernmentInsurancePlanService,
   DefaultSunLifeCommunicationMethodService,
@@ -92,6 +93,7 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.LetterTypeService).to(DefaultLetterTypeService);
     options.bind(TYPES.MaritalStatusService).to(DefaultMaritalStatusService);
     options.bind(TYPES.ProfileService).to(DefaultProfileService);
+    options.bind(TYPES.ProgramApplicantService).to(DefaultProgramApplicantService);
     options.bind(TYPES.ProvinceTerritoryStateService).to(DefaultProvinceTerritoryStateService);
     options.bind(TYPES.ProvincialGovernmentInsurancePlanService).to(DefaultProvincialGovernmentInsurancePlanService);
     options.bind(TYPES.RaoidcService).to(DefaultRaoidcService);

@@ -23,6 +23,7 @@ export * from './letter-type-service';
 export * from './letter-service';
 export * from './marital-status-service';
 export * from './profile-service';
+export * from './program-applicant-service';
 export * from './province-territory-state-service';
 export * from './provincial-government-insurance-plan-service';
 export * from './sun-life-communication-method-service';

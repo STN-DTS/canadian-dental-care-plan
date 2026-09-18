@@ -137,6 +137,73 @@ describe('DefaultApplicantDtoMapper', () => {
       expect(result.applicantType).toBeUndefined();
     });
 
+    it('should map an uncategorized applicant with sparse contact information', () => {
+      const sparseEntity: ApplicantResponseEntity = {
+        BenefitApplication: {
+          Applicant: {
+            ApplicantCategoryCode: {},
+            ClientIdentification: [
+              { IdentificationID: 'b2060828-c6a7-f111-aaad-7c1e5240aa47', IdentificationCategoryText: 'Client ID' },
+              { IdentificationID: '22014908272', IdentificationCategoryText: 'Client Number' },
+            ],
+            PersonBirthDate: { date: '1982-02-18' },
+            PersonContactInformation: [
+              {
+                Address: [
+                  {
+                    AddressCategoryCode: { ReferenceDataName: 'Mailing' },
+                    AddressCountry: { CountryCode: {} },
+                    AddressProvince: { ProvinceCode: {} },
+                    AddressStreet: {},
+                  },
+                  {
+                    AddressCategoryCode: { ReferenceDataName: 'Home' },
+                    AddressCountry: { CountryCode: {} },
+                    AddressProvince: { ProvinceCode: {} },
+                    AddressStreet: {},
+                  },
+                ],
+                EmailAddress: [],
+                TelephoneNumber: [
+                  { FullTelephoneNumber: {}, TelephoneNumberCategoryCode: { ReferenceDataName: 'Primary' } },
+                  { FullTelephoneNumber: {}, TelephoneNumberCategoryCode: { ReferenceDataName: 'Alternate' } },
+                ],
+              },
+            ],
+            PersonLanguage: [],
+            PersonMaritalStatus: { StatusCode: {} },
+            PersonName: [{ PersonGivenName: ['RYAN'], PersonSurName: 'COREY' }],
+            PersonSINIdentification: { IdentificationID: '794459701' },
+            PreferredMethodCommunicationCode: {},
+            PreferredMethodCommunicationGCCode: {},
+          },
+        },
+      };
+
+      expect(mapper.mapApplicantResponseEntityToApplicantDto(sparseEntity)).toEqual<ApplicantDto>({
+        applicantType: undefined,
+        clientId: 'b2060828-c6a7-f111-aaad-7c1e5240aa47',
+        clientNumber: '22014908272',
+        communicationPreferences: {
+          preferredLanguage: undefined,
+          preferredMethodGovernmentOfCanada: undefined,
+          preferredMethodSunLife: undefined,
+        },
+        contactInformation: {
+          email: undefined,
+          homeAddress: undefined,
+          mailingAddress: undefined,
+          phoneNumber: undefined,
+          phoneNumberAlt: undefined,
+        },
+        dateOfBirth: '1982-02-18',
+        firstName: 'RYAN',
+        lastName: 'COREY',
+        maritalStatus: undefined,
+        socialInsuranceNumber: '794459701',
+      });
+    });
+
     it('should throw error when clientId is not found', () => {
       const mockEntity: ApplicantResponseEntity = {
         BenefitApplication: {

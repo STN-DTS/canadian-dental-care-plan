@@ -59,44 +59,12 @@ describe('DefaultApplicantService', () => {
     applicantRepository.findApplicantBySin.mockResolvedValue(Some(applicantResponseEntity));
   });
 
-  it('returns a program applicant found by basic info', async () => {
-    applicantDtoMapper.mapApplicantResponseEntityToApplicantDto.mockReturnValue(applicantDto);
-
-    const result = await service.findProgramApplicantByBasicInfo(basicInfoRequest);
-
-    expect(result.unwrap().applicantType).toBe('775170000');
-  });
-
-  it('rejects an unclassified applicant found by basic info', async () => {
-    applicantDtoMapper.mapApplicantResponseEntityToApplicantDto.mockReturnValue({ ...applicantDto, applicantType: undefined });
-
-    const result = await service.findProgramApplicantByBasicInfo(basicInfoRequest);
-
-    expect(result.isNone()).toBe(true);
-  });
-
   it('returns an unclassified applicant from the applicant basic-info lookup', async () => {
     applicantDtoMapper.mapApplicantResponseEntityToApplicantDto.mockReturnValue({ ...applicantDto, applicantType: undefined });
 
     const result = await service.findApplicantByBasicInfo(basicInfoRequest);
 
     expect(result.unwrap().applicantType).toBeUndefined();
-  });
-
-  it('returns a program applicant found by SIN', async () => {
-    applicantDtoMapper.mapApplicantResponseEntityToApplicantDto.mockReturnValue(applicantDto);
-
-    const result = await service.findProgramApplicantBySin(sinRequest);
-
-    expect(result.unwrap().applicantType).toBe('775170000');
-  });
-
-  it('rejects an unclassified applicant found by SIN', async () => {
-    applicantDtoMapper.mapApplicantResponseEntityToApplicantDto.mockReturnValue({ ...applicantDto, applicantType: undefined });
-
-    const result = await service.findProgramApplicantBySin(sinRequest);
-
-    expect(result.isNone()).toBe(true);
   });
 
   it('returns an unclassified applicant from the applicant SIN lookup', async () => {
@@ -108,14 +76,12 @@ describe('DefaultApplicantService', () => {
     expect(auditService.createAudit).toHaveBeenCalledWith('applicant.personal-information.get', { userId: 'user-id' });
   });
 
-  it('preserves a missing repository result for broad and strict SIN lookups', async () => {
+  it('preserves a missing repository result for a SIN lookup', async () => {
     applicantRepository.findApplicantBySin.mockResolvedValue(None);
 
-    const broadResult = await service.findApplicantBySin(sinRequest);
-    const strictResult = await service.findProgramApplicantBySin(sinRequest);
+    const result = await service.findApplicantBySin(sinRequest);
 
-    expect(broadResult.isNone()).toBe(true);
-    expect(strictResult.isNone()).toBe(true);
+    expect(result.isNone()).toBe(true);
     expect(applicantDtoMapper.mapApplicantResponseEntityToApplicantDto).not.toHaveBeenCalled();
   });
 });

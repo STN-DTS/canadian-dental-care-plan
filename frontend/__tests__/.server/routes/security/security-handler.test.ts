@@ -4,7 +4,7 @@ import type { MockProxy } from 'vitest-mock-extended';
 import { anyArray, anyObject, mock } from 'vitest-mock-extended';
 
 import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/.server/domain/dtos';
-import type { ApplicantService, ClientApplicationService, ClientEligibilityService } from '~/.server/domain/services';
+import type { ApplicantService, ClientApplicationService, ClientEligibilityService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { DefaultSecurityHandler } from '~/.server/routes/security';
@@ -23,6 +23,7 @@ describe('DefaultSecurityHandler', () => {
   let mockRaoidcSessionValidator: MockProxy<RaoidcSessionValidator>;
   let mockClientApplicationService: MockProxy<ClientApplicationService>;
   let mockApplicantService: MockProxy<ApplicantService>;
+  let mockProgramApplicantService: MockProxy<ProgramApplicantService>;
   let mockClientEligibilityService: MockProxy<ClientEligibilityService>;
   let securityHandler: DefaultSecurityHandler;
 
@@ -34,6 +35,7 @@ describe('DefaultSecurityHandler', () => {
     mockRaoidcSessionValidator = mock<RaoidcSessionValidator>();
     mockClientApplicationService = mock<ClientApplicationService>();
     mockApplicantService = mock<ApplicantService>();
+    mockProgramApplicantService = mock<ProgramApplicantService>();
     mockClientEligibilityService = mock<ClientEligibilityService>();
 
     // Creating an instance of DefaultSecurityHandler with the mocked dependencies
@@ -43,6 +45,7 @@ describe('DefaultSecurityHandler', () => {
       mockRaoidcSessionValidator,
       mockClientApplicationService,
       mockApplicantService,
+      mockProgramApplicantService,
       mockClientEligibilityService,
     );
   });
@@ -95,6 +98,7 @@ describe('DefaultSecurityHandler', () => {
         mockRaoidcSessionValidator,
         mockClientApplicationService,
         mockApplicantService,
+        mockProgramApplicantService,
         mockClientEligibilityService,
       );
 
@@ -116,6 +120,7 @@ describe('DefaultSecurityHandler', () => {
         mockRaoidcSessionValidator,
         mockClientApplicationService,
         mockApplicantService,
+        mockProgramApplicantService,
         mockClientEligibilityService,
       );
 
@@ -155,6 +160,7 @@ describe('DefaultSecurityHandler', () => {
         mockRaoidcSessionValidator,
         mockClientApplicationService,
         mockApplicantService,
+        mockProgramApplicantService,
         mockClientEligibilityService,
       );
 
@@ -331,7 +337,7 @@ describe('DefaultSecurityHandler', () => {
 
       expect(result).toBe(applicant);
       expect(mockApplicantService.findApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
-      expect(mockApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
+      expect(mockProgramApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
       expect(mockSession.set).toHaveBeenCalledWith('applicant', applicant);
     });
   });
@@ -344,7 +350,7 @@ describe('DefaultSecurityHandler', () => {
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
-      mockApplicantService.findProgramApplicantBySin.mockResolvedValue(Some(programApplicant));
+      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(Some(programApplicant));
 
       const result = await securityHandler.requireProgramApplicant({
         requestUrl: new URL('https://localhost:3000/en/protected/application'),
@@ -353,7 +359,7 @@ describe('DefaultSecurityHandler', () => {
       });
 
       expect(result).toBe(programApplicant);
-      expect(mockApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
       expect(session.set).toHaveBeenCalledWith('programApplicant', programApplicant);
     });
 
@@ -373,7 +379,7 @@ describe('DefaultSecurityHandler', () => {
       });
 
       expect(result).toBe(programApplicant);
-      expect(mockApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
+      expect(mockProgramApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
     });
 
     it('should redirect when no program applicant is found', async () => {
@@ -381,7 +387,7 @@ describe('DefaultSecurityHandler', () => {
       session.id = 'session-id';
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
-      mockApplicantService.findProgramApplicantBySin.mockResolvedValue(None);
+      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(None);
 
       const error = await securityHandler
         .requireProgramApplicant({
@@ -394,7 +400,7 @@ describe('DefaultSecurityHandler', () => {
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
       expect((error as Response).headers.get('Location')).toBe('/en/protected/data-unavailable');
-      expect(mockApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
     });
   });
 

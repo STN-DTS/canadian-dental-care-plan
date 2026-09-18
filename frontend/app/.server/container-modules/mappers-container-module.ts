@@ -25,6 +25,7 @@ import {
   DefaultLetterTypeDtoMapper,
   DefaultMaritalStatusDtoMapper,
   DefaultProfileDtoMapper,
+  DefaultProgramApplicantDtoMapper,
   DefaultProvinceTerritoryStateDtoMapper,
   DefaultProvincialGovernmentInsurancePlanDtoMapper,
   DefaultSunLifeCommunicationMethodDtoMapper,
@@ -64,6 +65,7 @@ export function createMappersContainerModule(): ContainerModule {
     options.bind(TYPES.LetterDtoMapper).to(DefaultLetterDtoMapper);
     options.bind(TYPES.LetterTypeDtoMapper).to(DefaultLetterTypeDtoMapper);
     options.bind(TYPES.ProfileDtoMapper).to(DefaultProfileDtoMapper);
+    options.bind(TYPES.ProgramApplicantDtoMapper).to(DefaultProgramApplicantDtoMapper);
     options.bind(TYPES.ProvinceTerritoryStateDtoMapper).to(DefaultProvinceTerritoryStateDtoMapper);
     options.bind(TYPES.ProvincialGovernmentInsurancePlanDtoMapper).to(DefaultProvincialGovernmentInsurancePlanDtoMapper);
     options.bind(TYPES.SunLifeCommunicationMethodDtoMapper).to(DefaultSunLifeCommunicationMethodDtoMapper);

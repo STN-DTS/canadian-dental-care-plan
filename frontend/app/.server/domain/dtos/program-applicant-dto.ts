@@ -1,7 +1,7 @@
 import type { ReadonlyDeep } from 'type-fest';
 
-/** Information used to find an applicant by client number and identity details. */
-export type FindApplicantByBasicInfoDto = Readonly<{
+/** Information used to find a program applicant by client number and identity details. */
+export type FindProgramApplicantByBasicInfoDto = Readonly<{
   /** Applicant's client number. */
   clientNumber: string;
 
@@ -18,8 +18,8 @@ export type FindApplicantByBasicInfoDto = Readonly<{
   userId: string;
 }>;
 
-/** Information used to find an applicant by Social Insurance Number (SIN). */
-export type FindApplicantBySinRequestDto = Readonly<{
+/** Information used to find a program applicant by Social Insurance Number (SIN). */
+export type FindProgramApplicantBySinRequestDto = Readonly<{
   /** Applicant's SIN. */
   sin: string;
 
@@ -28,19 +28,13 @@ export type FindApplicantBySinRequestDto = Readonly<{
 }>;
 
 /**
- * Applicant record that may represent someone who has not yet completed a
- * program application. Program-assigned and incomplete contact fields may be
- * absent.
+ * Applicant recognized as a program participant. Unlike `ApplicantDto`, this
+ * contract requires both a program-assigned applicant type and a complete
+ * mailing address.
  */
-export type ApplicantDto = ReadonlyDeep<{
-  /**
-   * The applicant type returned by Power Platform, when assigned.
-   *
-   * Power Platform assigns this value only after the applicant successfully
-   * completes an application for the first time. It may be undefined until
-   * then.
-   */
-  applicantType?: string;
+export type ProgramApplicantDto = ReadonlyDeep<{
+  /** Program-assigned applicant type. */
+  applicantType: string;
 
   /** Applicant's internal client identifier. */
   clientId: string;
@@ -78,10 +72,10 @@ export type ApplicantDto = ReadonlyDeep<{
   /** Applicant's available contact information. */
   contactInformation: {
     /** Home address, when complete; ITA clients may initially have none. */
-    homeAddress?: ApplicantAddressDto;
+    homeAddress?: ProgramApplicantAddressDto;
 
-    /** Mailing address, when complete. */
-    mailingAddress?: ApplicantAddressDto;
+    /** Complete mailing address required for program operations. */
+    mailingAddress: ProgramApplicantAddressDto;
 
     /** Primary telephone number. */
     phoneNumber?: string;
@@ -94,8 +88,8 @@ export type ApplicantDto = ReadonlyDeep<{
   };
 }>;
 
-/** Normalized applicant address. */
-type ApplicantAddressDto = {
+/** Normalized program applicant address. */
+type ProgramApplicantAddressDto = {
   /** Street address. */
   address: string;
 

@@ -6,7 +6,7 @@ import { inject, injectable } from 'inversify';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/.server/domain/dtos';
-import type { ApplicantService, ClientApplicationService, ClientEligibilityService } from '~/.server/domain/services';
+import type { ApplicantService, ClientApplicationService, ClientEligibilityService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
@@ -190,6 +190,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
   private readonly raoidcSessionValidator: RaoidcSessionValidator;
   private readonly clientApplicationService: ClientApplicationService;
   private readonly applicantService: ApplicantService;
+  private readonly programApplicantService: ProgramApplicantService;
   private readonly clientEligibilityService: ClientEligibilityService;
 
   constructor(
@@ -198,6 +199,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     @inject(TYPES.RaoidcSessionValidator) raoidcSessionValidator: RaoidcSessionValidator,
     @inject(TYPES.ClientApplicationService) clientApplicationService: ClientApplicationService,
     @inject(TYPES.ApplicantService) applicantService: ApplicantService,
+    @inject(TYPES.ProgramApplicantService) programApplicantService: ProgramApplicantService,
     @inject(TYPES.ClientEligibilityService) clientEligibilityService: ClientEligibilityService,
   ) {
     this.log = createLogger('DefaultSecurityHandler');
@@ -206,6 +208,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     this.raoidcSessionValidator = raoidcSessionValidator;
     this.clientApplicationService = clientApplicationService;
     this.applicantService = applicantService;
+    this.programApplicantService = programApplicantService;
     this.clientEligibilityService = clientEligibilityService;
   }
 
@@ -373,7 +376,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
       return programApplicant;
     }
 
-    const programApplicantOption = await this.applicantService.findProgramApplicantBySin({
+    const programApplicantOption = await this.programApplicantService.findProgramApplicantBySin({
       sin: userInfoToken.sin,
       userId: userInfoToken.sub,
     });

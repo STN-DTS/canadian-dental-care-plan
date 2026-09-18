@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '~/.server/constants';
 import type { ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto, ClientApplicationRenewalEligibilityDto, ClientApplicationRenewalEligibilitySinRequestDto } from '~/.server/domain/dtos';
 import type { ClientApplicationRenewalEligibilityDtoMapper } from '~/.server/domain/mappers';
-import type { ApplicantService, AuditService, ClientApplicationService } from '~/.server/domain/services';
+import type { AuditService, ClientApplicationService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { sanitizeSin } from '~/utils/sin-utils';
@@ -32,19 +32,19 @@ export interface ClientApplicationRenewalEligibilityService {
 @injectable()
 export class DefaultClientApplicationRenewalEligibilityService implements ClientApplicationRenewalEligibilityService {
   private readonly log: Logger;
-  private readonly applicantService: ApplicantService;
+  private readonly programApplicantService: ProgramApplicantService;
   private readonly clientApplicationRenewalEligibilityDtoMapper: ClientApplicationRenewalEligibilityDtoMapper;
   private readonly clientApplicationService: ClientApplicationService;
   private readonly auditService: AuditService;
 
   constructor(
-    @inject(TYPES.ApplicantService) applicantService: ApplicantService,
+    @inject(TYPES.ProgramApplicantService) programApplicantService: ProgramApplicantService,
     @inject(TYPES.ClientApplicationRenewalEligibilityDtoMapper) clientApplicationRenewalEligibilityDtoMapper: ClientApplicationRenewalEligibilityDtoMapper,
     @inject(TYPES.ClientApplicationService) clientApplicationService: ClientApplicationService,
     @inject(TYPES.AuditService) auditService: AuditService,
   ) {
     this.log = createLogger('DefaultClientApplicationRenewalEligibilityService');
-    this.applicantService = applicantService;
+    this.programApplicantService = programApplicantService;
     this.clientApplicationService = clientApplicationService;
     this.clientApplicationRenewalEligibilityDtoMapper = clientApplicationRenewalEligibilityDtoMapper;
     this.auditService = auditService;
@@ -75,7 +75,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
 
     // If no client application is found with the provided basic info and SIN, check whether a
     // program applicant exists with that basic info.
-    const programApplicantOption = await this.applicantService.findProgramApplicantByBasicInfo({
+    const programApplicantOption = await this.programApplicantService.findProgramApplicantByBasicInfo({
       clientNumber: request.clientNumber,
       dateOfBirth: request.dateOfBirth,
       firstName: request.firstName,
@@ -122,7 +122,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     }
 
     // If no client application is found with the provided SIN, we check if a program applicant exists with that SIN
-    const programApplicantOption = await this.applicantService.findProgramApplicantBySin({
+    const programApplicantOption = await this.programApplicantService.findProgramApplicantBySin({
       sin: request.sin,
       userId: request.userId,
     });
