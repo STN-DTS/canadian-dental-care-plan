@@ -1,27 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const { createFeatureMiddleware, featureMiddleware, programApplicantMiddleware } = vi.hoisted(() => ({
-  createFeatureMiddleware: vi.fn((feature: string) => (feature === 'view-letters' ? vi.fn() : vi.fn())),
-  featureMiddleware: vi.fn(),
-  programApplicantMiddleware: vi.fn(),
-}));
+import { applicantMiddleware } from '~/middlewares/applicant.server';
+import { createFeatureMiddleware } from '~/middlewares/feature.server';
 
-vi.mock(import('~/middlewares/applicant.server'), () => ({
-  applicantMiddleware: vi.fn(),
-  programApplicantMiddleware,
-}));
-
-vi.mock(import('~/middlewares/feature.server'), () => ({
-  createFeatureMiddleware: (feature: string) => {
-    createFeatureMiddleware(feature);
-    return feature === 'view-letters' ? featureMiddleware : vi.fn();
-  },
-}));
-
-import { middleware } from '~/routes/protected/letters/layout';
+vi.mock(import('~/middlewares/applicant.server'));
+vi.mock(import('~/middlewares/feature.server'));
 
 describe('letters layout middleware', () => {
-  it('validates the feature before resolving the program applicant', () => {
-    expect(middleware).toEqual([featureMiddleware, programApplicantMiddleware]);
+  it('validates the feature before resolving the applicant', async () => {
+    const featureMiddleware = vi.fn();
+    vi.mocked(createFeatureMiddleware).mockReturnValue(featureMiddleware);
+
+    const { middleware } = await import('~/routes/protected/letters/layout');
+
+    expect(vi.mocked(createFeatureMiddleware)).toHaveBeenCalledWith('view-letters');
+    expect(middleware).toEqual([featureMiddleware, applicantMiddleware]);
   });
 });

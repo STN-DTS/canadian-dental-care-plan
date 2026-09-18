@@ -7,8 +7,8 @@ import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { programApplicantContext } from '~/.server/context/applicant-context';
-import type { ProgramApplicantDto } from '~/.server/domain/dtos';
+import { applicantContext } from '~/.server/context/applicant-context';
+import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
@@ -16,8 +16,7 @@ import { loader } from '~/routes/protected/letters/index';
 
 vi.mock(import('~/.server/utils/locale-utils'));
 
-const programApplicant = {
-  applicantType: 'general',
+const applicant = {
   clientId: 'some-client-id',
   clientNumber: 'some-client-number',
   dateOfBirth: '2000-01-01',
@@ -32,7 +31,7 @@ const programApplicant = {
       country: 'Canada',
     },
   },
-} satisfies ProgramApplicantDto;
+} satisfies ApplicantDto;
 
 describe('Letters Page', () => {
   afterEach(() => {
@@ -73,7 +72,7 @@ describe('Letters Page', () => {
         appContainer: mockAppContainer,
         session: mockSession,
       });
-      mockRouterContext.get.calledWith(programApplicantContext).mockReturnValueOnce(programApplicant);
+      mockRouterContext.get.calledWith(applicantContext).mockReturnValueOnce(applicant);
 
       const response = await loader({
         request: new Request('http://localhost/letters?sort=desc'),
@@ -124,7 +123,7 @@ describe('Letters Page', () => {
       appContainer: mockAppContainer,
       session: mockSession,
     });
-    mockRouterContext.get.calledWith(programApplicantContext).mockReturnValueOnce(programApplicant);
+    mockRouterContext.get.calledWith(applicantContext).mockReturnValueOnce(applicant);
 
     const response = await loader({
       request: new Request('http://localhost/letters'),

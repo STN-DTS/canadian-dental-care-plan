@@ -10,7 +10,7 @@ import type { Route } from './+types/index';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { getProgramApplicant } from '~/.server/context/applicant-context';
+import { getApplicant } from '~/.server/context/applicant-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -51,7 +51,7 @@ const orderEnumSchema = z.enum(['asc', 'desc']);
 
 export async function loader({ context, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const programApplicant = getProgramApplicant(context);
+  const applicant = getApplicant(context);
 
   const sortParam = url.searchParams.get('sort');
   const sortOrder = orderEnumSchema.catch('desc').parse(sortParam);
@@ -59,8 +59,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const userInfoToken: UserinfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const clientNumber = programApplicant.clientNumber;
-  const allLetters = await appContainer.get(TYPES.LetterService).findLettersByClientId({ clientId: clientNumber, userId: userInfoToken.sub, sortOrder });
+  const allLetters = await appContainer.get(TYPES.LetterService).findLettersByClientId({ clientId: applicant.clientNumber, userId: userInfoToken.sub, sortOrder });
   const letterTypes = await appContainer.get(TYPES.LetterTypeService).listLetterTypes();
   const letters = allLetters.filter(({ letterTypeId }) => letterTypes.some(({ id }) => letterTypeId === id));
 

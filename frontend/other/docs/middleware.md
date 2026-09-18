@@ -32,8 +32,8 @@ Shared middleware lives in `app/middlewares`.
 | `csrfTokenMiddleware`              | Creates the signed CSRF token cookie and validates submitted form tokens. | CSRF token accessed through `getCsrfToken` | Localized layout                                     |
 | `authMiddleware`                   | Validates the RAOIDC session and confirms token identities.               | `userContext`                              | Protected layout and protected application-state API |
 | `createFeatureMiddleware(feature)` | Creates a guard that validates one configured feature before continuing.  | None                                       | Documents and Letters layouts                        |
-| `applicantMiddleware`              | Resolves an applicant. The applicant category may be absent.              | `applicantContext`                         | Documents layout                                     |
-| `programApplicantMiddleware`       | Resolves a program applicant and requires an applicant category.          | `programApplicantContext`                  | Letters layout                                       |
+| `applicantMiddleware`              | Resolves an applicant. The applicant category may be absent.              | `applicantContext`                         | Documents and Letters layouts                        |
+| `programApplicantMiddleware`       | Resolves a program applicant and requires an applicant category.          | `programApplicantContext`                  | Not currently registered                             |
 | `clientApplicationMiddleware`      | Resolves the current client application.                                  | `clientApplicationContext`                 | Profile layout                                       |
 
 ## Route-local middleware
@@ -84,12 +84,12 @@ The upload route adds `appealUploadEligibilityMiddleware`. It consumes the `appl
 
 ### Letters
 
-The Letters layout first checks the `view-letters` feature, then resolves a strict program applicant. Applicants without `applicantType` cannot access this section.
+The Letters layout first checks the `view-letters` feature, then resolves the broad applicant shape. An applicant without `applicantType` can access this section.
 
 ```text
 protected chain
   -> createFeatureMiddleware('view-letters')
-  -> programApplicantMiddleware
+  -> applicantMiddleware
 ```
 
 ### Profile
