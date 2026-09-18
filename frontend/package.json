@@ -19,6 +19,7 @@
     "lint:oxlint:fix": "oxlint --fix .",
     "typecheck": "react-router typegen && tsc",
     "test:e2e": "playwright test",
+    "test:e2e:ci": "cross-env CI=true pnpm run test:e2e",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:unit": "vitest",

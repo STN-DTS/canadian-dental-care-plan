@@ -1,26 +1,43 @@
-import type { ReporterDescription } from '@playwright/test';
 import { defineConfig, devices } from '@playwright/test';
+import type { ReporterDescription } from '@playwright/test';
 
+const isCI = Boolean(process.env.CI);
+const isTeamCity = Boolean(process.env.TEAMCITY_VERSION);
 const port = process.env.PORT ?? '3000';
 
-const reporter: ReporterDescription[] = [['list'], ['html']];
+/**
+ * Determines the appropriate Playwright reporter configuration based on the environment.
+ *
+ * @returns An array of Playwright reporter configurations based on the environment.
+ */
+function getReporterConfig(): ReporterDescription[] {
+  if (!isCI) return [['list'], ['html']];
+  if (isTeamCity) return [['playwright-teamcity-reporter']];
+  return [['dot']];
+}
 
 export default defineConfig({
   testDir: './e2e',
   timeout: 15 * 1000,
   expect: { timeout: 10 * 1000 },
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? [...reporter, ['playwright-teamcity-reporter']] : reporter,
-  use: { baseURL: `http://localhost:${port}/`, trace: 'on-first-retry' },
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  workers: isCI ? 1 : undefined,
+  reporter: getReporterConfig(),
+  use: {
+    baseURL: `http://localhost:${port}/`,
+    trace: 'on-first-retry',
+    headless: isCI,
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'pnpm run start',
     port: Number(port),
-    reuseExistingServer: !process.env.CI,
-    stdout: 'pipe',
+    reuseExistingServer: !isCI,
+    stdout: 'ignore',
     stderr: 'pipe',
     // oxfmt-ignore
     env: {
