@@ -28,9 +28,6 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}/`,
     trace: 'on-first-retry',
-    headless: isCI,
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
