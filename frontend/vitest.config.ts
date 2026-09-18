@@ -11,6 +11,7 @@ export default defineConfig({
         test: {
           name: 'jsdom',
           environment: 'jsdom',
+          pool: 'vmThreads',
           include: [
             './__tests__/components/**/*.test.(ts|tsx)', //
             './__tests__/hooks/**/*.test.(ts|tsx)',
