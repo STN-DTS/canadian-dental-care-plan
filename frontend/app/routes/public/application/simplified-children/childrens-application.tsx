@@ -26,6 +26,7 @@ import { useCurrentLanguage, useFetcherActionComplete, useFetcherSubmissionState
 import { pageIds } from '~/page-ids';
 import { ProgressStepper } from '~/routes/public/application/simplified-children/progress-stepper';
 import { parseDateString, toLocaleDateString } from '~/utils/date-utils';
+import { focusOnNextFrame } from '~/utils/dom-utils';
 import { generateId } from '~/utils/id-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -170,9 +171,7 @@ export default function RenewChildChildrensApplication({ loaderData, params }: R
         t(($) => $.childrensApplication.childAddedAnnouncement, { childNumber: actionData.childNumber }),
         'polite',
       );
-      window.requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`)?.focus({ preventScroll: true });
-      });
+      focusOnNextFrame(() => document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(actionData.childId)}`));
       return;
     }
 
@@ -182,16 +181,12 @@ export default function RenewChildChildrensApplication({ loaderData, params }: R
         : t(($) => $.childrensApplication.childRemovedAnnouncement, { childNumber: actionData.childNumber }),
       'polite',
     );
-    window.requestAnimationFrame(() => {
-      const nextChild = state.children[actionData.removedIndex];
-      const previousChild = state.children[actionData.removedIndex - 1];
-      if (nextChild) {
-        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(nextChild.id)}`)?.focus({ preventScroll: true });
-      } else if (previousChild) {
-        document.querySelector<HTMLElement>(`#child-heading-${CSS.escape(previousChild.id)}`)?.focus({ preventScroll: true });
-      } else {
-        document.querySelector<HTMLElement>('#add-child')?.focus({ preventScroll: true });
-      }
+    focusOnNextFrame(() => {
+      const childNowAtRemovedIndex = state.children[actionData.removedIndex];
+      const precedingChild = state.children[actionData.removedIndex - 1];
+      const childToFocus = childNowAtRemovedIndex ?? precedingChild;
+      const focusTargetId = childToFocus ? `child-heading-${childToFocus.id}` : 'add-child';
+      return document.getElementById(focusTargetId);
     });
   });
 

@@ -3,6 +3,8 @@ import type { RefObject } from 'react';
 
 import { useLocation } from 'react-router';
 
+import { focusOnNextFrame } from '~/utils/dom-utils';
+
 /**
  * A custom hook that manages focus for accessible route navigation.
  * Moves focus to a specified element when the route pathname changes,
@@ -63,11 +65,7 @@ export const useAccessibleFocusManagement = (focusableElementRef: RefObject<HTML
       return;
     }
 
-    // Wait until the next paint so the new route content is in the DOM before moving focus.
-    const frameId = window.requestAnimationFrame(() => {
-      focusableElementRef.current?.focus({ preventScroll: true });
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
+    // Wait until the next animation frame before moving focus.
+    return focusOnNextFrame(() => focusableElementRef.current);
   }, [focusableElementRef, pathname]);
 };

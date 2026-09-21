@@ -37,6 +37,7 @@ import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-docume
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { expectDefined } from '~/utils/assert-utils';
+import { focusOnNextFrame } from '~/utils/dom-utils';
 import { getClientEnv } from '~/utils/env-utils';
 import { arrayBufferToBase64, getFileExtension, getMimeType } from '~/utils/file-utils';
 import { getLanguage } from '~/utils/locale-utils';
@@ -477,9 +478,7 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
         }),
         'polite',
       );
-      window.requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`)?.focus({ preventScroll: true });
-      });
+      focusOnNextFrame(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`));
     }
 
     const removedFile = removedFiles[0];

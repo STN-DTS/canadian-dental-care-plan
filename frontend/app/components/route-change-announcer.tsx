@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useLocation } from 'react-router';
 
+import { scheduleNextFrame } from '~/utils/dom-utils';
+
 /**
  * Announces route changes to assistive technology on client-side navigation.
  * It listens for changes in the pathname and updates an aria-live region with the current document title.
@@ -19,13 +21,11 @@ export function RouteChangeAnnouncer() {
       return;
     }
 
-    // Wait until the next paint so document.title reflects the new route before announcing.
-    const frameId = window.requestAnimationFrame(() => {
+    // Wait until the next animation frame so document.title reflects the new route before announcing.
+    return scheduleNextFrame(() => {
       const title = document.title.trim();
       setAnnouncement(title);
     });
-
-    return () => window.cancelAnimationFrame(frameId);
   }, [pathname]);
 
   return (
