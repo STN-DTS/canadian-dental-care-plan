@@ -477,6 +477,9 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
         }),
         'polite',
       );
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`)?.focus({ preventScroll: true });
+      });
     }
 
     const removedFile = removedFiles[0];
