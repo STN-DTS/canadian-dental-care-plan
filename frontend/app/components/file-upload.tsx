@@ -190,6 +190,11 @@ function useFileUploadContext(consumerName: string) {
 interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'> {
   value: FileState[];
   onValueChange: (files: ReadonlyArray<FileState>) => void;
+  /**
+   * Event callback invoked before files are added.
+   * @returns `false` to reject the entire batch; `true` or `undefined` to accept it.
+   */
+  onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boolean | undefined;
   accept?: string;
   dir?: Direction;
   label?: string;
@@ -202,7 +207,7 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
 }
 
 function FileUploadRoot(props: FileUploadRootProps) {
-  const { value, onValueChange, accept, dir: dirProp, label, name, asChild, disabled = false, invalid = false, multiple = false, required = false, children, className, ...rootProps } = props;
+  const { value, onValueChange, onBeforeFilesAdd, accept, dir: dirProp, label, name, asChild, disabled = false, invalid = false, multiple = false, required = false, children, className, ...rootProps } = props;
 
   const inputId = useId();
   const dropzoneId = useId();
@@ -221,17 +226,14 @@ function FileUploadRoot(props: FileUploadRootProps) {
   }, [value, store]);
 
   const onFilesChange = useCallback(
-    (files: File[]) => {
-      if (disabled) return;
-
-      if (files.length > 0) {
-        store.dispatch({ type: 'ADD_FILES', files });
-
-        const currentFiles = [...store.getState().files].map(([id, file]) => ({ id, file }));
-        onValueChange([...currentFiles]);
-      }
+    (files: ReadonlyArray<File>) => {
+      if (disabled || files.length === 0) return;
+      if (onBeforeFilesAdd?.(files) === false) return;
+      store.dispatch({ type: 'ADD_FILES', files });
+      const currentFiles = [...store.getState().files].map(([id, file]) => ({ id, file }));
+      onValueChange([...currentFiles]);
     },
-    [store, onValueChange, disabled],
+    [store, onValueChange, onBeforeFilesAdd, disabled],
   );
 
   const onInputChange = useCallback(
@@ -449,7 +451,7 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
       tabIndex={context.disabled ? undefined : 0}
       {...dropzoneProps}
       className={cn(
-        'relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors outline-none select-none hover:bg-zinc-100/30 focus-visible:border-zinc-400/50 data-[disabled]:pointer-events-none data-[dragging]:border-zinc-400/30 data-[dragging]:bg-zinc-100/30 data-[invalid]:border-red-700 data-[invalid]:ring-red-700/20',
+        'relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors outline-none select-none hover:bg-zinc-100/30 focus-visible:border-zinc-400/50 data-disabled:pointer-events-none data-dragging:border-zinc-400/30 data-dragging:bg-zinc-100/30 data-invalid:border-red-700 data-invalid:ring-red-700/20',
         className,
       )}
       onClick={onClick}
