@@ -9,6 +9,8 @@ The Express request handler creates a `RouterContextProvider` for every request.
 - the request-scoped session
 - the application dependency injection container
 
+The root route also registers `contextStorageMiddleware`, which stores the current `RouterContextProvider`, `Request`, and `URL` in server-only `AsyncLocalStorage`. Use `getContext()`, `getRequest()`, and `getUrl()` when code needs those request-scoped values outside the route function arguments.
+
 React Router middleware reads those dependencies and may add more specific values to the same context. Descendant middleware, loaders, and actions can then consume those values without repeating the lookup.
 
 ```mermaid
@@ -28,6 +30,7 @@ Shared middleware lives in `app/middlewares`.
 
 | Middleware                         | Responsibility                                                            | Provides                                   | Current registration                                 |
 | ---------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------- |
+| `contextStorageMiddleware`         | Stores request-scoped routing objects in server-only async storage.       | `getContext()`, `getRequest()`, `getUrl()` | Root route                                           |
 | `csrfMiddleware`                   | Rejects requests from untrusted origins with HTTP 403.                    | None                                       | Localized layout                                     |
 | `csrfTokenMiddleware`              | Creates the signed CSRF token cookie and validates submitted form tokens. | CSRF token accessed through `getCsrfToken` | Localized layout                                     |
 | `authMiddleware`                   | Validates the RAOIDC session and confirms token identities.               | `userContext`                              | Protected layout and protected application-state API |
@@ -47,12 +50,21 @@ Some middleware belongs to one route and remains colocated with it.
 
 ## Current route setup
 
+### Root route
+
+All frontend routes inherit the root middleware chain first:
+
+```text
+contextStorageMiddleware
+```
+
 ### Localized routes
 
 All localized public and protected routes inherit this chain:
 
 ```text
-appLocaleMiddleware
+contextStorageMiddleware
+  -> appLocaleMiddleware
   -> csrfMiddleware
   -> csrfTokenMiddleware
 ```
@@ -64,7 +76,8 @@ The localized layout loader reads the generated CSRF token and provides it to `A
 All routes below the protected layout inherit `authMiddleware` after the localized chain. This means their loaders, actions, and nested middleware can read `userContext`.
 
 ```text
-appLocaleMiddleware
+contextStorageMiddleware
+  -> appLocaleMiddleware
   -> csrfMiddleware
   -> csrfTokenMiddleware
   -> authMiddleware
@@ -121,6 +134,18 @@ Use the context getter associated with the middleware that owns the data:
 | `clientApplicationContext` | `getClientApplication(context)` | `clientApplicationMiddleware` |
 
 The getters fail fast when their context is unavailable. Register the producing middleware on the nearest common parent layout rather than repeating service calls in child loaders or actions.
+
+## Context storage getters
+
+`contextStorageMiddleware` is registered in `app/root.tsx`, so all descendant route middleware, loaders, and actions can read:
+
+| Getter         | Returns                             |
+| -------------- | ----------------------------------- |
+| `getContext()` | The current `RouterContextProvider` |
+| `getRequest()` | The current `Request`               |
+| `getUrl()`     | The current `URL`                   |
+
+Each getter is server-only and throws an actionable `AppError` when called outside a request handled by `contextStorageMiddleware`.
 
 ## Adding middleware
 
