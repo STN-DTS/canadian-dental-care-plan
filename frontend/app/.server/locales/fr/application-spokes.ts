@@ -544,7 +544,7 @@ const ns = {
       legend: "Est-ce que {{childName}} a accès à une assurance ou à une couverture dentaire privée?",
       optionYes: "<strong>Oui</strong>, {{childName}} a accès à une assurance ou à une couverture dentaire privée",
       optionNo: "<strong>Non</strong>, {{childName}} n'a pas accès à une assurance ou à une couverture dentaire privée",
-      dentalInsuranceEligibilityConfirmation: "Je comprends que je ne suis pas admissible au RCSD puisque j'ai accès à une assurance ou à une couverture dentaire privée. Ma couverture prendra fin si je suis actuellement membre.",
+      dentalInsuranceEligibilityConfirmation: "Je comprends que {{childName}} n'est pas admissible au RCSD puisqu'il ou elle a accès à une assurance ou une couverture dentaire privée. Sa couverture prendra fin s'il ou elle est actuellement membre.",
       dentalInsuranceEligibilityConfirmationNo:
         "Je comprends que je devrai fournir une preuve si l'un de mes feuillets T4 ou T4A indique que {{childName}} a accès à une assurance dentaire. Cela s'applique à mes feuillets T4 ou T4A et, le cas échéant, à ceux de mon conjoint ou de mon conjoint de fait.",
       backBtn: "Retour",

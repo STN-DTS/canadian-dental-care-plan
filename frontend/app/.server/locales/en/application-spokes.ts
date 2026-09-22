@@ -532,7 +532,7 @@ const ns = {
       legend: "Does {{childName}} have access to private dental insurance or coverage?",
       optionYes: "<strong>Yes</strong>, {{childName}} has access to private dental insurance or coverage",
       optionNo: "<strong>No</strong>, {{childName}} does not have access to private dental insurance or coverage",
-      dentalInsuranceEligibilityConfirmation: "I understand that I am not eligible for the CDCP because I have access to private dental insurance or coverage. My CDCP coverage will end if I am currently a member.",
+      dentalInsuranceEligibilityConfirmation: "I understand that {{childName}} is not eligible for the CDCP because they have access to private dental insurance or coverage. Their CDCP coverage will end if they are currently a member.",
       dentalInsuranceEligibilityConfirmationNo:
         "I understand that I will need to provide proof for {{childName}} if any T4 or T4A tax slips show they have access to dental insurance or coverage. This applies to my tax slips, and if applicable, my spouse's or common-law partner's tax slips.",
       backBtn: "Back",
