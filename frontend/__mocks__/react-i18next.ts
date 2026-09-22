@@ -4,24 +4,39 @@ import { vi } from 'vitest';
 
 type SelectorFn = ($: Record<string, unknown>) => unknown;
 
-/**
- * The vitest automock for react-i18next's useTranslation() hook.
- */
-export const useTranslation = vi.fn((ns?: Namespace) => {
+function createMockT(ns?: Namespace) {
   /**
    * Mock translation function for testing purposes.
    * @returns The result of the keyFromSelector function.
    */
-  const mockT = (selector: SelectorFn, options?: Record<string, unknown>) => {
+  return function mockT(selector: SelectorFn, options?: Record<string, unknown>) {
     const key = keyFromSelector(selector, Object.assign({}, options, ns ? { ns } : undefined));
     return options ? JSON.stringify({ key, options }) : key;
   };
+}
 
+/**
+ * The vitest automock for react-i18next's useTranslation() hook.
+ */
+export const useTranslation = vi.fn((ns?: Namespace) => {
+  const mockT = createMockT(ns);
   return {
     i18n: {
       getFixedT: () => mockT,
     },
     t: mockT,
+  };
+});
+
+/**
+ * The vitest automock for react-i18next's getI18n() function.
+ */
+export const getI18n = vi.fn(() => {
+  const mockT = createMockT();
+  return {
+    i18n: {
+      getFixedT: () => mockT,
+    },
   };
 });
 
