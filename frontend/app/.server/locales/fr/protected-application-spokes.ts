@@ -205,12 +205,12 @@ const ns = {
       eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html",
     },
     yes: {
-      alertTitle: "Confirmation de l’assurance ou couverture dentaire privée",
-      alertBody: "Vous n’êtes pas admissible au RCSD puisque vous avez accès à une assurance ou à une couverture dentaire privée. Si vous êtes actuellement membre du RCSD et que vous poursuivez la demande, votre couverture prendra fin immédiatement.",
-      confirmation: "Je comprends que je ne suis pas admissible au RCSD puisque j’ai accès à une assurance ou à une couverture dentaire privée. Ma couverture prendra fin si je suis actuellement membre.",
+      alertTitle: "Confirmation de l'assurance ou couverture dentaire privée",
+      alertBody: "Vous n'êtes pas admissible au RCSD puisque vous avez accès à une assurance ou à une couverture dentaire privée. Si vous êtes actuellement membre du RCSD et que vous poursuivez la demande, votre couverture prendra fin immédiatement.",
+      confirmation: "Je comprends que je ne suis pas admissible au RCSD puisque j'ai accès à une assurance ou à une couverture dentaire privée. Ma couverture prendra fin si je suis actuellement membre.",
     },
     no: {
-      alertTitle: "Confirmation de l’assurance ou couverture dentaire privée",
+      alertTitle: "Confirmation de l'assurance ou couverture dentaire privée",
       alertBody:
         "Vous pourriez être admissible au RCSD. Nous confirmerons votre réponse en examinant vos feuillets T4 et T4A. Si un feuillet indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'avez pas de couverture dentaire.",
       alertT4Href:
