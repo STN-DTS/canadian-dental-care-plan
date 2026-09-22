@@ -200,12 +200,12 @@ const ns = {
       eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
     },
     yes: {
-      alertTitle: "Private dental insurance confirmation",
+      alertTitle: "Private dental insurance or coverage confirmation",
       alertBody: "You are not eligible for the CDCP. This is because you have access to private dental insurance or coverage. If you are a current CDCP member and continue with this application, your coverage will end immediately.",
       confirmation: "I understand that I am not eligible for the CDCP because I have access to private dental insurance or coverage. My CDCP coverage will end if I am currently a member.",
     },
     no: {
-      alertTitle: "Dental insurance confirmation",
+      alertTitle: "Private dental insurance or coverage confirmation",
       alertBody:
         "You may be eligible for the CDCP. We'll confirm your response with your T4 and T4A tax slips and, if applicable, with your spouse or common-law partner's tax slips. If any slip shows you have access to dental insurance or coverage, you'll need to provide proof that you're not covered.",
       alertT4Href: "https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/tax-slips/understand-your-tax-slips/t4-slips/t4-statement-remuneration-paid.html",
