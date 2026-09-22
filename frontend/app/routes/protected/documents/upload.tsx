@@ -557,6 +557,7 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
           <p>{t(($) => $.upload.chooseDocuments.mustInclude)}</p>
           <ul className="list-disc space-y-1 pl-7">
             <li>{t(($) => $.upload.chooseDocuments.mustIncludeList.name)}</li>
+            <li>{t(($) => $.upload.chooseDocuments.mustIncludeList.memberId)}</li>
             <li>{t(($) => $.upload.chooseDocuments.mustIncludeList.signature)}</li>
           </ul>
         </section>

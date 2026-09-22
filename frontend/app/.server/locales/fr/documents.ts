@@ -30,6 +30,7 @@ const ns = {
       mustInclude: "Tous les documents doivent inclure\u00A0:",
       mustIncludeList: {
         name: "le prénom et le nom de famille complets tels qu'ils figurent sur votre demande",
+        memberId: "numéro d'identification du membre du Régime canadien de soins dentaires",
         signature: "la signature d'une personne autorisée. Par exemple un employeur, un représentant des ressources humaines ou un gestionnaire de régime de retraite",
       },
     },
