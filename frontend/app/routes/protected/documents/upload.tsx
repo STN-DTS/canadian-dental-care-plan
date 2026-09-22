@@ -5,7 +5,6 @@ import { redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { announce } from '@react-aria/live-announcer';
-import { fileTypeFromBuffer } from 'file-type';
 import type { TFunction } from 'i18next';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -39,7 +38,7 @@ import { pageIds } from '~/page-ids';
 import { expectDefined } from '~/utils/assert-utils';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 import { getClientEnv } from '~/utils/env-utils';
-import { arrayBufferToBase64, getFileExtension, getMimeType } from '~/utils/file-utils';
+import { arrayBufferToBase64, getFileExtension, isFileContentTypeAllowed } from '~/utils/file-utils';
 import { getLanguage } from '~/utils/locale-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -237,8 +236,6 @@ interface ScanDocumentsRequestArgs {
 }
 
 async function scanDocuments({ allowedExtensions, files, service, t, userId }: ScanDocumentsRequestArgs): Promise<UploadDocumentsResponseArgs> {
-  const allowedMimeTypes = new Set(allowedExtensions.map(getMimeType));
-
   const promises = Object.entries(files).map(async ([id, { file, fileBuffer }]) => {
     try {
       const invalidTypeError = t(($) => $.upload.errorMessage.invalidFileType, {
@@ -246,22 +243,10 @@ async function scanDocuments({ allowedExtensions, files, service, t, userId }: S
         extensions: allowedExtensions.join(', '),
       });
 
-      const detected = await fileTypeFromBuffer(fileBuffer);
-      const declared = file.type;
-
-      // --- MIME VALIDATION ----------------------------------------------------
-
-      // no detected type → only allow declared text/plain
-      if (!detected && declared !== 'text/plain') {
+      const isContentTypeAllowed = await isFileContentTypeAllowed({ allowedExtensions, declaredMimeType: file.type, fileBuffer });
+      if (!isContentTypeAllowed) {
         return { id, error: invalidTypeError };
       }
-
-      // detected but not allowed
-      if (detected && !allowedMimeTypes.has(detected.mime)) {
-        return { id, error: invalidTypeError };
-      }
-
-      // --- VIRUS SCAN ---------------------------------------------------------
 
       const scanResponse = await service.scanDocument({
         fileName: file.name,
