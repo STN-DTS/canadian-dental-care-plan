@@ -17,7 +17,7 @@ const ns = {
   },
   upload: {
     pageTitle: "Submit documents",
-    intro: "You need to upload documents showing that you do not have access to private dental insurance or dental coverage.",
+    intro: "You need to upload documents showing that you do not have access to private dental insurance or coverage.",
     chooseDocuments: {
       title: "Choose your documents",
       canUpload: "You can upload any of the following:",
@@ -30,6 +30,7 @@ const ns = {
       mustInclude: "All documents must include:",
       mustIncludeList: {
         name: "the same first and last name as your application",
+        memberId: "Canadian Dental Care Plan Member ID",
         signature: "a signature from an authorized person. For example, an employer, Human Resources representative, or pension plan administrator",
       },
     },

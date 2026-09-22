@@ -108,7 +108,7 @@ The same validation rules apply in the browser and on the server. Current defaul
 
 | Setting            | Current default                                           | Source                                    |
 | ------------------ | --------------------------------------------------------- | ----------------------------------------- |
-| Allowed extensions | `.docx`, `.pptx`, `.txt`, `.pdf`, `.jpg`, `.jpeg`, `.png` | `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` |
+| Allowed extensions | `.pdf`, `.docx`, `.rtf`, `.xlsx`, `.pptx`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tif`, `.tiff` | `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` |
 | Maximum file size  | 5 MB per file                                             | `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`        |
 | Maximum file count | 10 files per submission                                   | `DOCUMENT_UPLOAD_MAX_FILE_COUNT`          |
 
@@ -297,7 +297,7 @@ The production bindings are configured through Inversify. `DefaultDocumentUpload
 | `EWDU_ENCAPSULATION_PASSWORD`             | Credential added to EWDU request bodies            | Optional schema value; deployment secret |
 | `EWDU_PROGRAM_ACTIVITY_ID`                | EWDU program activity identifier                   | `CDCP`                                   |
 | `EWDU_RECORD_SOURCE_MSCA`                 | Power Platform metadata record-source value        | `775170004`                              |
-| `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` | Browser and server extension allow-list            | `.docx,.pptx,.txt,.pdf,.jpg,.jpeg,.png`  |
+| `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` | Browser and server extension allow-list            | `.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff`  |
 | `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`        | Browser and server per-file size limit             | `5`                                      |
 | `DOCUMENT_UPLOAD_MAX_FILE_COUNT`          | Browser and server batch limit                     | `10`                                     |
 
