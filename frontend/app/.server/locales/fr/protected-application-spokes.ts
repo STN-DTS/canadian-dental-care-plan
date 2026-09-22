@@ -213,10 +213,6 @@ const ns = {
       alertTitle: "Confirmation de l'assurance ou couverture dentaire privée",
       alertBody:
         "Vous pourriez être admissible au RCSD. Nous confirmerons votre réponse en examinant vos feuillets T4 et T4A. Si un feuillet indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'avez pas de couverture dentaire.",
-      alertT4Href:
-        "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/t4-etat-remuneration-payee.html",
-      alertT4aHref:
-        "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/feuillet-t4a.html",
       confirmation:
         "Je comprends que je devrai fournir une preuve si l'un de mes feuillets T4 ou T4A indique que j'ai accès à une assurance dentaire. Cela s'applique à mes feuillets T4 ou T4A et, le cas échéant, à ceux de mon conjoint ou de mon conjoint de fait.",
     },

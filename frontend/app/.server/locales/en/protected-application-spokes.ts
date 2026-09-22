@@ -208,8 +208,6 @@ const ns = {
       alertTitle: "Private dental insurance or coverage confirmation",
       alertBody:
         "You may be eligible for the CDCP. We'll confirm your response with your T4 and T4A tax slips and, if applicable, with your spouse or common-law partner's tax slips. If any slip shows you have access to dental insurance or coverage, you'll need to provide proof that you're not covered.",
-      alertT4Href: "https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/tax-slips/understand-your-tax-slips/t4-slips/t4-statement-remuneration-paid.html",
-      alertT4aHref: "https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/tax-slips/understand-your-tax-slips/t4-slips/t4a-slip.html",
       confirmation: "I understand that I will need to provide proof if any T4 or T4A tax slips show I have access to dental insurance or coverage. This applies to my tax slips, and if applicable, my spouse's or common-law partner's tax slips.",
     },
     errorMessage: {
