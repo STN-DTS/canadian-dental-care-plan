@@ -533,6 +533,8 @@ const ns = {
       optionYes: "<strong>Yes</strong>, {{childName}} has access to private dental insurance or coverage",
       optionNo: "<strong>No</strong>, {{childName}} does not have access to private dental insurance or coverage",
       dentalInsuranceEligibilityConfirmation: "I understand that I am not eligible for the CDCP because I have access to private dental insurance or coverage. My CDCP coverage will end if I am currently a member.",
+      dentalInsuranceEligibilityConfirmationNo:
+        "I understand that I will need to provide proof for {{childName}} if any T4 or T4A tax slips show they have access to dental insurance or coverage. This applies to my tax slips, and if applicable, my spouse's or common-law partner's tax slips.",
       backBtn: "Back",
       saveBtn: "Save",
       detail: {
@@ -560,8 +562,14 @@ const ns = {
         eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
       },
       alert: {
-        title: "Private dental insurance or coverage confirmation",
-        body: "You are not eligible for the CDCP. This is because you have access to private dental insurance or coverage. If you are a current CDCP member and continue with this application, your coverage will end immediately.",
+        yes: {
+          title: "Private dental insurance or coverage confirmation",
+          body: "{{childName}} is not eligible for the CDCP. This is because they have access to private dental insurance or coverage. If they are a current CDCP member and you continue with this application their coverage will end immediately.",
+        },
+        no: {
+          title: "Private dental coverage confirmation",
+          body: "{{childName}} may be eligible for the CDCP. We'll confirm your response with your T4 and T4A tax slips and, if applicable, with your spouse or common-law partner's tax slips. If any slip shows {{childName}} has access to dental insurance or coverage, you'll need to provide proof that they're not covered.",
+        },
       },
       errorMessage: {
         dentalInsuranceRequired: "Select whether you have access to dental insurance",
