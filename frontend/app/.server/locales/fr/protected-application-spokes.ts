@@ -206,18 +206,19 @@ const ns = {
     },
     yes: {
       alertTitle: "Confirmation de l'assurance dentaire privée",
-      alertBody: "Si vous avez accès à une assurance dentaire privée, vous n'êtes pas admissible au Régime canadien de soins dentaires. Si vous êtes déjà membre et que vous poursuivez la demande, votre couverture prendra fin immédiatement.",
-      confirmation: "Je comprends que je ne suis pas admissible au Régime canadien de soins dentaires si j'ai accès à une assurance ou à une couverture dentaire privée.",
+      alertBody: "Vous n’êtes pas admissible au RCSD puisque vous avez accès à une assurance ou à une couverture dentaire privée. Si vous êtes actuellement membre du RCSD et que vous poursuivez la demande, votre couverture prendra fin immédiatement.",
+      confirmation: "Je comprends que je ne suis pas admissible au RCSD puisque j’ai accès à une assurance ou à une couverture dentaire privée. Ma couverture prendra fin si je suis actuellement membre.",
     },
     no: {
       alertTitle: "Confirmation de l'assurance dentaire",
       alertBody:
-        "Nous confirmerons votre réponse en examinant vos feuillets <t4Href>T4 (case 45)</t4Href> ou <t4aHref>T4A (case 015)</t4aHref>. Si le document indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'êtes pas couvert(e).",
+        "Vous pourriez être admissible au RCSD. Nous confirmerons votre réponse en examinant vos feuillets T4 et T4A. Si un feuillet indique que vous avez accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que vous n'avez pas de couverture dentaire.",
       alertT4Href:
         "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/t4-etat-remuneration-payee.html",
       alertT4aHref:
         "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/declaration-revenus/remplir-declaration-revenus/feuillets-renseignements/comprendre-vos-feuillets-renseignements-fiscaux/feuillets-t4/feuillet-t4a.html",
-      confirmation: "Je comprends qu'on pourrait me demander de fournir la preuve que je n'ai pas accès à une assurance ou à une couverture dentaire.",
+      confirmation:
+        "Je comprends que je devrai fournir une preuve si l'un de mes feuillets T4 ou T4A indique que j'ai accès à une assurance dentaire. Cela s'applique à mes feuillets T4 ou T4A et, le cas échéant, à ceux de mon conjoint ou de mon conjoint de fait.",
     },
     errorMessage: {
       dentalInsuranceRequired: "Sélectionnez si vous avez accès à une assurance dentaire privée",
