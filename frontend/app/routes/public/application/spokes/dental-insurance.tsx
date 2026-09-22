@@ -141,9 +141,6 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
     setHasDentalInsurance(e.target.value === HAS_DENTAL_INSURANCE_OPTION.yes);
   }
 
-  const t4Href = <InlineLink to={t(($) => $.dentalInsurance.no.alertT4Href)} className="external-link" newTabIndicator target="_blank" />;
-  const t4aHref = <InlineLink to={t(($) => $.dentalInsurance.no.alertT4aHref)} className="external-link" newTabIndicator target="_blank" />;
-
   return (
     <>
       <AppPageTitle>{t(($) => $.dentalInsurance.title)}</AppPageTitle>
@@ -231,7 +228,7 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
               <div className="mb-4 space-y-4">
                 <ContextualAlert type="info" id="dental-insurance-confirmation-no">
                   <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.dentalInsurance.no.alertTitle)}</h2>
-                  <Trans ns="applicationSpokes" i18nKey={($) => $.dentalInsurance.no.alertBody} components={{ t4Href, t4aHref }} />
+                  <p>{t(($) => $.dentalInsurance.no.alertBody)}</p>
                 </ContextualAlert>
                 <InputCheckbox
                   id="dental-insurance-eligibility-confirmation-no"
