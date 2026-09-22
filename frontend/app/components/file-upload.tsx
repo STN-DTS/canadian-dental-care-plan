@@ -1,4 +1,4 @@
-import { createContext, use, useCallback, useEffect, useId, useMemo, useRef, useSyncExternalStore } from 'react';
+import { createContext, use, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ChangeEvent, ClipboardEvent, ComponentProps, DragEvent, KeyboardEvent, MouseEvent, ReactNode, RefObject } from 'react';
 
 import { faFile, faFileArchive, faFileAudio, faFileCode, faFileImage, faFileText, faFileVideo, faGear } from '@fortawesome/free-solid-svg-icons';
@@ -53,7 +53,8 @@ type StoreAction =
   | { type: 'SET_INVALID'; invalid: boolean }
   | { type: 'CLEAR' };
 
-function createStore(listeners: Set<() => void>, files: Map<string, File>, invalid: boolean, onValueChange: (files: ReadonlyArray<FileState>) => void) {
+function createStore(listeners: Set<() => void>, files: Map<string, File>, invalid: boolean) {
+  let onValueChange = (_files: ReadonlyArray<FileState>) => {};
   let state: StoreState = {
     files,
     dragOver: false,
@@ -63,38 +64,27 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
   function reducer(state: StoreState, action: StoreAction): StoreState {
     switch (action.type) {
       case 'ADD_FILES': {
+        const nextFiles = new Map(state.files);
         for (const file of action.files) {
-          files.set(crypto.randomUUID(), file);
+          nextFiles.set(crypto.randomUUID(), file);
         }
 
-        const fileList = [...files].map(([id, file]) => ({ id, file }));
+        const fileList = [...nextFiles].map(([id, file]) => ({ id, file }));
         onValueChange(fileList);
-        return { ...state, files };
+        return { ...state, files: nextFiles };
       }
 
       case 'SET_FILES': {
-        const newFileSet = new Map(action.files.map((f) => [f.id, f.file]));
-        for (const existingFile of files.keys()) {
-          if (!newFileSet.has(existingFile)) {
-            files.delete(existingFile);
-          }
-        }
-
-        for (const file of action.files) {
-          const existingState = files.get(file.id);
-          if (!existingState) {
-            files.set(file.id, file.file);
-          }
-        }
-        return { ...state, files };
+        return { ...state, files: new Map(action.files.map(({ id, file }) => [id, file])) };
       }
 
       case 'REMOVE_FILE': {
-        files.delete(action.id);
+        const nextFiles = new Map(state.files);
+        nextFiles.delete(action.id);
 
-        const fileList = [...files].map(([id, file]) => ({ id, file }));
+        const fileList = [...nextFiles].map(([id, file]) => ({ id, file }));
         onValueChange(fileList);
-        return { ...state, files };
+        return { ...state, files: nextFiles };
       }
 
       case 'SET_DRAG_OVER': {
@@ -102,13 +92,13 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
       }
 
       case 'SET_INVALID': {
+        if (state.invalid === action.invalid) return state;
         return { ...state, invalid: action.invalid };
       }
 
       case 'CLEAR': {
-        files.clear();
         onValueChange([]);
-        return { ...state, files, invalid: false };
+        return { ...state, files: new Map(), invalid: false };
       }
 
       default: {
@@ -122,7 +112,10 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
   }
 
   function dispatch(action: StoreAction) {
-    state = reducer(state, action);
+    const nextState = reducer(state, action);
+    if (nextState === state) return;
+
+    state = nextState;
     for (const listener of listeners) {
       listener();
     }
@@ -133,7 +126,11 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
     return () => listeners.delete(listener);
   }
 
-  return { getState, dispatch, subscribe };
+  function setOnValueChange(callback: (files: ReadonlyArray<FileState>) => void) {
+    onValueChange = callback;
+  }
+
+  return { getState, dispatch, subscribe, setOnValueChange };
 }
 
 const StoreContext = createContext<ReturnType<typeof createStore> | null>(null);
@@ -149,18 +146,18 @@ function useStoreContext(consumerName: string) {
 function useStore<T>(selector: (state: StoreState) => T): T {
   const store = useStoreContext('useStore');
 
-  const lastValueRef = useLazyRef<{ value: T; state: StoreState } | null>(() => null);
+  const lastValueRef = useLazyRef<{ value: T; state: StoreState; selector: (state: StoreState) => T } | null>(() => null);
 
   const getSnapshot = useCallback(() => {
     const state = store.getState();
     const prevValue = lastValueRef.current;
 
-    if (prevValue?.state === state) {
+    if (prevValue?.state === state && prevValue.selector === selector) {
       return prevValue.value;
     }
 
     const nextValue = selector(state);
-    lastValueRef.current = { value: nextValue, state };
+    lastValueRef.current = { value: nextValue, state, selector };
     return nextValue;
   }, [store, selector, lastValueRef]);
 
@@ -215,11 +212,16 @@ function FileUploadRoot(props: FileUploadRootProps) {
   const labelId = useId();
 
   const dir = useDirection(dirProp);
-  const listeners = useLazyRef(() => new Set<() => void>()).current;
-  const files = useLazyRef<Map<string, File>>(() => new Map()).current;
   const inputRef = useRef<HTMLInputElement>(null);
+  const [store] = useState(() => createStore(new Set(), new Map(), invalid));
 
-  const store = useMemo(() => createStore(listeners, files, invalid, onValueChange), [listeners, files, invalid, onValueChange]);
+  useEffect(() => {
+    store.setOnValueChange(onValueChange);
+  }, [store, onValueChange]);
+
+  useEffect(() => {
+    store.dispatch({ type: 'SET_INVALID', invalid });
+  }, [store, invalid]);
 
   useEffect(() => {
     store.dispatch({ type: 'SET_FILES', files: value });
@@ -230,10 +232,8 @@ function FileUploadRoot(props: FileUploadRootProps) {
       if (disabled || files.length === 0) return;
       if (onBeforeFilesAdd?.(files) === false) return;
       store.dispatch({ type: 'ADD_FILES', files });
-      const currentFiles = [...store.getState().files].map(([id, file]) => ({ id, file }));
-      onValueChange([...currentFiles]);
     },
-    [store, onValueChange, onBeforeFilesAdd, disabled],
+    [store, onBeforeFilesAdd, disabled],
   );
 
   const onInputChange = useCallback(

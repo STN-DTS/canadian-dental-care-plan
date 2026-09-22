@@ -54,7 +54,7 @@ describe('FileUpload', () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  it('adds files when pre-add validation succeeds', () => {
+  it('adds files once when pre-add validation succeeds', () => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
     const onBeforeFilesAdd = vi.fn(() => true);
     const { input, onValueChange } = renderFileUpload(onBeforeFilesAdd);
@@ -63,6 +63,7 @@ describe('FileUpload', () => {
 
     expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
     expect(onValueChange).toHaveBeenCalledWith([expect.objectContaining({ file })]);
+    expect(onValueChange).toHaveBeenCalledTimes(1);
   });
 
   it('validates dropped files before adding them', () => {
