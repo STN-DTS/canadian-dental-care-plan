@@ -1,8 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
-import { arrayBufferToBase64, findMimeType, getFileExtension, getMimeType, isValidExtension } from '~/utils/file-utils';
+import { arrayBufferToBase64, findMimeType, getFileExtension, getMimeType, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
 
 describe('file-utils', () => {
+  describe('isFileContentTypeAllowed', () => {
+    it('should allow detected RTF content when the extension is allowed', async () => {
+      const file = new File([String.raw`{\rtf1\ansi Test document}`], 'document.rtf', { type: 'application/rtf' });
+      const fileBuffer = await file.arrayBuffer();
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.rtf'], declaredMimeType: file.type, fileBuffer })).resolves.toBe(true);
+    });
+
+    it('should reject detected content when its MIME type is not allowed', async () => {
+      const file = new File([String.raw`{\rtf1\ansi Test document}`], 'document.rtf', { type: 'application/rtf' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(false);
+    });
+
+    it('should allow undetected content declared as text/plain', async () => {
+      const file = new File(['Plain text document'], 'document.txt', { type: 'text/plain' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(true);
+    });
+
+    it('should reject undetected content not declared as text/plain', async () => {
+      const file = new File(['Unknown content'], 'document.pdf', { type: 'application/pdf' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(false);
+    });
+  });
+
   describe('findMimeType', () => {
     it('should return Some with MIME type for valid extension', () => {
       const result = findMimeType('.pdf');

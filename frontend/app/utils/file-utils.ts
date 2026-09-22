@@ -1,5 +1,55 @@
+import { fileTypeFromBuffer } from 'file-type';
 import mime from 'mime';
 import { None, Option } from 'oxide.ts';
+
+interface FileContentTypeInput {
+  readonly file: File;
+}
+
+interface BufferedFileContentTypeInput {
+  readonly fileBuffer: ArrayBuffer;
+  readonly declaredMimeType: string;
+}
+
+type IsFileContentTypeAllowedArgs = {
+  readonly allowedExtensions: readonly string[];
+} & (FileContentTypeInput | BufferedFileContentTypeInput);
+
+/**
+ * Validates a file's content type using signature detection.
+ *
+ * Detected MIME types must match a MIME type derived from the allowed extensions. When
+ * detection returns no type, the file is allowed only when declared as `text/plain`.
+ * File extensions must be validated separately by the caller.
+ *
+ * Pass pre-read buffered content to avoid reading the same file more than once.
+ *
+ * @param args - Allowed extensions plus a file or buffered file content
+ * @returns Whether the content satisfies the detected-type policy or plain-text fallback
+ * @throws {Error} When detected content is available and an allowed extension has no registered MIME type
+ */
+export async function isFileContentTypeAllowed(args: IsFileContentTypeAllowedArgs): Promise<boolean> {
+  let fileBuffer: ArrayBuffer;
+  let declaredMimeType: string;
+
+  if ('file' in args) {
+    fileBuffer = await args.file.arrayBuffer();
+    declaredMimeType = args.file.type;
+  } else {
+    fileBuffer = args.fileBuffer;
+    declaredMimeType = args.declaredMimeType;
+  }
+
+  const detectedFileType = await fileTypeFromBuffer(fileBuffer);
+
+  // Plain text has no detectable signature, so fall back to its declared MIME type.
+  if (!detectedFileType) {
+    return declaredMimeType === 'text/plain';
+  }
+
+  const allowedMimeTypes = new Set(args.allowedExtensions.map(getMimeType));
+  return allowedMimeTypes.has(detectedFileType.mime);
+}
 
 /**
  * Finds the MIME type for a given file extension.
