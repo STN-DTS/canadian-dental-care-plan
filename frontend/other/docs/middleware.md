@@ -119,7 +119,8 @@ protected chain
 The unlocalized protected application-state API is outside the localized layout tree. It registers `authMiddleware` directly.
 
 ```text
-authMiddleware
+contextStorageMiddleware
+  -> authMiddleware
 ```
 
 ## Context consumers

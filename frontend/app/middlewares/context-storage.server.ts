@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { AppError } from '~/errors/app-error';
 
 type ContextStorage = Readonly<{
-  context: RouterContextProvider;
+  context: Readonly<RouterContextProvider>;
   request: Request;
   url: URL;
 }>;
@@ -30,7 +30,7 @@ export const contextStorageMiddleware: MiddlewareFunction<Response> = async ({ c
   return await contextStorage.run({ context, request, url }, async () => await next());
 };
 
-export function getContext(): RouterContextProvider {
+export function getContext(): Readonly<RouterContextProvider> {
   return getStore('getContext').context;
 }
 
