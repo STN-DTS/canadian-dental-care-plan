@@ -522,10 +522,10 @@ const ns = {
     },
     dentalInsurance: {
       title: "Access to private dental insurance or coverage for {{childName}}",
-      legend: "Does {{childName}} have private dental insurance or coverage through any of the following:",
+      legend: "Does {{childName}} have access to private dental insurance or coverage?",
       optionYes: "<strong>Yes</strong>, {{childName}} has access to private dental insurance or coverage",
       optionNo: "<strong>No</strong>, {{childName}} does not have access to private dental insurance or coverage",
-      dentalInsuranceEligibilityConfirmation: "I understand that {{childName}} is not eligible for the Canadian Dental Care Plan if they have access to dental insurance or coverage.",
+      dentalInsuranceEligibilityConfirmation: "I understand that I am not eligible for the CDCP because I have access to private dental insurance or coverage. My CDCP coverage will end if I am currently a member.",
       backBtn: "Back",
       saveBtn: "Save",
       detail: {
@@ -553,8 +553,8 @@ const ns = {
         eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
       },
       alert: {
-        title: "Private dental insurance confirmation",
-        body: "If {{childName}} has access to private dental insurance or coverage, they are not eligible for the Canadian Dental Care Plan. If you continue with the application and {{childName}} is a current member, their benefits will end immediately.",
+        title: "Private dental insurance or coverage confirmation",
+        body: "You are not eligible for the CDCP. This is because you have access to private dental insurance or coverage. If you are a current CDCP member and continue with this application, your coverage will end immediately.",
       },
       errorMessage: {
         dentalInsuranceRequired: "Select whether you have access to dental insurance",

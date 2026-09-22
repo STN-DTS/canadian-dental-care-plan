@@ -541,10 +541,10 @@ const ns = {
     },
     dentalInsurance: {
       title: "Accès à une assurance ou à une couverture dentaire privée pour {{childName}}",
-      legend: "{{childName}} a-t-il ou a-t-elle accès à une assurance ou à une couverture dentaire privée par l'un des moyens suivants\u00A0:",
+      legend: "Est-ce que {{childName}} a accès à une assurance ou à une couverture dentaire privée?",
       optionYes: "<strong>Oui</strong>, {{childName}} a accès à une assurance ou à une couverture dentaire privée",
       optionNo: "<strong>Non</strong>, {{childName}} n'a pas accès à une assurance ou à une couverture dentaire privée",
-      dentalInsuranceEligibilityConfirmation: "Je comprends que {{childName}} n'est pas admissible au Régime canadien de soins dentaires s'il ou elle a accès à une assurance ou à une couverture dentaire.",
+      dentalInsuranceEligibilityConfirmation: "Je comprends que je ne suis pas admissible au RCSD puisque j'ai accès à une assurance ou à une couverture dentaire privée. Ma couverture prendra fin si je suis actuellement membre.",
       backBtn: "Retour",
       saveBtn: "Sauvegarder",
       detail: {
@@ -572,8 +572,8 @@ const ns = {
         eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html",
       },
       alert: {
-        title: "Confirmation de l'assurance dentaire privée",
-        body: "Si {{childName}} a accès à une assurance ou à une couverture dentaire privée, il ou elle n'est pas admissible au Régime canadien de soins dentaires. Si vous poursuivez la demande et que {{childName}} est un membre actuel, sa couverture prendra fin immédiatement.",
+        title: "Confirmation de l'assurance ou couverture dentaire privée",
+        body: "Vous n'êtes pas admissible au RCSD puisque vous avez accès à une assurance ou à une couverture dentaire privée. Si vous êtes actuellement membre du RCSD et que vous poursuivez la demande, votre couverture prendra fin immédiatement.",
       },
       errorMessage: {
         dentalInsuranceRequired: "Sélectionnez si l'enfant a accès à une assurance dentaire privée",
