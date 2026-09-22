@@ -43,7 +43,7 @@ const ns = {
     pageTitle: "Applying on behalf of someone else",
     beforeSubmit: "Before you submit an application on behalf of someone else, you have to show proof that you can act for them as their:",
     legalRepresentative: "legal representative",
-    powerOfAttorney: "Power of Attorney",
+    powerOfAttorney: "power of attorney",
     mandate: "mandate",
     trusteeship: "trusteeship",
     contact: "You can also call Service Canada at 1\u2011833\u2011537\u20114342.",
