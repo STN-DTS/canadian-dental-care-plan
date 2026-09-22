@@ -153,14 +153,14 @@ export default function ProtectedNewChildrenConfirmation({ loaderData, params }:
             <strong>{formatSubmissionApplicationCode(submissionInfo.confirmationCode)}</strong>
           </h2>
         </div>
-        <section>
+        <div>
           <p className="mt-4">{t(($) => $.confirm.printCopyImportant)}</p>
           <div className="mt-8 print:hidden">
             <PrintButton variant="primary" size="lg" errorMessage={t(($) => $.confirm.printUnavailable)} data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Protected-Intake_Child:Print top - Application successfully submitted click">
               {t(($) => $.confirm.printBtn)}
             </PrintButton>
           </div>
-        </section>
+        </div>
         <ContextualAlert type="comment">
           <div className="space-y-4">
             <h2 className="text-2xl">
