@@ -579,6 +579,7 @@ const ns = {
       errorMessage: {
         dentalInsuranceRequired: "Sélectionnez si l'enfant a accès à une assurance dentaire privée",
         dentalInsuranceEligibilityConfirmationRequired: "Sélectionnez si l'enfant comprend qu'il a une assurance dentaire privée, qu'il n'est pas admissible au Régime canadien de soins dentaires",
+        dentalInsuranceEligibilityConfirmationNoRequired: "Sélectionnez si vous comprenez que vous devrez fournir une preuve si un feuillet T4 ou T4A indique que l'enfant a accès à une assurance ou à une couverture dentaire",
       },
     },
     parentGuardian: {

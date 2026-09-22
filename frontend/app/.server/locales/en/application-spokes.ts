@@ -574,6 +574,7 @@ const ns = {
       errorMessage: {
         dentalInsuranceRequired: "Select whether you have access to dental insurance",
         dentalInsuranceEligibilityConfirmationRequired: "Select whether you understand that if you have private dental insurance you are not eligible for the Canadian Dental Care Plan",
+        dentalInsuranceEligibilityConfirmationNoRequired: "Select whether you understand that you will need to provide proof if a T4 or T4A tax slip shows the child has access to dental insurance or coverage",
       },
     },
   },

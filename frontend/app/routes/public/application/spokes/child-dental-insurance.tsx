@@ -123,7 +123,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       if (hasDentalInsurance === false && dentalInsuranceEligibilityConfirmationNo === false) {
         ctx.addIssue({
           code: 'custom',
-          message: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationRequired),
+          message: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationNoRequired),
           path: ['dentalInsuranceEligibilityConfirmationNo'],
         });
       }
