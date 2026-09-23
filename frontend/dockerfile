@@ -34,7 +34,7 @@
 # Base image used by all subsequent stages.
 # ---------------------------------------------------------------------------- #
 
-FROM docker.io/library/node:26.9.0-trixie-slim@sha256:ed394b07265eca638a9d0221fb07771c1990532424b5c64aea21421ac3b81b25 AS base
+FROM docker.io/library/node:26.9.0-trixie-slim@sha256:3a771f83944bb763050c23c0225c260638c4b7899e7a72485ef75e5e570499e5 AS base
 
 WORKDIR /home/node
 
