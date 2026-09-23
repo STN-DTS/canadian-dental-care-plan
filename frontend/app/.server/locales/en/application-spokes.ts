@@ -527,10 +527,12 @@ const ns = {
     },
     dentalInsurance: {
       title: "Access to private dental insurance or coverage for {{childName}}",
-      legend: "Does {{childName}} have private dental insurance or coverage through any of the following:",
+      legend: "Does {{childName}} have access to private dental insurance or coverage?",
       optionYes: "<strong>Yes</strong>, {{childName}} has access to private dental insurance or coverage",
       optionNo: "<strong>No</strong>, {{childName}} does not have access to private dental insurance or coverage",
-      dentalInsuranceEligibilityConfirmation: "I understand that {{childName}} is not eligible for the Canadian Dental Care Plan if they have access to dental insurance or coverage.",
+      dentalInsuranceEligibilityConfirmation: "I understand that {{childName}} is not eligible for the CDCP because they have access to private dental insurance or coverage. Their CDCP coverage will end if they are currently a member.",
+      dentalInsuranceEligibilityConfirmationNo:
+        "I understand that I will need to provide proof for {{childName}} if any T4 or T4A tax slips show they have access to dental insurance or coverage. This applies to my tax slips, and if applicable, my spouse's or common-law partner's tax slips.",
       backBtn: "Back",
       saveBtn: "Save",
       detail: {
@@ -558,12 +560,19 @@ const ns = {
         eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
       },
       alert: {
-        title: "Private dental insurance confirmation",
-        body: "If {{childName}} has access to private dental insurance or coverage, they are not eligible for the Canadian Dental Care Plan. If you continue with the application and {{childName}} is a current member, their benefits will end immediately.",
+        yes: {
+          title: "Private dental insurance or coverage confirmation",
+          body: "{{childName}} is not eligible for the CDCP. This is because they have access to private dental insurance or coverage. If they are a current CDCP member and you continue with this application their coverage will end immediately.",
+        },
+        no: {
+          title: "Private dental coverage confirmation",
+          body: "{{childName}} may be eligible for the CDCP. We'll confirm your response with your T4 and T4A tax slips and, if applicable, with your spouse or common-law partner's tax slips. If any slip shows {{childName}} has access to dental insurance or coverage, you'll need to provide proof that they're not covered.",
+        },
       },
       errorMessage: {
         dentalInsuranceRequired: "Select whether you have access to dental insurance",
         dentalInsuranceEligibilityConfirmationRequired: "Select whether you understand that if you have private dental insurance you are not eligible for the Canadian Dental Care Plan",
+        dentalInsuranceEligibilityConfirmationNoRequired: "Select whether you understand that you will need to provide proof if a T4 or T4A tax slip shows the child has access to dental insurance or coverage",
       },
     },
   },

@@ -76,7 +76,18 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }),
   };
 
-  return { meta, defaultState: childState.dentalInsurance, childName, applicationFlow: `${state.context}-${state.typeOfApplication}` };
+  return {
+    meta,
+    defaultState: childState.dentalInsurance
+      ? {
+          hasDentalInsurance: childState.dentalInsurance.hasDentalInsurance,
+          dentalInsuranceEligibilityConfirmationYes: childState.dentalInsurance.hasDentalInsurance === true ? childState.dentalInsurance.dentalInsuranceEligibilityConfirmation : undefined,
+          dentalInsuranceEligibilityConfirmationNo: childState.dentalInsurance.hasDentalInsurance === false ? childState.dentalInsurance.dentalInsuranceEligibilityConfirmation : undefined,
+        }
+      : undefined,
+    childName,
+    applicationFlow: `${state.context}-${state.typeOfApplication}`,
+  };
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
@@ -96,25 +107,34 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       hasDentalInsurance: z.boolean({
         error: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceRequired),
       }),
-      dentalInsuranceEligibilityConfirmation: z.string().trim().optional(),
+      dentalInsuranceEligibilityConfirmationYes: z.boolean({
+        error: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationRequired),
+      }),
+      dentalInsuranceEligibilityConfirmationNo: z.boolean({
+        error: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationRequired),
+      }),
     })
-    .superRefine((val, ctx) => {
-      if (val.hasDentalInsurance && !val.dentalInsuranceEligibilityConfirmation) {
+    .superRefine(({ hasDentalInsurance, dentalInsuranceEligibilityConfirmationYes, dentalInsuranceEligibilityConfirmationNo }, ctx) => {
+      if (hasDentalInsurance && dentalInsuranceEligibilityConfirmationYes === false) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationRequired),
-          path: ['dentalInsuranceEligibilityConfirmation'],
+          path: ['dentalInsuranceEligibilityConfirmationYes'],
         });
       }
-    })
-    .transform((val) => ({
-      ...val,
-      dentalInsuranceEligibilityConfirmation: val.hasDentalInsurance ? val.dentalInsuranceEligibilityConfirmation === CHECKBOX_VALUE.yes : undefined,
-    }));
+      if (hasDentalInsurance === false && dentalInsuranceEligibilityConfirmationNo === false) {
+        ctx.addIssue({
+          code: 'custom',
+          message: t(($) => $.children.dentalInsurance.errorMessage.dentalInsuranceEligibilityConfirmationNoRequired),
+          path: ['dentalInsuranceEligibilityConfirmationNo'],
+        });
+      }
+    });
 
   const parsedDataResult = dentalInsuranceSchema.safeParse({
     hasDentalInsurance: formData.get('hasDentalInsurance') ? formData.get('hasDentalInsurance') === 'yes' : undefined,
-    dentalInsuranceEligibilityConfirmation: formData.get('dentalInsuranceEligibilityConfirmation') ?? '',
+    dentalInsuranceEligibilityConfirmationYes: formData.get('dentalInsuranceEligibilityConfirmationYes') === CHECKBOX_VALUE.yes,
+    dentalInsuranceEligibilityConfirmationNo: formData.get('dentalInsuranceEligibilityConfirmationNo') === CHECKBOX_VALUE.yes,
   });
 
   if (!parsedDataResult.success) {
@@ -127,7 +147,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     state: {
       children: state.children.map((child) => {
         if (child.id !== childState.id) return child;
-        return { ...child, dentalInsurance: parsedDataResult.data };
+        return {
+          ...child,
+          dentalInsurance: {
+            hasDentalInsurance: parsedDataResult.data.hasDentalInsurance,
+            dentalInsuranceEligibilityConfirmation: parsedDataResult.data.hasDentalInsurance ? parsedDataResult.data.dentalInsuranceEligibilityConfirmationYes : parsedDataResult.data.dentalInsuranceEligibilityConfirmationNo,
+          },
+        };
       }),
     },
   });
@@ -219,23 +245,48 @@ export default function ChildDentalInsurance({ loaderData, params }: Route.Compo
             {hasDentalInsurance && (
               <div className="space-y-4">
                 <ContextualAlert type="info" id="child-dental-insurance-confirmation">
-                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.title)}</h2>
+                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.yes.title)}</h2>
                   <p>
-                    {t(($) => $.children.dentalInsurance.alert.body, {
+                    {t(($) => $.children.dentalInsurance.alert.yes.body, {
                       childName: childName,
                     })}
                   </p>
                 </ContextualAlert>
                 <InputCheckbox
                   id="dental-insurance-eligibility-confirmation"
-                  name="dentalInsuranceEligibilityConfirmation"
+                  name="dentalInsuranceEligibilityConfirmationYes"
                   value={CHECKBOX_VALUE.yes}
-                  defaultChecked={defaultState?.dentalInsuranceEligibilityConfirmation}
-                  errorMessage={errors?.dentalInsuranceEligibilityConfirmation}
+                  defaultChecked={defaultState?.dentalInsuranceEligibilityConfirmationYes}
+                  errorMessage={errors?.dentalInsuranceEligibilityConfirmationYes}
                   required
                   aria-describedby="child-dental-insurance-confirmation"
                 >
                   {t(($) => $.children.dentalInsurance.dentalInsuranceEligibilityConfirmation, {
+                    childName: childName,
+                  })}
+                </InputCheckbox>
+              </div>
+            )}
+            {hasDentalInsurance === false && (
+              <div className="space-y-4">
+                <ContextualAlert type="info" id="child-dental-insurance-confirmation-no">
+                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.no.title)}</h2>
+                  <p>
+                    {t(($) => $.children.dentalInsurance.alert.no.body, {
+                      childName: childName,
+                    })}
+                  </p>
+                </ContextualAlert>
+                <InputCheckbox
+                  id="dental-insurance-eligibility-confirmation-no"
+                  name="dentalInsuranceEligibilityConfirmationNo"
+                  value={CHECKBOX_VALUE.yes}
+                  defaultChecked={defaultState?.dentalInsuranceEligibilityConfirmationNo}
+                  errorMessage={errors?.dentalInsuranceEligibilityConfirmationNo}
+                  required
+                  aria-describedby="child-dental-insurance-confirmation-no"
+                >
+                  {t(($) => $.children.dentalInsurance.dentalInsuranceEligibilityConfirmationNo, {
                     childName: childName,
                   })}
                 </InputCheckbox>
