@@ -15,6 +15,94 @@ type IsFileContentTypeAllowedArgs = {
   readonly allowedExtensions: readonly string[];
 } & (FileContentTypeInput | BufferedFileContentTypeInput);
 
+export interface HashedFile {
+  readonly file: File;
+  readonly hash: string;
+}
+
+/**
+ * Computes SHA-256 hash while preserving file reference.
+ *
+ * @param file - File whose contents will be hashed.
+ * @returns File paired with its lowercase hexadecimal SHA-256 hash.
+ */
+export async function hashFile(file: File): Promise<HashedFile> {
+  return {
+    file,
+    hash: await hashFileBuffer(await file.arrayBuffer()),
+  };
+}
+
+/**
+ * Computes SHA-256 hashes while preserving each file reference.
+ *
+ * @param files - Files whose contents will be hashed.
+ * @returns Files paired with their lowercase hexadecimal SHA-256 hashes.
+ */
+export async function hashFiles(files: ReadonlyArray<File>): Promise<ReadonlyArray<HashedFile>> {
+  return await Promise.all(files.map(hashFile));
+}
+
+/**
+ * Computes SHA-256 digest for a file buffer.
+ *
+ * @param fileBuffer - File contents to hash.
+ * @returns Lowercase hexadecimal SHA-256 digest.
+ */
+export async function hashFileBuffer(fileBuffer: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
+  return [...new Uint8Array(hashBuffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Finds first file whose name, size, and SHA-256 hash match an earlier file.
+ *
+ * @param files - Files to inspect for duplicate content.
+ * @returns Duplicate file, or `undefined` when every file is unique.
+ */
+export async function findDuplicateFile(files: ReadonlyArray<File>): Promise<File | undefined> {
+  const candidateGroups = groupPotentialDuplicateFiles(files);
+  const hashedFileGroups = await Promise.all(candidateGroups.map(hashFiles));
+
+  for (const hashedFiles of hashedFileGroups) {
+    const duplicateFile = findDuplicateByHash(hashedFiles);
+    if (duplicateFile) return duplicateFile;
+  }
+}
+
+/**
+ * Groups files by metadata that can identify possible duplicates without reading file contents.
+ *
+ * @param files - Files to group by name and size.
+ * @returns Groups containing at least two files with matching metadata.
+ */
+function groupPotentialDuplicateFiles(files: ReadonlyArray<File>): ReadonlyArray<ReadonlyArray<File>> {
+  const filesByMetadata = new Map<string, File[]>();
+
+  for (const file of files) {
+    const metadataKey = JSON.stringify([file.name, file.size]);
+    const matchingFiles = filesByMetadata.get(metadataKey);
+    if (matchingFiles) matchingFiles.push(file);
+    else filesByMetadata.set(metadataKey, [file]);
+  }
+
+  return [...filesByMetadata.values()].filter((matchingFiles) => matchingFiles.length > 1);
+}
+
+/**
+ * Finds first file whose hash matches an earlier file in same metadata group.
+ *
+ * @param hashedFiles - Files and hashes from one metadata group.
+ * @returns Duplicate file, or `undefined` when all hashes are unique.
+ */
+function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | undefined {
+  const seenHashes = new Set<string>();
+  for (const { file, hash } of hashedFiles) {
+    if (seenHashes.has(hash)) return file;
+    seenHashes.add(hash);
+  }
+}
+
 /**
  * Validates a file's content type using signature detection.
  *

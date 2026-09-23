@@ -1,8 +1,66 @@
 import { describe, expect, it } from 'vitest';
 
-import { arrayBufferToBase64, findMimeType, getFileExtension, getMimeType, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
+import { arrayBufferToBase64, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
 
 describe('file-utils', () => {
+  describe('hashFileBuffer', () => {
+    it('should return lowercase hexadecimal SHA-256 digest', async () => {
+      const fileBuffer = new TextEncoder().encode('abc').buffer;
+
+      await expect(hashFileBuffer(fileBuffer)).resolves.toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    });
+  });
+
+  describe('hashFile', () => {
+    it('should preserve file reference and include content hash', async () => {
+      const file = new File(['abc'], 'document.txt');
+
+      await expect(hashFile(file)).resolves.toEqual({
+        file,
+        hash: 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+      });
+    });
+  });
+
+  describe('hashFiles', () => {
+    it('should hash every file in input order', async () => {
+      const firstFile = new File(['abc'], 'first.txt');
+      const secondFile = new File(['def'], 'second.txt');
+
+      const hashedFiles = await hashFiles([firstFile, secondFile]);
+
+      expect(hashedFiles.map(({ file }) => file)).toEqual([firstFile, secondFile]);
+      expect(hashedFiles.map(({ hash }) => hash)).toEqual(['ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad', 'cb8379ac2098aa165029e3938a51da0bcecfc008fd6795f401178647f96c5b34']);
+    });
+  });
+
+  describe('findDuplicateFile', () => {
+    it('should return later file when name, size, and content match', async () => {
+      const originalFile = new File(['same content'], 'document.txt');
+      const duplicateFile = new File(['same content'], 'document.txt');
+
+      await expect(findDuplicateFile([originalFile, duplicateFile])).resolves.toBe(duplicateFile);
+    });
+
+    it('should return undefined when matching metadata has different content', async () => {
+      const firstFile = new File(['first'], 'document.txt');
+      const secondFile = new File(['other'], 'document.txt');
+
+      await expect(findDuplicateFile([firstFile, secondFile])).resolves.toBeUndefined();
+    });
+
+    it('should return undefined when matching content has different metadata', async () => {
+      const firstFile = new File(['same content'], 'first.txt');
+      const secondFile = new File(['same content'], 'second.txt');
+
+      await expect(findDuplicateFile([firstFile, secondFile])).resolves.toBeUndefined();
+    });
+
+    it('should return undefined for empty input', async () => {
+      await expect(findDuplicateFile([])).resolves.toBeUndefined();
+    });
+  });
+
   describe('isFileContentTypeAllowed', () => {
     it('should allow detected RTF content when the extension is allowed', async () => {
       const file = new File([String.raw`{\rtf1\ansi Test document}`], 'document.rtf', { type: 'application/rtf' });
