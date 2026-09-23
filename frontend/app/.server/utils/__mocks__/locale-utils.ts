@@ -1,9 +1,9 @@
 import { vi } from 'vitest';
 
-export async function getFixedT() {
+export const getFixedT = vi.fn(async () => {
   return await Promise.resolve(vi.fn((i18nKey: string) => i18nKey));
-}
+});
 
-export function getLocale() {
+export const getLocale = vi.fn(() => {
   return 'en';
-}
+});

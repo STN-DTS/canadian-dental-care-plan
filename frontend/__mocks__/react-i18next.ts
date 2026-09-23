@@ -34,6 +34,7 @@ export const useTranslation = vi.fn((ns?: Namespace) => {
 export const getI18n = vi.fn(() => {
   const mockT = createMockT();
   return {
+    getFixedT: () => mockT,
     i18n: {
       getFixedT: () => mockT,
     },
