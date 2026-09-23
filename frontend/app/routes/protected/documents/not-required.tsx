@@ -24,17 +24,7 @@ export const handle = {
 } as const satisfies RouteHandleData;
 
 function LayoutBreadcrumbs(): JSX.Element {
-  const { t } = useTranslation('documents');
-  return (
-    <ProtectedBreadcrumbs
-      items={[
-        {
-          content: t(($) => $.index.pageTitle),
-          routeId: 'protected/documents/index',
-        },
-      ]}
-    />
-  );
+  return <ProtectedBreadcrumbs />;
 }
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
