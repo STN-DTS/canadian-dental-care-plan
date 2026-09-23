@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * see: https://vitest.dev/guide/workspace
+ * Defining Vitest Projects
+ * https://vitest.dev/guide/projects
  */
 export default defineConfig({
   test: {
@@ -12,11 +13,7 @@ export default defineConfig({
           name: 'jsdom',
           environment: 'jsdom',
           pool: 'vmThreads',
-          include: [
-            './__tests__/components/**/*.test.(ts|tsx)', //
-            './__tests__/hooks/**/*.test.(ts|tsx)',
-            './__tests__/routes/**/*.test.(ts|tsx)',
-          ],
+          include: ['./__tests__/{components,hooks,routes}/**/*.test.{ts,tsx}'],
         },
       },
       {
@@ -24,14 +21,8 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: [
-            './__tests__/**/*.test.(ts|tsx)', //
-          ],
-          exclude: [
-            './__tests__/components/**', //
-            './__tests__/hooks/**',
-            './__tests__/routes/**',
-          ],
+          include: ['./__tests__/**/*.test.{ts,tsx}'],
+          exclude: ['./__tests__/{components,hooks,routes}/**'],
         },
       },
     ],
