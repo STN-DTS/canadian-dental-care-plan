@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
-import { redirect, useFetcher } from 'react-router';
+import { data, redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { announce } from '@react-aria/live-announcer';
-import type { TFunction } from 'i18next';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -15,7 +14,6 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
-import type { DocumentUploadService } from '~/.server/domain/services';
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -35,10 +33,9 @@ import { LoadingButton } from '~/components/loading-button';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
-import { expectDefined } from '~/utils/assert-utils';
+import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
+import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { focusOnNextFrame } from '~/utils/dom-utils';
-import { getClientEnv } from '~/utils/env-utils';
-import { arrayBufferToBase64, getFileExtension, isFileContentTypeAllowed } from '~/utils/file-utils';
 import { getLanguage } from '~/utils/locale-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
@@ -49,9 +46,10 @@ import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 type FileStateWithDocumentType = FileState & { readonly documentType: string };
 
-type DocumentUploadSchema = ReturnType<typeof createDocumentUploadSchema>;
-type DocumentUploadSchemaOuput = z.output<DocumentUploadSchema>;
-type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOuput>;
+const FORM_ACTION = {
+  upload: 'upload',
+  validateFiles: 'validate-files',
+} as const;
 
 /**
  * Middleware that permits access to the document upload route only for eligible applicants.
@@ -108,385 +106,184 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function clientAction({ request, url, serverAction }: Route.ClientActionArgs) {
-  const formData = await request.clone().formData();
   const locale = getLanguage(url);
   const t = getI18n().getFixedT(locale, 'documents');
-  const env = getClientEnv();
+  const formData = await request.clone().formData();
+  const source = 'client';
 
-  const validationResult = await validateUploadForm(formData, locale, t, {
-    allowedExtensions: env.DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS,
-    maxSizeMB: env.DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB,
-    maxCount: env.DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-  });
+  const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
+  if (formAction === FORM_ACTION.validateFiles) {
+    const selectionValidationResult = validateFileSelection({ formData, locale, t });
+    const validationId = selectionValidationResult.validationId;
+
+    if (!selectionValidationResult.success) {
+      return data({ formAction, source, validationId, errors: selectionValidationResult.errors }, 400);
+    }
+
+    return { formAction, source, validationId, errors: undefined };
+  }
+
+  const validationResult = await validateUploadForm({ formData, locale, t });
   if (!validationResult.success) {
-    return { errors: validationResult.errors };
+    return data({ formAction, source, errors: validationResult.errors }, 400);
   }
 
   return await serverAction();
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
-  const applicant = getApplicant(context);
+  const { session } = context.get(appContext);
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
-  const config = appContainer.get(TYPES.ClientConfig);
-  const user = getUser(context);
-  const allowedExtensions = config.DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS;
-
   const formData = await request.formData();
-  const validationResult = await validateUploadForm(formData, locale, t, {
-    allowedExtensions,
-    maxSizeMB: config.DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB,
-    maxCount: config.DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-  });
+  const source = 'server';
 
+  const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
+  if (formAction !== FORM_ACTION.upload) {
+    throw new Error(`Invalid formAction: ${formAction}`);
+  }
+
+  const validationResult = await validateUploadForm({ formData, locale, t });
   if (!validationResult.success) {
-    return { errors: validationResult.errors };
+    return data({ formAction, source, errors: validationResult.errors } as const, 400);
   }
 
   const { files } = validationResult.data;
-  const uploadService = appContainer.get(TYPES.DocumentUploadService);
 
-  const scanResult = await scanDocuments({ allowedExtensions, files, userId: user.id, service: uploadService, t });
+  const scanResult = await scanDocuments(files);
   if (!scanResult.success) {
-    return { errors: scanResult.errors };
+    return data({ formAction, source, errors: scanResult.errors } as const, 400);
   }
 
-  const clientNumber = applicant.clientNumber;
-  const uploadResult = await uploadDocuments({ clientNumber, files: files, service: uploadService, t, userId: user.id });
-
+  const uploadResult = await uploadDocuments(files);
   if (!uploadResult.success) {
-    return { errors: uploadResult.errors };
+    return data({ formAction, source, errors: uploadResult.errors } as const, 400);
   }
 
   const id = crypto.randomUUID();
-  startDocumentUploadState({
-    id,
-    session,
-    submittedDocuments: Object.values(files).map(({ file, documentType }) => ({
-      fileName: file.name,
-      documentType,
-      fileSize: file.size,
-    })),
+  const submittedDocuments = Object.values(files).map(({ file, documentType }) => {
+    return { fileName: file.name, documentType, fileSize: file.size };
   });
+
+  startDocumentUploadState({ id, session, submittedDocuments });
 
   return redirect(getDocumentUploadSubmittedUrl({ id, params }));
 }
 
-async function validateUploadForm(
-  formData: FormData,
-  locale: string,
-  t: TFunction<'documents'>,
-  config: { allowedExtensions: readonly string[]; maxSizeMB: number; maxCount: number },
-): Promise<{ success: true; data: DocumentUploadSchemaOuput } | { success: false; errors: DocumentUploadSchemaErrorTree }> {
-  const schema = createDocumentUploadSchema({ locale, t, allowedExtensions: config.allowedExtensions, maxFileSizeInMB: config.maxSizeMB, maxFileCount: config.maxCount });
-
-  // Parse form data into expected structure
-  const fileIds = formData.getAll('file_id') as string[];
-  const fileObjects = formData.getAll('file_object') as File[];
-  const documentTypes = formData.getAll('file_document_type') as string[];
-
-  // Build files record
-  const files: Record<string, { file: File; fileBuffer: ArrayBuffer; fileHash: string; documentType: string }> = Object.fromEntries(
-    await Promise.all(
-      fileIds.map(async (fileId, i) => {
-        const file = expectDefined(fileObjects[i], 'Expected file object at index ' + i);
-        const fileBuffer = await file.arrayBuffer();
-        const fileHashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
-        const fileHash = [...new Uint8Array(fileHashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
-        const documentType = documentTypes[i] ?? '';
-        return [fileId, { file, fileBuffer, fileHash, documentType }] as const;
-      }),
-    ),
-  );
-
-  // Build final data object
-  const data = {
-    files: files,
-  };
-
-  // Validate using Zod schema
-  const result = schema.safeParse(data);
-
-  if (!result.success) {
-    return { success: false, errors: z.treeifyError(result.error) };
-  }
-
-  return { success: true, data: result.data };
-}
-
-interface ScanDocumentsRequestArgs {
-  allowedExtensions: ReadonlyArray<string>;
-  files: DocumentUploadSchemaOuput['files'];
-  userId: string;
-  service: DocumentUploadService;
-  t: TFunction<'documents'>;
-}
-
-async function scanDocuments({ allowedExtensions, files, service, t, userId }: ScanDocumentsRequestArgs): Promise<UploadDocumentsResponseArgs> {
-  const promises = Object.entries(files).map(async ([id, { file, fileBuffer }]) => {
-    try {
-      const invalidTypeError = t(($) => $.upload.errorMessage.invalidFileType, {
-        filename: file.name,
-        extensions: allowedExtensions.join(', '),
-      });
-
-      const isContentTypeAllowed = await isFileContentTypeAllowed({ allowedExtensions, declaredMimeType: file.type, fileBuffer });
-      if (!isContentTypeAllowed) {
-        return { id, error: invalidTypeError };
-      }
-
-      const scanResponse = await service.scanDocument({
-        fileName: file.name,
-        binary: arrayBufferToBase64(fileBuffer),
-        userId,
-      });
-
-      if (scanResponse.Error) {
-        return {
-          id,
-          error: t(($) => $.upload.errorMessage.scanFailed, {
-            error: scanResponse.Error.ErrorMessage,
-            code: scanResponse.Error.ErrorCode,
-          }),
-        };
-      }
-
-      return { id, success: true };
-    } catch {
-      return {
-        id,
-        error: t(($) => $.upload.errorMessage.scanError),
-      };
-    }
-  });
-
-  const results = await Promise.all(promises);
-  return processBatchResults(results);
-}
-
-interface UploadDocumentsRequestArgs {
-  clientNumber: string;
-  files: DocumentUploadSchemaOuput['files'];
-  userId: string;
-  service: DocumentUploadService;
-  t: TFunction<'documents'>;
-}
-
-type UploadDocumentsResponseArgs =
-  | { success: true; errors?: undefined } //
-  | { success: false; errors: DocumentUploadSchemaErrorTree };
-
-async function uploadDocuments({ clientNumber, files, service, t, userId }: UploadDocumentsRequestArgs): Promise<UploadDocumentsResponseArgs> {
-  const promises = Object.entries(files).map(async ([id, { file, fileBuffer, documentType }]) => {
-    try {
-      const response = await service.uploadDocument({
-        clientNumber,
-        evidentiaryDocumentTypeId: documentType,
-        fileName: file.name,
-        binary: arrayBufferToBase64(fileBuffer),
-        uploadDate: new Date(),
-        lastModifiedDate: new Date(file.lastModified),
-        userId,
-      });
-
-      return response.Error //
-        ? {
-            id,
-            error: t(($) => $.upload.errorMessage.uploadFailed, {
-              error: response.Error.ErrorMessage,
-              code: response.Error.ErrorCode,
-            }),
-          }
-        : { id, success: true };
-    } catch {
-      return {
-        id,
-        error: t(($) => $.upload.errorMessage.uploadError),
-      };
-    }
-  });
-
-  const results = await Promise.all(promises);
-  return processBatchResults(results);
-}
-
-function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>):
-  | { success: true; errors?: undefined } //
-  | { success: false; errors: DocumentUploadSchemaErrorTree } {
-  const failures = results.filter((r) => r.error);
-  if (failures.length === 0) return { success: true };
-
-  const errors: DocumentUploadSchemaErrorTree = {
-    errors: [],
-    properties: {
-      files: {
-        errors: [],
-        properties: {},
-      },
-    },
-  };
-
-  for (const { id, error } of failures) {
-    if (error && errors.properties?.files?.properties) {
-      errors.properties.files.properties[id] = {
-        errors: [],
-        properties: {
-          file: {
-            errors: [error],
-          },
-        },
-      };
-    }
-  }
-
-  return { success: false, errors };
-}
-
-type CreateDocumentUploadSchemaArgs = {
-  locale: string;
-  t: TFunction<'documents'>;
-  allowedExtensions: ReadonlyArray<string>;
-  maxFileSizeInMB: number;
-  maxFileCount: number;
-};
-
-function createDocumentUploadSchema({ locale, t, allowedExtensions, maxFileSizeInMB, maxFileCount }: CreateDocumentUploadSchemaArgs) {
-  const maxFileSizeInBytes = megabytesToBytes(maxFileSizeInMB);
-
-  const fileSchema = z
-    .object({
-      file: z.instanceof(File),
-      fileBuffer: z.instanceof(ArrayBuffer),
-      fileHash: z.string(),
-      documentType: z.string(),
-    })
-    .superRefine((data, ctx) => {
-      if (!allowedExtensions.includes(getFileExtension(data.file.name))) {
-        ctx.addIssue({
-          code: 'custom',
-          message: t(($) => $.upload.errorMessage.invalidFileType, {
-            filename: data.file.name,
-            extensions: allowedExtensions.join(', '),
-          }),
-          path: ['file'],
-        });
-      } else if (data.file.size > maxFileSizeInBytes) {
-        ctx.addIssue({
-          code: 'custom',
-          message: t(($) => $.upload.errorMessage.fileTooLarge, {
-            filename: data.file.name,
-            filesize: bytesToFilesize(maxFileSizeInBytes, `${locale}-CA`),
-          }),
-          path: ['file'],
-        });
-      } else if (!data.documentType) {
-        ctx.addIssue({
-          code: 'custom',
-          message: t(($) => $.upload.errorMessage.documentTypeRequired, {
-            filename: data.file.name,
-          }),
-          path: ['documentType'],
-        });
-      }
-    });
-
-  return z.object({
-    files: z
-      .record(z.string(), fileSchema) //
-      .refine(
-        (value) => Object.keys(value).length > 0,
-        t(($) => $.upload.errorMessage.fileRequired),
-      )
-      .refine(
-        (value) => Object.keys(value).length <= maxFileCount,
-        t(($) => $.upload.errorMessage.tooManyFiles, { count: maxFileCount }),
-      )
-      .superRefine((files, ctx) => {
-        const seenFiles = new Set<string>();
-        for (const [id, { file, fileHash }] of Object.entries(files)) {
-          const fileKey = `file-${file.name}-${file.size}-${fileHash}`;
-          if (seenFiles.has(fileKey)) {
-            ctx.addIssue({
-              code: 'custom',
-              message: t(($) => $.upload.errorMessage.duplicateFile, { filename: file.name }),
-              path: [id, 'file'],
-            });
-          } else {
-            seenFiles.add(fileKey);
-          }
-        }
-      }),
-  });
-}
-
-export default function DocumentsUpload({ loaderData, params }: Route.ComponentProps) {
+export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation(['documents', 'gcweb']);
   const { documentTypes, SCCH_BASE_URI } = loaderData;
-  const env = useClientEnv();
-  const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT } = env;
+  const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
-  const fetcher = useFetcher<typeof action>();
-  const { isSubmitting } = useFetcherSubmissionState(fetcher);
+  const fetcher = useFetcher<typeof clientAction | typeof action>();
+  const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
 
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
+  const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
 
-  const handleFileChange = (files: ReadonlyArray<FileState>) => {
-    // Announce add/remove file actions to assistive technology since the file list updates without a
-    // page navigation, which would otherwise be a silent DOM change for screen reader users.
-    const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
-    const currentFileIds = new Set(files.map(({ id }) => id));
-    const addedFiles = files.filter(({ id }) => !previousFileIds.has(id));
-    const removedFiles = filesWithTypes.filter(({ id }) => !currentFileIds.has(id));
+  const handleBeforeFilesAdd = useCallback(
+    (files: ReadonlyArray<File>) => {
+      if (pendingFileValidationRef.current) return false;
 
-    const addedFile = addedFiles[0];
-    if (addedFile) {
-      announce(
-        t(($) => $.upload.fileAddedAnnouncement, {
-          count: addedFiles.length,
-          fileName: addedFile.file.name,
-        }),
-        'polite',
-      );
-      focusOnNextFrame(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`));
-    }
-
-    const removedFile = removedFiles[0];
-    if (removedFile) {
-      announce(
-        t(($) => $.upload.fileRemovedAnnouncement, {
-          count: removedFiles.length,
-          fileName: removedFile.file.name,
-        }),
-        'polite',
-      );
-    }
-
-    setFilesWithTypes((prev) => {
-      const prevMap = new Map(prev.map((item) => [item.id, item]));
-      const newItems: FileStateWithDocumentType[] = [];
-
-      for (const file of files) {
-        const prevFile = prevMap.get(file.id);
-        if (prevFile) {
-          newItems.push(prevFile);
-        } else {
-          newItems.push({ ...file, documentType: '' });
-        }
+      const validationId = crypto.randomUUID();
+      const formData = new FormData();
+      formData.set('_action', FORM_ACTION.validateFiles);
+      formData.set('_validation_id', validationId);
+      formData.set('current_file_count', filesWithTypes.length.toString());
+      for (const { file } of filesWithTypes) {
+        formData.append('existing_file_object', file);
       }
-      const uniqueItems = new Map(newItems.map((item) => [item.id, item]));
-      return [...uniqueItems.values()];
-    });
-  };
+      for (const file of files) {
+        formData.append('file_object', file);
+      }
+
+      pendingFileValidationRef.current = { validationId, files };
+      void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
+      return false;
+    },
+    [fetcher, filesWithTypes],
+  );
+
+  const handleFileChange = useCallback(
+    (files: ReadonlyArray<FileState>) => {
+      // Announce add/remove file actions to assistive technology since the file list updates without a
+      // page navigation, which would otherwise be a silent DOM change for screen reader users.
+      const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
+      const currentFileIds = new Set(files.map(({ id }) => id));
+      const addedFiles = files.filter(({ id }) => !previousFileIds.has(id));
+      const removedFiles = filesWithTypes.filter(({ id }) => !currentFileIds.has(id));
+
+      const addedFile = addedFiles[0];
+      if (addedFile) {
+        announce(
+          t(($) => $.upload.fileAddedAnnouncement, {
+            count: addedFiles.length,
+            fileName: addedFile.file.name,
+          }),
+          'polite',
+        );
+        focusOnNextFrame(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`));
+      }
+
+      const removedFile = removedFiles[0];
+      if (removedFile) {
+        announce(
+          t(($) => $.upload.fileRemovedAnnouncement, {
+            count: removedFiles.length,
+            fileName: removedFile.file.name,
+          }),
+          'polite',
+        );
+      }
+
+      setFilesWithTypes((prev) => {
+        const prevMap = new Map(prev.map((item) => [item.id, item]));
+        return files.map((file) => prevMap.get(file.id) ?? { ...file, documentType: '' });
+      });
+    },
+    [filesWithTypes, t],
+  );
+
+  useEffect(() => {
+    if (!pendingFileValidationRef.current || !fetcher.data) {
+      return;
+    }
+
+    if (
+      fetcher.data.source !== 'client' || //
+      fetcher.data.formAction !== FORM_ACTION.validateFiles ||
+      fetcher.data.validationId !== pendingFileValidationRef.current.validationId
+    ) {
+      return;
+    }
+
+    const files = pendingFileValidationRef.current.files;
+    pendingFileValidationRef.current = undefined;
+
+    if ('errors' in fetcher.data) {
+      return;
+    }
+
+    handleFileChange([...filesWithTypes, ...files.map((file) => ({ id: crypto.randomUUID(), file }))]);
+  }, [fetcher.data, filesWithTypes, handleFileChange]);
+
+  const handleDocumentTypeChange = useCallback((id: string, documentType: string) => {
+    setFilesWithTypes((prev) =>
+      prev.map((file) => {
+        // Update the document type for the matching file
+        return file.id === id ? { ...file, documentType } : file;
+      }),
+    );
+  }, []);
 
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    formData.set('_action', FORM_ACTION.upload);
     formData.delete('file_id');
     formData.delete('file_object');
     formData.delete('file_document_type');
@@ -549,7 +346,7 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
                     <li>{t(($) => $.upload.uploadFiles.maxFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })}</li>
                     <li>
                       {t(($) => $.upload.uploadFiles.maxSize, {
-                        filesize: bytesToFilesize(megabytesToBytes(env.DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB), `${i18n.language}-CA`),
+                        filesize: bytesToFilesize(megabytesToBytes(DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB), `${i18n.language}-CA`),
                       })}
                     </li>
                     <li>
@@ -559,7 +356,16 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
                     </li>
                   </ul>
                   {filesError && <InputError id="files-error" className="mb-2" fieldId="fileUploadTrigger" message={filesError} />}
-                  <FileUpload id="file-upload" label={t(($) => $.upload.uploadDocument)} value={filesWithTypes} onValueChange={handleFileChange} accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')} className="gap-4 sm:gap-6">
+                  <FileUpload
+                    id="file-upload"
+                    label={t(($) => $.upload.uploadDocument)}
+                    value={filesWithTypes}
+                    onValueChange={handleFileChange}
+                    onBeforeFilesAdd={handleBeforeFilesAdd}
+                    accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')}
+                    disabled={isSubmitting}
+                    className="gap-4 sm:gap-6"
+                  >
                     <div>
                       <FileUploadTrigger asChild>
                         <Button id="fileUploadTrigger" variant="secondary" className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
@@ -594,14 +400,13 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
                               className="w-full"
                               options={docTypeOptions}
                               value={documentType}
-                              onChange={(e) => {
-                                setFilesWithTypes((prev) => prev.map((p) => (p.id === id ? { ...p, documentType: e.target.value } : p)));
-                              }}
+                              onChange={(event) => handleDocumentTypeChange(id, event.currentTarget.value)}
+                              disabled={isSubmitting}
                               errorMessage={documentTypeError}
                             />
                             <div className="mt-2">
                               <FileUploadItemDelete asChild>
-                                <Button variant="secondary" size="sm" endIcon={faTimes}>
+                                <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting}>
                                   {t(($) => $.upload.remove)}
                                 </Button>
                               </FileUploadItemDelete>
@@ -615,7 +420,14 @@ export default function DocumentsUpload({ loaderData, params }: Route.ComponentP
               </div>
 
               <div className="mt-8">
-                <LoadingButton id="submit-button" variant="primary" type="submit" loading={isSubmitting} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click">
+                <LoadingButton
+                  id="submit-button"
+                  variant="primary"
+                  type="submit"
+                  loading={isSubmitting && submitAction === FORM_ACTION.upload}
+                  disabled={isSubmitting}
+                  data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+                >
                   {t(($) => $.upload.submit)}
                 </LoadingButton>
               </div>
