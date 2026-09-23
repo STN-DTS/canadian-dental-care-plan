@@ -264,7 +264,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
     const files = pendingFileValidationRef.current.files;
     pendingFileValidationRef.current = undefined;
 
-    if ('errors' in fetcher.data) {
+    if (fetcher.data.errors) {
       return;
     }
 
