@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { LiteralToPrimitiveDeep, PartialDeep } from 'type-fest';
 import { describe, expect, it, vi } from 'vitest';
 import { mockFn } from 'vitest-mock-extended';
 
@@ -14,8 +15,22 @@ getClientEnvMock.mockReturnValue({
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 1,
 });
 
-const tFunctionMock = mockFn<TFunction<'documents'>>();
-tFunctionMock.mockReturnValue('validation error');
+const tFunctionMock = mockFn<TFunction<'documents'>>().mockImplementation((selector) => {
+  type SelectorTranslation = Parameters<typeof selector>[0];
+  type SelectorTranslationMock = PartialDeep<LiteralToPrimitiveDeep<SelectorTranslation>>;
+  const selectorTranslationMock: SelectorTranslationMock = {
+    upload: {
+      errorMessage: {
+        documentTypeRequired: 'document type required',
+        fileRequired: 'file required',
+        fileTooLarge: 'file too large',
+        invalidFileType: 'invalid file type',
+        tooManyFiles: 'too many files',
+      },
+    },
+  };
+  return selector(selectorTranslationMock as unknown as SelectorTranslation);
+});
 
 describe('protected-documents-upload-helpers', () => {
   describe('validateFileSelection', () => {
@@ -31,20 +46,20 @@ describe('protected-documents-upload-helpers', () => {
     it('should reject selections exceeding maximum file count', () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.txt')], 3);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['validation error']);
+      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['too many files']);
     });
 
     it('should reject unsupported file extensions', () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.pdf')]);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['validation error']);
+      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['invalid file type']);
     });
 
     it('should reject files exceeding maximum size', () => {
       const oversizedFile = new File([new Uint8Array(1024 * 1024 + 1)], 'document.txt');
       const formData = createFileSelectionFormData([oversizedFile]);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['validation error']);
+      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['file too large']);
     });
 
     it('should reject missing validation ID', () => {
@@ -80,7 +95,7 @@ describe('protected-documents-upload-helpers', () => {
 
       expect(result).toMatchObject({
         success: false,
-        errors: { properties: { files: { properties: { first: { properties: { documentType: { errors: ['validation error'] } } } } } } },
+        errors: { properties: { files: { properties: { first: { properties: { documentType: { errors: ['document type required'] } } } } } } },
       });
     });
 
@@ -91,7 +106,7 @@ describe('protected-documents-upload-helpers', () => {
 
       expect(result).toMatchObject({
         success: false,
-        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['validation error'] } } } } } } },
+        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['invalid file type'] } } } } } } },
       });
     });
 
@@ -104,7 +119,7 @@ describe('protected-documents-upload-helpers', () => {
 
       const result = await validateUploadForm({ formData: createUploadFormData(entries), locale: 'en', t: tFunctionMock });
 
-      expect(result).toMatchObject({ success: false, errors: { properties: { files: { errors: ['validation error'] } } } });
+      expect(result).toMatchObject({ success: false, errors: { properties: { files: { errors: ['too many files'] } } } });
     });
 
     it('should throw when a file ID has no corresponding file', async () => {
