@@ -18,6 +18,7 @@ import { ZodConfig } from '~/components/zod-config';
 import { useNonce } from '~/hooks/use-nonce';
 import { useNProgress } from '~/hooks/use-nprogress';
 import indexStyleSheet from '~/index.css?url';
+import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { ClientHintCheck, getHints } from '~/utils/client-hints';
@@ -27,6 +28,8 @@ import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCan
 
 // see: https://docs.fontawesome.com/web/dig-deeper/security#content-security-policy
 fontAwesomeConfig.autoAddCss = false;
+
+export const middleware: Route.MiddlewareFunction[] = [contextStorageMiddleware];
 
 export const links: Route.LinksFunction = () => [
   { rel: 'stylesheet', href: indexStyleSheet }, //
