@@ -130,22 +130,21 @@ export default function ApplyFlowConfirm({ loaderData, params }: Route.Component
       <AppPageTitle>{t(($) => $.confirm.pageTitle)}</AppPageTitle>
       <div className="max-w-prose space-y-10">
         <div className="space-y-4">
+          <p>{t(($) => $.confirm.makeNote)}</p>
           <h2 className="text-3xl">
             <strong>{t(($) => $.confirm.appCodeIs)}</strong>
             <br />
             <strong>{formatSubmissionApplicationCode(submissionInfo.confirmationCode)}</strong>
           </h2>
-          <p>{t(($) => $.confirm.makeNote)}</p>
         </div>
-        <section>
-          <h2 className="font-lato text-3xl font-bold">{t(($) => $.confirm.keepCopy)}</h2>
+        <div>
           <p className="mt-4">{t(($) => $.confirm.printCopyImportant)}</p>
           <div className="mt-8 print:hidden">
             <PrintButton variant="primary" size="lg" errorMessage={t(($) => $.confirm.printUnavailable)} data-gc-analytics-customclick="ESDC-EDSC:CDCP Online Application Form-Protected-Intake_Adult:Print top - Application successfully submitted click">
               {t(($) => $.confirm.printBtn)}
             </PrintButton>
           </div>
-        </section>
+        </div>
         <ContextualAlert type="comment">
           <div className="space-y-4">
             <h2 className="text-2xl">
