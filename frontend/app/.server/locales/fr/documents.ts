@@ -39,7 +39,7 @@ const ns = {
       chooseFile: "Choisissez un fichier à téléverser.",
       maxFiles_one: "Vous pouvez téléverser un fichier",
       maxFiles_other: "Vous pouvez soumettre jusqu'à {{count}} fichiers à la fois",
-      maxSize: "La taille maximale du fichier est de {{filesize}} Mo",
+      maxSize: "La taille maximale du fichier est de {{filesize}}",
       acceptedTypes: "Types de fichiers acceptés\u00A0: {{extensions}}",
     },
     uploadDocument: "Téléverser mes documents",
