@@ -60,7 +60,6 @@ const ns = {
       invalidFileType: "File “{{filename}}” is not supported. You can upload a file in one of the following formats: {{extensions}}",
       tooManyFiles_one: "A maximum of one file can be uploaded at a time. Remove at least one file to continue.",
       tooManyFiles_other: "A maximum of {{count}} files can be uploaded at a time. Remove at least one file to continue.",
-      duplicateFile: "File “{{filename}}” has already been selected.",
       fileTooLarge: "File “{{filename}}” is too large. Make sure the file size is less than {{filesize}}.",
       scanFailed: "File(s) scan failed: {{error}} (Code: {{code}})",
       scanIncomplete: "File(s) scan could not be completed.",
