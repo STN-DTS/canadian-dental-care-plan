@@ -16,13 +16,17 @@ type ValidateFileSelectionArgs = {
   t: TFunction<'documents', undefined>;
 };
 
+type ValidateFileSelectionSuccess = { success: true; validationId: string; errors: undefined };
+type ValidateFileSelectionFailure = { success: false; validationId: string; errors: DocumentUploadSchemaErrorTree };
+type ValidateFileSelectionResult = ValidateFileSelectionSuccess | ValidateFileSelectionFailure;
+
 /**
  * Validates newly selected files against upload count, extension, and size limits.
  *
  * @param args - Form data, locale, and translator used for validation.
  * @returns Validation ID and file selection errors, when present.
  */
-export function validateFileSelection({ formData, locale, t }: ValidateFileSelectionArgs): { readonly validationId: string; readonly errors: DocumentUploadSchemaErrorTree | undefined } {
+export function validateFileSelection({ formData, locale, t }: ValidateFileSelectionArgs): ValidateFileSelectionResult {
   const validationId = z.string().parse(formData.get('_validation_id'));
   const incomingFiles = formData.getAll('file_object') as File[];
   const fileSelectionSchema = createFileSelectionSchema({ locale, t });
@@ -33,18 +37,23 @@ export function validateFileSelection({ formData, locale, t }: ValidateFileSelec
   });
 
   if (!validationResult.success) {
+    const errorMessage = expectDefined(validationResult.error.issues[0], 'Expected file selection validation issue').message;
     return {
+      success: false,
       validationId,
       errors: {
         errors: [],
         properties: {
-          files: { errors: [expectDefined(validationResult.error.issues[0], 'Expected file selection validation issue').message] },
+          files: {
+            errors: [errorMessage],
+          },
         },
       },
     };
   }
 
   return {
+    success: true,
     validationId,
     errors: undefined,
   };
@@ -56,6 +65,10 @@ type ValidateUploadFormArgs = {
   t: TFunction<'documents'>;
 };
 
+type ValidateUploadFormSuccess = { success: true; data: DocumentUploadSchemaOutput };
+type ValidateUploadFormFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+type ValidateUploadFormResult = ValidateUploadFormSuccess | ValidateUploadFormFailure;
+
 /**
  * Reads and validates documents submitted for upload.
  *
@@ -63,7 +76,7 @@ type ValidateUploadFormArgs = {
  * @returns Validated document data on success; otherwise, structured validation errors.
  * @throws {Error} When a file ID has no corresponding file object.
  */
-export async function validateUploadForm({ formData, locale, t }: ValidateUploadFormArgs): Promise<{ success: true; data: DocumentUploadSchemaOutput } | { success: false; errors: DocumentUploadSchemaErrorTree }> {
+export async function validateUploadForm({ formData, locale, t }: ValidateUploadFormArgs): Promise<ValidateUploadFormResult> {
   const schema = createDocumentUploadSchema({ locale, t });
   const fileIds = formData.getAll('file_id') as string[];
   const fileObjects = formData.getAll('file_object') as File[];

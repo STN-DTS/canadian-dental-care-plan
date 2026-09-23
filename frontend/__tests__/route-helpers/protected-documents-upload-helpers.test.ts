@@ -37,7 +37,10 @@ describe('protected-documents-upload-helpers', () => {
     it('should allow selecting duplicate files', () => {
       const formData = createFileSelectionFormData([new File(['same content'], 'document.txt'), new File(['same content'], 'document.txt')]);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock })).toEqual({
+      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: true,
         validationId: 'validation-id',
         errors: undefined,
       });
@@ -46,20 +49,59 @@ describe('protected-documents-upload-helpers', () => {
     it('should reject selections exceeding maximum file count', () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.txt')], 3);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['too many files']);
+      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: false,
+        validationId: 'validation-id',
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['too many files'],
+            },
+          },
+        },
+      });
     });
 
     it('should reject unsupported file extensions', () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.pdf')]);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['invalid file type']);
+      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: false,
+        validationId: 'validation-id',
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['invalid file type'],
+            },
+          },
+        },
+      });
     });
 
     it('should reject files exceeding maximum size', () => {
       const oversizedFile = new File([new Uint8Array(1024 * 1024 + 1)], 'document.txt');
       const formData = createFileSelectionFormData([oversizedFile]);
 
-      expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock }).errors?.properties?.files?.errors).toEqual(['file too large']);
+      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: false,
+        validationId: 'validation-id',
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['file too large'],
+            },
+          },
+        },
+      });
     });
 
     it('should reject missing validation ID', () => {
@@ -71,19 +113,43 @@ describe('protected-documents-upload-helpers', () => {
   });
 
   describe('validateUploadForm', () => {
-    it('should allow submitting duplicate files', async () => {
+    it('should allow submitting files including duplicates', async () => {
       const formData = createUploadFormData([
         { id: 'first', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
         { id: 'second', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
+        { id: 'third', file: new File(['new file content'], 'new-file.txt'), documentType: 'identity-document' },
       ]);
 
-      await expect(validateUploadForm({ formData, locale: 'en', t: tFunctionMock })).resolves.toMatchObject({ success: true });
+      await expect(validateUploadForm({ formData, locale: 'en', t: tFunctionMock })).resolves.toEqual({
+        data: {
+          files: {
+            first: {
+              documentType: 'receipt',
+              file: expect.toSatisfy((file) => file instanceof File && file.name === 'document.txt'),
+              fileBuffer: expect.any(ArrayBuffer),
+              fileHash: 'a636bd7cd42060a4d07fa1bfbcc010eb7794c2ba721e1e3e4c20335a15b66eaf',
+            },
+            second: {
+              documentType: 'receipt',
+              file: expect.toSatisfy((file) => file instanceof File && file.name === 'document.txt'),
+              fileBuffer: expect.any(ArrayBuffer),
+              fileHash: 'a636bd7cd42060a4d07fa1bfbcc010eb7794c2ba721e1e3e4c20335a15b66eaf',
+            },
+            third: {
+              documentType: 'identity-document',
+              file: expect.toSatisfy((file) => file instanceof File && file.name === 'new-file.txt'),
+              fileBuffer: expect.any(ArrayBuffer),
+              fileHash: '0eb88758c79815e61f7c3304ea43340e34773afb8b8edf561a26a40dc36fec2c',
+            },
+          },
+        },
+        success: true,
+      });
     });
 
     it('should reject an empty upload', async () => {
-      const result = await validateUploadForm({ formData: new FormData(), locale: 'en', t: tFunctionMock });
-
-      expect(result.success).toBe(false);
+      const actual = await validateUploadForm({ formData: new FormData(), locale: 'en', t: tFunctionMock });
+      expect(actual.success).toBe(false);
     });
 
     it('should reject a missing document type', async () => {
@@ -91,22 +157,56 @@ describe('protected-documents-upload-helpers', () => {
       formData.append('file_id', 'first');
       formData.append('file_object', new File(['content'], 'document.txt'));
 
-      const result = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
 
-      expect(result).toMatchObject({
+      expect(actual).toEqual({
         success: false,
-        errors: { properties: { files: { properties: { first: { properties: { documentType: { errors: ['document type required'] } } } } } } },
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                first: {
+                  errors: [],
+                  properties: {
+                    documentType: {
+                      errors: ['document type required'],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
     });
 
     it('should reject an unsupported file extension', async () => {
       const formData = createUploadFormData([{ id: 'first', file: new File(['content'], 'document.pdf'), documentType: 'receipt' }]);
 
-      const result = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
 
-      expect(result).toMatchObject({
+      expect(actual).toEqual({
         success: false,
-        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['invalid file type'] } } } } } } },
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                first: {
+                  errors: [],
+                  properties: {
+                    file: {
+                      errors: ['invalid file type'],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
     });
 
@@ -117,9 +217,19 @@ describe('protected-documents-upload-helpers', () => {
         documentType: 'receipt',
       }));
 
-      const result = await validateUploadForm({ formData: createUploadFormData(entries), locale: 'en', t: tFunctionMock });
+      const actual = await validateUploadForm({ formData: createUploadFormData(entries), locale: 'en', t: tFunctionMock });
 
-      expect(result).toMatchObject({ success: false, errors: { properties: { files: { errors: ['too many files'] } } } });
+      expect(actual).toEqual({
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['too many files'],
+            },
+          },
+        },
+      });
     });
 
     it('should throw when a file ID has no corresponding file', async () => {
