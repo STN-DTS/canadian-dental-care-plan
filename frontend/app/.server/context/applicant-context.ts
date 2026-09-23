@@ -3,6 +3,7 @@ import type { RouterContextProvider } from 'react-router';
 
 import type { ApplicantDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { AppError } from '~/errors/app-error';
+import { getContext } from '~/middlewares/context-storage.server';
 
 type ApplicantContext = ApplicantDto;
 
@@ -12,14 +13,15 @@ type ApplicantContext = ApplicantDto;
 export const applicantContext = createContext<ApplicantContext | null>(null);
 
 /**
- * Retrieves the current applicant from React Router context.
+ * Gets applicant details from provided router context or current request context.
  *
- * @param context React Router context provider containing applicant details.
- * @returns Current {@link ApplicantContext}.
- * @throws If applicant details have not been set in the context.
+ * @param context - Optional router context provider. Defaults to current request context.
+ * @returns Applicant details associated with selected context.
+ * @throws {AppError} When applicant context has not been populated.
  */
-export function getApplicant(context: Readonly<RouterContextProvider>): ApplicantContext {
-  const applicant = context.get(applicantContext);
+export function getApplicant(context?: Readonly<RouterContextProvider>): ApplicantContext {
+  const ctx = context ?? getContext();
+  const applicant = ctx.get(applicantContext);
 
   if (!applicant) {
     throw new AppError('Applicant context is not available. Ensure that the applicant has been set in the context.');
@@ -36,14 +38,15 @@ type ProgramApplicantContext = ProgramApplicantDto;
 export const programApplicantContext = createContext<ProgramApplicantContext | null>(null);
 
 /**
- * Retrieves the current program applicant from React Router context.
+ * Gets program applicant details from provided router context or current request context.
  *
- * @param context React Router context provider containing program applicant details.
- * @returns Current {@link ProgramApplicantContext}.
- * @throws If program applicant details have not been set in the context.
+ * @param context - Optional router context provider. Defaults to current request context.
+ * @returns Program applicant details associated with selected context.
+ * @throws {AppError} When program applicant context has not been populated.
  */
-export function getProgramApplicant(context: Readonly<RouterContextProvider>): ProgramApplicantContext {
-  const programApplicant = context.get(programApplicantContext);
+export function getProgramApplicant(context?: Readonly<RouterContextProvider>): ProgramApplicantContext {
+  const ctx = context ?? getContext();
+  const programApplicant = ctx.get(programApplicantContext);
 
   if (!programApplicant) {
     throw new AppError('Program applicant context is not available. Ensure that the program applicant has been set in the context.');
