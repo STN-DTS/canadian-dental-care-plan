@@ -238,6 +238,14 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
           }),
           'polite',
         );
+        const removedIndex = filesWithTypes.findIndex(({ id }) => id === removedFile.id);
+        focusOnNextFrame(() => {
+          const fileNowAtRemovedIndex = files[removedIndex];
+          const precedingFile = files[removedIndex - 1];
+          const fileToFocus = fileNowAtRemovedIndex ?? precedingFile;
+          const focusTargetId = fileToFocus ? `file-upload-item-${fileToFocus.id}` : 'fileUploadTrigger';
+          return document.getElementById(focusTargetId);
+        });
       }
 
       setFilesWithTypes((prev) => {
