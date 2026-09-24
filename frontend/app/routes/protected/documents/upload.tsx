@@ -334,9 +334,9 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
             <fetcher.Form method="post" onSubmit={handleSubmit} noValidate>
               <CsrfTokenInput />
               <div className="space-y-6">
-                <fieldset>
-                  <InputLegend className="mb-2">{t(($) => $.upload.uploadFiles.chooseFile)}</InputLegend>
-                  <ul className="mb-2 list-disc space-y-1 pl-7">
+                <fieldset className="space-y-2">
+                  <InputLegend>{t(($) => $.upload.uploadFiles.chooseFile)}</InputLegend>
+                  <ul className="list-disc space-y-1 pl-7">
                     <li>{t(($) => $.upload.uploadFiles.maxFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })}</li>
                     <li>
                       {t(($) => $.upload.uploadFiles.maxSize, {
@@ -375,11 +375,14 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                     </p>
                     <FileUploadList className="gap-4 sm:gap-6">
                       {filesWithTypes.map(({ id, file, documentType }) => {
+                        const fileNameId = `file-upload-item-${id}-name`;
                         const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
                         const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
                         return (
                           <FileUploadItem
                             id={`file-upload-item-${id}`}
+                            aria-labelledby={fileNameId}
+                            aria-describedby={undefined}
                             key={id}
                             value={id}
                             className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
@@ -389,7 +392,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                             <dl className="space-y-3 sm:space-y-4">
                               <div className="space-y-2">
                                 <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-                                <dd>{file.name}</dd>
+                                <dd id={fileNameId}>{file.name}</dd>
                               </div>
                             </dl>
                             <InputSelect
@@ -405,7 +408,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                               errorMessage={documentTypeError}
                             />
                             <div className="mt-2">
-                              <FileUploadItemDelete asChild>
+                              <FileUploadItemDelete asChild aria-describedby={fileNameId}>
                                 <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting}>
                                   {t(($) => $.upload.remove)}
                                 </Button>

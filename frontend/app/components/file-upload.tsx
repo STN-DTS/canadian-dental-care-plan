@@ -511,7 +511,6 @@ function FileUploadList(props: FileUploadListProps) {
     <ListPrimitive
       role="list"
       id={context.listId}
-      aria-orientation={orientation}
       data-orientation={orientation}
       data-slot="file-upload-list"
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -552,7 +551,8 @@ interface FileUploadItemProps extends ComponentProps<'div'> {
 function FileUploadItem(props: FileUploadItemProps) {
   const { value, asChild, className, ...itemProps } = props;
 
-  const id = useId();
+  const generatedId = useId();
+  const id = props.id ?? generatedId;
   const nameId = `${id}-name`;
   const sizeId = `${id}-size`;
 

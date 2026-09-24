@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { FileUpload, FileUploadDropzone, FileUploadItem, FileUploadItemDelete, FileUploadTrigger } from '~/components/file-upload';
+import { FileUpload, FileUploadDropzone, FileUploadItem, FileUploadItemDelete, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
 
 function stubDataTransfer() {
   vi.stubGlobal(
@@ -41,6 +41,28 @@ function renderFileUpload(onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boo
 describe('FileUpload', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('links removal to the rendered item without assigning list orientation', () => {
+    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
+
+    render(
+      <FileUpload label="Documents" value={[{ id: 'document', file }]} onValueChange={vi.fn()}>
+        <FileUploadList>
+          <FileUploadItem id="file-upload-item-document" aria-labelledby="file-upload-item-document-name" aria-describedby={undefined} value="document">
+            <span id="file-upload-item-document-name">document.pdf</span>
+            <FileUploadItemDelete asChild aria-describedby="file-upload-item-document-name">
+              <button type="button">Remove</button>
+            </FileUploadItemDelete>
+          </FileUploadItem>
+        </FileUploadList>
+      </FileUpload>,
+    );
+
+    expect(screen.getByRole('list')).not.toHaveAttribute('aria-orientation');
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAttribute('aria-controls', 'file-upload-item-document');
+    expect(screen.getByRole('listitem', { name: 'document.pdf' })).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAccessibleDescription('document.pdf');
   });
 
   it('keeps removal enabled when only the add trigger is disabled', () => {
