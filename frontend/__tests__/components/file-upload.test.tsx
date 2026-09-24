@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { FileUpload, FileUploadDropzone } from '~/components/file-upload';
+import { FileUpload, FileUploadDropzone, FileUploadItem, FileUploadItemDelete, FileUploadTrigger } from '~/components/file-upload';
 
 function stubDataTransfer() {
   vi.stubGlobal(
@@ -41,6 +41,25 @@ function renderFileUpload(onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boo
 describe('FileUpload', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('keeps removal enabled when only the add trigger is disabled', () => {
+    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
+    const onValueChange = vi.fn();
+
+    render(
+      <FileUpload label="Documents" value={[{ id: 'document', file }]} onValueChange={onValueChange}>
+        <FileUploadTrigger disabled>Upload file</FileUploadTrigger>
+        <FileUploadItem value="document">
+          <FileUploadItemDelete>Remove</FileUploadItemDelete>
+        </FileUploadItem>
+      </FileUpload>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Upload file' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(onValueChange).toHaveBeenCalledWith([]);
   });
 
   it('rejects files before changing the value', () => {

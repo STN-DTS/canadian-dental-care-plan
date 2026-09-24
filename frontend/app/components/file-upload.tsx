@@ -470,8 +470,9 @@ interface FileUploadTriggerProps extends ComponentProps<'button'> {
 }
 
 function FileUploadTrigger(props: FileUploadTriggerProps) {
-  const { asChild, onClick: onClickProp, ...triggerProps } = props;
+  const { asChild, disabled: disabledProp, onClick: onClickProp, ...triggerProps } = props;
   const context = useFileUploadContext(TRIGGER_NAME);
+  const disabled = context.disabled || disabledProp;
 
   const onClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
@@ -486,7 +487,7 @@ function FileUploadTrigger(props: FileUploadTriggerProps) {
 
   const TriggerPrimitive = asChild ? Slot : 'button';
 
-  return <TriggerPrimitive type="button" aria-controls={context.inputId} data-disabled={context.disabled ? '' : undefined} data-slot="file-upload-trigger" {...triggerProps} disabled={context.disabled} onClick={onClick} />;
+  return <TriggerPrimitive type="button" aria-controls={context.inputId} data-disabled={disabled ? '' : undefined} data-slot="file-upload-trigger" {...triggerProps} disabled={disabled} onClick={onClick} />;
 }
 
 interface FileUploadListProps extends ComponentProps<'div'> {
