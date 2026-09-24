@@ -108,6 +108,11 @@ Oxlint provides syntax and type-aware linting, Oxfmt handles formatting, and
 TypeScript performs project type checking. Configuration lives in
 `oxlint.config.ts`, `oxfmt.config.ts`, and `tsconfig.json`.
 
+Run `pnpm run typecheck` before `pnpm run lint:oxlint`: typecheck generates the
+React Router route types that Oxlint's type-aware rules depend on. CI jobs that
+run these checks separately must preserve this order; `pnpm run lint` already
+runs formatting, typecheck, and Oxlint in the correct sequence.
+
 ## Code organization
 
 ```text
