@@ -4,7 +4,6 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { announce } from '@react-aria/live-announcer';
 import { Trans, getI18n, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -187,7 +186,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
 
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
-      if (pendingFileValidationRef.current) return false;
+      if (pendingFileValidationRef.current || filesWithTypes.length >= DOCUMENT_UPLOAD_MAX_FILE_COUNT) return false;
 
       const validationId = crypto.randomUUID();
       const formData = new FormData();
@@ -205,40 +204,27 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
       void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
       return false;
     },
-    [fetcher, filesWithTypes],
+    [DOCUMENT_UPLOAD_MAX_FILE_COUNT, fetcher, filesWithTypes],
   );
 
   const handleFileChange = useCallback(
     (files: ReadonlyArray<FileState>) => {
-      // Announce add/remove file actions to assistive technology since the file list updates without a
-      // page navigation, which would otherwise be a silent DOM change for screen reader users.
       const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
       const currentFileIds = new Set(files.map(({ id }) => id));
-      const addedFiles = files.filter(({ id }) => !previousFileIds.has(id));
-      const removedFiles = filesWithTypes.filter(({ id }) => !currentFileIds.has(id));
+      const firstAddedFile = files.find(({ id }) => !previousFileIds.has(id));
+      const firstRemovedFile = filesWithTypes.find(({ id }) => !currentFileIds.has(id));
 
-      const addedFile = addedFiles[0];
-      if (addedFile) {
-        announce(
-          t(($) => $.upload.fileAddedAnnouncement, {
-            count: addedFiles.length,
-            fileName: addedFile.file.name,
-          }),
-          'polite',
-        );
-        focusOnNextFrame(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(addedFile.id)}`));
+      if (!firstAddedFile && !firstRemovedFile) {
+        // No files were added or removed, so no need to update focus or state.
+        return;
       }
 
-      const removedFile = removedFiles[0];
-      if (removedFile) {
-        announce(
-          t(($) => $.upload.fileRemovedAnnouncement, {
-            count: removedFiles.length,
-            fileName: removedFile.file.name,
-          }),
-          'polite',
-        );
-        const removedIndex = filesWithTypes.findIndex(({ id }) => id === removedFile.id);
+      if (firstAddedFile) {
+        focusOnNextFrame(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(firstAddedFile.id)}`));
+      }
+
+      if (firstRemovedFile) {
+        const removedIndex = filesWithTypes.findIndex(({ id }) => id === firstRemovedFile.id);
         focusOnNextFrame(() => {
           const fileNowAtRemovedIndex = files[removedIndex];
           const precedingFile = files[removedIndex - 1];
@@ -253,7 +239,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         return files.map((file) => prevMap.get(file.id) ?? { ...file, documentType: '' });
       });
     },
-    [filesWithTypes, t],
+    [filesWithTypes],
   );
 
   useEffect(() => {
@@ -375,12 +361,18 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                     className="gap-4 sm:gap-6"
                   >
                     <div>
-                      <FileUploadTrigger asChild>
+                      <FileUploadTrigger asChild disabled={filesWithTypes.length >= DOCUMENT_UPLOAD_MAX_FILE_COUNT}>
                         <Button id="fileUploadTrigger" variant="secondary" className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
                           {t(($) => $.upload.addFile)}
                         </Button>
                       </FileUploadTrigger>
                     </div>
+                    <p role="status" aria-atomic="true">
+                      {t(($) => $.upload.uploadFiles.filesSelected, {
+                        count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
+                        selected: filesWithTypes.length,
+                      })}
+                    </p>
                     <FileUploadList className="gap-4 sm:gap-6">
                       {filesWithTypes.map(({ id, file, documentType }) => {
                         const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
