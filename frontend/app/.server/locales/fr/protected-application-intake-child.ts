@@ -79,7 +79,7 @@ const ns = {
     pageTitle: "Demande soumise avec succès",
     appCodeIs: "Votre code de demande est\u00A0:",
     makeNote: "Prenez ce code en note, car vous en aurez besoin pour vérifier l'état de votre demande.",
-    printCopyImportant: "Il est important de conserver une copie de votre demande.",
+    printCopyImportant: "Il est important d'imprimer ou de sauvegarder une copie de votre demande.",
     printBtn: "Imprimer ou sauvegarder",
     printUnavailable: "L'impression n'est pas disponible pour le moment. Veuillez prendre note de votre code de confirmation et vérifier les renseignements que vous avez soumis avant de quitter cette page, car ils ne seront plus accessibles.",
     whatsNext: "Vous recevrez une lettre confirmant votre admissibilité",

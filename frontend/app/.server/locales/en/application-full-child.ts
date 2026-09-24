@@ -75,7 +75,7 @@ const ns = {
     pageTitle: "Application successfully submitted",
     appCodeIs: "Your application code is:",
     makeNote: "Save this code, you'll need it to check the status of your application.",
-    printCopyImportant: "It's important to keep a copy of your application.",
+    printCopyImportant: "It's important to print or save a copy of your application.",
     printBtn: "Print or save",
     printUnavailable: "Printing is not available at this time. Please take note of your application code and review the information you submitted before leaving this page, as it will no longer be accessible.",
     whatsNext: "You will receive a letter confirming eligibility",
