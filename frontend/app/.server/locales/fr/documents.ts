@@ -79,7 +79,7 @@ const ns = {
       cancelled: "votre demande a été annulée parce que la date limite est dépassée",
     },
     whatYouCanDoHeading: "Ce que vous pouvez faire",
-    statusChecker: "<statusCheckerLink>Vérifier l'état de votre demande</statusCheckerLink>",
+    statusChecker: "<statusCheckerLink>Vérifier l'état</statusCheckerLink> de votre demande",
     letters: "Consulter vos <lettersLink>lettres</lettersLink> du Régime canadien de soins dentaires",
     returnButton: "Retour au tableau de bord",
   },
