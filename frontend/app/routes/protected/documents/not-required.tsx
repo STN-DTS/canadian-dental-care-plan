@@ -49,7 +49,7 @@ export default function NotRequired({ loaderData, params }: Route.ComponentProps
   const { t } = useTranslation(['documents', 'gcweb']);
   const { SCCH_BASE_URI } = loaderData;
 
-  const statusCheckerLink = <InlineLink routeId="public/status/index" params={params} />;
+  const statusCheckerLink = <InlineLink routeId="public/status/index" params={params} className="external-link" newTabIndicator target="_blank" />;
   const lettersLink = <InlineLink routeId="protected/letters/index" params={params} />;
 
   return (
