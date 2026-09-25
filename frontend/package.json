@@ -91,7 +91,7 @@
     "oxide.ts": "^1.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-i18next": "^17.0.14",
+    "react-i18next": "^17.0.15",
     "react-idle-timer": "^5.7.3",
     "react-number-format": "^5.4.5",
     "react-phone-number-input": "^3.4.18",
