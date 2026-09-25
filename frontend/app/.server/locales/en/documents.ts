@@ -47,7 +47,7 @@ const ns = {
     uploadDocument: "Upload document",
     addFile: "Upload file",
     fileName: "File name",
-    remove: "Remove",
+    remove: "Remove file",
     documentType: "Document Type",
     submit: "Submit",
     selectOne: "Select one",

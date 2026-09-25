@@ -52,7 +52,7 @@ describe('FileUpload', () => {
           <FileUploadItem id="file-upload-item-document" aria-labelledby="file-upload-item-document-name" aria-describedby={undefined} value="document">
             <span id="file-upload-item-document-name">document.pdf</span>
             <FileUploadItemDelete asChild aria-describedby="file-upload-item-document-name">
-              <button type="button">Remove</button>
+              <button type="button">Remove file</button>
             </FileUploadItemDelete>
           </FileUploadItem>
         </FileUploadList>
@@ -60,9 +60,9 @@ describe('FileUpload', () => {
     );
 
     expect(screen.getByRole('list')).not.toHaveAttribute('aria-orientation');
-    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAttribute('aria-controls', 'file-upload-item-document');
+    expect(screen.getByRole('button', { name: 'Remove file' })).toHaveAttribute('aria-controls', 'file-upload-item-document');
     expect(screen.getByRole('listitem', { name: 'document.pdf' })).not.toHaveAttribute('aria-describedby');
-    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAccessibleDescription('document.pdf');
+    expect(screen.getByRole('button', { name: 'Remove file' })).toHaveAccessibleDescription('document.pdf');
   });
 
   it('keeps removal enabled when only the add trigger is disabled', () => {
