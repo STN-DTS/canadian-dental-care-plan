@@ -565,7 +565,7 @@ const ns = {
           body: "{{childName}} is not eligible for the CDCP. This is because they have access to private dental insurance or coverage. If they are a current CDCP member and you continue with this application their coverage will end immediately.",
         },
         no: {
-          title: "Private dental coverage confirmation",
+          title: "Private dental insurance or coverage confirmation",
           body: "{{childName}} may be eligible for the CDCP. We'll confirm your response with your T4 and T4A tax slips and, if applicable, with your spouse or common-law partner's tax slips. If any slip shows {{childName}} has access to dental insurance or coverage, you'll need to provide proof that they're not covered.",
         },
       },
