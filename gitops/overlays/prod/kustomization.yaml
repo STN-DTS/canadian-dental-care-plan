@@ -27,8 +27,8 @@ resources:
   #
   # For renewal application downtime with a 404 response, uncomment ./ingresses-renew-error-404.yaml
   #
-  # - ./ingresses.yaml
-  - ./ingresses-maintenance.yaml
+  - ./ingresses.yaml
+  # - ./ingresses-maintenance.yaml
   # - ./ingresses-apply-maintenance.yaml
   # Note: for the letters maintenance page, see the maintenance configMapGenerator below
   # - ./ingresses-letters-maintenance.yaml
@@ -69,8 +69,8 @@ configMapGenerator:
     #                it should be removed when the letters are brought back online
     # TODO :: GjB :: I am commenting this out but leaving the updated 503 page in
     #                the project as a reference for future, similar deployments
-    files:
-      - ./configs/maintenance/503.html
+    # files:
+    #   - ./configs/maintenance/503.html
 secretGenerator:
   - name: frontend
     behavior: replace
