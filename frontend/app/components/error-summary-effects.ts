@@ -67,7 +67,7 @@ function focusErrorSummary(summaryId: string): void {
   if (!element) return;
 
   element.scrollIntoView({ behavior: 'smooth' });
-  element.focus();
+  element.focus({ preventScroll: true });
 }
 
 function reportValidationErrorsToAnalytics(errors: ReadonlyArray<ErrorMessage>): void {

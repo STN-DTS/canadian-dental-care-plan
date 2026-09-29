@@ -25,9 +25,9 @@ interface ErrorSummaryProviderProps {
  * Provides a live error registry and validation lifecycle to form descendants.
  *
  * Field messages register errors while mounted and remove them on unmount.
- * Errors follow the DOM order of their target fields. When action data changes,
- * the provider commits a validation run after descendants have registered,
- * allowing focus and analytics effects to read the current error list.
+ * Errors follow target DOM order when provider children or registrations change.
+ * When action data changes, the provider commits a validation run after descendants
+ * have registered, allowing focus and analytics effects to read the current error list.
  *
  * @param children Form content that consumes or contributes to the summary.
  * @param actionData Current action result; a changed value starts a new run.
@@ -61,7 +61,6 @@ export function ErrorSummaryProvider({ children, actionData }: ErrorSummaryProvi
   useLayoutEffect(() => {
     const registrationIds = sortRegisteredErrors(state.registeredErrors);
     dispatch({ type: 'SORT_ERRORS', registrationIds });
-    // Child layout can reorder targets without changing field registrations.
   }, [children, state.registeredErrors]);
 
   useEffect(() => {
