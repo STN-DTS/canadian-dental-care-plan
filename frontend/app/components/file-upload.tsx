@@ -195,6 +195,7 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
   accept?: string;
   dir?: Direction;
   label?: string;
+  descriptionId?: string;
   name?: string;
   asChild?: boolean;
   disabled?: boolean;
@@ -204,7 +205,7 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
 }
 
 function FileUploadRoot(props: FileUploadRootProps) {
-  const { value, onValueChange, onBeforeFilesAdd, accept, dir: dirProp, label, name, asChild, disabled = false, invalid = false, multiple = false, required = false, children, className, ...rootProps } = props;
+  const { value, onValueChange, onBeforeFilesAdd, accept, dir: dirProp, label, descriptionId, name, asChild, disabled = false, invalid = false, multiple = false, required = false, children, className, ...rootProps } = props;
 
   const inputId = useId();
   const dropzoneId = useId();
@@ -269,7 +270,7 @@ function FileUploadRoot(props: FileUploadRootProps) {
             type="file"
             id={inputId}
             aria-labelledby={labelId}
-            aria-describedby={dropzoneId}
+            aria-describedby={descriptionId}
             ref={inputRef}
             tabIndex={-1}
             accept={accept}

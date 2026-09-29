@@ -180,6 +180,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
+  const fileUploadDescriptionId = filesError ? 'files-error file-upload-instructions' : 'file-upload-instructions';
 
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
@@ -336,7 +337,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
               <div className="space-y-6">
                 <fieldset className="space-y-2">
                   <InputLegend>{t(($) => $.upload.uploadFiles.chooseFile)}</InputLegend>
-                  <ul className="list-disc space-y-1 pl-7">
+                  <ul id="file-upload-instructions" className="list-disc space-y-1 pl-7">
                     <li>{t(($) => $.upload.uploadFiles.maxFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })}</li>
                     <li>
                       {t(($) => $.upload.uploadFiles.maxSize, {
@@ -353,16 +354,24 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                   <FileUpload
                     id="file-upload"
                     label={t(($) => $.upload.uploadDocument)}
+                    descriptionId={fileUploadDescriptionId}
                     value={filesWithTypes}
                     onValueChange={handleFileChange}
                     onBeforeFilesAdd={handleBeforeFilesAdd}
                     accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')}
                     disabled={isSubmitting}
+                    required
                     className="gap-4 sm:gap-6"
                   >
                     <div>
                       <FileUploadTrigger asChild disabled={filesWithTypes.length >= DOCUMENT_UPLOAD_MAX_FILE_COUNT}>
-                        <Button id="fileUploadTrigger" variant="secondary" className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
+                        <Button
+                          id="fileUploadTrigger"
+                          variant="secondary"
+                          aria-describedby={fileUploadDescriptionId}
+                          className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')}
+                          startIcon={faArrowUpFromBracket}
+                        >
                           {t(($) => $.upload.addFile)}
                         </Button>
                       </FileUploadTrigger>

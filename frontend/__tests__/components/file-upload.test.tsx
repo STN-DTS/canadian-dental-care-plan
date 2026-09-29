@@ -43,6 +43,22 @@ describe('FileUpload', () => {
     vi.unstubAllGlobals();
   });
 
+  it('uses the provided description ID for the file input', () => {
+    render(
+      <FileUpload label="Documents" descriptionId="file-upload-help" value={[]} onValueChange={vi.fn()}>
+        <p id="file-upload-help">Choose a supported document.</p>
+      </FileUpload>,
+    );
+
+    expect(screen.getByLabelText('Documents')).toHaveAccessibleDescription('Choose a supported document.');
+  });
+
+  it('does not reference a dropzone when no description ID is provided', () => {
+    render(<FileUpload label="Documents" value={[]} onValueChange={vi.fn()} />);
+
+    expect(screen.getByLabelText('Documents')).not.toHaveAttribute('aria-describedby');
+  });
+
   it('links removal to the rendered item without assigning list orientation', () => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
 
