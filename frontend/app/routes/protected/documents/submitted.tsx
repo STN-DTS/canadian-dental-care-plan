@@ -58,17 +58,19 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
       <AppPageTitle>{t(($) => $.submitted.pageTitle)}</AppPageTitle>
       <div className="max-w-prose space-y-6">
         <ContextualAlert type="success">
-          <h2 className="mb-2 font-bold">{t(($) => $.submitted.alertHeading)}</h2>
-          <p className="mb-2">{t(($) => $.submitted.youSubmitted)}</p>
-          <ul className="list-none space-y-1">
-            {submittedDocuments.map((document) => (
-              <li key={document.fileName}>{document.fileName}</li>
-            ))}
-          </ul>
-          <p className="mt-2">{t(($) => $.submitted.delayNote)}</p>
+          <div className="space-y-2">
+            <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
+            <p>{t(($) => $.submitted.youSubmitted)}</p>
+            <ol className="list-decimal space-y-1 pl-7">
+              {submittedDocuments.map((document) => (
+                <li key={document.id}>{document.fileName}</li>
+              ))}
+            </ol>
+            <p>{t(($) => $.submitted.delayNote)}</p>
+          </div>
         </ContextualAlert>
         <section className="space-y-4">
-          <h2 className="font-lato text-2xl font-bold">{t(($) => $.submitted.nextStepsHeading)}</h2>
+          <h2 className="font-lato text-2xl font-semibold">{t(($) => $.submitted.nextStepsHeading)}</h2>
           <ul className="list-disc space-y-1 pl-7">
             <li>{t(($) => $.submitted.nextSteps.review)}</li>
             <li>{t(($) => $.submitted.nextSteps.letter)}</li>

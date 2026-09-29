@@ -9,6 +9,7 @@ import { getPathById } from '~/utils/route-utils';
 export type DocumentUploadStateSessionKey = `document-upload-flow-${string}`;
 
 export interface SubmittedDocument {
+  readonly id: string;
   readonly fileName: string;
   readonly documentType: string;
   readonly fileSize: number;

@@ -161,8 +161,8 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   const id = crypto.randomUUID();
-  const submittedDocuments = Object.values(files).map(({ file, documentType }) => {
-    return { fileName: file.name, documentType, fileSize: file.size };
+  const submittedDocuments = Object.entries(files).map(([fileId, { file, documentType }]) => {
+    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
   });
 
   startDocumentUploadState({ id, session, submittedDocuments });

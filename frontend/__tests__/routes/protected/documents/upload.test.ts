@@ -343,7 +343,7 @@ describe('action', () => {
 
   it('starts submitted state and redirects after all documents are processed', async () => {
     const receipt = new File(['content'], 'document.pdf');
-    const identity = new File(['identity content'], 'identity.txt');
+    const identity = new File(['identity content'], 'document.pdf');
     const files = {
       'file-1': { file: receipt, fileBuffer: new ArrayBuffer(receipt.size), fileHash: 'receipt-hash', documentType: 'receipt' },
       'file-2': { file: identity, fileBuffer: new ArrayBuffer(identity.size), fileHash: 'identity-hash', documentType: 'identity-document' },
@@ -368,8 +368,8 @@ describe('action', () => {
       id: uploadId,
       session,
       submittedDocuments: [
-        { fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
-        { fileName: 'identity.txt', documentType: 'identity-document', fileSize: 16 },
+        { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
+        { id: 'file-2', fileName: 'document.pdf', documentType: 'identity-document', fileSize: 16 },
       ],
     });
     expect(getDocumentUploadSubmittedUrl).toHaveBeenCalledWith({ id: uploadId, params: { lang: 'fr' } });
