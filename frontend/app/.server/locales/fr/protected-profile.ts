@@ -1,6 +1,6 @@
 const ns = {
-  requiredLabel: "Veuillez remplir tous les champs.",
-  optionalLabel: "Veuillez remplir tous les champs, sauf ceux marqués comme facultatifs.",
+  requiredLabel: "Remplissez tous les champs.",
+  optionalLabel: "Veuillez remplir tous les champs, sauf s'ils sont indiqués facultatifs.",
   allOptionalLabel: "Tous les champs sont facultatifs.",
   none: "Aucun",
   eligibility: {
