@@ -81,7 +81,7 @@ const ns = {
     whatsNext: "Vous recevrez une lettre confirmant votre admissibilité",
     beginProcess: {
       renewal: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans les 30 jours civils pour vous informer de votre admissibilité au régime.",
-      intake: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans un délai de 30 jours civils avec plus d'informations et les prochaines étapes, au besoin.",
+      intake: "Nous avons reçu votre demande. Une lettre vous sera envoyée dans un délai de 30 jours civils avec plus d'informations et les prochaines étapes.",
     },
     proofOfCoverage:
       "Si l'un de vos feuillets T4 ou T4A indique que vous avez accès à une assurance ou une couverture dentaire pour vos enfants, vous devrez fournir une preuve qu'ils ne sont pas couverts. Cette preuve s'applique à vos feuillets fiscaux et, le cas échéant, à ceux de votre conjoint ou de votre conjoint de fait.",
