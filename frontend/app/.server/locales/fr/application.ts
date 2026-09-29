@@ -3,7 +3,7 @@ const ns = {
     pageTitle: "Présenter une demande",
   },
   requiredLabel: "Veuillez remplir tous les champs.",
-  optionalLabel: "Veuillez remplir tous les champs, sauf s'ils sont indiqués facultatifs.",
+  optionalLabel: "Veuillez remplir tous les champs, sauf ceux marqués comme facultatifs.",
   completeAllSections: "Veuillez remplir toutes les sections.",
   confirmInformation: "Veuillez confirmer l'exactitude des renseignements figurant à votre dossier.",
   next: "Suivant",
