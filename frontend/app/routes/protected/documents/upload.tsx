@@ -20,7 +20,7 @@ import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { Button, ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { FileUpload, FileUploadItem, FileUploadItemDelete, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
 import type { FileState } from '~/components/file-upload';
 import { InlineLink } from '~/components/inline-link';

@@ -16,7 +16,7 @@ import { ButtonLink } from '~/components/buttons';
 import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InlineLink } from '~/components/inline-link';
 import { InputCheckbox } from '~/components/input-checkbox';
 import { InputRadios } from '~/components/input-radios';

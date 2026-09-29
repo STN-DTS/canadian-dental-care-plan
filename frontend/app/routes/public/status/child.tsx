@@ -22,7 +22,7 @@ import { Collapsible } from '~/components/collapsible';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { DatePickerField } from '~/components/date-picker-field';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputPatternField } from '~/components/input-pattern-field';
 import { InputRadios } from '~/components/input-radios';
 import { InputSanitizeField } from '~/components/input-sanitize-field';

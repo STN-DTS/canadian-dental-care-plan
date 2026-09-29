@@ -20,7 +20,7 @@ import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputRadios } from '~/components/input-radios';
 import type { InputRadiosProps } from '~/components/input-radios';
 import { LoadingButton } from '~/components/loading-button';

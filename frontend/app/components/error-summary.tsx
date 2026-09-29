@@ -1,11 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useId } from 'react';
 import type { ComponentPropsWithoutRef, JSX } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
 import { AnchorLink } from '~/components/anchor-link';
 import { useErrorSummaryContext } from '~/components/error-summary-context';
-import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { cn } from '~/utils/tw-utils';
 
 /**
@@ -16,38 +15,23 @@ import { cn } from '~/utils/tw-utils';
  * a section containing a header and a list of error messages, each linked to
  * the corresponding field using the `AnchorLink` component.
  *
- * Additionally, when errors are present, the component scrolls into view and
- * focuses itself for accessibility. It also sends validation error events to
- * Adobe Analytics if it is configured.
- *
- * @returns A JSX element rendering the error summary section, or `undefined`
+ * @returns A JSX element rendering the error summary section, or `null`
  *          if there are no errors to display.
  */
-export function ErrorSummary({ className, ...props }: OmitStrict<ComponentPropsWithoutRef<'section'>, 'children' | 'tabIndex'>): JSX.Element | undefined {
+export function ErrorSummary({ className, id, ...props }: OmitStrict<ComponentPropsWithoutRef<'section'>, 'children' | 'tabIndex'>): JSX.Element | null {
   const { t } = useTranslation('gcweb');
+  const generatedId = useId();
+  const rootId = id ?? generatedId;
   const errorSummaryContext = useErrorSummaryContext();
-  const summaryRef = useRef<HTMLDivElement>(null);
   const errors = errorSummaryContext?.errors;
-  const validationRun = errorSummaryContext?.validationRun;
-
-  useEffect(() => {
-    if (errors && errors.length > 0 && summaryRef.current) {
-      summaryRef.current.scrollIntoView({ behavior: 'smooth' });
-      summaryRef.current.focus();
-
-      if (adobeAnalytics.isConfigured()) {
-        const fieldIds = errors.map(({ fieldId }) => fieldId);
-        adobeAnalytics.pushValidationErrorEvent(fieldIds);
-      }
-    }
-  }, [errors, validationRun]);
 
   if (!errors || errors.length === 0) {
-    return undefined;
+    // No errors to display, render nothing.
+    return null;
   }
 
   return (
-    <section ref={summaryRef} tabIndex={-1} className={cn('my-5 border-4 border-red-600 p-4', className)} {...props}>
+    <section id={rootId} data-error-summary-id={errorSummaryContext.summaryId} tabIndex={-1} className={cn('my-5 border-4 border-red-600 p-4', className)} {...props}>
       <h2 className="font-lato text-lg font-semibold">{t(($) => $.errorSummary.header, { count: errors.length })}</h2>
       <ul className="mt-1.5 list-disc space-y-2 pl-7">
         {errors.map(({ id, fieldId, message }) => (

@@ -23,7 +23,7 @@ import { DatePickerField } from '~/components/date-picker-field';
 import { DateTimeDisplay } from '~/components/date-time-display';
 import { useErrorAlert } from '~/components/error-alert';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputPatternField } from '~/components/input-pattern-field';
 import { InputSanitizeField } from '~/components/input-sanitize-field';
 import { LoadingButton } from '~/components/loading-button';

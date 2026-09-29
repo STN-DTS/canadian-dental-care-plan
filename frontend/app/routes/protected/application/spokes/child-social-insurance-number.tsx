@@ -23,7 +23,7 @@ import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputPatternField } from '~/components/input-pattern-field';
 import { LoadingButton } from '~/components/loading-button';
 import { useFetcherSubmissionState } from '~/hooks';

@@ -22,7 +22,7 @@ import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { DatePickerField } from '~/components/date-picker-field';
 import { useErrorAlert } from '~/components/error-alert';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputPatternField } from '~/components/input-pattern-field';
 import type { InputRadiosProps } from '~/components/input-radios';
 import { InputRadios } from '~/components/input-radios';

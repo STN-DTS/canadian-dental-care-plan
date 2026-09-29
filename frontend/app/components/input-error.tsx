@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import type { ComponentProps } from 'react';
 
 import { useErrorSummaryContext } from '~/components/error-summary-context';
@@ -12,17 +12,22 @@ interface InputErrorProps extends OmitStrict<ComponentProps<'div'>, 'children'> 
   message: string;
 }
 
-export function InputError({ className, fieldId, message, ...props }: InputErrorProps) {
+export function InputError({ className, fieldId, message, id, ...props }: InputErrorProps) {
   const errorSummaryContext = useErrorSummaryContext();
+  const registrationId = useId();
+  const rootId = id ?? registrationId;
+  const registerError = errorSummaryContext?.registerError;
+  const unregisterError = errorSummaryContext?.unregisterError;
 
-  // Register the error message with the context
-  // Intentionally no dependency array to push error on every render
   useEffect(() => {
-    errorSummaryContext?.pushError({ fieldId, message });
-  });
+    registerError?.(registrationId, { fieldId, message });
+    return () => {
+      unregisterError?.(registrationId);
+    };
+  }, [fieldId, message, registerError, registrationId, unregisterError]);
 
   return (
-    <div className={cn('w-fit max-w-prose border-l-2 border-red-600 bg-red-50 px-3 py-1', className)} role="alert" {...props}>
+    <div id={rootId} className={cn('w-fit max-w-prose border-l-2 border-red-600 bg-red-50 px-3 py-1', className)} role="alert" {...props}>
       {message}
     </div>
   );

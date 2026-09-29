@@ -20,7 +20,7 @@ import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/dialog';
 import { useErrorAlert } from '~/components/error-alert';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InlineLink } from '~/components/inline-link';
 import { InputField } from '~/components/input-field';
 import { LoadingButton } from '~/components/loading-button';

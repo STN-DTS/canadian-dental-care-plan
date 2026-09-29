@@ -16,7 +16,7 @@ import { ButtonLink } from '~/components/buttons';
 import { Collapsible } from '~/components/collapsible';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InlineLink } from '~/components/inline-link';
 import { InputPhoneField } from '~/components/input-phone-field';
 import { LoadingButton } from '~/components/loading-button';

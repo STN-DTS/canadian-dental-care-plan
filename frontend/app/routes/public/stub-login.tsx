@@ -15,7 +15,7 @@ import { AppPageTitle } from '~/components/app-page-title';
 import { Button } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InputField } from '~/components/input-field';
 import { InputPatternField } from '~/components/input-pattern-field';
 import { InputSelect } from '~/components/input-select';

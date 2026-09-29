@@ -18,7 +18,7 @@ import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { DebugPayload } from '~/components/debug-payload';
 import { ErrorSummary } from '~/components/error-summary';
-import { ErrorSummaryProvider } from '~/components/error-summary-context';
+import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { InlineLink } from '~/components/inline-link';
 import { InputCheckbox } from '~/components/input-checkbox';
 import { LoadingButton } from '~/components/loading-button';
