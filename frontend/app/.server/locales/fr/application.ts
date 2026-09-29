@@ -2,8 +2,8 @@ const ns = {
   index: {
     pageTitle: "Présenter une demande",
   },
-  requiredLabel: "Veuillez remplir tous les champs.",
-  optionalLabel: "Veuillez remplir tous les champs, sauf ceux marqués comme facultatifs.",
+  requiredLabel: "Remplissez tous les champs.",
+  optionalLabel: "Veuillez remplir tous les champs, sauf s'ils sont indiqués facultatifs.",
   completeAllSections: "Veuillez remplir toutes les sections.",
   confirmInformation: "Veuillez confirmer l'exactitude des renseignements figurant à votre dossier.",
   next: "Suivant",

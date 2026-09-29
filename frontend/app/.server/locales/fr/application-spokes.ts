@@ -185,8 +185,8 @@ const ns = {
         list: {
           pension: "votre emploi ou votre régime de pension",
           pensionPlans: "l'emploi ou le régime de pension d'un membre de votre famille",
-          insurancePlan: "une organisation professionnelle ou étudiante",
-          organization: "une couverture privée que vous ou un membre de votre famille avez acheté",
+          insurancePlan: "une couverture privée que vous ou un membre de votre famille avez acheté",
+          organization: "une organisation professionnelle ou étudiante",
           health: "un compte de dépenses de santé qui couvre les frais dentaires",
           notUsed: "vous ne l'avez jamais utilisé",
           notEnrolled: "vous avez choisi de ne pas y adhérer",
@@ -551,8 +551,8 @@ const ns = {
           list: {
             pension: "votre emploi ou votre régime de pension",
             pensionPlans: "l'emploi ou le régime de pension d'un membre de votre famille",
-            insurancePlan: "une organisation professionnelle ou étudiante",
-            organization: "une couverture privée que vous ou un membre de votre famille avez acheté",
+            insurancePlan: "une couverture privée que vous ou un membre de votre famille avez acheté",
+            organization: "une organisation professionnelle ou étudiante",
             health: "un compte de dépenses de santé qui couvre les frais dentaires",
             notUsed: "vous ne l'avez jamais utilisé",
             notEnrolled: "vous avez choisi de ne pas y adhérer",
