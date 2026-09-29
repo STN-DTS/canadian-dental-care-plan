@@ -6,6 +6,10 @@ allowBuilds:
   protobufjs: false
   unrs-resolver: false
 
+# Automatically deduplicate dependencies to reduce duplication in the dependency graph.
+# https://pnpm.io/settings/dependency-resolution#autodedupe
+autoDedupe: true
+
 # Blocks exotic subdependencies to prevent unexpected or potentially unsafe packages from being installed.
 # https://pnpm.io/settings#blockexoticsubdeps
 blockExoticSubdeps: true
