@@ -196,6 +196,8 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
   dir?: Direction;
   label?: string;
   descriptionId?: string;
+  /** Hide the native input from assistive technology when a visible trigger provides the accessible control. */
+  hideInputFromAccessibility?: boolean;
   name?: string;
   asChild?: boolean;
   disabled?: boolean;
@@ -205,7 +207,25 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
 }
 
 function FileUploadRoot(props: FileUploadRootProps) {
-  const { value, onValueChange, onBeforeFilesAdd, accept, dir: dirProp, label, descriptionId, name, asChild, disabled = false, invalid = false, multiple = false, required = false, children, className, ...rootProps } = props;
+  const {
+    value,
+    onValueChange,
+    onBeforeFilesAdd,
+    accept,
+    dir: dirProp,
+    label,
+    descriptionId,
+    hideInputFromAccessibility = false,
+    name,
+    asChild,
+    disabled = false,
+    invalid = false,
+    multiple = false,
+    required = false,
+    children,
+    className,
+    ...rootProps
+  } = props;
 
   const inputId = useId();
   const dropzoneId = useId();
@@ -269,6 +289,7 @@ function FileUploadRoot(props: FileUploadRootProps) {
           <input
             type="file"
             id={inputId}
+            aria-hidden={hideInputFromAccessibility ? true : undefined}
             aria-labelledby={labelId}
             aria-describedby={descriptionId}
             ref={inputRef}

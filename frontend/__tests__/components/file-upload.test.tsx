@@ -59,6 +59,26 @@ describe('FileUpload', () => {
     expect(screen.getByLabelText('Documents')).not.toHaveAttribute('aria-describedby');
   });
 
+  it('keeps the native input exposed when a dropzone provides the interaction', () => {
+    const { input } = renderFileUpload();
+
+    expect(input).not.toHaveAttribute('aria-hidden');
+  });
+
+  it('exposes the visible trigger instead of the hidden native input', () => {
+    const { container } = render(
+      <FileUpload label="Upload document" hideInputFromAccessibility value={[]} onValueChange={vi.fn()}>
+        <FileUploadTrigger asChild>
+          <button type="button">Upload file</button>
+        </FileUploadTrigger>
+      </FileUpload>,
+    );
+
+    expect(container.querySelector('input[type="file"]')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Upload document' })).not.toBeInTheDocument();
+  });
+
   it('links removal to the rendered item without assigning list orientation', () => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
 

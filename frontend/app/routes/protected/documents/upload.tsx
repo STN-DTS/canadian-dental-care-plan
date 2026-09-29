@@ -355,6 +355,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                     id="file-upload"
                     label={t(($) => $.upload.uploadDocument)}
                     descriptionId={fileUploadDescriptionId}
+                    hideInputFromAccessibility
                     value={filesWithTypes}
                     onValueChange={handleFileChange}
                     onBeforeFilesAdd={handleBeforeFilesAdd}
