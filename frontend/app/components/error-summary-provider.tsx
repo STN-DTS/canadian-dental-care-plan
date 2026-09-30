@@ -15,7 +15,7 @@ interface ErrorSummaryProviderProps {
    * Form content and field messages that share this provider's error registry.
    * Changes to this prop trigger ordering; descendant-only DOM mutations do not.
    */
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 
   /**
    * Current form action result, used only as a validation trigger.
@@ -24,7 +24,7 @@ interface ErrorSummaryProviderProps {
    * detects a changed value. Field messages supply the actual error contents;
    * registration changes alone do not start validation or request focus.
    */
-  actionData: unknown;
+  readonly actionData: unknown;
 }
 
 /**

@@ -9,22 +9,22 @@ interface ErrorSummaryState {
    * Errors keyed by mounted message registration ID, not by target field ID.
    * Map insertion order provides the fallback when targets cannot be ordered.
    */
-  registeredErrors: ReadonlyMap<string, ErrorMessage>;
+  readonly registeredErrors: ReadonlyMap<string, ErrorMessage>;
 
   /**
    * Registration IDs in the target order last committed by the layout effect.
    */
-  orderedErrorIds: readonly string[];
+  readonly orderedErrorIds: readonly string[];
 
   /**
    * Completed validation count used to trigger focus and analytics effects.
    */
-  validationRun: number;
+  readonly validationRun: number;
 
   /**
    * Whether validation has started and is awaiting completion.
    */
-  pendingValidation: boolean;
+  readonly pendingValidation: boolean;
 }
 
 /**
@@ -46,17 +46,17 @@ interface PositionedError {
   /**
    * Registered message associated with the resolved target.
    */
-  error: ErrorMessage;
+  readonly error: ErrorMessage;
 
   /**
    * DOM element used as the registration's ordering anchor.
    */
-  target: HTMLElement;
+  readonly target: HTMLElement;
 
   /**
    * Original map iteration position used to break ordering ties.
    */
-  registrationOrder: number;
+  readonly registrationOrder: number;
 }
 
 /**
@@ -64,11 +64,11 @@ interface PositionedError {
  * Registry and ordering actions do not start or complete validation.
  */
 type ErrorSummaryAction =
-  | { type: 'REGISTER_ERROR'; registrationId: string; error: NewError } //
-  | { type: 'UNREGISTER_ERROR'; registrationId: string }
-  | { type: 'SORT_ERRORS'; registrationIds: readonly string[] }
-  | { type: 'START_VALIDATION' }
-  | { type: 'COMPLETE_VALIDATION' };
+  | { readonly type: 'REGISTER_ERROR'; readonly registrationId: string; readonly error: NewError } //
+  | { readonly type: 'UNREGISTER_ERROR'; readonly registrationId: string }
+  | { readonly type: 'SORT_ERRORS'; readonly registrationIds: readonly string[] }
+  | { readonly type: 'START_VALIDATION' }
+  | { readonly type: 'COMPLETE_VALIDATION' };
 
 /**
  * Orders resolved targets by DOM position, then by registration order.
