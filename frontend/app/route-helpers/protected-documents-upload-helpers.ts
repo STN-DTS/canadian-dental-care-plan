@@ -122,7 +122,7 @@ type CreateFileSelectionSchemaArgs = {
  */
 function createFileSelectionSchema({ locale, t }: CreateFileSelectionSchemaArgs) {
   const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = getClientEnv();
-  const fileSchema = createFileValidationSchema({ locale, t });
+  const fileSchema = createFileValidationSchema({ locale, t, context: 'fileSelection' });
 
   return z
     .object({
@@ -146,6 +146,7 @@ function createFileSelectionSchema({ locale, t }: CreateFileSelectionSchemaArgs)
 }
 
 type CreateFileValidationSchemaArgs = {
+  context: 'fileSelection' | 'submit';
   locale: string;
   t: TFunction<'documents'>;
 };
@@ -156,7 +157,7 @@ type CreateFileValidationSchemaArgs = {
  * @param args - Locale and translator used to produce localized validation errors.
  * @returns Schema configured with client upload extension and size limits.
  */
-function createFileValidationSchema({ locale, t }: CreateFileValidationSchemaArgs) {
+function createFileValidationSchema({ context, locale, t }: CreateFileValidationSchemaArgs) {
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = getClientEnv();
   const maxFileSizeInBytes = megabytesToBytes(DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB);
   return z
@@ -165,12 +166,20 @@ function createFileValidationSchema({ locale, t }: CreateFileValidationSchemaArg
       if (!DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.includes(getFileExtension(file.name))) {
         ctx.addIssue({
           code: 'custom',
-          message: t(($) => $.upload.errorMessage.invalidFileType, { filename: file.name, extensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(', ') }),
+          message: t(($) => $.upload.errorMessage.invalidFileType, {
+            context,
+            filename: file.name,
+            extensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(', '),
+          }),
         });
       } else if (file.size > maxFileSizeInBytes) {
         ctx.addIssue({
           code: 'custom',
-          message: t(($) => $.upload.errorMessage.fileTooLarge, { filename: file.name, filesize: bytesToFilesize(maxFileSizeInBytes, `${locale}-CA`) }),
+          message: t(($) => $.upload.errorMessage.fileTooLarge, {
+            context,
+            filename: file.name,
+            filesize: bytesToFilesize(maxFileSizeInBytes, `${locale}-CA`),
+          }),
         });
       }
     });
@@ -189,7 +198,7 @@ type CreateDocumentUploadSchemaArgs = {
  */
 function createDocumentUploadSchema({ locale, t }: CreateDocumentUploadSchemaArgs) {
   const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = getClientEnv();
-  const fileValidationSchema = createFileValidationSchema({ locale, t });
+  const fileValidationSchema = createFileValidationSchema({ locale, t, context: 'submit' });
   const fileSchema = z
     .object({
       file: z.instanceof(File),

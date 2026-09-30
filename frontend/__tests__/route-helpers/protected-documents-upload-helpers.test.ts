@@ -82,6 +82,7 @@ describe('protected-documents-upload-helpers', () => {
           },
         },
       });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ context: 'fileSelection' }));
     });
 
     it('should reject files exceeding maximum size', () => {
@@ -208,6 +209,7 @@ describe('protected-documents-upload-helpers', () => {
           },
         },
       });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ context: 'submit' }));
     });
 
     it('should reject uploads exceeding maximum file count', async () => {
