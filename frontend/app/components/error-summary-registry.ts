@@ -1,18 +1,37 @@
 import type { ErrorMessage, NewError } from '~/components/error-summary-context';
 
-/** Registry and validation lifecycle state for one provider. */
+/**
+ * Registry and validation lifecycle state for one provider.
+ * Registration changes and validation completion are tracked independently.
+ */
 interface ErrorSummaryState {
-  /** Errors keyed by mounted message registration ID. */
+  /**
+   * Errors keyed by mounted message registration ID, not by target field ID.
+   * Map insertion order provides the fallback when targets cannot be ordered.
+   */
   registeredErrors: ReadonlyMap<string, ErrorMessage>;
-  /** Registration IDs ordered by target position after layout sorting. */
+
+  /**
+   * Registration IDs in the target order last committed by the layout effect.
+   */
   orderedErrorIds: readonly string[];
-  /** Monotonic trigger for validation side effects. */
+
+  /**
+   * Completed validation count used to trigger focus and analytics effects.
+   */
   validationRun: number;
-  /** Whether the latest action result still needs to be committed. */
+
+  /**
+   * Whether validation has started and is awaiting completion.
+   */
   pendingValidation: boolean;
 }
 
-/** Empty state used when an error-summary provider first mounts. */
+/**
+ * Empty registry and validation state used when a provider first mounts.
+ * The reducer copies collections before changing registrations, so providers
+ * can share this initial value without sharing subsequent registry updates.
+ */
 export const initialErrorSummaryState: ErrorSummaryState = {
   registeredErrors: new Map(),
   orderedErrorIds: [],
@@ -20,14 +39,30 @@ export const initialErrorSummaryState: ErrorSummaryState = {
   pendingValidation: false,
 };
 
-/** Error registration paired with its resolved target and fallback order. */
+/**
+ * Error registration paired with its resolved target and fallback order.
+ */
 interface PositionedError {
+  /**
+   * Registered message associated with the resolved target.
+   */
   error: ErrorMessage;
+
+  /**
+   * DOM element used as the registration's ordering anchor.
+   */
   target: HTMLElement;
+
+  /**
+   * Original map iteration position used to break ordering ties.
+   */
   registrationOrder: number;
 }
 
-/** State transitions emitted by field messages and provider effects. */
+/**
+ * State transitions emitted by field messages and provider effects.
+ * Registry and ordering actions do not start or complete validation.
+ */
 type ErrorSummaryAction =
   | { type: 'REGISTER_ERROR'; registrationId: string; error: NewError } //
   | { type: 'UNREGISTER_ERROR'; registrationId: string }
@@ -40,6 +75,11 @@ type ErrorSummaryAction =
  *
  * Registration order resolves identical targets, disconnected trees, and any
  * relationship the browser cannot order explicitly.
+ *
+ * @param left The first resolved registration to compare.
+ * @param right The second resolved registration to compare.
+ * @returns A negative value if left comes first, a positive value if right
+ * comes first, or zero when neither registration precedes the other.
  */
 function comparePositionedErrors(left: PositionedError, right: PositionedError): number {
   if (left.target === right.target) return left.registrationOrder - right.registrationOrder;
@@ -52,10 +92,17 @@ function comparePositionedErrors(left: PositionedError, right: PositionedError):
 }
 
 /**
- * Returns error IDs in target DOM order, with missing targets last.
+ * Returns registration IDs in target DOM order, with missing targets last.
+ *
+ * Resolves each field ID against the current document. Errors sharing a target
+ * retain map insertion order, as do errors whose targets are missing or cannot
+ * be ordered relative to one another. Neither the registry nor the DOM is mutated.
+ *
+ * Requires DOM access after field elements have been committed. This function
+ * reads a snapshot; it does not observe later mutations or update reducer state.
  *
  * @param registeredErrors Current mounted error registrations.
- * @returns IDs in summary display order.
+ * @returns Registration IDs in summary display order for a `SORT_ERRORS` action.
  */
 export function sortRegisteredErrors(registeredErrors: ReadonlyMap<string, ErrorMessage>): readonly string[] {
   const positionedErrors: PositionedError[] = [];
@@ -81,9 +128,18 @@ export function sortRegisteredErrors(registeredErrors: ReadonlyMap<string, Error
 /**
  * Applies field registration, ordering, and validation lifecycle transitions.
  *
+ * Registrations are keyed independently of field IDs, allowing several messages
+ * to target one field. Ordering is supplied by `SORT_ERRORS`; this reducer does
+ * not read the DOM. Registration and ordering updates never advance validation.
+ *
+ * `START_VALIDATION` marks a run as pending. `COMPLETE_VALIDATION` clears that
+ * flag and advances the counter only when a run is pending.
+ *
  * @param state Current registry state.
  * @param action Requested state transition.
- * @returns Updated state, or the same state when the action changes nothing.
+ * @returns The next state, retaining the original reference for redundant
+ * registration, ordering, or completion actions.
+ * @throws {Error} If the action type is not supported.
  */
 export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSummaryAction): ErrorSummaryState {
   switch (action.type) {

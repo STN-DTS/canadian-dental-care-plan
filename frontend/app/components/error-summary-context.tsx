@@ -16,45 +16,87 @@ import { createContext, use } from 'react';
  * field can own more than one error message.
  */
 export interface ErrorMessage {
-  /** Stable identity assigned to this mounted error registration. */
+  /**
+   * Stable identity supplied when the mounted error message registers itself.
+   * This identifies the registration, not the target field.
+   */
   id: string;
 
-  /** DOM ID used as the summary link target and ordering anchor. */
+  /**
+   * DOM ID of the control targeted by the summary link.
+   * The provider also uses this element to determine display order.
+   */
   fieldId: string;
 
-  /** Message shown beside the field and in the summary. */
+  /**
+   * Message shown beside the field and in the summary.
+   */
   message: string;
 }
 
 /**
- * Field error data before the provider assigns a registration ID.
+ * Field error data without its registration identity.
  *
- * Callers supply the target field and message. The mounted error component's
- * registration ID becomes the resulting {@link ErrorMessage.id}.
+ * Callers supply the target field and message. The registration ID passed
+ * separately to `registerError` becomes the resulting {@link ErrorMessage.id}.
  */
 export type NewError = OmitStrict<ErrorMessage, 'id'>;
 
-/** State and operations shared with the summary and field-error components. */
+/**
+ * Registry operations and validation state shared within one provider.
+ */
 export interface ErrorSummaryContextValue {
-  /** Registered errors; target DOM order is applied by the provider's layout effect. */
+  /**
+   * Current errors exposed to the summary.
+   *
+   * The provider applies target DOM order in a layout effect when its children
+   * or registrations change. Newly registered errors may await that sorting.
+   */
   errors: ErrorMessage[];
 
-  /** Add or update the error owned by a mounted field-level message. */
+  /**
+   * Adds or updates the error owned by a mounted field-level message.
+   *
+   * Repeating unchanged field and message data is a no-op. Registration changes
+   * do not start validation or request focus.
+   *
+   * @param registrationId The stable identity owned by the mounted message.
+   * @param error The target field and message to display.
+   */
   registerError: (registrationId: string, error: NewError) => void;
 
-  /** Remove the error owned by a field-level message when it unmounts. */
+  /**
+   * Removes one field-level message's registration when it unmounts.
+   *
+   * Unknown IDs are ignored. Other registrations remain, including messages
+   * associated with the same field.
+   *
+   * @param registrationId The identity of the registration to remove.
+   */
   unregisterError: (registrationId: string) => void;
 
-  /** Provider-generated value exposed on the summary's data attribute. */
+  /**
+   * Provider-generated value exposed through `data-error-summary-id`.
+   * Focus uses this attribute independently of the summary's DOM ID.
+   */
   summaryId: string;
 
-  /** True after action data changes and until the validation run is committed. */
+  /**
+   * Whether a validation run has started but has not been committed.
+   * The provider starts a run on mount and whenever action data changes.
+   */
   pendingValidation: boolean;
 
-  /** Monotonic trigger observed by focus and analytics effects. */
+  /**
+   * Number of completed validation runs, used to trigger focus and analytics.
+   * Registration and ordering changes do not advance this counter.
+   */
   validationRun: number;
 
-  /** Complete the pending run after descendants register their current errors. */
+  /**
+   * Completes the pending run after descendants register their current errors.
+   * Advances the validation counter once; calls without a pending run are ignored.
+   */
   completeValidation: () => void;
 }
 
