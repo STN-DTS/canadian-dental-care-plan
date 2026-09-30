@@ -5,7 +5,7 @@ import { getFixedT, getLocale, getLocaleFromParams, initI18n } from '~/.server/u
 
 // locale-utils uses the actual implementation of react-i18next's functions
 // rather than the mocked version to ensure real behavior is tested.
-vi.unmock('react-i18next');
+vi.unmock(import('react-i18next'));
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({
   getEnv: vi.fn(),
