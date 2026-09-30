@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ServerConfig } from '~/.server/configs';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import {
   checkValidAndVerifiedEmailAddress,
@@ -15,21 +14,17 @@ import {
   isSinReserved,
   maritalStatusHasPartner,
 } from '~/.server/routes/helpers/base-application-route-helpers';
+import { getEnv } from '~/.server/utils/env-utils';
 
-const mockServerConfig = await vi.hoisted(async () => {
-  const { mock } = await import('vitest-mock-extended');
-  return mock<ServerConfig>({
-    ELIGIBILITY_STATUS_CODE_ELIGIBLE: 'ELIGIBLE',
-    MARITAL_STATUS_CODE_COMMON_LAW: 'COMMON_LAW',
-    MARITAL_STATUS_CODE_MARRIED: 'MARRIED',
-    COMMUNICATION_METHOD_GC_DIGITAL_ID: 'digital',
-    COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'email',
-  });
+vi.mock(import('~/.server/utils/env-utils'));
+
+vi.mocked(getEnv, { partial: true }).mockReturnValue({
+  ELIGIBILITY_STATUS_CODE_ELIGIBLE: 'ELIGIBLE',
+  MARITAL_STATUS_CODE_COMMON_LAW: 'COMMON_LAW',
+  MARITAL_STATUS_CODE_MARRIED: 'MARRIED',
+  COMMUNICATION_METHOD_GC_DIGITAL_ID: 'digital',
+  COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: 'email',
 });
-
-vi.mock(import('~/.server/utils/env-utils'), () => ({
-  getEnv: vi.fn(() => mockServerConfig),
-}));
 
 describe('base-application-route-helpers', () => {
   describe('getAgeCategoryFromAge', () => {

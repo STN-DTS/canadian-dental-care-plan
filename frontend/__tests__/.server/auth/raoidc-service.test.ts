@@ -2,7 +2,6 @@ import type { redirect } from 'react-router';
 
 import type { JWTPayload } from 'jose';
 import type { Memoized, Options } from 'micro-memoize';
-import type crypto from 'node:crypto';
 import { subtle } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -17,12 +16,10 @@ import type { IdToken, JWKSet, ServerMetadata, UserinfoToken } from '~/.server/u
 import { fetchAccessToken, fetchServerMetadata, fetchUserInfo, generateAuthorizationRequest, generateCodeChallenge, generateRandomState } from '~/.server/utils/raoidc-utils';
 import { expandTemplate } from '~/utils/string-utils';
 
-const mockCrypto = await vi.hoisted(async () => {
+vi.mock(import('node:crypto'), async () => {
   const { mockDeep } = await import('vitest-mock-extended');
-  return mockDeep<typeof crypto>();
+  return await mockDeep();
 });
-
-vi.mock('node:crypto', () => mockCrypto);
 
 vi.mock(import('react-router'), () => ({
   redirect: vi.fn<typeof redirect>().mockImplementation((to) => new Response(`MockedRedirect(${to})`)),
