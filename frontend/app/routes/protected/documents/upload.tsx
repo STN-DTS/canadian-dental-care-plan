@@ -46,6 +46,101 @@ import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 type FileStateWithDocumentType = FileState & { readonly documentType: string };
 
+interface DocumentUploadItemProps extends FileStateWithDocumentType {
+  readonly documentTypeLabel: string;
+  readonly fileNameLabel: string;
+}
+
+interface UploadedDocumentItemProps extends DocumentUploadItemProps {
+  readonly uploadedStatus: string;
+}
+
+interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
+  readonly disabled: boolean;
+  readonly documentTypeError?: string;
+  readonly fileError?: string;
+  readonly onDocumentTypeChange: (id: string, documentType: string) => void;
+  readonly options: InputOptionProps[];
+  readonly recoveryStatus?: string;
+  readonly removeLabel: string;
+}
+
+function UploadedDocumentItem({ id, file, documentType, documentTypeLabel, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  return (
+    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
+      <p>{uploadedStatus}</p>
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+        <div className="space-y-2">
+          <dt className="font-semibold">{documentTypeLabel}</dt>
+          <dd>{documentType}</dd>
+        </div>
+      </dl>
+    </FileUploadItem>
+  );
+}
+
+function PendingDocumentUploadItem({
+  id,
+  file,
+  documentType,
+  disabled,
+  documentTypeError,
+  documentTypeLabel,
+  fileError,
+  fileNameLabel,
+  onDocumentTypeChange,
+  options,
+  recoveryStatus,
+  removeLabel,
+}: PendingDocumentUploadItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  const fileErrorId = `file-error-${id}`;
+  return (
+    <FileUploadItem
+      id={`file-upload-item-${id}`}
+      aria-labelledby={fileNameId}
+      aria-describedby={fileError ? fileErrorId : undefined}
+      key={id}
+      value={id}
+      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
+      tabIndex={-1}
+    >
+      {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
+      {recoveryStatus && <p>{recoveryStatus}</p>}
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+      </dl>
+      <InputSelect
+        id={`document-type-${id}`}
+        name={`document-type-${id}`}
+        label={documentTypeLabel}
+        required
+        className="w-full"
+        options={options}
+        value={documentType}
+        onChange={(event) => onDocumentTypeChange(id, event.currentTarget.value)}
+        disabled={disabled}
+        errorMessage={documentTypeError}
+      />
+      <div className="mt-2">
+        <FileUploadItemDelete asChild aria-describedby={fileNameId}>
+          <Button variant="secondary" size="sm" endIcon={faTimes} disabled={disabled}>
+            {removeLabel}
+          </Button>
+        </FileUploadItemDelete>
+      </div>
+    </FileUploadItem>
+  );
+}
+
 const FORM_ACTION = {
   upload: 'upload',
   finish: 'finish',
@@ -461,50 +556,30 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                       </div>
                     )}
                     <FileUploadList className="gap-4 sm:gap-6">
-                      {filesWithTypes.map(({ id, file, documentType }) => {
-                        const fileNameId = `file-upload-item-${id}-name`;
-                        const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
-                        const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
+                      {filesWithTypes.map((fileState) => {
+                        const { id } = fileState;
                         const isUploaded = uploadedFileIds.has(id);
-                        const fileErrorId = `file-error-${id}`;
+                        const itemProps = {
+                          ...fileState,
+                          documentTypeLabel: t(($) => $.upload.documentType),
+                          fileNameLabel: t(($) => $.upload.fileName),
+                        };
+                        if (isUploaded) {
+                          return <UploadedDocumentItem {...itemProps} uploadedStatus={t(($) => $.upload.recovery.uploaded)} key={id} />;
+                        }
+
                         return (
-                          <FileUploadItem
-                            id={`file-upload-item-${id}`}
-                            aria-labelledby={fileNameId}
-                            aria-describedby={fileError ? fileErrorId : undefined}
+                          <PendingDocumentUploadItem
+                            {...itemProps}
+                            disabled={isSubmitting}
+                            fileError={errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0]}
+                            documentTypeError={errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0]}
+                            options={docTypeOptions}
+                            onDocumentTypeChange={handleDocumentTypeChange}
+                            recoveryStatus={flowId ? t(($) => $.upload.recovery.notUploaded) : undefined}
+                            removeLabel={t(($) => $.upload.remove)}
                             key={id}
-                            value={id}
-                            className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
-                            tabIndex={-1}
-                          >
-                            {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
-                            {flowId && <p>{t(($) => (isUploaded ? $.upload.recovery.uploaded : $.upload.recovery.notUploaded))}</p>}
-                            <dl className="space-y-3 sm:space-y-4">
-                              <div className="space-y-2">
-                                <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-                                <dd id={fileNameId}>{file.name}</dd>
-                              </div>
-                            </dl>
-                            <InputSelect
-                              id={`document-type-${id}`}
-                              name={`document-type-${id}`}
-                              label={t(($) => $.upload.documentType)}
-                              required
-                              className="w-full"
-                              options={docTypeOptions}
-                              value={documentType}
-                              onChange={(event) => handleDocumentTypeChange(id, event.currentTarget.value)}
-                              disabled={isSubmitting || isUploaded}
-                              errorMessage={documentTypeError}
-                            />
-                            <div className="mt-2">
-                              <FileUploadItemDelete asChild aria-describedby={fileNameId}>
-                                <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting || isUploaded}>
-                                  {t(($) => $.upload.remove)}
-                                </Button>
-                              </FileUploadItemDelete>
-                            </div>
-                          </FileUploadItem>
+                          />
                         );
                       })}
                     </FileUploadList>
@@ -513,18 +588,46 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
               </div>
 
               <div className="mt-8">
-                {(!flowId || remainingFiles.length > 0 || canFinish) && (
+                {!flowId && (
                   <LoadingButton
                     id="submit-button"
                     name="_action"
-                    value={canFinish && remainingFiles.length === 0 ? FORM_ACTION.finish : FORM_ACTION.upload}
+                    value={FORM_ACTION.upload}
                     variant="primary"
                     type="submit"
-                    loading={isSubmitting && submitAction !== FORM_ACTION.validateFiles}
+                    loading={isSubmitting && submitAction === FORM_ACTION.upload}
                     disabled={isSubmitting}
                     data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
                   >
-                    {flowId ? (remainingFiles.length > 0 ? t(($) => $.upload.recovery.submitRemaining) : t(($) => $.upload.recovery.finish)) : t(($) => $.upload.submit)}
+                    {t(($) => $.upload.submit)}
+                  </LoadingButton>
+                )}
+                {flowId && remainingFiles.length > 0 && (
+                  <LoadingButton
+                    id="submit-remaining-files-button"
+                    name="_action"
+                    value={FORM_ACTION.upload}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction === FORM_ACTION.upload}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit remaining files click"
+                  >
+                    {t(($) => $.upload.recovery.submitRemaining)}
+                  </LoadingButton>
+                )}
+                {canFinish && remainingFiles.length === 0 && (
+                  <LoadingButton
+                    id="finish-upload-button"
+                    name="_action"
+                    value={FORM_ACTION.finish}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction === FORM_ACTION.finish}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Finish document upload click"
+                  >
+                    {t(($) => $.upload.recovery.finish)}
                   </LoadingButton>
                 )}
               </div>

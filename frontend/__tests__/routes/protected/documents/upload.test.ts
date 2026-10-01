@@ -530,8 +530,9 @@ describe('DocumentsUpload recovery UI', () => {
     const failedItemId = failedElement.id.replace('file-upload-item-', '');
     expect(failedElement).toHaveAttribute('aria-describedby', `file-error-${failedItemId}`);
     expect(document.getElementById('upload-recovery-summary')).toHaveAttribute('aria-live', 'polite');
-    expect(uploadedElement.querySelector('button[data-slot="file-upload-item-delete"]')).toBeDisabled();
-    expect(uploadedElement.querySelector('select')).toBeDisabled();
+    expect(uploadedElement).toHaveTextContent('Receipt');
+    expect(uploadedElement.querySelector('button[data-slot="file-upload-item-delete"]')).toBeNull();
+    expect(uploadedElement.querySelector('select')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit remaining files' }));
     await waitFor(() => expect(submissions.filter((formData) => formData.get('_action') === 'upload')).toHaveLength(2));
