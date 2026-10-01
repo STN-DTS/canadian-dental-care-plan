@@ -52,6 +52,7 @@ interface DocumentUploadItemProps extends FileStateWithDocumentType {
 }
 
 interface UploadedDocumentItemProps extends DocumentUploadItemProps {
+  readonly documentTypeName: string;
   readonly uploadedStatus: string;
 }
 
@@ -65,7 +66,7 @@ interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
   readonly removeLabel: string;
 }
 
-function UploadedDocumentItem({ id, file, documentType, documentTypeLabel, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
+function UploadedDocumentItem({ id, file, documentTypeLabel, documentTypeName, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
   const fileNameId = `file-upload-item-${id}-name`;
   return (
     <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
@@ -77,27 +78,14 @@ function UploadedDocumentItem({ id, file, documentType, documentTypeLabel, fileN
         </div>
         <div className="space-y-2">
           <dt className="font-semibold">{documentTypeLabel}</dt>
-          <dd>{documentType}</dd>
+          <dd>{documentTypeName}</dd>
         </div>
       </dl>
     </FileUploadItem>
   );
 }
 
-function PendingDocumentUploadItem({
-  id,
-  file,
-  documentType,
-  disabled,
-  documentTypeError,
-  documentTypeLabel,
-  fileError,
-  fileNameLabel,
-  onDocumentTypeChange,
-  options,
-  recoveryStatus,
-  removeLabel,
-}: PendingDocumentUploadItemProps): JSX.Element {
+function PendingDocumentUploadItem({ id, file, documentType, disabled, documentTypeError, documentTypeLabel, fileError, fileNameLabel, onDocumentTypeChange, options, recoveryStatus, removeLabel }: PendingDocumentUploadItemProps): JSX.Element {
   const fileNameId = `file-upload-item-${id}-name`;
   const fileErrorId = `file-error-${id}`;
   return (
@@ -565,7 +553,8 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                           fileNameLabel: t(($) => $.upload.fileName),
                         };
                         if (isUploaded) {
-                          return <UploadedDocumentItem {...itemProps} uploadedStatus={t(($) => $.upload.recovery.uploaded)} key={id} />;
+                          const documentTypeName = documentTypes.find(({ id: typeId }) => typeId === fileState.documentType)?.name ?? fileState.documentType;
+                          return <UploadedDocumentItem {...itemProps} documentTypeName={documentTypeName} uploadedStatus={t(($) => $.upload.recovery.uploaded)} key={id} />;
                         }
 
                         return (
