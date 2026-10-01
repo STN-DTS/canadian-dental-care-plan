@@ -15,6 +15,16 @@ type IsFileContentTypeAllowedArgs = {
   readonly allowedExtensions: readonly string[];
 } & (FileContentTypeInput | BufferedFileContentTypeInput);
 
+/**
+ * EICAR test string used for antivirus testing.
+ */
+const eicarString = String.raw`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`;
+
+/**
+ * EICAR test string may have certain allowed trailing characters.
+ */
+const eicarAllowedTrailingCharacters = new Set([' ', '\t', '\n', '\r', String.fromCharCode(0x1a)]);
+
 export interface HashedFile {
   readonly file: File;
   readonly hash: string;
@@ -137,6 +147,51 @@ export async function isFileContentTypeAllowed(args: IsFileContentTypeAllowedArg
 
   const allowedMimeTypes = new Set(args.allowedExtensions.map(getMimeType));
   return allowedMimeTypes.has(detectedFileType.mime);
+}
+
+/**
+ * Detects an EICAR test file from a File object.
+ *
+ * @param file - The file whose content should be checked.
+ * @returns A promise that resolves to whether the file content matches the EICAR standard.
+ */
+export function detectEicarContent(file: File): Promise<boolean>;
+
+/**
+ * Detects an EICAR test file from raw text content.
+ *
+ * @param fileContent - The raw text content of the file.
+ * @returns Whether the content strictly matches the EICAR standard.
+ */
+export function detectEicarContent(fileContent: string): boolean;
+
+/**
+ * Implements EICAR detection for the supported string and File overloads.
+ *
+ * @param fileContentOrFile - Raw text content or a File object to inspect.
+ * @returns A boolean for raw text content or a promise resolving to a boolean for a File object.
+ */
+export function detectEicarContent(fileContentOrFile: string | File): boolean | Promise<boolean> {
+  if (typeof fileContentOrFile !== 'string') {
+    if (fileContentOrFile.size > 128) {
+      return Promise.resolve(false);
+    }
+
+    return fileContentOrFile.text().then(detectEicarContent);
+  }
+
+  if (!fileContentOrFile || fileContentOrFile.length > 128 || !fileContentOrFile.startsWith(eicarString)) {
+    return false;
+  }
+
+  // Check for any disallowed trailing characters after the EICAR string
+  for (const character of fileContentOrFile.slice(eicarString.length)) {
+    if (!eicarAllowedTrailingCharacters.has(character)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
