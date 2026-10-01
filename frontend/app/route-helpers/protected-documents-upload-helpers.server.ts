@@ -10,8 +10,8 @@ import { getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
 import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-utils';
 
-type ScanDocumentsResponseSuccess = { success: true; errors?: undefined };
-type ScanDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+type ScanDocumentsResponseSuccess = { success: true; scannedFileIds: ReadonlyArray<string>; errors?: undefined };
+type ScanDocumentsResponseFailure = { success: false; scannedFileIds: ReadonlyArray<string>; errors: DocumentUploadSchemaErrorTree };
 type ScanDocumentsResponse = ScanDocumentsResponseSuccess | ScanDocumentsResponseFailure;
 
 /**
@@ -70,11 +70,14 @@ export async function scanDocuments(files: DocumentUploadSchemaOutput['files']):
     }),
   );
 
-  return processBatchResults(results);
+  const result = processBatchResults(results);
+  return result.success
+    ? { success: true, scannedFileIds: result.successfulFileIds }
+    : { success: false, scannedFileIds: result.successfulFileIds, errors: result.errors };
 }
 
-type UploadDocumentsResponseSuccess = { success: true; errors?: undefined };
-type UploadDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+type UploadDocumentsResponseSuccess = { success: true; uploadedFileIds: ReadonlyArray<string>; errors?: undefined };
+type UploadDocumentsResponseFailure = { success: false; uploadedFileIds: ReadonlyArray<string>; errors: DocumentUploadSchemaErrorTree };
 type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDocumentsResponseFailure;
 
 /**
@@ -121,7 +124,10 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
     }),
   );
 
-  return processBatchResults(results);
+  const result = processBatchResults(results);
+  return result.success
+    ? { success: true, uploadedFileIds: result.successfulFileIds }
+    : { success: false, uploadedFileIds: result.successfulFileIds, errors: result.errors };
 }
 
 /**
@@ -130,10 +136,13 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
  * @param results - Per-file operation results identified by file ID.
  * @returns Success when no result contains an error; otherwise, an error tree keyed by file ID.
  */
-function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): UploadDocumentsResponse {
+type BatchResults = { success: true; successfulFileIds: ReadonlyArray<string> } | { success: false; successfulFileIds: ReadonlyArray<string>; errors: DocumentUploadSchemaErrorTree };
+
+function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): BatchResults {
+  const successfulFileIds = results.filter((result) => result.error === undefined).map(({ id }) => id);
   const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
   if (failures.length === 0) {
-    return { success: true };
+    return { success: true, successfulFileIds };
   }
 
   const fileProperties: NonNullable<Get<DocumentUploadSchemaErrorTree, 'properties.files.properties'>> = {};
@@ -151,6 +160,7 @@ function processBatchResults(results: ReadonlyArray<{ id: string; error?: string
 
   return {
     success: false,
+    successfulFileIds,
     errors: {
       errors: [],
       properties: {

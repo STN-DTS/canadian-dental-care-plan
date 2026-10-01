@@ -13,7 +13,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
-import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { addSubmittedDocuments, getDocumentUploadSubmittedUrl, loadDocumentUploadState, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
@@ -33,6 +33,7 @@ import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-docume
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
+import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 import { getLanguage } from '~/utils/locale-utils';
@@ -47,6 +48,7 @@ type FileStateWithDocumentType = FileState & { readonly documentType: string };
 
 const FORM_ACTION = {
   upload: 'upload',
+  finish: 'finish',
   validateFiles: 'validate-files',
 } as const;
 
@@ -123,6 +125,10 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
     return { formAction, source, validationId, errors: undefined };
   }
 
+  if (formAction === FORM_ACTION.finish) {
+    return await serverAction();
+  }
+
   const validationResult = await validateUploadForm({ formData, locale, t });
   if (!validationResult.success) {
     return data({ formAction, source, errors: validationResult.errors }, 400);
@@ -139,6 +145,16 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const source = 'server';
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
+  if (formAction === FORM_ACTION.finish) {
+    const id = z.uuid().parse(formData.get('flow_id'));
+    const state = loadDocumentUploadState({ id, params, session });
+    if (state.submittedDocuments.length === 0) {
+      throw redirect(getPathById('protected/documents/upload', params));
+    }
+
+    return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+  }
+
   if (formAction !== FORM_ACTION.upload) {
     throw new Error(`Invalid formAction: ${formAction}`);
   }
@@ -149,25 +165,50 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   const { files } = validationResult.data;
+  const submittedFlowIdValue = formData.get('flow_id');
+  const submittedFlowId = typeof submittedFlowIdValue === 'string' && submittedFlowIdValue ? submittedFlowIdValue : undefined;
+  const existingState = submittedFlowId ? loadDocumentUploadState({ id: submittedFlowId, params, session }) : undefined;
+  const confirmedIds = new Set(existingState?.submittedDocuments.map(({ id }) => id));
+  const pendingFiles = Object.fromEntries(Object.entries(files).filter(([fileId]) => !confirmedIds.has(fileId)));
+  const scanResult = await scanDocuments(pendingFiles);
+  const scannedFileIds = new Set(scanResult.scannedFileIds);
+  const scannedFiles = Object.fromEntries(Object.entries(pendingFiles).filter(([fileId]) => scannedFileIds.has(fileId)));
+  const uploadResult = Object.keys(scannedFiles).length > 0 ? await uploadDocuments(scannedFiles) : { success: true as const, uploadedFileIds: [] };
+  const errors = mergeUploadErrors(scanResult.success ? undefined : scanResult.errors, uploadResult.success ? undefined : uploadResult.errors);
+  const uploadedFileIds = uploadResult.uploadedFileIds;
+  const submittedDocuments = uploadedFileIds.map((fileId) => {
+    const { file, documentType } = pendingFiles[fileId];
+    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
+  });
+  const failed = errors !== undefined;
 
-  const scanResult = await scanDocuments(files);
-  if (!scanResult.success) {
-    return data({ formAction, source, errors: scanResult.errors } as const, 400);
-  }
-
-  const uploadResult = await uploadDocuments(files);
-  if (!uploadResult.success) {
-    return data({ formAction, source, errors: uploadResult.errors } as const, 400);
+  if (submittedFlowId) {
+    addSubmittedDocuments({ id: submittedFlowId, params, session, submittedDocuments });
+    return data({ formAction, source, flowId: submittedFlowId, uploadedFileIds, errors });
   }
 
   const id = crypto.randomUUID();
-  const submittedDocuments = Object.entries(files).map(([fileId, { file, documentType }]) => {
-    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
-  });
-
   startDocumentUploadState({ id, session, submittedDocuments });
+  if (!failed) {
+    return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+  }
 
-  return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+  return data({ formAction, source, flowId: id, uploadedFileIds, errors });
+}
+
+function mergeUploadErrors(...errorTrees: ReadonlyArray<DocumentUploadSchemaErrorTree | undefined>): DocumentUploadSchemaErrorTree | undefined {
+  const fileErrors = Object.assign({}, ...errorTrees.map((tree) => tree?.properties?.files?.properties));
+  if (Object.keys(fileErrors).length === 0) return undefined;
+
+  return {
+    errors: [],
+    properties: {
+      files: {
+        errors: [],
+        properties: fileErrors,
+      },
+    },
+  };
 }
 
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
@@ -183,7 +224,12 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const fileUploadDescriptionId = filesError ? 'files-error file-upload-instructions' : 'file-upload-instructions';
 
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
+  const [flowId, setFlowId] = useState<string>();
+  const [uploadedFileIds, setUploadedFileIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [recoveryAnnouncement, setRecoveryAnnouncement] = useState('');
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
+  const remainingFiles = filesWithTypes.filter(({ id }) => !uploadedFileIds.has(id));
+  const canFinish = flowId !== undefined && remainingFiles.length === 0 && uploadedFileIds.size > 0;
 
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
@@ -278,19 +324,40 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    formData.set('_action', FORM_ACTION.upload);
+    const submitter = event.nativeEvent.submitter as HTMLButtonElement | null;
+    const formAction = submitter?.value === FORM_ACTION.finish ? FORM_ACTION.finish : FORM_ACTION.upload;
+    formData.set('_action', formAction);
     formData.delete('file_id');
     formData.delete('file_object');
     formData.delete('file_document_type');
 
-    for (const { id, file, documentType } of filesWithTypes) {
-      formData.append('file_id', id);
-      formData.append('file_object', file);
-      formData.append('file_document_type', documentType);
+    if (flowId) formData.set('flow_id', flowId);
+
+    if (formAction === FORM_ACTION.upload) {
+      for (const { id, file, documentType } of remainingFiles) {
+        formData.append('file_id', id);
+        formData.append('file_object', file);
+        formData.append('file_document_type', documentType);
+      }
     }
 
     await fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
   };
+
+  useEffect(() => {
+    if (!fetcher.data || !('flowId' in fetcher.data) || !fetcher.data.flowId || !('uploadedFileIds' in fetcher.data)) return;
+
+    const { flowId: nextFlowId, uploadedFileIds: newlyUploadedIds, errors: uploadErrors } = fetcher.data;
+    setFlowId(nextFlowId);
+    setUploadedFileIds((previousIds) => new Set([...previousIds, ...newlyUploadedIds]));
+    setRecoveryAnnouncement(
+      t(($) => $.upload.recovery.summary, {
+        uploaded: newlyUploadedIds.length,
+        failed: Object.keys(uploadErrors?.properties?.files?.properties ?? {}).length,
+      }),
+    );
+    focusOnNextFrame(() => document.getElementById('upload-recovery-summary'));
+  }, [fetcher.data, t]);
 
   const docTypeOptions = useMemo<InputOptionProps[]>(() => {
     return [
@@ -361,7 +428,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                     onBeforeFilesAdd={handleBeforeFilesAdd}
                     accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')}
                     disabled={isSubmitting}
-                    required
+                    required={!canFinish}
                     className="gap-4 sm:gap-6"
                   >
                     <div>
@@ -383,22 +450,30 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                         selected: filesWithTypes.length,
                       })}
                     </p>
+                    {flowId && (
+                      <div id="upload-recovery-summary" role="status" aria-live="polite" aria-atomic="true" tabIndex={-1}>
+                        {recoveryAnnouncement}
+                      </div>
+                    )}
                     <FileUploadList className="gap-4 sm:gap-6">
                       {filesWithTypes.map(({ id, file, documentType }) => {
                         const fileNameId = `file-upload-item-${id}-name`;
                         const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
                         const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
+                        const isUploaded = uploadedFileIds.has(id);
+                        const fileErrorId = `file-error-${id}`;
                         return (
                           <FileUploadItem
                             id={`file-upload-item-${id}`}
                             aria-labelledby={fileNameId}
-                            aria-describedby={undefined}
+                            aria-describedby={fileError ? fileErrorId : undefined}
                             key={id}
                             value={id}
                             className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
                             tabIndex={-1}
                           >
-                            {fileError && <InputError id={`file-error-${id}`} fieldId={`file-upload-item-${id}`} message={fileError} />}
+                            {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
+                            {flowId && <p>{t(($) => (isUploaded ? $.upload.recovery.uploaded : $.upload.recovery.notUploaded))}</p>}
                             <dl className="space-y-3 sm:space-y-4">
                               <div className="space-y-2">
                                 <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
@@ -414,12 +489,12 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                               options={docTypeOptions}
                               value={documentType}
                               onChange={(event) => handleDocumentTypeChange(id, event.currentTarget.value)}
-                              disabled={isSubmitting}
+                              disabled={isSubmitting || isUploaded}
                               errorMessage={documentTypeError}
                             />
                             <div className="mt-2">
                               <FileUploadItemDelete asChild aria-describedby={fileNameId}>
-                                <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting}>
+                                <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting || isUploaded}>
                                   {t(($) => $.upload.remove)}
                                 </Button>
                               </FileUploadItemDelete>
@@ -433,16 +508,20 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
               </div>
 
               <div className="mt-8">
-                <LoadingButton
-                  id="submit-button"
-                  variant="primary"
-                  type="submit"
-                  loading={isSubmitting && submitAction === FORM_ACTION.upload}
-                  disabled={isSubmitting}
-                  data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
-                >
-                  {t(($) => $.upload.submit)}
-                </LoadingButton>
+                {(!flowId || remainingFiles.length > 0 || canFinish) && (
+                  <LoadingButton
+                    id="submit-button"
+                    name="_action"
+                    value={canFinish && remainingFiles.length === 0 ? FORM_ACTION.finish : FORM_ACTION.upload}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction !== FORM_ACTION.validateFiles}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+                  >
+                    {flowId ? (remainingFiles.length > 0 ? t(($) => $.upload.recovery.submitRemaining) : t(($) => $.upload.recovery.finish)) : t(($) => $.upload.submit)}
+                  </LoadingButton>
+                )}
               </div>
             </fetcher.Form>
           </ErrorSummaryProvider>

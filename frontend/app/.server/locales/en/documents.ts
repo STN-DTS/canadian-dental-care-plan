@@ -44,6 +44,13 @@ const ns = {
       filesSelected_one: "{{selected}} of {{count}} file selected",
       filesSelected_other: "{{selected}} of {{count}} files selected",
     },
+    recovery: {
+      summary: "Upload results: {{uploaded}} uploaded; {{failed}} need attention.",
+      uploaded: "Uploaded",
+      notUploaded: "Not uploaded",
+      submitRemaining: "Submit remaining files",
+      finish: "Finish",
+    },
     uploadDocument: "Upload document",
     addFile: "Upload file",
     fileName: "File name",

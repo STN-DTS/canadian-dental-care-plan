@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import { appContext } from '~/.server/context';
 import type { AppContext } from '~/.server/context';
-import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { addSubmittedDocuments, getDocumentUploadSubmittedUrl, loadDocumentUploadState, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
@@ -101,10 +101,12 @@ beforeEach(() => {
     },
   });
   vi.mocked(getLanguage).mockReturnValue('en');
-  vi.mocked(scanDocuments).mockResolvedValue({ success: true });
-  vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
+  vi.mocked(scanDocuments).mockResolvedValue({ success: true, scannedFileIds: ['file-1'] });
+  vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadedFileIds: ['file-1'] });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', submittedDocuments: [] });
+  vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, submittedDocuments: [] });
+  vi.mocked(addSubmittedDocuments).mockReturnValue({ id: uploadId, submittedDocuments: [] });
 });
 
 afterEach(() => {
@@ -276,69 +278,129 @@ describe('action', () => {
   it('returns scan errors without uploading documents', async () => {
     const args = createActionArgs(validUploadFormData());
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['scan failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
-    vi.mocked(scanDocuments).mockResolvedValue({ success: false, errors });
+    vi.mocked(scanDocuments).mockResolvedValue({ success: false, scannedFileIds: [], errors });
 
     const result = await action(args);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: [],
-              properties: {
-                'file-1': {
-                  errors: ['scan failed'],
-                },
-              },
-            },
-          },
-        },
+        errors,
         formAction: 'upload',
         source: 'server',
+        flowId: uploadId,
+        uploadedFileIds: [],
       },
-      init: {
-        status: 400,
-      },
-      type: 'DataWithResponseInit',
     });
     expect(uploadDocuments).not.toHaveBeenCalled();
-    expect(startDocumentUploadState).not.toHaveBeenCalled();
+    expect(startDocumentUploadState).toHaveBeenCalledWith({ id: uploadId, session: expect.anything(), submittedDocuments: [] });
   });
 
-  it('returns upload errors without starting submitted state', async () => {
+  it('returns upload errors and starts metadata-only recovery state', async () => {
     const args = createActionArgs(validUploadFormData());
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['upload failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
-    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, uploadedFileIds: [], errors });
 
     const result = await action(args);
 
     expect(scanDocuments).toHaveBeenCalledOnce();
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: [],
-              properties: {
-                'file-1': {
-                  errors: ['upload failed'],
-                },
-              },
-            },
-          },
-        },
+        errors,
         formAction: 'upload',
         source: 'server',
+        flowId: uploadId,
+        uploadedFileIds: [],
       },
-      init: {
-        status: 400,
-      },
-      type: 'DataWithResponseInit',
     });
-    expect(startDocumentUploadState).not.toHaveBeenCalled();
+    expect(startDocumentUploadState).toHaveBeenCalledWith({ id: uploadId, session: expect.anything(), submittedDocuments: [] });
+    expect(JSON.stringify(result)).not.toContain('content');
+  });
+
+  it('returns mixed results with only confirmed filenames persisted', async () => {
+    const passed = new File(['safe file bytes'], 'confirmed.pdf');
+    const failed = new File(['private file bytes'], 'rejected.pdf');
+    const files = {
+      'file-1': { file: passed, fileBuffer: new ArrayBuffer(passed.size), fileHash: 'hash-1', documentType: 'receipt' },
+      'file-2': { file: failed, fileBuffer: new ArrayBuffer(failed.size), fileHash: 'hash-2', documentType: 'identity-document' },
+    } satisfies DocumentUploadSchemaOutput['files'];
+    vi.mocked(validateUploadForm).mockResolvedValue({ success: true, data: { files } });
+    vi.mocked(scanDocuments).mockResolvedValue({
+      success: false,
+      scannedFileIds: ['file-1'],
+      errors: { errors: [], properties: { files: { errors: [], properties: { 'file-2': { errors: ['scan failed'] } } } } },
+    });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadedFileIds: ['file-1'] });
+    const args = createActionArgs(createUploadFormData([
+      { id: 'file-1', file: passed, documentType: 'receipt' },
+      { id: 'file-2', file: failed, documentType: 'identity-document' },
+    ]));
+
+    const result = await action(args);
+
+    expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith({ 'file-1': files['file-1'] });
+    expect(startDocumentUploadState).toHaveBeenCalledWith({
+      id: uploadId,
+      session: args.context.get(appContext).session,
+      submittedDocuments: [{ id: 'file-1', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: passed.size }],
+    });
+    expect(result).toMatchObject({
+      data: { flowId: uploadId, uploadedFileIds: ['file-1'], errors: expect.any(Object) },
+    });
+    expect(JSON.stringify(result)).not.toContain('safe file bytes');
+    expect(JSON.stringify(result)).not.toContain('private file bytes');
+  });
+
+  it('never retries a session-confirmed file and records newly confirmed metadata', async () => {
+    const confirmed = new File(['content'], 'already-uploaded.pdf');
+    const retry = new File(['content'], 'retry.pdf');
+    const files = {
+      'file-1': { file: confirmed, fileBuffer: new ArrayBuffer(confirmed.size), fileHash: 'hash-1', documentType: 'receipt' },
+      'file-2': { file: retry, fileBuffer: new ArrayBuffer(retry.size), fileHash: 'hash-2', documentType: 'receipt' },
+    } satisfies DocumentUploadSchemaOutput['files'];
+    const formData = createUploadFormData([
+      { id: 'file-1', file: confirmed, documentType: 'receipt' },
+      { id: 'file-2', file: retry, documentType: 'receipt' },
+    ]);
+    formData.set('flow_id', uploadId);
+    vi.mocked(validateUploadForm).mockResolvedValue({ success: true, data: { files } });
+    vi.mocked(loadDocumentUploadState).mockReturnValue({
+      id: uploadId,
+      submittedDocuments: [{ id: 'file-1', fileName: confirmed.name, documentType: 'receipt', fileSize: confirmed.size }],
+    });
+    vi.mocked(scanDocuments).mockResolvedValue({ success: true, scannedFileIds: ['file-2'] });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadedFileIds: ['file-2'] });
+    const args = createActionArgs(formData);
+
+    const result = await action(args);
+
+    expect(scanDocuments).toHaveBeenCalledExactlyOnceWith({ 'file-2': files['file-2'] });
+    expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith({ 'file-2': files['file-2'] });
+    expect(addSubmittedDocuments).toHaveBeenCalledWith({
+      id: uploadId,
+      params: args.params,
+      session: args.context.get(appContext).session,
+      submittedDocuments: [{ id: 'file-2', fileName: 'retry.pdf', documentType: 'receipt', fileSize: retry.size }],
+    });
+    expect(result).toMatchObject({ data: { flowId: uploadId, uploadedFileIds: ['file-2'] } });
+    expect(result).not.toBeInstanceOf(Response);
+  });
+
+  it('requires Finish to redirect a recovery flow with confirmed documents', async () => {
+    const formData = new FormData();
+    formData.set('_action', 'finish');
+    formData.set('flow_id', uploadId);
+    const args = createActionArgs(formData);
+    vi.mocked(loadDocumentUploadState).mockReturnValue({
+      id: uploadId,
+      submittedDocuments: [{ id: 'file-1', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: 7 }],
+    });
+
+    const result = await action(args);
+
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).headers.get('Location')).toBe(submittedUrl);
+    expect(scanDocuments).not.toHaveBeenCalled();
+    expect(uploadDocuments).not.toHaveBeenCalled();
   });
 
   it('starts submitted state and redirects after all documents are processed', async () => {
@@ -353,6 +415,8 @@ describe('action', () => {
       { id: 'file-2', file: identity, documentType: 'identity-document' },
     ]);
     vi.mocked(validateUploadForm).mockResolvedValue({ success: true, data: { files } });
+    vi.mocked(scanDocuments).mockResolvedValue({ success: true, scannedFileIds: ['file-1', 'file-2'] });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadedFileIds: ['file-1', 'file-2'] });
     vi.mocked(getLocale).mockReturnValueOnce('fr');
     const args = createActionArgs(formData);
     args.url = new URL('http://localhost/fr/protected/documents/upload');
