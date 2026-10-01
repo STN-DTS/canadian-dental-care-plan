@@ -149,9 +149,10 @@ describe('protected-documents-upload-helpers.server', () => {
     });
 
     it('returns successful file IDs and errors together when a scan batch has mixed outcomes', async () => {
-      documentUploadServiceMock.scanDocument.mockImplementation(({ fileName }) =>
-        Promise.resolve(fileName === 'failed.txt' ? { Error: { ErrorCode: 'SCAN-1', ErrorMessage: 'Rejected' } } : { DataId: 'scan-123' }),
-      );
+      documentUploadServiceMock.scanDocument.mockImplementation(async ({ fileName }) => {
+        await Promise.resolve();
+        return fileName === 'failed.txt' ? { Error: { ErrorCode: 'SCAN-1', ErrorMessage: 'Rejected' } } : { DataId: 'scan-123' };
+      });
 
       await expect(scanDocuments(createFiles(['passed.txt', 'failed.txt']))).resolves.toMatchObject({
         success: false,
@@ -237,9 +238,10 @@ describe('protected-documents-upload-helpers.server', () => {
     });
 
     it('returns successful file IDs and errors together when an upload batch has mixed outcomes', async () => {
-      documentUploadServiceMock.uploadDocument.mockImplementation(({ fileName }) =>
-        Promise.resolve(fileName === 'failed.txt' ? { Error: { ErrorCode: 'UPLOAD-1', ErrorMessage: 'Rejected' } } : { DocumentFileName: fileName }),
-      );
+      documentUploadServiceMock.uploadDocument.mockImplementation(async ({ fileName }) => {
+        await Promise.resolve();
+        return fileName === 'failed.txt' ? { Error: { ErrorCode: 'UPLOAD-1', ErrorMessage: 'Rejected' } } : { DocumentFileName: fileName };
+      });
 
       await expect(uploadDocuments(createFiles(['passed.txt', 'failed.txt']))).resolves.toMatchObject({
         success: false,

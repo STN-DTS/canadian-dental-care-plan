@@ -71,9 +71,7 @@ export async function scanDocuments(files: DocumentUploadSchemaOutput['files']):
   );
 
   const result = processBatchResults(results);
-  return result.success
-    ? { success: true, scannedFileIds: result.successfulFileIds }
-    : { success: false, scannedFileIds: result.successfulFileIds, errors: result.errors };
+  return result.success ? { success: true, scannedFileIds: result.successfulFileIds } : { success: false, scannedFileIds: result.successfulFileIds, errors: result.errors };
 }
 
 type UploadDocumentsResponseSuccess = { success: true; uploadedFileIds: ReadonlyArray<string>; errors?: undefined };
@@ -125,9 +123,7 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
   );
 
   const result = processBatchResults(results);
-  return result.success
-    ? { success: true, uploadedFileIds: result.successfulFileIds }
-    : { success: false, uploadedFileIds: result.successfulFileIds, errors: result.errors };
+  return result.success ? { success: true, uploadedFileIds: result.successfulFileIds } : { success: false, uploadedFileIds: result.successfulFileIds, errors: result.errors };
 }
 
 /**

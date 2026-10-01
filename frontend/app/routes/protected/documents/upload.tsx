@@ -30,10 +30,10 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
-import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useClientEnv, useFetcherActionComplete, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
-import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
+import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 import { getLanguage } from '~/utils/locale-utils';
@@ -177,7 +177,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const errors = mergeUploadErrors(scanResult.success ? undefined : scanResult.errors, uploadResult.success ? undefined : uploadResult.errors);
   const uploadedFileIds = uploadResult.uploadedFileIds;
   const submittedDocuments = uploadedFileIds.map((fileId) => {
-    const { file, documentType } = pendingFiles[fileId];
+    const fileData = pendingFiles[fileId];
+    if (!fileData) throw new Error('An uploaded document was not included in the current request');
+    const { file, documentType } = fileData;
     return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
   });
   const failed = errors !== undefined;
@@ -230,6 +232,24 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
   const remainingFiles = filesWithTypes.filter(({ id }) => !uploadedFileIds.has(id));
   const canFinish = flowId !== undefined && remainingFiles.length === 0 && uploadedFileIds.size > 0;
+  const handleCompletedUpload = useCallback(
+    (result: NonNullable<typeof fetcher.data>) => {
+      if (!('flowId' in result) || !result.flowId || !('uploadedFileIds' in result)) return;
+
+      const { flowId: nextFlowId, uploadedFileIds: newlyUploadedIds, errors: uploadErrors } = result;
+      setFlowId(nextFlowId);
+      setUploadedFileIds((previousIds) => new Set([...previousIds, ...newlyUploadedIds]));
+      setRecoveryAnnouncement(
+        t(($) => $.upload.recovery.summary, {
+          uploaded: newlyUploadedIds.length,
+          failed: Object.keys(uploadErrors?.properties?.files?.properties ?? {}).length,
+        }),
+      );
+      focusOnNextFrame(() => document.getElementById('upload-recovery-summary'));
+    },
+    [t],
+  );
+  useFetcherActionComplete(fetcher, handleCompletedUpload);
 
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
@@ -343,21 +363,6 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
 
     await fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
   };
-
-  useEffect(() => {
-    if (!fetcher.data || !('flowId' in fetcher.data) || !fetcher.data.flowId || !('uploadedFileIds' in fetcher.data)) return;
-
-    const { flowId: nextFlowId, uploadedFileIds: newlyUploadedIds, errors: uploadErrors } = fetcher.data;
-    setFlowId(nextFlowId);
-    setUploadedFileIds((previousIds) => new Set([...previousIds, ...newlyUploadedIds]));
-    setRecoveryAnnouncement(
-      t(($) => $.upload.recovery.summary, {
-        uploaded: newlyUploadedIds.length,
-        failed: Object.keys(uploadErrors?.properties?.files?.properties ?? {}).length,
-      }),
-    );
-    focusOnNextFrame(() => document.getElementById('upload-recovery-summary'));
-  }, [fetcher.data, t]);
 
   const docTypeOptions = useMemo<InputOptionProps[]>(() => {
     return [
