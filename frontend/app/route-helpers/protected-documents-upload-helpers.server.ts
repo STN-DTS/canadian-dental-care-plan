@@ -1,7 +1,10 @@
+import type { Get } from 'type-fest';
+
 import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
+import { createLogger } from '~/.server/logging';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
@@ -18,6 +21,8 @@ type ScanDocumentsResponse = ScanDocumentsResponseSuccess | ScanDocumentsRespons
  * @returns Success when every document passes validation and scanning; otherwise, file-specific errors.
  */
 export async function scanDocuments(files: DocumentUploadSchemaOutput['files']): Promise<ScanDocumentsResponse> {
+  const log = createLogger('protected-documents-upload-helpers/scanDocuments');
+
   const user = getUser();
   const url = getUrl();
   const t = await getFixedT(url, 'documents');
@@ -41,6 +46,7 @@ export async function scanDocuments(files: DocumentUploadSchemaOutput['files']):
         });
 
         if (!isContentTypeAllowed) {
+          log.warn('File rejected before security scan for document [%s]', id);
           return { id, error: invalidTypeError };
         }
 
@@ -51,24 +57,15 @@ export async function scanDocuments(files: DocumentUploadSchemaOutput['files']):
         });
 
         if (scanResponse.Error) {
-          return {
-            id,
-            error: t(($) => $.upload.errorMessage.scanFailed, {
-              error: scanResponse.Error.ErrorMessage,
-              code: scanResponse.Error.ErrorCode,
-            }),
-          };
+          log.warn('Security scan rejected document [%s] with code [%s]', id, scanResponse.Error.ErrorCode);
+          return { id, error: t(($) => $.upload.errorMessage.scanFailed, { filename: file.name }) };
         }
 
-        return {
-          id,
-          success: true,
-        };
+        log.trace('Security scan passed for document [%s]', id);
+        return { id, success: true };
       } catch {
-        return {
-          id,
-          error: t(($) => $.upload.errorMessage.scanError),
-        };
+        log.error('Unexpected security scan error for document [%s]', id);
+        return { id, error: t(($) => $.upload.errorMessage.scanError, { filename: file.name }) };
       }
     }),
   );
@@ -87,6 +84,8 @@ type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDocumentsR
  * @returns Success when every document uploads; otherwise, file-specific errors.
  */
 export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']): Promise<UploadDocumentsResponse> {
+  const log = createLogger('protected-documents-upload-helpers/uploadDocuments');
+
   const user = getUser();
   const applicant = getApplicant();
   const url = getUrl();
@@ -109,24 +108,15 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
         });
 
         if (response.Error) {
-          return {
-            id,
-            error: t(($) => $.upload.errorMessage.uploadFailed, {
-              error: response.Error.ErrorMessage,
-              code: response.Error.ErrorCode,
-            }),
-          };
+          log.warn('Upload rejected for document [%s] with code [%s]', id, response.Error.ErrorCode);
+          return { id, error: t(($) => $.upload.errorMessage.uploadFailed, { filename: file.name }) };
         }
 
-        return {
-          id,
-          success: true,
-        };
+        log.trace('Document uploaded successfully: [%s]', id);
+        return { id, success: true };
       } catch {
-        return {
-          id,
-          error: t(($) => $.upload.errorMessage.uploadError),
-        };
+        log.error('Unexpected file upload error for document [%s]', id);
+        return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
       }
     }),
   );
@@ -141,23 +131,34 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
  * @returns Success when no result contains an error; otherwise, an error tree keyed by file ID.
  */
 function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): UploadDocumentsResponse {
-  const failures = results.filter((result) => result.error);
+  const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
   if (failures.length === 0) {
     return { success: true };
   }
 
-  const errors: DocumentUploadSchemaErrorTree = { errors: [], properties: { files: { errors: [], properties: {} } } };
+  const fileProperties: NonNullable<Get<DocumentUploadSchemaErrorTree, 'properties.files.properties'>> = {};
+
   for (const { id, error } of failures) {
-    if (error && errors.properties?.files?.properties) {
-      errors.properties.files.properties[id] = {
-        errors: [],
-        properties: {
-          file: {
-            errors: [error],
-          },
+    fileProperties[id] = {
+      errors: [],
+      properties: {
+        file: {
+          errors: [error],
         },
-      };
-    }
+      },
+    };
   }
-  return { success: false, errors };
+
+  return {
+    success: false,
+    errors: {
+      errors: [],
+      properties: {
+        files: {
+          errors: [],
+          properties: fileProperties,
+        },
+      },
+    },
+  };
 }
