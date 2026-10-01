@@ -44,91 +44,6 @@ import { getTitleMetaTags } from '~/utils/seo-utils';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
-type FileStateWithDocumentType = FileState & { readonly documentType: string };
-
-interface DocumentUploadItemProps extends FileStateWithDocumentType {
-  readonly documentTypeLabel: string;
-  readonly fileNameLabel: string;
-}
-
-interface UploadedDocumentItemProps extends DocumentUploadItemProps {
-  readonly documentTypeName: string;
-  readonly uploadedStatus: string;
-}
-
-interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
-  readonly disabled: boolean;
-  readonly documentTypeError?: string;
-  readonly fileError?: string;
-  readonly onDocumentTypeChange: (id: string, documentType: string) => void;
-  readonly options: InputOptionProps[];
-  readonly recoveryStatus?: string;
-  readonly removeLabel: string;
-}
-
-function UploadedDocumentItem({ id, file, documentTypeLabel, documentTypeName, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
-  const fileNameId = `file-upload-item-${id}-name`;
-  return (
-    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
-      <p>{uploadedStatus}</p>
-      <dl className="space-y-3 sm:space-y-4">
-        <div className="space-y-2">
-          <dt className="font-semibold">{fileNameLabel}</dt>
-          <dd id={fileNameId}>{file.name}</dd>
-        </div>
-        <div className="space-y-2">
-          <dt className="font-semibold">{documentTypeLabel}</dt>
-          <dd>{documentTypeName}</dd>
-        </div>
-      </dl>
-    </FileUploadItem>
-  );
-}
-
-function PendingDocumentUploadItem({ id, file, documentType, disabled, documentTypeError, documentTypeLabel, fileError, fileNameLabel, onDocumentTypeChange, options, recoveryStatus, removeLabel }: PendingDocumentUploadItemProps): JSX.Element {
-  const fileNameId = `file-upload-item-${id}-name`;
-  const fileErrorId = `file-error-${id}`;
-  return (
-    <FileUploadItem
-      id={`file-upload-item-${id}`}
-      aria-labelledby={fileNameId}
-      aria-describedby={fileError ? fileErrorId : undefined}
-      key={id}
-      value={id}
-      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
-      tabIndex={-1}
-    >
-      {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
-      {recoveryStatus && <p>{recoveryStatus}</p>}
-      <dl className="space-y-3 sm:space-y-4">
-        <div className="space-y-2">
-          <dt className="font-semibold">{fileNameLabel}</dt>
-          <dd id={fileNameId}>{file.name}</dd>
-        </div>
-      </dl>
-      <InputSelect
-        id={`document-type-${id}`}
-        name={`document-type-${id}`}
-        label={documentTypeLabel}
-        required
-        className="w-full"
-        options={options}
-        value={documentType}
-        onChange={(event) => onDocumentTypeChange(id, event.currentTarget.value)}
-        disabled={disabled}
-        errorMessage={documentTypeError}
-      />
-      <div className="mt-2">
-        <FileUploadItemDelete asChild aria-describedby={fileNameId}>
-          <Button variant="secondary" size="sm" endIcon={faTimes} disabled={disabled}>
-            {removeLabel}
-          </Button>
-        </FileUploadItemDelete>
-      </div>
-    </FileUploadItem>
-  );
-}
-
 const FORM_ACTION = {
   upload: 'upload',
   finish: 'finish',
@@ -162,10 +77,6 @@ export const handle = {
   layoutOptions: { breadcrumbs: <LayoutBreadcrumbs /> },
   pageIdentifier: pageIds.protected.documents.upload,
 } as const satisfies RouteHandleData;
-
-function LayoutBreadcrumbs(): JSX.Element {
-  return <ProtectedBreadcrumbs />;
-}
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
@@ -638,5 +549,94 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
     </>
+  );
+}
+
+type FileStateWithDocumentType = FileState & { readonly documentType: string };
+
+function LayoutBreadcrumbs(): JSX.Element {
+  return <ProtectedBreadcrumbs />;
+}
+
+interface DocumentUploadItemProps extends FileStateWithDocumentType {
+  readonly documentTypeLabel: string;
+  readonly fileNameLabel: string;
+}
+
+interface UploadedDocumentItemProps extends DocumentUploadItemProps {
+  readonly documentTypeName: string;
+  readonly uploadedStatus: string;
+}
+
+interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
+  readonly disabled: boolean;
+  readonly documentTypeError?: string;
+  readonly fileError?: string;
+  readonly onDocumentTypeChange: (id: string, documentType: string) => void;
+  readonly options: InputOptionProps[];
+  readonly recoveryStatus?: string;
+  readonly removeLabel: string;
+}
+
+function UploadedDocumentItem({ id, file, documentTypeLabel, documentTypeName, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  return (
+    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
+      <p>{uploadedStatus}</p>
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+        <div className="space-y-2">
+          <dt className="font-semibold">{documentTypeLabel}</dt>
+          <dd>{documentTypeName}</dd>
+        </div>
+      </dl>
+    </FileUploadItem>
+  );
+}
+
+function PendingDocumentUploadItem({ id, file, documentType, disabled, documentTypeError, documentTypeLabel, fileError, fileNameLabel, onDocumentTypeChange, options, recoveryStatus, removeLabel }: PendingDocumentUploadItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  const fileErrorId = `file-error-${id}`;
+  return (
+    <FileUploadItem
+      id={`file-upload-item-${id}`}
+      aria-labelledby={fileNameId}
+      aria-describedby={fileError ? fileErrorId : undefined}
+      key={id}
+      value={id}
+      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
+      tabIndex={-1}
+    >
+      {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
+      {recoveryStatus && <p>{recoveryStatus}</p>}
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+      </dl>
+      <InputSelect
+        id={`document-type-${id}`}
+        name={`document-type-${id}`}
+        label={documentTypeLabel}
+        required
+        className="w-full"
+        options={options}
+        value={documentType}
+        onChange={(event) => onDocumentTypeChange(id, event.currentTarget.value)}
+        disabled={disabled}
+        errorMessage={documentTypeError}
+      />
+      <div className="mt-2">
+        <FileUploadItemDelete asChild aria-describedby={fileNameId}>
+          <Button variant="secondary" size="sm" endIcon={faTimes} disabled={disabled}>
+            {removeLabel}
+          </Button>
+        </FileUploadItemDelete>
+      </div>
+    </FileUploadItem>
   );
 }
