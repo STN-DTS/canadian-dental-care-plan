@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { arrayBufferToBase64, detectEicarContent, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
+import { arrayBufferToBase64, base64ToArrayBuffer, detectEicarContent, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
 
 const eicarString = String.raw`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`;
 
@@ -91,8 +91,8 @@ describe('file-utils', () => {
   });
 
   describe('detectEicarContent', () => {
-    it('should detect the exact EICAR signature', () => {
-      expect(detectEicarContent(eicarString)).toBe(true);
+    it('should detect the exact EICAR signature in an ArrayBuffer', () => {
+      expect(detectEicarContent(new TextEncoder().encode(eicarString).buffer)).toBe(true);
     });
 
     it('should detect EICAR content from a File', async () => {
@@ -109,30 +109,43 @@ describe('file-utils', () => {
 
     it('should reject an oversized File without reading its content', async () => {
       const file = new File(['x'.repeat(129)], 'document.txt');
-      const text = vi.spyOn(file, 'text');
+      const arrayBuffer = vi.spyOn(file, 'arrayBuffer');
 
       await expect(detectEicarContent(file)).resolves.toBe(false);
-      expect(text).not.toHaveBeenCalled();
+      expect(arrayBuffer).not.toHaveBeenCalled();
     });
 
     it('should allow only the official trailing whitespace characters', () => {
-      expect(detectEicarContent(`${eicarString} \t\n\r\x1a`)).toBe(true);
-      expect(detectEicarContent(`${eicarString}\u00a0`)).toBe(false);
-      expect(detectEicarContent(`${eicarString}0`)).toBe(false);
+      expect(detectEicarContent(new TextEncoder().encode(`${eicarString} \t\n\r\x1a`).buffer)).toBe(true);
+      expect(detectEicarContent(new TextEncoder().encode(`${eicarString}\u00a0`).buffer)).toBe(false);
+      expect(detectEicarContent(new TextEncoder().encode(`${eicarString}0`).buffer)).toBe(false);
     });
 
     it('should reject content that does not start with the signature', () => {
-      expect(detectEicarContent(` ${eicarString}`)).toBe(false);
-      expect(detectEicarContent(eicarString.replace('EICAR', 'eicar'))).toBe(false);
+      expect(detectEicarContent(new TextEncoder().encode(` ${eicarString}`).buffer)).toBe(false);
+      expect(detectEicarContent(new TextEncoder().encode(eicarString.replace('EICAR', 'eicar')).buffer)).toBe(false);
     });
 
-    it('should enforce the 128-character maximum', () => {
-      expect(detectEicarContent(`${eicarString}${' '.repeat(128 - eicarString.length)}`)).toBe(true);
-      expect(detectEicarContent(`${eicarString}${' '.repeat(129 - eicarString.length)}`)).toBe(false);
+    it('should enforce the 128-byte maximum', () => {
+      expect(detectEicarContent(new TextEncoder().encode(`${eicarString}${' '.repeat(128 - eicarString.length)}`).buffer)).toBe(true);
+      expect(detectEicarContent(new TextEncoder().encode(`${eicarString}${' '.repeat(129 - eicarString.length)}`).buffer)).toBe(false);
     });
 
     it('should reject empty content', () => {
-      expect(detectEicarContent('')).toBe(false);
+      expect(detectEicarContent(new ArrayBuffer(0))).toBe(false);
+    });
+  });
+
+  describe('base64ToArrayBuffer', () => {
+    it('should decode valid Base64 content', () => {
+      const fileBuffer = base64ToArrayBuffer('SGVsbG8=');
+
+      expect(fileBuffer).toBeDefined();
+      expect(new TextDecoder().decode(fileBuffer)).toBe('Hello');
+    });
+
+    it('should return undefined for invalid Base64 content', () => {
+      expect(base64ToArrayBuffer('not valid Base64*')).toBeUndefined();
     });
   });
 

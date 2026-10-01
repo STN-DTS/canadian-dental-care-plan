@@ -21,6 +21,11 @@ type IsFileContentTypeAllowedArgs = {
 const eicarString = String.raw`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`;
 
 /**
+ * Encodes the EICAR test string into a byte array.
+ */
+const eicarBytes = new TextEncoder().encode(eicarString);
+
+/**
  * EICAR test string may have certain allowed trailing characters.
  */
 const eicarAllowedTrailingCharacters = new Set([' ', '\t', '\n', '\r', String.fromCharCode(0x1a)]);
@@ -150,48 +155,84 @@ export async function isFileContentTypeAllowed(args: IsFileContentTypeAllowedArg
 }
 
 /**
- * Detects an EICAR test file from a File object.
+ * Detects the EICAR test signature in a File.
  *
- * @param file - The file whose content should be checked.
- * @returns A promise that resolves to whether the file content matches the EICAR standard.
+ * @param fileOrBuffer - File containing content to inspect.
+ * @returns Promise resolving to true when content matches EICAR; otherwise false.
  */
-export function detectEicarContent(file: File): Promise<boolean>;
+export function detectEicarContent(fileOrBuffer: File): Promise<boolean>;
 
 /**
- * Detects an EICAR test file from raw text content.
+ * Detects the EICAR test signature in an ArrayBuffer.
  *
- * @param fileContent - The raw text content of the file.
- * @returns Whether the content strictly matches the EICAR standard.
+ * Checks raw bytes directly and allows only official EICAR trailing characters.
+ *
+ * @param fileOrBuffer - ArrayBuffer containing content to inspect.
+ * @returns true when content matches EICAR; otherwise false.
  */
-export function detectEicarContent(fileContent: string): boolean;
+export function detectEicarContent(fileOrBuffer: ArrayBuffer): boolean;
 
 /**
- * Implements EICAR detection for the supported string and File overloads.
+ * Detects the EICAR test signature in a File or ArrayBuffer.
  *
- * @param fileContentOrFile - Raw text content or a File object to inspect.
- * @returns A boolean for raw text content or a promise resolving to a boolean for a File object.
+ * Reads File content as an ArrayBuffer, then checks raw bytes.
+ *
+ * @param fileOrBuffer - File or ArrayBuffer containing content to inspect.
+ * @returns Promise resolving to detection result for a File; boolean result for an ArrayBuffer.
  */
-export function detectEicarContent(fileContentOrFile: string | File): boolean | Promise<boolean> {
-  if (typeof fileContentOrFile !== 'string') {
-    if (fileContentOrFile.size > 128) {
+export function detectEicarContent(fileOrBuffer: ArrayBuffer | File): boolean | Promise<boolean> {
+  if (fileOrBuffer instanceof File) {
+    if (fileOrBuffer.size > 128) {
       return Promise.resolve(false);
     }
 
-    return fileContentOrFile.text().then(detectEicarContent);
+    return fileOrBuffer.arrayBuffer().then(detectEicarContent);
   }
 
-  if (!fileContentOrFile || fileContentOrFile.length > 128 || !fileContentOrFile.startsWith(eicarString)) {
+  const fileBytes = new Uint8Array(fileOrBuffer);
+
+  // Reject files that are too large or too small to be the EICAR test file.
+  if (fileBytes.length > 128 || fileBytes.length < eicarBytes.length) {
     return false;
   }
 
-  // Check for any disallowed trailing characters after the EICAR string
-  for (const character of fileContentOrFile.slice(eicarString.length)) {
-    if (!eicarAllowedTrailingCharacters.has(character)) {
+  // Check each byte against the EICAR signature
+  for (let index = 0; index < eicarBytes.length; index += 1) {
+    if (fileBytes[index] !== eicarBytes[index]) {
+      return false;
+    }
+  }
+
+  // Check trailing characters after the EICAR signature
+  for (const byte of fileBytes.slice(eicarBytes.length)) {
+    if (!eicarAllowedTrailingCharacters.has(String.fromCharCode(byte))) {
       return false;
     }
   }
 
   return true;
+}
+
+/**
+ * Decodes a standard Base64 string into an ArrayBuffer.
+ *
+ * @param base64Content - Standard Base64 content without whitespace.
+ * @returns Decoded bytes, or undefined when content is invalid Base64.
+ */
+export function base64ToArrayBuffer(base64Content: string): ArrayBuffer | undefined {
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64Content)) {
+    return undefined;
+  }
+
+  try {
+    const isNode = typeof Buffer !== 'undefined';
+    const bytes = isNode //
+      ? Uint8Array.from(Buffer.from(base64Content, 'base64'))
+      : Uint8Array.from(atob(base64Content), (character) => character.codePointAt(0) ?? 0);
+    return bytes.buffer;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
