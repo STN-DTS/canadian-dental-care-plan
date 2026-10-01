@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { arrayBufferToBase64, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
+import { arrayBufferToBase64, detectEicarContent, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
+
+const eicarString = String.raw`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`;
 
 describe('file-utils', () => {
   describe('hashFileBuffer', () => {
@@ -85,6 +87,52 @@ describe('file-utils', () => {
       const file = new File(['Unknown content'], 'document.pdf', { type: 'application/pdf' });
 
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(false);
+    });
+  });
+
+  describe('detectEicarContent', () => {
+    it('should detect the exact EICAR signature', () => {
+      expect(detectEicarContent(eicarString)).toBe(true);
+    });
+
+    it('should detect EICAR content from a File', async () => {
+      const file = new File([eicarString], 'document.txt');
+
+      await expect(detectEicarContent(file)).resolves.toBe(true);
+    });
+
+    it('should reject invalid content even when the filename looks like EICAR', async () => {
+      const file = new File(['not the EICAR signature'], 'eicar.com');
+
+      await expect(detectEicarContent(file)).resolves.toBe(false);
+    });
+
+    it('should reject an oversized File without reading its content', async () => {
+      const file = new File(['x'.repeat(129)], 'document.txt');
+      const text = vi.spyOn(file, 'text');
+
+      await expect(detectEicarContent(file)).resolves.toBe(false);
+      expect(text).not.toHaveBeenCalled();
+    });
+
+    it('should allow only the official trailing whitespace characters', () => {
+      expect(detectEicarContent(`${eicarString} \t\n\r\x1a`)).toBe(true);
+      expect(detectEicarContent(`${eicarString}\u00a0`)).toBe(false);
+      expect(detectEicarContent(`${eicarString}0`)).toBe(false);
+    });
+
+    it('should reject content that does not start with the signature', () => {
+      expect(detectEicarContent(` ${eicarString}`)).toBe(false);
+      expect(detectEicarContent(eicarString.replace('EICAR', 'eicar'))).toBe(false);
+    });
+
+    it('should enforce the 128-character maximum', () => {
+      expect(detectEicarContent(`${eicarString}${' '.repeat(128 - eicarString.length)}`)).toBe(true);
+      expect(detectEicarContent(`${eicarString}${' '.repeat(129 - eicarString.length)}`)).toBe(false);
+    });
+
+    it('should reject empty content', () => {
+      expect(detectEicarContent('')).toBe(false);
     });
   });
 
