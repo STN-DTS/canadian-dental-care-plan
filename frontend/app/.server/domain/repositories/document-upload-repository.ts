@@ -7,6 +7,7 @@ import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { base64ToArrayBuffer, detectEicarContent } from '~/utils/file-utils';
 
 /**
  * A repository that provides document uploading and scanning functionality.
@@ -209,8 +210,31 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
     this.log.debug('Scanning document for filename [%s]', scanDocumentRequestEntity.filename);
 
-    this.log.debug('Successfully scanned document. File is safe.');
+    const documentBuffer = base64ToArrayBuffer(scanDocumentRequestEntity.binary);
 
+    if (!documentBuffer) {
+      this.log.warn('Document scan failed: unable to decode binary content for filename [%s]', scanDocumentRequestEntity.filename);
+      return await Promise.resolve({
+        DataId: null,
+        Error: {
+          ErrorCode: 'INVALID_BINARY',
+          ErrorMessage: 'Failed to decode binary content of the document.',
+        },
+      });
+    }
+
+    if (detectEicarContent(documentBuffer)) {
+      this.log.warn('Document scan detected EICAR test content for filename [%s]', scanDocumentRequestEntity.filename);
+      return await Promise.resolve({
+        DataId: null,
+        Error: {
+          ErrorCode: 'EICAR_DETECTED',
+          ErrorMessage: 'EICAR test content detected in the document.',
+        },
+      });
+    }
+
+    this.log.debug('Successfully scanned document. File is safe.');
     return await Promise.resolve({ DataId: 'mock-data-id-12345', Error: null });
   }
 
