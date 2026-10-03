@@ -43,7 +43,6 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
-import { getClientEnv } from '~/utils/env-utils';
 
 const FORM_ACTION = {
   upload: 'upload',
@@ -133,7 +132,7 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { session } = context.get(appContext);
+  const { appContainer, session } = context.get(appContext);
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const formData = await request.formData();
@@ -166,23 +165,24 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const existingState = submittedFlowId ? loadDocumentUploadState({ id: submittedFlowId, params, session }) : undefined;
   const confirmedIds = new Set(existingState?.submittedDocuments.map(({ id }) => id));
   const pendingFiles = Object.fromEntries(Object.entries(files).filter(([fileId]) => !confirmedIds.has(fileId)));
-  const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = getClientEnv();
+  const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = appContainer.get(TYPES.ClientConfig);
   if ((existingState?.submittedDocuments.length ?? 0) + Object.keys(pendingFiles).length > DOCUMENT_UPLOAD_MAX_FILE_COUNT) {
+    const errors: DocumentUploadSchemaErrorTree = {
+      errors: [],
+      properties: {
+        files: {
+          errors: [t(($) => $.upload.errorMessage.tooManyFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })],
+        },
+      },
+    };
     return data(
       {
         formAction,
         source,
         ...(existingState && { flowId: existingState.id }),
         uploadedFileIds: [],
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: [t(($) => $.upload.errorMessage.tooManyFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })],
-            },
-          },
-        },
-      } as const,
+        errors,
+      },
       400,
     );
   }
