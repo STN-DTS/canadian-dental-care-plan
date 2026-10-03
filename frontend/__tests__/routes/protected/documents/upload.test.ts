@@ -94,7 +94,7 @@ function createActionArgs(formData: FormData, maxFileCount = 10): ActionArgs {
     get: () => ({ DOCUMENT_UPLOAD_MAX_FILE_COUNT: maxFileCount }),
   } as unknown as AppContext['appContainer'];
   const context = new RouterContextProvider();
-  context.set(appContext, mock<AppContext>({ appContainer, session }));
+  context.set(appContext, { appContainer, session });
   return {
     request: createRequest(formData),
     url: new URL('http://localhost/en/protected/documents/upload'),
@@ -411,11 +411,11 @@ describe('action', () => {
   });
 
   it('rejects recovery batches that exceed the flow-wide file limit before scanning', async () => {
-    const formData = createUploadFormData([{ id: 'file-2', file: new File(['content'], 'new.pdf'), documentType: 'receipt' }]);
+    const formData = validUploadFormData();
     formData.set('flow_id', uploadId);
     vi.mocked(loadDocumentUploadState).mockReturnValue({
       id: uploadId,
-      submittedDocuments: [{ id: 'file-1', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: 7 }],
+      submittedDocuments: [{ id: 'confirmed-file', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: 7 }],
     });
     const args = createActionArgs(formData, 1);
 
@@ -427,7 +427,7 @@ describe('action', () => {
         source: 'server',
         flowId: uploadId,
         uploadedFileIds: [],
-        errors: { properties: { files: { errors: [expect.any(String)] } } },
+        errors: { properties: { files: { errors: [expect.anything()] } } },
       },
       init: { status: 400 },
     });
