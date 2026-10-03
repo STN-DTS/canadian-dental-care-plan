@@ -101,6 +101,29 @@ export function startDocumentUploadState({ id, session, submittedDocuments }: St
   return initialState;
 }
 
+interface AddSubmittedDocumentsArgs {
+  id: string;
+  params: DocumentUploadStateParams;
+  session: Session;
+  submittedDocuments: ReadonlyArray<SubmittedDocument>;
+}
+
+export function addSubmittedDocuments({ id, params, session, submittedDocuments }: AddSubmittedDocumentsArgs) {
+  const state = loadDocumentUploadState({ id, params, session });
+  const documentsById = new Map(state.submittedDocuments.map((document) => [document.id, document]));
+
+  for (const document of submittedDocuments) {
+    documentsById.set(document.id, document);
+  }
+
+  const updatedState: DocumentUploadState = {
+    ...state,
+    submittedDocuments: [...documentsById.values()],
+  };
+  session.set(getSessionKey(state.id), updatedState);
+  return updatedState;
+}
+
 interface ClearStateArgs {
   id: string;
   params: DocumentUploadStateParams;

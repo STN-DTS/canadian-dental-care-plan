@@ -66,7 +66,7 @@ describe('protected-documents-upload-helpers.server', () => {
     it('should scan valid documents', async () => {
       documentUploadServiceMock.scanDocument.mockResolvedValue({ DataId: 'scan-123' });
 
-      await expect(scanDocuments(createFiles())).resolves.toEqual({ success: true });
+      await expect(scanDocuments(createFiles())).resolves.toEqual({ success: true, scannedFileIds: ['first'] });
       expect(documentUploadServiceMock.scanDocument).toHaveBeenCalledWith({
         fileName: 'document.txt',
         binary: 'base64-content',
@@ -147,6 +147,27 @@ describe('protected-documents-upload-helpers.server', () => {
         },
       });
     });
+
+    it('returns successful file IDs and errors together when a scan batch has mixed outcomes', async () => {
+      documentUploadServiceMock.scanDocument.mockImplementation(async ({ fileName }) => {
+        await Promise.resolve();
+        return fileName === 'failed.txt' ? { Error: { ErrorCode: 'SCAN-1', ErrorMessage: 'Rejected' } } : { DataId: 'scan-123' };
+      });
+
+      await expect(scanDocuments(createFiles(['passed.txt', 'failed.txt']))).resolves.toMatchObject({
+        success: false,
+        scannedFileIds: ['first'],
+        errors: {
+          properties: {
+            files: {
+              properties: {
+                second: { properties: { file: { errors: ['scan failed'] } } },
+              },
+            },
+          },
+        },
+      });
+    });
   });
 
   describe('uploadDocuments', () => {
@@ -158,7 +179,7 @@ describe('protected-documents-upload-helpers.server', () => {
     it('should upload documents with applicant and user context', async () => {
       documentUploadServiceMock.uploadDocument.mockResolvedValue({ DocumentFileName: 'document.txt' });
 
-      await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true });
+      await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true, uploadedFileIds: ['first'] });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledWith({
         clientNumber: 'client-123',
         evidentiaryDocumentTypeId: 'receipt',
@@ -215,17 +236,43 @@ describe('protected-documents-upload-helpers.server', () => {
         },
       });
     });
+
+    it('returns successful file IDs and errors together when an upload batch has mixed outcomes', async () => {
+      documentUploadServiceMock.uploadDocument.mockImplementation(async ({ fileName }) => {
+        await Promise.resolve();
+        return fileName === 'failed.txt' ? { Error: { ErrorCode: 'UPLOAD-1', ErrorMessage: 'Rejected' } } : { DocumentFileName: fileName };
+      });
+
+      await expect(uploadDocuments(createFiles(['passed.txt', 'failed.txt']))).resolves.toMatchObject({
+        success: false,
+        uploadedFileIds: ['first'],
+        errors: {
+          properties: {
+            files: {
+              properties: {
+                second: { properties: { file: { errors: ['upload failed'] } } },
+              },
+            },
+          },
+        },
+      });
+    });
   });
 });
 
-function createFiles(): DocumentUploadSchemaOutput['files'] {
-  const file = new File(['content'], 'document.txt', { type: 'text/plain', lastModified: 1_000 });
-  return {
-    first: {
-      file,
-      fileBuffer: new TextEncoder().encode('content').buffer,
-      fileHash: 'hash',
-      documentType: 'receipt',
-    },
-  };
+function createFiles(fileNames = ['document.txt']): DocumentUploadSchemaOutput['files'] {
+  return Object.fromEntries(
+    fileNames.map((fileName, index) => {
+      const file = new File(['content'], fileName, { type: 'text/plain', lastModified: 1_000 });
+      return [
+        index === 0 ? 'first' : 'second',
+        {
+          file,
+          fileBuffer: new TextEncoder().encode('content').buffer,
+          fileHash: 'hash',
+          documentType: 'receipt',
+        },
+      ];
+    }),
+  );
 }

@@ -44,6 +44,13 @@ const ns = {
       filesSelected_one: "Fichiers sélectionnés : {{selected}} sur {{count}} fichier",
       filesSelected_other: "Fichiers sélectionnés : {{selected}} sur {{count}} fichiers",
     },
+    recovery: {
+      summary: "Résultats du téléversement. Téléversements réussis : {{uploaded}}. Fichiers à vérifier : {{failed}}.",
+      uploaded: "Téléversé",
+      notUploaded: "Non téléversé",
+      submitRemaining: "Soumettre les fichiers restants",
+      finish: "Terminer",
+    },
     uploadDocument: "Téléverser mes documents",
     addFile: "Ajouter un fichier",
     fileName: "Nom du fichier",

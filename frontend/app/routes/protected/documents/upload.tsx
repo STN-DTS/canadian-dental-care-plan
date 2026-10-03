@@ -13,7 +13,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
-import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { addSubmittedDocuments, getDocumentUploadSubmittedUrl, loadDocumentUploadState, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
@@ -30,9 +30,10 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
-import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useClientEnv, useFetcherActionComplete, useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
+import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 import { getLanguage } from '~/utils/locale-utils';
@@ -43,10 +44,9 @@ import { getTitleMetaTags } from '~/utils/seo-utils';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
-type FileStateWithDocumentType = FileState & { readonly documentType: string };
-
 const FORM_ACTION = {
   upload: 'upload',
+  finish: 'finish',
   validateFiles: 'validate-files',
 } as const;
 
@@ -77,10 +77,6 @@ export const handle = {
   layoutOptions: { breadcrumbs: <LayoutBreadcrumbs /> },
   pageIdentifier: pageIds.protected.documents.upload,
 } as const satisfies RouteHandleData;
-
-function LayoutBreadcrumbs(): JSX.Element {
-  return <ProtectedBreadcrumbs />;
-}
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
@@ -123,6 +119,10 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
     return { formAction, source, validationId, errors: undefined };
   }
 
+  if (formAction === FORM_ACTION.finish) {
+    return await serverAction();
+  }
+
   const validationResult = await validateUploadForm({ formData, locale, t });
   if (!validationResult.success) {
     return data({ formAction, source, errors: validationResult.errors }, 400);
@@ -132,13 +132,24 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { session } = context.get(appContext);
+  const { appContainer, session } = context.get(appContext);
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const formData = await request.formData();
   const source = 'server';
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
+  if (formAction === FORM_ACTION.finish) {
+    const submittedFlowId = formData.get('flow_id');
+    const id = typeof submittedFlowId === 'string' ? submittedFlowId : null;
+    const state = loadDocumentUploadState({ id, params, session });
+    if (state.submittedDocuments.length === 0) {
+      throw redirect(getPathById('protected/documents/upload', params));
+    }
+
+    return redirect(getDocumentUploadSubmittedUrl({ id: state.id, params }));
+  }
+
   if (formAction !== FORM_ACTION.upload) {
     throw new Error(`Invalid formAction: ${formAction}`);
   }
@@ -149,25 +160,88 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   const { files } = validationResult.data;
-
-  const scanResult = await scanDocuments(files);
-  if (!scanResult.success) {
-    return data({ formAction, source, errors: scanResult.errors } as const, 400);
+  const submittedFlowIdValue = formData.get('flow_id');
+  const submittedFlowId = typeof submittedFlowIdValue === 'string' && submittedFlowIdValue ? submittedFlowIdValue : undefined;
+  const existingState = submittedFlowId ? loadDocumentUploadState({ id: submittedFlowId, params, session }) : undefined;
+  const confirmedIds = new Set(existingState?.submittedDocuments.map(({ id }) => id));
+  const pendingFiles = Object.fromEntries(Object.entries(files).filter(([fileId]) => !confirmedIds.has(fileId)));
+  const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = appContainer.get(TYPES.ClientConfig);
+  if ((existingState?.submittedDocuments.length ?? 0) + Object.keys(pendingFiles).length > DOCUMENT_UPLOAD_MAX_FILE_COUNT) {
+    const errors: DocumentUploadSchemaErrorTree = {
+      errors: [],
+      properties: {
+        files: {
+          errors: [t(($) => $.upload.errorMessage.tooManyFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })],
+        },
+      },
+    };
+    return data(
+      {
+        formAction,
+        source,
+        ...(existingState && { flowId: existingState.id }),
+        uploadedFileIds: [],
+        errors,
+      },
+      400,
+    );
   }
+  const scanResult = await scanDocuments(pendingFiles);
+  const scannedFileIds = new Set(scanResult.scannedFileIds);
+  const scannedFiles = Object.fromEntries(Object.entries(pendingFiles).filter(([fileId]) => scannedFileIds.has(fileId)));
+  const uploadResult = Object.keys(scannedFiles).length > 0 ? await uploadDocuments(scannedFiles) : { success: true as const, uploadedFileIds: [] };
+  const errors = mergeUploadErrors(scanResult.success ? undefined : scanResult.errors, uploadResult.success ? undefined : uploadResult.errors);
+  const uploadedFileIds = uploadResult.uploadedFileIds;
+  const submittedDocuments = uploadedFileIds.map((fileId) => {
+    const fileData = pendingFiles[fileId];
+    if (!fileData) throw new Error('An uploaded document was not included in the current request');
+    const { file, documentType } = fileData;
+    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
+  });
+  const failed = errors !== undefined;
 
-  const uploadResult = await uploadDocuments(files);
-  if (!uploadResult.success) {
-    return data({ formAction, source, errors: uploadResult.errors } as const, 400);
+  if (submittedFlowId) {
+    addSubmittedDocuments({ id: submittedFlowId, params, session, submittedDocuments });
+    return data({ formAction, source, flowId: submittedFlowId, uploadedFileIds, errors });
   }
 
   const id = crypto.randomUUID();
-  const submittedDocuments = Object.entries(files).map(([fileId, { file, documentType }]) => {
-    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
-  });
-
   startDocumentUploadState({ id, session, submittedDocuments });
+  if (!failed) {
+    return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+  }
 
-  return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+  return data({ formAction, source, flowId: id, uploadedFileIds, errors });
+}
+
+function mergeUploadErrors(...errorTrees: ReadonlyArray<DocumentUploadSchemaErrorTree | undefined>): DocumentUploadSchemaErrorTree | undefined {
+  const fileErrors = Object.assign({}, ...errorTrees.map((tree) => tree?.properties?.files?.properties));
+  if (Object.keys(fileErrors).length === 0) return undefined;
+
+  return {
+    errors: [],
+    properties: {
+      files: {
+        errors: [],
+        properties: fileErrors,
+      },
+    },
+  };
+}
+
+function omitUploadErrors(errorTree: DocumentUploadSchemaErrorTree | undefined, fileIds: ReadonlySet<string>): DocumentUploadSchemaErrorTree | undefined {
+  const fileErrors = Object.fromEntries(Object.entries(errorTree?.properties?.files?.properties ?? {}).filter(([fileId]) => !fileIds.has(fileId)));
+  if (Object.keys(fileErrors).length === 0) return undefined;
+
+  return {
+    errors: [],
+    properties: {
+      files: {
+        errors: [],
+        properties: fileErrors,
+      },
+    },
+  };
 }
 
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
@@ -183,7 +257,35 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const fileUploadDescriptionId = filesError ? 'files-error file-upload-instructions' : 'file-upload-instructions';
 
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
+  const [flowId, setFlowId] = useState<string>();
+  const [uploadedFileIds, setUploadedFileIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [recoveryUploadErrors, setRecoveryUploadErrors] = useState<DocumentUploadSchemaErrorTree>();
+  const [recoveryAnnouncement, setRecoveryAnnouncement] = useState('');
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
+  const pendingUploadFileIdsRef = useRef<ReadonlyArray<string>>([]);
+  const remainingFiles = filesWithTypes.filter(({ id }) => !uploadedFileIds.has(id));
+  const canFinish = flowId !== undefined && remainingFiles.length === 0 && uploadedFileIds.size > 0;
+  const handleCompletedUpload = useCallback(
+    (result: NonNullable<typeof fetcher.data>) => {
+      if (!('flowId' in result) || !result.flowId || !('uploadedFileIds' in result)) return;
+
+      const { flowId: nextFlowId, uploadedFileIds: newlyUploadedIds, errors: uploadErrors } = result;
+      setFlowId(nextFlowId);
+      setUploadedFileIds((previousIds) => new Set([...previousIds, ...newlyUploadedIds]));
+      const retriedFileIds = new Set(pendingUploadFileIdsRef.current);
+      pendingUploadFileIdsRef.current = [];
+      setRecoveryUploadErrors((previousErrors) => mergeUploadErrors(omitUploadErrors(previousErrors, retriedFileIds), uploadErrors));
+      setRecoveryAnnouncement(
+        t(($) => $.upload.recovery.summary, {
+          uploaded: newlyUploadedIds.length,
+          failed: Object.keys(uploadErrors?.properties?.files?.properties ?? {}).length,
+        }),
+      );
+      focusOnNextFrame(() => document.getElementById('upload-recovery-summary'));
+    },
+    [t],
+  );
+  useFetcherActionComplete(fetcher, handleCompletedUpload);
 
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
@@ -235,6 +337,11 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         });
       }
 
+      const removedFileIds = new Set(filesWithTypes.filter(({ id }) => !currentFileIds.has(id)).map(({ id }) => id));
+      if (removedFileIds.size > 0) {
+        setRecoveryUploadErrors((previousErrors) => omitUploadErrors(previousErrors, removedFileIds));
+      }
+
       setFilesWithTypes((prev) => {
         const prevMap = new Map(prev.map((item) => [item.id, item]));
         return files.map((file) => prevMap.get(file.id) ?? { ...file, documentType: '' });
@@ -278,15 +385,22 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    formData.set('_action', FORM_ACTION.upload);
+    const submitter = event.nativeEvent.submitter as HTMLButtonElement | null;
+    const formAction = submitter?.value === FORM_ACTION.finish ? FORM_ACTION.finish : FORM_ACTION.upload;
+    formData.set('_action', formAction);
     formData.delete('file_id');
     formData.delete('file_object');
     formData.delete('file_document_type');
 
-    for (const { id, file, documentType } of filesWithTypes) {
-      formData.append('file_id', id);
-      formData.append('file_object', file);
-      formData.append('file_document_type', documentType);
+    if (flowId) formData.set('flow_id', flowId);
+
+    if (formAction === FORM_ACTION.upload) {
+      pendingUploadFileIdsRef.current = remainingFiles.map(({ id }) => id);
+      for (const { id, file, documentType } of remainingFiles) {
+        formData.append('file_id', id);
+        formData.append('file_object', file);
+        formData.append('file_document_type', documentType);
+      }
     }
 
     await fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
@@ -361,7 +475,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                     onBeforeFilesAdd={handleBeforeFilesAdd}
                     accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')}
                     disabled={isSubmitting}
-                    required
+                    required={!canFinish}
                     className="gap-4 sm:gap-6"
                   >
                     <div>
@@ -383,48 +497,37 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                         selected: filesWithTypes.length,
                       })}
                     </p>
+                    {flowId && (
+                      <div id="upload-recovery-summary" role="status" aria-live="polite" aria-atomic="true" tabIndex={-1}>
+                        {recoveryAnnouncement}
+                      </div>
+                    )}
                     <FileUploadList className="gap-4 sm:gap-6">
-                      {filesWithTypes.map(({ id, file, documentType }) => {
-                        const fileNameId = `file-upload-item-${id}-name`;
-                        const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
-                        const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
+                      {filesWithTypes.map((fileState) => {
+                        const { id } = fileState;
+                        const isUploaded = uploadedFileIds.has(id);
+                        const itemProps = {
+                          ...fileState,
+                          documentTypeLabel: t(($) => $.upload.documentType),
+                          fileNameLabel: t(($) => $.upload.fileName),
+                        };
+                        if (isUploaded) {
+                          const documentTypeName = documentTypes.find(({ id: typeId }) => typeId === fileState.documentType)?.name ?? fileState.documentType;
+                          return <UploadedDocumentItem {...itemProps} documentTypeName={documentTypeName} uploadedStatus={t(($) => $.upload.recovery.uploaded)} key={id} />;
+                        }
+
                         return (
-                          <FileUploadItem
-                            id={`file-upload-item-${id}`}
-                            aria-labelledby={fileNameId}
-                            aria-describedby={undefined}
+                          <PendingDocumentUploadItem
+                            {...itemProps}
+                            disabled={isSubmitting}
+                            fileError={recoveryUploadErrors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0] ?? errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0]}
+                            documentTypeError={recoveryUploadErrors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0] ?? errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0]}
+                            options={docTypeOptions}
+                            onDocumentTypeChange={handleDocumentTypeChange}
+                            recoveryStatus={flowId ? t(($) => $.upload.recovery.notUploaded) : undefined}
+                            removeLabel={t(($) => $.upload.remove)}
                             key={id}
-                            value={id}
-                            className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
-                            tabIndex={-1}
-                          >
-                            {fileError && <InputError id={`file-error-${id}`} fieldId={`file-upload-item-${id}`} message={fileError} />}
-                            <dl className="space-y-3 sm:space-y-4">
-                              <div className="space-y-2">
-                                <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-                                <dd id={fileNameId}>{file.name}</dd>
-                              </div>
-                            </dl>
-                            <InputSelect
-                              id={`document-type-${id}`}
-                              name={`document-type-${id}`}
-                              label={t(($) => $.upload.documentType)}
-                              required
-                              className="w-full"
-                              options={docTypeOptions}
-                              value={documentType}
-                              onChange={(event) => handleDocumentTypeChange(id, event.currentTarget.value)}
-                              disabled={isSubmitting}
-                              errorMessage={documentTypeError}
-                            />
-                            <div className="mt-2">
-                              <FileUploadItemDelete asChild aria-describedby={fileNameId}>
-                                <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting}>
-                                  {t(($) => $.upload.remove)}
-                                </Button>
-                              </FileUploadItemDelete>
-                            </div>
-                          </FileUploadItem>
+                          />
                         );
                       })}
                     </FileUploadList>
@@ -433,16 +536,48 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
               </div>
 
               <div className="mt-8">
-                <LoadingButton
-                  id="submit-button"
-                  variant="primary"
-                  type="submit"
-                  loading={isSubmitting && submitAction === FORM_ACTION.upload}
-                  disabled={isSubmitting}
-                  data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
-                >
-                  {t(($) => $.upload.submit)}
-                </LoadingButton>
+                {!flowId && (
+                  <LoadingButton
+                    id="submit-button"
+                    name="_action"
+                    value={FORM_ACTION.upload}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction === FORM_ACTION.upload}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+                  >
+                    {t(($) => $.upload.submit)}
+                  </LoadingButton>
+                )}
+                {flowId && remainingFiles.length > 0 && (
+                  <LoadingButton
+                    id="submit-remaining-files-button"
+                    name="_action"
+                    value={FORM_ACTION.upload}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction === FORM_ACTION.upload}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit remaining files click"
+                  >
+                    {t(($) => $.upload.recovery.submitRemaining)}
+                  </LoadingButton>
+                )}
+                {canFinish && remainingFiles.length === 0 && (
+                  <LoadingButton
+                    id="finish-upload-button"
+                    name="_action"
+                    value={FORM_ACTION.finish}
+                    variant="primary"
+                    type="submit"
+                    loading={isSubmitting && submitAction === FORM_ACTION.finish}
+                    disabled={isSubmitting}
+                    data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Finish document upload click"
+                  >
+                    {t(($) => $.upload.recovery.finish)}
+                  </LoadingButton>
+                )}
               </div>
             </fetcher.Form>
           </ErrorSummaryProvider>
@@ -462,5 +597,94 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
     </>
+  );
+}
+
+type FileStateWithDocumentType = FileState & { readonly documentType: string };
+
+function LayoutBreadcrumbs(): JSX.Element {
+  return <ProtectedBreadcrumbs />;
+}
+
+interface DocumentUploadItemProps extends FileStateWithDocumentType {
+  readonly documentTypeLabel: string;
+  readonly fileNameLabel: string;
+}
+
+interface UploadedDocumentItemProps extends DocumentUploadItemProps {
+  readonly documentTypeName: string;
+  readonly uploadedStatus: string;
+}
+
+interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
+  readonly disabled: boolean;
+  readonly documentTypeError?: string;
+  readonly fileError?: string;
+  readonly onDocumentTypeChange: (id: string, documentType: string) => void;
+  readonly options: InputOptionProps[];
+  readonly recoveryStatus?: string;
+  readonly removeLabel: string;
+}
+
+function UploadedDocumentItem({ id, file, documentTypeLabel, documentTypeName, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  return (
+    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} aria-describedby={undefined} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
+      <p>{uploadedStatus}</p>
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+        <div className="space-y-2">
+          <dt className="font-semibold">{documentTypeLabel}</dt>
+          <dd>{documentTypeName}</dd>
+        </div>
+      </dl>
+    </FileUploadItem>
+  );
+}
+
+function PendingDocumentUploadItem({ id, file, documentType, disabled, documentTypeError, documentTypeLabel, fileError, fileNameLabel, onDocumentTypeChange, options, recoveryStatus, removeLabel }: PendingDocumentUploadItemProps): JSX.Element {
+  const fileNameId = `file-upload-item-${id}-name`;
+  const fileErrorId = `file-error-${id}`;
+  return (
+    <FileUploadItem
+      id={`file-upload-item-${id}`}
+      aria-labelledby={fileNameId}
+      aria-describedby={fileError ? fileErrorId : undefined}
+      key={id}
+      value={id}
+      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
+      tabIndex={-1}
+    >
+      {fileError && <InputError id={fileErrorId} fieldId={`file-upload-item-${id}`} message={fileError} />}
+      {recoveryStatus && <p>{recoveryStatus}</p>}
+      <dl className="space-y-3 sm:space-y-4">
+        <div className="space-y-2">
+          <dt className="font-semibold">{fileNameLabel}</dt>
+          <dd id={fileNameId}>{file.name}</dd>
+        </div>
+      </dl>
+      <InputSelect
+        id={`document-type-${id}`}
+        name={`document-type-${id}`}
+        label={documentTypeLabel}
+        required
+        className="w-full"
+        options={options}
+        value={documentType}
+        onChange={(event) => onDocumentTypeChange(id, event.currentTarget.value)}
+        disabled={disabled}
+        errorMessage={documentTypeError}
+      />
+      <div className="mt-2">
+        <FileUploadItemDelete asChild aria-describedby={fileNameId}>
+          <Button variant="secondary" size="sm" endIcon={faTimes} disabled={disabled}>
+            {removeLabel}
+          </Button>
+        </FileUploadItemDelete>
+      </div>
+    </FileUploadItem>
   );
 }
