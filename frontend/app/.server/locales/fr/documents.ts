@@ -45,7 +45,7 @@ const ns = {
       filesSelected_other: "Fichiers sélectionnés : {{selected}} sur {{count}} fichiers",
     },
     recovery: {
-      summary: "Résultats du téléversement : {{uploaded}} téléversé(s); {{failed}} à corriger.",
+      summary: "Résultats du téléversement — Téléversements réussis : {{uploaded}}; fichiers nécessitant une correction : {{failed}}.",
       uploaded: "Téléversé",
       notUploaded: "Non téléversé",
       submitRemaining: "Soumettre les fichiers restants",

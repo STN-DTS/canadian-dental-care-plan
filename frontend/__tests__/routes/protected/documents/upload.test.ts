@@ -534,12 +534,17 @@ describe('DocumentsUpload recovery UI', () => {
     expect(uploadedElement.querySelector('button[data-slot="file-upload-item-delete"]')).toBeNull();
     expect(uploadedElement.querySelector('select')).toBeNull();
 
+    await addFile(new File(['three'], 'new.pdf'));
+    const newItem = screen.getByText('new.pdf').closest('[role="listitem"]') as HTMLElement;
+    fireEvent.change(newItem.querySelector('select') as HTMLSelectElement, { target: { value: 'receipt' } });
+    expect(failedElement.querySelector('[role="alert"]')).toHaveTextContent('upload failed');
+
     fireEvent.click(screen.getByRole('button', { name: 'Submit remaining files' }));
     await waitFor(() => expect(submissions.filter((formData) => formData.get('_action') === 'upload')).toHaveLength(2));
     const retryRequest = submissions.filter((formData) => formData.get('_action') === 'upload')[1];
     if (!retryRequest) throw new Error('Expected retry request');
-    expect(retryRequest.getAll('file_id')).toHaveLength(1);
-    expect(retryRequest.getAll('file_object').map((file) => (file as File).name)).toEqual(['retry.pdf']);
+    expect(retryRequest.getAll('file_id')).toHaveLength(2);
+    expect(retryRequest.getAll('file_object').map((file) => (file as File).name)).toEqual(['retry.pdf', 'new.pdf']);
     expect(await screen.findByRole('button', { name: 'Finish' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
@@ -621,7 +626,7 @@ function renderRecoveryUi(routes: ReturnType<typeof createRoutesStub>, submitHan
           selectOne: 'Select one',
           returnDashboard: 'Return to dashboard',
           recovery: {
-            summary: 'Upload results: {{uploaded}} uploaded; {{failed}} need attention.',
+            summary: 'Upload results — Successful uploads: {{uploaded}}; files needing attention: {{failed}}.',
             uploaded: 'Uploaded',
             notUploaded: 'Not uploaded',
             submitRemaining: 'Submit remaining files',

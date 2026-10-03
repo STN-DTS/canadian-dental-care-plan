@@ -207,6 +207,21 @@ function mergeUploadErrors(...errorTrees: ReadonlyArray<DocumentUploadSchemaErro
   };
 }
 
+function omitUploadErrors(errorTree: DocumentUploadSchemaErrorTree | undefined, fileIds: ReadonlySet<string>): DocumentUploadSchemaErrorTree | undefined {
+  const fileErrors = Object.fromEntries(Object.entries(errorTree?.properties?.files?.properties ?? {}).filter(([fileId]) => !fileIds.has(fileId)));
+  if (Object.keys(fileErrors).length === 0) return undefined;
+
+  return {
+    errors: [],
+    properties: {
+      files: {
+        errors: [],
+        properties: fileErrors,
+      },
+    },
+  };
+}
+
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation(['documents', 'gcweb']);
   const { documentTypes, SCCH_BASE_URI } = loaderData;
@@ -222,8 +237,10 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
   const [flowId, setFlowId] = useState<string>();
   const [uploadedFileIds, setUploadedFileIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [recoveryUploadErrors, setRecoveryUploadErrors] = useState<DocumentUploadSchemaErrorTree>();
   const [recoveryAnnouncement, setRecoveryAnnouncement] = useState('');
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
+  const pendingUploadFileIdsRef = useRef<ReadonlyArray<string>>([]);
   const remainingFiles = filesWithTypes.filter(({ id }) => !uploadedFileIds.has(id));
   const canFinish = flowId !== undefined && remainingFiles.length === 0 && uploadedFileIds.size > 0;
   const handleCompletedUpload = useCallback(
@@ -233,6 +250,9 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
       const { flowId: nextFlowId, uploadedFileIds: newlyUploadedIds, errors: uploadErrors } = result;
       setFlowId(nextFlowId);
       setUploadedFileIds((previousIds) => new Set([...previousIds, ...newlyUploadedIds]));
+      const retriedFileIds = new Set(pendingUploadFileIdsRef.current);
+      pendingUploadFileIdsRef.current = [];
+      setRecoveryUploadErrors((previousErrors) => mergeUploadErrors(omitUploadErrors(previousErrors, retriedFileIds), uploadErrors));
       setRecoveryAnnouncement(
         t(($) => $.upload.recovery.summary, {
           uploaded: newlyUploadedIds.length,
@@ -295,6 +315,11 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         });
       }
 
+      const removedFileIds = new Set(filesWithTypes.filter(({ id }) => !currentFileIds.has(id)).map(({ id }) => id));
+      if (removedFileIds.size > 0) {
+        setRecoveryUploadErrors((previousErrors) => omitUploadErrors(previousErrors, removedFileIds));
+      }
+
       setFilesWithTypes((prev) => {
         const prevMap = new Map(prev.map((item) => [item.id, item]));
         return files.map((file) => prevMap.get(file.id) ?? { ...file, documentType: '' });
@@ -348,6 +373,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
     if (flowId) formData.set('flow_id', flowId);
 
     if (formAction === FORM_ACTION.upload) {
+      pendingUploadFileIdsRef.current = remainingFiles.map(({ id }) => id);
       for (const { id, file, documentType } of remainingFiles) {
         formData.append('file_id', id);
         formData.append('file_object', file);
@@ -472,8 +498,8 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
                           <PendingDocumentUploadItem
                             {...itemProps}
                             disabled={isSubmitting}
-                            fileError={errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0]}
-                            documentTypeError={errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0]}
+                            fileError={recoveryUploadErrors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0] ?? errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0]}
+                            documentTypeError={recoveryUploadErrors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0] ?? errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0]}
                             options={docTypeOptions}
                             onDocumentTypeChange={handleDocumentTypeChange}
                             recoveryStatus={flowId ? t(($) => $.upload.recovery.notUploaded) : undefined}
