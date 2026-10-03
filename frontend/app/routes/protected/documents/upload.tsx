@@ -43,6 +43,7 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
+import { getClientEnv } from '~/utils/env-utils';
 
 const FORM_ACTION = {
   upload: 'upload',
@@ -140,13 +141,14 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
   if (formAction === FORM_ACTION.finish) {
-    const id = z.uuid().parse(formData.get('flow_id'));
+    const submittedFlowId = formData.get('flow_id');
+    const id = typeof submittedFlowId === 'string' ? submittedFlowId : null;
     const state = loadDocumentUploadState({ id, params, session });
     if (state.submittedDocuments.length === 0) {
       throw redirect(getPathById('protected/documents/upload', params));
     }
 
-    return redirect(getDocumentUploadSubmittedUrl({ id, params }));
+    return redirect(getDocumentUploadSubmittedUrl({ id: state.id, params }));
   }
 
   if (formAction !== FORM_ACTION.upload) {
@@ -164,6 +166,26 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const existingState = submittedFlowId ? loadDocumentUploadState({ id: submittedFlowId, params, session }) : undefined;
   const confirmedIds = new Set(existingState?.submittedDocuments.map(({ id }) => id));
   const pendingFiles = Object.fromEntries(Object.entries(files).filter(([fileId]) => !confirmedIds.has(fileId)));
+  const { DOCUMENT_UPLOAD_MAX_FILE_COUNT } = getClientEnv();
+  if ((existingState?.submittedDocuments.length ?? 0) + Object.keys(pendingFiles).length > DOCUMENT_UPLOAD_MAX_FILE_COUNT) {
+    return data(
+      {
+        formAction,
+        source,
+        ...(existingState && { flowId: existingState.id }),
+        uploadedFileIds: [],
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [t(($) => $.upload.errorMessage.tooManyFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })],
+            },
+          },
+        },
+      } as const,
+      400,
+    );
+  }
   const scanResult = await scanDocuments(pendingFiles);
   const scannedFileIds = new Set(scanResult.scannedFileIds);
   const scannedFiles = Object.fromEntries(Object.entries(pendingFiles).filter(([fileId]) => scannedFileIds.has(fileId)));
@@ -607,7 +629,7 @@ interface PendingDocumentUploadItemProps extends DocumentUploadItemProps {
 function UploadedDocumentItem({ id, file, documentTypeLabel, documentTypeName, fileNameLabel, uploadedStatus }: UploadedDocumentItemProps): JSX.Element {
   const fileNameId = `file-upload-item-${id}-name`;
   return (
-    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
+    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} aria-describedby={undefined} key={id} value={id} className="flex-col items-stretch gap-3 sm:gap-4" tabIndex={-1}>
       <p>{uploadedStatus}</p>
       <dl className="space-y-3 sm:space-y-4">
         <div className="space-y-2">

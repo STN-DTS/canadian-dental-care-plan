@@ -407,6 +407,33 @@ describe('action', () => {
     expect(result).not.toBeInstanceOf(Response);
   });
 
+  it('rejects recovery batches that exceed the flow-wide file limit before scanning', async () => {
+    vi.stubEnv('DOCUMENT_UPLOAD_MAX_FILE_COUNT', '1');
+    const formData = createUploadFormData([{ id: 'file-2', file: new File(['content'], 'new.pdf'), documentType: 'receipt' }]);
+    formData.set('flow_id', uploadId);
+    vi.mocked(loadDocumentUploadState).mockReturnValue({
+      id: uploadId,
+      submittedDocuments: [{ id: 'file-1', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: 7 }],
+    });
+    const args = createActionArgs(formData);
+
+    const result = await action(args);
+
+    expect(result).toMatchObject({
+      data: {
+        formAction: 'upload',
+        source: 'server',
+        flowId: uploadId,
+        uploadedFileIds: [],
+        errors: { properties: { files: { errors: [expect.any(String)] } } },
+      },
+      init: { status: 400 },
+    });
+    expect(scanDocuments).not.toHaveBeenCalled();
+    expect(uploadDocuments).not.toHaveBeenCalled();
+    expect(addSubmittedDocuments).not.toHaveBeenCalled();
+  });
+
   it('requires Finish to redirect a recovery flow with confirmed documents', async () => {
     const formData = new FormData();
     formData.set('_action', 'finish');
@@ -423,6 +450,22 @@ describe('action', () => {
     expect((result as Response).headers.get('Location')).toBe(submittedUrl);
     expect(scanDocuments).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
+  });
+
+  it('delegates malformed Finish flow IDs to the state loader and redirects with its validated ID', async () => {
+    const formData = new FormData();
+    formData.set('_action', 'finish');
+    formData.set('flow_id', 'malformed-flow-id');
+    vi.mocked(loadDocumentUploadState).mockReturnValue({
+      id: uploadId,
+      submittedDocuments: [{ id: 'file-1', fileName: 'confirmed.pdf', documentType: 'receipt', fileSize: 7 }],
+    });
+
+    const result = await action(createActionArgs(formData));
+
+    expect(loadDocumentUploadState).toHaveBeenCalledWith({ id: 'malformed-flow-id', params: { lang: 'en' }, session: expect.anything() });
+    expect(getDocumentUploadSubmittedUrl).toHaveBeenCalledWith({ id: uploadId, params: { lang: 'en' } });
+    expect(result).toBeInstanceOf(Response);
   });
 
   it('starts submitted state and redirects after all documents are processed', async () => {
@@ -531,6 +574,7 @@ describe('DocumentsUpload recovery UI', () => {
     expect(failedElement).toHaveAttribute('aria-describedby', `file-error-${failedItemId}`);
     expect(document.getElementById('upload-recovery-summary')).toHaveAttribute('aria-live', 'polite');
     expect(uploadedElement).toHaveTextContent('Receipt');
+    expect(uploadedElement).not.toHaveAttribute('aria-describedby');
     expect(uploadedElement.querySelector('button[data-slot="file-upload-item-delete"]')).toBeNull();
     expect(uploadedElement.querySelector('select')).toBeNull();
 
