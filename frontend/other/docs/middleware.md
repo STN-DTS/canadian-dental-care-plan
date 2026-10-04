@@ -43,10 +43,10 @@ Shared middleware lives in `app/middlewares`.
 
 Some middleware belongs to one route and remains colocated with it.
 
-| Middleware                          | Location                                    | Responsibility                                                                                                                               |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `appLocaleMiddleware`               | `app/routes/localized-layout.tsx`           | Validates the `:lang` parameter before localized routes run. Invalid locales receive HTTP 404.                                               |
-| `appealUploadEligibilityMiddleware` | `app/routes/protected/documents/upload.tsx` | Requires at least one application paused because of a T4 mismatch. Ineligible applicants are redirected to the documents not-required route. |
+| Middleware                          | Location                                                 | Responsibility                                                                                                                               |
+| ----------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appLocaleMiddleware`               | `app/routes/localized-layout.tsx`                        | Validates the `:lang` parameter before localized routes run. Invalid locales receive HTTP 404.                                               |
+| `appealUploadEligibilityMiddleware` | `app/routes/protected/documents/upload/upload.server.ts` | Requires at least one application paused because of a T4 mismatch. Ineligible applicants are redirected to the documents not-required route. |
 
 ## Current route setup
 

@@ -336,7 +336,7 @@ export const routes = [
           },
           {
             id: 'protected/documents/upload',
-            file: 'routes/protected/documents/upload.tsx',
+            file: 'routes/protected/documents/upload/index.tsx',
             paths: { en: '/:lang/protected/documents/upload', fr: '/:lang/protege/documents/televerser' },
           },
           {

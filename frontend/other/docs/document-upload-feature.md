@@ -61,7 +61,7 @@ EWDU owns threat scanning and the predetermined drop location. Power Platform ow
 | Submitted-document list     | `/en/protected/documents` and `/fr/protege/documents`                                                          |
 | Documents-not-required page | `/en/protected/documents/not-required` and `/fr/protege/documents/non-requis`                                  |
 | Supported target            | Primary enrolled applicant only. Child records are mapped server-side but are not currently offered in the UI. |
-| Source route                | [`app/routes/protected/documents/upload.tsx`](../../app/routes/protected/documents/upload.tsx)                 |
+| Source route                | [`app/routes/protected/documents/upload/index.tsx`](../../app/routes/protected/documents/upload/index.tsx)     |
 
 On page access, the server validates the feature flag, authenticated session, client application, and enrolled-applicant status. It redirects to the documents-not-required page when requirements are not met, loads applicant and document-type choices, and loads the dashboard URL.
 
@@ -242,7 +242,9 @@ Power Platform later returns document metadata, client display names, and locali
 
 Technical reference for developers and integration teams. Key implementation files:
 
-- [`upload.tsx`](../../app/routes/protected/documents/upload.tsx): upload page access, validation, EWDU scan/upload orchestration, and session-based confirmation.
+- [`index.tsx`](../../app/routes/protected/documents/upload/index.tsx) and [`upload.server.ts`](../../app/routes/protected/documents/upload/upload.server.ts): route exports and the protected server-side loader, eligibility middleware, validation, EWDU scan/upload orchestration, and session-based confirmation.
+- [`document-upload-instructions.tsx`](../../app/routes/protected/documents/upload/document-upload-instructions.tsx): localized eligibility and document requirements shown on the upload page.
+- [`document-upload-form.tsx`](../../app/routes/protected/documents/upload/document-upload-form.tsx) and [`use-document-upload-form.ts`](../../app/routes/protected/documents/upload/use-document-upload-form.ts): accessible upload controls, client-side selection flow, file state, focus management, and multipart form submission.
 - [`document-upload-service.ts`](../../app/.server/domain/services/document-upload-service.ts): EWDU service facade.
 - [`document-upload-repository.ts`](../../app/.server/domain/repositories/document-upload-repository.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.
 - [`document-upload-dto-ts`](../../app/.server/domain/dtos/document-upload-dto.ts): scan and upload DTO contracts.
