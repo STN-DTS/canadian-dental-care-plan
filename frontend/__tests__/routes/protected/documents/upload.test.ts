@@ -40,7 +40,7 @@ const uploadErrors: DocumentUploadSchemaErrorTree = {
 
 function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 0) {
   const formData = new FormData();
-  formData.set('_action', 'validate-files');
+  formData.set('_action', 'add-files');
   formData.set('_validation_id', 'validation-1');
   formData.set('current_file_count', String(currentFileCount));
   for (const file of files) formData.append('file_object', file, file.name);
@@ -138,7 +138,7 @@ describe('clientAction', () => {
             },
           },
         },
-        formAction: 'validate-files',
+        formAction: 'add-files',
         source: 'client',
         validationId: 'validation-1',
       },
@@ -162,7 +162,7 @@ describe('clientAction', () => {
     );
 
     expect(validateFileSelection).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
-    expect(result).toEqual({ formAction: 'validate-files', source: 'client', validationId: 'validation-1', errors: undefined });
+    expect(result).toEqual({ formAction: 'add-files', source: 'client', validationId: 'validation-1', errors: undefined });
     expect(serverAction).not.toHaveBeenCalled();
   });
 
@@ -232,7 +232,7 @@ describe('action', () => {
   it('rejects the client-only file validation action', async () => {
     const args = createActionArgs(createSelectionFormData([]));
 
-    await expect(action(args)).rejects.toThrow('Invalid formAction: validate-files');
+    await expect(action(args)).rejects.toThrow('Invalid formAction: add-files');
   });
 
   it('returns validation errors without scanning invalid upload data', async () => {

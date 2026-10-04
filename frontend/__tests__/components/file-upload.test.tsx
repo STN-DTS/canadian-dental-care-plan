@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -77,6 +78,29 @@ describe('FileUpload', () => {
     expect(container.querySelector('input[type="file"]')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('button', { name: 'Upload file' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Upload document' })).not.toBeInTheDocument();
+  });
+
+  it('opens the file picker when the visible trigger is activated by keyboard', async () => {
+    const { container } = render(
+      <FileUpload label="Upload document" hideInputFromAccessibility value={[]} onValueChange={vi.fn()}>
+        <FileUploadTrigger asChild>
+          <button type="button">Upload file</button>
+        </FileUploadTrigger>
+      </FileUpload>,
+    );
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) {
+      throw new Error('Expected the hidden native file input');
+    }
+    const inputClick = vi.spyOn(input, 'click');
+    const user = userEvent.setup();
+    const trigger = screen.getByRole('button', { name: 'Upload file' });
+
+    await user.tab();
+    expect(trigger).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(inputClick).toHaveBeenCalledOnce();
   });
 
   it('links removal to the rendered item without assigning list orientation', () => {
