@@ -79,11 +79,24 @@ runs:
       run: |
         set -euo pipefail
 
+        password_file="$(mktemp "$RUNNER_TEMP/aqua-password.XXXXXX")"
+        trap 'rm -f "$password_file"' EXIT
+        chmod 600 "$password_file"
+        printf '%s' "$AQUA_PASSWORD" > "$password_file"
+
         docker run --rm \
+          --env AQUA_HOST \
+          --env AQUA_POLICIES \
+          --env AQUA_USERNAME \
+          --env IMAGE_REF \
+          --env REPORT_FILE \
           --volume /var/run/docker.sock:/var/run/docker.sock \
           --volume "$GITHUB_WORKSPACE/.github/aqua-reports:/reports" \
+          --volume "$password_file:/run/secrets/aqua-password:ro" \
+          --entrypoint /bin/sh \
           asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
-          scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"
+          -c 'AQUA_PASSWORD="$(cat /run/secrets/aqua-password)"; exec /opt/aquasec/scannercli scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" \
+            --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'
     - name: Upload scannercli report
       if: ${{ !env.ACT }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

@@ -14,21 +14,6 @@ jobs:
   synchronize:
     if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' && github.ref == 'refs/heads/main' }}
     runs-on: arc-runners-dshp-dev
-    env:
-      AUTH_JWT_PRIVATE_KEY_DEV: ${{ secrets.AUTH_JWT_PRIVATE_KEY_DEV }}
-      AUTH_JWT_PUBLIC_KEY_DEV: ${{ secrets.AUTH_JWT_PUBLIC_KEY_DEV }}
-      DYNATRACE_API_KEY: ${{ secrets.DYNATRACE_API_KEY }}
-      DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV: ${{ secrets.DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV }}
-      GC_NOTIFY_API_KEY: ${{ secrets.GC_NOTIFY_API_KEY }}
-      HCAPTCHA_SECRET_KEY_DEV: ${{ secrets.HCAPTCHA_SECRET_KEY_DEV }}
-      INTEROP_API_SUBSCRIPTION_KEY_INT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT }}
-      INTEROP_API_SUBSCRIPTION_KEY_INT_OLD: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT_OLD }}
-      INTEROP_API_SUBSCRIPTION_KEY_PERF: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_PERF }}
-      INTEROP_API_SUBSCRIPTION_KEY_UAT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_UAT }}
-      OAUTH2_PROXY_CLIENT_SECRET: ${{ secrets.OAUTH2_PROXY_CLIENT_SECRET }}
-      OAUTH2_PROXY_COOKIE_SECRET: ${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
-      REDIS_PASSWORD_DEV: ${{ secrets.REDIS_PASSWORD_DEV }}
-      SESSION_COOKIE_SECRET: ${{ secrets.SESSION_COOKIE_SECRET }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,6 +86,21 @@ jobs:
             --kubeconfig "$kubeconfig"
           printf 'KUBECONFIG=%s\n' "$kubeconfig" >> "$GITHUB_ENV"
       - name: Synchronize all environment overlays
+        env:
+          AUTH_JWT_PRIVATE_KEY_DEV: ${{ secrets.AUTH_JWT_PRIVATE_KEY_DEV }}
+          AUTH_JWT_PUBLIC_KEY_DEV: ${{ secrets.AUTH_JWT_PUBLIC_KEY_DEV }}
+          DYNATRACE_API_KEY: ${{ secrets.DYNATRACE_API_KEY }}
+          DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV: ${{ secrets.DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV }}
+          GC_NOTIFY_API_KEY: ${{ secrets.GC_NOTIFY_API_KEY }}
+          HCAPTCHA_SECRET_KEY_DEV: ${{ secrets.HCAPTCHA_SECRET_KEY_DEV }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT_OLD: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT_OLD }}
+          INTEROP_API_SUBSCRIPTION_KEY_PERF: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_PERF }}
+          INTEROP_API_SUBSCRIPTION_KEY_UAT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_UAT }}
+          OAUTH2_PROXY_CLIENT_SECRET: ${{ secrets.OAUTH2_PROXY_CLIENT_SECRET }}
+          OAUTH2_PROXY_COOKIE_SECRET: ${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
+          REDIS_PASSWORD_DEV: ${{ secrets.REDIS_PASSWORD_DEV }}
+          SESSION_COOKIE_SECRET: ${{ secrets.SESSION_COOKIE_SECRET }}
         run: |
           set -euo pipefail
           umask 077
