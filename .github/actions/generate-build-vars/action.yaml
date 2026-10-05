@@ -1,0 +1,65 @@
+name: Generate build variables
+description: Generate build metadata for main and feature branch images
+
+inputs:
+  version:
+    description: Version string used in build metadata
+    required: true
+
+outputs:
+  build-date:
+    description: UTC build date
+    value: ${{ steps.build-vars.outputs.build-date }}
+  build-number:
+    description: GitHub run number formatted as hexadecimal
+    value: ${{ steps.build-vars.outputs.build-number }}
+  build-revision:
+    description: Revision used to tag the image
+    value: ${{ steps.build-vars.outputs.build-revision }}
+  build-version:
+    description: Version string supplied by the caller
+    value: ${{ steps.build-vars.outputs.build-version }}
+  scan-timestamp:
+    description: UTC timestamp used in scan report names
+    value: ${{ steps.build-vars.outputs.scan-timestamp }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate dynamic build variables
+      id: build-vars
+      shell: bash
+      env:
+        REF_NAME: ${{ github.ref_name }}
+        REF_TYPE: ${{ github.ref_type }}
+        RUN_NUMBER: ${{ github.run_number }}
+        SOURCE_SHA: ${{ github.sha }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        BUILD_NUMBER=$(printf '%05x' "$RUN_NUMBER")
+        SHORT_SHA=${SOURCE_SHA:0:8}
+
+        if [[ "$REF_TYPE" == "tag" ]]; then
+          BUILD_REVISION="$SHORT_SHA"
+        elif [[ "$REF_NAME" == "main" ]]; then
+          BUILD_REVISION="${VERSION}-${SHORT_SHA}-${BUILD_NUMBER}"
+        else
+          SANITIZED_BRANCH=$(printf '%s' "$REF_NAME" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9._-]+/-/g; s/^[._-]+//; s/[._-]+$//' \
+            | cut -c1-119 \
+            | sed -E 's/[._-]+$//')
+          SANITIZED_BRANCH=${SANITIZED_BRANCH:-branch}
+          BUILD_REVISION="${SANITIZED_BRANCH}-${SHORT_SHA}"
+        fi
+
+        {
+          echo "build-date=${BUILD_DATE}"
+          echo "build-number=${BUILD_NUMBER}"
+          echo "build-revision=${BUILD_REVISION}"
+          echo "build-version=${VERSION}"
+          echo "scan-timestamp=$(date -u +'%Y%m%d-%H%M%S')"
+        } >> "$GITHUB_OUTPUT"

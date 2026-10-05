@@ -1,0 +1,199 @@
+name: Synchronize GitOps environments
+
+permissions: read-all
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - gitops/**
+  workflow_dispatch: {}
+
+jobs:
+  synchronize:
+    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' && github.ref == 'refs/heads/main' }}
+    runs-on: arc-runners-dshp-dev
+    env:
+      AUTH_JWT_PRIVATE_KEY_DEV: ${{ secrets.AUTH_JWT_PRIVATE_KEY_DEV }}
+      AUTH_JWT_PUBLIC_KEY_DEV: ${{ secrets.AUTH_JWT_PUBLIC_KEY_DEV }}
+      DYNATRACE_API_KEY: ${{ secrets.DYNATRACE_API_KEY }}
+      DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV: ${{ secrets.DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV }}
+      GC_NOTIFY_API_KEY: ${{ secrets.GC_NOTIFY_API_KEY }}
+      HCAPTCHA_SECRET_KEY_DEV: ${{ secrets.HCAPTCHA_SECRET_KEY_DEV }}
+      INTEROP_API_SUBSCRIPTION_KEY_INT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT }}
+      INTEROP_API_SUBSCRIPTION_KEY_INT_OLD: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT_OLD }}
+      INTEROP_API_SUBSCRIPTION_KEY_PERF: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_PERF }}
+      INTEROP_API_SUBSCRIPTION_KEY_UAT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_UAT }}
+      OAUTH2_PROXY_CLIENT_SECRET: ${{ secrets.OAUTH2_PROXY_CLIENT_SECRET }}
+      OAUTH2_PROXY_COOKIE_SECRET: ${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
+      REDIS_PASSWORD_DEV: ${{ secrets.REDIS_PASSWORD_DEV }}
+      SESSION_COOKIE_SECRET: ${{ secrets.SESSION_COOKIE_SECRET }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify synchronization secrets
+        env:
+          AUTH_JWT_PRIVATE_KEY_DEV: ${{ secrets.AUTH_JWT_PRIVATE_KEY_DEV }}
+          AUTH_JWT_PUBLIC_KEY_DEV: ${{ secrets.AUTH_JWT_PUBLIC_KEY_DEV }}
+          DYNATRACE_API_KEY: ${{ secrets.DYNATRACE_API_KEY }}
+          DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV: ${{ secrets.DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV }}
+          GC_NOTIFY_API_KEY: ${{ secrets.GC_NOTIFY_API_KEY }}
+          HCAPTCHA_SECRET_KEY_DEV: ${{ secrets.HCAPTCHA_SECRET_KEY_DEV }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT_OLD: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_INT_OLD }}
+          INTEROP_API_SUBSCRIPTION_KEY_PERF: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_PERF }}
+          INTEROP_API_SUBSCRIPTION_KEY_UAT: ${{ secrets.INTEROP_API_SUBSCRIPTION_KEY_UAT }}
+          OAUTH2_PROXY_CLIENT_SECRET: ${{ secrets.OAUTH2_PROXY_CLIENT_SECRET }}
+          OAUTH2_PROXY_COOKIE_SECRET: ${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
+          REDIS_PASSWORD_DEV: ${{ secrets.REDIS_PASSWORD_DEV }}
+          SESSION_COOKIE_SECRET: ${{ secrets.SESSION_COOKIE_SECRET }}
+        run: |
+          set -euo pipefail
+          required_secrets=(
+            AUTH_JWT_PRIVATE_KEY_DEV AUTH_JWT_PUBLIC_KEY_DEV DYNATRACE_API_KEY
+            DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV GC_NOTIFY_API_KEY HCAPTCHA_SECRET_KEY_DEV
+            INTEROP_API_SUBSCRIPTION_KEY_INT INTEROP_API_SUBSCRIPTION_KEY_INT_OLD
+            INTEROP_API_SUBSCRIPTION_KEY_PERF INTEROP_API_SUBSCRIPTION_KEY_UAT
+            OAUTH2_PROXY_CLIENT_SECRET OAUTH2_PROXY_COOKIE_SECRET REDIS_PASSWORD_DEV
+            SESSION_COOKIE_SECRET
+          )
+          for name in "${required_secrets[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "Required GitHub secret '$name' is not configured." >&2
+              exit 1
+            fi
+          done
+      - name: Authenticate to Azure
+        uses: ./.github/actions/azure-acr-login
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
+          azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+          acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
+      - name: Configure Kubernetes access
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+          K8S_CLUSTER_NAME: ${{ vars.K8S_CLUSTER_NAME_NONPROD }}
+          K8S_RESOURCE_GROUP: ${{ vars.K8S_RESOURCE_GROUP_NONPROD }}
+        run: |
+          set -euo pipefail
+          for name in AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_SUBSCRIPTION_ID K8S_CLUSTER_NAME K8S_RESOURCE_GROUP; do
+            if [[ -z "${!name}" ]]; then
+              echo "Required GitHub configuration '$name' is not set." >&2
+              exit 1
+            fi
+          done
+
+          kubeconfig="$RUNNER_TEMP/cdcp-gitops-kubeconfig"
+          az aks get-credentials --overwrite-existing \
+            --subscription "$AZURE_SUBSCRIPTION_ID" \
+            --resource-group "$K8S_RESOURCE_GROUP" \
+            --name "$K8S_CLUSTER_NAME" \
+            --file "$kubeconfig"
+          kubelogin convert-kubeconfig \
+            --login spn \
+            --client-id "$AZURE_CLIENT_ID" \
+            --client-secret "$AZURE_CLIENT_SECRET" \
+            --kubeconfig "$kubeconfig"
+          printf 'KUBECONFIG=%s\n' "$kubeconfig" >> "$GITHUB_ENV"
+      - name: Synchronize all environment overlays
+        run: |
+          set -euo pipefail
+          umask 077
+
+          write_frontend_secrets() {
+            local environment="$1"
+            local interop_key="$2"
+            local include_rum_token="$3"
+            local secrets_file="gitops/overlays/${environment}/configs/frontend/secrets.conf"
+
+            {
+              printf 'AUTH_JWT_PRIVATE_KEY=%s\n' "$AUTH_JWT_PRIVATE_KEY_DEV"
+              printf 'AUTH_JWT_PUBLIC_KEY=%s\n' "$AUTH_JWT_PUBLIC_KEY_DEV"
+              if [[ "$include_rum_token" == true ]]; then
+                printf 'DYNATRACE_API_RUM_SCRIPT_TOKEN=%s\n' "$DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV"
+              fi
+              printf 'GC_NOTIFY_API_KEY=%s\n' "$GC_NOTIFY_API_KEY"
+              printf 'HCAPTCHA_SECRET_KEY=%s\n' "$HCAPTCHA_SECRET_KEY_DEV"
+              printf 'INTEROP_API_SUBSCRIPTION_KEY=%s\n' "$interop_key"
+              printf 'OTEL_API_KEY=%s\n' "$DYNATRACE_API_KEY"
+              printf 'SESSION_COOKIE_SECRET=%s\n' "$SESSION_COOKIE_SECRET"
+            } > "$secrets_file"
+          }
+
+          write_oauth_secrets() {
+            printf 'OAUTH2_PROXY_CLIENT_SECRET=%s\nOAUTH2_PROXY_COOKIE_SECRET=%s\n' \
+              "$OAUTH2_PROXY_CLIENT_SECRET" "$OAUTH2_PROXY_COOKIE_SECRET" \
+              > "gitops/overlays/$1/configs/oauth-proxy/secrets.conf"
+          }
+
+          write_redis_secrets() {
+            printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD_DEV" \
+              > "gitops/overlays/$1/configs/redis/secrets.conf"
+          }
+
+          synchronize_environment() {
+            kubectl apply --kubeconfig "$KUBECONFIG" \
+              --kustomize "gitops/overlays/$1/" --force
+          }
+
+          write_frontend_secrets dev "$INTEROP_API_SUBSCRIPTION_KEY_INT_OLD" false
+          write_oauth_secrets dev
+          synchronize_environment dev
+
+          write_frontend_secrets int1 "$INTEROP_API_SUBSCRIPTION_KEY_INT" false
+          write_oauth_secrets int1
+          write_redis_secrets int1
+          synchronize_environment int1
+
+          write_frontend_secrets int2 "$INTEROP_API_SUBSCRIPTION_KEY_UAT" false
+          write_oauth_secrets int2
+          write_redis_secrets int2
+          synchronize_environment int2
+
+          write_frontend_secrets otto "$INTEROP_API_SUBSCRIPTION_KEY_UAT" false
+          write_redis_secrets otto
+          synchronize_environment otto
+
+          write_frontend_secrets perf "$INTEROP_API_SUBSCRIPTION_KEY_PERF" false
+          write_oauth_secrets perf
+          write_redis_secrets perf
+          synchronize_environment perf
+
+          write_frontend_secrets prototype "$INTEROP_API_SUBSCRIPTION_KEY_INT" false
+          synchronize_environment prototype
+
+          synchronize_environment shared
+
+          write_frontend_secrets staging "$INTEROP_API_SUBSCRIPTION_KEY_UAT" true
+          write_oauth_secrets staging
+          write_redis_secrets staging
+          synchronize_environment staging
+
+          write_frontend_secrets training "$INTEROP_API_SUBSCRIPTION_KEY_INT" false
+          synchronize_environment training
+
+          write_frontend_secrets uat1 "$INTEROP_API_SUBSCRIPTION_KEY_UAT" false
+          write_oauth_secrets uat1
+          write_redis_secrets uat1
+          synchronize_environment uat1
+
+          write_frontend_secrets uat2 "$INTEROP_API_SUBSCRIPTION_KEY_UAT" false
+          write_oauth_secrets uat2
+          write_redis_secrets uat2
+          synchronize_environment uat2
+      - name: Remove temporary kubeconfig
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          for environment in dev int1 int2 otto perf prototype staging training uat1 uat2; do
+            rm -f \
+              "gitops/overlays/${environment}/configs/frontend/secrets.conf" \
+              "gitops/overlays/${environment}/configs/oauth-proxy/secrets.conf" \
+              "gitops/overlays/${environment}/configs/redis/secrets.conf"
+          done
+          rm -f "$RUNNER_TEMP/cdcp-gitops-kubeconfig"

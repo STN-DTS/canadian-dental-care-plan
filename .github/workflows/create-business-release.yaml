@@ -1,0 +1,139 @@
+name: Create business release
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version in vX.Y.Z format
+        required: true
+        type: string
+      release_description:
+        description: Description for the release
+        required: true
+        type: string
+      release_reason:
+        description: Reason for the release
+        required: true
+        type: string
+      release_target_date:
+        description: Target date in YYYY-MM-DD format
+        required: true
+        type: string
+      release_start_date_time:
+        description: Start date and time in UTC ISO 8601 format
+        required: true
+        type: string
+      release_end_date_time:
+        description: End date and time in UTC ISO 8601 format
+        required: true
+        type: string
+      release_ado_id:
+        description: Optional ADO release work item ID
+        required: false
+        type: string
+
+jobs:
+  create-release:
+    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    env:
+      ADO_PAT: ${{ secrets.ADO_PAT }}
+      ADO_USERNAME: ${{ vars.ADO_USERNAME }}
+      RELEASE_VERSION: ${{ inputs.release_version }}
+      RELEASE_DESCRIPTION: ${{ inputs.release_description }}
+      RELEASE_REASON: ${{ inputs.release_reason }}
+      RELEASE_TARGET_DATE: ${{ inputs.release_target_date }}
+      RELEASE_START_DATE_TIME: ${{ inputs.release_start_date_time }}
+      RELEASE_END_DATE_TIME: ${{ inputs.release_end_date_time }}
+      RELEASE_ADO_ID: ${{ inputs.release_ado_id }}
+    steps:
+      - name: Checkout source and tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Validate release inputs
+        id: validate
+        run: |
+          set -euo pipefail
+
+          [[ "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "Release version must match vX.Y.Z." >&2
+            exit 1
+          }
+          if [[ -n "$RELEASE_ADO_ID" && ! "$RELEASE_ADO_ID" =~ ^[0-9]+$ ]]; then
+            echo "ADO work item ID must be numeric." >&2
+            exit 1
+          fi
+          [[ -n "$ADO_PAT" && -n "$ADO_USERNAME" ]] || {
+            echo "Configure the ADO_PAT secret and ADO_USERNAME variable." >&2
+            exit 1
+          }
+          [[ "$RELEASE_TARGET_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || {
+            echo "Target date must match YYYY-MM-DD." >&2
+            exit 1
+          }
+          target_date_time=$(date -u -d "$RELEASE_TARGET_DATE" +'%Y-%m-%dT00:00:00Z')
+          [[ "${target_date_time:0:10}" == "$RELEASE_TARGET_DATE" ]] || {
+            echo "Target date is not a valid calendar date." >&2
+            exit 1
+          }
+          for date_time in "$RELEASE_START_DATE_TIME" "$RELEASE_END_DATE_TIME"; do
+            [[ "$date_time" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || {
+              echo "Release start and end must use UTC ISO 8601 format." >&2
+              exit 1
+            }
+            normalized=$(date -u -d "$date_time" +'%Y-%m-%dT%H:%M:%SZ')
+            [[ "$normalized" == "$date_time" ]] || {
+              echo "Release start or end is not a valid date and time." >&2
+              exit 1
+            }
+          done
+
+          printf 'target-date-time=%s\n' "$target_date_time" >> "$GITHUB_OUTPUT"
+      - name: Create Azure DevOps release work item
+        env:
+          TARGET_DATE_TIME: ${{ steps.validate.outputs.target-date-time }}
+        run: |
+          set -euo pipefail
+
+          version_without_v=${RELEASE_VERSION#v}
+          approvals_url="https://014gc.sharepoint.com/:f:/r/sites/BU6282451/Shared%20Documents/CDCP/Governance/CAB%20%26%20RMS/Releases/Release%20${version_without_v}"
+          release_links="<p><strong>Approvals:</strong> <a href='${approvals_url}'>${approvals_url}</a></p>"
+
+          if [[ -n "$RELEASE_ADO_ID" ]]; then
+            ado_work_item_url="https://dev.azure.com/ESDCCM/CDCP/_workitems/edit/${RELEASE_ADO_ID}"
+            release_links+="<p><strong>ADO:</strong> <a href='${ado_work_item_url}'>${ado_work_item_url}</a></p>"
+          fi
+          if git show-ref --verify --quiet "refs/tags/${RELEASE_VERSION}"; then
+            github_tag_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_VERSION}"
+            test_results_url="https://014gc.sharepoint.com/:u:/r/sites/BU6282451/Shared%20Documents/CDCP/Test%20Results/${RELEASE_VERSION}.zip"
+            release_links+="<p><strong>GitHub:</strong> <a href='${github_tag_url}'>${github_tag_url}</a></p>"
+            release_links+="<p><strong>Test Results:</strong> <a href='${test_results_url}'>${test_results_url}</a></p>"
+          fi
+
+          jq -n \
+            --arg title "Release ${RELEASE_VERSION}" \
+            --arg description "$RELEASE_DESCRIPTION" \
+            --arg reason "$RELEASE_REASON" \
+            --arg target_date "$TARGET_DATE_TIME" \
+            --arg start_date "$RELEASE_START_DATE_TIME" \
+            --arg end_date "$RELEASE_END_DATE_TIME" \
+            --arg links "$release_links" \
+            '[
+              {op: "add", path: "/fields/System.Title", value: $title},
+              {op: "add", path: "/fields/System.Description", value: $description},
+              {op: "add", path: "/fields/Custom.Why", value: $reason},
+              {op: "add", path: "/fields/Microsoft.VSTS.Scheduling.TargetDate", value: $target_date},
+              {op: "add", path: "/fields/Custom.ReleaseStartDateTime", value: $start_date},
+              {op: "add", path: "/fields/Custom.ReleaseEndDateTime", value: $end_date},
+              {op: "add", path: "/fields/Custom.ReleaseLinks", value: $links}
+            ]' > "$RUNNER_TEMP/release-work-item.json"
+
+          curl --fail-with-body --silent --show-error \
+            --user "${ADO_USERNAME}:${ADO_PAT}" \
+            --request POST \
+            --header 'Content-Type: application/json-patch+json' \
+            --data-binary "@${RUNNER_TEMP}/release-work-item.json" \
+            'https://dev.azure.com/DTS-STN/Canada%20Dental%20Care%20Plan/_apis/wit/workitems/$Release?api-version=7.1-preview.3'

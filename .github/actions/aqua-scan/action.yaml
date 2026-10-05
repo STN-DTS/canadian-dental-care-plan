@@ -1,0 +1,94 @@
+name: Aqua scan
+description: Scan a local container image with Trivy and Aqua
+
+inputs:
+  image-ref:
+    description: Full container image reference to scan
+    required: true
+  artifact-prefix:
+    description: Prefix used for scan report files and artifacts
+    required: true
+  vault-url:
+    description: Vault URL
+    required: true
+  vault-role-id:
+    description: Vault AppRole role ID
+    required: true
+  vault-secret-id:
+    description: Vault AppRole secret ID
+    required: true
+  aqua-vault-path:
+    description: Vault KV path holding Aqua scan credentials
+    required: true
+  scan-timestamp:
+    description: Timestamp used in scan report filenames
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch Aqua credentials from HashiCorp Vault
+      id: vault
+      uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3
+      with:
+        method: approle
+        url: ${{ inputs.vault-url }}
+        roleId: ${{ inputs.vault-role-id }}
+        secretId: ${{ inputs.vault-secret-id }}
+        exportEnv: false
+        secrets: |
+          ${{ inputs.aqua-vault-path }} AQUA_HOST | AQUA_HOST;
+          ${{ inputs.aqua-vault-path }} AQUA_USERNAME | AQUA_USERNAME;
+          ${{ inputs.aqua-vault-path }} AQUA_PASSWORD | AQUA_PASSWORD;
+          ${{ inputs.aqua-vault-path }} AQUA_POLICIES | AQUA_POLICIES;
+    - name: Create Aqua reports directories and fetch Trivy template
+      shell: bash
+      env:
+        TRIVY_VERSION: v0.69.3
+      run: |
+        set -euo pipefail
+
+        mkdir -p .github/aqua-reports contrib
+        curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/refs/tags/${TRIVY_VERSION}/contrib/html.tpl" -o contrib/html.tpl
+    - name: Run Aqua vulnerability scanner
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      with:
+        image-ref: ${{ inputs.image-ref }}
+        scanners: vuln
+        format: template
+        template: "@contrib/html.tpl"
+        output: .github/aqua-reports/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
+    - name: Upload Aqua scan report
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      with:
+        name: aqua-scan-report-${{ inputs.artifact-prefix }}
+        path: .github/aqua-reports/
+        if-no-files-found: warn
+        retention-days: 7
+    - name: Run Aqua scannercli
+      if: ${{ !env.ACT }}
+      continue-on-error: true
+      shell: bash
+      env:
+        AQUA_HOST: ${{ steps.vault.outputs.AQUA_HOST }}
+        AQUA_PASSWORD: ${{ steps.vault.outputs.AQUA_PASSWORD }}
+        AQUA_POLICIES: ${{ steps.vault.outputs.AQUA_POLICIES }}
+        AQUA_USERNAME: ${{ steps.vault.outputs.AQUA_USERNAME }}
+        IMAGE_REF: ${{ inputs.image-ref }}
+        REPORT_FILE: scannercli-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
+      run: |
+        set -euo pipefail
+
+        docker run --rm \
+          --volume /var/run/docker.sock:/var/run/docker.sock \
+          --volume "$GITHUB_WORKSPACE/.github/aqua-reports:/reports" \
+          asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
+          scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"
+    - name: Upload scannercli report
+      if: ${{ !env.ACT }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      with:
+        name: scannercli-report-${{ inputs.artifact-prefix }}
+        path: .github/aqua-reports/scannercli-report-${{ inputs.artifact-prefix }}-*
+        if-no-files-found: warn
+        retention-days: 7
