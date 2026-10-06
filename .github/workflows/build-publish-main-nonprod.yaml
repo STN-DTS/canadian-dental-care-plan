@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - main
-      - feature/*
       - release/v*
   workflow_call: {}
   workflow_dispatch:
@@ -175,14 +174,6 @@ jobs:
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label-$short_sha"
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label"
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC"
-          elif [[ "$REF_NAME" == feature/* ]]; then
-            feature_tag=$(printf '%s' "${REF_NAME#feature/}" | tr -cd '[:alnum:]')
-            if [[ -z "$feature_tag" ]]; then
-              echo "Feature branch name does not produce a valid image tag." >&2
-              exit 1
-            fi
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER-$feature_tag"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$feature_tag-latest"
           fi
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
@@ -224,10 +215,6 @@ jobs:
             docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
             docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}"
             docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC"
-          elif [[ "$REF_NAME" == feature/* ]]; then
-            feature_tag=$(printf '%s' "${REF_NAME#feature/}" | tr -cd '[:alnum:]')
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}-${BUILD_NUMBER}-${feature_tag}"
-            docker push "${IMAGE_NAME}:${feature_tag}-latest"
           fi
 
           if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
