@@ -110,10 +110,8 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
       - name: Run full end-to-end tests
-        if: ${{ startsWith(github.ref_name, 'feature/') }}
         run: pnpm run test:e2e
       - name: Run smoke tests
-        if: ${{ !startsWith(github.ref_name, 'feature/') }}
         run: pnpm run test:e2e:smoke
 
   build-frontend:
