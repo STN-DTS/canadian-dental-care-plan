@@ -254,7 +254,7 @@ Technical reference for developers and integration teams. Key implementation fil
 - [`env.utils-ts`](../../app/.server/utils/env-utils.ts): server-side integration and upload configuration schema.
 - [`application-routes-reference.md`](./application-routes-reference.md): protected document route list.
 
-The production bindings are configured through Inversify. `DefaultDocumentUploadRepository` is used unless the `document-upload` mock is enabled; the mock returns successful scan and upload responses without calling EWDU.
+The production bindings are configured through Inversify. `DefaultDocumentUploadRepository` is used unless the `document-upload` mock is enabled; the mock returns successful scan and upload responses without calling EWDU, except that uploading `mock-upload-failure.txt` returns an error to exercise upload failure recovery.
 
 ## Configuration, Security, and Operations
 

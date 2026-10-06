@@ -199,6 +199,18 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
     this.log.debug('Uploading document for filename [%s]', documentUploadRequestEntity.filename);
 
+    if (documentUploadRequestEntity.filename === 'mock-upload-failure.txt') {
+      this.log.warn('Mock document upload failed for filename [%s]', documentUploadRequestEntity.filename);
+
+      return await Promise.resolve({
+        DocumentFileName: null,
+        Error: {
+          ErrorCode: 'MOCK_UPLOAD_FAILURE',
+          ErrorMessage: 'Mock document upload failed.',
+        },
+      });
+    }
+
     this.log.debug('Successfully uploaded document: [%s]', documentUploadRequestEntity.filename);
 
     return await Promise.resolve({
