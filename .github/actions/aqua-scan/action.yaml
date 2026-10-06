@@ -67,7 +67,6 @@ runs:
         retention-days: 7
     - name: Run Aqua scannercli
       if: ${{ !env.ACT }}
-      continue-on-error: true
       shell: bash
       env:
         AQUA_HOST: ${{ steps.vault.outputs.AQUA_HOST }}
@@ -96,9 +95,9 @@ runs:
           --entrypoint /bin/sh \
           asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
           -c 'AQUA_PASSWORD="$(cat /run/secrets/aqua-password)"; exec /opt/aquasec/scannercli scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" \
-            --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'
+            --checkonly --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'
     - name: Upload scannercli report
-      if: ${{ !env.ACT }}
+      if: ${{ always() && !env.ACT }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: scannercli-report-${{ inputs.artifact-prefix }}

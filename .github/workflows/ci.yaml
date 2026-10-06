@@ -16,6 +16,15 @@ env:
   CI: true
 
 jobs:
+  lint-github-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Lint GitHub Actions workflows
+        run: "$HOME/go/bin/actionlint"
+
   detect-changes:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
