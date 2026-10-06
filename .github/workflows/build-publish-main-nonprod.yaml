@@ -1,0 +1,283 @@
+# ============================================================================
+# Workflow: Build, test, and publish nonprod images
+# Purpose:  Validates the frontend and publishes signed images to nonprod ACR.
+# Security: Third-party GitHub Actions are pinned to immutable commit SHAs.
+# ============================================================================
+name: Build, test, and publish nonprod images
+
+permissions: read-all
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - release/v*
+  workflow_call: {}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version used in image metadata
+        default: 0.0.0
+
+env:
+  CI: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    outputs:
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - name: Checkout source code
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check for frontend changes
+        if: ${{ github.event_name == 'push' }}
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            frontend:
+              - .github/workflows/build-publish-main-nonprod.yaml
+              - .github/actions/**
+              - frontend/**
+      - name: Publish change-detection output
+        id: changes
+        run: |
+          echo "frontend=${{ github.event_name != 'push' || steps.filter.outputs.frontend == 'true' }}" >> "$GITHUB_OUTPUT"
+
+  resolve-version:
+    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve and validate build version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" == release/* ]]; then
+            if [[ ! "$REF_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]]; then
+              echo "Invalid release branch name '$REF_NAME'; expected release/vX.Y.Z with an optional suffix." >&2
+              exit 1
+            fi
+            version=${REF_NAME#release/v}
+          else
+            version=${INPUT_VERSION:-0.0.0}
+          fi
+
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+  test-frontend:
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26.9.0
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run format check
+        run: pnpm run format:check
+      - name: Run typecheck
+        run: pnpm run typecheck
+      - name: Run lint
+        run: pnpm run lint:oxlint
+      - name: Run unit tests with coverage
+        run: pnpm run test:unit:coverage
+      - name: Build frontend
+        run: pnpm run build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run full end-to-end tests
+        if: ${{ startsWith(github.ref_name, 'feature/') }}
+        run: pnpm run test:e2e
+      - name: Run smoke tests
+        if: ${{ !startsWith(github.ref_name, 'feature/') }}
+        run: pnpm run test:e2e:smoke
+
+  build-frontend:
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
+    runs-on: arc-runners-dshp-dev
+    needs:
+      - detect-changes
+      - resolve-version
+      - test-frontend
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify image signing configuration
+        env:
+          COSIGN_VAULT_PATH: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
+        run: |
+          set -euo pipefail
+          test -n "$COSIGN_VAULT_PATH"
+          test -s .github/actions/sign-container-image/cosign.pub
+      - name: Authenticate to Azure and setup ACR credentials
+        uses: ./.github/actions/azure-acr-login
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
+          azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+          acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
+      - name: Generate dynamic build variables
+        id: build-vars
+        uses: ./.github/actions/generate-build-vars
+        with:
+          version: ${{ needs.resolve-version.outputs.version }}
+      - name: Build frontend OCI image
+        env:
+          BUILD_DATE: ${{ steps.build-vars.outputs.build-date }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SOURCE_SHA: ${{ github.sha }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          docker build \
+            --file frontend/dockerfile frontend \
+            --build-arg BUILD_DATE="$BUILD_DATE" \
+            --build-arg BUILD_ID="$BUILD_NUMBER" \
+            --build-arg BUILD_REVISION="$BUILD_REVISION" \
+            --build-arg BUILD_VERSION="$BUILD_VERSION" \
+            --tag "$IMAGE_NAME:$BUILD_REVISION"
+
+          short_sha="${SOURCE_SHA:0:8}"
+          if [[ "$REF_NAME" == main ]]; then
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:latest"
+          elif [[ "$REF_NAME" == release/* ]]; then
+            rc_label=$(printf '%03d' "$RUN_NUMBER")
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label-$short_sha"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC"
+          elif [[ "$REF_NAME" == feature/* ]]; then
+            feature_tag=$(printf '%s' "${REF_NAME#feature/}" | tr -cd '[:alnum:]')
+            if [[ -z "$feature_tag" ]]; then
+              echo "Feature branch name does not produce a valid image tag." >&2
+              exit 1
+            fi
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER-$feature_tag"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$feature_tag-latest"
+          fi
+      - name: Scan frontend OCI image
+        uses: ./.github/actions/aqua-scan
+        with:
+          image-ref: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend:${{ steps.build-vars.outputs.build-revision }}
+          artifact-prefix: cdcp-frontend
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          aqua-vault-path: ${{ vars.AQUA_VAULT_PATH_NONPROD }}
+          scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
+      - name: Push frontend OCI image to registry
+        id: push
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SOURCE_SHA: ${{ github.sha }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          push_log="$(mktemp "$RUNNER_TEMP/image-push.XXXXXX")"
+          trap 'rm -f "$push_log"' EXIT
+          image_ref="${IMAGE_NAME}:${BUILD_REVISION}"
+
+          docker push "$image_ref" 2>&1 | tee "$push_log"
+          image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
+
+          short_sha="${SOURCE_SHA:0:8}"
+          if [[ "$REF_NAME" == main ]]; then
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}-${BUILD_NUMBER}"
+            docker push "${IMAGE_NAME}:latest"
+          elif [[ "$REF_NAME" == release/* ]]; then
+            rc_label=$(printf '%03d' "$RUN_NUMBER")
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}"
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC"
+          elif [[ "$REF_NAME" == feature/* ]]; then
+            feature_tag=$(printf '%s' "${REF_NAME#feature/}" | tr -cd '[:alnum:]')
+            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}-${BUILD_NUMBER}-${feature_tag}"
+            docker push "${IMAGE_NAME}:${feature_tag}-latest"
+          fi
+
+          if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Unable to determine the pushed frontend image digest." >&2
+            exit 1
+          fi
+
+          printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Published image"
+            echo
+            echo "| Application | Image | Source commit |"
+            echo "| --- | --- | --- |"
+            echo "| CDCP frontend | \`${image_ref}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Sign and verify frontend OCI image
+        uses: ./.github/actions/sign-container-image
+        with:
+          image: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend@${{ steps.push.outputs.image-digest }}
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          cosign-vault-path: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
+      - name: Restart dev and int1 deployments
+        if: ${{ github.ref_name == 'main' }}
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          K8S_CLUSTER_NAME: ${{ vars.K8S_CLUSTER_NAME_NONPROD }}
+          K8S_RESOURCE_GROUP: ${{ vars.K8S_RESOURCE_GROUP_NONPROD }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+        run: |
+          set -euo pipefail
+
+          kubeconfig="$RUNNER_TEMP/cdcp-nonprod-kubeconfig"
+          trap 'rm -f "$kubeconfig"' EXIT
+          az aks get-credentials --overwrite-existing \
+            --subscription "$AZURE_SUBSCRIPTION_ID" \
+            --resource-group "$K8S_RESOURCE_GROUP" \
+            --name "$K8S_CLUSTER_NAME" \
+            --file "$kubeconfig"
+          kubelogin convert-kubeconfig \
+            --login spn \
+            --client-id "$AZURE_CLIENT_ID" \
+            --client-secret "$AZURE_CLIENT_SECRET" \
+            --kubeconfig "$kubeconfig"
+
+          kubectl rollout restart deployment/frontend-dev \
+            --kubeconfig "$kubeconfig" --namespace canada-dental-care-plan
+          kubectl rollout restart deployment/frontend-int1 \
+            --kubeconfig "$kubeconfig" --namespace canada-dental-care-plan
