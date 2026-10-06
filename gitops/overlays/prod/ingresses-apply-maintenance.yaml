@@ -1,8 +1,7 @@
-# This file defines ingress resources that put the online application into "maintenance mode".
+# This file defines ingress resources that route application and demande pages to maintenance.
 #
-# To enable maintenance mode, reference this file in kustomization.yaml.
-# This will route traffic for the online application to the maintenance and OAuth proxy services,
-# while preserving access to the allowed routes.
+# To enable this contingency, reference this file instead of ingresses.yaml in kustomization.yaml.
+# Other paths continue to route to the frontend service.
 #
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -32,7 +31,7 @@ spec:
                 name: frontend
                 port:
                   name: http
-          - path: /.+/(apply|demander)(/.+)?
+          - path: ^/[^/]+/((protected/)?application|(protege/)?demande)(/.*)?$
             pathType: ImplementationSpecific
             backend:
               service:
@@ -72,7 +71,7 @@ spec:
                 name: frontend
                 port:
                   name: http
-          - path: /.+/(apply|demander)(/.+)?
+          - path: ^/[^/]+/((protected/)?application|(protege/)?demande)(/.*)?$
             pathType: ImplementationSpecific
             backend:
               service:
