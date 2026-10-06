@@ -21,7 +21,7 @@ resources:
   # Note: to enable maintenance mode:
   #
   #   1. comment ./ingresses.yaml
-  #   2. uncomment the appropriate maintenance mode file:
+  #   2. uncomment exactly one alternative ingress file:
   #      - for full application maintenance, uncomment ./ingresses-maintenance.yaml
   #      - for online application maintenance, uncomment ./ingresses-apply-maintenance.yaml
   #
