@@ -69,7 +69,7 @@ jobs:
           set -euo pipefail
 
           if [[ "$EVENT_NAME" == "push" && "$REF_NAME" == release/* ]]; then
-            if [[ ! "$REF_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]]; then
+            if [[ ! "$REF_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
               echo "Invalid release branch name '$REF_NAME'; expected release/vX.Y.Z with an optional suffix." >&2
               exit 1
             fi
@@ -118,7 +118,7 @@ jobs:
         run: pnpm run test:e2e:smoke
 
   build-frontend:
-    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/v'))) }}
     runs-on: arc-runners-dshp-dev
     needs:
       - detect-changes
