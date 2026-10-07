@@ -96,7 +96,7 @@ runs:
           --volume "$GITHUB_WORKSPACE/.github/aqua-reports:/reports" \
           --volume "$password_file:/run/secrets/aqua-password:ro" \
           --entrypoint /bin/sh \
-          asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
+          asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner@sha256:ae32e1b47558412021210bba6f6e6e519a8f3ae97a3842ce468829b462085406 \
           -c 'AQUA_PASSWORD="$(cat /run/secrets/aqua-password)"; exec /opt/aquasec/scannercli scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" \
             --checkonly --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'
     - name: Upload scannercli report
