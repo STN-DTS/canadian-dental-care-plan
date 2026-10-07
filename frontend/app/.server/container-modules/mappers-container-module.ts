@@ -28,6 +28,7 @@ import {
   DefaultProgramApplicantDtoMapper,
   DefaultProvinceTerritoryStateDtoMapper,
   DefaultProvincialGovernmentInsurancePlanDtoMapper,
+  DefaultRecordSourceDtoMapper,
   DefaultSunLifeCommunicationMethodDtoMapper,
   DefaultVerificationCodeDtoMapper,
 } from '~/.server/domain/mappers';
@@ -68,6 +69,7 @@ export function createMappersContainerModule(): ContainerModule {
     options.bind(TYPES.ProgramApplicantDtoMapper).to(DefaultProgramApplicantDtoMapper);
     options.bind(TYPES.ProvinceTerritoryStateDtoMapper).to(DefaultProvinceTerritoryStateDtoMapper);
     options.bind(TYPES.ProvincialGovernmentInsurancePlanDtoMapper).to(DefaultProvincialGovernmentInsurancePlanDtoMapper);
+    options.bind(TYPES.RecordSourceDtoMapper).to(DefaultRecordSourceDtoMapper);
     options.bind(TYPES.SunLifeCommunicationMethodDtoMapper).to(DefaultSunLifeCommunicationMethodDtoMapper);
     options.bind(TYPES.VerificationCodeDtoMapper).to(DefaultVerificationCodeDtoMapper);
     options.bind(TYPES.MaritalStatusDtoMapper).to(DefaultMaritalStatusDtoMapper);

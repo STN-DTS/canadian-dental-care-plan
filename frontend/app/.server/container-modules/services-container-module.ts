@@ -35,6 +35,7 @@ import {
   DefaultProgramApplicantService,
   DefaultProvinceTerritoryStateService,
   DefaultProvincialGovernmentInsurancePlanService,
+  DefaultRecordSourceService,
   DefaultSunLifeCommunicationMethodService,
   DefaultVerificationCodeService,
   StubVerificationCodeService,
@@ -96,6 +97,7 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.ProgramApplicantService).to(DefaultProgramApplicantService);
     options.bind(TYPES.ProvinceTerritoryStateService).to(DefaultProvinceTerritoryStateService);
     options.bind(TYPES.ProvincialGovernmentInsurancePlanService).to(DefaultProvincialGovernmentInsurancePlanService);
+    options.bind(TYPES.RecordSourceService).to(DefaultRecordSourceService);
     options.bind(TYPES.RaoidcService).to(DefaultRaoidcService);
     // RedisService bindings depend on the SESSION_STORAGE_TYPE configuration string
     options.bind(TYPES.RedisService).to(DefaultRedisService).when(sessionTypeIs(serverConfig, 'redis'));

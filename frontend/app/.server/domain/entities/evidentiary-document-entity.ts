@@ -9,6 +9,7 @@ export type EvidentiaryDocumentEntity = ReadonlyDeep<{
   clientId: string;
   documentTypeId: string;
   mscaUploadDate: string; // ISO 8601 date string
+  recordSource?: number;
   healthCanadaTransferDate?: string; // ISO 8601 date string
   client: {
     id: string;
@@ -75,6 +76,7 @@ export type EvidentiaryDocumentResponseEntity = ReadonlyDeep<{
     _esdc_documenttypeid_value: string;
     esdc_evidentiarydocumentid: string;
     esdc_uploaddate: string;
+    esdc_recordsource?: number;
     esdc_Clientid: {
       esdc_clientid: string;
       esdc_lastname: string;

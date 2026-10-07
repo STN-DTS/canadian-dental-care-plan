@@ -10,5 +10,6 @@ export * from './letter-type-not-found-exception';
 export * from './marital-status-not-found-exception';
 export * from './province-territory-state-not-found-exception';
 export * from './provincial-government-insurance-plan-not-found-exception';
+export * from './record-source-not-found-exception';
 export * from './resource-not-found-exception';
 export * from './sun-life-communication-method-not-found-exception';
