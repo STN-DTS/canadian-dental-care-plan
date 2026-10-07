@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 
-import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUpFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-provider';
-import { FileUpload, FileUploadItem, FileUploadItemDelete, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
+import { FileUpload, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
 import { InputError } from '~/components/input-error';
 import { InputLegend } from '~/components/input-legend';
 import type { InputOptionProps } from '~/components/input-option';
-import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { PendingDocumentUploadItem } from '~/routes/protected/documents/upload/components/pending-document-upload-item';
+import { UploadedDocumentUploadItem } from '~/routes/protected/documents/upload/components/uploaded-document-upload-item';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
@@ -108,50 +109,27 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 })}
               </p>
               <FileUploadList className="gap-4 sm:gap-6">
-                {filesWithTypes.map(({ id, file, documentType }) => {
-                  const fileNameId = `file-upload-item-${id}-name`;
+                {documentUploadFormState.pendingDocuments.map(({ id, file, documentType }) => {
                   const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
                   const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
 
                   return (
-                    <FileUploadItem
-                      id={`file-upload-item-${id}`}
-                      aria-labelledby={fileNameId}
-                      aria-describedby={undefined}
+                    <PendingDocumentUploadItem
                       key={id}
-                      value={id}
-                      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
-                      tabIndex={-1}
-                    >
-                      {fileError && <InputError id={`file-error-${id}`} fieldId={`file-upload-item-${id}`} message={fileError} />}
-                      <dl className="space-y-3 sm:space-y-4">
-                        <div className="space-y-2">
-                          <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-                          <dd id={fileNameId}>{file.name}</dd>
-                        </div>
-                      </dl>
-                      <InputSelect
-                        id={`document-type-${id}`}
-                        name={`document-type-${id}`}
-                        label={t(($) => $.upload.documentType)}
-                        required
-                        className="w-full"
-                        options={docTypeOptions}
-                        value={documentType}
-                        onChange={(event) => handleDocumentTypeChange(id, event.currentTarget.value)}
-                        disabled={isSubmitting}
-                        errorMessage={documentTypeError}
-                      />
-                      <div className="mt-2">
-                        <FileUploadItemDelete asChild aria-describedby={fileNameId}>
-                          <Button variant="secondary" size="sm" endIcon={faTimes} disabled={isSubmitting}>
-                            {t(($) => $.upload.remove)}
-                          </Button>
-                        </FileUploadItemDelete>
-                      </div>
-                    </FileUploadItem>
+                      id={id}
+                      fileName={file.name}
+                      documentType={documentType}
+                      documentTypeOptions={docTypeOptions}
+                      disabled={isSubmitting}
+                      fileError={fileError}
+                      documentTypeError={documentTypeError}
+                      onDocumentTypeChange={handleDocumentTypeChange}
+                    />
                   );
                 })}
+                {documentUploadFormState.uploadedDocuments.map(({ id, file, documentType }) => (
+                  <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />
+                ))}
               </FileUploadList>
             </FileUpload>
           </fieldset>
