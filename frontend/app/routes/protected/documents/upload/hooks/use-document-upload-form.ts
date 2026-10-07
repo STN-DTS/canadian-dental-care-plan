@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { FileState } from '~/components/file-upload';
-import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
+import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 
 export type FileStateWithDocumentType = FileState & { readonly documentType: string };
 
-export function useDocumentUploadForm(fetcher: DocumentUploadFetcher, maxFileCount: number) {
+export function useDocumentUploadForm() {
+  const fetcher = useDocumentUploadFetcher();
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
   const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
   const cancelPendingFocusRef = useRef<(() => void) | undefined>(undefined);
@@ -25,8 +26,6 @@ export function useDocumentUploadForm(fetcher: DocumentUploadFetcher, maxFileCou
 
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
-      if (pendingFileValidationRef.current || filesWithTypes.length >= maxFileCount) return false;
-
       const validationId = crypto.randomUUID();
       const formData = new FormData();
       formData.set('_action', FORM_ACTION.addFiles);
@@ -43,7 +42,7 @@ export function useDocumentUploadForm(fetcher: DocumentUploadFetcher, maxFileCou
       void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
       return false;
     },
-    [fetcher, filesWithTypes, maxFileCount],
+    [fetcher, filesWithTypes],
   );
 
   const handleFileChange = useCallback(

@@ -4,12 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
+import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 
 function createFetcher(data: DocumentUploadFetcher['data'], submit = vi.fn<DocumentUploadFetcher['submit']>()) {
   return mock<DocumentUploadFetcher>({ data, submit });
 }
+
+vi.mock(import('~/routes/protected/documents/upload/hooks/use-document-upload-fetcher'));
 
 beforeEach(() => {
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
@@ -28,8 +31,8 @@ describe('useDocumentUploadForm', () => {
   it('validates new files before adding them and clears the pending validation after an error', () => {
     const file = new File(['contents'], 'evidence.pdf', { type: 'application/pdf' });
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
-    let fetcher = createFetcher(undefined, submit);
-    const { result, rerender } = renderHook(() => useDocumentUploadForm(fetcher, 10));
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    const { result, rerender } = renderHook(() => useDocumentUploadForm());
 
     act(() => {
       result.current.handleBeforeFilesAdd([file]);
@@ -44,17 +47,19 @@ describe('useDocumentUploadForm', () => {
     expect(selectionFormData.getAll('file_object')).toEqual([file]);
 
     const validationId = selectionFormData.get('_validation_id');
-    fetcher = createFetcher(
-      {
-        formAction: FORM_ACTION.addFiles,
-        source: 'client',
-        validationId: String(validationId),
-        errors: {
-          errors: [],
-          properties: { files: { errors: ['unsupported file'] } },
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(
+      createFetcher(
+        {
+          formAction: FORM_ACTION.addFiles,
+          source: 'client',
+          validationId: String(validationId),
+          errors: {
+            errors: [],
+            properties: { files: { errors: ['unsupported file'] } },
+          },
         },
-      },
-      submit,
+        submit,
+      ),
     );
     rerender();
 
@@ -70,7 +75,8 @@ describe('useDocumentUploadForm', () => {
     const receipt = new File(['receipt'], 'receipt.pdf', { type: 'application/pdf' });
     const proof = new File(['proof'], 'proof.pdf', { type: 'application/pdf' });
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
-    const { result } = renderHook(() => useDocumentUploadForm(createFetcher(undefined, submit), 10));
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    const { result } = renderHook(() => useDocumentUploadForm());
 
     act(() => {
       result.current.handleFileChange([
@@ -107,7 +113,8 @@ describe('useDocumentUploadForm', () => {
 
   it('moves focus to the next remaining file or the upload button after removal', () => {
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
-    const { result } = renderHook(() => useDocumentUploadForm(createFetcher(undefined, submit), 10));
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    const { result } = renderHook(() => useDocumentUploadForm());
     const firstFileItem = document.createElement('div');
     firstFileItem.id = 'file-upload-item-file-1';
     firstFileItem.tabIndex = -1;

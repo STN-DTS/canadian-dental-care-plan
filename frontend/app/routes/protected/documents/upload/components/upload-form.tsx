@@ -30,7 +30,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
 
   const fetcher = useDocumentUploadFetcher();
   const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
-  const { filesWithTypes, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm(fetcher, DOCUMENT_UPLOAD_MAX_FILE_COUNT);
+  const { filesWithTypes, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
