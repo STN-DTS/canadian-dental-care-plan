@@ -51,11 +51,29 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
     meta,
     documents: evidentiaryDocuments.map((document) => {
       const mscaUploadDate = parseDateTimeString(document.mscaUploadDate);
+      const recordSourceId = document.recordSource?.toString();
+      const serviceName = recordSourceId ? recordSourceMap.get(recordSourceId) : undefined;
+
+      const uploadMethod = (() => {
+        if (!recordSourceId) return t(($) => $.index.uploadMethodUnknown);
+        if (!serviceName) return t(($) => $.index.uploadMethodUnknown);
+
+        if (recordSourceId === '775170002') {
+          return t(($) => $.index.uploadMethodOverrides.api, { defaultValue: serviceName });
+        }
+
+        if (recordSourceId === '775170004') {
+          return t(($) => $.index.uploadMethodOverrides.msca, { defaultValue: serviceName });
+        }
+
+        return serviceName;
+      })();
+
       return {
         id: document.id,
         fileName: document.fileName,
         documentType: document.documentType,
-        uploadMethod: document.recordSource ? (recordSourceMap.get(document.recordSource.toString()) ?? t(($) => $.index.uploadMethodUnknown)) : t(($) => $.index.uploadMethodUnknown),
+        uploadMethod,
         mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
         mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
         mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),

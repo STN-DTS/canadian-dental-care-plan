@@ -14,6 +14,10 @@ const ns = {
       submittedBy: "Submitted by",
       typeOfDocument: "Type of document",
     },
+    uploadMethodOverrides: {
+      api: "Mail",
+      msca: "Upload",
+    },
     uploadMethodUnknown: "Unknown",
   },
   upload: {

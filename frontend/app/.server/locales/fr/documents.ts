@@ -14,6 +14,10 @@ const ns = {
       submittedBy: "Soumis par",
       typeOfDocument: "Type de document",
     },
+    uploadMethodOverrides: {
+      api: "Courrier",
+      msca: "Téléversement",
+    },
     uploadMethodUnknown: "Inconnu",
   },
   upload: {
