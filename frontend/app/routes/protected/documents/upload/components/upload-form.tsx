@@ -16,9 +16,9 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
-import { FORM_ACTION } from '~/routes/protected/documents/upload/form-actions';
-import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/form-actions';
-import { useDocumentUploadForm } from '~/routes/protected/documents/upload/use-document-upload-form';
+import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
+import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
+import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/upload-form-action';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 

@@ -1,26 +1,18 @@
 import type { JSX } from 'react';
 
-import { data } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
-import { getI18n, useTranslation } from 'react-i18next';
-import * as z from 'zod';
-
-import type { Route } from './+types/index';
+import type { Route } from './+types/upload-form';
 
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
 import { pageIds } from '~/page-ids';
-import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
-import { DocumentUploadForm } from '~/routes/protected/documents/upload/document-upload-form';
-import { DocumentUploadInstructions } from '~/routes/protected/documents/upload/document-upload-instructions';
-import { FORM_ACTION } from '~/routes/protected/documents/upload/form-actions';
-import { getLanguage } from '~/utils/locale-utils';
+import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
+import { DocumentUploadInstructions } from '~/routes/protected/documents/upload/components/upload-instructions';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
-
-export { action, loader, middleware } from './upload.server';
 
 export const handle = {
   i18nPreloadNamespace: ['documents', 'gcweb'],
@@ -34,32 +26,9 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export async function clientAction({ request, url, serverAction }: Route.ClientActionArgs) {
-  const locale = getLanguage(url);
-  const t = getI18n().getFixedT(locale, 'documents');
-  const formData = await request.clone().formData();
-  const source = 'client';
-
-  const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
-
-  if (formAction === FORM_ACTION.addFiles) {
-    const selectionValidationResult = validateFileSelection({ formData, locale, t });
-    const validationId = selectionValidationResult.validationId;
-
-    if (!selectionValidationResult.success) {
-      return data({ formAction, source, validationId, errors: selectionValidationResult.errors }, 400);
-    }
-
-    return { formAction, source, validationId, errors: undefined };
-  }
-
-  const validationResult = await validateUploadForm({ formData, locale, t });
-  if (!validationResult.success) {
-    return data({ formAction, source, errors: validationResult.errors }, 400);
-  }
-
-  return await serverAction();
-}
+export { loader } from './upload-form-loader.server';
+export { action } from './upload-form-action.server';
+export { clientAction } from './upload-form-action.client';
 
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation(['documents', 'gcweb']);

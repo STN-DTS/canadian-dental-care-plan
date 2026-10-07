@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { useFetcher } from 'react-router';
 
 import type { FileState } from '~/components/file-upload';
-import { FORM_ACTION } from '~/routes/protected/documents/upload/form-actions';
-import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/form-actions';
+import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
+import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 
 export type FileStateWithDocumentType = FileState & { readonly documentType: string };

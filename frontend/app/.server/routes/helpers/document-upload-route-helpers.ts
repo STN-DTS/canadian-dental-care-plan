@@ -78,7 +78,6 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
 interface StartStateArgs {
   id: string;
   session: Session;
-  submittedDocuments: ReadonlyArray<SubmittedDocument>;
 }
 
 /**
@@ -86,19 +85,44 @@ interface StartStateArgs {
  * @param args - The arguments.
  * @returns The initial document upload state.
  */
-export function startDocumentUploadState({ id, session, submittedDocuments }: StartStateArgs) {
+export function startDocumentUploadState({ id, session }: StartStateArgs) {
   const log = createLogger('document-upload-route-helpers/startDocumentUploadState');
   const parsedId = idSchema.parse(id);
 
   const initialState: DocumentUploadState = {
     id: parsedId,
-    submittedDocuments,
+    submittedDocuments: [],
   };
 
   const sessionKey = getSessionKey(parsedId);
   session.set(sessionKey, initialState);
   log.info('Document upload session state started; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
   return initialState;
+}
+
+interface UpdateStateArgs {
+  id: string;
+  params: DocumentUploadStateParams;
+  session: Session;
+  state: Pick<DocumentUploadState, 'submittedDocuments'>;
+}
+
+/**
+ * Updates document upload state.
+ * @param args - The arguments.
+ * @returns The updated document upload state.
+ */
+export function updateDocumentUploadState({ id, session, state, params }: UpdateStateArgs) {
+  const log = createLogger('document-upload-route-helpers/updateDocumentUploadState');
+  const currentState = loadDocumentUploadState({ id, params, session });
+  const newState: DocumentUploadState = {
+    ...currentState,
+    submittedDocuments: state.submittedDocuments,
+  };
+  const sessionKey = getSessionKey(currentState.id);
+  session.set(sessionKey, newState);
+  log.info('Document upload session state updated; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  return newState;
 }
 
 interface ClearStateArgs {
@@ -119,11 +143,10 @@ export function clearDocumentUploadState({ id, params, session }: ClearStateArgs
   log.info('Document upload session state cleared; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
 }
 
-interface GetDocumentUploadSubmittedUrlArgs {
-  id: string;
-  params: DocumentUploadStateParams;
+export function getDocumentUploadFormUrl(id: string, params: DocumentUploadStateParams) {
+  return getPathById('protected/documents/upload/upload-form', { ...params, id });
 }
 
-export function getDocumentUploadSubmittedUrl({ id, params }: GetDocumentUploadSubmittedUrlArgs) {
-  return getPathById('protected/documents/submitted', params) + `?id=${id}`;
+export function getDocumentUploadSubmittedUrl(id: string, params: DocumentUploadStateParams) {
+  return getPathById('protected/documents/upload/upload-submitted', { ...params, id });
 }

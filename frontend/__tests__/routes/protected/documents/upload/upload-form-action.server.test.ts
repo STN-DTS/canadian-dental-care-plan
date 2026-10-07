@@ -5,13 +5,13 @@ import { mock } from 'vitest-mock-extended';
 
 import { appContext } from '~/.server/context';
 import type { AppContext } from '~/.server/context';
-import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { getDocumentUploadSubmittedUrl, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
-import { action, clientAction } from '~/routes/protected/documents/upload';
+import { action } from '~/routes/protected/documents/upload/upload-form-action.server';
 import { getLanguage } from '~/utils/locale-utils';
 
 vi.mock(import('node:crypto'));
@@ -66,7 +66,6 @@ function createRequest(formData: FormData) {
 }
 
 type ActionArgs = Parameters<typeof action>[0];
-type ClientActionArgs = Parameters<typeof clientAction>[0];
 
 function createActionArgs(formData: FormData): ActionArgs {
   const session = mock<Session>({ id: 'session-1' });
@@ -74,10 +73,10 @@ function createActionArgs(formData: FormData): ActionArgs {
   context.set(appContext, mock<AppContext>({ session }));
   return {
     request: createRequest(formData),
-    url: new URL('http://localhost/en/protected/documents/upload'),
+    url: new URL('http://localhost/en/protected/documents/upload/session-1'),
     context,
-    params: { lang: 'en' },
-    pattern: '/en/protected/documents/upload',
+    params: { id: 'session-1', lang: 'en' },
+    pattern: '/:lang/protected/documents/upload/:id',
   };
 }
 
@@ -104,128 +103,11 @@ beforeEach(() => {
   vi.mocked(scanDocuments).mockResolvedValue({ success: true });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', submittedDocuments: [] });
+  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: 'upload-id', submittedDocuments: [] });
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
-});
-
-describe('clientAction', () => {
-  it('returns tagged errors for invalid file selection without calling the server action', async () => {
-    vi.mocked(validateFileSelection).mockReturnValue({
-      success: false,
-      validationId: 'validation-1',
-      errors: { errors: [], properties: { files: { errors: ['invalid file type'] } } },
-    });
-    const serverAction = vi.fn();
-    const result = await clientAction(
-      mock<ClientActionArgs>({
-        request: createRequest(createSelectionFormData([new File(['content'], 'document.exe')])),
-        url: new URL('http://localhost/en/protected/documents/upload'),
-        serverAction,
-      }),
-    );
-
-    expect(serverAction).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: ['invalid file type'],
-            },
-          },
-        },
-        formAction: 'add-files',
-        source: 'client',
-        validationId: 'validation-1',
-      },
-      init: {
-        status: 400,
-      },
-      type: 'DataWithResponseInit',
-    });
-  });
-
-  it('returns a tagged selection success without calling the server action', async () => {
-    const serverAction = vi.fn();
-    const formData = createSelectionFormData([new File(['content'], 'document.pdf')]);
-    vi.mocked(getLanguage).mockReturnValue('fr');
-    const result = await clientAction(
-      mock<ClientActionArgs>({
-        request: createRequest(formData),
-        url: new URL('http://localhost/fr/protected/documents/upload'),
-        serverAction,
-      }),
-    );
-
-    expect(validateFileSelection).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
-    expect(result).toEqual({ formAction: 'add-files', source: 'client', validationId: 'validation-1', errors: undefined });
-    expect(serverAction).not.toHaveBeenCalled();
-  });
-
-  it('returns tagged errors for invalid upload data without calling the server action', async () => {
-    vi.mocked(validateUploadForm).mockResolvedValue({ success: false, errors: uploadErrors });
-    const serverAction = vi.fn();
-    const formData = createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf') }]);
-    const result = await clientAction(
-      mock<ClientActionArgs>({
-        request: createRequest(formData),
-        url: new URL('http://localhost/en/protected/documents/upload'),
-        serverAction,
-      }),
-    );
-
-    expect(serverAction).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: [],
-              properties: {
-                'file-1': {
-                  errors: [],
-                  properties: {
-                    documentType: {
-                      errors: ['document type required'],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        formAction: 'upload',
-        source: 'client',
-      },
-      init: {
-        status: 400,
-      },
-      type: 'DataWithResponseInit',
-    });
-  });
-
-  it('delegates valid upload data to the server action', async () => {
-    const serverAction = vi.fn().mockResolvedValue({ submitted: true });
-    const formData = validUploadFormData();
-    vi.mocked(getLanguage).mockReturnValue('fr');
-
-    await expect(
-      clientAction(
-        mock<ClientActionArgs>({
-          request: createRequest(formData),
-          url: new URL('http://localhost/fr/protected/documents/upload'),
-          serverAction,
-        }),
-      ),
-    ).resolves.toEqual({ submitted: true });
-    expect(validateUploadForm).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
-    expect(serverAction).toHaveBeenCalledOnce();
-  });
 });
 
 describe('action', () => {
@@ -304,7 +186,7 @@ describe('action', () => {
       type: 'DataWithResponseInit',
     });
     expect(uploadDocuments).not.toHaveBeenCalled();
-    expect(startDocumentUploadState).not.toHaveBeenCalled();
+    expect(updateDocumentUploadState).not.toHaveBeenCalled();
   });
 
   it('returns upload errors without starting submitted state', async () => {
@@ -338,7 +220,7 @@ describe('action', () => {
       },
       type: 'DataWithResponseInit',
     });
-    expect(startDocumentUploadState).not.toHaveBeenCalled();
+    expect(updateDocumentUploadState).not.toHaveBeenCalled();
   });
 
   it('starts submitted state and redirects after all documents are processed', async () => {
@@ -355,24 +237,29 @@ describe('action', () => {
     vi.mocked(validateUploadForm).mockResolvedValue({ success: true, data: { files } });
     vi.mocked(getLocale).mockReturnValueOnce('fr');
     const args = createActionArgs(formData);
-    args.url = new URL('http://localhost/fr/protected/documents/upload');
-    args.params = { lang: 'fr' };
-    args.pattern = '/fr/protected/documents/upload';
+    args.url = new URL(`http://localhost/fr/protected/documents/upload/${uploadId}`);
+    args.params = { id: uploadId, lang: 'fr' };
+    args.pattern = '/:lang/protected/documents/upload/:id';
     const { session } = args.context.get(appContext);
     const result = await action(args);
 
     expect(validateUploadForm).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
     expect(scanDocuments).toHaveBeenCalledExactlyOnceWith(files);
     expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
-    expect(startDocumentUploadState).toHaveBeenCalledWith({
-      id: uploadId,
-      session,
-      submittedDocuments: [
-        { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
-        { id: 'file-2', fileName: 'document.pdf', documentType: 'identity-document', fileSize: 16 },
-      ],
-    });
-    expect(getDocumentUploadSubmittedUrl).toHaveBeenCalledWith({ id: uploadId, params: { lang: 'fr' } });
+    expect(updateDocumentUploadState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: uploadId,
+        session,
+        params: args.params,
+        state: {
+          submittedDocuments: [
+            { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
+            { id: 'file-2', fileName: 'document.pdf', documentType: 'identity-document', fileSize: 16 },
+          ],
+        },
+      }),
+    );
+    expect(getDocumentUploadSubmittedUrl).toHaveBeenCalledWith(uploadId, args.params);
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(302);
     expect((result as Response).headers.get('Location')).toBe(submittedUrl);
