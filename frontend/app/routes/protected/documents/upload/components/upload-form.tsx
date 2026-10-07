@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
 
-import { useFetcher } from 'react-router';
-
 import { faArrowUpFromBracket, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -16,9 +14,9 @@ import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
 import { LoadingButton } from '~/components/loading-button';
 import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
-import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/upload-form-action';
 import { cn } from '~/utils/tw-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
@@ -30,7 +28,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { t, i18n } = useTranslation('documents');
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
-  const fetcher = useFetcher<DocumentUploadFetcherData>();
+  const fetcher = useDocumentUploadFetcher();
   const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
   const { filesWithTypes, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm(fetcher, DOCUMENT_UPLOAD_MAX_FILE_COUNT);
 

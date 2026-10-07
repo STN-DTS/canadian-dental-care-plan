@@ -1,13 +1,14 @@
 import { act, renderHook } from '@testing-library/react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 
-import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
+import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 
 function createFetcher(data: DocumentUploadFetcher['data'], submit = vi.fn<DocumentUploadFetcher['submit']>()) {
-  return { data, submit } satisfies DocumentUploadFetcher;
+  return mock<DocumentUploadFetcher>({ data, submit });
 }
 
 beforeEach(() => {

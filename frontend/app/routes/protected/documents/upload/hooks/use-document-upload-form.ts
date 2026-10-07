@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { useFetcher } from 'react-router';
-
 import type { FileState } from '~/components/file-upload';
+import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
-import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 
 export type FileStateWithDocumentType = FileState & { readonly documentType: string };
-
-export type DocumentUploadFetcher = Pick<ReturnType<typeof useFetcher<DocumentUploadFetcherData>>, 'data' | 'submit'>;
 
 export function useDocumentUploadForm(fetcher: DocumentUploadFetcher, maxFileCount: number) {
   const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
