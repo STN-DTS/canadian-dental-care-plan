@@ -63,6 +63,7 @@ runs:
       with:
         name: aqua-scan-report-${{ inputs.artifact-prefix }}
         path: .github/aqua-reports/
+        include-hidden-files: true
         if-no-files-found: warn
         retention-days: 7
     - name: Run Aqua scannercli
@@ -102,5 +103,6 @@ runs:
       with:
         name: scannercli-report-${{ inputs.artifact-prefix }}
         path: .github/aqua-reports/scannercli-report-${{ inputs.artifact-prefix }}-*
+        include-hidden-files: true
         if-no-files-found: warn
         retention-days: 7
