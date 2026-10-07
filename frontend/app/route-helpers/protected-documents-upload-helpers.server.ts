@@ -73,9 +73,9 @@ export async function scanDocuments(files: DocumentUploadSchemaOutput['files']):
   return processBatchResults(results);
 }
 
-type UploadDocumentsResponseSuccess = { success: true; errors?: undefined };
-type UploadDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
-type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDocumentsResponseFailure;
+export type UploadDocumentsResponseSuccess = { success: true; errors?: undefined };
+export type UploadDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+export type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDocumentsResponseFailure;
 
 /**
  * Uploads validated documents for a client.

@@ -34,7 +34,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
   const documentUploadStateId = getDocumentUploadStateIdFromUrl(url);
-  const { submittedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });
+  const { uploadedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
@@ -46,12 +46,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const user = getUser(context);
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted', { userId: user.id });
 
-  return { meta, submittedDocuments, SCCH_BASE_URI };
+  return { meta, uploadedDocuments, SCCH_BASE_URI };
 }
 
 export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation(['documents', 'gcweb']);
-  const { submittedDocuments, SCCH_BASE_URI } = loaderData;
+  const { uploadedDocuments, SCCH_BASE_URI } = loaderData;
 
   return (
     <>
@@ -62,7 +62,7 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
             <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
             <p>{t(($) => $.submitted.youSubmitted)}</p>
             <ol className="list-decimal space-y-1 pl-7">
-              {submittedDocuments.map((document) => (
+              {uploadedDocuments.map((document) => (
                 <li key={document.id}>{document.fileName}</li>
               ))}
             </ol>

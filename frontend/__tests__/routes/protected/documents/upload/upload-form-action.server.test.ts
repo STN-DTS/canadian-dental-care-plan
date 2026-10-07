@@ -1,11 +1,11 @@
 import { RouterContextProvider } from 'react-router';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { appContext } from '~/.server/context';
 import type { AppContext } from '~/.server/context';
-import { getDocumentUploadSubmittedUrl, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
@@ -99,11 +99,13 @@ beforeEach(() => {
       },
     },
   });
-  vi.mocked(getLanguage).mockReturnValue('en');
-  vi.mocked(scanDocuments).mockResolvedValue({ success: true });
-  vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
+  vi.mocked(getDocumentUploadStateIdFromUrl).mockReturnValue(uploadId);
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: 'upload-id', pendingDocuments: [], submittedDocuments: [] });
+  vi.mocked(getLanguage).mockReturnValue('en');
+  vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(scanDocuments).mockResolvedValue({ success: true });
+  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
 });
 
 afterEach(() => {
@@ -191,6 +193,7 @@ describe('action', () => {
 
   it('returns upload errors without starting submitted state', async () => {
     const args = createActionArgs(validUploadFormData());
+    const { session } = args.context.get(appContext);
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['upload failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
     vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
 
@@ -213,14 +216,38 @@ describe('action', () => {
           },
         },
         formAction: 'upload',
+        pendingDocuments: [
+          {
+            documentType: 'receipt',
+            fileName: 'document.pdf',
+            fileSize: 7,
+            id: 'file-1',
+          },
+        ],
         source: 'server',
+        uploadedDocuments: [],
       },
       init: {
         status: 400,
       },
       type: 'DataWithResponseInit',
     });
-    expect(updateDocumentUploadState).not.toHaveBeenCalled();
+    expect(updateDocumentUploadState).toHaveBeenCalledWith({
+      id: uploadId,
+      session,
+      params: args.params,
+      state: {
+        pendingDocuments: [
+          {
+            documentType: 'receipt',
+            fileName: 'document.pdf',
+            fileSize: 7,
+            id: 'file-1',
+          },
+        ],
+        uploadedDocuments: [],
+      },
+    });
   });
 
   it('starts submitted state and redirects after all documents are processed', async () => {
@@ -246,23 +273,21 @@ describe('action', () => {
     expect(validateUploadForm).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
     expect(scanDocuments).toHaveBeenCalledExactlyOnceWith(files);
     expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
-    expect(updateDocumentUploadState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: uploadId,
-        session,
-        params: args.params,
-        state: {
-          pendingDocuments: [],
-          submittedDocuments: [
-            { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
-            { id: 'file-2', fileName: 'document.pdf', documentType: 'identity-document', fileSize: 16 },
-          ],
-        },
-      }),
-    );
+    expect(updateDocumentUploadState).toHaveBeenCalledWith({
+      id: uploadId,
+      session,
+      params: args.params,
+      state: {
+        pendingDocuments: [],
+        uploadedDocuments: [
+          { documentType: 'receipt', fileName: 'document.pdf', fileSize: 7, id: 'file-1' },
+          { documentType: 'identity-document', fileName: 'document.pdf', fileSize: 16, id: 'file-2' },
+        ],
+      },
+    });
     expect(getDocumentUploadSubmittedUrl).toHaveBeenCalledWith(uploadId, args.params);
-    expect(result).toBeInstanceOf(Response);
-    expect((result as Response).status).toBe(302);
-    expect((result as Response).headers.get('Location')).toBe(submittedUrl);
+    assert(result instanceof Response);
+    expect(result.status).toBe(302);
+    expect(result.headers.get('Location')).toBe(submittedUrl);
   });
 });
