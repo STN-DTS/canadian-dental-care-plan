@@ -11,7 +11,7 @@ const ns = {
     tableHeaders: {
       dateReceived: "Date de réception",
       fileName: "Nom du fichier",
-      uploadMethod: "Méthode de transmission",
+      submittedBy: "Soumis par",
       typeOfDocument: "Type de document",
     },
     uploadMethodUnknown: "Inconnu",
