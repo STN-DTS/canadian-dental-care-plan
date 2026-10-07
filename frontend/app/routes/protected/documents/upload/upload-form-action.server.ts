@@ -5,7 +5,7 @@ import * as z from 'zod';
 import type { Route } from './+types/upload-form';
 
 import { appContext } from '~/.server/context';
-import { getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
@@ -15,7 +15,7 @@ import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-act
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const uploadState = loadDocumentUploadState({ id: getDocumentUploadStateIdFromUrl(url), session, params });
+  const uploadState = loadDocumentUploadState({ id: params.id, session, params });
 
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
@@ -66,5 +66,5 @@ export async function action({ context, params, request, url }: Route.ActionArgs
  * Checks if a document has an upload error.
  */
 function hasUploadError(fileId: string, uploadDocumentsFailureResponse: UploadDocumentsResponseFailure): boolean {
-  return (uploadDocumentsFailureResponse.errors.properties?.files?.properties?.[fileId]?.errors.length ?? 0) > 0;
+  return (uploadDocumentsFailureResponse.errors.properties?.files?.properties?.[fileId]?.properties?.file?.errors.length ?? 0) > 0;
 }

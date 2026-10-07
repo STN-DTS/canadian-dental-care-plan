@@ -196,27 +196,16 @@ describe('action', () => {
   it('returns upload errors without starting submitted state', async () => {
     const args = createActionArgs(validUploadFormData());
     const { session } = args.context.get(appContext);
-    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['upload failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
+    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: [], properties: { file: { errors: ['upload failed'] } } } } } } } satisfies DocumentUploadSchemaErrorTree;
     vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
 
     const result = await action(args);
 
+    expect(loadDocumentUploadState).toHaveBeenCalledWith({ id: args.params.id, session, params: args.params });
     expect(scanDocuments).toHaveBeenCalledOnce();
     expect(result).toEqual({
       data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: [],
-              properties: {
-                'file-1': {
-                  errors: ['upload failed'],
-                },
-              },
-            },
-          },
-        },
+        errors,
         formAction: 'upload',
         source: 'server',
         responseType: 'upload-errors',
