@@ -7,7 +7,7 @@ import type { Route } from './+types/upload-submitted';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getUser } from '~/.server/context/user-context';
-import { getDocumentUploadStateIdFromUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
@@ -33,8 +33,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const documentUploadStateId = getDocumentUploadStateIdFromUrl(url);
-  const { uploadedDocuments } = loadDocumentUploadState({ id: documentUploadStateId, params, session });
+  const { uploadedDocuments } = loadDocumentUploadState({ id: params.id, params, session });
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
