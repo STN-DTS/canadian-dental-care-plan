@@ -44,12 +44,14 @@ runs:
     - name: Create Aqua reports directories and fetch Trivy template
       shell: bash
       env:
-        TRIVY_VERSION: v0.69.3
+        TRIVY_TEMPLATE_COMMIT: 6fb20c8edd70745d6b34bff0387b53b03c8a760a
+        TRIVY_TEMPLATE_SHA256: d36b637cc77bc1a49b1f9a2358173756cd27a5d3385fab6365c0bab09abe5f0a
       run: |
         set -euo pipefail
 
         mkdir -p .github/aqua-reports contrib
-        curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/refs/tags/${TRIVY_VERSION}/contrib/html.tpl" -o contrib/html.tpl
+        curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_TEMPLATE_COMMIT}/contrib/html.tpl" -o contrib/html.tpl
+        printf '%s  %s\n' "$TRIVY_TEMPLATE_SHA256" contrib/html.tpl | sha256sum --check
     - name: Run Aqua vulnerability scanner
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
       with:
