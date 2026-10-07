@@ -193,6 +193,19 @@ describe('useDocumentUploadForm', () => {
       { id: 'file-2', file: proof, documentType: 'proof-of-coverage' },
       { id: 'file-1', file: receipt, documentType: 'receipt' },
     ]);
+
+    const uploadedDocuments = result.current.documentUploadFormState.uploadedDocuments;
+    const uploadButton = document.createElement('button');
+    uploadButton.id = 'fileUploadTrigger';
+    document.body.append(uploadButton);
+
+    act(() => {
+      result.current.handleFileChange(uploadedDocuments);
+    });
+
+    expect.soft(result.current.documentUploadFormState.pendingDocuments).toEqual([]);
+    expect(result.current.documentUploadFormState.uploadedDocuments).toEqual(uploadedDocuments);
+    expect(uploadButton).toHaveFocus();
   });
 
   it('moves focus to the next remaining file or the upload button after removal', () => {

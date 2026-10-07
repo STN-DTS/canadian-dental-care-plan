@@ -57,9 +57,11 @@ export function useDocumentUploadForm() {
 
   const handleFileChange = useCallback(
     (files: ReadonlyArray<FileState>) => {
+      const uploadedFileIds = new Set(documentUploadFormState.uploadedDocuments.map(({ id }) => id));
+      const pendingFiles = files.filter(({ id }) => !uploadedFileIds.has(id));
       const previousFileIds = new Set(documentUploadFormState.pendingDocuments.map(({ id }) => id));
-      const currentFileIds = new Set(files.map(({ id }) => id));
-      const firstAddedFile = files.find(({ id }) => !previousFileIds.has(id));
+      const currentFileIds = new Set(pendingFiles.map(({ id }) => id));
+      const firstAddedFile = pendingFiles.find(({ id }) => !previousFileIds.has(id));
       const firstRemovedFile = documentUploadFormState.pendingDocuments.find(({ id }) => !currentFileIds.has(id));
 
       if (!firstAddedFile && !firstRemovedFile) {
@@ -73,8 +75,8 @@ export function useDocumentUploadForm() {
       if (firstRemovedFile) {
         const removedIndex = documentUploadFormState.pendingDocuments.findIndex(({ id }) => id === firstRemovedFile.id);
         scheduleFocus(() => {
-          const fileNowAtRemovedIndex = files[removedIndex];
-          const precedingFile = files[removedIndex - 1];
+          const fileNowAtRemovedIndex = pendingFiles[removedIndex];
+          const precedingFile = pendingFiles[removedIndex - 1];
           const fileToFocus = fileNowAtRemovedIndex ?? precedingFile;
           const focusTargetId = fileToFocus ? `file-upload-item-${fileToFocus.id}` : 'fileUploadTrigger';
           return document.getElementById(focusTargetId);
@@ -85,7 +87,7 @@ export function useDocumentUploadForm() {
         const previousFileMap = new Map(previousState.pendingDocuments.map((item) => [item.id, item]));
         return {
           ...previousState,
-          pendingDocuments: files.map((file) => previousFileMap.get(file.id) ?? { ...file, documentType: '' }),
+          pendingDocuments: pendingFiles.map((file) => previousFileMap.get(file.id) ?? Object.assign({}, file, { documentType: '' })),
         };
       });
     },
