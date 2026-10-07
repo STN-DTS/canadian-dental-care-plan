@@ -70,7 +70,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
 
     const url = new URL(`${this.baseUrl}/esdc_evidentiarydocuments`);
 
-    url.searchParams.set('$select', 'esdc_filename,_esdc_documenttypeid_value,esdc_uploaddate');
+    url.searchParams.set('$select', 'esdc_filename,_esdc_documenttypeid_value,esdc_uploaddate,esdc_recordsource');
     url.searchParams.set('$expand', 'esdc_Clientid($select=esdc_firstname,esdc_lastname),esdc_DocumentTypeid($select=esdc_nameenglish,esdc_namefrench)');
     url.searchParams.set('$filter', `statuscode eq 1 and _esdc_clientid_value eq '${findEvidentiaryDocumentsRequest.clientId}'`);
     url.searchParams.set('$orderby', 'esdc_uploaddate desc,esdc_filename asc');
@@ -168,6 +168,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
       clientId: doc.esdc_Clientid.esdc_clientid,
       documentTypeId: doc._esdc_documenttypeid_value,
       mscaUploadDate: doc.esdc_uploaddate,
+      recordSource: doc.esdc_recordsource,
       client: {
         id: doc.esdc_Clientid.esdc_clientid,
         firstName: doc.esdc_Clientid.esdc_firstname,
@@ -214,6 +215,7 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
         clientId: findEvidentiaryDocumentsRequest.clientId,
         documentTypeId: '70a54c5a-9f9f-f011-bbd2-7ced8d05477c',
         mscaUploadDate: '2025-10-21T16:33:31Z',
+        recordSource: 775170004,
         client: {
           id: findEvidentiaryDocumentsRequest.clientId,
           firstName: 'Liam',
@@ -231,6 +233,7 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
         clientId: findEvidentiaryDocumentsRequest.clientId,
         documentTypeId: 'de3c6d3c-9f9f-f011-bbd2-7ced8d05477c',
         mscaUploadDate: '2025-10-21T15:53:11Z',
+        recordSource: 775170001,
         client: {
           id: findEvidentiaryDocumentsRequest.clientId,
           firstName: 'Liam',

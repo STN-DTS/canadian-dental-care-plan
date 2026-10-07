@@ -1,7 +1,7 @@
 const ns = {
   index: {
     pageTitle: "View documents",
-    hasDocuments: "You have submitted the following documents for the Canadian Dental Care Plan:",
+    hasDocuments: "Here is the list of documents you have submitted.",
     noDocuments: "There are no documents uploaded yet. If you have recently submitted some, there could be a short delay with the documents appearing here.",
     whatYouCanDoHeading: "What you can do",
     whatYouCanDo: "You can <uploadLink>submit documents</uploadLink> if you have some to upload.",
@@ -14,6 +14,7 @@ const ns = {
       submittedBy: "Submitted by",
       typeOfDocument: "Type of document",
     },
+    uploadMethodUnknown: "Unknown",
   },
   upload: {
     pageTitle: "Submit documents",

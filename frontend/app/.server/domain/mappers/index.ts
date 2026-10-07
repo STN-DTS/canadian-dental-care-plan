@@ -24,5 +24,6 @@ export * from './profile-dto-mapper';
 export * from './program-applicant-dto-mapper';
 export * from './province-territory-state-dto-mapper';
 export * from './provincial-government-insurance-plan-dto-mapper';
+export * from './record-source-dto-mapper';
 export * from './sun-life-communication-method-dto-mapper';
 export * from './verification-code-dto-mapper';

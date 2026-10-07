@@ -33,7 +33,10 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
   const locale = getLocale(url);
 
   const evidentiaryDocumentService = appContainer.get(TYPES.EvidentiaryDocumentService);
+  const recordSourceService = appContainer.get(TYPES.RecordSourceService);
   const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId, userId: user.id }, locale);
+  const localizedRecordSources = recordSourceService.listLocalizedRecordSources(locale);
+  const recordSourceMap = new Map(localizedRecordSources.map(({ id, name }) => [id, name]));
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {
@@ -52,7 +55,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
         id: document.id,
         fileName: document.fileName,
         documentType: document.documentType,
-        client: document.client,
+        uploadMethod: document.recordSource ? (recordSourceMap.get(document.recordSource.toString()) ?? t(($) => $.index.uploadMethodUnknown)) : t(($) => $.index.uploadMethodUnknown),
         mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
         mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
         mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),
@@ -88,7 +91,7 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
                   <TableRow key={document.id} className="odd:bg-white even:bg-gray-50">
                     <TableCell className="max-w-50 break-all">{document.fileName}</TableCell>
                     <TableCell>{document.documentType.name}</TableCell>
-                    <TableCell>{`${document.client.firstName} ${document.client.lastName}`}</TableCell>
+                    <TableCell>{document.uploadMethod}</TableCell>
                     <TableCell className="text-nowrap">
                       <DateTimeDisplay isoTimestamp={document.mscaUploadIsoTimestamp} tooltipText={document.mscaUploadDateTooltip}>
                         {document.mscaUploadDateDisplay}

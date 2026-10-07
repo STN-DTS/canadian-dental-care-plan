@@ -33,6 +33,7 @@ import type {
   ProgramApplicantDtoMapper,
   ProvinceTerritoryStateDtoMapper,
   ProvincialGovernmentInsurancePlanDtoMapper,
+  RecordSourceDtoMapper,
   SunLifeCommunicationMethodDtoMapper,
   VerificationCodeDtoMapper,
 } from '~/.server/domain/mappers';
@@ -87,6 +88,7 @@ import type {
   ProgramApplicantService,
   ProvinceTerritoryStateService,
   ProvincialGovernmentInsurancePlanService,
+  RecordSourceService,
   SunLifeCommunicationMethodService,
   VerificationCodeService,
 } from '~/.server/domain/services';
@@ -249,6 +251,8 @@ export const TYPES = assignServiceIdentifiers({
   PublicApplicationStateResolver: serviceId<PublicApplicationStateResolver>(),
   ProvincialGovernmentInsurancePlanDtoMapper: serviceId<ProvincialGovernmentInsurancePlanDtoMapper>(),
   ProvincialGovernmentInsurancePlanService: serviceId<ProvincialGovernmentInsurancePlanService>(),
+  RecordSourceDtoMapper: serviceId<RecordSourceDtoMapper>(),
+  RecordSourceService: serviceId<RecordSourceService>(),
   RaoidcService: serviceId<RaoidcService>(),
   RaoidcSessionValidator: serviceId<RaoidcSessionValidator>(),
   RedisService: serviceId<RedisService>(),
