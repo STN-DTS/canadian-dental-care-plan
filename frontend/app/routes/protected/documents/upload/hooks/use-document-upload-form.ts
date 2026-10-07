@@ -2,16 +2,30 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { FileState } from '~/components/file-upload';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
+import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
+import { generateId } from '~/utils/id-utils';
 
-export type FileStateWithDocumentType = FileState & { readonly documentType: string };
+type FileStateWithDocumentType = FileState & { readonly documentType: string };
+type DocumentUploadFormState = {
+  /**
+   * The list of documents that are currently pending upload.
+   */
+  readonly pendingDocuments: ReadonlyArray<FileStateWithDocumentType>;
+  /**
+   * The list of documents that have been successfully uploaded.
+   */
+  readonly uploadedDocuments: ReadonlyArray<FileStateWithDocumentType>;
+};
 
 export function useDocumentUploadForm() {
   const fetcher = useDocumentUploadFetcher();
-  const [filesWithTypes, setFilesWithTypes] = useState<FileStateWithDocumentType[]>([]);
-  const pendingFileValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
+  const [documentUploadFormState, setDocumentUploadFormState] = useState<DocumentUploadFormState>({ pendingDocuments: [], uploadedDocuments: [] });
+  const [appliedUploadErrorResponse, setAppliedUploadErrorResponse] = useState<DocumentUploadFetcherData>();
+  const pendingFileSelectionValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
   const cancelPendingFocusRef = useRef<(() => void) | undefined>(undefined);
+  const currentFileCount = documentUploadFormState.pendingDocuments.length + documentUploadFormState.uploadedDocuments.length;
 
   const scheduleFocus = useCallback((getElement: () => HTMLElement | null | undefined) => {
     cancelPendingFocusRef.current?.();
@@ -30,27 +44,23 @@ export function useDocumentUploadForm() {
       const formData = new FormData();
       formData.set('_action', FORM_ACTION.addFiles);
       formData.set('_validation_id', validationId);
-      formData.set('current_file_count', filesWithTypes.length.toString());
-      for (const { file } of filesWithTypes) {
-        formData.append('existing_file_object', file);
-      }
+      formData.set('current_file_count', currentFileCount.toString());
       for (const file of files) {
         formData.append('file_object', file);
       }
-
-      pendingFileValidationRef.current = { validationId, files };
+      pendingFileSelectionValidationRef.current = { validationId, files };
       void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
       return false;
     },
-    [fetcher, filesWithTypes],
+    [fetcher, currentFileCount],
   );
 
   const handleFileChange = useCallback(
     (files: ReadonlyArray<FileState>) => {
-      const previousFileIds = new Set(filesWithTypes.map(({ id }) => id));
+      const previousFileIds = new Set(documentUploadFormState.pendingDocuments.map(({ id }) => id));
       const currentFileIds = new Set(files.map(({ id }) => id));
       const firstAddedFile = files.find(({ id }) => !previousFileIds.has(id));
-      const firstRemovedFile = filesWithTypes.find(({ id }) => !currentFileIds.has(id));
+      const firstRemovedFile = documentUploadFormState.pendingDocuments.find(({ id }) => !currentFileIds.has(id));
 
       if (!firstAddedFile && !firstRemovedFile) {
         return;
@@ -61,7 +71,7 @@ export function useDocumentUploadForm() {
       }
 
       if (firstRemovedFile) {
-        const removedIndex = filesWithTypes.findIndex(({ id }) => id === firstRemovedFile.id);
+        const removedIndex = documentUploadFormState.pendingDocuments.findIndex(({ id }) => id === firstRemovedFile.id);
         scheduleFocus(() => {
           const fileNowAtRemovedIndex = files[removedIndex];
           const precedingFile = files[removedIndex - 1];
@@ -71,38 +81,61 @@ export function useDocumentUploadForm() {
         });
       }
 
-      setFilesWithTypes((previousFiles) => {
-        const previousFileMap = new Map(previousFiles.map((item) => [item.id, item]));
-        return files.map((file) => previousFileMap.get(file.id) ?? { ...file, documentType: '' });
+      setDocumentUploadFormState((previousState) => {
+        const previousFileMap = new Map(previousState.pendingDocuments.map((item) => [item.id, item]));
+        return {
+          ...previousState,
+          pendingDocuments: files.map((file) => previousFileMap.get(file.id) ?? { ...file, documentType: '' }),
+        };
       });
     },
-    [filesWithTypes, scheduleFocus],
+    [documentUploadFormState, scheduleFocus],
   );
 
-  useEffect(() => {
-    const pendingValidation = pendingFileValidationRef.current;
-    const data = fetcher.data;
+  useEffect(
+    function applyFileSelectionValidationResponse() {
+      const pendingValidation = pendingFileSelectionValidationRef.current;
+      const data = fetcher.data;
+      const isPendingValidationResponse = pendingValidation && data?.source === 'client' && data.formAction === FORM_ACTION.addFiles && data.validationId === pendingValidation.validationId;
 
-    if (!pendingValidation || !data) {
-      return;
-    }
+      if (!isPendingValidationResponse) return;
+      pendingFileSelectionValidationRef.current = undefined;
 
-    if (data.source !== 'client' || data.formAction !== FORM_ACTION.addFiles || data.validationId !== pendingValidation.validationId) {
-      return;
-    }
+      if (!data.errors) {
+        const files = pendingValidation.files.map((file) => ({ id: generateId(), file }));
+        handleFileChange([...documentUploadFormState.pendingDocuments, ...files]);
+      }
+    },
+    [fetcher.data, documentUploadFormState, handleFileChange],
+  );
 
-    pendingFileValidationRef.current = undefined;
+  const uploadResponse = fetcher.data;
+  const isNewUploadErrorResponse = uploadResponse?.source === 'server' && uploadResponse.responseType === 'upload-errors' && uploadResponse !== appliedUploadErrorResponse;
 
-    if (data.errors) {
-      return;
-    }
+  if (isNewUploadErrorResponse) {
+    setAppliedUploadErrorResponse(uploadResponse);
+    setDocumentUploadFormState((previousState) => ({
+      pendingDocuments: previousState.pendingDocuments.filter((doc) => uploadResponse.pendingDocuments.some((pending) => pending.id === doc.id)),
+      uploadedDocuments: [...previousState.pendingDocuments, ...previousState.uploadedDocuments].filter((doc) => uploadResponse.uploadedDocuments.some((uploaded) => uploaded.id === doc.id)),
+    }));
+  }
 
-    const files = pendingValidation.files.map((file) => ({ id: crypto.randomUUID(), file }));
-    handleFileChange([...filesWithTypes, ...files]);
-  }, [fetcher.data, filesWithTypes, handleFileChange]);
+  useEffect(
+    function clearPendingFileSelectionAfterUploadError() {
+      const data = fetcher.data;
+      const isUnsuccessfulUploadResponse = data?.source === 'server' && data.responseType === 'upload-errors';
+
+      if (!isUnsuccessfulUploadResponse) return;
+      pendingFileSelectionValidationRef.current = undefined;
+    },
+    [fetcher.data],
+  );
 
   const handleDocumentTypeChange = useCallback((id: string, documentType: string) => {
-    setFilesWithTypes((previousFiles) => previousFiles.map((file) => (file.id === id ? { ...file, documentType } : file)));
+    setDocumentUploadFormState((previousState) => ({
+      ...previousState,
+      pendingDocuments: previousState.pendingDocuments.map((file) => (file.id === id ? { ...file, documentType } : file)),
+    }));
   }, []);
 
   const submitForm = useCallback(
@@ -113,7 +146,7 @@ export function useDocumentUploadForm() {
       formData.delete('file_object');
       formData.delete('file_document_type');
 
-      for (const { id, file, documentType } of filesWithTypes) {
+      for (const { id, file, documentType } of documentUploadFormState.pendingDocuments) {
         formData.append('file_id', id);
         formData.append('file_object', file);
         formData.append('file_document_type', documentType);
@@ -121,11 +154,11 @@ export function useDocumentUploadForm() {
 
       void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
     },
-    [fetcher, filesWithTypes],
+    [fetcher, documentUploadFormState],
   );
 
   return {
-    filesWithTypes,
+    documentUploadFormState,
     handleBeforeFilesAdd,
     handleDocumentTypeChange,
     handleFileChange,

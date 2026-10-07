@@ -30,7 +30,11 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
 
   const fetcher = useDocumentUploadFetcher();
   const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
-  const { filesWithTypes, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
+  const { documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
+
+  const filesWithTypes = useMemo(() => {
+    return [...documentUploadFormState.pendingDocuments, ...documentUploadFormState.uploadedDocuments];
+  }, [documentUploadFormState]);
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];

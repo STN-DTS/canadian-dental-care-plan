@@ -306,7 +306,7 @@ The current implementation is batch-oriented but not transactional across system
 - Any scan failure: no file is sent to `ScanAndSave`.
 - Upload failure for one file: other concurrent EWDU uploads may already have succeeded. The application returns errors and does not show a success confirmation for the batch.
 - Power Platform ingestion is asynchronous. DTS can show EWDU submission confirmation before records appear in the documents list. Ingestion failures and retries belong to the Power Platform background process.
-- A browser retry after a partial failure can submit already-uploaded files again because there is no idempotency key in the current upload contract.
+- After a partial upload failure, the form retains successful files separately and retries only pending files. Both collections count toward the file-selection limit. The upload contract has no idempotency key, so independently resubmitting a successful file can still create a duplicate.
 - The immediate confirmation uses session data. The documents page retrieves records from Power Platform when the user opens the list; newly submitted files can appear after background ingestion completes.
 
 These behaviors are important acceptance criteria for any EWDU or Power Platform change. Changes to background ingestion require updates to Power Platform monitoring and operations. DTS changes must preserve EWDU submission and explain the delay before documents appear in the list.

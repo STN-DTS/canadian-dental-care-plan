@@ -20,7 +20,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const locale = getLocale(url);
   const t = await getFixedT(locale, 'documents');
   const formData = await request.formData();
-  const source = 'server';
+  const source = 'server' as const;
 
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
   if (formAction !== FORM_ACTION.upload) {
@@ -29,7 +29,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const validationResult = await validateUploadForm({ formData, locale, t });
   if (!validationResult.success) {
-    return data({ formAction, source, errors: validationResult.errors } as const, 400);
+    return data({ formAction, source, responseType: 'validation-errors', errors: validationResult.errors } as const, 400);
   }
 
   const { files } = validationResult.data;
@@ -40,7 +40,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const scanResult = await scanDocuments(files);
   if (!scanResult.success) {
-    return data({ formAction, source, errors: scanResult.errors } as const, 400);
+    return data({ formAction, source, responseType: 'scan-errors', errors: scanResult.errors } as const, 400);
   }
 
   const uploadResult = await uploadDocuments(files);
@@ -53,7 +53,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     const uploadedDocuments = [...uploadState.uploadedDocuments, ...submittedDocuments.filter((doc) => !pendingDocuments.some((pending) => pending.id === doc.id))];
 
     updateDocumentUploadState({ id: uploadState.id, session, params, state: { pendingDocuments, uploadedDocuments } });
-    return data({ formAction, source, errors: uploadResult.errors, uploadedDocuments, pendingDocuments } as const, 400);
+    return data({ formAction, source, responseType: 'upload-errors', errors: uploadResult.errors, uploadedDocuments, pendingDocuments } as const, 400);
   }
 
   // Merge previously uploaded documents with newly uploaded ones.

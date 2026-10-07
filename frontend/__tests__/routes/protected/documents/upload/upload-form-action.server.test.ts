@@ -147,6 +147,7 @@ describe('action', () => {
         },
         formAction: 'upload',
         source: 'server',
+        responseType: 'validation-errors',
       },
       init: {
         status: 400,
@@ -181,6 +182,7 @@ describe('action', () => {
         },
         formAction: 'upload',
         source: 'server',
+        responseType: 'scan-errors',
       },
       init: {
         status: 400,
@@ -216,6 +218,8 @@ describe('action', () => {
           },
         },
         formAction: 'upload',
+        source: 'server',
+        responseType: 'upload-errors',
         pendingDocuments: [
           {
             documentType: 'receipt',
@@ -224,7 +228,6 @@ describe('action', () => {
             id: 'file-1',
           },
         ],
-        source: 'server',
         uploadedDocuments: [],
       },
       init: {

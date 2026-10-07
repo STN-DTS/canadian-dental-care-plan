@@ -53,6 +53,7 @@ describe('useDocumentUploadForm', () => {
           formAction: FORM_ACTION.addFiles,
           source: 'client',
           validationId: String(validationId),
+          responseType: 'validation-errors',
           errors: {
             errors: [],
             properties: { files: { errors: ['unsupported file'] } },
@@ -63,7 +64,7 @@ describe('useDocumentUploadForm', () => {
     );
     rerender();
 
-    expect(result.current.filesWithTypes).toEqual([]);
+    expect(result.current.documentUploadFormState.pendingDocuments).toEqual([]);
 
     act(() => {
       result.current.handleBeforeFilesAdd([file]);
@@ -109,6 +110,89 @@ describe('useDocumentUploadForm', () => {
     expect(submittedFormData.getAll('file_id')).toEqual(['file-1', 'file-2']);
     expect(submittedFormData.getAll('file_object')).toEqual([receipt, proof]);
     expect(submittedFormData.getAll('file_document_type')).toEqual(['receipt', 'proof-of-coverage']);
+  });
+
+  it('applies each upload-error response once without discarding files selected afterward', () => {
+    const receipt = new File(['receipt'], 'receipt.pdf', { type: 'application/pdf' });
+    const proof = new File(['proof'], 'proof.pdf', { type: 'application/pdf' });
+    const extra = new File(['extra'], 'extra.pdf', { type: 'application/pdf' });
+    const submit = vi.fn<DocumentUploadFetcher['submit']>();
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    const { result, rerender } = renderHook(() => useDocumentUploadForm());
+
+    act(() => {
+      result.current.handleFileChange([
+        { id: 'file-1', file: receipt },
+        { id: 'file-2', file: proof },
+      ]);
+    });
+    act(() => {
+      result.current.handleDocumentTypeChange('file-1', 'receipt');
+      result.current.handleDocumentTypeChange('file-2', 'proof-of-coverage');
+    });
+
+    const uploadErrorResponse = {
+      formAction: FORM_ACTION.upload,
+      source: 'server' as const,
+      responseType: 'upload-errors' as const,
+      errors: { errors: [] },
+      pendingDocuments: [{ id: 'file-2', fileName: proof.name, fileSize: proof.size, documentType: 'proof-of-coverage' }],
+      uploadedDocuments: [{ id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt' }],
+    };
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(uploadErrorResponse, submit));
+    rerender();
+
+    expect(result.current.documentUploadFormState.pendingDocuments).toEqual([{ id: 'file-2', file: proof, documentType: 'proof-of-coverage' }]);
+    expect.soft(result.current.documentUploadFormState.uploadedDocuments).toEqual([{ id: 'file-1', file: receipt, documentType: 'receipt' }]);
+
+    act(() => {
+      result.current.submitForm(document.createElement('form'));
+    });
+
+    const retryFormData = submit.mock.calls[0]?.[0];
+    expect(retryFormData).toBeInstanceOf(FormData);
+    if (!(retryFormData instanceof FormData)) {
+      throw new Error('Expected upload retry to submit multipart form data');
+    }
+    expect(retryFormData.getAll('file_id')).toEqual(['file-2']);
+    expect(retryFormData.getAll('file_object')).toEqual([proof]);
+    expect(retryFormData.getAll('file_document_type')).toEqual(['proof-of-coverage']);
+
+    act(() => {
+      result.current.handleBeforeFilesAdd([extra]);
+    });
+
+    const selectionFormData = submit.mock.calls[1]?.[0];
+    expect(selectionFormData).toBeInstanceOf(FormData);
+    if (!(selectionFormData instanceof FormData)) {
+      throw new Error('Expected file selection to submit multipart form data');
+    }
+    expect.soft(selectionFormData.get('current_file_count')).toBe('2');
+
+    act(() => {
+      result.current.handleFileChange([...result.current.documentUploadFormState.pendingDocuments, { id: 'file-3', file: extra }]);
+    });
+    rerender();
+
+    expect(result.current.documentUploadFormState.pendingDocuments.map(({ id }) => id)).toEqual(['file-2', 'file-3']);
+
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(
+      createFetcher(
+        {
+          ...uploadErrorResponse,
+          pendingDocuments: [{ id: 'file-3', fileName: extra.name, fileSize: extra.size, documentType: '' }],
+          uploadedDocuments: [...uploadErrorResponse.uploadedDocuments, ...uploadErrorResponse.pendingDocuments],
+        },
+        submit,
+      ),
+    );
+    rerender();
+
+    expect(result.current.documentUploadFormState.pendingDocuments).toEqual([{ id: 'file-3', file: extra, documentType: '' }]);
+    expect.soft(result.current.documentUploadFormState.uploadedDocuments).toEqual([
+      { id: 'file-2', file: proof, documentType: 'proof-of-coverage' },
+      { id: 'file-1', file: receipt, documentType: 'receipt' },
+    ]);
   });
 
   it('moves focus to the next remaining file or the upload button after removal', () => {

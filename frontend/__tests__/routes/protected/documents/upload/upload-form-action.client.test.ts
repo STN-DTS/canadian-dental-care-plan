@@ -119,6 +119,7 @@ describe('clientAction', () => {
           },
         },
         formAction: 'add-files',
+        responseType: 'validation-errors',
         source: 'client',
         validationId: 'validation-1',
       },
@@ -142,7 +143,13 @@ describe('clientAction', () => {
     );
 
     expect(validateFileSelection).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
-    expect(result).toEqual({ formAction: 'add-files', source: 'client', validationId: 'validation-1', errors: undefined });
+    expect(result).toEqual({
+      formAction: 'add-files',
+      responseType: 'success',
+      source: 'client',
+      validationId: 'validation-1',
+      errors: undefined,
+    });
     expect(serverAction).not.toHaveBeenCalled();
   });
 
@@ -180,6 +187,7 @@ describe('clientAction', () => {
           },
         },
         formAction: 'upload',
+        responseType: 'validation-errors',
         source: 'client',
       },
       init: {
