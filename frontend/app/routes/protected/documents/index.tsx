@@ -82,7 +82,7 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
                 <TableRow>
                   <TableHead>{t(($) => $.index.tableHeaders.fileName)}</TableHead>
                   <TableHead>{t(($) => $.index.tableHeaders.typeOfDocument)}</TableHead>
-                  <TableHead>{t(($) => $.index.tableHeaders.uploadMethod)}</TableHead>
+                  <TableHead>{t(($) => $.index.tableHeaders.submittedBy)}</TableHead>
                   <TableHead>{t(($) => $.index.tableHeaders.dateReceived)}</TableHead>
                 </TableRow>
               </TableHeader>
