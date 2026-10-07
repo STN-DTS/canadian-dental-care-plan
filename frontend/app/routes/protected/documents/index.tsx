@@ -43,6 +43,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
+  const { EWDU_RECORD_SOURCE_API, EWDU_RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ServerConfig);
   const { timeZone } = getHints(request);
 
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: user.id });
@@ -58,11 +59,11 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
         if (!recordSourceId) return t(($) => $.index.uploadMethodUnknown);
         if (!serviceName) return t(($) => $.index.uploadMethodUnknown);
 
-        if (recordSourceId === '775170002') {
+        if (recordSourceId === EWDU_RECORD_SOURCE_API) {
           return t(($) => $.index.uploadMethodOverrides.api, { defaultValue: serviceName });
         }
 
-        if (recordSourceId === '775170004') {
+        if (recordSourceId === EWDU_RECORD_SOURCE_MSCA) {
           return t(($) => $.index.uploadMethodOverrides.msca, { defaultValue: serviceName });
         }
 
@@ -128,14 +129,14 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
               <Trans
                 ns="documents"
                 i18nKey={($) => $.index.whatYouCanDo}
-                components={{ uploadLink: <InlineLink routeId="protected/documents/upload" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click" /> }}
+                components={{ uploadLink: <InlineLink routeId="protected/documents/upload/upload-index" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click" /> }}
               />
             </p>
           </div>
         )}
         {hasDocuments && (
           <div>
-            <ButtonLink id="upload-button" routeId="protected/documents/upload" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
+            <ButtonLink id="upload-button" routeId="protected/documents/upload/upload-index" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
               {t(($) => $.index.uploadDocuments)}
             </ButtonLink>
           </div>

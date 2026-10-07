@@ -97,6 +97,7 @@ const serverEnv = clientEnvSchema.extend({
   EWDU_ENCAPSULATION_USERNAME: z.string().default('CDCP'),
   EWDU_ENCAPSULATION_PASSWORD: z.string().optional(),
   EWDU_PROGRAM_ACTIVITY_ID: z.string().default('CDCP'),
+  EWDU_RECORD_SOURCE_API: z.string().default('775170002'),
   EWDU_RECORD_SOURCE_MSCA: z.string().default('775170004'),
 
   // simulation/testing date settings
@@ -123,7 +124,7 @@ const serverEnv = clientEnvSchema.extend({
 
   // http proxy settings
   HTTP_PROXY_URL: z.string().trim().transform(emptyToUndefined).optional(),
-  HTTP_PROXY_TLS_TIMEOUT: z.coerce.number().default(30*1000),
+  HTTP_PROXY_TLS_TIMEOUT: z.coerce.number().default(30 * 1000),
 
   // session configuration
   SESSION_STORAGE_TYPE: z.enum(['memory', 'redis']).default('memory'),
@@ -238,10 +239,10 @@ const serverEnv = clientEnvSchema.extend({
    */
   APPLICATION_KILLSWITCH_TTL_SECONDS: z.coerce.number().default(5 * 60),
 })
-/**
- * Refiner to ensure that RENEWAL_PERIOD_END_DATE is greater than or equal to RENEWAL_PERIOD_START_DATE
- */
-.refine(({RENEWAL_PERIOD_END_DATE, RENEWAL_PERIOD_START_DATE}) => {
+  /**
+   * Refiner to ensure that RENEWAL_PERIOD_END_DATE is greater than or equal to RENEWAL_PERIOD_START_DATE
+   */
+  .refine(({ RENEWAL_PERIOD_END_DATE, RENEWAL_PERIOD_START_DATE }) => {
     return new Date(RENEWAL_PERIOD_START_DATE) <= new Date(RENEWAL_PERIOD_END_DATE);
   }, {
     path: ['RENEWAL_PERIOD_END_DATE'],
