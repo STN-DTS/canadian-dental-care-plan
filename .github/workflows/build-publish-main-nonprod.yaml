@@ -212,7 +212,6 @@ jobs:
           short_sha="${SOURCE_SHA:0:8}"
           if [[ "$REF_NAME" == main ]]; then
             docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}-${BUILD_NUMBER}"
             docker push "${IMAGE_NAME}:latest"
           elif [[ "$REF_NAME" == release/* ]]; then
             rc_label=$(printf '%03d' "$RUN_NUMBER")
