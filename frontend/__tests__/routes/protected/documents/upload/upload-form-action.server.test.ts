@@ -103,7 +103,7 @@ beforeEach(() => {
   vi.mocked(scanDocuments).mockResolvedValue({ success: true });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: 'upload-id', submittedDocuments: [] });
+  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: 'upload-id', pendingDocuments: [], submittedDocuments: [] });
 });
 
 afterEach(() => {
@@ -252,6 +252,7 @@ describe('action', () => {
         session,
         params: args.params,
         state: {
+          pendingDocuments: [],
           submittedDocuments: [
             { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 },
             { id: 'file-2', fileName: 'document.pdf', documentType: 'identity-document', fileSize: 16 },

@@ -45,7 +45,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
   });
 
-  updateDocumentUploadState({ id, session, params, state: { submittedDocuments } });
+  updateDocumentUploadState({ id, session, params, state: { submittedDocuments, pendingDocuments: [] } });
 
   return redirect(getDocumentUploadSubmittedUrl(id, params));
 }

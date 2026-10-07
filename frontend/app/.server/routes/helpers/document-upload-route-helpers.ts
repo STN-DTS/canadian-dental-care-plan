@@ -17,6 +17,7 @@ export interface SubmittedDocument {
 
 export interface DocumentUploadState {
   readonly id: string;
+  readonly pendingDocuments: ReadonlyArray<SubmittedDocument>;
   readonly submittedDocuments: ReadonlyArray<SubmittedDocument>;
 }
 
@@ -91,6 +92,7 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
 
   const initialState: DocumentUploadState = {
     id: parsedId,
+    pendingDocuments: [],
     submittedDocuments: [],
   };
 
@@ -104,7 +106,7 @@ interface UpdateStateArgs {
   id: string;
   params: DocumentUploadStateParams;
   session: Session;
-  state: Pick<DocumentUploadState, 'submittedDocuments'>;
+  state: Pick<DocumentUploadState, 'pendingDocuments' | 'submittedDocuments'>;
 }
 
 /**
@@ -118,6 +120,7 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
   const newState: DocumentUploadState = {
     ...currentState,
     submittedDocuments: state.submittedDocuments,
+    pendingDocuments: state.pendingDocuments,
   };
   const sessionKey = getSessionKey(currentState.id);
   session.set(sessionKey, newState);
