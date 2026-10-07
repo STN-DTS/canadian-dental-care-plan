@@ -47,7 +47,7 @@ export class DefaultRecordSourceService implements RecordSourceService {
       { id: '775170001', nameEn: 'Online', nameFr: 'En ligne' },
       { id: '775170002', nameEn: 'API', nameFr: 'API' },
       { id: '775170003', nameEn: 'IVR', nameFr: 'RVI' },
-      { id: '775170004', nameEn: 'MSCA', nameFr: 'MSCA' },
+      { id: '775170004', nameEn: 'MSCA', nameFr: 'MDSC' },
     ];
   }
 
