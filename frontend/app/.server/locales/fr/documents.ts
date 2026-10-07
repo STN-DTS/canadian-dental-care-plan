@@ -71,7 +71,7 @@ const ns = {
       fileTooLarge_fileSelection: "Le fichier que vous tentez de téléverser est trop volumineux. Assurez-vous que sa taille est inférieure à {{filesize}}.",
       scanFailed: "Le fichier «\u00A0{{filename}}\u00A0» ne respecte pas les exigences de sécurité.",
       scanError: "Une erreur inattendue s'est produite lors de la vérification du fichier «\u00A0{{filename}}\u00A0» par rapport aux exigences de sécurité.",
-      uploadFailed: "Le fichier «\u00A0{{filename}}\u00A0» n'a pas pu être téléversé.",
+      uploadFailed: "Un problème est survenu lors du téléversement du fichier «\u00A0{{filename}}\u00A0». Veuillez réessayer.",
       uploadError: "Une erreur inattendue s'est produite lors du téléversement du fichier «\u00A0{{filename}}\u00A0».",
     },
   },

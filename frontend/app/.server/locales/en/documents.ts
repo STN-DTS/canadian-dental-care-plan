@@ -71,7 +71,7 @@ const ns = {
       fileTooLarge_fileSelection: "The file you are trying to upload is too large. Make sure the file size is less than {{filesize}}.",
       scanFailed: "The file “{{filename}}” does not meet security requirements.",
       scanError: "An unexpected error occurred while checking file “{{filename}}” against security requirements.",
-      uploadFailed: "The file “{{filename}}” could not be uploaded.",
+      uploadFailed: "There was a problem uploading the file “{{filename}}”. Please try again.",
       uploadError: "An unexpected error occurred while uploading file “{{filename}}”.",
     },
   },
