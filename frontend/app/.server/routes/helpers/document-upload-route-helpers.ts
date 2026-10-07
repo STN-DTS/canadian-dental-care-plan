@@ -1,4 +1,4 @@
-import { redirectDocument } from 'react-router';
+import { data } from 'react-router';
 
 import * as z from 'zod';
 
@@ -63,14 +63,14 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
 
   if (!parsedId.success) {
     log.warn('Invalid "id" query string format; redirecting to [%s]; id: [%s], sessionId: [%s]', documentsIndexUrl, id, session.id);
-    throw redirectDocument(documentsIndexUrl);
+    throw data(null, { status: 404 });
   }
 
   const sessionKey = getSessionKey(parsedId.data);
 
   if (!session.has(sessionKey)) {
     log.warn('Document upload session state has not been found; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', documentsIndexUrl, sessionKey, session.id);
-    throw redirectDocument(documentsIndexUrl);
+    throw data(null, { status: 404 });
   }
 
   return session.get(sessionKey);
