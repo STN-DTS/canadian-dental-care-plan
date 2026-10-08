@@ -1,3 +1,5 @@
+import { createMemoryRouter } from 'react-router';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -16,6 +18,27 @@ beforeEach(() => {
 });
 
 describe('document upload lifecycle', () => {
+  it.each([
+    { lang: 'en', destination: '/en/protected/documents', id: uploadId },
+    { lang: 'fr', destination: '/fr/protege/documents', id: uploadId },
+    { lang: 'en', destination: '/en/protected/documents', id: null },
+    { lang: 'fr', destination: '/fr/protege/documents', id: null },
+    { lang: 'en', destination: '/en/protected/documents', id: 'invalid-id' },
+    { lang: 'fr', destination: '/fr/protege/documents', id: 'invalid-id' },
+  ])('replaces an unavailable $lang upload flow ($id) with the listing without retaining the expired URL', async ({ lang, destination, id }) => {
+    vi.mocked(session.has).mockReturnValue(false);
+    const router = createMemoryRouter([{ path: '/before' }, { path: '/expired', loader: () => loadDocumentUploadState({ id, params: { lang }, session }) }, { path: destination }], { initialEntries: ['/before', '/expired'], initialIndex: 1 });
+
+    try {
+      await vi.waitFor(() => expect(router.state.location.pathname).toBe(destination));
+      expect(router.state.historyAction).toBe('REPLACE');
+      await router.navigate(-1);
+      expect(router.state.location.pathname).toBe('/before');
+    } finally {
+      router.dispose();
+    }
+  });
+
   it('starts initialized with no document metadata', () => {
     expect(startDocumentUploadState({ id: uploadId, session })).toEqual({ id: uploadId, status: 'initialized', documents: [] });
   });

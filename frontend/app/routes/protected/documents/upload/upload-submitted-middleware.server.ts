@@ -1,23 +1,24 @@
-import { redirect } from 'react-router';
+import { replace } from 'react-router';
 
 import type { Route } from './+types/upload-submitted';
 
 import { appContext } from '~/.server/context';
-import { getDocumentUploadFormUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { getPathById } from '~/utils/route-utils';
 
 /**
  * Prevents open upload flows from reaching the confirmation loader.
  * @param args - The route context and localized flow parameters.
  * @param next - Runs downstream middleware and the confirmation loader for a finished flow.
  * @returns The downstream result for a finished flow.
- * @throws A form redirect for an open flow, or HTTP 404 for a missing or invalid flow.
+ * @throws A replacement redirect to the localized documents listing for an open or unavailable flow.
  */
 const unfinishedUploadMiddleware: Route.MiddlewareFunction = async ({ context, params }, next) => {
   const { session } = context.get(appContext);
   const uploadState = loadDocumentUploadState({ id: params.id, params, session });
 
   if (uploadState.status !== 'finished') {
-    throw redirect(getDocumentUploadFormUrl(uploadState.id, params));
+    throw replace(getPathById('protected/documents/index', params));
   }
 
   return await next();

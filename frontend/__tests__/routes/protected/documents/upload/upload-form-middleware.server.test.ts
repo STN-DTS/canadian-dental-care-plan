@@ -32,11 +32,16 @@ beforeEach(() => {
 });
 
 describe('upload form lifecycle middleware', () => {
-  it.each(['GET', 'POST'])('redirects a finished flow before %s processing', async (method) => {
+  it.each(['GET', 'POST'])('replaces a finished form with confirmation before %s processing', async (method) => {
     vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'finished', documents: [] });
     const next = vi.fn();
 
-    await expect(guard(createArgs(method), next)).rejects.toMatchObject({ status: 302 });
+    const response = await Promise.resolve(guard(createArgs(method), next)).catch((error: unknown) => error);
+    expect(response).toBeInstanceOf(Response);
+    if (!(response instanceof Response)) throw new Error('Expected a confirmation redirect');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toBe(`/en/protected/documents/upload/${uploadId}/submitted`);
+    expect(response.headers.get('X-Remix-Replace')).toBe('true');
     expect(next).not.toHaveBeenCalled();
   });
 

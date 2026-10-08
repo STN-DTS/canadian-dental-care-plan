@@ -1,4 +1,4 @@
-import { data, redirect } from 'react-router';
+import { data, replace } from 'react-router';
 
 import type { TFunction } from 'i18next';
 import * as z from 'zod';
@@ -70,7 +70,7 @@ function finishAction({ formAction, formData, params, session, uploadState }: Fi
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: uploadedDocuments } });
   finishDocumentUploadState({ id: uploadState.id, session, params });
-  return redirect(getDocumentUploadSubmittedUrl(uploadState.id, params));
+  return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }
 
 type UploadActionParams = {
@@ -149,7 +149,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
   }
 
   finishDocumentUploadState({ id: uploadState.id, session, params });
-  return redirect(getDocumentUploadSubmittedUrl(uploadState.id, params));
+  return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }
 
 /**

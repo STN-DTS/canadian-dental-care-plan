@@ -1,11 +1,11 @@
-import { RouterContextProvider, data } from 'react-router';
+import { RouterContextProvider, replace } from 'react-router';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { appContext } from '~/.server/context';
 import type { AppContext } from '~/.server/context';
-import { getDocumentUploadFormUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { Session } from '~/.server/web/session';
 import { middleware } from '~/routes/protected/documents/upload/upload-submitted-middleware.server';
 
@@ -45,31 +45,32 @@ describe('submitted upload lifecycle middleware', () => {
   });
 
   it.each([
-    { lang: 'en', status: 'initialized' as const },
-    { lang: 'fr', status: 'initialized' as const },
-    { lang: 'en', status: 'partial-upload' as const },
-    { lang: 'fr', status: 'partial-upload' as const },
-  ])('redirects an open $status flow to the $lang form', async ({ lang, status }) => {
+    { lang: 'en', status: 'initialized' as const, destination: '/en/protected/documents' },
+    { lang: 'fr', status: 'initialized' as const, destination: '/fr/protege/documents' },
+    { lang: 'en', status: 'partial-upload' as const, destination: '/en/protected/documents' },
+    { lang: 'fr', status: 'partial-upload' as const, destination: '/fr/protege/documents' },
+  ])('replaces an open $status confirmation URL with the $lang listing', async ({ lang, status, destination }) => {
     vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status, documents: status === 'partial-upload' ? [uploadedDocument] : [] });
     const args = createArgs(lang);
     const next = vi.fn();
 
     const response = await Promise.resolve(guard(args, next)).catch((error: unknown) => error);
     expect(response).toBeInstanceOf(Response);
-    if (!(response instanceof Response)) throw new Error('Expected an upload form redirect');
+    if (!(response instanceof Response)) throw new Error('Expected a documents listing redirect');
     expect(response.status).toBe(302);
-    expect(response.headers.get('Location')).toBe(getDocumentUploadFormUrl(uploadId, args.params));
+    expect(response.headers.get('Location')).toBe(destination);
+    expect(response.headers.get('X-Remix-Replace')).toBe('true');
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('propagates a missing-flow response without invoking the loader', async () => {
-    const notFound = data(null, { status: 404 });
+  it('propagates missing-flow recovery without invoking the loader', async () => {
+    const recovery = replace('/en/protected/documents');
     vi.mocked(loadDocumentUploadState).mockImplementation(() => {
-      throw notFound;
+      throw recovery;
     });
     const next = vi.fn();
 
-    await expect(guard(createArgs('en'), next)).rejects.toBe(notFound);
+    await expect(guard(createArgs('en'), next)).rejects.toBe(recovery);
     expect(next).not.toHaveBeenCalled();
   });
 });

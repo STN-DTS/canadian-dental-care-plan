@@ -1,4 +1,4 @@
-import { data } from 'react-router';
+import { data, replace } from 'react-router';
 
 import * as z from 'zod';
 
@@ -55,6 +55,7 @@ interface LoadStateArgs {
  * Loads document upload state.
  * @param args - The arguments.
  * @returns The loaded state.
+ * @throws A replacement redirect to the localized documents listing if the ID or flow is unavailable.
  */
 export function loadDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {
   const log = createLogger('document-upload-route-helpers/loadDocumentUploadState');
@@ -63,15 +64,15 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
   const parsedId = idSchema.safeParse(id);
 
   if (!parsedId.success) {
-    log.warn('Invalid "id" query string format; redirecting to [%s]; id: [%s], sessionId: [%s]', documentsIndexUrl, id, session.id);
-    throw data(null, { status: 404 });
+    log.warn('Invalid document upload flow ID; redirecting to [%s]; id: [%s], sessionId: [%s]', documentsIndexUrl, id, session.id);
+    throw replace(documentsIndexUrl);
   }
 
   const sessionKey = getSessionKey(parsedId.data);
 
   if (!session.has(sessionKey)) {
     log.warn('Document upload session state has not been found; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', documentsIndexUrl, sessionKey, session.id);
-    throw data(null, { status: 404 });
+    throw replace(documentsIndexUrl);
   }
 
   return session.get(sessionKey);

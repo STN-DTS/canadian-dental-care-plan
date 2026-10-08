@@ -1,4 +1,4 @@
-import { redirect } from 'react-router';
+import { replace } from 'react-router';
 
 import type { Route } from './+types/upload-form';
 
@@ -10,14 +10,14 @@ import { getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.serve
  * @param args - The route context and localized flow parameters.
  * @param next - Runs downstream middleware and the route handler for an open flow.
  * @returns The downstream result for an open flow.
- * @throws A confirmation redirect for a finished flow, or HTTP 404 for a missing or invalid flow.
+ * @throws A replacement redirect to confirmation for a finished flow, or to the listing for an unavailable flow.
  */
 const finishedUploadMiddleware: Route.MiddlewareFunction = async ({ context, params }, next) => {
   const { session } = context.get(appContext);
   const uploadState = loadDocumentUploadState({ id: params.id, params, session });
 
   if (uploadState.status === 'finished') {
-    throw redirect(getDocumentUploadSubmittedUrl(uploadState.id, params));
+    throw replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
   }
 
   return await next();

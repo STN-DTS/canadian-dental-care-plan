@@ -141,6 +141,7 @@ describe('action', () => {
     expect(finishDocumentUploadState).toHaveBeenCalledWith({ id: uploadId, session, params: args.params });
     expect(response).toBeInstanceOf(Response);
     expect((response as Response).headers.get('Location')).toBe(submittedUrl);
+    expect((response as Response).headers.get('X-Remix-Replace')).toBe('true');
     expect(getFiles).not.toHaveBeenCalled();
     expect(validateUploadedFiles).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
@@ -403,5 +404,6 @@ describe('action', () => {
     assert(result instanceof Response);
     expect(result.status).toBe(302);
     expect(result.headers.get('Location')).toBe(submittedUrl);
+    expect(result.headers.get('X-Remix-Replace')).toBe('true');
   });
 });
