@@ -168,6 +168,7 @@ describe('useDocumentUploadForm', () => {
       throw new Error('Expected file selection to submit multipart form data');
     }
     expect.soft(selectionFormData.get('current_file_count')).toBe('2');
+    expect.soft(selectionFormData.getAll('existing_file_object')).toEqual([proof, receipt]);
 
     act(() => {
       result.current.handleFileChange([...result.current.documentUploadFormState.pendingDocuments, { id: 'file-3', file: extra }]);

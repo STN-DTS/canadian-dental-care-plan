@@ -61,6 +61,7 @@ const ns = {
     selectOne: "Select one",
     returnDashboard: "Return to dashboard",
     errorMessage: {
+      duplicateFile: "The file “{{filename}}” matches a file you've already selected or uploaded. Please choose another file.",
       fileRequired: "You must upload a file before clicking “Submit”.",
       documentTypeRequired: "Select a document type for file “{{filename}}”.",
       invalidFileType: "The file type you're trying to upload (“{{filename}}”) is not supported. You can upload a file in one of the following formats: {{extensions}}",

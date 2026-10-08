@@ -29,7 +29,7 @@ This document describes the current Canadian Dental Care Plan (CDCP) protected d
 The feature is a protected MSCA workflow for submitting evidentiary documents for the authenticated applicant. The browser sends file data to the CDCP server, which validates and submits files to EWDU:
 
 1. The user selects files and a document type for each file.
-2. The CDCP server validates the submission and computes a SHA-256 hash for each file. Duplicate files are allowed.
+2. The CDCP server validates the submission and computes a SHA-256 hash for each file. Files with matching filenames, sizes, and contents are rejected as duplicates.
 3. The server checks each file extension and detected content type.
 4. The server sends each file to EWDU through the Interop API `Scan` operation.
 5. Only after every file passes scanning does the server send the files to EWDU through `ScanAndSave`.
@@ -126,10 +126,10 @@ Validation rules include:
 - The filename extension must be allowed.
 - The file size must not exceed the configured maximum.
 - A document type is required for every file.
-- Duplicate files are allowed and submitted separately, including files with identical names and contents. The upload route does not call the retained duplicate-detection utility.
+- File selection rejects duplicates within the new selection and against all listed pending and uploaded documents. A duplicate has the same filename, size, and SHA-256 content hash. Final upload validation repeats the duplicate check within the submitted batch in both the browser and on the server.
 - The file content is inspected with `file-type` when scanning. If no type is detected, only a declared `text/plain` file is accepted. A detected MIME type must map to one of the configured extensions.
 
-The server reads each file while parsing the submission, computes its SHA-256 hash, and converts the binary to base64 for downstream requests. The hash is not used to reject duplicate files.
+The server reads each file while parsing the submission, computes its SHA-256 hash for duplicate validation, and converts the binary to base64 for downstream requests.
 
 ### 2. EWDU processing
 
@@ -214,7 +214,7 @@ The query filters by selected client ID and active status, expands client and do
 The application does not generate a business filename. It preserves the original `File.name` supplied by the browser when the user selects or drops a file.
 
 - `file_id` is an internal identifier generated with `crypto.randomUUID()`. It tracks the selected file in the UI, error responses, and confirmation list; it is not sent to EWDU or Power Platform.
-- The original filename is used for extension validation and EWDU requests. Duplicate filenames are allowed.
+- The original filename is used for extension validation, duplicate detection, and EWDU requests. Files with the same name are allowed when their contents differ.
 - The server does not rename, sanitize, or add a timestamp to the filename before sending it downstream.
 - The upload timestamp is generated separately by the server. It is not derived from the filename or the file's local creation date.
 
@@ -232,7 +232,7 @@ The following values are used by the CDCP server but are not included in EWDU or
 
 - File size, used for the maximum-size check.
 - Declared MIME type and detected file type, used for content validation.
-- SHA-256 file hash, computed during validation but not used for duplicate detection. The duplicate-detection utility remains available for future use.
+- SHA-256 file hash, used with filename and size to detect duplicates during validation.
 - CSRF token, used to protect the submission.
 - Internal `file_id`, used to associate UI errors with selected files.
 
@@ -307,7 +307,7 @@ The current implementation is batch-oriented but not transactional across system
 - Any scan failure: no file is sent to `ScanAndSave`.
 - Upload failure for one file: other concurrent EWDU uploads may already have succeeded. The application returns errors and does not show a success confirmation for the batch.
 - Power Platform ingestion is asynchronous. DTS can show EWDU submission confirmation before records appear in the documents list. Ingestion failures and retries belong to the Power Platform background process.
-- After a partial upload failure, the form retains successful files separately and retries only pending files. Both collections count toward the file-selection limit. The upload contract has no idempotency key, so independently resubmitting a successful file can still create a duplicate.
+- After a partial upload failure, the form retains successful files separately and retries only pending files. Both collections count toward the file-selection limit and are checked when adding files. The upload contract has no idempotency key, so independently resubmitting a successful file in a new upload flow can still create a duplicate.
 - The immediate confirmation uses session data. The documents page retrieves records from Power Platform when the user opens the list; newly submitted files can appear after background ingestion completes.
 
 These behaviors are important acceptance criteria for any EWDU or Power Platform change. Changes to background ingestion require updates to Power Platform monitoring and operations. DTS changes must preserve EWDU submission and explain the delay before documents appear in the list.

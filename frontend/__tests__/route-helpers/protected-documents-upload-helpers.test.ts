@@ -21,6 +21,7 @@ const tFunctionMock = mockFn<TFunction<'documents'>>().mockImplementation((selec
   const selectorTranslationMock: SelectorTranslationMock = {
     upload: {
       errorMessage: {
+        duplicateFile: 'duplicate file',
         documentTypeRequired: 'document type required',
         fileRequired: 'file required',
         fileTooLarge: 'file too large',
@@ -34,22 +35,58 @@ const tFunctionMock = mockFn<TFunction<'documents'>>().mockImplementation((selec
 
 describe('protected-documents-upload-helpers', () => {
   describe('validateFileSelection', () => {
-    it('should allow selecting duplicate files', () => {
+    it('should reject duplicate files within a selection', async () => {
       const formData = createFileSelectionFormData([new File(['same content'], 'document.txt'), new File(['same content'], 'document.txt')]);
 
-      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
+        success: false,
+        validationId: 'validation-id',
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['duplicate file'],
+            },
+          },
+        },
+      });
+    });
+
+    it('should reject a duplicate of an existing listed file', async () => {
+      const formData = createFileSelectionFormData([new File(['same content'], 'document.txt')], 2);
+      formData.append('existing_file_object', new File(['pending'], 'pending.txt'));
+      formData.append('existing_file_object', new File(['same content'], 'document.txt'));
+
+      const actual = await validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: false,
+        validationId: 'validation-id',
+        errors: { errors: [], properties: { files: { errors: ['duplicate file'] } } },
+      });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), { filename: 'document.txt' });
+    });
+
+    it.each([
+      { name: 'renamed.txt', contents: 'same content' },
+      { name: 'document.txt', contents: 'new contents' },
+    ])('should allow a file with a different name or content: $name, $contents', async ({ name, contents }) => {
+      const formData = createFileSelectionFormData([new File([contents], name)], 1);
+      formData.append('existing_file_object', new File(['same content'], 'document.txt'));
+
+      await expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock })).resolves.toEqual({
         success: true,
         validationId: 'validation-id',
         errors: undefined,
       });
     });
 
-    it('should reject selections exceeding maximum file count', () => {
+    it('should reject selections exceeding maximum file count', async () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.txt')], 3);
 
-      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -65,10 +102,10 @@ describe('protected-documents-upload-helpers', () => {
       });
     });
 
-    it('should reject unsupported file extensions', () => {
+    it('should reject unsupported file extensions', async () => {
       const formData = createFileSelectionFormData([new File(['content'], 'document.pdf')]);
 
-      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -85,11 +122,11 @@ describe('protected-documents-upload-helpers', () => {
       expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ context: 'fileSelection' }));
     });
 
-    it('should reject files exceeding maximum size', () => {
+    it('should reject files exceeding maximum size', async () => {
       const oversizedFile = new File([new Uint8Array(1024 * 1024 + 1)], 'document.txt');
       const formData = createFileSelectionFormData([oversizedFile]);
 
-      const actual = validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
+      const actual = await validateFileSelection({ formData, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -105,16 +142,16 @@ describe('protected-documents-upload-helpers', () => {
       });
     });
 
-    it('should reject missing validation ID', () => {
+    it('should reject missing validation ID', async () => {
       const formData = createFileSelectionFormData([]);
       formData.delete('_validation_id');
 
-      expect(() => validateFileSelection({ formData, locale: 'en', t: tFunctionMock })).toThrow();
+      await expect(validateFileSelection({ formData, locale: 'en', t: tFunctionMock })).rejects.toThrow();
     });
   });
 
   describe('validateUploadForm', () => {
-    it('should allow submitting files including duplicates', async () => {
+    it('should reject duplicate files in the submitted batch', async () => {
       const formData = createUploadFormData([
         { id: 'first', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
         { id: 'second', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
@@ -122,30 +159,33 @@ describe('protected-documents-upload-helpers', () => {
       ]);
 
       await expect(validateUploadForm({ formData, locale: 'en', t: tFunctionMock })).resolves.toEqual({
-        data: {
-          files: {
-            first: {
-              documentType: 'receipt',
-              file: expect.toSatisfy((file) => file instanceof File && file.name === 'document.txt'),
-              fileBuffer: expect.any(ArrayBuffer),
-              fileHash: 'a636bd7cd42060a4d07fa1bfbcc010eb7794c2ba721e1e3e4c20335a15b66eaf',
-            },
-            second: {
-              documentType: 'receipt',
-              file: expect.toSatisfy((file) => file instanceof File && file.name === 'document.txt'),
-              fileBuffer: expect.any(ArrayBuffer),
-              fileHash: 'a636bd7cd42060a4d07fa1bfbcc010eb7794c2ba721e1e3e4c20335a15b66eaf',
-            },
-            third: {
-              documentType: 'identity-document',
-              file: expect.toSatisfy((file) => file instanceof File && file.name === 'new-file.txt'),
-              fileBuffer: expect.any(ArrayBuffer),
-              fileHash: '0eb88758c79815e61f7c3304ea43340e34773afb8b8edf561a26a40dc36fec2c',
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                second: { errors: [], properties: { file: { errors: ['duplicate file'] } } },
+              },
             },
           },
         },
-        success: true,
       });
+    });
+
+    it.each([
+      { name: 'renamed.txt', contents: 'same content' },
+      { name: 'document.txt', contents: 'new contents' },
+    ])('should allow submitting files with a different name or content: $name, $contents', async ({ name, contents }) => {
+      const formData = createUploadFormData([
+        { id: 'first', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
+        { id: 'second', file: new File([contents], name), documentType: 'receipt' },
+      ]);
+
+      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+
+      expect(actual.success).toBe(true);
     });
 
     it('should reject an empty upload', async () => {

@@ -3,7 +3,7 @@ import * as z from 'zod';
 
 import { expectDefined } from '~/utils/assert-utils';
 import { getClientEnv } from '~/utils/env-utils';
-import { getFileExtension, hashFileBuffer } from '~/utils/file-utils';
+import { findDuplicateFile, getFileExtension, hashFileBuffer } from '~/utils/file-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 type DocumentUploadSchema = ReturnType<typeof createDocumentUploadSchema>;
@@ -26,7 +26,7 @@ type ValidateFileSelectionResult = ValidateFileSelectionSuccess | ValidateFileSe
  * @param args - Form data, locale, and translator used for validation.
  * @returns Validation ID and file selection errors, when present.
  */
-export function validateFileSelection({ formData, locale, t }: ValidateFileSelectionArgs): ValidateFileSelectionResult {
+export async function validateFileSelection({ formData, locale, t }: ValidateFileSelectionArgs): Promise<ValidateFileSelectionResult> {
   const validationId = z.string().parse(formData.get('_validation_id'));
   const incomingFiles = formData.getAll('file_object') as File[];
   const fileSelectionSchema = createFileSelectionSchema({ locale, t });
@@ -36,8 +36,18 @@ export function validateFileSelection({ formData, locale, t }: ValidateFileSelec
     files: incomingFiles,
   });
 
-  if (!validationResult.success) {
-    const errorMessage = expectDefined(validationResult.error.issues[0], 'Expected file selection validation issue').message;
+  let errorMessage: string | undefined;
+  if (validationResult.success) {
+    const existingFiles = formData.getAll('existing_file_object') as File[];
+    const duplicateFile = await findDuplicateFile([...existingFiles, ...incomingFiles]);
+    if (duplicateFile) {
+      errorMessage = t(($) => $.upload.errorMessage.duplicateFile, { filename: duplicateFile.name });
+    }
+  } else {
+    errorMessage = expectDefined(validationResult.error.issues[0], 'Expected file selection validation issue').message;
+  }
+
+  if (errorMessage !== undefined) {
     return {
       success: false,
       validationId,
@@ -225,6 +235,17 @@ function createDocumentUploadSchema({ locale, t }: CreateDocumentUploadSchemaArg
       .refine(
         (value) => Object.keys(value).length <= DOCUMENT_UPLOAD_MAX_FILE_COUNT,
         t(($) => $.upload.errorMessage.tooManyFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT }),
-      ),
+      )
+      .superRefine((files, ctx) => {
+        const seenFiles = new Set<string>();
+        for (const [id, { file, fileHash }] of Object.entries(files)) {
+          const fileKey = JSON.stringify([file.name, file.size, fileHash]);
+          if (seenFiles.has(fileKey)) {
+            ctx.addIssue({ code: 'custom', message: t(($) => $.upload.errorMessage.duplicateFile, { filename: file.name }), path: [id, 'file'] });
+          } else {
+            seenFiles.add(fileKey);
+          }
+        }
+      }),
   });
 }

@@ -85,7 +85,7 @@ const validUploadFormData = () => createUploadFormData([{ id: 'file-1', file: ne
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn().mockReturnValue(uploadId) });
-  vi.mocked(validateFileSelection).mockReturnValue({ success: true, validationId: 'validation-1', errors: undefined });
+  vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
   vi.mocked(validateUploadForm).mockResolvedValue({
     success: true,
     data: {

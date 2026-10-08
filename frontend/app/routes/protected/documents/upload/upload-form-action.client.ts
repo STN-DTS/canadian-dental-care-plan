@@ -18,7 +18,7 @@ export async function clientAction({ request, url, serverAction }: Route.ClientA
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.addFiles) {
-    const selectionValidationResult = validateFileSelection({ formData, locale, t });
+    const selectionValidationResult = await validateFileSelection({ formData, locale, t });
     const validationId = selectionValidationResult.validationId;
 
     if (!selectionValidationResult.success) {

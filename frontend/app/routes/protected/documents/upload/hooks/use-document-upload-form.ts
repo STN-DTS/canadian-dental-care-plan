@@ -45,6 +45,9 @@ export function useDocumentUploadForm() {
       formData.set('_action', FORM_ACTION.addFiles);
       formData.set('_validation_id', validationId);
       formData.set('current_file_count', currentFileCount.toString());
+      for (const { file } of [...documentUploadFormState.pendingDocuments, ...documentUploadFormState.uploadedDocuments]) {
+        formData.append('existing_file_object', file);
+      }
       for (const file of files) {
         formData.append('file_object', file);
       }
@@ -52,7 +55,7 @@ export function useDocumentUploadForm() {
       void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
       return false;
     },
-    [fetcher, currentFileCount],
+    [fetcher, currentFileCount, documentUploadFormState],
   );
 
   const handleFileChange = useCallback(

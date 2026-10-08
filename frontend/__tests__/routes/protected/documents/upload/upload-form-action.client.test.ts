@@ -66,7 +66,7 @@ const validUploadFormData = () => createUploadFormData([{ id: 'file-1', file: ne
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn().mockReturnValue(uploadId) });
-  vi.mocked(validateFileSelection).mockReturnValue({ success: true, validationId: 'validation-1', errors: undefined });
+  vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
   vi.mocked(validateUploadForm).mockResolvedValue({
     success: true,
     data: {
@@ -93,7 +93,7 @@ afterEach(() => {
 
 describe('clientAction', () => {
   it('returns tagged errors for invalid file selection without calling the server action', async () => {
-    vi.mocked(validateFileSelection).mockReturnValue({
+    vi.mocked(validateFileSelection).mockResolvedValue({
       success: false,
       validationId: 'validation-1',
       errors: { errors: [], properties: { files: { errors: ['invalid file type'] } } },

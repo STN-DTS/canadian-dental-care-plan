@@ -61,6 +61,7 @@ const ns = {
     selectOne: "Sélectionnez une option",
     returnDashboard: "Retour au tableau de bord",
     errorMessage: {
+      duplicateFile: "Le fichier «\u00A0{{filename}}\u00A0» correspond à un fichier que vous avez déjà sélectionné ou téléversé. Veuillez choisir un autre fichier.",
       fileRequired: "Vous devez ajouter un fichier avant de cliquer sur «\u00A0Soumettre\u00A0».",
       documentTypeRequired: "Sélectionnez un type de document pour le fichier «\u00A0{{filename}}\u00A0».",
       invalidFileType: "Le type de fichier que vous tentez de téléverser («\u00A0{{filename}}\u00A0») n'est pas pris en charge. Vous pouvez téléverser un fichier dans l'un des formats suivants\u00A0: {{extensions}}",
