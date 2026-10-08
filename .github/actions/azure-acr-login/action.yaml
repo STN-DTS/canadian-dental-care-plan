@@ -1,0 +1,41 @@
+name: Azure ACR login
+description: Authenticate to Azure and Azure Container Registry
+
+inputs:
+  azure-client-id:
+    description: Azure service principal client ID
+    required: true
+  azure-client-secret:
+    description: Azure service principal client secret
+    required: true
+  azure-tenant-id:
+    description: Azure tenant ID
+    required: true
+  azure-subscription-id:
+    description: Azure subscription ID
+    required: true
+  acr-domain:
+    description: Azure Container Registry domain
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to Azure and setup ACR credentials
+      shell: bash
+      env:
+        ACR_DOMAIN: ${{ inputs.acr-domain }}
+        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
+        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+        AZURE_SUBSCRIPTION_ID: ${{ inputs.azure-subscription-id }}
+        AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
+      run: |
+        set -euo pipefail
+
+        az login --service-principal \
+          --tenant "$AZURE_TENANT_ID" \
+          --username "$AZURE_CLIENT_ID" \
+          --password "$AZURE_CLIENT_SECRET"
+
+        az acr login --name "${ACR_DOMAIN%%.*}" \
+          --subscription "$AZURE_SUBSCRIPTION_ID"
