@@ -6,6 +6,7 @@ import { Link, createRoutesStub, redirect } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import { buttonSizeStyles, buttonVariantStyles } from '~/components/buttons';
 import { useClientEnv } from '~/hooks/use-client-env';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
@@ -27,7 +28,9 @@ beforeEach(() => {
 });
 
 function setDocuments(documents: ReadonlyArray<UploadDocument>) {
-  vi.mocked(useDocumentUploadForm).mockReturnValue(mock<UploadForm>({ documentUploadFormState: { documents } }));
+  const form = mock<UploadForm>({ documentUploadFormState: { documents } });
+  vi.mocked(useDocumentUploadForm).mockReturnValue(form);
+  return form;
 }
 
 function createDocument(id: string, status: UploadDocument['status']): UploadDocument {
@@ -54,6 +57,46 @@ function renderForm(language = 'en') {
 }
 
 describe('DocumentUploadForm', () => {
+  it.each(['keep', 'escape', 'close'])('keeps a pending file when removal is cancelled with %s', async (action) => {
+    const user = userEvent.setup();
+    const form = setDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+    const removeButton = within(screen.getByRole('listitem', { name: 'pending.txt' })).getByRole('button', { name: 'upload.remove' });
+
+    await user.click(removeButton);
+
+    const dialog = await screen.findByRole('dialog', { name: 'upload.removeFileConfirmation.title' });
+    expect(dialog).toHaveClass('sm:max-w-md');
+    expect(dialog).toHaveAccessibleDescription(/pending\.txt/);
+    expect(form.handleFileChange).not.toHaveBeenCalled();
+    const keepButton = within(dialog).getByRole('button', { name: 'upload.removeFileConfirmation.keep' });
+    expect(keepButton).toHaveClass(buttonVariantStyles.secondary, buttonSizeStyles.sm);
+    await waitFor(() => expect(keepButton).toHaveFocus());
+    if (action === 'escape') await user.keyboard('{Escape}');
+    else await user.click(action === 'keep' ? keepButton : within(dialog).getByRole('button', { name: 'dialog.close' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(form.handleFileChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('listitem', { name: 'pending.txt' })).toBeInTheDocument();
+    await waitFor(() => expect(removeButton).toHaveFocus());
+  });
+
+  it('removes only the selected pending file after explicit confirmation', async () => {
+    const user = userEvent.setup();
+    const form = setDocuments([createDocument('uploaded', 'uploaded'), createDocument('pending', 'pending'), createDocument('remaining', 'pending')]);
+    renderForm();
+
+    await user.click(within(screen.getByRole('listitem', { name: 'pending.txt' })).getByRole('button', { name: 'upload.remove' }));
+    const dialog = await screen.findByRole('dialog');
+    const confirmButton = within(dialog).getByRole('button', { name: 'upload.removeFileConfirmation.confirm' });
+    expect(confirmButton).toHaveClass(buttonVariantStyles.primary, buttonSizeStyles.sm);
+    await user.click(confirmButton);
+
+    expect(form.handleFileChange).toHaveBeenCalledExactlyOnceWith([expect.objectContaining({ id: 'uploaded' }), expect.objectContaining({ id: 'remaining' })]);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(within(screen.getByRole('listitem', { name: 'uploaded.txt' })).queryByRole('button', { name: 'upload.remove' })).not.toBeInTheDocument();
+  });
+
   it('keeps pending files when the user cancels navigation and restores focus', async () => {
     const user = userEvent.setup();
     setDocuments([createDocument('uploaded', 'uploaded'), createDocument('pending', 'pending')]);

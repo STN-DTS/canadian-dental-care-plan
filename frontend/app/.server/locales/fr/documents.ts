@@ -59,6 +59,12 @@ const ns = {
     addFile: "Ajouter un fichier",
     fileName: "Nom du fichier",
     remove: "Supprimer le fichier",
+    removeFileConfirmation: {
+      title: "Supprimer ce fichier?",
+      description: "Supprimer «\u00A0{{filename}}\u00A0» de votre sélection? Vous devrez le sélectionner à nouveau pour le téléverser.",
+      keep: "Conserver le fichier",
+      confirm: "Supprimer le fichier",
+    },
     documentType: "Type de document",
     documentTypeUnavailable: "Type de document non disponible",
     status: "Statut",

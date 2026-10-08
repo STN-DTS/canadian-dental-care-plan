@@ -59,6 +59,12 @@ const ns = {
     addFile: "Upload file",
     fileName: "File name",
     remove: "Remove file",
+    removeFileConfirmation: {
+      title: "Remove this file?",
+      description: "Remove “{{filename}}” from your selection? You will need to select it again to upload it.",
+      keep: "Keep file",
+      confirm: "Remove file",
+    },
     documentType: "Document Type",
     documentTypeUnavailable: "Document type unavailable",
     status: "Status",
