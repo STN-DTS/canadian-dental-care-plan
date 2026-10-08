@@ -1,12 +1,14 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-import { createRoutesStub } from 'react-router';
+import { Link, createRoutesStub, redirect } from 'react-router';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { useClientEnv } from '~/hooks/use-client-env';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
+import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
@@ -36,8 +38,14 @@ function renderForm(language = 'en') {
   const RoutesStub = createRoutesStub([
     {
       path: '/:lang/protected/documents/upload/:id',
-      Component: () => <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />,
+      Component: () => (
+        <>
+          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />
+          <Link to="/destination">Leave upload</Link>
+        </>
+      ),
     },
+    { path: '/destination', Component: () => <h1>Destination</h1> },
   ]);
   return {
     ...render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />),
@@ -46,6 +54,120 @@ function renderForm(language = 'en') {
 }
 
 describe('DocumentUploadForm', () => {
+  it('keeps pending files when the user cancels navigation and restores focus', async () => {
+    const user = userEvent.setup();
+    setDocuments([createDocument('uploaded', 'uploaded'), createDocument('pending', 'pending')]);
+    renderForm();
+    const leaveLink = screen.getByRole('link', { name: 'Leave upload' });
+
+    await user.click(leaveLink);
+
+    const dialog = await screen.findByRole('dialog', { name: 'upload.unsavedChanges.title' });
+    expect(dialog).toHaveAccessibleDescription('upload.unsavedChanges.description');
+    const stayButton = within(dialog).getByRole('button', { name: 'upload.unsavedChanges.stay' });
+    await waitFor(() => expect(stayButton).toHaveFocus());
+    await user.click(stayButton);
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: 'Destination' })).not.toBeInTheDocument();
+    expect(screen.getByRole('listitem', { name: 'pending.txt' })).toBeInTheDocument();
+    await waitFor(() => expect(leaveLink).toHaveFocus());
+  });
+
+  it('cancels navigation when the dialog is dismissed with Escape', async () => {
+    const user = userEvent.setup();
+    setDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+
+    await user.click(screen.getByRole('link', { name: 'Leave upload' }));
+    await screen.findByRole('dialog');
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: 'Destination' })).not.toBeInTheDocument();
+    expect(screen.getByRole('listitem', { name: 'pending.txt' })).toBeInTheDocument();
+  });
+
+  it('keeps pending files when the dialog close button is used', async () => {
+    const user = userEvent.setup();
+    setDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+
+    await user.click(screen.getByRole('link', { name: 'Leave upload' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'dialog.close' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('listitem', { name: 'pending.txt' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Destination' })).not.toBeInTheDocument();
+  });
+
+  it('proceeds to the blocked destination only after explicit confirmation', async () => {
+    const user = userEvent.setup();
+    setDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+
+    await user.click(screen.getByRole('link', { name: 'Leave upload' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'upload.unsavedChanges.leave' }));
+
+    expect(await screen.findByRole('heading', { name: 'Destination' })).toBeInTheDocument();
+  });
+
+  it.each(['empty', 'uploaded-only'])('allows navigation without a dialog when the form is %s', async (caseName) => {
+    const user = userEvent.setup();
+    setDocuments(caseName === 'empty' ? [] : [createDocument('uploaded', 'uploaded')]);
+    renderForm();
+
+    await user.click(screen.getByRole('link', { name: 'Leave upload' }));
+
+    expect(await screen.findByRole('heading', { name: 'Destination' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it.each(['empty', 'uploaded-only', 'pending'])('guards browser unloads only when documents are pending: %s', (caseName) => {
+    setDocuments(caseName === 'empty' ? [] : [createDocument('document', caseName === 'pending' ? 'pending' : 'uploaded')]);
+    renderForm();
+    const event = new Event('beforeunload', { cancelable: true });
+
+    window.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(caseName === 'pending');
+  });
+
+  it('does not block the confirmation redirect after a successful upload submission', async () => {
+    const user = userEvent.setup();
+    const documents = [createDocument('pending', 'pending')];
+    const RoutesStub = createRoutesStub([
+      {
+        path: '/:lang/protected/documents/upload/:id',
+        Component: function UploadRoute() {
+          const fetcher = useDocumentUploadFetcher();
+          vi.mocked(useDocumentUploadForm).mockReturnValue(
+            mock<UploadForm>({
+              documentUploadFormState: { documents },
+              submitForm: (form) => {
+                void fetcher.submit(form, { method: 'post' });
+              },
+            }),
+          );
+          return <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />;
+        },
+        action: () => redirect('/destination'),
+      },
+      { path: '/destination', Component: () => <h1>Destination</h1> },
+    ]);
+    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
+
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+
+    expect(await screen.findByRole('heading', { name: 'Destination' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('names and describes the uploaded-only region and places confirmation inside it', () => {
     setDocuments([createDocument('first', 'uploaded'), createDocument('last', 'uploaded')]);
     renderForm();

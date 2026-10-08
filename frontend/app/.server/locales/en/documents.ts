@@ -66,6 +66,12 @@ const ns = {
     submit: "Submit",
     submitRemaining: "Submit remaining files",
     viewSubmissionConfirmation: "View submission confirmation",
+    unsavedChanges: {
+      title: "Leave this page?",
+      description: "Files that have not finished uploading may be lost if you leave this page. Files already uploaded will remain submitted.",
+      stay: "Stay on this page",
+      leave: "Leave page",
+    },
     selectOne: "Select one",
     returnDashboard: "Return to dashboard",
     errorMessage: {

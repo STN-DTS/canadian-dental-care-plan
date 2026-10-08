@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { useParams } from 'react-router';
 
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, ButtonLink } from '~/components/buttons';
 import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/dialog';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { FileUpload, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
@@ -15,7 +16,7 @@ import { InputError } from '~/components/input-error';
 import { InputLegend } from '~/components/input-legend';
 import type { InputOptionProps } from '~/components/input-option';
 import { LoadingButton } from '~/components/loading-button';
-import { useClientEnv, useFetcherSubmissionState } from '~/hooks';
+import { useClientEnv, useFetcherSubmissionState, usePromptOnUnsavedChanges } from '~/hooks';
 import { PendingDocumentUploadItem } from '~/routes/protected/documents/upload/components/pending-document-upload-item';
 import { UploadedDocumentUploadItem } from '~/routes/protected/documents/upload/components/uploaded-document-upload-item';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
@@ -42,6 +43,8 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const pendingFileCount = filesWithTypes.length - uploadedFileCount;
   const hasUploadedDocuments = uploadedFileCount > 0;
   const hasUploadedOnly = hasUploadedDocuments && pendingFileCount === 0;
+  const blocker = usePromptOnUnsavedChanges(pendingFileCount > 0);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
@@ -181,6 +184,43 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
           </div>
         )}
       </fetcher.Form>
+      <Dialog
+        open={blocker.state === 'blocked'}
+        onOpenChange={(open) => {
+          if (!open && blocker.state === 'blocked') blocker.reset();
+        }}
+      >
+        <DialogContent
+          onOpenAutoFocus={() => {
+            returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t(($) => $.upload.unsavedChanges.title)}</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>{t(($) => $.upload.unsavedChanges.description)}</DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="primary" type="button">
+                {t(($) => $.upload.unsavedChanges.stay)}
+              </Button>
+            </DialogClose>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                if (blocker.state === 'blocked') blocker.proceed();
+              }}
+            >
+              {t(($) => $.upload.unsavedChanges.leave)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ErrorSummaryProvider>
   );
 }

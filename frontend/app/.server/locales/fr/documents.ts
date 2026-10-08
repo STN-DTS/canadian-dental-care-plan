@@ -66,6 +66,12 @@ const ns = {
     submit: "Soumettre",
     submitRemaining: "Soumettre les fichiers restants",
     viewSubmissionConfirmation: "Consulter la confirmation de soumission",
+    unsavedChanges: {
+      title: "Quitter cette page?",
+      description: "Les fichiers dont le téléversement n'est pas terminé pourraient être perdus si vous quittez cette page. Les fichiers déjà téléversés resteront soumis.",
+      stay: "Rester sur cette page",
+      leave: "Quitter la page",
+    },
     selectOne: "Sélectionnez une option",
     returnDashboard: "Retour au tableau de bord",
     errorMessage: {
