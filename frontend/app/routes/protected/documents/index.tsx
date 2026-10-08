@@ -42,7 +42,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };
-  const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
+  const { SCCH_BASE_URI, RECORD_SOURCE_API, RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ClientConfig);
   const { timeZone } = getHints(request);
 
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: user.id });
@@ -51,11 +51,29 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
     meta,
     documents: evidentiaryDocuments.map((document) => {
       const mscaUploadDate = parseDateTimeString(document.mscaUploadDate);
+      const recordSourceId = document.recordSource?.toString();
+      const serviceName = recordSourceId ? recordSourceMap.get(recordSourceId) : undefined;
+
+      const uploadMethod = (() => {
+        if (!recordSourceId) return t(($) => $.index.uploadMethodUnknown);
+        if (!serviceName) return t(($) => $.index.uploadMethodUnknown);
+
+        if (recordSourceId === RECORD_SOURCE_API) {
+          return t(($) => $.index.uploadMethodOverrides.api, { defaultValue: serviceName });
+        }
+
+        if (recordSourceId === RECORD_SOURCE_MSCA) {
+          return t(($) => $.index.uploadMethodOverrides.msca, { defaultValue: serviceName });
+        }
+
+        return serviceName;
+      })();
+
       return {
         id: document.id,
         fileName: document.fileName,
         documentType: document.documentType,
-        uploadMethod: document.recordSource ? (recordSourceMap.get(document.recordSource.toString()) ?? t(($) => $.index.uploadMethodUnknown)) : t(($) => $.index.uploadMethodUnknown),
+        uploadMethod,
         mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
         mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
         mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),
@@ -110,14 +128,14 @@ export default function DocumentsIndex({ loaderData, params }: Route.ComponentPr
               <Trans
                 ns="documents"
                 i18nKey={($) => $.index.whatYouCanDo}
-                components={{ uploadLink: <InlineLink routeId="protected/documents/upload" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click" /> }}
+                components={{ uploadLink: <InlineLink routeId="protected/documents/upload/upload-index" params={params} data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click" /> }}
               />
             </p>
           </div>
         )}
         {hasDocuments && (
           <div>
-            <ButtonLink id="upload-button" routeId="protected/documents/upload" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
+            <ButtonLink id="upload-button" routeId="protected/documents/upload/upload-index" params={params} variant="primary" data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Upload documents - Submitted documents click">
               {t(($) => $.index.uploadDocuments)}
             </ButtonLink>
           </div>
