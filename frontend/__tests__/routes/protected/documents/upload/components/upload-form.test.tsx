@@ -211,14 +211,20 @@ describe('DocumentUploadForm', () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
-  it('names and describes the uploaded-only region and places confirmation inside it', () => {
-    setDocuments([createDocument('first', 'uploaded'), createDocument('last', 'uploaded')]);
+  it('names and describes the uploaded-only region and submits finish from its confirmation button', async () => {
+    const user = userEvent.setup();
+    const form = setDocuments([createDocument('first', 'uploaded'), createDocument('last', 'uploaded')]);
     renderForm();
 
     const region = screen.getByRole('region', { name: /upload.uploadFiles.uploadedFiles/ });
     expect(region).toHaveAccessibleDescription('upload.uploadFiles.documentsSent upload.uploadFiles.noPendingFiles');
     expect(region).toHaveAttribute('tabindex', '-1');
-    expect(within(region).getByRole('link', { name: 'upload.viewSubmissionConfirmation' })).toHaveAttribute('href', `/en/protected/documents/upload/${uploadId}/submitted`);
+    const confirmationButton = within(region).getByRole('button', { name: 'upload.viewSubmissionConfirmation' });
+    expect(confirmationButton).toHaveAttribute('type', 'submit');
+    expect(confirmationButton).toHaveAttribute('name', '_action');
+    expect(confirmationButton).toHaveAttribute('value', 'finish');
+    await user.click(confirmationButton);
+    expect(form.submitForm).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'upload.submitRemaining' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'upload.addFile' })).toBeEnabled();
     expect(screen.getAllByRole('listitem', { name: /\.txt$/ }).map((item) => item.getAttribute('aria-labelledby'))).toEqual(['file-upload-item-first-name', 'file-upload-item-last-name']);
@@ -228,14 +234,14 @@ describe('DocumentUploadForm', () => {
     const uploaded = [createDocument('first', 'uploaded'), createDocument('last', 'uploaded')];
     setDocuments(uploaded);
     const { rerender, RoutesStub } = renderForm();
-    expect(screen.getByRole('link', { name: 'upload.viewSubmissionConfirmation' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'upload.viewSubmissionConfirmation' })).toBeInTheDocument();
 
     setDocuments([...uploaded, createDocument('replacement', 'pending')]);
     rerender(<RoutesStub key="pending" initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
 
     expect(screen.getByRole('status')).toHaveTextContent(/upload.uploadFiles.filesSelected.*\..*upload.uploadFiles.uploadedFiles.*\..*upload.uploadFiles.pendingFiles/);
     expect(screen.getByRole('button', { name: 'upload.submitRemaining' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'upload.viewSubmissionConfirmation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'upload.viewSubmissionConfirmation' })).not.toBeInTheDocument();
   });
 
   it('localizes mixed-upload counts and the retry action in French', () => {

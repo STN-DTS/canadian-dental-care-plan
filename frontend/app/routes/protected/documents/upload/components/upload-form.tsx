@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 
-import { useParams } from 'react-router';
-
 import { faArrowUpFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import { Button, ButtonLink } from '~/components/buttons';
+import { Button } from '~/components/buttons';
 import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
@@ -31,7 +29,6 @@ interface DocumentUploadFormProps {
 
 export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { t, i18n } = useTranslation('documents');
-  const params = useParams();
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
   const fetcher = useDocumentUploadFetcher();
@@ -117,9 +114,9 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     </h3>
                     <p id="document-upload-sent">{t(($) => $.upload.uploadFiles.documentsSent)}</p>
                     <p id="document-upload-pending">{t(($) => $.upload.uploadFiles.noPendingFiles)}</p>
-                    <ButtonLink variant="primary" routeId="protected/documents/upload/upload-submitted" params={params}>
+                    <LoadingButton variant="primary" type="submit" name="_action" value={FORM_ACTION.finish} loading={isSubmitting && submitAction === FORM_ACTION.finish} disabled={isSubmitting}>
                       {t(($) => $.upload.viewSubmissionConfirmation)}
-                    </ButtonLink>
+                    </LoadingButton>
                   </div>
                 </ContextualAlert>
               ) : (

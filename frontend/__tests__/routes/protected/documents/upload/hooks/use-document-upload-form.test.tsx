@@ -248,6 +248,28 @@ describe('useDocumentUploadForm', () => {
 
     expect(result.current.documentUploadFormState.documents).toEqual(uploadedDocuments);
     expect(uploadStatusRegion).toHaveFocus();
+
+    const form = document.createElement('form');
+    for (const [name, value] of [
+      ['_csrf', 'csrf-token'],
+      ['file_id', 'removed-file'],
+      ['file_document_type', 'receipt'],
+    ] as const) {
+      const input = document.createElement('input');
+      input.name = name;
+      input.value = value;
+      form.append(input);
+    }
+    act(() => {
+      result.current.submitForm(form);
+    });
+    const finishFormData = submit.mock.lastCall?.[0];
+    if (!(finishFormData instanceof FormData)) throw new Error('Expected a finish submission');
+    expect(finishFormData.get('_action')).toBe(FORM_ACTION.finish);
+    expect(finishFormData.get('_csrf')).toBe('csrf-token');
+    expect(finishFormData.getAll('file_id')).toEqual([]);
+    expect(finishFormData.getAll('file_object')).toEqual([]);
+    expect(finishFormData.getAll('file_document_type')).toEqual([]);
   });
 
   it('moves focus to the next remaining file or the upload button after removal', () => {

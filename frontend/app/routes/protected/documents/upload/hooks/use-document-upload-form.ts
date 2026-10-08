@@ -161,18 +161,20 @@ export function useDocumentUploadForm() {
   }, []);
 
   /**
-   * Submits current pending files and document types while retaining other form fields.
+   * Submits pending files, or finishes an uploaded-only selection, retaining other form fields.
    * @param form - The form supplying fields such as the CSRF token.
    */
   const submitForm = useCallback(
     (form: HTMLFormElement) => {
+      const pendingDocuments = documentUploadFormState.documents.filter(({ status }) => status === 'pending');
+      const hasUploadedDocuments = documentUploadFormState.documents.some(({ status }) => status === 'uploaded');
       const formData = new FormData(form);
-      formData.set('_action', FORM_ACTION.upload);
+      formData.set('_action', pendingDocuments.length === 0 && hasUploadedDocuments ? FORM_ACTION.finish : FORM_ACTION.upload);
       formData.delete('file_id');
       formData.delete('file_object');
       formData.delete('file_document_type');
 
-      for (const { id, file, documentType } of documentUploadFormState.documents.filter(({ status }) => status === 'pending')) {
+      for (const { id, file, documentType } of pendingDocuments) {
         formData.append('file_id', id);
         formData.append('file_object', file);
         formData.append('file_document_type', documentType);

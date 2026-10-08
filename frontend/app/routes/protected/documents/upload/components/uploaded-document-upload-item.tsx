@@ -20,7 +20,7 @@ export function UploadedDocumentUploadItem({ id, fileName, documentTypeName }: U
       <dl className="space-y-3 sm:space-y-4">
         <div className="space-y-2">
           <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-          <dd id={fileNameId} className="break-words">
+          <dd id={fileNameId} className="wrap-break-word">
             {fileName}
           </dd>
         </div>
