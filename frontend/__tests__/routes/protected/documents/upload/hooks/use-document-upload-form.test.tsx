@@ -235,14 +235,18 @@ describe('useDocumentUploadForm', () => {
     const uploadedDocuments = result.current.documentUploadFormState.documents.filter(({ status }) => status === 'uploaded');
     const uploadButton = document.createElement('button');
     uploadButton.id = 'fileUploadTrigger';
-    document.body.append(uploadButton);
+    const uploadStatusRegion = document.createElement('div');
+    uploadStatusRegion.id = 'document-upload-status';
+    uploadStatusRegion.setAttribute('role', 'region');
+    uploadStatusRegion.tabIndex = -1;
+    document.body.append(uploadButton, uploadStatusRegion);
 
     act(() => {
       result.current.handleFileChange(uploadedDocuments);
     });
 
     expect(result.current.documentUploadFormState.documents).toEqual(uploadedDocuments);
-    expect(uploadButton).toHaveFocus();
+    expect(uploadStatusRegion).toHaveFocus();
   });
 
   it('moves focus to the next remaining file or the upload button after removal', () => {

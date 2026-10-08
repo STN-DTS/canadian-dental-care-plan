@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
 
+import { useParams } from 'react-router';
+
 import { faArrowUpFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '~/components/buttons';
+import { Button, ButtonLink } from '~/components/buttons';
+import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-provider';
@@ -27,6 +30,7 @@ interface DocumentUploadFormProps {
 
 export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { t, i18n } = useTranslation('documents');
+  const params = useParams();
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
   const fetcher = useDocumentUploadFetcher();
@@ -34,6 +38,10 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
 
   const filesWithTypes = useMemo(() => [...documentUploadFormState.documents], [documentUploadFormState.documents]);
+  const uploadedFileCount = filesWithTypes.filter(({ status }) => status === 'uploaded').length;
+  const pendingFileCount = filesWithTypes.length - uploadedFileCount;
+  const hasUploadedDocuments = uploadedFileCount > 0;
+  const hasUploadedOnly = hasUploadedDocuments && pendingFileCount === 0;
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
@@ -100,12 +108,36 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                   </Button>
                 </FileUploadTrigger>
               </div>
-              <p role="status" aria-atomic="true">
-                {t(($) => $.upload.uploadFiles.filesSelected, {
-                  count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-                  selected: filesWithTypes.length,
-                })}
-              </p>
+              {hasUploadedOnly ? (
+                <ContextualAlert id="document-upload-status" role="region" tabIndex={-1} type="success" aria-labelledby="document-upload-status-heading" aria-describedby="document-upload-sent document-upload-pending">
+                  <div className="space-y-4">
+                    <h3 id="document-upload-status-heading" className="font-lato text-xl font-semibold">
+                      {t(($) => $.upload.uploadFiles.uploadedFiles, { count: filesWithTypes.length })}
+                    </h3>
+                    <p id="document-upload-sent">{t(($) => $.upload.uploadFiles.documentsSent)}</p>
+                    <p id="document-upload-pending">{t(($) => $.upload.uploadFiles.noPendingFiles)}</p>
+                    <ButtonLink variant="primary" routeId="protected/documents/upload/upload-submitted" params={params}>
+                      {t(($) => $.upload.viewSubmissionConfirmation)}
+                    </ButtonLink>
+                  </div>
+                </ContextualAlert>
+              ) : (
+                <p role="status" aria-atomic="true">
+                  {t(($) => $.upload.uploadFiles.filesSelected, {
+                    count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
+                    selected: filesWithTypes.length,
+                  })}
+                  {hasUploadedDocuments && (
+                    <>
+                      {'. '}
+                      {t(($) => $.upload.uploadFiles.uploadedFiles, { count: uploadedFileCount })}
+                      {'. '}
+                      {t(($) => $.upload.uploadFiles.pendingFiles, { count: pendingFileCount })}
+                      {'.'}
+                    </>
+                  )}
+                </p>
+              )}
               <FileUploadList className="gap-4 sm:gap-6">
                 {filesWithTypes.map(({ id, file, documentType, status }) => {
                   if (status === 'uploaded') {
@@ -134,18 +166,20 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
           </fieldset>
         </div>
 
-        <div className="mt-8">
-          <LoadingButton
-            id="submit-button"
-            variant="primary"
-            type="submit"
-            loading={isSubmitting && submitAction === FORM_ACTION.upload}
-            disabled={isSubmitting}
-            data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
-          >
-            {t(($) => $.upload.submit)}
-          </LoadingButton>
-        </div>
+        {!hasUploadedOnly && (
+          <div className="mt-8">
+            <LoadingButton
+              id="submit-button"
+              variant="primary"
+              type="submit"
+              loading={isSubmitting && submitAction === FORM_ACTION.upload}
+              disabled={isSubmitting}
+              data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+            >
+              {hasUploadedDocuments ? t(($) => $.upload.submitRemaining) : t(($) => $.upload.submit)}
+            </LoadingButton>
+          </div>
+        )}
       </fetcher.Form>
     </ErrorSummaryProvider>
   );

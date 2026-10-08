@@ -75,7 +75,8 @@ export function useDocumentUploadForm() {
           const fileNowAtRemovedIndex = pendingFiles[removedIndex];
           const precedingFile = pendingFiles[removedIndex - 1];
           const fileToFocus = fileNowAtRemovedIndex ?? precedingFile;
-          const focusTargetId = fileToFocus ? `file-upload-item-${fileToFocus.id}` : 'fileUploadTrigger';
+          const fallbackFocusId = uploadedFileIds.size > 0 ? 'document-upload-status' : 'fileUploadTrigger';
+          const focusTargetId = fileToFocus ? `file-upload-item-${fileToFocus.id}` : fallbackFocusId;
           return document.getElementById(focusTargetId);
         });
       }
