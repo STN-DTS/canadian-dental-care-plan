@@ -23,6 +23,7 @@ export const useTranslation = vi.fn((ns?: Namespace) => {
   return {
     i18n: {
       getFixedT: () => mockT,
+      language: 'en',
     },
     t: mockT,
   };
