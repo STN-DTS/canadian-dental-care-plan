@@ -79,6 +79,8 @@ export const clientEnvSchema = z.object({
     .pipe(z.array(z.string().refine(isValidExtension)).min(1)),
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
   DOCUMENT_UPLOAD_MAX_FILE_COUNT: z.coerce.number().positive().default(10),
+  RECORD_SOURCE_API: z.string().trim().min(1).default('775170002'),
+  RECORD_SOURCE_MSCA: z.string().trim().min(1).default('775170004'),
 
   // Eligibility Status Codes
   ELIGIBILITY_STATUS_CODE_ELIGIBLE: z.string().trim().min(1).default('775170000'),

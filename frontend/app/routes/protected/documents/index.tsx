@@ -42,8 +42,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }),
   };
-  const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
-  const { EWDU_RECORD_SOURCE_API, EWDU_RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ServerConfig);
+  const { SCCH_BASE_URI, RECORD_SOURCE_API, RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ClientConfig);
   const { timeZone } = getHints(request);
 
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: user.id });
@@ -59,11 +58,11 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
         if (!recordSourceId) return t(($) => $.index.uploadMethodUnknown);
         if (!serviceName) return t(($) => $.index.uploadMethodUnknown);
 
-        if (recordSourceId === EWDU_RECORD_SOURCE_API) {
+        if (recordSourceId === RECORD_SOURCE_API) {
           return t(($) => $.index.uploadMethodOverrides.api, { defaultValue: serviceName });
         }
 
-        if (recordSourceId === EWDU_RECORD_SOURCE_MSCA) {
+        if (recordSourceId === RECORD_SOURCE_MSCA) {
           return t(($) => $.index.uploadMethodOverrides.msca, { defaultValue: serviceName });
         }
 

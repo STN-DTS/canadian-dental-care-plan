@@ -270,8 +270,8 @@ The production bindings are configured through Inversify. `DefaultDocumentUpload
 | `EWDU_ENCAPSULATION_USERNAME`             | Credential added to EWDU request bodies                 | `CDCP`                                                                  |
 | `EWDU_ENCAPSULATION_PASSWORD`             | Credential added to EWDU request bodies                 | Optional schema value; deployment secret                                |
 | `EWDU_PROGRAM_ACTIVITY_ID`                | EWDU program activity identifier                        | `CDCP`                                                                  |
-| `EWDU_RECORD_SOURCE_API`                  | Upload-method override mapping for API source           | `775170002`                                                             |
-| `EWDU_RECORD_SOURCE_MSCA`                 | Metadata mapping configuration; not used by EWDU upload | `775170004`                                                             |
+| `RECORD_SOURCE_API`                       | Upload-method override mapping for API source           | `775170002`                                                             |
+| `RECORD_SOURCE_MSCA`                      | Upload-method override mapping for MSCA source          | `775170004`                                                             |
 | `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` | Browser and server extension allow-list                 | `.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff` |
 | `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`        | Browser and server per-file size limit                  | `5`                                                                     |
 | `DOCUMENT_UPLOAD_MAX_FILE_COUNT`          | Browser and server batch limit                          | `10`                                                                    |
