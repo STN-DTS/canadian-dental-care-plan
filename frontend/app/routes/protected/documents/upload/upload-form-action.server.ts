@@ -63,11 +63,12 @@ function finishAction({ formAction, formData, params, session, uploadState }: Fi
     throw data(null, { status: 400 });
   }
 
-  if (uploadState.status === 'finished' || uploadState.uploadedDocuments.length === 0) {
+  const uploadedDocuments = uploadState.documents.filter((document) => document.status === 'uploaded');
+  if (uploadState.status === 'finished' || uploadedDocuments.length === 0) {
     throw data(null, { status: 409 });
   }
 
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { pendingDocuments: [], uploadedDocuments: uploadState.uploadedDocuments } });
+  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: uploadedDocuments } });
   finishDocumentUploadState({ id: uploadState.id, session, params });
   return redirect(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }
@@ -107,7 +108,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
   }
 
   // Ensure that none of the files being uploaded have already been uploaded.
-  if ([...files.keys()].some((id) => uploadState.uploadedDocuments.some((document) => document.id === id))) {
+  if ([...files.keys()].some((id) => uploadState.documents.some((document) => document.id === id && document.status === 'uploaded'))) {
     throw data(null, { status: 409 });
   }
 
@@ -119,10 +120,17 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   // Extract the submitted documents from the validated form data.
   const submittedDocuments = Object.entries(validationResult.data.files).map(([fileId, { file, documentType }]) => {
-    return { id: fileId, fileName: file.name, documentType, fileSize: file.size };
+    return { id: fileId, fileName: file.name, documentType, fileSize: file.size, status: 'pending' as const };
   });
 
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { pendingDocuments: submittedDocuments, uploadedDocuments: uploadState.uploadedDocuments } });
+  const existingIds = new Set(uploadState.documents.map(({ id }) => id));
+  const submittedDocumentsById = new Map(submittedDocuments.map((document) => [document.id, document]));
+  const documents = [
+    ...uploadState.documents.filter((document) => document.status === 'uploaded' || submittedDocumentsById.has(document.id)).map((document) => submittedDocumentsById.get(document.id) ?? document),
+    ...submittedDocuments.filter((document) => !existingIds.has(document.id)),
+  ];
+
+  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents } });
 
   const scanResult = await scanDocuments(validationResult.data.files);
   if (!scanResult.success) {
@@ -130,21 +138,16 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
   }
 
   const uploadResult = await uploadDocuments(validationResult.data.files);
+  const processedDocuments = documents.map((document) => {
+    if (document.status === 'uploaded' || (!uploadResult.success && hasUploadError(document.id, uploadResult))) return document;
+    return Object.assign({}, document, { status: 'uploaded' as const });
+  });
+
+  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });
   if (!uploadResult.success) {
-    // Retrieve the list of documents that failed to upload.
-    const pendingDocuments = submittedDocuments.filter((doc) => hasUploadError(doc.id, uploadResult));
-
-    // Retrieve the list of successfully uploaded documents and
-    // merge them with previously uploaded documents.
-    const uploadedDocuments = [...uploadState.uploadedDocuments, ...submittedDocuments.filter((doc) => !pendingDocuments.some((pending) => pending.id === doc.id))];
-
-    updateDocumentUploadState({ id: uploadState.id, session, params, state: { pendingDocuments, uploadedDocuments } });
-    return data({ formAction, source, responseType: 'upload-errors', errors: uploadResult.errors, uploadedDocuments, pendingDocuments } as const, 400);
+    return data({ formAction, source, responseType: 'upload-errors', errors: uploadResult.errors, documents: processedDocuments } as const, 400);
   }
 
-  // Merge previously uploaded documents with newly uploaded ones.
-  const uploadedDocuments = [...uploadState.uploadedDocuments, ...submittedDocuments];
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { pendingDocuments: [], uploadedDocuments: uploadedDocuments } });
   finishDocumentUploadState({ id: uploadState.id, session, params });
   return redirect(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }

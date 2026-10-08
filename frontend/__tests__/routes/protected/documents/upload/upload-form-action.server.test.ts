@@ -96,9 +96,9 @@ beforeEach(() => {
   vi.mocked(getDocumentUploadStateIdFromUrl).mockReturnValue(uploadId);
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(getLanguage).mockReturnValue('en');
-  vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(scanDocuments).mockResolvedValue({ success: true });
-  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
 });
 
@@ -127,8 +127,8 @@ describe('action', () => {
   });
 
   it('clears stale pending metadata and completes the flow without processing file bytes', async () => {
-    const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8 };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', pendingDocuments: [{ id: 'removed-file' }], uploadedDocuments: [uploadedDocument] });
+    const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ ...uploadedDocument, id: 'removed-file', status: 'pending' }, uploadedDocument] });
     const formData = new FormData();
     formData.set('_action', 'finish');
     const args = createActionArgs(formData);
@@ -136,7 +136,7 @@ describe('action', () => {
 
     const response = await action(args);
 
-    expect(updateDocumentUploadState).toHaveBeenCalledExactlyOnceWith({ id: uploadId, session, params: args.params, state: { pendingDocuments: [], uploadedDocuments: [uploadedDocument] } });
+    expect(updateDocumentUploadState).toHaveBeenCalledExactlyOnceWith({ id: uploadId, session, params: args.params, state: { documents: [uploadedDocument] } });
     expect(vi.mocked(updateDocumentUploadState).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(finishDocumentUploadState).mock.invocationCallOrder[0]!);
     expect(finishDocumentUploadState).toHaveBeenCalledWith({ id: uploadId, session, params: args.params });
     expect(response).toBeInstanceOf(Response);
@@ -189,7 +189,7 @@ describe('action', () => {
   });
 
   it('rejects resubmission of an uploaded ID without changing state', async () => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', pendingDocuments: [], uploadedDocuments: [{ id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 }] });
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7, status: 'uploaded' }] });
 
     await expect(action(createActionArgs(validUploadFormData()))).rejects.toMatchObject({ init: { status: 409 } });
     expect(validateUploadedFiles).not.toHaveBeenCalled();
@@ -239,8 +239,8 @@ describe('action', () => {
   it('replaces stale pending metadata with the submitted batch even when scanning fails', async () => {
     const args = createActionArgs(validUploadFormData());
     const { session } = args.context.get(appContext);
-    const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8 };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', pendingDocuments: [{ id: 'removed-file', fileName: 'removed.pdf', documentType: 'receipt', fileSize: 7 }], uploadedDocuments: [uploadedDocument] });
+    const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'removed-file', fileName: 'removed.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }, uploadedDocument] });
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['scan failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
     vi.mocked(scanDocuments).mockResolvedValue({ success: false, errors });
 
@@ -275,7 +275,7 @@ describe('action', () => {
       id: uploadId,
       session,
       params: args.params,
-      state: { pendingDocuments: [{ id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7 }], uploadedDocuments: [uploadedDocument] },
+      state: { documents: [uploadedDocument, { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }] },
     });
     expect(vi.mocked(updateDocumentUploadState).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(scanDocuments).mock.invocationCallOrder[0]!);
   });
@@ -296,15 +296,15 @@ describe('action', () => {
         formAction: 'upload',
         source: 'server',
         responseType: 'upload-errors',
-        pendingDocuments: [
+        documents: [
           {
             documentType: 'receipt',
             fileName: 'document.pdf',
             fileSize: 7,
             id: 'file-1',
+            status: 'pending',
           },
         ],
-        uploadedDocuments: [],
       },
       init: {
         status: 400,
@@ -316,17 +316,50 @@ describe('action', () => {
       session,
       params: args.params,
       state: {
-        pendingDocuments: [
+        documents: [
           {
             documentType: 'receipt',
             fileName: 'document.pdf',
             fileSize: 7,
             id: 'file-1',
+            status: 'pending',
           },
         ],
-        uploadedDocuments: [],
       },
     });
+  });
+
+  it('preserves order across a partial retry, retaining uploaded documents and replacing pending metadata', async () => {
+    const retryFile = new File(['retry'], 'retry.pdf');
+    const newFile = new File(['new'], 'new.pdf');
+    const retryDocument = { id: 'file-1', fileName: retryFile.name, fileSize: retryFile.size, documentType: 'receipt', status: 'pending' as const };
+    const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const };
+    const newDocument = { id: 'file-3', fileName: newFile.name, fileSize: newFile.size, documentType: 'receipt', status: 'pending' as const };
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [retryDocument, uploadedDocument, { ...retryDocument, id: 'removed' }] });
+    const files = {
+      'file-1': { file: retryFile, fileBuffer: new ArrayBuffer(retryFile.size), fileHash: 'retry-hash', documentType: 'receipt' },
+      'file-3': { file: newFile, fileBuffer: new ArrayBuffer(newFile.size), fileHash: 'new-hash', documentType: 'receipt' },
+    };
+    vi.mocked(getFiles).mockResolvedValue(new Map(Object.entries(files)));
+    vi.mocked(validateUploadedFiles).mockReturnValue({ success: true, data: { files } });
+    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-3': { errors: [], properties: { file: { errors: ['upload failed'] } } } } } } } satisfies DocumentUploadSchemaErrorTree;
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
+    const args = createActionArgs(
+      createUploadFormData([
+        { id: 'file-1', file: retryFile, documentType: 'receipt' },
+        { id: 'file-3', file: newFile, documentType: 'receipt' },
+      ]),
+    );
+    const { session } = args.context.get(appContext);
+
+    const result = await action(args);
+
+    expect(updateDocumentUploadState).toHaveBeenNthCalledWith(1, { id: uploadId, session, params: args.params, state: { documents: [retryDocument, uploadedDocument, newDocument] } });
+    const documents = [{ ...retryDocument, status: 'uploaded' }, uploadedDocument, newDocument];
+    expect(updateDocumentUploadState).toHaveBeenNthCalledWith(2, { id: uploadId, session, params: args.params, state: { documents } });
+    expect(result).toEqual({ data: { formAction: 'upload', source: 'server', responseType: 'upload-errors', errors, documents }, init: { status: 400 }, type: 'DataWithResponseInit' });
+    expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
+    expect(finishDocumentUploadState).not.toHaveBeenCalled();
   });
 
   it('starts submitted state and redirects after all documents are processed', async () => {
@@ -360,10 +393,9 @@ describe('action', () => {
       session,
       params: args.params,
       state: {
-        pendingDocuments: [],
-        uploadedDocuments: [
-          { documentType: 'receipt', fileName: 'document.pdf', fileSize: 7, id: 'file-1' },
-          { documentType: 'identity-document', fileName: 'document.pdf', fileSize: 16, id: 'file-2' },
+        documents: [
+          { documentType: 'receipt', fileName: 'document.pdf', fileSize: 7, id: 'file-1', status: 'uploaded' },
+          { documentType: 'identity-document', fileName: 'document.pdf', fileSize: 16, id: 'file-2', status: 'uploaded' },
         ],
       },
     });

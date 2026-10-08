@@ -13,13 +13,13 @@ export interface SubmittedDocument {
   readonly fileName: string;
   readonly documentType: string;
   readonly fileSize: number;
+  readonly status: 'pending' | 'uploaded';
 }
 
 export interface DocumentUploadState {
   readonly id: string;
   readonly status: 'initialized' | 'partial-upload' | 'finished';
-  readonly pendingDocuments: ReadonlyArray<Pick<SubmittedDocument, 'id'> & Partial<Omit<SubmittedDocument, 'id'>>>;
-  readonly uploadedDocuments: ReadonlyArray<SubmittedDocument>;
+  readonly documents: ReadonlyArray<SubmittedDocument>;
 }
 
 /**
@@ -94,8 +94,7 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
   const initialState: DocumentUploadState = {
     id: parsedId,
     status: 'initialized',
-    pendingDocuments: [],
-    uploadedDocuments: [],
+    documents: [],
   };
 
   const sessionKey = getSessionKey(parsedId);
@@ -126,8 +125,7 @@ export function resetDocumentUploadState({ id, params, session }: ResetStateArgs
   const resettedState: DocumentUploadState = {
     ...currentState,
     status: 'initialized',
-    pendingDocuments: [],
-    uploadedDocuments: [],
+    documents: [],
   };
 
   const sessionKey = getSessionKey(currentState.id);
@@ -140,7 +138,7 @@ interface UpdateStateArgs {
   id: string;
   params: DocumentUploadStateParams;
   session: Session;
-  state: Pick<DocumentUploadState, 'pendingDocuments' | 'uploadedDocuments'>;
+  state: Pick<DocumentUploadState, 'documents'>;
 }
 
 /**
@@ -158,9 +156,8 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
 
   const newState: DocumentUploadState = {
     ...currentState,
-    status: state.uploadedDocuments.length > 0 ? 'partial-upload' : 'initialized',
-    uploadedDocuments: state.uploadedDocuments,
-    pendingDocuments: state.pendingDocuments,
+    status: state.documents.some((document) => document.status === 'uploaded') ? 'partial-upload' : 'initialized',
+    documents: state.documents,
   };
 
   const sessionKey = getSessionKey(currentState.id);
@@ -173,7 +170,7 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
 export function finishDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {
   const currentState = loadDocumentUploadState({ id, params, session });
 
-  if (currentState.status === 'finished' || currentState.uploadedDocuments.length === 0 || currentState.pendingDocuments.length > 0) {
+  if (currentState.status === 'finished' || !currentState.documents.some((document) => document.status === 'uploaded') || currentState.documents.some((document) => document.status === 'pending')) {
     throw data(null, { status: 409 });
   }
 

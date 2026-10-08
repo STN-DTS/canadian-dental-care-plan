@@ -33,7 +33,8 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const { uploadedDocuments } = loadDocumentUploadState({ id: params.id, params, session });
+  const { documents } = loadDocumentUploadState({ id: params.id, params, session });
+  const uploadedDocuments = documents.filter((document) => document.status === 'uploaded');
 
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const meta = {

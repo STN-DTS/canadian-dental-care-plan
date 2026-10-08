@@ -23,10 +23,12 @@ const appContainer = mock<AppContext['appContainer']>();
 const state: DocumentUploadState = {
   id: uploadId,
   status: 'partial-upload',
-  pendingDocuments: [{ id: 'pending' }],
-  uploadedDocuments: [{ id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8 }],
+  documents: [
+    { id: 'pending', fileName: 'pending.txt', documentType: 'receipt', fileSize: 7, status: 'pending' },
+    { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' },
+  ],
 };
-const emptyState: DocumentUploadState = { id: uploadId, status: 'initialized', pendingDocuments: [], uploadedDocuments: [] };
+const emptyState: DocumentUploadState = { id: uploadId, status: 'initialized', documents: [] };
 
 beforeEach(() => {
   vi.clearAllMocks();

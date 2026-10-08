@@ -165,8 +165,10 @@ describe('useDocumentUploadForm', () => {
       source: 'server' as const,
       responseType: 'upload-errors' as const,
       errors: { errors: [] },
-      pendingDocuments: [{ id: 'file-2', fileName: proof.name, fileSize: proof.size, documentType: 'proof-of-coverage' }],
-      uploadedDocuments: [{ id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt' }],
+      documents: [
+        { id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded' as const },
+        { id: 'file-2', fileName: proof.name, fileSize: proof.size, documentType: 'proof-of-coverage', status: 'pending' as const },
+      ],
     };
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(uploadErrorResponse, submit));
     rerender();
@@ -218,8 +220,7 @@ describe('useDocumentUploadForm', () => {
       createFetcher(
         {
           ...uploadErrorResponse,
-          pendingDocuments: [{ id: 'file-3', fileName: extra.name, fileSize: extra.size, documentType: '' }],
-          uploadedDocuments: [...uploadErrorResponse.uploadedDocuments, ...uploadErrorResponse.pendingDocuments],
+          documents: [...uploadErrorResponse.documents.map((document) => Object.assign({}, document, { status: 'uploaded' as const })), { id: 'file-3', fileName: extra.name, fileSize: extra.size, documentType: '', status: 'pending' as const }],
         },
         submit,
       ),

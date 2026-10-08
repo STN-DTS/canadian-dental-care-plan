@@ -33,7 +33,7 @@ beforeEach(() => {
 
 describe('upload form lifecycle middleware', () => {
   it.each(['GET', 'POST'])('redirects a finished flow before %s processing', async (method) => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'finished', pendingDocuments: [], uploadedDocuments: [] });
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'finished', documents: [] });
     const next = vi.fn();
 
     await expect(guard(createArgs(method), next)).rejects.toMatchObject({ status: 302 });
@@ -41,7 +41,7 @@ describe('upload form lifecycle middleware', () => {
   });
 
   it.each(['initialized', 'partial-upload'] as const)('continues an open %s flow', async (status) => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status, pendingDocuments: [], uploadedDocuments: [] });
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status, documents: [] });
     const response = new Response(null, { status: 204 });
     const next = vi.fn().mockResolvedValue(response);
 

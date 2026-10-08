@@ -131,7 +131,7 @@ export function useDocumentUploadForm() {
 
   if (isNewUploadErrorResponse) {
     setAppliedUploadErrorResponse(uploadResponse);
-    const uploadedFileIds = new Set(uploadResponse.uploadedDocuments.map(({ id }) => id));
+    const uploadedFileIds = new Set(uploadResponse.documents.filter(({ status }) => status === 'uploaded').map(({ id }) => id));
     setDocumentUploadFormState((previousState) => ({
       documents: previousState.documents.map((document) => (document.status === 'pending' && uploadedFileIds.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
     }));

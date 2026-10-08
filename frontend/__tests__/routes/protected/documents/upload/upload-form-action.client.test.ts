@@ -78,7 +78,7 @@ beforeEach(() => {
   vi.mocked(scanDocuments).mockResolvedValue({ success: true });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', documents: [] });
 });
 
 afterEach(() => {
