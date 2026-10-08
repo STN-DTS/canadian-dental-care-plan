@@ -160,15 +160,7 @@ jobs:
             exit 1
           fi
 
-          docker push "${IMAGE_NAME}:${BUILD_VERSION}"
           printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Published image"
-            echo
-            echo "| Application | Image | Source commit |"
-            echo "| --- | --- | --- |"
-            echo "| CDCP frontend | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
-          } >> "$GITHUB_STEP_SUMMARY"
       - name: Sign and verify frontend OCI image
         uses: ./.github/actions/sign-container-image
         with:
@@ -177,3 +169,23 @@ jobs:
           vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           cosign-vault-path: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
+      - name: Publish signed release version alias
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          docker tag "$image_ref" "${IMAGE_NAME}:${BUILD_VERSION}"
+          docker push "${IMAGE_NAME}:${BUILD_VERSION}"
+
+          {
+            echo "## Published image"
+            echo
+            echo "| Application | Image | Source commit |"
+            echo "| --- | --- | --- |"
+            echo "| CDCP frontend | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
+          } >> "$GITHUB_STEP_SUMMARY"
