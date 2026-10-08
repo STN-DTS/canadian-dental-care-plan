@@ -33,9 +33,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
   const { documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
 
-  const filesWithTypes = useMemo(() => {
-    return [...documentUploadFormState.pendingDocuments, ...documentUploadFormState.uploadedDocuments];
-  }, [documentUploadFormState]);
+  const filesWithTypes = useMemo(() => [...documentUploadFormState.documents], [documentUploadFormState.documents]);
 
   const errors = fetcher.data?.errors;
   const filesError = errors?.properties?.files?.errors[0];
@@ -96,7 +94,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
               className="gap-4 sm:gap-6"
             >
               <div>
-                <FileUploadTrigger asChild disabled={filesWithTypes.length >= DOCUMENT_UPLOAD_MAX_FILE_COUNT}>
+                <FileUploadTrigger asChild>
                   <Button id="fileUploadTrigger" variant="secondary" aria-describedby={fileUploadDescriptionId} className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
                     {t(($) => $.upload.addFile)}
                   </Button>
@@ -109,7 +107,11 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 })}
               </p>
               <FileUploadList className="gap-4 sm:gap-6">
-                {documentUploadFormState.pendingDocuments.map(({ id, file, documentType }) => {
+                {filesWithTypes.map(({ id, file, documentType, status }) => {
+                  if (status === 'uploaded') {
+                    return <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />;
+                  }
+
                   const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
                   const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
 
@@ -127,9 +129,6 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     />
                   );
                 })}
-                {documentUploadFormState.uploadedDocuments.map(({ id, file, documentType }) => (
-                  <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />
-                ))}
               </FileUploadList>
             </FileUpload>
           </fieldset>

@@ -7,25 +7,18 @@ import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-act
 import { focusOnNextFrame } from '~/utils/dom-utils';
 import { generateId } from '~/utils/id-utils';
 
-type FileStateWithDocumentType = FileState & { readonly documentType: string };
+type DocumentUploadFileState = FileState & { readonly documentType: string; readonly status: 'pending' | 'uploaded' };
 type DocumentUploadFormState = {
-  /**
-   * The list of documents that are currently pending upload.
-   */
-  readonly pendingDocuments: ReadonlyArray<FileStateWithDocumentType>;
-  /**
-   * The list of documents that have been successfully uploaded.
-   */
-  readonly uploadedDocuments: ReadonlyArray<FileStateWithDocumentType>;
+  readonly documents: ReadonlyArray<DocumentUploadFileState>;
 };
 
 export function useDocumentUploadForm() {
   const fetcher = useDocumentUploadFetcher();
-  const [documentUploadFormState, setDocumentUploadFormState] = useState<DocumentUploadFormState>({ pendingDocuments: [], uploadedDocuments: [] });
+  const [documentUploadFormState, setDocumentUploadFormState] = useState<DocumentUploadFormState>({ documents: [] });
   const [appliedUploadErrorResponse, setAppliedUploadErrorResponse] = useState<DocumentUploadFetcherData>();
   const pendingFileSelectionValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
   const cancelPendingFocusRef = useRef<(() => void) | undefined>(undefined);
-  const currentFileCount = documentUploadFormState.pendingDocuments.length + documentUploadFormState.uploadedDocuments.length;
+  const currentFileCount = documentUploadFormState.documents.length;
 
   const scheduleFocus = useCallback((getElement: () => HTMLElement | null | undefined) => {
     cancelPendingFocusRef.current?.();
@@ -45,7 +38,7 @@ export function useDocumentUploadForm() {
       formData.set('_action', FORM_ACTION.addFiles);
       formData.set('_validation_id', validationId);
       formData.set('current_file_count', currentFileCount.toString());
-      for (const { file } of [...documentUploadFormState.pendingDocuments, ...documentUploadFormState.uploadedDocuments]) {
+      for (const { file } of documentUploadFormState.documents) {
         formData.append('existing_file_object', file);
       }
       for (const file of files) {
@@ -60,12 +53,13 @@ export function useDocumentUploadForm() {
 
   const handleFileChange = useCallback(
     (files: ReadonlyArray<FileState>) => {
-      const uploadedFileIds = new Set(documentUploadFormState.uploadedDocuments.map(({ id }) => id));
+      const previousPendingDocuments = documentUploadFormState.documents.filter(({ status }) => status === 'pending');
+      const uploadedFileIds = new Set(documentUploadFormState.documents.filter(({ status }) => status === 'uploaded').map(({ id }) => id));
       const pendingFiles = files.filter(({ id }) => !uploadedFileIds.has(id));
-      const previousFileIds = new Set(documentUploadFormState.pendingDocuments.map(({ id }) => id));
+      const previousFileIds = new Set(previousPendingDocuments.map(({ id }) => id));
       const currentFileIds = new Set(pendingFiles.map(({ id }) => id));
       const firstAddedFile = pendingFiles.find(({ id }) => !previousFileIds.has(id));
-      const firstRemovedFile = documentUploadFormState.pendingDocuments.find(({ id }) => !currentFileIds.has(id));
+      const firstRemovedFile = previousPendingDocuments.find(({ id }) => !currentFileIds.has(id));
 
       if (!firstAddedFile && !firstRemovedFile) {
         return;
@@ -76,7 +70,7 @@ export function useDocumentUploadForm() {
       }
 
       if (firstRemovedFile) {
-        const removedIndex = documentUploadFormState.pendingDocuments.findIndex(({ id }) => id === firstRemovedFile.id);
+        const removedIndex = previousPendingDocuments.findIndex(({ id }) => id === firstRemovedFile.id);
         scheduleFocus(() => {
           const fileNowAtRemovedIndex = pendingFiles[removedIndex];
           const precedingFile = pendingFiles[removedIndex - 1];
@@ -87,10 +81,12 @@ export function useDocumentUploadForm() {
       }
 
       setDocumentUploadFormState((previousState) => {
-        const previousFileMap = new Map(previousState.pendingDocuments.map((item) => [item.id, item]));
+        const previousFileIds = new Set(previousState.documents.map(({ id }) => id));
+        const retainedDocuments = previousState.documents.filter(({ id, status }) => status === 'uploaded' || currentFileIds.has(id));
+        const addedDocuments = pendingFiles.filter(({ id }) => !previousFileIds.has(id)).map((file) => Object.assign({}, file, { documentType: '', status: 'pending' as const }));
         return {
           ...previousState,
-          pendingDocuments: pendingFiles.map((file) => previousFileMap.get(file.id) ?? Object.assign({}, file, { documentType: '' })),
+          documents: [...retainedDocuments, ...addedDocuments],
         };
       });
     },
@@ -108,7 +104,7 @@ export function useDocumentUploadForm() {
 
       if (!data.errors) {
         const files = pendingValidation.files.map((file) => ({ id: generateId(), file }));
-        handleFileChange([...documentUploadFormState.pendingDocuments, ...files]);
+        handleFileChange([...documentUploadFormState.documents.filter(({ status }) => status === 'pending'), ...files]);
       }
     },
     [fetcher.data, documentUploadFormState, handleFileChange],
@@ -119,9 +115,9 @@ export function useDocumentUploadForm() {
 
   if (isNewUploadErrorResponse) {
     setAppliedUploadErrorResponse(uploadResponse);
+    const uploadedFileIds = new Set(uploadResponse.uploadedDocuments.map(({ id }) => id));
     setDocumentUploadFormState((previousState) => ({
-      pendingDocuments: previousState.pendingDocuments.filter((doc) => uploadResponse.pendingDocuments.some((pending) => pending.id === doc.id)),
-      uploadedDocuments: [...previousState.pendingDocuments, ...previousState.uploadedDocuments].filter((doc) => uploadResponse.uploadedDocuments.some((uploaded) => uploaded.id === doc.id)),
+      documents: previousState.documents.map((document) => (document.status === 'pending' && uploadedFileIds.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
     }));
   }
 
@@ -139,7 +135,7 @@ export function useDocumentUploadForm() {
   const handleDocumentTypeChange = useCallback((id: string, documentType: string) => {
     setDocumentUploadFormState((previousState) => ({
       ...previousState,
-      pendingDocuments: previousState.pendingDocuments.map((file) => (file.id === id ? { ...file, documentType } : file)),
+      documents: previousState.documents.map((document) => (document.status === 'pending' && document.id === id ? Object.assign({}, document, { documentType }) : document)),
     }));
   }, []);
 
@@ -151,7 +147,7 @@ export function useDocumentUploadForm() {
       formData.delete('file_object');
       formData.delete('file_document_type');
 
-      for (const { id, file, documentType } of documentUploadFormState.pendingDocuments) {
+      for (const { id, file, documentType } of documentUploadFormState.documents.filter(({ status }) => status === 'pending')) {
         formData.append('file_id', id);
         formData.append('file_object', file);
         formData.append('file_document_type', documentType);
