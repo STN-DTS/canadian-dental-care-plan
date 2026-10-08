@@ -3,7 +3,7 @@ import type { LiteralToPrimitiveDeep, PartialDeep } from 'type-fest';
 import { describe, expect, it, vi } from 'vitest';
 import { mockFn } from 'vitest-mock-extended';
 
-import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { getClientEnv } from '~/utils/env-utils';
 
 vi.mock(import('~/utils/env-utils'));
@@ -150,7 +150,7 @@ describe('protected-documents-upload-helpers', () => {
     });
   });
 
-  describe('validateUploadForm', () => {
+  describe('validateUploadedFiles', () => {
     it('should reject duplicate files in the submitted batch', async () => {
       const formData = createUploadFormData([
         { id: 'first', file: new File(['same content'], 'document.txt'), documentType: 'receipt' },
@@ -158,7 +158,9 @@ describe('protected-documents-upload-helpers', () => {
         { id: 'third', file: new File(['new file content'], 'new-file.txt'), documentType: 'identity-document' },
       ]);
 
-      await expect(validateUploadForm({ formData, locale: 'en', t: tFunctionMock })).resolves.toEqual({
+      const files = await getFiles(formData);
+
+      expect(validateUploadedFiles({ files, locale: 'en', t: tFunctionMock })).toEqual({
         success: false,
         errors: {
           errors: [],
@@ -183,13 +185,14 @@ describe('protected-documents-upload-helpers', () => {
         { id: 'second', file: new File([contents], name), documentType: 'receipt' },
       ]);
 
-      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+      const files = await getFiles(formData);
+      const actual = validateUploadedFiles({ files, locale: 'en', t: tFunctionMock });
 
       expect(actual.success).toBe(true);
     });
 
-    it('should reject an empty upload', async () => {
-      const actual = await validateUploadForm({ formData: new FormData(), locale: 'en', t: tFunctionMock });
+    it('should reject an empty upload', () => {
+      const actual = validateUploadedFiles({ files: new Map(), locale: 'en', t: tFunctionMock });
       expect(actual.success).toBe(false);
     });
 
@@ -198,7 +201,8 @@ describe('protected-documents-upload-helpers', () => {
       formData.append('file_id', 'first');
       formData.append('file_object', new File(['content'], 'document.txt'));
 
-      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+      const files = await getFiles(formData);
+      const actual = validateUploadedFiles({ files, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -226,7 +230,8 @@ describe('protected-documents-upload-helpers', () => {
     it('should reject an unsupported file extension', async () => {
       const formData = createUploadFormData([{ id: 'first', file: new File(['content'], 'document.pdf'), documentType: 'receipt' }]);
 
-      const actual = await validateUploadForm({ formData, locale: 'en', t: tFunctionMock });
+      const files = await getFiles(formData);
+      const actual = validateUploadedFiles({ files, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -259,7 +264,8 @@ describe('protected-documents-upload-helpers', () => {
         documentType: 'receipt',
       }));
 
-      const actual = await validateUploadForm({ formData: createUploadFormData(entries), locale: 'en', t: tFunctionMock });
+      const files = await getFiles(createUploadFormData(entries));
+      const actual = validateUploadedFiles({ files, locale: 'en', t: tFunctionMock });
 
       expect(actual).toEqual({
         success: false,
@@ -273,12 +279,14 @@ describe('protected-documents-upload-helpers', () => {
         },
       });
     });
+  });
 
+  describe('getFiles', () => {
     it('should throw when a file ID has no corresponding file', async () => {
       const formData = new FormData();
       formData.append('file_id', 'missing');
 
-      await expect(validateUploadForm({ formData, locale: 'en', t: tFunctionMock })).rejects.toThrow('Expected file object at index 0');
+      await expect(getFiles(formData)).rejects.toThrow('Expected file object at index 0');
     });
   });
 });

@@ -17,7 +17,8 @@ export interface SubmittedDocument {
 
 export interface DocumentUploadState {
   readonly id: string;
-  readonly pendingDocuments: ReadonlyArray<SubmittedDocument>;
+  readonly status: 'initialized' | 'partial-upload' | 'finished';
+  readonly pendingDocuments: ReadonlyArray<Pick<SubmittedDocument, 'id'> & Partial<Omit<SubmittedDocument, 'id'>>>;
   readonly uploadedDocuments: ReadonlyArray<SubmittedDocument>;
 }
 
@@ -92,6 +93,7 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
 
   const initialState: DocumentUploadState = {
     id: parsedId,
+    status: 'initialized',
     pendingDocuments: [],
     uploadedDocuments: [],
   };
@@ -100,6 +102,38 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
   session.set(sessionKey, initialState);
   log.info('Document upload session state started; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
   return initialState;
+}
+
+interface ResetStateArgs {
+  id: string;
+  params: DocumentUploadStateParams;
+  session: Session;
+}
+
+/**
+ * Resets document upload state.
+ * @param args - The arguments.
+ * @returns The reset document upload state.
+ */
+export function resetDocumentUploadState({ id, params, session }: ResetStateArgs) {
+  const log = createLogger('document-upload-route-helpers/resetDocumentUploadState');
+  const currentState = loadDocumentUploadState({ id, params, session });
+
+  if (currentState.status === 'finished') {
+    throw data(null, { status: 409 });
+  }
+
+  const resettedState: DocumentUploadState = {
+    ...currentState,
+    status: 'initialized',
+    pendingDocuments: [],
+    uploadedDocuments: [],
+  };
+
+  const sessionKey = getSessionKey(currentState.id);
+  session.set(sessionKey, resettedState);
+  log.info('Document upload session state reset; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  return resettedState;
 }
 
 interface UpdateStateArgs {
@@ -117,15 +151,35 @@ interface UpdateStateArgs {
 export function updateDocumentUploadState({ id, session, state, params }: UpdateStateArgs) {
   const log = createLogger('document-upload-route-helpers/updateDocumentUploadState');
   const currentState = loadDocumentUploadState({ id, params, session });
+
+  if (currentState.status === 'finished') {
+    throw data(null, { status: 409 });
+  }
+
   const newState: DocumentUploadState = {
     ...currentState,
+    status: state.uploadedDocuments.length > 0 ? 'partial-upload' : 'initialized',
     uploadedDocuments: state.uploadedDocuments,
     pendingDocuments: state.pendingDocuments,
   };
+
   const sessionKey = getSessionKey(currentState.id);
   session.set(sessionKey, newState);
+
   log.info('Document upload session state updated; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
   return newState;
+}
+
+export function finishDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {
+  const currentState = loadDocumentUploadState({ id, params, session });
+
+  if (currentState.status === 'finished' || currentState.uploadedDocuments.length === 0 || currentState.pendingDocuments.length > 0) {
+    throw data(null, { status: 409 });
+  }
+
+  const finishedState: DocumentUploadState = { ...currentState, status: 'finished' };
+  session.set(getSessionKey(currentState.id), finishedState);
+  return finishedState;
 }
 
 interface ClearStateArgs {

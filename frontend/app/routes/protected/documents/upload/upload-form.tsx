@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 
+import type { ShouldRevalidateFunction } from 'react-router';
+
 import { useTranslation } from 'react-i18next';
 
 import type { Route } from './+types/upload-form';
@@ -10,6 +12,7 @@ import { ButtonLink } from '~/components/buttons';
 import { pageIds } from '~/page-ids';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
 import { DocumentUploadInstructions } from '~/routes/protected/documents/upload/components/upload-instructions';
+import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
@@ -26,9 +29,23 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
-export { loader } from './upload-form-loader.server';
-export { action } from './upload-form-action.server';
-export { clientAction } from './upload-form-action.client';
+export { middleware } from '~/routes/protected/documents/upload/upload-form-middleware.server';
+export { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
+export { action } from '~/routes/protected/documents/upload/upload-form-action.server';
+export { loader } from '~/routes/protected/documents/upload/upload-form-loader.server';
+
+/**
+ * Preserves the active flow after same-page upload form mutations without changing navigation resets.
+ * @param args - The navigation, submission, and default revalidation decision.
+ * @returns False for known same-page POST actions, otherwise the router's default decision.
+ */
+export const shouldRevalidate: ShouldRevalidateFunction = ({ currentUrl, nextUrl, formAction, formData, formMethod, defaultShouldRevalidate }) => {
+  if (formMethod?.toUpperCase() !== 'POST' || !formAction) return defaultShouldRevalidate;
+
+  const isSamePage = currentUrl.pathname === nextUrl.pathname && currentUrl.search === nextUrl.search && new URL(formAction, currentUrl).pathname === currentUrl.pathname;
+  const isUploadFormAction = Object.values(FORM_ACTION).some((action) => action === formData?.get('_action'));
+  return isSamePage && isUploadFormAction ? false : defaultShouldRevalidate;
+};
 
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation(['documents', 'gcweb']);

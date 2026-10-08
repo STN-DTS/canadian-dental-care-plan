@@ -69,30 +69,25 @@ export async function validateFileSelection({ formData, locale, t }: ValidateFil
   };
 }
 
-type ValidateUploadFormArgs = {
-  formData: FormData;
-  locale: string;
-  t: TFunction<'documents'>;
+type FileRecord = {
+  file: File;
+  fileBuffer: ArrayBuffer;
+  fileHash: string;
+  documentType: string;
 };
 
-type ValidateUploadFormSuccess = { success: true; data: DocumentUploadSchemaOutput };
-type ValidateUploadFormFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
-type ValidateUploadFormResult = ValidateUploadFormSuccess | ValidateUploadFormFailure;
-
 /**
- * Reads and validates documents submitted for upload.
- *
- * @param args - Form data, locale, and translator used for validation.
- * @returns Validated document data on success; otherwise, structured validation errors.
- * @throws {Error} When a file ID has no corresponding file object.
+ * Reads submitted file bytes and hashes them, pairing each file ID with its document type.
+ * @param formData - The multipart fields containing file IDs, file objects, and document types.
+ * @returns Parsed file records keyed by their submitted IDs.
+ * @throws If a file ID has no corresponding file object or reading its bytes fails.
  */
-export async function validateUploadForm({ formData, locale, t }: ValidateUploadFormArgs): Promise<ValidateUploadFormResult> {
-  const schema = createDocumentUploadSchema({ locale, t });
+export async function getFiles(formData: FormData): Promise<ReadonlyMap<string, FileRecord>> {
   const fileIds = formData.getAll('file_id') as string[];
   const fileObjects = formData.getAll('file_object') as File[];
   const documentTypes = formData.getAll('file_document_type') as string[];
 
-  const files: Record<string, { file: File; fileBuffer: ArrayBuffer; fileHash: string; documentType: string }> = Object.fromEntries(
+  return new Map(
     await Promise.all(
       fileIds.map(async (fileId, index) => {
         const file = expectDefined(fileObjects[index], 'Expected file object at index ' + index);
@@ -103,8 +98,27 @@ export async function validateUploadForm({ formData, locale, t }: ValidateUpload
       }),
     ),
   );
+}
 
-  const result = schema.safeParse({ files });
+type ValidateUploadedFilesArgs = {
+  files: ReadonlyMap<string, FileRecord>;
+  locale: string;
+  t: TFunction<'documents'>;
+};
+
+type ValidateUploadedFilesSuccess = { success: true; data: DocumentUploadSchemaOutput };
+type ValidateUploadedFilesFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+type ValidateUploadedFilesResult = ValidateUploadedFilesSuccess | ValidateUploadedFilesFailure;
+
+/**
+ * Validates already parsed files without reading or hashing their contents again.
+ *
+ * @param args - Files, locale, and translator used for validation.
+ * @returns Validated document data on success; otherwise, structured validation errors.
+ */
+export function validateUploadedFiles({ files, locale, t }: ValidateUploadedFilesArgs): ValidateUploadedFilesResult {
+  const schema = createDocumentUploadSchema({ locale, t });
+  const result = schema.safeParse({ files: Object.fromEntries(files) });
 
   if (!result.success) {
     return {

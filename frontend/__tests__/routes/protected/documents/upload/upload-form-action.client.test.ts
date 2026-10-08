@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import { validateFileSelection, validateUploadForm } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
@@ -63,28 +63,22 @@ type ClientActionArgs = Parameters<typeof clientAction>[0];
 
 const validUploadFormData = () => createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf'), documentType: 'receipt' }]);
 
+const parsedFiles: Awaited<ReturnType<typeof getFiles>> = new Map([['file-1', { file: new File(['content'], 'document.pdf'), fileBuffer: new ArrayBuffer(7), fileHash: 'file-hash', documentType: 'receipt' }]]);
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn().mockReturnValue(uploadId) });
   vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
-  vi.mocked(validateUploadForm).mockResolvedValue({
+  vi.mocked(getFiles).mockResolvedValue(parsedFiles);
+  vi.mocked(validateUploadedFiles).mockReturnValue({
     success: true,
-    data: {
-      files: {
-        'file-1': {
-          file: new File(['content'], 'document.pdf'),
-          fileBuffer: new ArrayBuffer(7),
-          fileHash: 'file-hash',
-          documentType: 'receipt',
-        },
-      },
-    },
+    data: { files: Object.fromEntries(parsedFiles) },
   });
   vi.mocked(getLanguage).mockReturnValue('en');
   vi.mocked(scanDocuments).mockResolvedValue({ success: true });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', pendingDocuments: [], uploadedDocuments: [] });
+  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', pendingDocuments: [], uploadedDocuments: [] });
 });
 
 afterEach(() => {
@@ -153,8 +147,20 @@ describe('clientAction', () => {
     expect(serverAction).not.toHaveBeenCalled();
   });
 
+  it('delegates finish directly to the server without parsing or validating files', async () => {
+    const formData = new FormData();
+    formData.set('_action', 'finish');
+    const serverAction = vi.fn().mockResolvedValue({ submitted: true });
+
+    await expect(clientAction(mock<ClientActionArgs>({ request: createRequest(formData), url: new URL('http://localhost/en/protected/documents/upload/session-1'), serverAction }))).resolves.toEqual({ submitted: true });
+    expect(serverAction).toHaveBeenCalledOnce();
+    expect(getFiles).not.toHaveBeenCalled();
+    expect(validateUploadedFiles).not.toHaveBeenCalled();
+    expect(validateFileSelection).not.toHaveBeenCalled();
+  });
+
   it('returns tagged errors for invalid upload data without calling the server action', async () => {
-    vi.mocked(validateUploadForm).mockResolvedValue({ success: false, errors: uploadErrors });
+    vi.mocked(validateUploadedFiles).mockReturnValue({ success: false, errors: uploadErrors });
     const serverAction = vi.fn();
     const formData = createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf') }]);
     const result = await clientAction(
@@ -211,7 +217,8 @@ describe('clientAction', () => {
         }),
       ),
     ).resolves.toEqual({ submitted: true });
-    expect(validateUploadForm).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
+    expect(getFiles).toHaveBeenCalledExactlyOnceWith(formData);
+    expect(validateUploadedFiles).toHaveBeenCalledExactlyOnceWith({ files: parsedFiles, locale: 'fr', t: expect.any(Function) });
     expect(serverAction).toHaveBeenCalledOnce();
   });
 });

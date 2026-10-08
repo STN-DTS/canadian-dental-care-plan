@@ -12,6 +12,11 @@ type DocumentUploadFormState = {
   readonly documents: ReadonlyArray<DocumentUploadFileState>;
 };
 
+/**
+ * Manages selected files, document types, upload outcomes, and focus for the upload form.
+ * Retains uploaded files in selection order and submits only pending files on retries.
+ * @returns The document list and handlers for selection, document types, and submission.
+ */
 export function useDocumentUploadForm() {
   const fetcher = useDocumentUploadFetcher();
   const [documentUploadFormState, setDocumentUploadFormState] = useState<DocumentUploadFormState>({ documents: [] });
@@ -20,6 +25,7 @@ export function useDocumentUploadForm() {
   const cancelPendingFocusRef = useRef<(() => void) | undefined>(undefined);
   const currentFileCount = documentUploadFormState.documents.length;
 
+  /** Schedules focus on the next frame, cancelling any previously scheduled focus. */
   const scheduleFocus = useCallback((getElement: () => HTMLElement | null | undefined) => {
     cancelPendingFocusRef.current?.();
     cancelPendingFocusRef.current = focusOnNextFrame(getElement);
@@ -31,6 +37,11 @@ export function useDocumentUploadForm() {
     };
   }, []);
 
+  /**
+   * Validates new files against all listed files before adding them to the pending selection.
+   * @param files - The files proposed for selection.
+   * @returns False to defer selection until the matching validation response arrives.
+   */
   const handleBeforeFilesAdd = useCallback(
     (files: ReadonlyArray<File>) => {
       const validationId = crypto.randomUUID();
@@ -51,6 +62,10 @@ export function useDocumentUploadForm() {
     [fetcher, currentFileCount, documentUploadFormState],
   );
 
+  /**
+   * Reconciles pending selection changes, retaining uploaded files and scheduling focus.
+   * @param files - The file widget's updated selection.
+   */
   const handleFileChange = useCallback(
     (files: ReadonlyArray<FileState>) => {
       const previousPendingDocuments = documentUploadFormState.documents.filter(({ status }) => status === 'pending');
@@ -133,6 +148,11 @@ export function useDocumentUploadForm() {
     [fetcher.data],
   );
 
+  /**
+   * Updates the document type of a pending file without changing uploaded files.
+   * @param id - The selected file ID.
+   * @param documentType - The selected document type ID.
+   */
   const handleDocumentTypeChange = useCallback((id: string, documentType: string) => {
     setDocumentUploadFormState((previousState) => ({
       ...previousState,
@@ -140,6 +160,10 @@ export function useDocumentUploadForm() {
     }));
   }, []);
 
+  /**
+   * Submits current pending files and document types while retaining other form fields.
+   * @param form - The form supplying fields such as the CSRF token.
+   */
   const submitForm = useCallback(
     (form: HTMLFormElement) => {
       const formData = new FormData(form);
