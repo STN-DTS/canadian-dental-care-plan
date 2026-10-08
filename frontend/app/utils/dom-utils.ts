@@ -18,6 +18,6 @@ export function scheduleNextFrame(callback: FrameRequestCallback): () => void {
  * @param options Options passed to `HTMLElement.focus`.
  * @returns A cleanup function that cancels the pending animation frame.
  */
-export function focusOnNextFrame(getElement: () => HTMLElement | null | undefined, options: FocusOptions = { preventScroll: true }): () => void {
+export function focusOnNextFrame(getElement: () => HTMLElement | null | undefined, options?: FocusOptions): () => void {
   return scheduleNextFrame(() => getElement()?.focus(options));
 }

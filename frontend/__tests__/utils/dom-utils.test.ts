@@ -42,7 +42,7 @@ describe('dom-utils', () => {
 
       expect(getElement).not.toHaveBeenCalled();
       scheduledCallback?.(100);
-      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+      expect(focus).toHaveBeenCalledWith(undefined);
     });
   });
 });
