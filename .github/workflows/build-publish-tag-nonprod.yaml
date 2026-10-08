@@ -10,7 +10,7 @@ permissions: read-all
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch: {}
 
 env:
@@ -129,7 +129,6 @@ jobs:
             --build-arg BUILD_VERSION="$BUILD_VERSION" \
             --tag "$IMAGE_NAME:$IMAGE_TAG"
           docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$BUILD_VERSION"
-          docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME"
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
         with:
@@ -162,7 +161,6 @@ jobs:
           fi
 
           docker push "${IMAGE_NAME}:${BUILD_VERSION}"
-          docker push "$IMAGE_NAME"
           printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
           {
             echo "## Published image"
