@@ -31,12 +31,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "$REF_TYPE" != "tag" || ! "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+          if [[ "$REF_TYPE" != "tag" || ! "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$ ]]; then
             echo "Must run against a release tag (vX.Y.Z with an optional suffix), got '$REF_NAME'." >&2
             exit 1
           fi
 
-          echo "version=${REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          version="${REF_NAME#v}"
+          build_number="$(printf '%05x' "$GITHUB_RUN_NUMBER")"
+          generated_tag="${version}-${GITHUB_SHA:0:8}-${build_number}"
+          docker_tag_regex='^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
+
+          if [[ ! "$version" =~ $docker_tag_regex || ! "$generated_tag" =~ $docker_tag_regex ]]; then
+            echo "Release tag '$REF_NAME' generates an invalid Docker tag." >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
   test-frontend:
     needs: resolve-version
