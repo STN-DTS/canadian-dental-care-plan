@@ -7,6 +7,10 @@ name: Build, test, and publish nonprod tag images
 
 permissions: read-all
 
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   push:
     tags:
