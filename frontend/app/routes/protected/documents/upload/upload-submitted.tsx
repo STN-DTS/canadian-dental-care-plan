@@ -30,6 +30,8 @@ function LayoutBreadcrumbs(): JSX.Element {
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
+export { middleware } from '~/routes/protected/documents/upload/upload-submitted-middleware.server';
+
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
