@@ -1,14 +1,10 @@
-import { useRef } from 'react';
-
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '~/components/buttons';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/components/dialog';
-import { FileUploadItem, FileUploadItemDelete } from '~/components/file-upload';
+import { FileUploadItem } from '~/components/file-upload';
 import { InputError } from '~/components/input-error';
 import type { InputOptionProps } from '~/components/input-option';
 import { InputSelect } from '~/components/input-select';
+import { RemoveFileDialog } from '~/routes/protected/documents/upload/components/remove-file-dialog';
 import { cn } from '~/utils/tw-utils';
 
 interface PendingDocumentUploadItemProps {
@@ -25,7 +21,6 @@ interface PendingDocumentUploadItemProps {
 export function PendingDocumentUploadItem({ id, fileName, documentType, documentTypeOptions, disabled, fileError, documentTypeError, onDocumentTypeChange }: PendingDocumentUploadItemProps) {
   const { t } = useTranslation('documents');
   const fileNameId = `file-upload-item-${id}-name`;
-  const removalConfirmedRef = useRef(false);
 
   return (
     <FileUploadItem
@@ -56,48 +51,7 @@ export function PendingDocumentUploadItem({ id, fileName, documentType, document
         errorMessage={documentTypeError}
       />
       <div className="mt-2">
-        <Dialog
-          onOpenChange={(open) => {
-            if (open) removalConfirmedRef.current = false;
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button variant="secondary" size="sm" endIcon={faTimes} disabled={disabled} aria-describedby={fileNameId}>
-              {t(($) => $.upload.remove)}
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            className="sm:max-w-md"
-            onCloseAutoFocus={(event) => {
-              if (removalConfirmedRef.current) event.preventDefault();
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>{t(($) => $.upload.removeFileConfirmation.title)}</DialogTitle>
-            </DialogHeader>
-            <DialogDescription className="text-base text-inherit">{t(($) => $.upload.removeFileConfirmation.description, { filename: fileName })}</DialogDescription>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="secondary" size="sm" type="button">
-                  {t(($) => $.upload.removeFileConfirmation.keep)}
-                </Button>
-              </DialogClose>
-              <DialogClose asChild>
-                <FileUploadItemDelete
-                  asChild
-                  disabled={disabled}
-                  onClick={() => {
-                    removalConfirmedRef.current = true;
-                  }}
-                >
-                  <Button variant="primary" size="sm" type="button" disabled={disabled}>
-                    {t(($) => $.upload.removeFileConfirmation.confirm)}
-                  </Button>
-                </FileUploadItemDelete>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <RemoveFileDialog fileName={fileName} fileNameId={fileNameId} disabled={disabled} />
       </div>
     </FileUploadItem>
   );
