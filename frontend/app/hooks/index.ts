@@ -14,6 +14,7 @@ export * from './use-hcaptcha';
 export * from './use-hints';
 export * from './use-nonce';
 export * from './use-postal-code-required-country-ids';
+export * from './use-prompt-on-unsaved-changes';
 export * from './use-root-loader-data';
 export * from './use-safe-fetcher-submit';
 export * from './use-sections-status';
