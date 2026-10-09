@@ -1,7 +1,8 @@
 import { test as base } from '@playwright/test';
 
-import { UploadPage } from '../pages/upload-page';
+import { UploadPage, documentFile } from '../pages/upload-page';
 import type { UploadSubmission } from '../pages/upload-page';
+import { UploadSubmittedPage } from '../pages/upload-submitted-page';
 
 /**
  * Provides an isolated, ready-to-use upload page for each test.
@@ -12,9 +13,11 @@ import type { UploadSubmission } from '../pages/upload-page';
  * and metadata-only completion. File contents and CSRF values are not recorded.
  *
  * The built-in page fixture owns browser-context isolation and teardown; this
- * fixture only installs the capture and opens a new upload flow.
+ * uploadPage installs the capture and opens a new upload flow. The optional
+ * uploadSubmittedPage fixture completes two files through that flow and yields
+ * a confirmation page object; it runs only when requested by a test.
  */
-export const test = base.extend<{ uploadPage: UploadPage }>({
+export const test = base.extend<{ uploadPage: UploadPage; uploadSubmittedPage: UploadSubmittedPage }>({
   uploadPage: async ({ page }, use) => {
     // Install before navigation and reset the capture for each new document.
     await page.addInitScript(() => {
@@ -43,6 +46,16 @@ export const test = base.extend<{ uploadPage: UploadPage }>({
     await uploadPage.goto();
     // Yield the initialized page object to the test; Playwright handles teardown.
     await use(uploadPage);
+  },
+  uploadSubmittedPage: async ({ uploadPage }, use) => {
+    await uploadPage.addFile(documentFile('eligibility-review.txt'));
+    await uploadPage.chooseType('eligibility-review.txt');
+    await uploadPage.addFile(documentFile('employer-letter.txt'));
+    await uploadPage.chooseType('employer-letter.txt', 2);
+    await uploadPage.submit();
+    const submittedPage = new UploadSubmittedPage(uploadPage.page);
+    await submittedPage.waitForConfirmation();
+    await use(submittedPage);
   },
 });
 

@@ -9,11 +9,19 @@ pnpm run build
 pnpm exec playwright test e2e/protected/documents
 ```
 
-The suite contains 65 isolated Chromium tests. Each test gets a new browser
-context and a new UUID-keyed upload flow through the `uploadPage` fixture.
+The directory contains 79 isolated Chromium tests: 65 upload-form and HTTP
+contract tests, 8 dedicated confirmation tests, and 6 documents-index tests.
+Each test gets a new browser context; upload tests also get a new UUID-keyed
+upload flow through the `uploadPage` fixture.
 `UploadPage` extends `BasePage`; setup checks the URL and H1 with `isLoaded()`
 and then waits for React Router initialization before interactive actions.
 Tests use accessible roles, web-first assertions, and no fixed sleeps.
+
+Finished-confirmation tests request the `uploadSubmittedPage` fixture, which
+depends on `uploadPage`, submits two files, and returns an `UploadSubmittedPage`
+extending `BasePage`. Guard and partial-completion tests keep their own flow
+state by requesting only `uploadPage`. Neither fixture creates another browser
+context beyond Playwright's built-in isolated page.
 
 Screenshots are retained for every passing and failing test in `test-results/`.
 The root configuration retains traces on the first retry and uses its existing
@@ -27,6 +35,11 @@ pnpm exec playwright show-report
 
 - [upload.spec.ts](./upload.spec.ts) exercises the rendered upload form,
   confirmation, validation, scanning, partial recovery, focus, and navigation.
+- [upload-submitted.spec.ts](./upload-submitted.spec.ts) checks receipt content,
+  ordered successful filenames, next steps, delayed visibility, refresh,
+  finished-form redirects, and confirmation access guards.
+- [index.spec.ts](./index.spec.ts) checks the populated documents table,
+  document metadata, refresh, and navigation to the upload entry route.
 - [upload-contract.spec.ts](./upload-contract.spec.ts) sends malformed and
   validation-bypassing HTTP requests to the real server action using the
   isolated browser's cookies and CSRF token. Screenshots show the browser state;
