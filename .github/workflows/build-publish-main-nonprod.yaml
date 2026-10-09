@@ -171,15 +171,15 @@ jobs:
         run: |
           set -euo pipefail
 
+          short_sha="${SOURCE_SHA:0:8}"
           docker build \
             --file frontend/dockerfile frontend \
             --build-arg BUILD_DATE="$BUILD_DATE" \
             --build-arg BUILD_ID="$BUILD_NUMBER" \
-            --build-arg BUILD_REVISION="$SOURCE_SHA" \
+            --build-arg BUILD_REVISION="$short_sha" \
             --build-arg BUILD_VERSION="$BUILD_VERSION" \
             --tag "$IMAGE_NAME:$BUILD_REVISION"
 
-          short_sha="${SOURCE_SHA:0:8}"
           if [[ "$REF_NAME" == main ]]; then
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha"
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER"
@@ -230,7 +230,6 @@ jobs:
 
           push_image "$image_ref"
           image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
-
           short_sha="${SOURCE_SHA:0:8}"
           if [[ "$REF_NAME" == main ]]; then
             push_image "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
