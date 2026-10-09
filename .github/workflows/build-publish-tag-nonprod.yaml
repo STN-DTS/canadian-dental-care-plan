@@ -155,6 +155,15 @@ jobs:
           image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
 
           docker push "$image_ref" 2>&1 | tee "$push_log"
+          {
+            echo "## Published container tags"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
+              "${image_ref##*:}" "$image_ref" "${GITHUB_SHA:0:8}" \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
           image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
           if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
             echo "Unable to determine the pushed frontend image digest." >&2
@@ -162,6 +171,7 @@ jobs:
           fi
 
           printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
+          printf '\nImage digest: `%s`\n' "$image_digest" >> "$GITHUB_STEP_SUMMARY"
       - name: Sign and verify frontend OCI image
         uses: ./.github/actions/sign-container-image
         with:
@@ -183,11 +193,11 @@ jobs:
           docker push "${IMAGE_NAME}:${BUILD_VERSION}"
 
           {
-            echo "## Published image"
+            echo "## Published release alias"
             echo
-            echo "| Application | Image | Source commit |"
-            echo "| --- | --- | --- |"
-            echo "| CDCP frontend | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+            echo "| CDCP frontend | \`${BUILD_VERSION}\` | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Clean up Azure and registry credentials
         if: ${{ always() }}

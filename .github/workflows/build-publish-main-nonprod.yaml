@@ -215,18 +215,33 @@ jobs:
           trap 'rm -f "$push_log"' EXIT
           image_ref="${IMAGE_NAME}:${BUILD_REVISION}"
 
-          docker push "$image_ref" 2>&1 | tee "$push_log"
+          {
+            echo "## Published container tags"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          push_image() {
+            local image_ref="$1"
+            docker push "$image_ref" 2>&1 | tee "$push_log"
+            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
+              "${image_ref##*:}" "$image_ref" "${GITHUB_SHA:0:8}" \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          push_image "$image_ref"
           image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
 
           short_sha="${SOURCE_SHA:0:8}"
           if [[ "$REF_NAME" == main ]]; then
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
-            docker push "${IMAGE_NAME}:latest"
+            push_image "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
+            push_image "${IMAGE_NAME}:latest"
           elif [[ "$REF_NAME" == release/* ]]; then
             rc_label=$(printf '%03d' "$RUN_NUMBER")
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}"
-            docker push "${IMAGE_NAME}:${BUILD_VERSION}-RC"
+            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
+            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}"
+            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC"
           fi
 
           if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
@@ -235,13 +250,7 @@ jobs:
           fi
 
           printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Published image"
-            echo
-            echo "| Application | Image | Source commit |"
-            echo "| --- | --- | --- |"
-            echo "| CDCP frontend | \`${image_ref}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
-          } >> "$GITHUB_STEP_SUMMARY"
+          printf '\nImage digest: `%s`\n' "$image_digest" >> "$GITHUB_STEP_SUMMARY"
       - name: Sign and verify frontend OCI image
         uses: ./.github/actions/sign-container-image
         with:
