@@ -104,8 +104,9 @@ jobs:
       - name: Authenticate to Azure and setup ACR credentials
         uses: ./.github/actions/azure-acr-login
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
           azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
           acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
@@ -193,3 +194,13 @@ jobs:
             echo "| --- | --- | --- |"
             echo "| CDCP frontend | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up Azure and registry credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${AZURE_CONFIG_DIR:-}" ]]; then
+            rm -rf -- "$AZURE_CONFIG_DIR"
+          fi
+          if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+            rm -rf -- "$DOCKER_CONFIG"
+          fi

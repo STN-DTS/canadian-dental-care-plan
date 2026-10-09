@@ -2,12 +2,18 @@ name: Azure ACR login
 description: Authenticate to Azure and Azure Container Registry
 
 inputs:
-  azure-client-id:
-    description: Azure service principal client ID
+  vault-url:
+    description: Vault URL
     required: true
-  azure-client-secret:
-    description: Azure service principal client secret
+  vault-role-id:
+    description: Vault AppRole role ID
     required: true
+  vault-secret-id:
+    description: Vault AppRole secret ID
+    required: true
+  azure-vault-path:
+    description: Vault API path holding SPN_ID and SPN_PASSWORD; the AppRole must have read access
+    default: canada-dental-care-plan/data/SPN
   azure-tenant-id:
     description: Azure tenant ID
     required: true
@@ -18,24 +24,57 @@ inputs:
     description: Azure Container Registry domain
     required: true
 
+outputs:
+  azure-client-id:
+    description: Masked Azure client ID for subsequent steps in this job only
+    value: ${{ steps.vault.outputs.AZURE_CLIENT_ID }}
+  azure-client-secret:
+    description: Masked Azure client secret for subsequent steps in this job only
+    value: ${{ steps.vault.outputs.AZURE_CLIENT_SECRET }}
+
 runs:
   using: composite
   steps:
+    - name: Fetch Azure credentials from HashiCorp Vault
+      id: vault
+      uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+      with:
+        method: approle
+        url: ${{ inputs.vault-url }}
+        roleId: ${{ inputs.vault-role-id }}
+        secretId: ${{ inputs.vault-secret-id }}
+        exportEnv: false
+        exportToken: false
+        secrets: |
+          ${{ inputs.azure-vault-path }} SPN_ID | AZURE_CLIENT_ID;
+          ${{ inputs.azure-vault-path }} SPN_PASSWORD | AZURE_CLIENT_SECRET;
     - name: Authenticate to Azure and setup ACR credentials
       shell: bash
       env:
         ACR_DOMAIN: ${{ inputs.acr-domain }}
-        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
-        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+        AZURE_CLIENT_ID: ${{ steps.vault.outputs.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ steps.vault.outputs.AZURE_CLIENT_SECRET }}
         AZURE_SUBSCRIPTION_ID: ${{ inputs.azure-subscription-id }}
         AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
       run: |
         set -euo pipefail
+        umask 077
+
+        azure_config_dir="$(mktemp -d "$RUNNER_TEMP/cdcp-azure.XXXXXX")"
+        docker_config_dir="$(mktemp -d "$RUNNER_TEMP/cdcp-docker.XXXXXX")"
+        export AZURE_CONFIG_DIR="$azure_config_dir"
+        export DOCKER_CONFIG="$docker_config_dir"
+        {
+          printf 'AZURE_CONFIG_DIR=%s\n' "$AZURE_CONFIG_DIR"
+          printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG"
+        } >> "$GITHUB_ENV"
 
         az login --service-principal \
           --tenant "$AZURE_TENANT_ID" \
           --username "$AZURE_CLIENT_ID" \
-          --password "$AZURE_CLIENT_SECRET"
+          --password "$AZURE_CLIENT_SECRET" \
+          --output none >/dev/null 2>&1
 
         az acr login --name "${ACR_DOMAIN%%.*}" \
-          --subscription "$AZURE_SUBSCRIPTION_ID"
+          --subscription "$AZURE_SUBSCRIPTION_ID" \
+          --output none >/dev/null 2>&1

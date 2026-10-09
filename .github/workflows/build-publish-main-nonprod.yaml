@@ -146,10 +146,12 @@ jobs:
           test -n "$COSIGN_VAULT_PATH"
           test -s .github/actions/sign-container-image/cosign.pub
       - name: Authenticate to Azure and setup ACR credentials
+        id: acr-login
         uses: ./.github/actions/azure-acr-login
         with:
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
           azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
           acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
@@ -255,15 +257,16 @@ jobs:
       - name: Restart dev and int1 deployments
         if: ${{ github.ref_name == 'main' }}
         env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          AZURE_CLIENT_ID: ${{ steps.acr-login.outputs.azure-client-id }}
+          AZURE_CLIENT_SECRET: ${{ steps.acr-login.outputs.azure-client-secret }}
           K8S_CLUSTER_NAME: ${{ vars.K8S_CLUSTER_NAME_NONPROD }}
           K8S_RESOURCE_GROUP: ${{ vars.K8S_RESOURCE_GROUP_NONPROD }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
         run: |
           set -euo pipefail
 
-          kubeconfig="$RUNNER_TEMP/cdcp-nonprod-kubeconfig"
+          umask 077
+          kubeconfig="$(mktemp "$RUNNER_TEMP/cdcp-nonprod-kubeconfig.XXXXXX")"
           trap 'rm -f "$kubeconfig"' EXIT
           az aks get-credentials --overwrite-existing \
             --subscription "$AZURE_SUBSCRIPTION_ID" \
@@ -272,11 +275,19 @@ jobs:
             --file "$kubeconfig"
           kubelogin convert-kubeconfig \
             --login spn \
-            --client-id "$AZURE_CLIENT_ID" \
-            --client-secret "$AZURE_CLIENT_SECRET" \
             --kubeconfig "$kubeconfig"
 
           kubectl rollout restart deployment/frontend-dev \
             --kubeconfig "$kubeconfig" --namespace canada-dental-care-plan
           kubectl rollout restart deployment/frontend-int1 \
             --kubeconfig "$kubeconfig" --namespace canada-dental-care-plan
+      - name: Clean up Azure and registry credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${AZURE_CONFIG_DIR:-}" ]]; then
+            rm -rf -- "$AZURE_CONFIG_DIR"
+          fi
+          if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+            rm -rf -- "$DOCKER_CONFIG"
+          fi
