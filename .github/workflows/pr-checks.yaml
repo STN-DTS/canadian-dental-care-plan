@@ -48,20 +48,24 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - id: frontend
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Detect frontend changes
+        id: frontend
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
             src:
               - frontend/**
-      - id: gitops
+      - name: Detect GitOps changes
+        id: gitops
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
             src:
               - gitops/**
-      - id: infrastructure
+      - name: Detect infrastructure changes
+        id: infrastructure
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
@@ -75,45 +79,50 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     needs: detect-changes
+    defaults:
+      run:
+        working-directory: ./frontend
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: frontend/package.json
       - name: Install pnpm
         run: |
           corepack enable
           corepack prepare --activate
-        working-directory: frontend/
       - name: Verify versions
         run: |
           node -v
           pnpm -v
-        working-directory: frontend/
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: frontend/
-      - run: pnpm run format:check
-        working-directory: frontend/
-      - run: pnpm run typecheck
-        working-directory: frontend/
-      - run: pnpm run lint:oxlint
-        working-directory: frontend/
-      - run: pnpm run test:unit:coverage
-        working-directory: frontend/
-      - run: pnpm run build
-        working-directory: frontend/
-      - run: pnpm exec playwright install chromium --with-deps
-        working-directory: frontend/
-      - run: pnpm run test:e2e:smoke
-        working-directory: frontend/
+      - name: Check formatting
+        run: pnpm run format:check
+      - name: Check TypeScript types
+        run: pnpm run typecheck
+      - name: Run lint
+        run: pnpm run lint:oxlint
+      - name: Run unit tests with coverage
+        run: pnpm run test:unit:coverage
+      - name: Build frontend
+        run: pnpm run build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run end-to-end smoke tests
+        run: pnpm run test:e2e:smoke
   build-frontend:
     runs-on: ubuntu-latest
     needs: detect-changes
+    defaults:
+      run:
+        working-directory: ./frontend
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build Docker image
         run: podman build --file dockerfile .
-        working-directory: frontend/
