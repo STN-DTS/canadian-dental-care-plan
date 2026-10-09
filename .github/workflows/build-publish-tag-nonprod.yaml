@@ -139,7 +139,6 @@ jobs:
           vault-url: ${{ secrets.VAULT_URL_NONPROD }}
           vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-          aqua-vault-path: ${{ vars.AQUA_VAULT_PATH_NONPROD }}
           scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
       - name: Push frontend OCI image to registry
         id: push

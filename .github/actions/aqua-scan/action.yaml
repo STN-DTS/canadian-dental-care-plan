@@ -17,9 +17,6 @@ inputs:
   vault-secret-id:
     description: Vault AppRole secret ID
     required: true
-  aqua-vault-path:
-    description: Vault KV path holding Aqua scan credentials
-    required: true
   scan-timestamp:
     description: Timestamp used in scan report filenames
     required: true
@@ -37,10 +34,10 @@ runs:
         secretId: ${{ inputs.vault-secret-id }}
         exportEnv: false
         secrets: |
-          ${{ inputs.aqua-vault-path }} AQUA_HOST | AQUA_HOST;
-          ${{ inputs.aqua-vault-path }} AQUA_USERNAME | AQUA_USERNAME;
-          ${{ inputs.aqua-vault-path }} AQUA_PASSWORD | AQUA_PASSWORD;
-          ${{ inputs.aqua-vault-path }} AQUA_POLICIES | AQUA_POLICIES;
+          canada-dental-care-plan/data/shared/cicd/aquasec AQUA_HOST | AQUA_HOST;
+          canada-dental-care-plan/data/shared/cicd/aquasec AQUA_USERNAME | AQUA_USERNAME;
+          canada-dental-care-plan/data/shared/cicd/aquasec AQUA_PASSWORD | AQUA_PASSWORD;
+          canada-dental-care-plan/data/shared/cicd/aquasec AQUA_POLICIES | AQUA_POLICIES;
     - name: Create Aqua reports directories and fetch Trivy template
       shell: bash
       env:
