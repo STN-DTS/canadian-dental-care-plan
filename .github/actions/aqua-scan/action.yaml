@@ -66,6 +66,7 @@ runs:
         if-no-files-found: warn
         retention-days: 7
     - name: Run Aqua scannercli
+      id: scanner
       if: ${{ !env.ACT }}
       continue-on-error: true
       shell: bash
@@ -97,18 +98,19 @@ runs:
           asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
           -c 'AQUA_PASSWORD="$(cat /run/secrets/aqua-password)"; exec /opt/aquasec/scannercli scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" \
             --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'; then
-          exit 0
+          scan_status=0
         else
           scan_status=$?
-          {
-            printf '## Aqua scannercli failed\n\n'
-            printf 'Scanner invocation exited with code `%s`.\n\n' "$scan_status"
-            printf 'Publishing continues because this scan is non-blocking. This does not indicate a successful Aqua scan.\n'
-          } >> "$GITHUB_STEP_SUMMARY"
-          printf '::warning::Aqua scannercli failed with exit code %s; publishing continues without a successful Aqua scan.\n' "$scan_status"
-          exit "$scan_status"
         fi
+        printf 'exit-code=%s\n' "$scan_status" >> "$GITHUB_OUTPUT"
+        if (( scan_status == 4 )); then
+          printf '::warning::Aqua scan completed, but compliance policies failed; publishing continues in advisory mode.\n'
+        elif (( scan_status != 0 )); then
+          printf '::warning::Aqua scannercli execution failed with exit code %s; publishing continues without a completed Aqua scan.\n' "$scan_status"
+        fi
+        exit "$scan_status"
     - name: Upload scannercli report
+      id: scanner-report
       if: ${{ always() && !env.ACT }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
@@ -117,3 +119,59 @@ runs:
         include-hidden-files: true
         if-no-files-found: warn
         retention-days: 7
+    - name: Summarize Aqua scanner result
+      if: ${{ always() && !env.ACT }}
+      shell: bash
+      env:
+        IMAGE_REF: ${{ inputs.image-ref }}
+        SCAN_EXIT_CODE: ${{ steps.scanner.outputs.exit-code }}
+        REPORT_URL: ${{ steps.scanner-report.outputs.artifact-url }}
+      run: |
+        set -euo pipefail
+
+        case "$SCAN_EXIT_CODE" in
+          0)
+            result='Scan completed; compliance passed'
+            next_steps='No compliance failure was reported by scannercli.'
+            ;;
+          4)
+            result='Scan completed; compliance policies failed'
+            next_steps='Review the scanner report or Aqua Console for the failed controls and affected packages. Remediate the findings or follow the approved exception process.'
+            ;;
+          125)
+            result='Scanner container could not start'
+            next_steps='Check the scanner logs for image download, registry connectivity, or Docker setup failures. Compliance was not evaluated.'
+            ;;
+          126|127)
+            result='Scanner command could not execute'
+            next_steps='Check the scanner image, executable path, and permissions. Compliance was not evaluated.'
+            ;;
+          '')
+            result='Scanner result unavailable'
+            next_steps='Check earlier action steps and scanner logs. No completed scan can be confirmed.'
+            ;;
+          *)
+            result='Scanner returned an unexpected failure'
+            next_steps='Review the scanner logs and any available report before determining whether compliance was evaluated.'
+            ;;
+        esac
+
+        {
+          printf '## Aqua scanner result\n\n'
+          printf '| Field | Value |\n| --- | --- |\n'
+          printf '| Image | `%s` |\n' "$IMAGE_REF"
+          printf '| Result | %s |\n' "$result"
+          printf '| Exit code | `%s` |\n' "${SCAN_EXIT_CODE:-unavailable}"
+          printf '| Enforcement | Advisory; scannercli does not block publishing |\n'
+          if [[ -n "$REPORT_URL" ]]; then
+            printf '| Report | [Download scanner report](%s) |\n' "$REPORT_URL"
+          else
+            printf '| Report | No scanner report artifact is available |\n'
+          fi
+          printf '\n%s\n\n' "$next_steps"
+          printf '[Workflow logs](%s/%s/actions/runs/%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+          printf 'Vault-derived policy names, credentials, and raw scanner output are omitted from this summary.\n'
+          if [[ "$SCAN_EXIT_CODE" != 0 ]]; then
+            printf '\nPublication or signature success does not establish Aqua compliance.\n'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
