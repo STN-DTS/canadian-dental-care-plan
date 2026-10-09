@@ -95,11 +95,8 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify image signing configuration
-        env:
-          COSIGN_VAULT_PATH: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
         run: |
           set -euo pipefail
-          test -n "$COSIGN_VAULT_PATH"
           test -s .github/actions/sign-container-image/cosign.pub
       - name: Authenticate to Azure and setup ACR credentials
         uses: ./.github/actions/azure-acr-login
@@ -173,7 +170,6 @@ jobs:
           vault-url: ${{ secrets.VAULT_URL_NONPROD }}
           vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-          cosign-vault-path: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
       - name: Publish signed release version alias
         env:
           BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
