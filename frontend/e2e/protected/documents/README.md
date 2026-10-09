@@ -19,6 +19,13 @@ List the current tests without running them:
 pnpm exec playwright test e2e/protected/documents --list
 ```
 
+Run only accessibility tests, or exclude them from a functional-only run:
+
+```sh
+pnpm exec playwright test e2e/protected/documents --grep @a11y
+pnpm exec playwright test e2e/protected/documents --grep-invert @a11y
+```
+
 Screenshots are off by default. The custom `E2E_SCREENSHOTS=true` setting enables
 full-page screenshots for passes and failures in `test-results/`. Playwright Test
 has no `--screenshot` flag. Use `--trace` to override the default first-retry traces.
@@ -46,6 +53,28 @@ pnpm exec playwright show-report
   ordered filenames, next steps, delayed visibility, refresh, and access guards.
 - [index.spec.ts](./index.spec.ts): populated table, metadata, refresh, and
   navigation to upload.
+- Accessibility scans follow the same route names:
+  [index-accessibility.spec.ts](./index-accessibility.spec.ts),
+  [upload-accessibility.spec.ts](./upload-accessibility.spec.ts), and
+  [upload-submitted-accessibility.spec.ts](./upload-submitted-accessibility.spec.ts).
+
+## Accessibility
+
+[The accessibility fixture](../../fixtures/accessibility.ts) uses
+`@axe-core/playwright` and supplies `makeAxeBuilder` and `checkAccessibility`.
+It composes with document-upload fixtures through `mergeTests`, without adding
+browser contexts or scanning every functional test automatically.
+
+Tests wait for each visible state, then scan the full page with default axe
+rules. No elements or rules are excluded. Each scan attaches complete JSON
+results before asserting zero detected violations; failures show rule IDs,
+impact, target selectors, and help links. Inconclusive results remain in reports
+for manual review. Dialog tests also check Tab, Shift+Tab, Escape, and focus restoration.
+
+These tests run with the normal E2E suite. Passing scans do not prove WCAG
+conformance, correct screen-reader announcements, or usability. Manual assessments
+and inclusive user testing remain necessary; a specific WCAG rule scope can be
+configured centrally in the builder fixture when the project selects its target.
 
 ## Fixtures
 

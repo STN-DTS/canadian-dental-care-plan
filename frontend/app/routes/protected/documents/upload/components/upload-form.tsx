@@ -101,7 +101,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
             >
               <div>
                 <FileUploadTrigger asChild>
-                  <Button id="fileUploadTrigger" variant="secondary" aria-describedby={fileUploadDescriptionId} className={cn(filesError !== undefined && 'border-red-500 text-red-500 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
+                  <Button id="fileUploadTrigger" variant="secondary" aria-describedby={fileUploadDescriptionId} className={cn(filesError !== undefined && 'border-red-500 text-red-700 hover:bg-red-100 focus:bg-red-100')} startIcon={faArrowUpFromBracket}>
                     {t(($) => $.upload.addFile)}
                   </Button>
                 </FileUploadTrigger>
