@@ -48,7 +48,7 @@ export default defineConfig({
       AUTH_RAOIDC_CLIENT_ID: 'CDCP',
       AUTH_RASCL_LOGOUT_URL: `http://localhost:${port}/`,
       ENABLED_FEATURES: "hcaptcha,view-letters,status,show-prototype-banner,doc-upload",
-      ENABLED_MOCKS: 'cct,code-tables,document-upload,gc-notify,power-platform,profile,raoidc,status-check,verification-code,wsaddress',
+      ENABLED_MOCKS: 'cct,code-tables,document-upload,evidentiary-document,gc-notify,power-platform,profile,raoidc,status-check,verification-code,wsaddress',
       GC_NOTIFY_API_KEY: '00000000000000000000000000000000',
       HCAPTCHA_SECRET_KEY: '0x0000000000000000000000000000000000000000',
       HCAPTCHA_SITE_KEY: '10000000-ffff-ffff-ffff-000000000001',
