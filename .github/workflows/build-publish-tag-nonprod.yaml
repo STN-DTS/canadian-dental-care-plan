@@ -1,0 +1,195 @@
+# ============================================================================
+# Workflow: Build, test, and publish nonprod tag images
+# Purpose:  Validates the frontend and publishes release-tagged images to nonprod ACR.
+# Security: Third-party GitHub Actions are pinned to immutable commit SHAs.
+# ============================================================================
+name: Build, test, and publish nonprod tag images
+
+permissions: read-all
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+env:
+  CI: true
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate release tag
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$REF_TYPE" != "tag" || ! "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$ ]]; then
+            echo "Must run against a release tag (vX.Y.Z with an optional suffix), got '$REF_NAME'." >&2
+            exit 1
+          fi
+
+          version="${REF_NAME#v}"
+          build_number="$(printf '%05x' "$GITHUB_RUN_NUMBER")"
+          generated_tag="${version}-${GITHUB_SHA:0:8}-${build_number}"
+          docker_tag_regex='^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
+
+          if [[ ! "$version" =~ $docker_tag_regex || ! "$generated_tag" =~ $docker_tag_regex ]]; then
+            echo "Release tag '$REF_NAME' generates an invalid Docker tag." >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  test-frontend:
+    needs: resolve-version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26.9.0
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run format check
+        run: pnpm run format:check
+      - name: Run typecheck
+        run: pnpm run typecheck
+      - name: Run lint
+        run: pnpm run lint:oxlint
+      - name: Run unit tests with coverage
+        run: pnpm run test:unit:coverage
+      - name: Build frontend
+        run: pnpm run build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run end-to-end tests
+        run: pnpm run test:e2e
+
+  build-frontend:
+    runs-on: arc-runners-dshp-dev
+    needs:
+      - resolve-version
+      - test-frontend
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify image signing configuration
+        env:
+          COSIGN_VAULT_PATH: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
+        run: |
+          set -euo pipefail
+          test -n "$COSIGN_VAULT_PATH"
+          test -s .github/actions/sign-container-image/cosign.pub
+      - name: Authenticate to Azure and setup ACR credentials
+        uses: ./.github/actions/azure-acr-login
+        with:
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID_NONPROD }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET_NONPROD }}
+          azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
+          azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+          acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
+      - name: Generate dynamic build variables
+        id: build-vars
+        uses: ./.github/actions/generate-build-vars
+        with:
+          version: ${{ needs.resolve-version.outputs.version }}
+      - name: Build frontend OCI image
+        env:
+          BUILD_DATE: ${{ steps.build-vars.outputs.build-date }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          IMAGE_TAG="${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          docker build \
+            --file frontend/dockerfile frontend \
+            --build-arg BUILD_DATE="$BUILD_DATE" \
+            --build-arg BUILD_ID="$BUILD_NUMBER" \
+            --build-arg BUILD_REVISION="$BUILD_REVISION" \
+            --build-arg BUILD_VERSION="$BUILD_VERSION" \
+            --tag "$IMAGE_NAME:$IMAGE_TAG"
+          docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$BUILD_VERSION"
+      - name: Scan frontend OCI image
+        uses: ./.github/actions/aqua-scan
+        with:
+          image-ref: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend:${{ steps.build-vars.outputs.build-version }}-${{ steps.build-vars.outputs.build-revision }}-${{ steps.build-vars.outputs.build-number }}
+          artifact-prefix: cdcp-frontend
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          aqua-vault-path: ${{ vars.AQUA_VAULT_PATH_NONPROD }}
+          scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
+      - name: Push frontend OCI image to registry
+        id: push
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          push_log="$(mktemp "$RUNNER_TEMP/image-push.XXXXXX")"
+          trap 'rm -f "$push_log"' EXIT
+          image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+
+          docker push "$image_ref" 2>&1 | tee "$push_log"
+          image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
+          if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Unable to determine the pushed frontend image digest." >&2
+            exit 1
+          fi
+
+          printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
+      - name: Sign and verify frontend OCI image
+        uses: ./.github/actions/sign-container-image
+        with:
+          image: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend@${{ steps.push.outputs.image-digest }}
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          cosign-vault-path: ${{ vars.COSIGN_VAULT_PATH_NONPROD }}
+      - name: Publish signed release version alias
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          docker tag "$image_ref" "${IMAGE_NAME}:${BUILD_VERSION}"
+          docker push "${IMAGE_NAME}:${BUILD_VERSION}"
+
+          {
+            echo "## Published image"
+            echo
+            echo "| Application | Image | Source commit |"
+            echo "| --- | --- | --- |"
+            echo "| CDCP frontend | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
+          } >> "$GITHUB_STEP_SUMMARY"
