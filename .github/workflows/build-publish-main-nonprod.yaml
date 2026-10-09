@@ -10,6 +10,7 @@ permissions: read-all
 concurrency:
   group: frontend-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 on:
   push:
@@ -106,7 +107,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26.9.0
+          node-version-file: frontend/package.json
       - name: Install pnpm
         run: |
           corepack enable
@@ -182,12 +183,9 @@ jobs:
           if [[ "$REF_NAME" == main ]]; then
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha"
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:latest"
           elif [[ "$REF_NAME" == release/* ]]; then
             rc_label=$(printf '%03d' "$RUN_NUMBER")
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label-$short_sha"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC"
           fi
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
@@ -236,12 +234,9 @@ jobs:
           short_sha="${SOURCE_SHA:0:8}"
           if [[ "$REF_NAME" == main ]]; then
             push_image "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
-            push_image "${IMAGE_NAME}:latest"
           elif [[ "$REF_NAME" == release/* ]]; then
             rc_label=$(printf '%03d' "$RUN_NUMBER")
             push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
-            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}"
-            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC"
           fi
 
           if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
@@ -258,6 +253,55 @@ jobs:
           vault-url: ${{ secrets.VAULT_URL_NONPROD }}
           vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+      - name: Promote verified frontend image to latest
+        if: ${{ success() && github.ref_name == 'main' }}
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+        run: |
+          set -euo pipefail
+
+          docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "${IMAGE_NAME}:latest"
+          docker push "${IMAGE_NAME}:latest"
+
+          {
+            echo "## Promoted verified container tag"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+            printf '| CDCP frontend | `latest` | `%s:latest` | [`%s`](%s/%s/commit/%s) |\n' \
+              "$IMAGE_NAME" "${GITHUB_SHA:0:8}" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+            printf '\nVerified image digest: `%s`\n' "$IMAGE_DIGEST"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Promote verified frontend release aliases
+        if: ${{ success() && startsWith(github.ref, 'refs/heads/release/v') }}
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
+          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+
+          rc_label=$(printf '%03d' "$RUN_NUMBER")
+          {
+            echo "## Promoted verified release tags"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for image_tag in "${BUILD_VERSION}-RC${rc_label}" "${BUILD_VERSION}-RC"; do
+            image_ref="${IMAGE_NAME}:${image_tag}"
+            docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "$image_ref"
+            docker push "$image_ref"
+            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
+              "$image_tag" "$image_ref" "${GITHUB_SHA:0:8}" \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          done
+          printf '\nVerified image digest: `%s`\n' "$IMAGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"
       - name: Restart dev and int1 deployments
         if: ${{ github.ref_name == 'main' }}
         env:
