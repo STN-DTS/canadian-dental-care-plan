@@ -1,19 +1,46 @@
-name: Build and test solution
+# ============================================================================
+# Workflow: Build and test pull request
+# Purpose:  This is the primary Continuous Integration (CI) pipeline. It
+#           detects changes in the monorepo and selectively runs frontend
+#           tests and container builds.
+# Security: This workflow pins third-party GitHub Actions to immutable commit
+#           SHAs rather than mutable version tags to help mitigate supply chain
+#           attacks.
+#
+#           To find the exact 40-character SHA for a specific action release,
+#           you can query the repository directly using git:
+#           git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<version>
+#
+#           Example:
+#           git ls-remote https://github.com/actions/checkout.git refs/tags/v7.0.1
+# ============================================================================
+name: Build and test pull request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Follows the principle of least privilege.
+# Defaults to read-only access for the GITHUB_TOKEN.
 permissions: read-all
 
+# ----------------------------------------------------------------------------
+# Triggers: When does this workflow run?
+# ----------------------------------------------------------------------------
 on:
-  push:
-    branches:
-      - main
-      - release/**
   pull_request:
+    types: [opened, synchronize, reopened, converted_to_draft, ready_for_review]
+    # Triggers on PRs targeting the main branch or any release branch.
     branches:
       - main
       - release/**
+  # Allows this workflow to be called as a reusable workflow.
   workflow_call: {}
+  # Allows a user to trigger this workflow manually from the GitHub Actions UI.
   workflow_dispatch: {}
 
 env:
+  # Standard environment variable letting tools know they are in CI.
   CI: true
 
 jobs:
