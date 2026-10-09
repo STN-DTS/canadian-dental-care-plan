@@ -1,129 +1,89 @@
 # Document Upload E2E Coverage
 
-These specs use the root Playwright configuration and its `webServer` command.
-Build the application before running them so `pnpm run start` serves current
-source code. No separate application startup command is needed.
+The spec files are the source of truth for test scenarios. Feature behavior is
+documented in [Document Upload Feature](../../../other/docs/document-upload-feature.md).
+
+## Run
+
+Build first. The root Playwright configuration starts the application with
+`pnpm run start`; no separate server command is needed.
 
 ```sh
 pnpm run build
 pnpm exec playwright test e2e/protected/documents
 ```
 
-The directory contains 79 isolated Chromium tests: 65 upload-form and HTTP
-contract tests, 8 dedicated confirmation tests, and 6 documents-index tests.
-Each test gets a new browser context; upload tests also get a new UUID-keyed
-upload flow through the `uploadPage` fixture.
-`UploadPage` extends `BasePage`; setup checks the URL and H1 with `isLoaded()`
-and then waits for React Router initialization before interactive actions.
-Tests use accessible roles, web-first assertions, and no fixed sleeps.
+List the current tests without running them:
 
-Finished-confirmation tests request the `uploadSubmittedPage` fixture, which
-depends on `uploadPage`, submits two files, and returns an `UploadSubmittedPage`
-extending `BasePage`. Guard and partial-completion tests keep their own flow
-state by requesting only `uploadPage`. Neither fixture creates another browser
-context beyond Playwright's built-in isolated page.
+```sh
+pnpm exec playwright test e2e/protected/documents --list
+```
 
-Screenshots are retained for every passing and failing test in `test-results/`.
-The root configuration retains traces on the first retry and uses its existing
-reporters. Open an HTML report after a default-reporter run with:
+Screenshots are off by default. The custom `E2E_SCREENSHOTS=true` setting enables
+full-page screenshots for passes and failures in `test-results/`. Playwright Test
+has no `--screenshot` flag. Use `--trace` to override the default first-retry traces.
+
+```sh
+E2E_SCREENSHOTS=true pnpm exec playwright test e2e/protected/documents
+pnpm exec playwright test e2e/protected/documents --trace=retain-on-failure
+```
+
+The root configuration supplies reporters. After a run using the HTML reporter:
 
 ```sh
 pnpm exec playwright show-report
 ```
 
-## Test Boundaries
+## Suites
 
-- [upload.spec.ts](./upload.spec.ts) exercises the rendered upload form,
-  confirmation, validation, scanning, partial recovery, focus, and navigation.
-- [upload-submitted.spec.ts](./upload-submitted.spec.ts) checks receipt content,
-  ordered successful filenames, next steps, delayed visibility, refresh,
-  finished-form redirects, and confirmation access guards.
-- [index.spec.ts](./index.spec.ts) checks the populated documents table,
-  document metadata, refresh, and navigation to the upload entry route.
-- [upload-contract.spec.ts](./upload-contract.spec.ts) sends malformed and
-  validation-bypassing HTTP requests to the real server action using the
-  isolated browser's cookies and CSRF token. Screenshots show the browser state;
-  HTTP status and response assertions verify the server result.
-- [UploadPage](../../pages/upload-page.ts) keeps file-picker and form operations
-  sequential because they mutate the same page. Independent confirmation
-  assertions run with `Promise.all()`.
-- [The fixture](../../fixtures/document-upload.ts) captures multipart field names
-  and filenames from actual browser fetches. It does not store file contents or
-  CSRF values in the capture. This verifies retry and finish payloads without
-  depending on Chromium exposing multipart bytes to `Request.postDataBuffer()`.
-- EWDU and Power Platform use existing application mocks. The suite does not
-  verify live EWDU scanning, ingestion, delivery, or downstream retry policies.
-- The upload page has no same-language internal navigation link. SPA guard and
-  query tests therefore initiate navigation through React Router's browser
-  router. Native unload tests use actual reload and document navigation.
-- `evidentiary-document` is enabled in the root configuration because it owns
-  the appeal eligibility and document-list mock bindings.
+- [upload.spec.ts](./upload.spec.ts): form validation, selection, scanning,
+  partial recovery, focus, confirmation, and navigation.
+- [upload-contract.spec.ts](./upload-contract.spec.ts): crafted HTTP requests to
+  the real server action, bypassing client checks but retaining session cookies
+  and CSRF protection. Assertions check statuses, bodies, and redirects.
+  Optional screenshots show browser state, not HTTP responses.
+- [upload-submitted.spec.ts](./upload-submitted.spec.ts): receipt content,
+  ordered filenames, next steps, delayed visibility, refresh, and access guards.
+- [index.spec.ts](./index.spec.ts): populated table, metadata, refresh, and
+  navigation to upload.
 
-## Scenario Mapping
+## Fixtures
 
-Source: [Document Upload Feature](../../../other/docs/document-upload-feature.md).
+Each test has a fresh browser context. [The fixture](../../fixtures/document-upload.ts)
+provides `uploadPage` with a new UUID-keyed flow. [UploadPage](../../pages/upload-page.ts)
+extends `BasePage`, checks URL and H1 with `isLoaded()`, and waits for router
+initialization. Tests use accessible locators, web-first assertions, and no sleeps.
+Page mutations run sequentially; independent filename assertions use `Promise.all()`.
 
-| Document scenario                                                          | E2E coverage                                                               |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Eligible entry creates a new initialized flow                              | Empty UUID flow and repeated-entry checks                                  |
-| Invalid flow ID or unavailable session record                              | Invalid-ID and missing-session redirects                                   |
-| Finished form access, including POST                                       | Confirmation refresh, form revisit, and finished-form POST                 |
-| Initialized or partial confirmation access                                 | Both redirect to the documents list                                        |
-| Finished confirmation shows filenames and delayed visibility               | Confirmation filenames, ordering, next steps, delay notice, and refresh    |
-| Valid selection, empty type, and focus                                     | File-picker, pending-item, empty-type, count, and focus assertions         |
-| Appending files preserves types and selection                              | Append and independent type-change checks                                  |
-| Picker selects one file; cancellation changes nothing                      | Native picker `isMultiple()` and cancellation checks                       |
-| Count limit, including uploaded files                                      | Ten-file limit and partial-upload combined-count checks                    |
-| Unsupported extension or oversized selection                               | Selection rejected, previous file/type preserved, no server POST           |
-| Exact maximum size                                                         | Accepted 5 MiB selection                                                   |
-| Duplicate against pending or uploaded files                                | Both rejected without adding the file                                      |
-| Same content under different names; same name with different content       | Both accepted as separate selections                                       |
-| Pending type change affects only that file                                 | Independent selector values                                                |
-| Removal cancellation, Escape, and dismissal                                | All retain the file and restore trigger focus                              |
-| Confirmed removal focus destinations                                       | Next item, preceding item, upload trigger, and uploaded-only region        |
-| Uploaded items cannot be edited or removed                                 | Successful status and absence of edit/removal controls                     |
-| Empty submission or missing type                                           | Client errors and zero upload POSTs                                        |
-| Server repeats extension, size, count, type, and duplicate validation      | Direct HTTP validation-bypass checks                                       |
-| Missing, blank, non-string, duplicate, or mismatched IDs; non-file objects | HTTP 400 cases                                                             |
-| Resubmitted uploaded ID                                                    | HTTP 409 and retained success                                              |
-| Disallowed detected type or undetectable non-text content                  | File-specific rejection before uploading                                   |
-| Undetectable declared text content                                         | Successful plain-text upload journeys                                      |
-| Scan rejects a file; no pending file uploads                               | EICAR mixed-batch rejection, retained pending files, and recovery          |
-| All pending uploads succeed                                                | Confirmation with ordered filenames                                        |
-| Every upload fails                                                         | Pending state, upload error, and repeated retry                            |
-| Partial upload succeeds                                                    | Successful and failed statuses, counts, retained order, and no redirect    |
-| Upload error response or processing exception                              | Mock failure and unknown-type resolution error                             |
-| Retry after scan failure                                                   | Corrected pending batch subsequently reaches confirmation                  |
-| Retry after partial upload sends only pending files                        | Captured multipart filenames exclude earlier success                       |
-| Add or remove files after partial success                                  | Duplicate/count checks and successful replacement upload                   |
-| Removal alone does not finish partial flow                                 | Uploaded-only status and unchanged form URL                                |
-| Explicit uploaded-only completion                                          | Metadata-only finish fields and success-only confirmation                  |
-| Finish without success                                                     | HTTP 409                                                                   |
-| Finish includes IDs, files, or another non-string field                    | HTTP 400 cases                                                             |
-| Removing all files with no success                                         | Empty count and upload-trigger focus                                       |
-| Pending pathname navigation                                                | Stay, Escape, Close, focus restoration, and explicit Leave                 |
-| Pending browser unload                                                     | Native `beforeunload` warning on reload                                    |
-| Empty or uploaded-only navigation                                          | No native warning; uploaded-only SPA navigation also unblocked             |
-| Query or fragment changes                                                  | No pathname dialog; query revalidates metadata, fragment retains selection |
-| Reload clears pending and uploaded metadata                                | Pending reset and partial reset with confirmation rejected                 |
-| Same-form selection, upload, and finish preserve state                     | Append, partial recovery, retry, and finish journeys                       |
-| In-flight submission disables mutations                                    | Held real browser request; picker, type, removal, and submit disabled      |
+`uploadSubmittedPage` depends on `uploadPage`, submits two files, and returns an
+`UploadSubmittedPage` extending `BasePage`. Guard and partial-completion tests
+request only `uploadPage`. Neither fixture adds another browser context.
 
-## Remaining E2E Gaps
+The fixture captures action names, filenames, and multipart field names from
+browser fetches, not file contents or CSRF values. This verifies retry and finish
+payloads without relying on Chromium's `Request.postDataBuffer()` support.
 
-The current application mocks return one fixed eligible applicant and fixed
-document types. The following documented scenarios are not claimed as E2E
-coverage; they need configurable backend fixtures or lower-level fault injection:
+SPA guard and query tests invoke the browser router because the upload page has
+no same-language internal navigation link. Native unload tests use real reloads
+and document navigation.
 
-| Scenario                                                          | Current limitation or existing lower-level coverage                                                                        |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Eligibility absent or `canUploadAppealDocuments: false` redirects | Existing eligibility-mapper tests cover true/false decisions, but this mock cannot render both access outcomes             |
-| Entire incoming multi-file selection rejected on first error      | Native picker is single-file; selection-helper tests cover batch validation                                                |
-| Stale selection-validation response ignored                       | Local client action and disabled picker prevent arranging this race through normal UI; hook-level testing is appropriate   |
-| Unavailable uploaded document-type label fallback                 | Fixed active mock types do not change during a flow                                                                        |
-| Content checking or scan service throws                           | Existing server-helper tests inject rejected scan promises; E2E covers actual rejection, not a forced service exception    |
-| Actual EWDU scans/uploads never repeat for successful files       | E2E verifies successful filenames are absent from retry POSTs; downstream call counts require a controllable EWDU endpoint |
+## Limits
 
-The HTTP tests exercise the real upload action rather than fulfilling application
-responses with fabricated success/error data. They do not equate mocked backend
-success with completed Power Platform ingestion.
+EWDU and Power Platform use application mocks. The required `evidentiary-document`
+mock supplies eligibility and document-list data. These tests do not verify live
+scanning, delivery, ingestion, or downstream retries. Mock submission success
+does not mean Power Platform ingestion completed; HTTP responses are not fabricated.
+
+The fixed applicant and document types leave these E2E gaps:
+
+- **Absent or denied eligibility:** mapper tests cover true/false decisions;
+  configurable backend fixtures are needed to test both access outcomes.
+- **Whole multi-file selection rejection:** the picker is single-file;
+  selection-helper tests cover batch validation.
+- **Stale selection responses:** local validation and disabled controls prevent
+  arranging the race through normal UI; test at hook level.
+- **Unavailable uploaded type labels:** mock active types never change mid-flow.
+- **Content-check or scan-service exceptions:** server-helper tests inject scan
+  failures; E2E covers rejection, not forced service exceptions.
+- **No repeated downstream calls for successful files:** retry POSTs exclude
+  successful filenames, but EWDU call counts require a controllable endpoint.

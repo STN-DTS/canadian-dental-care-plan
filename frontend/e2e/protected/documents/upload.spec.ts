@@ -12,8 +12,6 @@
 import { expect, test } from '../../fixtures/document-upload';
 import { uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl } from '../../pages/upload-page';
 
-test.use({ screenshot: { mode: 'on', fullPage: true } });
-
 const maxBytes = 5 * 1024 * 1024;
 
 test.describe('access and lifecycle', () => {

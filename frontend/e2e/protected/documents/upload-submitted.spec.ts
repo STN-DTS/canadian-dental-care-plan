@@ -4,15 +4,13 @@
  * Completes real form submissions against the configured backend mocks before
  * checking receipt content, successful filenames, next steps, and session-backed
  * navigation. Confirmation represents submission, not Power Platform ingestion.
- * Screenshots are retained for every outcome; external dashboard links are not
- * followed. Upload-form interactions and malformed HTTP payloads are covered by
+ * Optional screenshots are configured centrally; external dashboard links are
+ * not followed. Upload-form interactions and malformed HTTP payloads are covered by
  * upload.spec.ts and upload-contract.spec.ts respectively.
  */
 import { expect, test } from '../../fixtures/document-upload';
 import { uploadEntryUrl, uploadFailureName } from '../../pages/upload-page';
 import { UploadSubmittedPage } from '../../pages/upload-submitted-page';
-
-test.use({ screenshot: { mode: 'on', fullPage: true } });
 
 const submittedNames = ['eligibility-review.txt', 'employer-letter.txt'];
 

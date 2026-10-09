@@ -11,8 +11,6 @@ import { expect, test } from '@playwright/test';
 import { BasePage } from '../../pages/base-page';
 import { uploadEntryUrl, uploadFlowUrl } from '../../pages/upload-page';
 
-test.use({ screenshot: { mode: 'on', fullPage: true }, timezoneId: 'UTC' });
-
 test.describe('documents index', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/en/protected/documents');

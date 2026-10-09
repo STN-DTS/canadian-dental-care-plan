@@ -30,6 +30,7 @@ export default defineConfig({
   reporter: getReporterConfig(),
   use: {
     baseURL: `http://localhost:${port}/`,
+    screenshot: process.env.E2E_SCREENSHOTS === 'true' ? { mode: 'on', fullPage: true } : 'off',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

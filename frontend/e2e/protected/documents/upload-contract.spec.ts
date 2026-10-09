@@ -7,14 +7,12 @@
  * conflicts, and redirects using HTTP statuses, response bodies, and headers.
  * Browser interactions establish or verify flow state where needed.
  *
- * Backend services use the configured mocks. Screenshots capture browser state,
- * not HTTP responses; rendered user journeys belong in upload.spec.ts.
+ * Backend services use the configured mocks. Optional screenshots capture browser
+ * state, not HTTP responses; rendered user journeys belong in upload.spec.ts.
  */
 import { expect, test } from '../../fixtures/document-upload';
 import { documentFile, uploadFailureName } from '../../pages/upload-page';
 import type { UploadField } from '../../pages/upload-page';
-
-test.use({ screenshot: { mode: 'on', fullPage: true } });
 
 const validFile = documentFile();
 const validFields: UploadField[] = [
