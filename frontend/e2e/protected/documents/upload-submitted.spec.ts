@@ -9,8 +9,7 @@
  * upload.spec.ts and upload-contract.spec.ts respectively.
  */
 import { expect, test } from '../../fixtures/document-upload';
-import { uploadEntryUrl, uploadFailureName } from '../../pages/upload-page';
-import { UploadSubmittedPage } from '../../pages/upload-submitted-page';
+import { collectUploadRequests, uploadEntryUrl, uploadFailureName } from '../../utils/document-upload';
 
 const submittedNames = ['eligibility-review.txt', 'employer-letter.txt'];
 
@@ -39,7 +38,7 @@ test.describe('finished upload confirmation', () => {
 
   test('refresh retains confirmation without submitting files again', async ({ uploadPage, uploadSubmittedPage, page }) => {
     const confirmationUrl = page.url();
-    const requests = uploadPage.requests();
+    const requests = collectUploadRequests(uploadPage.page);
     await page.reload();
     await uploadSubmittedPage.waitForConfirmation();
     await expect(page).toHaveURL(confirmationUrl);
@@ -69,11 +68,10 @@ test.describe('confirmation access and partial completion', () => {
     await uploadPage.isLoaded('/en/protected/documents', 'View documents');
   });
 
-  test('partial upload confirms only successful files after explicit completion', async ({ uploadPage }) => {
+  test('partial upload confirms only successful files after explicit completion', async ({ uploadPage, submittedPage }) => {
     await uploadPage.partialUpload();
     await uploadPage.removeFile(uploadFailureName);
-    await uploadPage.page.getByRole('button', { name: 'View submission confirmation', exact: true }).click();
-    const submittedPage = new UploadSubmittedPage(uploadPage.page);
+    await uploadPage.finishButton.click();
     await submittedPage.waitForConfirmation();
     await expect(submittedPage.submittedFiles).toHaveText(['evidence.txt']);
     await expect(submittedPage.main.getByText(uploadFailureName, { exact: true })).toHaveCount(0);

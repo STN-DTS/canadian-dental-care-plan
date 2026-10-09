@@ -9,7 +9,7 @@
 import { expect, test } from '@playwright/test';
 
 import { BasePage } from '../../pages/base-page';
-import { uploadEntryUrl, uploadFlowUrl } from '../../pages/upload-page';
+import { uploadEntryUrl, uploadFlowUrl } from '../../utils/document-upload';
 
 test.describe('documents index', () => {
   test.beforeEach(async ({ page }) => {

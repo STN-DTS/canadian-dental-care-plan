@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { BasePage } from './base-page';
@@ -20,15 +21,26 @@ export class UploadSubmittedPage extends BasePage {
     super(page);
     this.main = page.getByRole('main');
     this.receiptHeading = this.main.getByRole('heading', { name: 'We received your documents', exact: true });
-    this.submittedFiles = this.main.getByRole('list').first().getByRole('listitem');
+    this.submittedFiles = this.main.locator('ol').getByRole('listitem');
     this.delayNotice = this.main.getByText('There could be a short delay with your documents appearing in your account.', { exact: true });
     this.nextStepsHeading = this.main.getByRole('heading', { name: 'Next steps', exact: true });
-    this.nextSteps = this.main.getByRole('list').nth(1).getByRole('listitem');
+    this.nextSteps = this.main.getByRole('list').filter({ hasText: "We'll review the documents submitted." }).getByRole('listitem');
     this.returnLink = this.main.getByRole('link', { name: 'Return to dashboard', exact: true });
   }
 
   /** Waits for the finished-flow confirmation URL and H1 using BasePage. */
   async waitForConfirmation() {
     await this.isLoaded(/\/submitted$/, 'Documents submitted');
+  }
+
+  /**
+   * Waits for confirmation and verifies successful filenames, delay notice, and next steps.
+   * @param names - Successful filenames expected in selection order.
+   */
+  async confirmation(names: string[]) {
+    await this.waitForConfirmation();
+    await expect(this.submittedFiles).toHaveText(names);
+    await expect(this.delayNotice).toBeVisible();
+    await expect(this.nextStepsHeading).toBeVisible();
   }
 }

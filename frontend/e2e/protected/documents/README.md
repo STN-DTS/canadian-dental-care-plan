@@ -53,19 +53,29 @@ Each test has a fresh browser context. [The fixture](../../fixtures/document-upl
 provides `uploadPage` with a new UUID-keyed flow. [UploadPage](../../pages/upload-page.ts)
 extends `BasePage`, checks URL and H1 with `isLoaded()`, and waits for router
 initialization. Tests use accessible locators, web-first assertions, and no sleeps.
-Page mutations run sequentially; independent filename assertions use `Promise.all()`.
+Page mutations run sequentially. Form locators belong to `UploadPage`;
+confirmation locators and assertions belong to `UploadSubmittedPage`.
 
 `uploadSubmittedPage` depends on `uploadPage`, submits two files, and returns an
 `UploadSubmittedPage` extending `BasePage`. Guard and partial-completion tests
-request only `uploadPage`. Neither fixture adds another browser context.
+request `uploadPage` and, when needed, `submittedPage`. The latter only binds
+confirmation locators; it does not submit files. No fixture adds another browser context.
+
+`uploadApi` depends on `uploadPage` and provides `DocumentUploadApi` for direct
+HTTP contracts. [Shared helpers](../../utils/document-upload.ts) own test files,
+route constants, request collection, and `readUploadSubmissions()`.
 
 The fixture captures action names, filenames, and multipart field names from
 browser fetches, not file contents or CSRF values. This verifies retry and finish
 payloads without relying on Chromium's `Request.postDataBuffer()` support.
+Existing `Request` inputs are cloned before inspection so their bodies remain
+available to the original fetch call.
 
-SPA guard and query tests invoke the browser router because the upload page has
-no same-language internal navigation link. Native unload tests use real reloads
-and document navigation.
+SPA guard and query tests use `navigateUploadRouter()` because the upload page
+has no same-language internal navigation link. Router initialization and
+navigation hooks are isolated in the shared helpers, not page objects.
+These hooks depend on React Router internals; native unload tests use real
+reloads and document navigation.
 
 ## Limits
 

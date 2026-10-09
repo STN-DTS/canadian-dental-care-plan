@@ -10,7 +10,7 @@
  * Server validation of crafted HTTP payloads belongs in upload-contract.spec.ts.
  */
 import { expect, test } from '../../fixtures/document-upload';
-import { uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl } from '../../pages/upload-page';
+import { collectUploadRequests, uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl, navigateUploadRouter, readUploadSubmissions } from '../../utils/document-upload';
 
 const maxBytes = 5 * 1024 * 1024;
 
@@ -46,17 +46,17 @@ test.describe('access and lifecycle', () => {
     await expect(page).toHaveURL('/en/protected/documents');
   });
 
-  test('finished confirmation persists on refresh and form revisit', async ({ uploadPage }) => {
+  test('finished confirmation persists on refresh and form revisit', async ({ uploadPage, submittedPage }) => {
     const { page } = uploadPage;
     const originalForm = page.url();
     await uploadPage.addFile();
     await uploadPage.chooseType('evidence.txt');
     await uploadPage.submit();
-    await uploadPage.confirmation(['evidence.txt']);
+    await submittedPage.confirmation(['evidence.txt']);
     await page.reload();
-    await uploadPage.confirmation(['evidence.txt']);
+    await submittedPage.confirmation(['evidence.txt']);
     await page.goto(originalForm);
-    await uploadPage.confirmation(['evidence.txt']);
+    await submittedPage.confirmation(['evidence.txt']);
   });
 });
 
@@ -84,7 +84,7 @@ test.describe('selection and editing', () => {
     const { page } = uploadPage;
     await uploadPage.addFile();
     const picker = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+    await uploadPage.uploadButton.click();
     await (await picker).setFiles([]);
     await expect(uploadPage.item('evidence.txt')).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('1 of 10 files selected');
@@ -99,9 +99,9 @@ test.describe('selection and editing', () => {
       const { page } = uploadPage;
       await uploadPage.addFile();
       await uploadPage.chooseType('evidence.txt');
-      const requests = uploadPage.requests();
+      const requests = collectUploadRequests(uploadPage.page);
       const picker = page.waitForEvent('filechooser');
-      await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+      await uploadPage.uploadButton.click();
       await (await picker).setFiles(scenario.payload);
       await expect(page.getByText(scenario.error).first()).toBeVisible();
       await expect(page.getByRole('status')).toHaveText('1 of 10 files selected');
@@ -124,7 +124,7 @@ test.describe('selection and editing', () => {
       const { page } = uploadPage;
       await uploadPage.addFile();
       const picker = page.waitForEvent('filechooser');
-      await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+      await uploadPage.uploadButton.click();
       await (await picker).setFiles(scenario.second);
       await expect(page.getByRole('combobox')).toHaveCount(2);
       await expect(page.getByRole('status')).toHaveText('2 of 10 files selected');
@@ -135,7 +135,7 @@ test.describe('selection and editing', () => {
     const { page } = uploadPage;
     await uploadPage.addFiles(Array.from({ length: 10 }, (_, index) => file(`evidence-${index}.txt`)));
     const picker = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+    await uploadPage.uploadButton.click();
     await (await picker).setFiles(file('eleventh.txt'));
     await expect(page.getByText(/You can upload up to 10 documents at a time/).first()).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('10 of 10 files selected');
@@ -144,11 +144,10 @@ test.describe('selection and editing', () => {
 
   for (const dismiss of ['Keep file', 'Escape', 'Close']) {
     test(`${dismiss} cancels removal and restores focus`, async ({ uploadPage }) => {
-      const { page } = uploadPage;
       await uploadPage.addFile();
       const trigger = uploadPage.item('evidence.txt').getByRole('button', { name: 'Remove file', exact: true });
       await trigger.click();
-      const dialog = page.getByRole('dialog', { name: 'Remove this file?' });
+      const dialog = uploadPage.removeDialog;
       if (dismiss === 'Escape') await dialog.press('Escape');
       else await dialog.getByRole('button', { name: dismiss, exact: true }).click();
       await expect(dialog).not.toBeVisible();
@@ -165,7 +164,7 @@ test.describe('selection and editing', () => {
     await uploadPage.removeFile('last.txt');
     await expect(uploadPage.item('first.txt')).toBeFocused();
     await uploadPage.removeFile('first.txt');
-    await expect(page.getByRole('button', { name: 'Upload file', exact: true })).toBeFocused();
+    await expect(uploadPage.uploadButton).toBeFocused();
     await expect(page.getByRole('status')).toHaveText('0 of 10 files selected');
   });
 });
@@ -173,7 +172,7 @@ test.describe('selection and editing', () => {
 test.describe('validation, scanning and uploading', () => {
   test('empty submission is blocked without a server POST', async ({ uploadPage }) => {
     const { page } = uploadPage;
-    const requests = uploadPage.requests();
+    const requests = collectUploadRequests(uploadPage.page);
     await uploadPage.submit();
     await expect(page.getByText('You must upload a file before clicking', { exact: false }).first()).toBeVisible();
     expect(requests).toHaveLength(0);
@@ -181,13 +180,13 @@ test.describe('validation, scanning and uploading', () => {
 
   test('missing type produces a file-specific error without a server POST', async ({ uploadPage }) => {
     await uploadPage.addFile();
-    const requests = uploadPage.requests();
+    const requests = collectUploadRequests(uploadPage.page);
     await uploadPage.submit();
     await expect(uploadPage.item('evidence.txt')).toContainText('Select a document type for file');
     expect(requests).toHaveLength(0);
   });
 
-  test('disables mutation controls while the upload response is pending', async ({ uploadPage }) => {
+  test('disables mutation controls while the upload response is pending', async ({ uploadPage, submittedPage }) => {
     await uploadPage.addFile();
     await uploadPage.chooseType('evidence.txt');
     let release!: () => void;
@@ -204,25 +203,23 @@ test.describe('validation, scanning and uploading', () => {
       await expect(uploadPage.uploadButton).toBeDisabled();
       await expect(uploadPage.item('evidence.txt').getByRole('combobox')).toBeDisabled();
       await expect(uploadPage.item('evidence.txt').getByRole('button', { name: 'Remove file', exact: true })).toBeDisabled();
-      await expect(uploadPage.page.locator('#submit-button')).toBeDisabled();
+      await expect(uploadPage.submitButton).toBeDisabled();
     } finally {
       release();
     }
-    await uploadPage.confirmation(['evidence.txt']);
+    await submittedPage.confirmation(['evidence.txt']);
   });
 
-  test('all successful files redirect to confirmation in selection order', async ({ uploadPage }) => {
-    const { page } = uploadPage;
+  test('all successful files redirect to confirmation in selection order', async ({ uploadPage, submittedPage }) => {
     await uploadPage.addFile(file('first.txt'));
     await uploadPage.chooseType('first.txt');
     await uploadPage.addFile(file('second.txt'));
     await uploadPage.chooseType('second.txt');
     await uploadPage.submit();
-    await uploadPage.confirmation(['first.txt', 'second.txt']);
-    await expect(page.getByRole('main').getByRole('list').first().getByRole('listitem')).toHaveText(['first.txt', 'second.txt']);
+    await submittedPage.confirmation(['first.txt', 'second.txt']);
   });
 
-  test('scan rejection prevents every file in the batch from uploading', async ({ uploadPage }) => {
+  test('scan rejection prevents every file in the batch from uploading', async ({ uploadPage, submittedPage }) => {
     const { page } = uploadPage;
     await uploadPage.addFile();
     await uploadPage.chooseType('evidence.txt');
@@ -235,7 +232,7 @@ test.describe('validation, scanning and uploading', () => {
     await expect(page.getByText('Uploaded successfully', { exact: true })).toHaveCount(0);
     await uploadPage.removeFile('scan-test.txt');
     await uploadPage.submit();
-    await uploadPage.confirmation(['evidence.txt']);
+    await submittedPage.confirmation(['evidence.txt']);
   });
 
   for (const scenario of [
@@ -293,7 +290,7 @@ test.describe('partial recovery and explicit completion', () => {
     const response = page.waitForResponse((value) => value.request().method() === 'POST' && value.url().includes('/documents/upload/'));
     await uploadPage.submit();
     await response;
-    expect((await uploadPage.submissions()).at(-1)?.fileNames).toEqual([failureName]);
+    expect((await readUploadSubmissions(uploadPage.page)).at(-1)?.fileNames).toEqual([failureName]);
     await expect(uploadPage.item(failureName)).toContainText('There was a problem uploading');
     await expect(uploadPage.item('evidence.txt')).toContainText('Uploaded successfully');
   });
@@ -302,24 +299,24 @@ test.describe('partial recovery and explicit completion', () => {
     const { page } = uploadPage;
     await uploadPage.partialUpload();
     const picker = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+    await uploadPage.uploadButton.click();
     await (await picker).setFiles(file());
     await expect(page.getByText(/matches a file you've already selected or uploaded/).first()).toBeVisible();
     await expect(page.getByRole('status')).toContainText('2 of 10 files selected');
   });
 
-  test('adds and uploads new files after removing a failed file', async ({ uploadPage }) => {
+  test('adds and uploads new files after removing a failed file', async ({ uploadPage, submittedPage }) => {
     const { page } = uploadPage;
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
     await uploadPage.addFile(file('replacement.txt'));
     await uploadPage.chooseType('replacement.txt', 2);
     await uploadPage.submit();
-    await uploadPage.confirmation(['evidence.txt', 'replacement.txt']);
+    await submittedPage.confirmation(['evidence.txt', 'replacement.txt']);
     await expect(page.getByRole('main').getByText(failureName, { exact: true })).toHaveCount(0);
   });
 
-  test('removing failures requires explicit metadata-only completion', async ({ uploadPage }) => {
+  test('removing failures requires explicit metadata-only completion', async ({ uploadPage, submittedPage }) => {
     const { page } = uploadPage;
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
@@ -327,9 +324,9 @@ test.describe('partial recovery and explicit completion', () => {
     await expect(region).toBeFocused();
     await expect(region).toContainText('No files awaiting upload.');
     await expect(page).toHaveURL(flowUrl);
-    await region.getByRole('button', { name: 'View submission confirmation' }).click();
-    await uploadPage.confirmation(['evidence.txt']);
-    const submission = (await uploadPage.submissions()).at(-1);
+    await uploadPage.finishButton.click();
+    await submittedPage.confirmation(['evidence.txt']);
+    const submission = (await readUploadSubmissions(uploadPage.page)).at(-1);
     expect(submission?.action).toBe('finish');
     expect(submission?.fieldNames).not.toContain('file_id');
     expect(submission?.fieldNames).not.toContain('file_object');
@@ -340,7 +337,7 @@ test.describe('partial recovery and explicit completion', () => {
     await uploadPage.partialUpload();
     await uploadPage.addFiles(Array.from({ length: 8 }, (_, index) => file(`extra-${index}.txt`)));
     const picker = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Upload file', exact: true }).click();
+    await uploadPage.uploadButton.click();
     await (await picker).setFiles(file('eleventh.txt'));
     await expect(page.getByText(/You can upload up to 10 documents at a time/).first()).toBeVisible();
     await expect(page.getByRole('status')).toContainText('10 of 10 files selected');
@@ -348,15 +345,15 @@ test.describe('partial recovery and explicit completion', () => {
 });
 
 test.describe('navigation and refresh', () => {
-  test('query changes are not blocked and revalidate open flow metadata', async ({ uploadPage }) => {
+  test('query changes are not blocked and revalidate open flow metadata', async ({ uploadPage, uploadApi }) => {
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
     const response = uploadPage.page.waitForResponse((value) => value.request().method() === 'GET' && value.url().includes('query-test=1'));
-    await uploadPage.navigate(`${new URL(uploadPage.page.url()).pathname}?query-test=1`);
+    await navigateUploadRouter(uploadPage.page, `${new URL(uploadPage.page.url()).pathname}?query-test=1`);
     await response;
     await expect(uploadPage.page).toHaveURL(/\?query-test=1$/);
     await expect(uploadPage.page.getByRole('dialog')).toHaveCount(0);
-    const finish = await uploadPage.post([['_action', 'finish']]);
+    const finish = await uploadApi.post([['_action', 'finish']]);
     expect(finish.status()).toBe(409);
   });
 
@@ -365,8 +362,8 @@ test.describe('navigation and refresh', () => {
       const { page } = uploadPage;
       await uploadPage.addFile();
       await uploadPage.uploadButton.focus();
-      await uploadPage.navigate('/en/protected/documents');
-      const dialog = page.getByRole('dialog', { name: 'Leave this page?' });
+      await navigateUploadRouter(uploadPage.page, '/en/protected/documents');
+      const dialog = uploadPage.unsavedChangesDialog;
       await expect(dialog).toBeVisible();
       if (dismiss === 'Escape') await dialog.press('Escape');
       else await dialog.getByRole('button', { name: dismiss, exact: true }).click();
@@ -379,8 +376,8 @@ test.describe('navigation and refresh', () => {
 
   test('explicit Leave allows pathname navigation', async ({ uploadPage }) => {
     await uploadPage.addFile();
-    await uploadPage.navigate('/en/protected/documents');
-    await uploadPage.page.getByRole('dialog', { name: 'Leave this page?' }).getByRole('button', { name: 'Leave page', exact: true }).click();
+    await navigateUploadRouter(uploadPage.page, '/en/protected/documents');
+    await uploadPage.unsavedChangesDialog.getByRole('button', { name: 'Leave page', exact: true }).click();
     await expect(uploadPage.page).toHaveURL('/en/protected/documents');
     await expect(uploadPage.page.getByRole('heading', { level: 1 })).toBeVisible();
   });
@@ -388,7 +385,7 @@ test.describe('navigation and refresh', () => {
   test('uploaded-only selection navigates without a client-side warning', async ({ uploadPage }) => {
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
-    await uploadPage.navigate('/en/protected/documents');
+    await navigateUploadRouter(uploadPage.page, '/en/protected/documents');
     await expect(uploadPage.page).toHaveURL('/en/protected/documents');
     await expect(uploadPage.page.getByRole('dialog')).toHaveCount(0);
   });
