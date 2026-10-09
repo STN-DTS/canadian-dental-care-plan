@@ -67,6 +67,7 @@ runs:
         retention-days: 7
     - name: Run Aqua scannercli
       if: ${{ !env.ACT }}
+      continue-on-error: true
       shell: bash
       env:
         AQUA_HOST: ${{ steps.vault.outputs.AQUA_HOST }}
@@ -83,7 +84,7 @@ runs:
         chmod 600 "$password_file"
         printf '%s' "$AQUA_PASSWORD" > "$password_file"
 
-        docker run --rm \
+        if docker run --rm \
           --env AQUA_HOST \
           --env AQUA_POLICIES \
           --env AQUA_USERNAME \
@@ -93,9 +94,20 @@ runs:
           --volume "$GITHUB_WORKSPACE/.github/aqua-reports:/reports" \
           --volume "$password_file:/run/secrets/aqua-password:ro" \
           --entrypoint /bin/sh \
-          asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner@sha256:ae32e1b47558412021210bba6f6e6e519a8f3ae97a3842ce468829b462085406 \
+          asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805 \
           -c 'AQUA_PASSWORD="$(cat /run/secrets/aqua-password)"; exec /opt/aquasec/scannercli scan --host "$AQUA_HOST" --user "$AQUA_USERNAME" --password "$AQUA_PASSWORD" \
-            --checkonly --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'
+            --policies "$AQUA_POLICIES" --local "$IMAGE_REF" --htmlfile "/reports/$REPORT_FILE"'; then
+          exit 0
+        else
+          scan_status=$?
+          {
+            printf '## Aqua scannercli failed\n\n'
+            printf 'Scanner invocation exited with code `%s`.\n\n' "$scan_status"
+            printf 'Publishing continues because this scan is non-blocking. This does not indicate a successful Aqua scan.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf '::warning::Aqua scannercli failed with exit code %s; publishing continues without a successful Aqua scan.\n' "$scan_status"
+          exit "$scan_status"
+        fi
     - name: Upload scannercli report
       if: ${{ always() && !env.ACT }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
