@@ -255,8 +255,8 @@ jobs:
         env:
           AZURE_CLIENT_ID: ${{ steps.acr-login.outputs.azure-client-id }}
           AZURE_CLIENT_SECRET: ${{ steps.acr-login.outputs.azure-client-secret }}
-          K8S_CLUSTER_NAME: ${{ vars.K8S_CLUSTER_NAME_NONPROD }}
-          K8S_RESOURCE_GROUP: ${{ vars.K8S_RESOURCE_GROUP_NONPROD }}
+          K8S_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NONPROD }}
+          K8S_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP_NONPROD }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
         run: |
           set -euo pipefail
