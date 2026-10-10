@@ -110,10 +110,6 @@ function createNotificationPayload(duration) {
   const blocks = [
     {
       type: "section",
-      text: { type: "mrkdwn", text: headline },
-    },
-    {
-      type: "section",
       text: { type: "mrkdwn", text: `${links.ref} | ${links.commit}\n${metadata}` },
     },
   ];
@@ -150,6 +146,7 @@ function createNotificationPayload(duration) {
   return {
     channel: process.env.SLACK_CHANNEL_ID,
     ...(process.env.THREAD_TS ? { thread_ts: process.env.THREAD_TS, reply_broadcast: true } : {}),
+    blocks: [{ type: "section", text: { type: "mrkdwn", text: headline } }],
     attachments: [
       {
         color: presentation.color,

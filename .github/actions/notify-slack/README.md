@@ -17,7 +17,9 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 
 ## Message Content
 
-- Status-first headline linking the workflow name and run number to the run.
+- One status-first headline above the colored attachment, linking the workflow
+  name and run number to the run. Top-level `blocks` contain the headline;
+  attachment blocks contain only metadata and result details.
 - Linked branch/tag and exact source commit on one line.
 - Start notifications include trigger, attempt number, and an actor link.
 - Completion replies include elapsed time when available and attempt number;
@@ -31,9 +33,8 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 The repository remains in the attachment fallback text and GitHub link destinations.
 Completion replies keep ref and commit so channel broadcasts retain source context.
 The attachment's `fallback` includes failures and published-image details for clients
-that cannot render its blocks. Top-level `text` is omitted because Slack renders it
-above the attachment, duplicating the message. Unrecognized messages and tags for
-other images remain unchanged.
+that cannot render its blocks. Top-level `text` is omitted to avoid a second
+visible summary. Unrecognized messages and tags for other images remain unchanged.
 
 Success is green, failure red, cancellation amber, start teal, and other statuses
 gray. Empty optional sections are omitted.

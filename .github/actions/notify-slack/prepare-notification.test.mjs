@@ -97,10 +97,12 @@ for (const [status, color, label] of [
     assert.equal(payload.channel, "C123");
     assert.equal(payload.attachments[0].color, color);
     assert.equal(
-      payload.attachments[0].blocks[0].text.text,
+      payload.blocks[0].text.text,
       `*${label}* · <https://github.com/STN-DTS/repo/actions/runs/123|Build and test #42>`,
     );
-    assert.equal(payload.attachments[0].blocks.length, 2);
+    assert.equal(payload.blocks.length, 1);
+    assert.equal(payload.attachments[0].blocks.length, 1);
+    assert.ok(!JSON.stringify(payload.attachments[0].blocks).includes("Build and test #42"));
     assert.equal(payload.thread_ts, undefined);
     assert.equal(payload.reply_broadcast, undefined);
     assert.equal(request, undefined);
@@ -108,10 +110,13 @@ for (const [status, color, label] of [
   });
 }
 
-test("renders only the attachment instead of duplicating it in top-level text", () => {
+test("renders the headline above attachment details without duplicate top-level text", () => {
   const { payload } = runNotification();
   assert.equal(Object.hasOwn(payload, "text"), false);
   assert.equal(payload.attachments.length, 1);
+  assert.equal(payload.blocks.length, 1);
+  assert.ok(payload.blocks[0].text.text.startsWith("*Started*"));
+  assert.ok(payload.attachments[0].blocks[0].text.text.startsWith("Ref:"));
 });
 
 test("preserves GitHub links, encoded refs, and escaped labels", () => {
@@ -121,7 +126,7 @@ test("preserves GitHub links, encoded refs, and escaped labels", () => {
   });
   const blocks = payload.attachments[0].blocks;
   assert.equal(
-    blocks[1].text.text,
+    blocks[0].text.text,
     "Ref: <https://github.com/STN-DTS/repo/tree/feature%2F%3Cname%3E%7Ctest|feature/&lt;name&gt;&#124;test> | Commit: <https://github.com/STN-DTS/repo/commit/abcdef1234567890abcdef1234567890abcdef1234|abcdef12>\nTrigger: push | Attempt 2 | By <https://github.com/dependabot%5Bbot%5D|dependabot[bot]>",
   );
   assert.equal(blocks[0].text.type, "mrkdwn");
@@ -147,15 +152,15 @@ test("includes threaded results, multiline messages, all failed jobs, ACR destin
   const blocks = payload.attachments[0].blocks;
   assert.equal(payload.thread_ts, "123.456");
   assert.equal(payload.reply_broadcast, true);
-  assert.equal(blocks[2].text.text, "Failed jobs:\n- test-frontend\n- build-frontend");
-  assert.equal(blocks[3].text.text, message);
+  assert.equal(blocks[1].text.text, "Failed jobs:\n- test-frontend\n- build-frontend");
+  assert.equal(blocks[2].text.text, message);
   assert.equal(
-    blocks[4].text.text,
+    blocks[3].text.text,
     `Published image\nACR: testregistry.azurecr.io\nImage: canada-dental-care-plan/frontend\nDigest: sha256:${"a".repeat(64)}`,
   );
-  assert.equal(blocks.length, 5);
-  assert.ok(!blocks[1].text.text.includes("Trigger:"));
-  assert.ok(!blocks[1].text.text.includes("By "));
+  assert.equal(blocks.length, 4);
+  assert.ok(!blocks[0].text.text.includes("Trigger:"));
+  assert.ok(!blocks[0].text.text.includes("By "));
 });
 
 test("groups matching published tags under their ACR and image without repeating full references", () => {
@@ -166,9 +171,9 @@ test("groups matching published tags under their ACR and image without repeating
     IMAGE_REF: `${imageName}@${digest}`,
     MESSAGE: `Pushed image tags:\n- ${imageName}:v1\n- ${imageName}:latest`,
   });
-  assert.equal(payload.attachments[0].blocks.length, 3);
+  assert.equal(payload.attachments[0].blocks.length, 2);
   assert.equal(
-    payload.attachments[0].blocks[2].text.text,
+    payload.attachments[0].blocks[1].text.text,
     `Published image\nACR: testregistry.azurecr.io\nImage: canada-dental-care-plan/frontend\nTags: v1, latest\nDigest: ${digest}`,
   );
   assert.ok(payload.attachments[0].fallback.includes("Tags: v1, latest"));
@@ -179,7 +184,7 @@ test("groups matching published tags under their ACR and image without repeating
 test("preserves pushed tags after partial publication without an immutable reference", () => {
   const message = "Pushed image tags:\n- testregistry.azurecr.io/frontend:v1";
   const { payload } = runNotification({ NOTIFICATION_STATUS: "failure", MESSAGE: message });
-  assert.equal(payload.attachments[0].blocks[2].text.text, message);
+  assert.equal(payload.attachments[0].blocks[1].text.text, message);
   assert.ok(payload.attachments[0].fallback.includes(message));
   assert.ok(!payload.attachments[0].fallback.includes("Digest:"));
 });
@@ -191,14 +196,14 @@ test("preserves tag lists for other images instead of grouping them under the wr
     MESSAGE: message,
     IMAGE_REF: `testregistry.azurecr.io/frontend@sha256:${"a".repeat(64)}`,
   });
-  assert.equal(payload.attachments[0].blocks[2].text.text, message);
-  assert.ok(!payload.attachments[0].blocks[3].text.text.includes("Tags:"));
+  assert.equal(payload.attachments[0].blocks[1].text.text, message);
+  assert.ok(!payload.attachments[0].blocks[2].text.text.includes("Tags:"));
 });
 
 test("escapes the workflow headline and uses the run number rather than the run ID", () => {
   const { payload } = runNotification({ WORKFLOW_NAME: "Build <image> & test|publish" });
   assert.equal(
-    payload.attachments[0].blocks[0].text.text,
+    payload.blocks[0].text.text,
     "*Started* · <https://github.com/STN-DTS/repo/actions/runs/123|Build &lt;image&gt; &amp; test&#124;publish #42>",
   );
 });
@@ -215,7 +220,7 @@ test("fetches elapsed time for the current attempt without exposing the token", 
   assert.equal(request.authorization, "Bearer fixture-token");
   assert.equal(request.accept, "application/vnd.github+json");
   assert.equal(request.hasSignal, true);
-  assert.ok(payload.attachments[0].blocks[1].text.text.endsWith("\nElapsed: 2m 5s | Attempt 2"));
+  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nElapsed: 2m 5s | Attempt 2"));
   assert.ok(!JSON.stringify(payload).includes("fixture-token"));
   assert.ok(!stdout.includes("fixture-token"));
 });
@@ -236,7 +241,7 @@ for (const [scenario, overrides] of [
       GH_TOKEN: "fixture-token",
       ...overrides,
     });
-    assert.equal(payload.attachments[0].blocks.length, 2);
+    assert.equal(payload.attachments[0].blocks.length, 1);
     assert.ok(
       stdout.includes("::warning::Unable to fetch workflow elapsed time; posting without it."),
     );
@@ -249,5 +254,5 @@ test("clamps elapsed time to zero when the API start time is in the future", () 
     GH_TOKEN: "fixture-token",
     TEST_STARTED_AT: "2026-10-10T12:03:00Z",
   });
-  assert.ok(payload.attachments[0].blocks[1].text.text.endsWith("\nElapsed: 0m 0s | Attempt 2"));
+  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nElapsed: 0m 0s | Attempt 2"));
 });
