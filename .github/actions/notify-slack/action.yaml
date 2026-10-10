@@ -30,9 +30,6 @@ inputs:
   image-ref:
     description: Optional immutable published image reference including its sha256 digest
     default: ""
-  github-token:
-    description: Optional token with actions read permission for completion elapsed time
-    default: ""
   workflow-name:
     description: Name of the workflow being reported
     default: ${{ github.workflow }}
@@ -98,9 +95,6 @@ runs:
         ACTOR: ${{ github.triggering_actor || github.actor }}
         JOB_RESULTS: ${{ inputs.job-results }}
         COMMIT_SHA: ${{ inputs.commit-sha }}
-        GH_TOKEN: ${{ inputs.github-token }}
-        API_URL: ${{ github.api_url }}
-        RUN_ID: ${{ github.run_id }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
         NOTIFICATION_STATUS: ${{ inputs.status }}
         SLACK_CHANNEL_ID: ${{ inputs.channel-id }}

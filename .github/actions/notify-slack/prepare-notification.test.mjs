@@ -9,19 +9,9 @@ import { fileURLToPath } from "node:url";
 const scriptPath = fileURLToPath(new URL("./prepare-notification.mjs", import.meta.url));
 const apiMock = `
   import fs from 'node:fs';
-  Date.now = () => Date.parse('2026-10-10T12:02:05Z');
-  globalThis.fetch = async (url, options) => {
-    fs.writeFileSync(process.env.TEST_REQUEST_FILE, JSON.stringify({
-      url,
-      authorization: options.headers.Authorization,
-      accept: options.headers.Accept,
-      hasSignal: options.signal instanceof AbortSignal
-    }));
-    if (process.env.TEST_API_MODE === 'network-error') throw new Error('fixture failure');
-    return {
-      ok: process.env.TEST_API_MODE !== 'http-error',
-      json: async () => ({ run_started_at: process.env.TEST_STARTED_AT })
-    };
+  globalThis.fetch = async (url) => {
+    fs.writeFileSync(process.env.TEST_REQUEST_FILE, JSON.stringify({ url }));
+    throw new Error('Unexpected API request');
   };
 `;
 
@@ -46,8 +36,6 @@ function runNotification(overrides = {}) {
           COMMIT_SHA: "abcdef1234567890abcdef1234567890abcdef1234",
           JOB_RESULTS: "{}",
           GH_TOKEN: "",
-          API_URL: "https://api.github.com",
-          RUN_ID: "123",
           RUN_ATTEMPT: "2",
           RUN_NUMBER: "42",
           NOTIFICATION_STATUS: "started",
@@ -57,8 +45,6 @@ function runNotification(overrides = {}) {
           RUN_URL: "https://github.com/STN-DTS/repo/actions/runs/123",
           MESSAGE: "",
           IMAGE_REF: "",
-          TEST_API_MODE: "success",
-          TEST_STARTED_AT: "2026-10-10T12:00:00Z",
           ...overrides,
           EVENT_NAME: "push",
           GITHUB_OUTPUT: outputPath,
@@ -226,51 +212,14 @@ test("escapes the workflow headline and uses the run number rather than the run 
   );
 });
 
-test("fetches elapsed time for the current attempt without exposing the token", () => {
+test("omits elapsed time and makes no API request for completion", () => {
   const { payload, request, stdout } = runNotification({
     NOTIFICATION_STATUS: "success",
     GH_TOKEN: "fixture-token",
   });
-  assert.equal(
-    request.url,
-    "https://api.github.com/repos/STN-DTS/repo/actions/runs/123/attempts/2",
-  );
-  assert.equal(request.authorization, "Bearer fixture-token");
-  assert.equal(request.accept, "application/vnd.github+json");
-  assert.equal(request.hasSignal, true);
-  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nElapsed: 2m 5s | Attempt 2"));
+  assert.equal(request, undefined);
+  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nAttempt 2"));
+  assert.ok(!JSON.stringify(payload).includes("Elapsed:"));
   assert.ok(!JSON.stringify(payload).includes("fixture-token"));
   assert.ok(!stdout.includes("fixture-token"));
-});
-
-test("does not request elapsed time for start notifications even with a token", () => {
-  const { request } = runNotification({ GH_TOKEN: "fixture-token" });
-  assert.equal(request, undefined);
-});
-
-for (const [scenario, overrides] of [
-  ["HTTP failure", { TEST_API_MODE: "http-error" }],
-  ["network failure", { TEST_API_MODE: "network-error" }],
-  ["invalid timestamp", { TEST_STARTED_AT: "invalid" }],
-]) {
-  test(`posts without duration after ${scenario}`, () => {
-    const { payload, stdout } = runNotification({
-      NOTIFICATION_STATUS: "success",
-      GH_TOKEN: "fixture-token",
-      ...overrides,
-    });
-    assert.equal(payload.attachments[0].blocks.length, 1);
-    assert.ok(
-      stdout.includes("::warning::Unable to fetch workflow elapsed time; posting without it."),
-    );
-  });
-}
-
-test("clamps elapsed time to zero when the API start time is in the future", () => {
-  const { payload } = runNotification({
-    NOTIFICATION_STATUS: "success",
-    GH_TOKEN: "fixture-token",
-    TEST_STARTED_AT: "2026-10-10T12:03:00Z",
-  });
-  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nElapsed: 0m 0s | Attempt 2"));
 });

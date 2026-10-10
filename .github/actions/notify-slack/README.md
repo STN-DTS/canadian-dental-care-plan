@@ -8,7 +8,7 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 1. `action.yaml` rejects a blank channel ID, ensures Node.js runtime libraries,
    sets up Node.js, and fetches the Slack bot token using Vault AppRole authentication.
 2. `prepare-notification.mjs` reads the supplied environment variables, prepares
-   links and failure details, and optionally fetches elapsed time from GitHub.
+   links and failure details without querying GitHub's API.
 3. The script builds a JavaScript object and exports it as JSON in the `payload`
    step output. It does not send messages or include authentication tokens in
    the payload.
@@ -22,7 +22,7 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
   attachment blocks contain only metadata and result details.
 - Linked branch/tag and exact source commit on one line.
 - Start notifications include trigger, attempt number, and an actor link.
-- Completion replies include elapsed time when available and attempt number;
+- Completion replies include attempt number;
   actor and trigger remain in the parent start message.
 - Optional plain-text message, including pushed-image lists after partial publication.
 - Every failed build/test dependency supplied by the caller.
@@ -85,7 +85,6 @@ as a composite-action output. Existing TeamCity webhooks can remain unchanged.
 | `message`         | No       | Additional plain text; preserves newlines and image lists     |
 | `job-results`     | No       | JSON `needs` context; defaults to `{}`                        |
 | `image-ref`       | No       | Published immutable image reference                           |
-| `github-token`    | No       | Token with `actions: read` for completion elapsed time        |
 | `workflow-name`   | No       | Defaults to `github.workflow`                                 |
 | `run-url`         | No       | Defaults to the current run URL                               |
 | `ref`             | No       | Defaults to `github.ref_name`                                 |
@@ -131,7 +130,6 @@ optional inputs:
 ```yaml
 thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
 job-results: ${{ toJSON(needs) }}
-github-token: ${{ github.token }}
 image-ref: ${{ needs.build-frontend.outputs.published-image-ref }}
 ```
 
@@ -140,8 +138,8 @@ build/test job results, not the notification job's own status. Failed-job detail
 exclude jobs whose IDs start with `notify-`, because delivery failures are not
 build failures. Only direct dependencies are available in `needs`.
 
-Grant `contents: read` for checkout and `actions: read` to completion jobs that
-request elapsed time. Checkout should use `persist-credentials: false`.
+Grant `contents: read` for checkout. Notification jobs do not need `actions: read`
+or a GitHub API token. Checkout should use `persist-credentials: false`.
 Every job must depend directly on the `check-repository` fork gate. Completion
 jobs use `always() && needs.check-repository.result == 'success'`.
 
@@ -161,10 +159,8 @@ See the complete integrations in
   rerun that does not rerun `notify-start` may reuse the earlier thread.
 - Notification jobs use `continue-on-error: true`. Delivery errors remain visible
   in logs but do not fail the build/test workflow.
-- Elapsed time uses the current run attempt's `run_started_at` through message
-  preparation. It includes queue/setup time and is not the final workflow
-  duration: the notification job is still running. API requests have a ten-second
-  timeout; missing metadata produces a warning and omits elapsed time.
+- Elapsed time is intentionally omitted: notification preparation adds overhead
+  and cannot report the final workflow duration. Use the workflow-run link for timing.
 - Pushed-image lists contain only successful pushes, including promoted aliases.
   A reported digest identifies the published artifact, not proof that signing
   or deployment succeeded; check the final result and failed jobs.
@@ -186,8 +182,6 @@ Local tests validate payload preparation, not live Slack delivery or Vault acces
 - `not_in_channel`: invite the Slack app to the destination channel.
 - `missing_scope`: add `chat:write` and reinstall the Slack app.
 - Vault `403`: check the AppRole's read policy for the fixed secret path.
-- Missing elapsed time: check the completion job's `actions: read` permission and
-  the preparation step's warning logs. Other message details still post.
 - Standalone completion message: check whether the start notification succeeded
   and its timestamp reached the completion call.
 
@@ -199,7 +193,7 @@ From the repository root, run:
 node --test .github/actions/notify-slack/prepare-notification.test.mjs
 ```
 
-The tests execute the actual preparation script in isolated processes with mocked
-GitHub API responses and time. They cover colors, links, threading, optional
-sections, failed-job details, token exclusion, and elapsed-time fallback. No Vault
+The tests execute the actual preparation script in isolated processes and detect
+unexpected API requests. They cover colors, links, threading, optional
+sections, failed-job details, token exclusion, and elapsed-time omission. No Vault
 credentials, Slack token, network access, or extra npm packages are required.

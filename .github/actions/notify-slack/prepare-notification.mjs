@@ -2,7 +2,6 @@
  * @file Prepares GitHub metadata for the Vault-backed Slack notification action.
  * Reads workflow metadata and job results from environment variables supplied by action.yaml.
  * Writes the complete Slack payload as JSON to GITHUB_OUTPUT.
- * Optionally queries the current run attempt for elapsed time; API failures omit duration.
  * This script does not fetch Vault secrets or send Slack messages.
  */
 
@@ -38,53 +37,11 @@ const links = {
 };
 
 /**
- * Fetches elapsed time for the current run attempt.
- * Skips the API request for start notifications or when no token is provided.
- * API failures produce a warning and an empty duration.
- *
- * @returns {Promise<string>} The elapsed-time label, or an empty string when unavailable.
- */
-async function getElapsedTime() {
-  let duration = "";
-  if (process.env.GH_TOKEN && process.env.NOTIFICATION_STATUS !== "started") {
-    try {
-      const url = `${process.env.API_URL}/repos/${REPOSITORY}/actions/runs/${process.env.RUN_ID}/attempts/${process.env.RUN_ATTEMPT}`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${process.env.GH_TOKEN}`,
-          Accept: "application/vnd.github+json",
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-
-      if (!response.ok) {
-        throw new Error("Run metadata unavailable");
-      }
-
-      const run = await response.json();
-      const startedAt = Date.parse(run.run_started_at);
-
-      if (!Number.isFinite(startedAt)) {
-        throw new Error("Run start time unavailable");
-      }
-
-      const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-      duration = `Elapsed: ${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-    } catch {
-      console.log("::warning::Unable to fetch workflow elapsed time; posting without it.");
-    }
-  }
-  return duration;
-}
-
-/**
  * Builds the Slack message with status colors, links, and nonempty optional sections.
  *
- * @param {string} duration - Elapsed-time label, or an empty string to omit it.
  * @returns {object} The chat.postMessage payload, without authentication credentials.
  */
-function createNotificationPayload(duration) {
+function createNotificationPayload() {
   const status = process.env.NOTIFICATION_STATUS;
   const statuses = {
     success: { color: "#2DA44E", label: "Succeeded" },
@@ -102,7 +59,7 @@ function createNotificationPayload(duration) {
   const metadata =
     status === "started"
       ? `Trigger: ${escapeLabel(process.env.EVENT_NAME)} | Attempt ${process.env.RUN_ATTEMPT} | ${links.actor}`
-      : [duration, `Attempt ${process.env.RUN_ATTEMPT}`].filter(Boolean).join(" | ");
+      : `Attempt ${process.env.RUN_ATTEMPT}`;
   const fallbackMetadata =
     status === "started"
       ? `Trigger: ${process.env.EVENT_NAME} | Attempt ${process.env.RUN_ATTEMPT} | By ${ACTOR}`
@@ -184,6 +141,5 @@ function createNotificationPayload(duration) {
   };
 }
 
-const duration = await getElapsedTime();
-const payload = createNotificationPayload(duration);
+const payload = createNotificationPayload();
 fs.appendFileSync(process.env.GITHUB_OUTPUT, `payload=${JSON.stringify(payload)}\n`);
