@@ -55,6 +55,29 @@ runs:
         exportToken: false
         secrets: |
           canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
+    - name: Prepare GitHub links
+      id: links
+      shell: bash
+      env:
+        SERVER_URL: ${{ github.server_url }}
+        REPOSITORY: ${{ github.repository }}
+        REF_NAME: ${{ inputs.ref }}
+        ACTOR: ${{ github.triggering_actor || github.actor }}
+      run: |
+        node <<'NODE'
+        const fs = require('node:fs');
+        const escapeLabel = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '&#124;');
+        const { SERVER_URL, REPOSITORY, REF_NAME, ACTOR } = process.env;
+        const repositoryUrl = `${SERVER_URL}/${REPOSITORY}`;
+        const links = {
+          repository: `Repository: <${repositoryUrl}|${escapeLabel(REPOSITORY)}>`,
+          ref: `Ref: <${repositoryUrl}/tree/${encodeURIComponent(REF_NAME)}|${escapeLabel(REF_NAME)}>`,
+          actor: `By <${SERVER_URL}/${encodeURIComponent(ACTOR)}|${escapeLabel(ACTOR)}>`
+        };
+        for (const [name, value] of Object.entries(links)) {
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
+        }
+        NODE
     - name: Post notification to Slack
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
       with:
@@ -73,16 +96,53 @@ runs:
                     "type": "section",
                     "text": {
                       "type": "plain_text",
-                      "text": ${{ toJSON(format('{0}: {1} | Ref: {2}', inputs.workflow-name, inputs.status, inputs.ref)) }}
+                      "text": ${{ toJSON(inputs.workflow-name) }}
                     }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {
+                        "type": "plain_text",
+                        "text": ${{ toJSON(format('Status: {0}', inputs.status == 'success' && 'Succeeded' || inputs.status == 'failure' && 'Failed' || inputs.status == 'cancelled' && 'Cancelled' || inputs.status == 'started' && 'Started' || inputs.status == 'skipped' && 'Skipped' || inputs.status)) }}
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": ${{ steps.links.outputs.ref }}
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": ${{ steps.links.outputs.repository }}
+                      },
+                      {
+                        "type": "plain_text",
+                        "text": ${{ toJSON(format('Trigger: {0}', github.event_name)) }}
+                      }
+                    ]
                   },
                   ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
                   {
-                    "type": "section",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ${{ toJSON(inputs.run-url) }}
-                    }
+                    "type": "context",
+                    "elements": [
+                      {
+                        "type": "mrkdwn",
+                        "text": ${{ toJSON(format('Run #{0} | Attempt {1} | {2}', github.run_number, github.run_attempt, fromJSON(steps.links.outputs.actor))) }}
+                      }
+                    ]
+                  },
+                  {
+                    "type": "actions",
+                    "elements": [
+                      {
+                        "type": "button",
+                        "action_id": "view_workflow_run",
+                        "text": {
+                          "type": "plain_text",
+                          "text": "View workflow run"
+                        },
+                        "url": ${{ toJSON(inputs.run-url) }}
+                      }
+                    ]
                   }
                 ]
               }
