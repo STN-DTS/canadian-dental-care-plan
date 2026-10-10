@@ -24,6 +24,9 @@ inputs:
   message:
     description: Optional additional notification text
     default: ""
+  job-results:
+    description: JSON needs context for reporting failed build and test jobs
+    default: "{}"
   workflow-name:
     description: Name of the workflow being reported
     default: ${{ github.workflow }}
@@ -71,6 +74,7 @@ runs:
         REPOSITORY: ${{ github.repository }}
         REF_NAME: ${{ inputs.ref }}
         ACTOR: ${{ github.triggering_actor || github.actor }}
+        JOB_RESULTS: ${{ inputs.job-results }}
       run: |
         node <<'NODE'
         const fs = require('node:fs');
@@ -82,6 +86,10 @@ runs:
           ref: `Ref: <${repositoryUrl}/tree/${encodeURIComponent(REF_NAME)}|${escapeLabel(REF_NAME)}>`,
           actor: `By <${SERVER_URL}/${encodeURIComponent(ACTOR)}|${escapeLabel(ACTOR)}>`
         };
+        const failedJobs = Object.entries(JSON.parse(process.env.JOB_RESULTS))
+          .filter(([name, job]) => !name.startsWith('notify-') && job.result === 'failure')
+          .map(([name]) => `- ${name}`);
+        links.failures = failedJobs.length ? `Failed jobs:\n${failedJobs.join('\n')}` : '';
         for (const [name, value] of Object.entries(links)) {
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
         }
@@ -131,6 +139,7 @@ runs:
                     ]
                   },
                   ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
+                  ${{ fromJSON(steps.links.outputs.failures) != '' && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', steps.links.outputs.failures) || '' }}
                   {
                     "type": "context",
                     "elements": [

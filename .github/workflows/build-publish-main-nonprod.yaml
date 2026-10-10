@@ -90,6 +90,7 @@ jobs:
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
+          job-results: ${{ toJSON(needs) }}
           status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
           message: >-
             ${{ needs.build-frontend.outputs.pushed-image-tags != '' && format('Pushed image tags:{0}{1}', fromJSON('"\n"'), needs.build-frontend.outputs.pushed-image-tags) || '' }}

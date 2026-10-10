@@ -68,6 +68,7 @@ jobs:
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
+          job-results: ${{ toJSON(needs) }}
           status: ${{ needs.run-e2e-tests.result }}
 
   run-e2e-tests:
