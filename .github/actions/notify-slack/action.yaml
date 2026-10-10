@@ -36,6 +36,9 @@ inputs:
   ref:
     description: Branch or tag being reported
     default: ${{ github.ref_name }}
+  commit-sha:
+    description: Exact source commit being reported
+    default: ${{ github.sha }}
 
 outputs:
   ts:
@@ -75,6 +78,7 @@ runs:
         REF_NAME: ${{ inputs.ref }}
         ACTOR: ${{ github.triggering_actor || github.actor }}
         JOB_RESULTS: ${{ inputs.job-results }}
+        COMMIT_SHA: ${{ inputs.commit-sha }}
       run: |
         node <<'NODE'
         const fs = require('node:fs');
@@ -90,6 +94,8 @@ runs:
           .filter(([name, job]) => !name.startsWith('notify-') && job.result === 'failure')
           .map(([name]) => `- ${name}`);
         links.failures = failedJobs.length ? `Failed jobs:\n${failedJobs.join('\n')}` : '';
+        const commitSha = process.env.COMMIT_SHA;
+        links.commit = `Commit: <${repositoryUrl}/commit/${encodeURIComponent(commitSha)}|${escapeLabel(commitSha.slice(0, 8))}>`;
         for (const [name, value] of Object.entries(links)) {
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
         }
@@ -135,6 +141,10 @@ runs:
                       {
                         "type": "plain_text",
                         "text": ${{ toJSON(format('Trigger: {0}', github.event_name)) }}
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": ${{ steps.links.outputs.commit }}
                       }
                     ]
                   },
