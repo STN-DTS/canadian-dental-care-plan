@@ -10,6 +10,12 @@ Apply rules according to the file path. Frontend Express naming conventions do
 not apply to GitOps or infrastructure files. See the path-scoped frontend
 instructions for Express-specific guidance.
 
+## Slack Notifications
+
+When adding or modifying Slack notifications, read
+`.github/actions/notify-slack/README.md` for bot and Vault setup, required job
+dependencies, threading, metadata, failure handling, and verification.
+
 ## GitHub Actions Fork Protection
 
 Forks inherit workflow files but normally lack our Vault credentials, repository
