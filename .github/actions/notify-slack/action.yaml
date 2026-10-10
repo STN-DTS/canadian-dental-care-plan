@@ -27,6 +27,9 @@ inputs:
   job-results:
     description: JSON needs context for reporting failed build and test jobs
     default: "{}"
+  image-ref:
+    description: Optional immutable published image reference including its sha256 digest
+    default: ""
   workflow-name:
     description: Name of the workflow being reported
     default: ${{ github.workflow }}
@@ -150,6 +153,7 @@ runs:
                   },
                   ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
                   ${{ fromJSON(steps.links.outputs.failures) != '' && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', steps.links.outputs.failures) || '' }}
+                  ${{ inputs.image-ref && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(format('Image digest: {0}', inputs.image-ref))) || '' }}
                   {
                     "type": "context",
                     "elements": [

@@ -83,6 +83,7 @@ jobs:
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
           job-results: ${{ toJSON(needs) }}
+          image-ref: ${{ needs.build-frontend.outputs.published-image-ref }}
           status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
           message: >-
             ${{ needs.build-frontend.outputs.pushed-image-tags != '' && format('Pushed image tags:{0}{1}', fromJSON('"\n"'), needs.build-frontend.outputs.pushed-image-tags) || '' }}
@@ -172,6 +173,7 @@ jobs:
       - test-frontend
     outputs:
       pushed-image-tags: ${{ steps.pushed-tags.outputs.image-tags }}
+      published-image-ref: ${{ steps.push.outputs.image-digest != '' && format('{0}/canada-dental-care-plan/canada-dental-care-plan-frontend@{1}', vars.ACR_DOMAIN_NONPROD, steps.push.outputs.image-digest) || '' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
