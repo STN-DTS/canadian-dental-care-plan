@@ -154,9 +154,11 @@ test("includes threaded results, multiline messages, all failed jobs, ACR destin
   assert.equal(payload.reply_broadcast, true);
   assert.equal(blocks[1].text.text, "Failed jobs:\n- test-frontend\n- build-frontend");
   assert.equal(blocks[2].text.text, message);
+  assert.equal(blocks[2].text.type, "plain_text");
+  assert.equal(blocks[3].text.type, "mrkdwn");
   assert.equal(
     blocks[3].text.text,
-    `Published image\nACR: testregistry.azurecr.io\nImage: canada-dental-care-plan/frontend\nDigest: sha256:${"a".repeat(64)}`,
+    `*Published image*\nACR: \`testregistry.azurecr.io\`\nImage: \`canada-dental-care-plan/frontend\`\nDigest: \`sha256:${"a".repeat(64)}\``,
   );
   assert.equal(blocks.length, 4);
   assert.ok(!blocks[0].text.text.includes("Trigger:"));
@@ -172,13 +174,29 @@ test("groups matching published tags under their ACR and image without repeating
     MESSAGE: `Pushed image tags:\n- ${imageName}:v1\n- ${imageName}:latest`,
   });
   assert.equal(payload.attachments[0].blocks.length, 2);
+  assert.equal(payload.attachments[0].blocks[1].text.type, "mrkdwn");
   assert.equal(
     payload.attachments[0].blocks[1].text.text,
-    `Published image\nACR: testregistry.azurecr.io\nImage: canada-dental-care-plan/frontend\nTags: v1, latest\nDigest: ${digest}`,
+    `*Published image*\nACR: \`testregistry.azurecr.io\`\nImage: \`canada-dental-care-plan/frontend\`\nDigest: \`${digest}\`\nTags: \`v1\`, \`latest\``,
   );
   assert.ok(payload.attachments[0].fallback.includes("Tags: v1, latest"));
   assert.ok(payload.attachments[0].fallback.includes(digest));
   assert.ok(!JSON.stringify(payload).includes(`${imageName}:v1`));
+});
+
+test("escapes Slack markup in published identifiers while keeping fallback text plain", () => {
+  const imageName = "testregistry.azurecr.io/frontend<&|`>";
+  const digest = `sha256:${"a".repeat(64)}`;
+  const { payload } = runNotification({
+    NOTIFICATION_STATUS: "success",
+    IMAGE_REF: `${imageName}@${digest}`,
+    MESSAGE: `Pushed image tags:\n- ${imageName}:v1`,
+  });
+  const attachment = payload.attachments[0];
+  assert.ok(attachment.blocks[1].text.text.includes("Image: `frontend&lt;&amp;&#124;&#96;&gt;`"));
+  assert.ok(attachment.fallback.includes("Image: frontend<&|`>"));
+  assert.ok(attachment.fallback.includes("Tags: v1"));
+  assert.ok(!attachment.fallback.includes("*Published image*"));
 });
 
 test("preserves pushed tags after partial publication without an immutable reference", () => {

@@ -116,30 +116,47 @@ function createNotificationPayload(duration) {
 
   let message = process.env.MESSAGE;
   let publishedImage = "";
+  let formattedPublishedImage = "";
   if (process.env.IMAGE_REF) {
+    const inlineCode = (value) => `\`${escapeLabel(value).replace(/`/g, "&#96;")}\``;
     const [imageName, digest] = process.env.IMAGE_REF.split("@");
     const registrySeparator = imageName.indexOf("/");
     const imageDetails = [
       "Published image",
       `ACR: ${imageName.slice(0, registrySeparator)}`,
       `Image: ${imageName.slice(registrySeparator + 1)}`,
+      `Digest: ${digest}`,
+    ];
+    const formattedDetails = [
+      "*Published image*",
+      `ACR: ${inlineCode(imageName.slice(0, registrySeparator))}`,
+      `Image: ${inlineCode(imageName.slice(registrySeparator + 1))}`,
+      `Digest: ${inlineCode(digest)}`,
     ];
     if (message?.startsWith("Pushed image tags:\n")) {
       const tagLines = message.slice("Pushed image tags:\n".length).split("\n");
       const prefix = `- ${imageName}:`;
       if (tagLines.every((line) => line.startsWith(prefix) && line.length > prefix.length)) {
-        imageDetails.push(`Tags: ${tagLines.map((line) => line.slice(prefix.length)).join(", ")}`);
+        const tags = tagLines.map((line) => line.slice(prefix.length));
+        imageDetails.push(`Tags: ${tags.join(", ")}`);
+        formattedDetails.push(`Tags: ${tags.map(inlineCode).join(", ")}`);
         message = "";
       }
     }
-    imageDetails.push(`Digest: ${digest}`);
     publishedImage = imageDetails.join("\n");
+    formattedPublishedImage = formattedDetails.join("\n");
   }
-  for (const text of [links.failures, message, publishedImage]) {
+  for (const text of [links.failures, message]) {
     if (!text) continue;
     blocks.push({
       type: "section",
       text: { type: "plain_text", text },
+    });
+  }
+  if (formattedPublishedImage) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: formattedPublishedImage },
     });
   }
 

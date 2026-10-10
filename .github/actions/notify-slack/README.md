@@ -28,7 +28,10 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 - Every failed build/test dependency supplied by the caller.
 - Published-image section with destination ACR, image path, and full digest,
   derived from the optional `image-ref` input. Matching pushed tags appear as
-  short tag names without repeating the registry and image path.
+  comma-separated short tag names on a `Tags:` line, without repeating the registry
+  and image path.
+  The section uses Slack `mrkdwn` with bold headings and inline-code identifiers;
+  its fallback remains plain text.
 
 The repository remains in the attachment fallback text and GitHub link destinations.
 Completion replies keep ref and commit so channel broadcasts retain source context.
