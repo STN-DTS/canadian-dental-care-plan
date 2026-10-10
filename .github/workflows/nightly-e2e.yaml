@@ -94,5 +94,15 @@ jobs:
         run: pnpm exec playwright install chromium --with-deps
         working-directory: frontend/
       - name: Run e2e tests
+        id: e2e
         run: pnpm run test:e2e
         working-directory: frontend/
+      - name: Upload E2E failure artifacts
+        if: ${{ failure() && steps.e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

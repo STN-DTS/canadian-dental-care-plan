@@ -16,7 +16,7 @@ const webServerHost = process.env.WSL_DISTRO_NAME ? '[::1]' : 'localhost';
 function getReporterConfig(): ReporterDescription[] {
   if (!isCI) return [['list'], ['html']];
   if (isTeamCity) return [['playwright-teamcity-reporter']];
-  return [['dot']];
+  return [['dot'], ['html', { open: 'never' }]];
 }
 
 export default defineConfig({
