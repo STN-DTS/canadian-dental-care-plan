@@ -1,27 +1,25 @@
 /**
- * @file Persists one Slack message per workflow run attempt using trusted artifacts.
- * Job concurrency serializes restore, Slack update, and save. Restore errors stop
- * delivery rather than risking duplicates; lifecycle phases prevent backward updates.
+ * @file Finds this bot's workflow message in Slack history for forward-only updates.
+ * Job concurrency serializes lookup and delivery. Lookup failures stop delivery
+ * rather than risking duplicates or updating an unrelated message.
  */
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
-import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+export const METADATA_EVENT_TYPE = "stn_dts.workflow_run";
 
 /**
  * @typedef {object} MessageState
- * @property {string} key Repository, source run, attempt, and channel identity.
+ * @property {string} key Repository, run, attempt, and channel identity.
  * @property {number} phase Queued (1), started (2), or completed (3).
- * @property {string} timestamp Slack message timestamp, preserved as a string.
+ * @property {string} timestamp Slack message timestamp.
  */
-const MAX_STATE_BYTES = 65536;
 
 /**
- * Maps a workflow_run event to a monotonic lifecycle phase.
+ * Maps a workflow event to its monotonic phase.
  * @param {string} action GitHub activity type.
- * @returns {number} The lifecycle phase.
- * @throws {Error} If the activity type is unsupported.
+ * @returns {number} Lifecycle phase.
  */
 export function lifecyclePhase(action) {
   const phases = { requested: 1, in_progress: 2, completed: 3 };
@@ -30,9 +28,9 @@ export function lifecyclePhase(action) {
 }
 
 /**
- * Allows only forward transitions, reusing the existing message timestamp.
+ * Allows only forward transitions and preserves the existing timestamp.
  * @param {string} action GitHub activity type.
- * @param {MessageState} [state] Previously persisted state.
+ * @param {MessageState} [state] Existing message state.
  * @returns {{phase: number, shouldPost: boolean, timestamp: string}} Delivery decision.
  */
 export function messageTransition(action, state) {
@@ -41,11 +39,10 @@ export function messageTransition(action, state) {
 }
 
 /**
- * Validates identity and timestamp before state can control Slack updates.
- * @param {MessageState} state Parsed artifact or newly constructed state.
+ * Validates state identity, phase, and timestamp before updating Slack.
+ * @param {MessageState} state Candidate state.
  * @param {string} key Expected message identity.
- * @returns {MessageState} The validated state.
- * @throws {Error} If state is malformed or belongs to another run attempt or channel.
+ * @returns {MessageState} Validated state.
  */
 export function validateState(state, key) {
   if (
@@ -60,123 +57,167 @@ export function validateState(state, key) {
 }
 
 /**
- * Requests GitHub data with authentication and a bounded timeout.
- * @param {string | URL} url GitHub API endpoint.
- * @returns {Promise<Response>} Successful response.
- * @throws {Error} If GitHub rejects the request or the timeout expires.
+ * Builds hidden correlation metadata stored with the Slack message.
+ * @param {string} repository Source repository.
+ * @param {string} runId Source run ID.
+ * @param {string} attempt Source run attempt.
+ * @param {string} status Notification status.
+ * @returns {object} Slack message metadata.
  */
-async function requestGitHub(url) {
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${process.env.GH_TOKEN}`,
-      Accept: "application/vnd.github+json",
+export function messageMetadata(repository, runId, attempt, status) {
+  return {
+    event_type: METADATA_EVENT_TYPE,
+    event_payload: {
+      repository,
+      run_id: String(runId),
+      attempt: String(attempt),
+      phase: status === "queued" ? 1 : status === "started" ? 2 : 3,
     },
+  };
+}
+
+/**
+ * Matches metadata or a legacy headline and attempt, only for this bot's messages.
+ * @param {object} message Slack history message.
+ * @param {{userId: string, repository: string, runId: string, attempt: string, channel: string, runUrl: string}} identity Expected identity.
+ * @returns {MessageState | undefined} Matched state, if any.
+ */
+export function matchMessage(message, identity) {
+  if (message.user !== identity.userId) return undefined;
+  const key = `${identity.repository}:${identity.runId}:${identity.attempt}:${identity.channel}`;
+  if (message.metadata) {
+    if (message.metadata.event_type !== METADATA_EVENT_TYPE) return undefined;
+    const payload = message.metadata.event_payload;
+    if (!payload) throw new Error("Workflow message metadata payload unavailable");
+    if (
+      payload?.repository !== identity.repository ||
+      String(payload.run_id) !== identity.runId ||
+      String(payload.attempt) !== identity.attempt
+    )
+      return undefined;
+    return validateState({ key, phase: payload.phase, timestamp: message.ts }, key);
+  }
+
+  const sections = [
+    ...(message.blocks ?? []),
+    ...(message.attachments ?? []).flatMap((attachment) => attachment.blocks ?? []),
+  ]
+    .filter((block) => block.type === "section" && block.text?.type === "mrkdwn")
+    .map((block) => block.text.text);
+  const headline = sections.find((text) => text.includes(`<${identity.runUrl}|`));
+  const label = headline?.match(/^\*([^*]+)\* · </)?.[1];
+  const attempts = sections.flatMap((text) =>
+    [...text.matchAll(/\bAttempt (\d+)\b/g)].map((match) => match[1]),
+  );
+  if (!label || attempts.length !== 1 || attempts[0] !== identity.attempt) return undefined;
+  const completedLabels = [
+    "Succeeded",
+    "Failed",
+    "Cancelled",
+    "Skipped",
+    "Timed out",
+    "Startup failed",
+    "Action required",
+    "Neutral",
+    "Stale",
+  ];
+  const phase =
+    label === "Queued"
+      ? 1
+      : label === "Started"
+        ? 2
+        : completedLabels.includes(label)
+          ? 3
+          : undefined;
+  if (!phase) return undefined;
+  return validateState({ key, phase, timestamp: message.ts }, key);
+}
+
+/**
+ * Calls Slack without exposing tokens or response bodies in errors.
+ * @param {string} method Slack API method.
+ * @param {object} [parameters] Query parameters.
+ * @returns {Promise<object>} Successful Slack response.
+ */
+async function requestSlack(method, parameters = {}) {
+  const url = new URL(`https://slack.com/api/${method}`);
+  for (const [name, value] of Object.entries(parameters)) url.searchParams.set(name, String(value));
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}` },
     signal: AbortSignal.timeout(10000),
   });
-  if (!response.ok) throw new Error("Unable to retrieve notification state");
-  return response;
+  if (!response.ok) throw new Error(`Slack ${method} request failed`);
+  const data = await response.json();
+  if (!data.ok)
+    throw new Error(
+      `Slack ${method} request rejected; check scopes, channel membership, and rate limits`,
+    );
+  return data;
 }
 
 /**
- * Reads only state.json from a size-limited archive; never extracts executable files.
- * @param {Response} response Artifact ZIP download response.
- * @param {string} key Expected message identity.
- * @returns {Promise<MessageState>} Validated state.
+ * Searches bounded, paginated history and rejects multiple matching messages.
+ * @param {object} identity Source run and bot identity.
+ * @param {string} createdAt Source run creation time, or empty for all retained history.
+ * @returns {Promise<MessageState | undefined>} Unique existing message.
  */
-async function readStateArchive(response, key) {
-  const archive = await response.arrayBuffer();
-  if (archive.byteLength > MAX_STATE_BYTES)
-    throw new Error("Notification state archive is too large");
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "slack-state-"));
-  try {
-    const archivePath = path.join(directory, "state.zip");
-    fs.writeFileSync(archivePath, Buffer.from(archive));
-    const content = execFileSync("unzip", ["-p", archivePath, "state.json"], {
-      encoding: "utf8",
-      maxBuffer: MAX_STATE_BYTES,
-    });
-    return validateState(JSON.parse(content), key);
-  } finally {
-    fs.rmSync(directory, { recursive: true, force: true });
+async function findMessage(identity, createdAt) {
+  const parameters = { channel: identity.channel, include_all_metadata: true, limit: 100 };
+  if (createdAt) {
+    const timestamp = Date.parse(createdAt);
+    if (!Number.isFinite(timestamp)) throw new Error("Invalid source run creation time");
+    parameters.oldest = String(Math.max(0, Math.floor(timestamp / 1000) - 60));
   }
-}
-
-/**
- * Restores the latest retained state produced by this notifier workflow.
- * @param {string} api Repository API base URL.
- * @param {string} artifactName Artifact name scoped to run attempt and channel.
- * @param {string} key Expected message identity.
- * @returns {Promise<MessageState | undefined>} State, or undefined if none is retained.
- */
-async function restoreState(api, artifactName, key) {
-  const currentRun = await (
-    await requestGitHub(`${api}/actions/runs/${process.env.GITHUB_RUN_ID}`)
-  ).json();
-  for (let page = 1; ; page++) {
-    const url = new URL(`${api}/actions/artifacts`);
-    url.searchParams.set("name", artifactName);
-    url.searchParams.set("per_page", "100");
-    url.searchParams.set("page", String(page));
-    const data = await (await requestGitHub(url)).json();
-    const artifacts = data.artifacts
-      .filter((artifact) => artifact.name === artifactName && !artifact.expired)
-      .sort((first, second) => second.id - first.id);
-    for (const artifact of artifacts) {
-      if (artifact.size_in_bytes > MAX_STATE_BYTES)
-        throw new Error("Notification state artifact is too large");
-      const producer = await (
-        await requestGitHub(`${api}/actions/runs/${artifact.workflow_run.id}`)
-      ).json();
-      if (producer.workflow_id !== currentRun.workflow_id || producer.event !== "workflow_run")
-        continue;
-      return readStateArchive(
-        await requestGitHub(`${api}/actions/artifacts/${artifact.id}/zip`),
-        key,
-      );
+  const matches = new Map();
+  const cursors = new Set();
+  for (let page = 0; page < 100; page++) {
+    const data = await requestSlack("conversations.history", parameters);
+    for (const message of data.messages) {
+      const state = matchMessage(message, identity);
+      if (state) matches.set(state.timestamp, state);
     }
-    if (data.artifacts.length < 100) return undefined;
+    if (matches.size > 1)
+      throw new Error("Multiple workflow messages match; refusing an ambiguous update");
+    const cursor = data.response_metadata?.next_cursor;
+    if (!cursor) {
+      if (data.has_more) throw new Error("Incomplete Slack history response");
+      return matches.values().next().value;
+    }
+    if (cursors.has(cursor)) throw new Error("Repeated Slack history cursor");
+    cursors.add(cursor);
+    parameters.cursor = cursor;
   }
+  throw new Error("Slack history search limit exceeded");
 }
 
 /**
- * Restores a delivery decision or saves state after a successful Slack operation.
- * Reads workflow environment configuration and writes GitHub step outputs.
+ * Resolves bot identity and writes a safe post/update decision for the action.
  * @returns {Promise<void>}
  */
 async function main() {
-  const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
-  const run = event.workflow_run;
-  const key = `${process.env.REPOSITORY}:${run.id}:${run.run_attempt}:${process.env.SLACK_CHANNEL_ID}`;
-  const artifactName = `slack-message-${event.repository.id}-${run.id}-${run.run_attempt}-${process.env.SLACK_CHANNEL_ID}`;
-  const stateFile = path.join(process.env.RUNNER_TEMP, "slack-message-state", "state.json");
-
-  if (process.env.NOTIFICATION_STATE_MODE === "save") {
-    const state = validateState(
-      { key, phase: lifecyclePhase(event.action), timestamp: process.env.MESSAGE_TS },
-      key,
-    );
-    fs.mkdirSync(path.dirname(stateFile), { recursive: true });
-    fs.writeFileSync(stateFile, JSON.stringify(state));
-    return;
-  }
-
-  const api = `${process.env.API_URL}/repos/${process.env.REPOSITORY}`;
-  const state = await restoreState(api, artifactName, key);
-  const transition = messageTransition(event.action, state);
-  const outputs = {
-    "should-post": String(transition.shouldPost),
-    "message-ts": transition.timestamp,
-    "artifact-name": artifactName,
-    "state-file": stateFile,
+  const auth = await requestSlack("auth.test");
+  if (!auth.user_id) throw new Error("Slack bot identity unavailable");
+  const identity = {
+    userId: auth.user_id,
+    repository: process.env.REPOSITORY,
+    runId: process.env.RUN_ID,
+    attempt: process.env.RUN_ATTEMPT,
+    channel: process.env.SLACK_CHANNEL_ID,
+    runUrl: process.env.RUN_URL,
   };
+  const state = await findMessage(identity, process.env.RUN_CREATED_AT);
+  const action =
+    process.env.NOTIFICATION_STATUS === "queued"
+      ? "requested"
+      : process.env.NOTIFICATION_STATUS === "started"
+        ? "in_progress"
+        : "completed";
+  const transition = messageTransition(action, state);
   fs.appendFileSync(
     process.env.GITHUB_OUTPUT,
-    Object.entries(outputs)
-      .map(([name, value]) => `${name}=${value}\n`)
-      .join(""),
+    `should-post=${transition.shouldPost}\nmessage-ts=${transition.timestamp}\n`,
   );
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
   await main();
-}

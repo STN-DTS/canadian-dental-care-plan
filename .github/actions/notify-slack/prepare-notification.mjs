@@ -6,6 +6,7 @@
  */
 
 import fs from "node:fs";
+import { messageMetadata } from "./workflow-message-state.mjs";
 
 /**
  * Escapes characters that could alter a Slack mrkdwn link label.
@@ -95,6 +96,7 @@ function createNotificationPayload() {
 
   return {
     channel: process.env.SLACK_CHANNEL_ID,
+    metadata: messageMetadata(REPOSITORY, process.env.RUN_ID, process.env.RUN_ATTEMPT, status),
     ...(process.env.MESSAGE_TS ? { ts: process.env.MESSAGE_TS } : {}),
     blocks: [{ type: "section", text: { type: "mrkdwn", text: headline } }],
     attachments: [

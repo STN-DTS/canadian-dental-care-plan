@@ -18,8 +18,11 @@ inputs:
   status:
     description: Build status to report, such as queued, success, failure, or cancelled
     required: true
-  message-ts:
-    description: Existing Slack message timestamp to update; omit to create a message
+  run-id:
+    description: ID of the reported workflow run, used for message correlation
+    default: ${{ github.run_id }}
+  run-created-at:
+    description: Source run creation time for bounding Slack history lookup
     default: ""
   job-results:
     description: JSON job results retrieved from the reported workflow run attempt
@@ -91,8 +94,23 @@ runs:
         exportToken: false
         secrets: |
           canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
+    - name: Find existing workflow message
+      id: state
+      shell: bash
+      env:
+        SLACK_BOT_TOKEN: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
+        REPOSITORY: ${{ github.repository }}
+        RUN_ID: ${{ inputs.run-id }}
+        RUN_ATTEMPT: ${{ inputs.run-attempt }}
+        RUN_URL: ${{ inputs.run-url }}
+        RUN_CREATED_AT: ${{ inputs.run-created-at }}
+        NOTIFICATION_STATUS: ${{ inputs.status }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: node "$ACTION_PATH/workflow-message-state.mjs"
     - name: Prepare Slack Notification
       id: prepare-notification
+      if: ${{ steps.state.outputs.should-post == 'true' }}
       shell: bash
       env:
         SERVER_URL: ${{ github.server_url }}
@@ -102,10 +120,11 @@ runs:
         JOB_RESULTS: ${{ inputs.job-results }}
         COMMIT_SHA: ${{ inputs.commit-sha }}
         RUN_ATTEMPT: ${{ inputs.run-attempt }}
+        RUN_ID: ${{ inputs.run-id }}
         NOTIFICATION_STATUS: ${{ inputs.status }}
         SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
         WORKFLOW_NAME: ${{ inputs.workflow-name }}
-        MESSAGE_TS: ${{ inputs.message-ts }}
+        MESSAGE_TS: ${{ steps.state.outputs.message-ts }}
         RUN_URL: ${{ inputs.run-url }}
         EVENT_NAME: ${{ inputs.event-name }}
         RUN_NUMBER: ${{ inputs.run-number }}
@@ -113,9 +132,10 @@ runs:
       run: node "$ACTION_PATH/prepare-notification.mjs"
     - name: Post notification to Slack
       id: notification
+      if: ${{ steps.state.outputs.should-post == 'true' }}
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
       with:
-        method: ${{ inputs.message-ts != '' && 'chat.update' || 'chat.postMessage' }}
+        method: ${{ steps.state.outputs.message-ts != '' && 'chat.update' || 'chat.postMessage' }}
         token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
         errors: true
         payload: ${{ steps.prepare-notification.outputs.payload }}

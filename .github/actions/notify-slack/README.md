@@ -6,25 +6,27 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 The repository's notifications are centralized in
 [notify-workflow-run.yaml](../../workflows/notify-workflow-run.yaml). Build workflows
 do not call this action directly. The notifier maintains one Slack message per run
-attempt, updating it from Queued to Started to the final result. It stores only
-the message timestamp and lifecycle phase, not custom build or image metadata.
+attempt, updating it from Queued to Started to the final result. Slack message
+metadata stores the source identity and lifecycle phase; no GitHub state artifacts
+or custom build metadata are needed.
 
 ## How It Works
 
-1. Under job-level concurrency, `workflow-message-state.mjs` restores the message
-   timestamp and phase from a trusted notifier artifact. Duplicate and backward
-   transitions skip delivery before Slack credentials are fetched.
-2. The notifier uses metadata from `github.event.workflow_run`, not its own run.
+1. The notifier uses metadata from `github.event.workflow_run`, not its own run.
    `prepare-workflow-run.mjs` fetches failed jobs for completed non-successful runs,
    using the originating run ID and attempt. API failures warn and omit job details.
-3. `action.yaml` rejects a blank channel ID, ensures Node.js runtime libraries,
+2. `action.yaml` rejects a blank channel ID, ensures Node.js runtime libraries,
    sets up Node.js, and fetches the Slack bot token using Vault AppRole authentication.
+3. Under job-level concurrency, `workflow-message-state.mjs` uses `auth.test` to
+   identify the bot and scans `conversations.history` with `include_all_metadata=true`.
+   It resolves the existing timestamp and phase, rejecting ambiguous matches.
+   Duplicate and backward transitions skip delivery.
 4. `prepare-notification.mjs` reads the supplied environment variables and prepares
    links and failure details without querying GitHub's API.
    It exports JSON in the `payload` step output without authentication credentials.
 5. Slack's official action calls `chat.postMessage` for a new message or `chat.update`
    for an existing timestamp. The composite action returns the timestamp as `ts`.
-6. After success, the notifier saves and uploads the new phase and timestamp.
+   Every post or update includes source identity and lifecycle phase in metadata.
 
 ## Message Content
 
@@ -42,7 +44,7 @@ workflow labels remain ordinary clickable links. Attachment fallback text stays 
 
 The builder accepts only run metadata and API-derived job results. Custom messages,
 container registries, image tags, digests, and thread replies are not supported.
-The optional `message-ts` input identifies a message to update, not a thread parent.
+Existing message timestamps are resolved internally rather than supplied by callers.
 
 The repository remains in the attachment fallback text and GitHub link destinations.
 Messages keep ref and commit so each announcement retains source context.
@@ -60,8 +62,10 @@ require an acknowledgement handler, so this action does not use buttons.
 ## Setup
 
 1. Open the existing STN-DTS Notifications app in Slack's app dashboard.
-2. Under **OAuth & Permissions**, add the bot scope `chat:write` and reinstall the
-   app to the workspace. Obtain the **Bot User OAuth Token** (`xoxb-...`).
+2. Under **OAuth & Permissions**, grant `chat:write` plus `channels:history` for
+   public channels and/or `groups:history` for private channels, then reinstall
+   the app. Obtain the **Bot User OAuth Token** (`xoxb-...`). Existing channel
+   information scopes such as `channels:read` do not grant access to messages.
 3. Store the token in Vault at API path
    `canada-dental-care-plan/data/shared/cicd/slack`, field `SLACK_BOT_TOKEN`.
    The Vault UI path is `shared/cicd/slack` under the `canada-dental-care-plan`
@@ -78,7 +82,25 @@ require an acknowledgement handler, so this action does not use buttons.
    The action sets up Node.js 26.10.0 before preparing the payload; Node does not
    need to be preinstalled on the runner.
    Existing notification jobs use `arc-runners-dshp-dev`.
-   State restoration also requires `unzip`; the notifier installs it if missing.
+
+Register the custom event type `stn_dts.workflow_run` in the Slack app manifest's
+`metadata.event_subscriptions`, using a schema for this event payload:
+
+```json
+{
+  "repository": "STN-DTS/canadian-dental-care-plan",
+  "run_id": "123",
+  "attempt": "1",
+  "phase": 1
+}
+```
+
+`repository`, `run_id`, and `attempt` are required strings. `phase` is a required
+integer: Queued = 1, Started = 2, completed = 3. Slack's
+[metadata guide](https://docs.slack.dev/messaging/message-metadata/) describes
+schema registration. Invalid metadata may be ignored with a warning, so verify
+that posted messages retain their full metadata during rollout. Metadata is not
+secret: channel members and other apps may read it. No Events API callback is needed.
 
 Never put tokens or AppRole secret values in source control or chat. The action
 uses `exportEnv: false` and `exportToken: false`; the Slack token is not exposed
@@ -93,7 +115,8 @@ as a composite-action output. Existing TeamCity webhooks can remain unchanged.
 | `vault-secret-id` | Yes      | AppRole secret ID                                             |
 | `channel-id`      | Yes      | Destination channel ID; blank values fail before Vault access |
 | `status`          | Yes      | `queued`, `started`, or the workflow conclusion               |
-| `message-ts`      | No       | Existing message timestamp for `chat.update`                  |
+| `run-id`          | No       | Source run ID; defaults to `github.run_id`                    |
+| `run-created-at`  | No       | Source creation time to bound history lookup                  |
 | `job-results`     | No       | JSON run-attempt job results; defaults to `{}`                |
 | `workflow-name`   | No       | Defaults to `github.workflow`                                 |
 | `run-url`         | No       | Defaults to the current run URL                               |
@@ -104,7 +127,8 @@ as a composite-action output. Existing TeamCity webhooks can remain unchanged.
 | `run-number`      | No       | Defaults to `github.run_number`                               |
 | `run-attempt`     | No       | Defaults to `github.run_attempt`                              |
 
-Output `ts` is the posted Slack message timestamp, not a credential.
+Output `ts` is the posted or updated Slack message timestamp, not a credential.
+It is empty when duplicate or backward events skip delivery.
 
 ## Workflow Integration
 
@@ -136,17 +160,27 @@ whose `head_repository` differs from this repository are excluded before interna
 runner execution. Do not execute triggering-branch code or downloaded artifacts here.
 
 Workflow permissions default to `{}`. The notifier job grants `contents: read` for
-trusted checkout and `actions: read` for job and state lookups. The GitHub API token is
-passed only to the metadata and state scripts, not the Slack posting action. The job lookup is
+trusted checkout and `actions: read` for failed-job lookup. The GitHub API token is
+passed only to the job metadata script, not the Slack posting action. The job lookup is
 paginated, uses ten-second request timeouts, and treats failed or timed-out jobs
 as failures. It does not fetch custom build outputs.
 
-State artifacts are named by repository ID, source run ID, attempt, and channel.
-Restoration checks that each artifact was produced by this notifier workflow,
-not an untrusted build workflow. Only size-limited `state.json` is read from its
-ZIP; no downloaded files are executed. Artifacts expire after seven days.
+Messages carry `metadata.event_type = stn_dts.workflow_run` with repository,
+source run ID, attempt, and phase in `event_payload`. Lookup considers only messages
+owned by the bot returned from `auth.test`, in the configured channel. It paginates
+history from sixty seconds before source run creation, with at most 100 pages.
+When creation time is omitted, it scans retained history under the same page limit.
+Each Slack request has a ten-second timeout. API errors and incomplete searches
+fail closed; there is no fallback that silently creates another message.
+
+Legacy messages without metadata can be adopted only when this bot's structured
+headline contains the exact source-run link and exactly one matching attempt.
+Known status labels determine the previous phase. Multiple matches are rejected,
+including duplicates already posted by older versions. Messages with unrelated
+metadata are never adopted by parsing their visible text.
+
 Job concurrency serializes events by repository, run ID, and attempt, queues
-pending events without cancelling them, and holds the lock through state upload.
+pending events without cancelling them, and holds the lock through Slack delivery.
 
 For event-driven callers, override all originating-run
 metadata inputs shown in the notifier workflow so links and labels do not describe
@@ -159,11 +193,11 @@ the notification run instead.
 - Updating completion does not create a fresh channel announcement or thread reply.
 - Event delivery and runner scheduling can delay announcements; there is no
   ordering guarantee. If completion arrives first, it becomes the final message.
-- Missing or expired state causes a new message. State lookup errors or malformed
-  state fail closed and skip delivery rather than risk a duplicate or wrong update.
-- Slack posting and artifact upload are not atomic. If Slack succeeds but state
-  upload fails, a later event can duplicate the message. Deleting state artifacts
-  also removes deduplication history. This is best-effort, not exactly-once delivery.
+- No matching retained message causes a new post. History lookup errors, malformed
+  matching metadata, and ambiguous legacy messages stop delivery.
+- Metadata and visible content are sent together, removing the post/artifact-upload
+  failure gap. Slack history retention, deleted messages, visibility delays, and
+  uncertain API outcomes still prevent an exactly-once delivery guarantee.
 - Notification jobs use `continue-on-error: true`. Delivery errors remain visible
   in logs but do not fail the build/test workflow.
 - Elapsed time is intentionally omitted: notification preparation adds overhead
@@ -179,6 +213,8 @@ the notification run instead.
 2. Confirm one message advances from Queued to Started to completion, with status colors and links
    to the originating run. Confirm actor, source commit, trigger, number, and attempt.
 3. Check failure and rerun cases without publishing unwanted images.
+   Also verify legacy-message adoption and retained metadata containing the correct
+   repository, run ID, attempt, and phase. Existing ambiguous duplicates need manual cleanup.
 4. Once delivery works, disable `/github` workflow subscriptions if they produce
    duplicate notifications. Other GitHub app subscriptions can stay enabled.
 
@@ -187,15 +223,19 @@ Local tests validate payload preparation, not live Slack delivery or Vault acces
 ## Troubleshooting
 
 - `not_in_channel`: invite the Slack app to the destination channel.
-- `missing_scope`: add `chat:write` and reinstall the Slack app.
+- `missing_scope`: check `chat:write` and the relevant channel history scope,
+  then reinstall the Slack app.
 - Vault `403`: check the AppRole's read policy for the fixed secret path.
 - No events: ensure the notifier is on the default branch and the originating
   workflow name exactly matches the allowlist.
 - Missing failed jobs: check the notifier's `actions: read` permission and metadata
   warning logs. The overall workflow conclusion still posts.
-- State lookup failure: check `actions: read`, artifact retention, and `unzip` availability.
-- Slack `message_not_found`: the stored message was deleted; updates fail rather
-  than silently creating a replacement.
+- State lookup failure: check Slack history scopes, bot membership, rate limits,
+  and channel retention. No artifact or ZIP access is used.
+- Ambiguous match: more than one message exists for the same run attempt. Remove
+  duplicates manually before retrying; the notifier will not guess which one to update.
+- Slack `message_not_found`: a message was deleted between lookup and update.
+  Updates fail rather than silently creating a replacement.
 
 ## Local Tests
 
@@ -207,7 +247,8 @@ node --test .github/actions/notify-slack/prepare-notification.test.mjs
 
 The tests execute the actual preparation script in isolated processes and detect
 unexpected API requests. They cover colors, links, standalone messages,
-failed-job details, job pagination, lifecycle updates, trusted state restoration,
+failed-job details, job pagination, lifecycle updates, bot-owned metadata lookup,
+history pagination, unique legacy adoption, ambiguous matches,
 duplicate suppression, late events, rerun isolation, API failure handling, token exclusion, and
 custom-content and elapsed-time omission. No Vault
 credentials, Slack token, network access, or extra npm packages are required.

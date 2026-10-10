@@ -5,7 +5,12 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { messageTransition, validateState } from "./workflow-message-state.mjs";
+import {
+  matchMessage,
+  messageMetadata,
+  messageTransition,
+  validateState,
+} from "./workflow-message-state.mjs";
 
 const scriptPath = fileURLToPath(new URL("./prepare-notification.mjs", import.meta.url));
 const apiMock = `
@@ -39,6 +44,7 @@ function runNotification(overrides = {}) {
           GH_TOKEN: "",
           RUN_ATTEMPT: "2",
           RUN_NUMBER: "42",
+          RUN_ID: "123",
           NOTIFICATION_STATUS: "queued",
           SLACK_CHANNEL_ID: "C123",
           MESSAGE_TS: "",
@@ -352,43 +358,36 @@ test("rejects cross-attempt and malformed message state", () => {
 function runMessageState({
   action = "in_progress",
   phase,
-  mode = "restore",
   apiError = false,
   untrusted = false,
   attempt = 1,
+  pages,
 } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "slack-lifecycle-test-"));
   const eventPath = path.join(directory, "event.json");
   const outputPath = path.join(directory, "output");
   const requestPath = path.join(directory, "requests");
-  const state = { key: `STN-DTS/repo:123:${attempt}:C123`, phase, timestamp: "123.456" };
+  const message = {
+    user: untrusted ? "UOTHER" : "UBOT",
+    ts: "123.456",
+    metadata: {
+      ...messageMetadata("STN-DTS/repo", "123", String(attempt), "queued"),
+      event_payload: { repository: "STN-DTS/repo", run_id: "123", attempt: String(attempt), phase },
+    },
+  };
+  const historyPages = pages ?? [{ ok: true, messages: phase ? [message] : [] }];
   const mock = `
     import fs from 'node:fs';
-    import childProcess from 'node:child_process';
-    import { syncBuiltinESMExports } from 'node:module';
-    childProcess.execFileSync = (command, args) => {
-      if (command !== 'unzip' || args[0] !== '-p' || args[2] !== 'state.json') throw new Error('Unexpected archive extraction');
-      return process.env.TEST_STATE;
-    };
-    syncBuiltinESMExports();
     const requests = [];
-    globalThis.fetch = async (url) => {
-      requests.push(String(url));
+    let page = 0;
+    globalThis.fetch = async (url, options) => {
+      requests.push({ url: String(url), hasSignal: options.signal instanceof AbortSignal,
+        authenticated: options.headers.Authorization === 'Bearer fixture-token' });
       fs.writeFileSync(process.env.TEST_REQUEST_FILE, JSON.stringify(requests));
       if (process.env.TEST_API_ERROR === 'true') return { ok: false };
-      const state = JSON.parse(process.env.TEST_STATE);
-      let data;
-      if (String(url).includes('/actions/artifacts?')) {
-        data = { artifacts: state.phase ? [{
-          id: 77, name: 'slack-message-42-123-' + process.env.TEST_ATTEMPT + '-C123',
-          expired: false, size_in_bytes: 100, workflow_run: { id: 88 }
-        }] : [] };
-      } else if (String(url).endsWith('/actions/runs/88')) {
-        data = { workflow_id: process.env.TEST_UNTRUSTED === 'true' ? 999 : 55, event: 'workflow_run' };
-      } else {
-        data = { workflow_id: 55 };
-      }
-      return { ok: true, json: async () => data, arrayBuffer: async () => new Uint8Array([1, 2]).buffer };
+      const data = String(url).includes('/auth.test') ? { ok: true, user_id: 'UBOT' }
+        : JSON.parse(process.env.TEST_PAGES)[page++];
+      return { ok: true, json: async () => data };
     };
   `;
   try {
@@ -415,31 +414,28 @@ function runMessageState({
           ...process.env,
           GITHUB_EVENT_PATH: eventPath,
           GITHUB_OUTPUT: outputPath,
-          RUNNER_TEMP: directory,
-          GITHUB_RUN_ID: "99",
           REPOSITORY: "STN-DTS/repo",
-          API_URL: "https://api.github.com",
-          GH_TOKEN: "fixture-token",
+          RUN_ID: "123",
+          RUN_ATTEMPT: String(attempt),
+          RUN_URL: "https://github.com/STN-DTS/repo/actions/runs/123",
+          RUN_CREATED_AT: "2026-10-10T12:00:00Z",
+          SLACK_BOT_TOKEN: "fixture-token",
           SLACK_CHANNEL_ID: "C123",
-          MESSAGE_TS: "123.456",
-          NOTIFICATION_STATE_MODE: mode,
-          TEST_STATE: JSON.stringify(state),
+          NOTIFICATION_STATUS:
+            action === "requested" ? "queued" : action === "in_progress" ? "started" : "success",
+          TEST_PAGES: JSON.stringify(historyPages),
           TEST_REQUEST_FILE: requestPath,
           TEST_API_ERROR: String(apiError),
-          TEST_UNTRUSTED: String(untrusted),
-          TEST_ATTEMPT: String(attempt),
         },
       },
     );
     assert.ifError(result.error);
     const output = fs.readFileSync(outputPath, "utf8");
-    const stateFile = path.join(directory, "slack-message-state", "state.json");
     assert.ok(!output.includes("fixture-token"));
     assert.ok(!result.stderr.includes("fixture-token"));
     return {
       status: result.status,
       output,
-      saved: fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, "utf8")) : undefined,
       requests: fs.existsSync(requestPath) ? JSON.parse(fs.readFileSync(requestPath, "utf8")) : [],
     };
   } finally {
@@ -447,7 +443,7 @@ function runMessageState({
   }
 }
 
-test("restores the trusted timestamp and suppresses duplicate Started events", () => {
+test("finds this bot's metadata and suppresses duplicate Started events", () => {
   const result = runMessageState({ phase: 2 });
   assert.equal(result.status, 0);
   assert.ok(result.output.includes("should-post=false\n"));
@@ -471,14 +467,13 @@ test("creates a new message for a rerun without a Queued event", () => {
   const result = runMessageState({ attempt: 2 });
   assert.equal(result.status, 0);
   assert.ok(result.output.includes("should-post=true\nmessage-ts=\n"));
-  assert.ok(result.output.includes("artifact-name=slack-message-42-123-2-C123\n"));
 });
 
-test("does not trust message state artifacts produced by a different workflow", () => {
+test("does not adopt another bot's message even when its metadata matches", () => {
   const result = runMessageState({ phase: 2, untrusted: true });
   assert.equal(result.status, 0);
   assert.ok(result.output.includes("message-ts=\n"));
-  assert.ok(!result.requests.some((url) => url.endsWith("/zip")));
+  assert.ok(result.requests.every((request) => request.url.startsWith("https://slack.com/api/")));
 });
 
 test("fails closed when state cannot be retrieved", () => {
@@ -487,13 +482,137 @@ test("fails closed when state cannot be retrieved", () => {
   assert.equal(result.output, "");
 });
 
-test("saves completion state with its timestamp without API requests", () => {
-  const result = runMessageState({ mode: "save", action: "completed" });
+test("attaches run identity and lifecycle phase to new and updated payloads", () => {
+  for (const [status, phase] of [
+    ["queued", 1],
+    ["started", 2],
+    ["success", 3],
+  ]) {
+    const { payload } = runNotification({ NOTIFICATION_STATUS: status, MESSAGE_TS: "123.456" });
+    assert.deepEqual(payload.metadata, {
+      event_type: "stn_dts.workflow_run",
+      event_payload: { repository: "STN-DTS/repo", run_id: "123", attempt: "2", phase },
+    });
+  }
+});
+
+const historyIdentity = {
+  userId: "UBOT",
+  repository: "STN-DTS/repo",
+  runId: "123",
+  attempt: "1",
+  channel: "C123",
+  runUrl: "https://github.com/STN-DTS/repo/actions/runs/123",
+};
+
+function legacyMessage(timestamp = "123.456", label = "Queued", attempt = "1") {
+  return {
+    user: "UBOT",
+    ts: timestamp,
+    blocks: [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: `*${label}* · <${historyIdentity.runUrl}|Build #42>` },
+      },
+    ],
+    attachments: [
+      {
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `Ref: main\nTrigger: push | Attempt ${attempt} | By test-user`,
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+test("adopts a unique legacy Queued message by exact run link and attempt", () => {
+  const result = runMessageState({ pages: [{ ok: true, messages: [legacyMessage()] }] });
   assert.equal(result.status, 0);
-  assert.deepEqual(result.saved, {
-    key: "STN-DTS/repo:123:1:C123",
-    phase: 3,
-    timestamp: "123.456",
+  assert.ok(result.output.includes("should-post=true\nmessage-ts=123.456\n"));
+  assert.equal(matchMessage(legacyMessage("123.456", "Queued", "2"), historyIdentity), undefined);
+  const unrelated = legacyMessage();
+  unrelated.blocks[0].text.text = unrelated.blocks[0].text.text.replace("runs/123|", "runs/1234|");
+  assert.equal(matchMessage(unrelated, historyIdentity), undefined);
+  assert.equal(matchMessage(legacyMessage("123.456", "Succeeded"), historyIdentity).phase, 3);
+});
+
+test("paginates history with metadata and a source-run time boundary", () => {
+  const result = runMessageState({
+    pages: [
+      { ok: true, messages: [], has_more: true, response_metadata: { next_cursor: "next" } },
+      { ok: true, messages: [legacyMessage()] },
+    ],
   });
-  assert.deepEqual(result.requests, []);
+  assert.equal(result.status, 0);
+  assert.ok(result.output.includes("message-ts=123.456"));
+  const first = new URL(result.requests[1].url);
+  assert.equal(first.searchParams.get("include_all_metadata"), "true");
+  assert.equal(
+    first.searchParams.get("oldest"),
+    String(Date.parse("2026-10-10T12:00:00Z") / 1000 - 60),
+  );
+  assert.equal(new URL(result.requests[2].url).searchParams.get("cursor"), "next");
+  assert.ok(result.requests.every((request) => request.authenticated && request.hasSignal));
+});
+
+test("rejects ambiguous matches across history pages", () => {
+  const result = runMessageState({
+    pages: [
+      { ok: true, messages: [legacyMessage()], response_metadata: { next_cursor: "next" } },
+      { ok: true, messages: [legacyMessage("123.789")] },
+    ],
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.output, "");
+});
+
+test("fails closed on missing scopes and repeated history cursors", () => {
+  for (const pages of [
+    [{ ok: false, error: "missing_scope" }],
+    [
+      { ok: true, messages: [], response_metadata: { next_cursor: "same" } },
+      { ok: true, messages: [], response_metadata: { next_cursor: "same" } },
+    ],
+  ]) {
+    const result = runMessageState({ pages });
+    assert.notEqual(result.status, 0);
+    assert.equal(result.output, "");
+  }
+});
+
+test("does not fall back to legacy parsing when nonmatching metadata is present", () => {
+  const message = {
+    ...legacyMessage(),
+    metadata: messageMetadata("other/repo", "123", "1", "queued"),
+  };
+  assert.equal(matchMessage(message, historyIdentity), undefined);
+  message.metadata = messageMetadata("STN-DTS/repo", "123", "2", "queued");
+  assert.equal(matchMessage(message, historyIdentity), undefined);
+});
+
+test("fails closed when workflow metadata is incomplete or malformed", () => {
+  for (const metadata of [
+    { event_type: "stn_dts.workflow_run" },
+    {
+      event_type: "stn_dts.workflow_run",
+      event_payload: {
+        repository: "STN-DTS/repo",
+        run_id: "123",
+        attempt: "1",
+        phase: 4,
+      },
+    },
+  ]) {
+    const result = runMessageState({
+      pages: [{ ok: true, messages: [{ user: "UBOT", ts: "123.456", metadata }] }],
+    });
+    assert.notEqual(result.status, 0);
+    assert.equal(result.output, "");
+  }
 });

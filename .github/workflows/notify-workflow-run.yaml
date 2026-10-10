@@ -53,23 +53,7 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 26.10.0
-      - name: Ensure state archive reader
-        run: |
-          set -euo pipefail
-          if ! command -v unzip >/dev/null; then
-            sudo -n apt-get update
-            sudo -n apt-get install --yes unzip
-          fi
-      - name: Restore Slack message state
-        id: state
-        env:
-          NOTIFICATION_STATE_MODE: restore
-          GH_TOKEN: ${{ github.token }}
-          API_URL: ${{ github.api_url }}
-          REPOSITORY: ${{ github.repository }}
-        run: node .github/actions/notify-slack/workflow-message-state.mjs
       - name: Read failed jobs from the originating run attempt
-        if: ${{ steps.state.outputs.should-post == 'true' }}
         id: metadata
         env:
           GH_TOKEN: ${{ github.token }}
@@ -78,7 +62,6 @@ jobs:
         run: node .github/actions/notify-slack/prepare-workflow-run.mjs
       - name: Post workflow notification
         id: slack
-        if: ${{ steps.state.outputs.should-post == 'true' }}
         uses: ./.github/actions/notify-slack
         with:
           vault-url: ${{ secrets.VAULT_URL_NONPROD }}
@@ -86,7 +69,8 @@ jobs:
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           status: ${{ github.event.action == 'requested' && 'queued' || github.event.action == 'in_progress' && 'started' || github.event.workflow_run.conclusion }}
-          message-ts: ${{ steps.state.outputs.message-ts }}
+          run-id: ${{ github.event.workflow_run.id }}
+          run-created-at: ${{ github.event.workflow_run.created_at }}
           workflow-name: ${{ github.event.workflow_run.name }}
           run-url: ${{ github.event.workflow_run.html_url }}
           ref: ${{ github.event.workflow_run.head_branch }}
@@ -96,18 +80,3 @@ jobs:
           run-number: ${{ github.event.workflow_run.run_number }}
           run-attempt: ${{ github.event.workflow_run.run_attempt }}
           job-results: ${{ steps.metadata.outputs.job-results }}
-      - name: Persist Slack message state
-        if: ${{ steps.slack.outcome == 'success' }}
-        env:
-          NOTIFICATION_STATE_MODE: save
-          REPOSITORY: ${{ github.repository }}
-          MESSAGE_TS: ${{ steps.slack.outputs.ts || steps.state.outputs.message-ts }}
-        run: node .github/actions/notify-slack/workflow-message-state.mjs
-      - name: Upload Slack message state
-        if: ${{ steps.slack.outcome == 'success' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: ${{ steps.state.outputs.artifact-name }}
-          path: ${{ steps.state.outputs.state-file }}
-          retention-days: 7
-          if-no-files-found: error
