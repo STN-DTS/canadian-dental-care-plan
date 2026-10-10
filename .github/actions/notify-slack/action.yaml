@@ -63,6 +63,10 @@ runs:
           echo "::error::The channel-id input is required."
           exit 1
         fi
+    - name: Setup Node.js for notification preparation
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: 26.10.0
     - name: Fetch Slack bot token from HashiCorp Vault
       id: vault
       uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
