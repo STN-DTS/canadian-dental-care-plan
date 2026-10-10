@@ -21,6 +21,7 @@ jobs:
         run: echo "Repository check passed."
 
   notify-start:
+    continue-on-error: true
     needs: check-repository
     runs-on: arc-runners-dshp-dev
     timeout-minutes: 5
@@ -41,6 +42,7 @@ jobs:
           status: started
 
   notify-complete:
+    continue-on-error: true
     if: ${{ always() && needs.check-repository.result == 'success' }}
     needs:
       - check-repository
