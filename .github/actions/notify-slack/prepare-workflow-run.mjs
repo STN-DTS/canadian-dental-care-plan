@@ -1,3 +1,8 @@
+/**
+ * @file Retrieves failed jobs for the originating workflow run attempt.
+ * Paginated GitHub API failures warn and omit details without blocking delivery.
+ * Exports job-results JSON only; authentication credentials are never exported.
+ */
 import fs from "node:fs";
 
 const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));

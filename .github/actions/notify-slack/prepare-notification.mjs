@@ -59,6 +59,7 @@ function createNotificationPayload() {
     success: { color: "#2DA44E", label: "Succeeded" },
     failure: { color: "#CF222E", label: "Failed" },
     cancelled: { color: "#BF8700", label: "Cancelled" },
+    queued: { color: "#359FA3", label: "Queued" },
     started: { color: "#359FA3", label: "Started" },
     skipped: { color: "#808080", label: "Skipped" },
     timed_out: { color: "#CF222E", label: "Timed out" },
@@ -94,6 +95,7 @@ function createNotificationPayload() {
 
   return {
     channel: process.env.SLACK_CHANNEL_ID,
+    ...(process.env.MESSAGE_TS ? { ts: process.env.MESSAGE_TS } : {}),
     blocks: [{ type: "section", text: { type: "mrkdwn", text: headline } }],
     attachments: [
       {

@@ -16,8 +16,11 @@ inputs:
     description: Slack channel ID where the bot posts the notification
     required: true
   status:
-    description: Build status to report, such as started, success, failure, or cancelled
+    description: Build status to report, such as queued, success, failure, or cancelled
     required: true
+  message-ts:
+    description: Existing Slack message timestamp to update; omit to create a message
+    default: ""
   job-results:
     description: JSON job results retrieved from the reported workflow run attempt
     default: "{}"
@@ -102,6 +105,7 @@ runs:
         NOTIFICATION_STATUS: ${{ inputs.status }}
         SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
         WORKFLOW_NAME: ${{ inputs.workflow-name }}
+        MESSAGE_TS: ${{ inputs.message-ts }}
         RUN_URL: ${{ inputs.run-url }}
         EVENT_NAME: ${{ inputs.event-name }}
         RUN_NUMBER: ${{ inputs.run-number }}
@@ -111,7 +115,7 @@ runs:
       id: notification
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
       with:
-        method: chat.postMessage
+        method: ${{ inputs.message-ts != '' && 'chat.update' || 'chat.postMessage' }}
         token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
         errors: true
         payload: ${{ steps.prepare-notification.outputs.payload }}
