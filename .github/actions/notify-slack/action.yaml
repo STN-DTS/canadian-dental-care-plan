@@ -63,6 +63,15 @@ runs:
           echo "::error::The channel-id input is required."
           exit 1
         fi
+    - name: Ensure Node.js runtime libraries
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if ! ldconfig -p | grep -F 'libatomic.so.1' >/dev/null; then
+          sudo -n apt-get update
+          sudo -n apt-get install --yes libatomic1
+        fi
     - name: Setup Node.js for notification preparation
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:

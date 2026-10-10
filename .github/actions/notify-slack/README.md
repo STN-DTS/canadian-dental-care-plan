@@ -5,8 +5,8 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 
 ## How It Works
 
-1. `action.yaml` rejects a blank channel ID, sets up Node.js, and fetches the
-   Slack bot token from Vault using AppRole authentication.
+1. `action.yaml` rejects a blank channel ID, ensures Node.js runtime libraries,
+   sets up Node.js, and fetches the Slack bot token using Vault AppRole authentication.
 2. `prepare-notification.mjs` reads the supplied environment variables, prepares
    links and failure details, and optionally fetches elapsed time from GitHub.
 3. The script builds a JavaScript object and exports it as JSON in the `payload`
@@ -42,9 +42,12 @@ gray. Empty optional sections are omitted.
    `VAULT_SECRET_ID_NONPROD`.
 5. Invite the app to the destination Slack channel. Copy the channel ID from
    channel details and set GitHub Actions repository variable `SLACK_CHANNEL_ID`.
-6. Use a Linux runner with Bash and connectivity to Vault, Slack, GitHub's API,
-   and the Node.js download service. The action sets up Node.js 26.10.0 before
-   preparing the payload; Node does not need to be preinstalled on the runner.
+6. Use a Debian/Ubuntu Linux runner with Bash and connectivity to Vault, Slack,
+   GitHub's API, the Node.js download service, and package repositories. If
+   `libatomic.so.1` is missing, the action installs `libatomic1` using passwordless
+   `sudo -n`. Alternatively, include this library in the runner image.
+   The action sets up Node.js 26.10.0 before preparing the payload; Node does not
+   need to be preinstalled on the runner.
    Existing notification jobs use `arc-runners-dshp-dev`.
 
 Never put tokens or AppRole secret values in source control or chat. The action
