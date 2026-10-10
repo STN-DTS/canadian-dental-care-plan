@@ -55,6 +55,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      actions: read
     steps:
       - name: Checkout notification action
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -69,6 +70,7 @@ jobs:
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
           job-results: ${{ toJSON(needs) }}
+          github-token: ${{ github.token }}
           status: ${{ needs.run-e2e-tests.result }}
 
   run-e2e-tests:

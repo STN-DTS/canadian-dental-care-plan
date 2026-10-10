@@ -75,6 +75,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      actions: read
     env:
       BUILD_RESULTS: ${{ format('{0},{1},{2},{3}', needs.detect-changes.result, needs.resolve-version.result, needs.test-frontend.result, needs.build-frontend.result) }}
     steps:
@@ -91,6 +92,7 @@ jobs:
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
           job-results: ${{ toJSON(needs) }}
+          github-token: ${{ github.token }}
           image-ref: ${{ needs.build-frontend.outputs.published-image-ref }}
           status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
           message: >-

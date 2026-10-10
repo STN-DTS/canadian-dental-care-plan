@@ -30,6 +30,9 @@ inputs:
   image-ref:
     description: Optional immutable published image reference including its sha256 digest
     default: ""
+  github-token:
+    description: Optional token with actions read permission for completion elapsed time
+    default: ""
   workflow-name:
     description: Name of the workflow being reported
     default: ${{ github.workflow }}
@@ -82,6 +85,11 @@ runs:
         ACTOR: ${{ github.triggering_actor || github.actor }}
         JOB_RESULTS: ${{ inputs.job-results }}
         COMMIT_SHA: ${{ inputs.commit-sha }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        API_URL: ${{ github.api_url }}
+        RUN_ID: ${{ github.run_id }}
+        RUN_ATTEMPT: ${{ github.run_attempt }}
+        NOTIFICATION_STATUS: ${{ inputs.status }}
       run: |
         node <<'NODE'
         const fs = require('node:fs');
@@ -102,6 +110,27 @@ runs:
         for (const [name, value] of Object.entries(links)) {
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
         }
+        (async () => {
+          let duration = '';
+          if (process.env.GH_TOKEN && process.env.NOTIFICATION_STATUS !== 'started') {
+            try {
+              const url = `${process.env.API_URL}/repos/${REPOSITORY}/actions/runs/${process.env.RUN_ID}/attempts/${process.env.RUN_ATTEMPT}`;
+              const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' },
+                signal: AbortSignal.timeout(10000)
+              });
+              if (!response.ok) throw new Error('Run metadata unavailable');
+              const run = await response.json();
+              const startedAt = Date.parse(run.run_started_at);
+              if (!Number.isFinite(startedAt)) throw new Error('Run start time unavailable');
+              const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+              duration = `Elapsed: ${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+            } catch {
+              console.log('::warning::Unable to fetch workflow elapsed time; posting without it.');
+            }
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `duration=${JSON.stringify(duration)}\n`);
+        })();
         NODE
     - name: Post notification to Slack
       id: notification
@@ -154,6 +183,7 @@ runs:
                   ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
                   ${{ fromJSON(steps.links.outputs.failures) != '' && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', steps.links.outputs.failures) || '' }}
                   ${{ inputs.image-ref && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(format('Image digest: {0}', inputs.image-ref))) || '' }}
+                  ${{ fromJSON(steps.links.outputs.duration) != '' && format('{{"type":"context","elements":[{{"type":"plain_text","text":{0}}}]}},', steps.links.outputs.duration) || '' }}
                   {
                     "type": "context",
                     "elements": [
