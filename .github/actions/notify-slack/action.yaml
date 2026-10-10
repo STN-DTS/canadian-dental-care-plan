@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: Notify Slack
+description: Send a build notification to Slack using a bot token stored in HashiCorp Vault
+
+inputs:
+  vault-url:
+    description: Vault URL
+    required: true
+  vault-role-id:
+    description: Vault AppRole role ID
+    required: true
+  vault-secret-id:
+    description: Vault AppRole secret ID
+    required: true
+  channel-id:
+    description: Slack channel ID where the bot posts the notification
+    required: true
+  status:
+    description: Build status to report, such as started, success, failure, or cancelled
+    required: true
+  message:
+    description: Optional additional notification text
+    default: ""
+  workflow-name:
+    description: Name of the workflow being reported
+    default: ${{ github.workflow }}
+  run-url:
+    description: URL of the workflow run being reported
+    default: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  ref:
+    description: Branch or tag being reported
+    default: ${{ github.ref_name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate Slack channel
+      shell: bash
+      env:
+        SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
+      run: |
+        if [[ -z "${SLACK_CHANNEL_ID//[[:space:]]/}" ]]; then
+          echo "::error::The channel-id input is required."
+          exit 1
+        fi
+    - name: Fetch Slack bot token from HashiCorp Vault
+      id: vault
+      uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+      with:
+        method: approle
+        url: ${{ inputs.vault-url }}
+        roleId: ${{ inputs.vault-role-id }}
+        secretId: ${{ inputs.vault-secret-id }}
+        exportEnv: false
+        exportToken: false
+        secrets: |
+          canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
+    - name: Post notification to Slack
+      uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+      with:
+        method: chat.postMessage
+        token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+        errors: true
+        payload: |
+          {
+            "channel": ${{ toJSON(inputs.channel-id) }},
+            "text": ${{ toJSON(format('{0}: {1}. {2}', inputs.workflow-name, inputs.status, inputs.run-url)) }},
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "plain_text",
+                  "text": ${{ toJSON(format('{0}: {1} | Ref: {2}', inputs.workflow-name, inputs.status, inputs.ref)) }}
+                }
+              },
+              ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
+              {
+                "type": "section",
+                "text": {
+                  "type": "plain_text",
+                  "text": ${{ toJSON(inputs.run-url) }}
+                }
+              }
+            ]
+          }

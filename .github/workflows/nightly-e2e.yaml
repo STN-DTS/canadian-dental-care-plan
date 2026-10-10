@@ -7,6 +7,7 @@ on:
 
 env:
   CI: true
+  SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 permissions: read-all
 

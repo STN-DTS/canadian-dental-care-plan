@@ -42,6 +42,7 @@ on:
 env:
   # Standard environment variable letting tools know they are in CI.
   CI: true
+  SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 jobs:
   detect-changes:
