@@ -123,7 +123,6 @@ jobs:
       - name: Resolve and validate build version
         id: version
         env:
-          EVENT_NAME: ${{ github.event_name }}
           INPUT_VERSION: ${{ github.event.inputs.version }}
           REF_NAME: ${{ github.ref_name }}
           RUN_NUMBER: ${{ github.run_number }}
@@ -131,7 +130,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" == release/* ]]; then
+          if [[ "$REF_NAME" == release/* ]]; then
             version=${REF_NAME#release/v}
           else
             version=${INPUT_VERSION:-0.0.0}
@@ -192,7 +191,7 @@ jobs:
         run: ${{ github.ref == 'refs/heads/main' && 'pnpm run test:e2e:smoke' || 'pnpm run test:e2e' }}
 
   build-frontend:
-    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/v'))) }}
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/v')) }}
     runs-on: arc-runners-dshp-dev
     needs:
       - check-repository
