@@ -22,7 +22,16 @@ env:
   SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
   notify-start:
+    needs: check-repository
     runs-on: arc-runners-dshp-dev
     timeout-minutes: 5
     permissions:
@@ -42,8 +51,9 @@ jobs:
           status: started
 
   notify-complete:
-    if: ${{ always() }}
+    if: ${{ always() && needs.check-repository.result == 'success' }}
     needs:
+      - check-repository
       - notify-start
       - resolve-version
       - test-frontend
@@ -70,7 +80,7 @@ jobs:
 
   resolve-version:
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    needs: check-repository
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -100,7 +110,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   test-frontend:
-    needs: resolve-version
+    needs:
+      - check-repository
+      - resolve-version
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -136,6 +148,7 @@ jobs:
   build-frontend:
     runs-on: arc-runners-dshp-dev
     needs:
+      - check-repository
       - resolve-version
       - test-frontend
     steps:

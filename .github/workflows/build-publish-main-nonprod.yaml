@@ -29,8 +29,17 @@ env:
   SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
   notify-start:
     if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+    needs: check-repository
     runs-on: arc-runners-dshp-dev
     timeout-minutes: 5
     permissions:
@@ -50,8 +59,9 @@ jobs:
           status: started
 
   notify-complete:
-    if: ${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+    if: ${{ always() && needs.check-repository.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
     needs:
+      - check-repository
       - notify-start
       - detect-changes
       - resolve-version
@@ -79,7 +89,7 @@ jobs:
 
   detect-changes:
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    needs: check-repository
     outputs:
       frontend-changed: ${{ steps.changes.outputs.frontend }}
     steps:
@@ -104,7 +114,7 @@ jobs:
           echo "frontend=${{ github.event_name != 'push' || steps.filter.outputs.frontend == 'true' }}" >> "$GITHUB_OUTPUT"
 
   resolve-version:
-    if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}
+    needs: check-repository
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -145,7 +155,9 @@ jobs:
 
   test-frontend:
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
-    needs: detect-changes
+    needs:
+      - check-repository
+      - detect-changes
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -182,6 +194,7 @@ jobs:
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/v'))) }}
     runs-on: arc-runners-dshp-dev
     needs:
+      - check-repository
       - detect-changes
       - resolve-version
       - test-frontend
