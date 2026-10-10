@@ -90,48 +90,8 @@ runs:
         RUN_ID: ${{ github.run_id }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
         NOTIFICATION_STATUS: ${{ inputs.status }}
-      run: |
-        node <<'NODE'
-        const fs = require('node:fs');
-        const escapeLabel = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '&#124;');
-        const { SERVER_URL, REPOSITORY, REF_NAME, ACTOR } = process.env;
-        const repositoryUrl = `${SERVER_URL}/${REPOSITORY}`;
-        const links = {
-          repository: `Repository: <${repositoryUrl}|${escapeLabel(REPOSITORY)}>`,
-          ref: `Ref: <${repositoryUrl}/tree/${encodeURIComponent(REF_NAME)}|${escapeLabel(REF_NAME)}>`,
-          actor: `By <${SERVER_URL}/${encodeURIComponent(ACTOR)}|${escapeLabel(ACTOR)}>`
-        };
-        const failedJobs = Object.entries(JSON.parse(process.env.JOB_RESULTS))
-          .filter(([name, job]) => !name.startsWith('notify-') && job.result === 'failure')
-          .map(([name]) => `- ${name}`);
-        links.failures = failedJobs.length ? `Failed jobs:\n${failedJobs.join('\n')}` : '';
-        const commitSha = process.env.COMMIT_SHA;
-        links.commit = `Commit: <${repositoryUrl}/commit/${encodeURIComponent(commitSha)}|${escapeLabel(commitSha.slice(0, 8))}>`;
-        for (const [name, value] of Object.entries(links)) {
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
-        }
-        (async () => {
-          let duration = '';
-          if (process.env.GH_TOKEN && process.env.NOTIFICATION_STATUS !== 'started') {
-            try {
-              const url = `${process.env.API_URL}/repos/${REPOSITORY}/actions/runs/${process.env.RUN_ID}/attempts/${process.env.RUN_ATTEMPT}`;
-              const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' },
-                signal: AbortSignal.timeout(10000)
-              });
-              if (!response.ok) throw new Error('Run metadata unavailable');
-              const run = await response.json();
-              const startedAt = Date.parse(run.run_started_at);
-              if (!Number.isFinite(startedAt)) throw new Error('Run start time unavailable');
-              const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-              duration = `Elapsed: ${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-            } catch {
-              console.log('::warning::Unable to fetch workflow elapsed time; posting without it.');
-            }
-          }
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `duration=${JSON.stringify(duration)}\n`);
-        })();
-        NODE
+        ACTION_PATH: ${{ github.action_path }}
+      run: node "$ACTION_PATH/prepare-notification.mjs"
     - name: Post notification to Slack
       id: notification
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
