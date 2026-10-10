@@ -3,16 +3,24 @@
 This composite action sends STN-DTS workflow notifications through Slack's
 official GitHub Action. It authenticates with a bot token fetched from Vault.
 
+The repository's notifications are centralized in
+[notify-workflow-run.yaml](../../workflows/notify-workflow-run.yaml). Build workflows
+do not call this action directly. The notifier posts standalone start and completion
+messages without image metadata, artifact exchange, or thread timestamp storage.
+
 ## How It Works
 
 1. `action.yaml` rejects a blank channel ID, ensures Node.js runtime libraries,
    sets up Node.js, and fetches the Slack bot token using Vault AppRole authentication.
-2. `prepare-notification.mjs` reads the supplied environment variables, prepares
+2. The notifier passes metadata from `github.event.workflow_run`, not its own run.
+   `prepare-workflow-run.mjs` fetches failed jobs for completed non-successful runs,
+   using the originating run ID and attempt. API failures warn and omit job details.
+3. `prepare-notification.mjs` reads the supplied environment variables and prepares
    links and failure details without querying GitHub's API.
-3. The script builds a JavaScript object and exports it as JSON in the `payload`
+4. The script builds a JavaScript object and exports it as JSON in the `payload`
    step output. It does not send messages or include authentication tokens in
    the payload.
-4. Slack's official action calls `chat.postMessage` with that payload and the
+5. Slack's official action calls `chat.postMessage` with that payload and the
    Vault token. The composite action returns the posted message timestamp as `ts`.
 
 ## Message Content
@@ -21,23 +29,22 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
   name and run number to the run. Top-level `blocks` contain the headline;
   attachment blocks contain only metadata and result details.
 - Linked branch/tag and exact source commit on one line.
-- Start notifications include trigger, attempt number, and an actor link.
-- Completion replies include attempt number;
-  actor and trigger remain in the parent start message.
-- Optional plain-text message, including pushed-image lists after partial publication.
-- Every failed build/test dependency supplied by the caller.
-- Published-image section with destination ACR, image path, and full digest,
-  derived from the optional `image-ref` input. Matching pushed tags appear as
-  comma-separated short tag names on a `Tags:` line, without repeating the registry
-  and image path.
-  The section uses Slack `mrkdwn` with bold headings and inline-code identifiers;
-  its fallback remains plain text.
+- Standalone start and completion notifications include trigger, attempt number,
+  and an actor link.
+- Failed jobs retrieved from the originating workflow run attempt, without
+  workflow-specific job-name exclusions.
+
+Trigger names and failed-job names use inline code. Ref, commit, actor, and
+workflow labels remain ordinary clickable links. Attachment fallback text stays plain.
+
+The builder accepts only run metadata and API-derived job results. Custom messages,
+container registries, image tags, digests, and Slack thread timestamps are not supported.
 
 The repository remains in the attachment fallback text and GitHub link destinations.
-Completion replies keep ref and commit so channel broadcasts retain source context.
-The attachment's `fallback` includes failures and published-image details for clients
+Messages keep ref and commit so each announcement retains source context.
+The attachment's `fallback` includes run metadata and failed jobs for clients
 that cannot render its blocks. Top-level `text` is omitted to avoid a second
-visible summary. Unrecognized messages and tags for other images remain unchanged.
+visible summary.
 
 Success is green, failure red, cancellation amber, start teal, and other statuses
 gray. Empty optional sections are omitted.
@@ -81,96 +88,73 @@ as a composite-action output. Existing TeamCity webhooks can remain unchanged.
 | `vault-secret-id` | Yes      | AppRole secret ID                                             |
 | `channel-id`      | Yes      | Destination channel ID; blank values fail before Vault access |
 | `status`          | Yes      | `started`, `success`, `failure`, `cancelled`, or `skipped`    |
-| `thread-ts`       | No       | Parent message timestamp; omitted for standalone messages     |
-| `message`         | No       | Additional plain text; preserves newlines and image lists     |
-| `job-results`     | No       | JSON `needs` context; defaults to `{}`                        |
-| `image-ref`       | No       | Published immutable image reference                           |
+| `job-results`     | No       | JSON run-attempt job results; defaults to `{}`                |
 | `workflow-name`   | No       | Defaults to `github.workflow`                                 |
 | `run-url`         | No       | Defaults to the current run URL                               |
 | `ref`             | No       | Defaults to `github.ref_name`                                 |
 | `commit-sha`      | No       | Defaults to `github.sha`                                      |
+| `actor`           | No       | Defaults to triggering actor, then `github.actor`             |
+| `event-name`      | No       | Defaults to `github.event_name`                               |
+| `run-number`      | No       | Defaults to `github.run_number`                               |
+| `run-attempt`     | No       | Defaults to `github.run_attempt`                              |
 
 Output `ts` is the posted Slack message timestamp, not a credential.
 
 ## Workflow Integration
 
-Define the channel once at workflow level:
+The notifier listens to `workflow_run` events for these exact workflow names:
 
-```yaml
-env:
-  SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
-```
+- `Build, test, and publish nonprod images`
+- `Build, test, and publish nonprod tag images`
+- `Nightly e2e tests`
 
-After checkout, post a start message:
+Add other workflow names to its `on.workflow_run.workflows` allowlist. Additional
+branch, event, or conclusion conditions belong on the notifier job. No changes
+to the source workflow are needed. Reusable workflow calls are reported under
+the caller's workflow run name; a reusable workflow name alone does not select
+an unrelated caller run.
 
-```yaml
-- name: Notify Slack of workflow start
-  id: slack
-  uses: ./.github/actions/notify-slack
-  with:
-    vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-    vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-    vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-    channel-id: ${{ env.SLACK_CHANNEL_ID }}
-    status: started
-```
+`in_progress` posts Started; `completed` posts the originating run's conclusion.
+These are separate notification runs, not a job that waits for the build.
+The notifier itself is not allowlisted, preventing notification recursion.
 
-In the `notify-start` job, expose the start message timestamp:
+The workflow must exist on the repository's default branch to receive these events.
+It checks out only that branch with `persist-credentials: false`, never the triggering
+run's code. This is important because `workflow_run` can access Vault secrets even
+when the triggering run was unprivileged. Fork repositories are gated, and runs
+whose `head_repository` differs from this repository are excluded before internal
+runner execution. Do not execute triggering-branch code or downloaded artifacts here.
 
-```yaml
-outputs:
-  slack-ts: ${{ steps.slack.outputs.ts }}
-```
+Workflow permissions default to `{}`. The notifier job grants `contents: read` for
+trusted checkout and `actions: read` for the job lookup. The GitHub API token is
+passed only to the metadata script, not the Slack posting action. That lookup is
+paginated, uses ten-second request timeouts, and treats failed or timed-out jobs
+as failures. It does not fetch artifacts or custom build outputs.
 
-The `notify-complete` job must directly depend on `notify-start`, the repository
-gate, and every build/test job whose result it reports. Its action call uses the
-same Vault and channel inputs as the start call, plus a final `status` and these
-optional inputs:
-
-```yaml
-thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
-job-results: ${{ toJSON(needs) }}
-image-ref: ${{ needs.build-frontend.outputs.published-image-ref }}
-```
-
-For E2E-only workflows, omit `image-ref`. Set completion `status` from the
-build/test job results, not the notification job's own status. Failed-job details
-exclude jobs whose IDs start with `notify-`, because delivery failures are not
-build failures. Only direct dependencies are available in `needs`.
-
-Grant `contents: read` for checkout. Notification jobs do not need `actions: read`
-or a GitHub API token. Checkout should use `persist-credentials: false`.
-Every job must depend directly on the `check-repository` fork gate. Completion
-jobs use `always() && needs.check-repository.result == 'success'`.
-
-See the complete integrations in
-[the branch build](../../workflows/build-publish-main-nonprod.yaml),
-[the tag build](../../workflows/build-publish-tag-nonprod.yaml), and
-[nightly E2E](../../workflows/nightly-e2e.yaml).
+For event-driven callers, override all originating-run
+metadata inputs shown in the notifier workflow so links and labels do not describe
+the notification run instead.
 
 ## Behavior
 
-- Completion posts a reply under the start message. The parent remains
-  `Started`; it is not updated. Threaded replies use `reply_broadcast: true` so
-  Slack also shares them in the channel. Slack controls how broadcast references
-  and attachment colors render in each client and thread view.
-- If start delivery fails or no timestamp is available, completion posts a new
-  standalone message. A full rerun posts a new start message and thread. A partial
-  rerun that does not rerun `notify-start` may reuse the earlier thread.
+- Start and completion are separate standalone posts. Completion does not depend
+  on successful start delivery. No thread timestamp is persisted or reused.
+- Event delivery and runner scheduling can delay announcements; there is no
+  cross-run ordering guarantee for very short workflows.
 - Notification jobs use `continue-on-error: true`. Delivery errors remain visible
   in logs but do not fail the build/test workflow.
 - Elapsed time is intentionally omitted: notification preparation adds overhead
   and cannot report the final workflow duration. Use the workflow-run link for timing.
-- Pushed-image lists contain only successful pushes, including promoted aliases.
-  A reported digest identifies the published artifact, not proof that signing
-  or deployment succeeded; check the final result and failed jobs.
-- Cancellation replies are best-effort: GitHub can stop notification jobs too.
+- Image metadata is not included by the generic notifier; use the workflow run's
+  summaries and artifacts.
+- Cancellation notifications use the originating run's completed event, but
+  notification delivery remains best-effort.
 
 ## Verify Delivery
 
 1. Publish the action and workflow changes, then trigger a new run.
-2. Confirm the start message, completion reply, status color, and GitHub links.
-   For publishing workflows, also check the pushed-image list and digest.
+2. Confirm standalone start and completion messages, status colors, and links
+   to the originating run. Confirm actor, source commit, trigger, number, and attempt.
 3. Check failure and rerun cases without publishing unwanted images.
 4. Once delivery works, disable `/github` workflow subscriptions if they produce
    duplicate notifications. Other GitHub app subscriptions can stay enabled.
@@ -182,8 +166,10 @@ Local tests validate payload preparation, not live Slack delivery or Vault acces
 - `not_in_channel`: invite the Slack app to the destination channel.
 - `missing_scope`: add `chat:write` and reinstall the Slack app.
 - Vault `403`: check the AppRole's read policy for the fixed secret path.
-- Standalone completion message: check whether the start notification succeeded
-  and its timestamp reached the completion call.
+- No events: ensure the notifier is on the default branch and the originating
+  workflow name exactly matches the allowlist.
+- Missing failed jobs: check the notifier's `actions: read` permission and metadata
+  warning logs. The overall workflow conclusion still posts.
 
 ## Local Tests
 
@@ -194,6 +180,7 @@ node --test .github/actions/notify-slack/prepare-notification.test.mjs
 ```
 
 The tests execute the actual preparation script in isolated processes and detect
-unexpected API requests. They cover colors, links, threading, optional
-sections, failed-job details, token exclusion, and elapsed-time omission. No Vault
+unexpected API requests. They cover colors, links, standalone messages,
+failed-job details, job pagination, API failure handling, token exclusion, and
+custom-content and elapsed-time omission. No Vault
 credentials, Slack token, network access, or extra npm packages are required.

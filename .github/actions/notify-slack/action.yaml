@@ -15,21 +15,12 @@ inputs:
   channel-id:
     description: Slack channel ID where the bot posts the notification
     required: true
-  thread-ts:
-    description: Parent Slack message timestamp; omit to post a new message
-    default: ""
   status:
     description: Build status to report, such as started, success, failure, or cancelled
     required: true
-  message:
-    description: Optional additional notification text
-    default: ""
   job-results:
-    description: JSON needs context for reporting failed build and test jobs
+    description: JSON job results retrieved from the reported workflow run attempt
     default: "{}"
-  image-ref:
-    description: Optional immutable published image reference including its sha256 digest
-    default: ""
   workflow-name:
     description: Name of the workflow being reported
     default: ${{ github.workflow }}
@@ -42,6 +33,18 @@ inputs:
   commit-sha:
     description: Exact source commit being reported
     default: ${{ github.sha }}
+  actor:
+    description: Actor who triggered the reported workflow
+    default: ${{ github.triggering_actor || github.actor }}
+  event-name:
+    description: Event that triggered the reported workflow
+    default: ${{ github.event_name }}
+  run-number:
+    description: Number of the reported workflow run
+    default: ${{ github.run_number }}
+  run-attempt:
+    description: Attempt of the reported workflow run
+    default: ${{ github.run_attempt }}
 
 outputs:
   ts:
@@ -92,19 +95,16 @@ runs:
         SERVER_URL: ${{ github.server_url }}
         REPOSITORY: ${{ github.repository }}
         REF_NAME: ${{ inputs.ref }}
-        ACTOR: ${{ github.triggering_actor || github.actor }}
+        ACTOR: ${{ inputs.actor }}
         JOB_RESULTS: ${{ inputs.job-results }}
         COMMIT_SHA: ${{ inputs.commit-sha }}
-        RUN_ATTEMPT: ${{ github.run_attempt }}
+        RUN_ATTEMPT: ${{ inputs.run-attempt }}
         NOTIFICATION_STATUS: ${{ inputs.status }}
         SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
-        THREAD_TS: ${{ inputs.thread-ts }}
         WORKFLOW_NAME: ${{ inputs.workflow-name }}
         RUN_URL: ${{ inputs.run-url }}
-        MESSAGE: ${{ inputs.message }}
-        IMAGE_REF: ${{ inputs.image-ref }}
-        EVENT_NAME: ${{ github.event_name }}
-        RUN_NUMBER: ${{ github.run_number }}
+        EVENT_NAME: ${{ inputs.event-name }}
+        RUN_NUMBER: ${{ inputs.run-number }}
         ACTION_PATH: ${{ github.action_path }}
       run: node "$ACTION_PATH/prepare-notification.mjs"
     - name: Post notification to Slack

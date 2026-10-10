@@ -40,11 +40,8 @@ function runNotification(overrides = {}) {
           RUN_NUMBER: "42",
           NOTIFICATION_STATUS: "started",
           SLACK_CHANNEL_ID: "C123",
-          THREAD_TS: "",
           WORKFLOW_NAME: "Build and test",
           RUN_URL: "https://github.com/STN-DTS/repo/actions/runs/123",
-          MESSAGE: "",
-          IMAGE_REF: "",
           ...overrides,
           EVENT_NAME: "push",
           GITHUB_OUTPUT: outputPath,
@@ -75,6 +72,11 @@ for (const [status, color, label] of [
   ["failure", "#CF222E", "Failed"],
   ["cancelled", "#BF8700", "Cancelled"],
   ["skipped", "#808080", "Skipped"],
+  ["timed_out", "#CF222E", "Timed out"],
+  ["startup_failure", "#CF222E", "Startup failed"],
+  ["action_required", "#BF8700", "Action required"],
+  ["neutral", "#808080", "Neutral"],
+  ["stale", "#808080", "Stale"],
   ["unknown", "#808080", "unknown"],
   ["constructor", "#808080", "constructor"],
 ]) {
@@ -113,21 +115,16 @@ test("preserves GitHub links, encoded refs, and escaped labels", () => {
   const blocks = payload.attachments[0].blocks;
   assert.equal(
     blocks[0].text.text,
-    "Ref: <https://github.com/STN-DTS/repo/tree/feature%2F%3Cname%3E%7Ctest|feature/&lt;name&gt;&#124;test> | Commit: <https://github.com/STN-DTS/repo/commit/abcdef1234567890abcdef1234567890abcdef1234|abcdef12>\nTrigger: push | Attempt 2 | By <https://github.com/dependabot%5Bbot%5D|dependabot[bot]>",
+    "Ref: <https://github.com/STN-DTS/repo/tree/feature%2F%3Cname%3E%7Ctest|feature/&lt;name&gt;&#124;test> | Commit: <https://github.com/STN-DTS/repo/commit/abcdef1234567890abcdef1234567890abcdef1234|abcdef12>\nTrigger: `push` | Attempt 2 | By <https://github.com/dependabot%5Bbot%5D|dependabot[bot]>",
   );
   assert.equal(blocks[0].text.type, "mrkdwn");
   assert.ok(!JSON.stringify(blocks).includes("View workflow run"));
   assert.ok(!JSON.stringify(payload).includes('"type":"button"'));
 });
 
-test("includes threaded results, multiline messages, all failed jobs, ACR destination, and image digests", () => {
-  const message = 'Pushed image tags:\n- registry/image:v1\nQuoted "text"';
-  const image = `testregistry.azurecr.io/canada-dental-care-plan/frontend@sha256:${"a".repeat(64)}`;
+test("includes all failed originating jobs without workflow-specific exclusions", () => {
   const { payload } = runNotification({
     NOTIFICATION_STATUS: "failure",
-    THREAD_TS: "123.456",
-    MESSAGE: message,
-    IMAGE_REF: image,
     JOB_RESULTS: JSON.stringify({
       "test-frontend": { result: "failure" },
       "build-frontend": { result: "failure" },
@@ -136,72 +133,50 @@ test("includes threaded results, multiline messages, all failed jobs, ACR destin
     }),
   });
   const blocks = payload.attachments[0].blocks;
-  assert.equal(payload.thread_ts, "123.456");
-  assert.equal(payload.reply_broadcast, true);
-  assert.equal(blocks[1].text.text, "Failed jobs:\n- test-frontend\n- build-frontend");
-  assert.equal(blocks[2].text.text, message);
-  assert.equal(blocks[2].text.type, "plain_text");
-  assert.equal(blocks[3].text.type, "mrkdwn");
+  assert.equal(blocks[1].text.type, "mrkdwn");
   assert.equal(
-    blocks[3].text.text,
-    `*Published image*\nACR: \`testregistry.azurecr.io\`\nImage: \`canada-dental-care-plan/frontend\`\nDigest: \`sha256:${"a".repeat(64)}\``,
+    blocks[1].text.text,
+    "*Failed jobs*\n- `test-frontend`\n- `build-frontend`\n- `notify-start`",
   );
-  assert.equal(blocks.length, 4);
-  assert.ok(!blocks[0].text.text.includes("Trigger:"));
-  assert.ok(!blocks[0].text.text.includes("By "));
+  assert.equal(blocks.length, 2);
+  assert.ok(
+    payload.attachments[0].fallback.includes(
+      "Failed jobs:\n- test-frontend\n- build-frontend\n- notify-start",
+    ),
+  );
+  assert.ok(blocks[0].text.text.includes("Trigger:"));
+  assert.ok(blocks[0].text.text.includes("By "));
 });
 
-test("groups matching published tags under their ACR and image without repeating full references", () => {
-  const imageName = "testregistry.azurecr.io/canada-dental-care-plan/frontend";
-  const digest = `sha256:${"b".repeat(64)}`;
+test("escapes inline-code job names and keeps fallback metadata plain", () => {
+  const jobName = "test <image>&|`";
   const { payload } = runNotification({
-    NOTIFICATION_STATUS: "success",
-    IMAGE_REF: `${imageName}@${digest}`,
-    MESSAGE: `Pushed image tags:\n- ${imageName}:v1\n- ${imageName}:latest`,
-  });
-  assert.equal(payload.attachments[0].blocks.length, 2);
-  assert.equal(payload.attachments[0].blocks[1].text.type, "mrkdwn");
-  assert.equal(
-    payload.attachments[0].blocks[1].text.text,
-    `*Published image*\nACR: \`testregistry.azurecr.io\`\nImage: \`canada-dental-care-plan/frontend\`\nDigest: \`${digest}\`\nTags: \`v1\`, \`latest\``,
-  );
-  assert.ok(payload.attachments[0].fallback.includes("Tags: v1, latest"));
-  assert.ok(payload.attachments[0].fallback.includes(digest));
-  assert.ok(!JSON.stringify(payload).includes(`${imageName}:v1`));
-});
-
-test("escapes Slack markup in published identifiers while keeping fallback text plain", () => {
-  const imageName = "testregistry.azurecr.io/frontend<&|`>";
-  const digest = `sha256:${"a".repeat(64)}`;
-  const { payload } = runNotification({
-    NOTIFICATION_STATUS: "success",
-    IMAGE_REF: `${imageName}@${digest}`,
-    MESSAGE: `Pushed image tags:\n- ${imageName}:v1`,
+    NOTIFICATION_STATUS: "failure",
+    REF_NAME: "feature/<name>|test",
+    JOB_RESULTS: JSON.stringify({ [jobName]: { result: "failure" } }),
   });
   const attachment = payload.attachments[0];
-  assert.ok(attachment.blocks[1].text.text.includes("Image: `frontend&lt;&amp;&#124;&#96;&gt;`"));
-  assert.ok(attachment.fallback.includes("Image: frontend<&|`>"));
-  assert.ok(attachment.fallback.includes("Tags: v1"));
-  assert.ok(!attachment.fallback.includes("*Published image*"));
+  assert.equal(
+    attachment.blocks[1].text.text,
+    "*Failed jobs*\n- `test &lt;image&gt;&amp;&#124;&#96;`",
+  );
+  assert.ok(attachment.fallback.includes(`Failed jobs:\n- ${jobName}`));
+  assert.ok(attachment.fallback.includes("Ref: feature/<name>|test | Commit: abcdef12"));
+  assert.ok(attachment.fallback.includes("Trigger: push | Attempt 2 | By test-user"));
 });
 
-test("preserves pushed tags after partial publication without an immutable reference", () => {
-  const message = "Pushed image tags:\n- testregistry.azurecr.io/frontend:v1";
-  const { payload } = runNotification({ NOTIFICATION_STATUS: "failure", MESSAGE: message });
-  assert.equal(payload.attachments[0].blocks[1].text.text, message);
-  assert.ok(payload.attachments[0].fallback.includes(message));
-  assert.ok(!payload.attachments[0].fallback.includes("Digest:"));
-});
-
-test("preserves tag lists for other images instead of grouping them under the wrong image", () => {
-  const message = "Pushed image tags:\n- otherregistry.azurecr.io/other:v1";
+test("ignores legacy custom message, image, and thread values", () => {
   const { payload } = runNotification({
     NOTIFICATION_STATUS: "success",
-    MESSAGE: message,
-    IMAGE_REF: `testregistry.azurecr.io/frontend@sha256:${"a".repeat(64)}`,
+    IMAGE_REF: `registry/image@sha256:${"b".repeat(64)}`,
+    MESSAGE: "Custom build details",
+    THREAD_TS: "123.456",
   });
-  assert.equal(payload.attachments[0].blocks[1].text.text, message);
-  assert.ok(!payload.attachments[0].blocks[2].text.text.includes("Tags:"));
+  assert.equal(payload.attachments[0].blocks.length, 1);
+  assert.equal(payload.thread_ts, undefined);
+  assert.equal(payload.reply_broadcast, undefined);
+  assert.ok(!JSON.stringify(payload).includes("Custom build details"));
+  assert.ok(!JSON.stringify(payload).includes("sha256:"));
 });
 
 test("escapes the workflow headline and uses the run number rather than the run ID", () => {
@@ -218,8 +193,119 @@ test("omits elapsed time and makes no API request for completion", () => {
     GH_TOKEN: "fixture-token",
   });
   assert.equal(request, undefined);
-  assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("\nAttempt 2"));
+  assert.ok(
+    payload.attachments[0].blocks[0].text.text.includes("\nTrigger: `push` | Attempt 2 | By "),
+  );
   assert.ok(!JSON.stringify(payload).includes("Elapsed:"));
   assert.ok(!JSON.stringify(payload).includes("fixture-token"));
   assert.ok(!stdout.includes("fixture-token"));
 });
+
+function runWorkflowMetadata(action, conclusion, pages = [], apiMode = "success") {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "slack-workflow-test-"));
+  const outputPath = path.join(directory, "output");
+  const eventPath = path.join(directory, "event.json");
+  const requestPath = path.join(directory, "requests.json");
+  const mock = `
+    import fs from 'node:fs';
+    const requests = [];
+    globalThis.fetch = async (url, options) => {
+      requests.push({ url: String(url), hasSignal: options.signal instanceof AbortSignal });
+      fs.writeFileSync(process.env.TEST_REQUEST_FILE, JSON.stringify(requests));
+      if (process.env.TEST_API_MODE === 'network-error') throw new Error('fixture failure');
+      return {
+        ok: process.env.TEST_API_MODE !== 'http-error',
+        json: async () => ({ jobs: JSON.parse(process.env.TEST_PAGES)[requests.length - 1] })
+      };
+    };
+  `;
+  try {
+    fs.writeFileSync(
+      eventPath,
+      JSON.stringify({ action, workflow_run: { id: 987, run_attempt: 3, conclusion } }),
+    );
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        `data:text/javascript,${encodeURIComponent(mock)}`,
+        fileURLToPath(new URL("./prepare-workflow-run.mjs", import.meta.url)),
+      ],
+      {
+        encoding: "utf8",
+        timeout: 15000,
+        env: {
+          ...process.env,
+          GITHUB_EVENT_PATH: eventPath,
+          GITHUB_OUTPUT: outputPath,
+          GH_TOKEN: "fixture-token",
+          API_URL: "https://api.github.com",
+          REPOSITORY: "STN-DTS/repo",
+          TEST_REQUEST_FILE: requestPath,
+          TEST_PAGES: JSON.stringify(pages),
+          TEST_API_MODE: apiMode,
+        },
+      },
+    );
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr);
+    const output = fs.readFileSync(outputPath, "utf8").trimEnd();
+    assert.ok(output.startsWith("job-results="));
+    assert.ok(!output.includes("fixture-token"));
+    assert.ok(!result.stdout.includes("fixture-token"));
+    return {
+      results: JSON.parse(output.slice("job-results=".length)),
+      requests: fs.existsSync(requestPath) ? JSON.parse(fs.readFileSync(requestPath, "utf8")) : [],
+      stdout: result.stdout,
+    };
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+for (const [action, conclusion] of [
+  ["in_progress", null],
+  ["completed", "success"],
+]) {
+  test(`skips job lookups for ${action} ${conclusion ?? ""}`, () => {
+    const { results, requests } = runWorkflowMetadata(action, conclusion);
+    assert.deepEqual(results, {});
+    assert.deepEqual(requests, []);
+  });
+}
+
+test("collects failures across pages from the originating run attempt", () => {
+  const firstPage = Array.from({ length: 100 }, (_, index) => ({
+    name: `job-${index}`,
+    conclusion: "success",
+  }));
+  firstPage[0] = { name: "test-frontend", conclusion: "failure" };
+  const { results, requests } = runWorkflowMetadata("completed", "failure", [
+    firstPage,
+    [
+      { name: "build-frontend", conclusion: "timed_out" },
+      { name: "setup", conclusion: "startup_failure" },
+      { name: "cancelled", conclusion: "cancelled" },
+    ],
+  ]);
+  assert.deepEqual(results, {
+    "test-frontend": { result: "failure" },
+    "build-frontend": { result: "failure" },
+    setup: { result: "failure" },
+  });
+  assert.equal(requests.length, 2);
+  assert.equal(
+    requests[0].url,
+    "https://api.github.com/repos/STN-DTS/repo/actions/runs/987/attempts/3/jobs?per_page=100&page=1",
+  );
+  assert.ok(requests[1].url.endsWith("page=2"));
+  assert.ok(requests.every((request) => request.hasSignal));
+});
+
+for (const apiMode of ["http-error", "network-error"]) {
+  test(`keeps completion deliverable after a job lookup ${apiMode}`, () => {
+    const { results, stdout } = runWorkflowMetadata("completed", "failure", [], apiMode);
+    assert.deepEqual(results, {});
+    assert.ok(stdout.includes("::warning::Unable to fetch failed jobs"));
+  });
+}

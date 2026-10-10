@@ -7,7 +7,6 @@ on:
 
 env:
   CI: true
-  SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 permissions: read-all
 
@@ -19,57 +18,6 @@ jobs:
     steps:
       - name: Allow non-fork repository
         run: echo "Repository check passed."
-
-  notify-start:
-    continue-on-error: true
-    needs: check-repository
-    outputs:
-      slack-ts: ${{ steps.slack.outputs.ts }}
-    runs-on: arc-runners-dshp-dev
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout notification action
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Notify Slack of E2E start
-        id: slack
-        uses: ./.github/actions/notify-slack
-        with:
-          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-          channel-id: ${{ env.SLACK_CHANNEL_ID }}
-          status: started
-
-  notify-complete:
-    continue-on-error: true
-    if: ${{ always() && needs.check-repository.result == 'success' }}
-    needs:
-      - check-repository
-      - notify-start
-      - run-e2e-tests
-    runs-on: arc-runners-dshp-dev
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout notification action
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Notify Slack of E2E result
-        uses: ./.github/actions/notify-slack
-        with:
-          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-          channel-id: ${{ env.SLACK_CHANNEL_ID }}
-          thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
-          job-results: ${{ toJSON(needs) }}
-          status: ${{ needs.run-e2e-tests.result }}
 
   run-e2e-tests:
     needs: check-repository
