@@ -17,16 +17,28 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
 
 ## Message Content
 
-- Workflow name, readable status, and a status-colored left border.
-- Repository, branch/tag, actor, and exact source-commit links.
-- Trigger, run number, attempt number, and a workflow-run button.
-- Optional message, including the publishing workflows' pushed-image lists.
+- Status-first headline linking the workflow name and run number to the run.
+- Linked branch/tag and exact source commit on one line.
+- Start notifications include trigger, attempt number, and an actor link.
+- Completion replies include elapsed time when available and attempt number;
+  actor and trigger remain in the parent start message.
+- Optional plain-text message, including pushed-image lists after partial publication.
 - Every failed build/test dependency supplied by the caller.
-- Optional immutable published image reference (`image@sha256:...`).
-- Completion elapsed time when a GitHub token is supplied.
+- Published-image section with destination ACR, image path, and full digest,
+  derived from the optional `image-ref` input. Matching pushed tags appear as
+  short tag names without repeating the registry and image path.
+
+The repository remains in the notification fallback text and GitHub link destinations.
+Completion replies keep ref and commit so channel broadcasts retain source context.
+The fallback text also includes failures and published-image details for notifications
+and accessibility. Unrecognized messages and tags for other images remain unchanged.
 
 Success is green, failure red, cancellation amber, start teal, and other statuses
 gray. Empty optional sections are omitted.
+
+The workflow-run link uses ordinary Slack mrkdwn. It does not require an
+interactivity endpoint. Slack URL buttons still send interaction payloads and
+require an acknowledgement handler, so this action does not use buttons.
 
 ## Setup
 
@@ -135,7 +147,9 @@ See the complete integrations in
 ## Behavior
 
 - Completion posts a reply under the start message. The parent remains
-  `Started`; it is not updated. Replies are not broadcast to the channel.
+  `Started`; it is not updated. Threaded replies use `reply_broadcast: true` so
+  Slack also shares them in the channel. Slack controls how broadcast references
+  and attachment colors render in each client and thread view.
 - If start delivery fails or no timestamp is available, completion posts a new
   standalone message. A full rerun posts a new start message and thread. A partial
   rerun that does not rerun `notify-start` may reuse the earlier thread.

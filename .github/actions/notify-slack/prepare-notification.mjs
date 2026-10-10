@@ -31,7 +31,6 @@ const failedJobs = Object.entries(JSON.parse(process.env.JOB_RESULTS))
   .map(([name]) => `- ${name}`);
 
 const links = {
-  repository: `Repository: <${repositoryUrl}|${escapeLabel(REPOSITORY)}>`,
   ref: `Ref: <${repositoryUrl}/tree/${encodeURIComponent(REF_NAME)}|${escapeLabel(REF_NAME)}>`,
   actor: `By <${SERVER_URL}/${encodeURIComponent(ACTOR)}|${escapeLabel(ACTOR)}>`,
   failures: failedJobs.length ? `Failed jobs:\n${failedJobs.join("\n")}` : "",
@@ -88,9 +87,9 @@ async function getElapsedTime() {
 function createNotificationPayload(duration) {
   const status = process.env.NOTIFICATION_STATUS;
   const statuses = {
-    success: { color: "good", label: "Succeeded" },
-    failure: { color: "danger", label: "Failed" },
-    cancelled: { color: "warning", label: "Cancelled" },
+    success: { color: "#2DA44E", label: "Succeeded" },
+    failure: { color: "#CF222E", label: "Failed" },
+    cancelled: { color: "#BF8700", label: "Cancelled" },
     started: { color: "#359FA3", label: "Started" },
     skipped: { color: "#808080", label: "Skipped" },
   };
@@ -99,25 +98,48 @@ function createNotificationPayload(duration) {
     ? statuses[status]
     : { color: "#808080", label: status };
 
+  const headline = `*${escapeLabel(presentation.label)}* · <${process.env.RUN_URL}|${escapeLabel(process.env.WORKFLOW_NAME)} #${process.env.RUN_NUMBER}>`;
+  const metadata =
+    status === "started"
+      ? `Trigger: ${escapeLabel(process.env.EVENT_NAME)} | Attempt ${process.env.RUN_ATTEMPT} | ${links.actor}`
+      : [duration, `Attempt ${process.env.RUN_ATTEMPT}`].filter(Boolean).join(" | ");
+  const fallbackMetadata =
+    status === "started"
+      ? `Trigger: ${process.env.EVENT_NAME} | Attempt ${process.env.RUN_ATTEMPT} | By ${ACTOR}`
+      : metadata;
   const blocks = [
     {
       type: "section",
-      text: { type: "plain_text", text: process.env.WORKFLOW_NAME },
+      text: { type: "mrkdwn", text: headline },
     },
     {
       type: "section",
-      fields: [
-        { type: "plain_text", text: `Status: ${presentation.label}` },
-        { type: "mrkdwn", text: links.ref },
-        { type: "mrkdwn", text: links.repository },
-        { type: "plain_text", text: `Trigger: ${process.env.EVENT_NAME}` },
-        { type: "mrkdwn", text: links.commit },
-      ],
+      text: { type: "mrkdwn", text: `${links.ref} | ${links.commit}\n${metadata}` },
     },
   ];
 
-  const imageDigest = process.env.IMAGE_REF ? `Image digest: ${process.env.IMAGE_REF}` : "";
-  for (const text of [process.env.MESSAGE, links.failures, imageDigest]) {
+  let message = process.env.MESSAGE;
+  let publishedImage = "";
+  if (process.env.IMAGE_REF) {
+    const [imageName, digest] = process.env.IMAGE_REF.split("@");
+    const registrySeparator = imageName.indexOf("/");
+    const imageDetails = [
+      "Published image",
+      `ACR: ${imageName.slice(0, registrySeparator)}`,
+      `Image: ${imageName.slice(registrySeparator + 1)}`,
+    ];
+    if (message?.startsWith("Pushed image tags:\n")) {
+      const tagLines = message.slice("Pushed image tags:\n".length).split("\n");
+      const prefix = `- ${imageName}:`;
+      if (tagLines.every((line) => line.startsWith(prefix) && line.length > prefix.length)) {
+        imageDetails.push(`Tags: ${tagLines.map((line) => line.slice(prefix.length)).join(", ")}`);
+        message = "";
+      }
+    }
+    imageDetails.push(`Digest: ${digest}`);
+    publishedImage = imageDetails.join("\n");
+  }
+  for (const text of [links.failures, message, publishedImage]) {
     if (!text) continue;
     blocks.push({
       type: "section",
@@ -125,40 +147,20 @@ function createNotificationPayload(duration) {
     });
   }
 
-  if (duration) {
-    blocks.push({
-      type: "context",
-      elements: [{ type: "plain_text", text: duration }],
-    });
-  }
-
-  blocks.push(
-    {
-      type: "context",
-      elements: [
-        {
-          type: "mrkdwn",
-          text: `Run #${process.env.RUN_NUMBER} | Attempt ${process.env.RUN_ATTEMPT} | ${links.actor}`,
-        },
-      ],
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          action_id: "view_workflow_run",
-          text: { type: "plain_text", text: "View workflow run" },
-          url: process.env.RUN_URL,
-        },
-      ],
-    },
-  );
-
   return {
     channel: process.env.SLACK_CHANNEL_ID,
-    ...(process.env.THREAD_TS ? { thread_ts: process.env.THREAD_TS } : {}),
-    text: `${process.env.WORKFLOW_NAME}: ${status}. ${process.env.RUN_URL}`,
+    ...(process.env.THREAD_TS ? { thread_ts: process.env.THREAD_TS, reply_broadcast: true } : {}),
+    text: [
+      `${presentation.label} · ${process.env.WORKFLOW_NAME} #${process.env.RUN_NUMBER}`,
+      `${REPOSITORY} | Ref: ${REF_NAME} | Commit: ${commitSha.slice(0, 8)}`,
+      fallbackMetadata,
+      links.failures,
+      message,
+      publishedImage,
+      process.env.RUN_URL,
+    ]
+      .filter(Boolean)
+      .join("\n"),
     attachments: [{ color: presentation.color, blocks }],
   };
 }
