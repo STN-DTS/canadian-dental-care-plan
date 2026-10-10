@@ -79,6 +79,8 @@ jobs:
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
+          message: >-
+            ${{ needs.build-frontend.outputs.pushed-image-tags != '' && format('Pushed image tags:{0}{1}', fromJSON('"\n"'), needs.build-frontend.outputs.pushed-image-tags) || '' }}
 
   resolve-version:
     runs-on: ubuntu-latest
@@ -163,6 +165,8 @@ jobs:
       - check-repository
       - resolve-version
       - test-frontend
+    outputs:
+      pushed-image-tags: ${{ steps.pushed-tags.outputs.image-tags }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -222,11 +226,14 @@ jobs:
         run: |
           set -euo pipefail
 
+          pushed_image_tags_file="$(mktemp "$RUNNER_TEMP/pushed-image-tags.XXXXXX")"
+          printf 'PUSHED_IMAGE_TAGS_FILE=%s\n' "$pushed_image_tags_file" >> "$GITHUB_ENV"
           push_log="$(mktemp "$RUNNER_TEMP/image-push.XXXXXX")"
           trap 'rm -f "$push_log"' EXIT
           image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
 
           docker push "$image_ref" 2>&1 | tee "$push_log"
+          printf '%s\n' "$image_ref" >> "$pushed_image_tags_file"
           {
             echo "## Published container tags"
             echo
@@ -263,6 +270,7 @@ jobs:
           image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
           docker tag "$image_ref" "${IMAGE_NAME}:${BUILD_VERSION}"
           docker push "${IMAGE_NAME}:${BUILD_VERSION}"
+          printf '%s\n' "${IMAGE_NAME}:${BUILD_VERSION}" >> "$PUSHED_IMAGE_TAGS_FILE"
 
           {
             echo "## Published release alias"
@@ -280,4 +288,23 @@ jobs:
           fi
           if [[ -n "${DOCKER_CONFIG:-}" ]]; then
             rm -rf -- "$DOCKER_CONFIG"
+          fi
+      - name: Collect pushed image tags
+        id: pushed-tags
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+
+          if [[ -f "${PUSHED_IMAGE_TAGS_FILE:-}" ]]; then
+            output_delimiter="image_tags_$(cat /proc/sys/kernel/random/uuid)"
+            {
+              printf 'image-tags<<%s\n' "$output_delimiter"
+              while IFS= read -r image_ref; do
+                printf -- '- %s\n' "$image_ref"
+              done < "$PUSHED_IMAGE_TAGS_FILE"
+              printf '%s\n' "$output_delimiter"
+            } >> "$GITHUB_OUTPUT"
+            rm -f -- "$PUSHED_IMAGE_TAGS_FILE"
+          else
+            printf 'image-tags=\n' >> "$GITHUB_OUTPUT"
           fi
