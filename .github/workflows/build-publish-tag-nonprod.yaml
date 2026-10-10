@@ -22,6 +22,52 @@ env:
   SLACK_CHANNEL_ID: ${{ vars.SLACK_CHANNEL_ID }}
 
 jobs:
+  notify-start:
+    runs-on: arc-runners-dshp-dev
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout notification action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Notify Slack of workflow start
+        uses: ./.github/actions/notify-slack
+        with:
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          status: started
+
+  notify-complete:
+    if: ${{ always() }}
+    needs:
+      - notify-start
+      - resolve-version
+      - test-frontend
+      - build-frontend
+    runs-on: arc-runners-dshp-dev
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      BUILD_RESULTS: ${{ format('{0},{1},{2}', needs.resolve-version.result, needs.test-frontend.result, needs.build-frontend.result) }}
+    steps:
+      - name: Checkout notification action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Notify Slack of workflow result
+        uses: ./.github/actions/notify-slack
+        with:
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
+
   resolve-version:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'STN-DTS/canadian-dental-care-plan' }}

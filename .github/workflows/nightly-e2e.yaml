@@ -1,4 +1,4 @@
-name: Nightly e2e tests (main & release)
+name: Nightly e2e tests
 
 on:
   schedule:
@@ -12,8 +12,49 @@ env:
 permissions: read-all
 
 jobs:
+  notify-start:
+    runs-on: arc-runners-dshp-dev
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout notification action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Notify Slack of E2E start
+        uses: ./.github/actions/notify-slack
+        with:
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          status: started
+
+  notify-complete:
+    if: ${{ always() }}
+    needs:
+      - notify-start
+      - run-e2e-tests
+    runs-on: arc-runners-dshp-dev
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout notification action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Notify Slack of E2E result
+        uses: ./.github/actions/notify-slack
+        with:
+          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
+          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
+          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          status: ${{ needs.run-e2e-tests.result }}
+
   run-e2e-tests:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
