@@ -75,8 +75,8 @@ runs:
         exportToken: false
         secrets: |
           canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
-    - name: Prepare GitHub links
-      id: links
+    - name: Prepare Slack Notification
+      id: prepare-notification
       shell: bash
       env:
         SERVER_URL: ${{ github.server_url }}
@@ -90,6 +90,14 @@ runs:
         RUN_ID: ${{ github.run_id }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
         NOTIFICATION_STATUS: ${{ inputs.status }}
+        SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
+        THREAD_TS: ${{ inputs.thread-ts }}
+        WORKFLOW_NAME: ${{ inputs.workflow-name }}
+        RUN_URL: ${{ inputs.run-url }}
+        MESSAGE: ${{ inputs.message }}
+        IMAGE_REF: ${{ inputs.image-ref }}
+        EVENT_NAME: ${{ github.event_name }}
+        RUN_NUMBER: ${{ github.run_number }}
         ACTION_PATH: ${{ github.action_path }}
       run: node "$ACTION_PATH/prepare-notification.mjs"
     - name: Post notification to Slack
@@ -99,75 +107,4 @@ runs:
         method: chat.postMessage
         token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
         errors: true
-        payload: |
-          {
-            "channel": ${{ toJSON(inputs.channel-id) }},
-            ${{ inputs.thread-ts && format('"thread_ts":{0},', toJSON(inputs.thread-ts)) || '' }}
-            "text": ${{ toJSON(format('{0}: {1}. {2}', inputs.workflow-name, inputs.status, inputs.run-url)) }},
-            "attachments": [
-              {
-                "color": ${{ toJSON(inputs.status == 'success' && 'good' || inputs.status == 'failure' && 'danger' || inputs.status == 'cancelled' && 'warning' || inputs.status == 'started' && '#359FA3' || '#808080') }},
-                "blocks": [
-                  {
-                    "type": "section",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ${{ toJSON(inputs.workflow-name) }}
-                    }
-                  },
-                  {
-                    "type": "section",
-                    "fields": [
-                      {
-                        "type": "plain_text",
-                        "text": ${{ toJSON(format('Status: {0}', inputs.status == 'success' && 'Succeeded' || inputs.status == 'failure' && 'Failed' || inputs.status == 'cancelled' && 'Cancelled' || inputs.status == 'started' && 'Started' || inputs.status == 'skipped' && 'Skipped' || inputs.status)) }}
-                      },
-                      {
-                        "type": "mrkdwn",
-                        "text": ${{ steps.links.outputs.ref }}
-                      },
-                      {
-                        "type": "mrkdwn",
-                        "text": ${{ steps.links.outputs.repository }}
-                      },
-                      {
-                        "type": "plain_text",
-                        "text": ${{ toJSON(format('Trigger: {0}', github.event_name)) }}
-                      },
-                      {
-                        "type": "mrkdwn",
-                        "text": ${{ steps.links.outputs.commit }}
-                      }
-                    ]
-                  },
-                  ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
-                  ${{ fromJSON(steps.links.outputs.failures) != '' && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', steps.links.outputs.failures) || '' }}
-                  ${{ inputs.image-ref && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(format('Image digest: {0}', inputs.image-ref))) || '' }}
-                  ${{ fromJSON(steps.links.outputs.duration) != '' && format('{{"type":"context","elements":[{{"type":"plain_text","text":{0}}}]}},', steps.links.outputs.duration) || '' }}
-                  {
-                    "type": "context",
-                    "elements": [
-                      {
-                        "type": "mrkdwn",
-                        "text": ${{ toJSON(format('Run #{0} | Attempt {1} | {2}', github.run_number, github.run_attempt, fromJSON(steps.links.outputs.actor))) }}
-                      }
-                    ]
-                  },
-                  {
-                    "type": "actions",
-                    "elements": [
-                      {
-                        "type": "button",
-                        "action_id": "view_workflow_run",
-                        "text": {
-                          "type": "plain_text",
-                          "text": "View workflow run"
-                        },
-                        "url": ${{ toJSON(inputs.run-url) }}
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
+        payload: ${{ steps.prepare-notification.outputs.payload }}

@@ -132,3 +132,16 @@ an invitation; `missing_scope` means Slack permissions need updating and app
 reinstallation. Vault `403` errors require checking the AppRole read policy.
 Disable `/github` workflow subscriptions only after verifying delivery if they
 would otherwise produce duplicate build notifications.
+
+## Local Tests
+
+From the repository root, run:
+
+```sh
+node --test .github/actions/notify-slack/prepare-notification.test.mjs
+```
+
+The tests execute the actual preparation script in isolated processes with mocked
+GitHub API responses and time. They cover colors, links, threading, optional
+sections, failed-job details, token exclusion, and elapsed-time fallback. No Vault
+credentials, Slack token, network access, or extra npm packages are required.

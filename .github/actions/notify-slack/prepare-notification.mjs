@@ -1,7 +1,7 @@
 /**
  * @file Prepares GitHub metadata for the Vault-backed Slack notification action.
  * Reads workflow metadata and job results from environment variables supplied by action.yaml.
- * Writes JSON-encoded repository, ref, actor, failure, commit, and duration values to GITHUB_OUTPUT.
+ * Writes the complete Slack payload as JSON to GITHUB_OUTPUT.
  * Optionally queries the current run attempt for elapsed time; API failures omit duration.
  * This script does not fetch Vault secrets or send Slack messages.
  */
@@ -38,18 +38,14 @@ const links = {
   commit: `Commit: <${repositoryUrl}/commit/${encodeURIComponent(commitSha)}|${escapeLabel(commitSha.slice(0, 8))}>`,
 };
 
-for (const [name, value] of Object.entries(links)) {
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${JSON.stringify(value)}\n`);
-}
-
 /**
- * Writes JSON-encoded elapsed time to GITHUB_OUTPUT for the current run attempt.
+ * Fetches elapsed time for the current run attempt.
  * Skips the API request for start notifications or when no token is provided.
- * API failures produce a warning and an empty duration; output-write errors propagate.
+ * API failures produce a warning and an empty duration.
  *
- * @returns {Promise<void>} Resolves after the duration output is written.
+ * @returns {Promise<string>} The elapsed-time label, or an empty string when unavailable.
  */
-async function writeElapsedTimeOutput() {
+async function getElapsedTime() {
   let duration = "";
   if (process.env.GH_TOKEN && process.env.NOTIFICATION_STATUS !== "started") {
     try {
@@ -80,7 +76,93 @@ async function writeElapsedTimeOutput() {
       console.log("::warning::Unable to fetch workflow elapsed time; posting without it.");
     }
   }
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `duration=${JSON.stringify(duration)}\n`);
+  return duration;
 }
 
-writeElapsedTimeOutput();
+/**
+ * Builds the Slack message with status colors, links, and nonempty optional sections.
+ *
+ * @param {string} duration - Elapsed-time label, or an empty string to omit it.
+ * @returns {object} The chat.postMessage payload, without authentication credentials.
+ */
+function createNotificationPayload(duration) {
+  const status = process.env.NOTIFICATION_STATUS;
+  const statuses = {
+    success: { color: "good", label: "Succeeded" },
+    failure: { color: "danger", label: "Failed" },
+    cancelled: { color: "warning", label: "Cancelled" },
+    started: { color: "#359FA3", label: "Started" },
+    skipped: { color: "#808080", label: "Skipped" },
+  };
+
+  const presentation = Object.hasOwn(statuses, status)
+    ? statuses[status]
+    : { color: "#808080", label: status };
+
+  const blocks = [
+    {
+      type: "section",
+      text: { type: "plain_text", text: process.env.WORKFLOW_NAME },
+    },
+    {
+      type: "section",
+      fields: [
+        { type: "plain_text", text: `Status: ${presentation.label}` },
+        { type: "mrkdwn", text: links.ref },
+        { type: "mrkdwn", text: links.repository },
+        { type: "plain_text", text: `Trigger: ${process.env.EVENT_NAME}` },
+        { type: "mrkdwn", text: links.commit },
+      ],
+    },
+  ];
+
+  const imageDigest = process.env.IMAGE_REF ? `Image digest: ${process.env.IMAGE_REF}` : "";
+  for (const text of [process.env.MESSAGE, links.failures, imageDigest]) {
+    if (!text) continue;
+    blocks.push({
+      type: "section",
+      text: { type: "plain_text", text },
+    });
+  }
+
+  if (duration) {
+    blocks.push({
+      type: "context",
+      elements: [{ type: "plain_text", text: duration }],
+    });
+  }
+
+  blocks.push(
+    {
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: `Run #${process.env.RUN_NUMBER} | Attempt ${process.env.RUN_ATTEMPT} | ${links.actor}`,
+        },
+      ],
+    },
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          action_id: "view_workflow_run",
+          text: { type: "plain_text", text: "View workflow run" },
+          url: process.env.RUN_URL,
+        },
+      ],
+    },
+  );
+
+  return {
+    channel: process.env.SLACK_CHANNEL_ID,
+    ...(process.env.THREAD_TS ? { thread_ts: process.env.THREAD_TS } : {}),
+    text: `${process.env.WORKFLOW_NAME}: ${status}. ${process.env.RUN_URL}`,
+    attachments: [{ color: presentation.color, blocks }],
+  };
+}
+
+const duration = await getElapsedTime();
+const payload = createNotificationPayload(duration);
+fs.appendFileSync(process.env.GITHUB_OUTPUT, `payload=${JSON.stringify(payload)}\n`);
