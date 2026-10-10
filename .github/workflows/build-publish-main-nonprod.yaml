@@ -38,7 +38,6 @@ jobs:
         run: echo "Repository check passed."
 
   notify-start:
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
     needs: check-repository
     runs-on: arc-runners-dshp-dev
     timeout-minutes: 5
@@ -59,7 +58,7 @@ jobs:
           status: started
 
   notify-complete:
-    if: ${{ always() && needs.check-repository.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+    if: ${{ always() && needs.check-repository.result == 'success' }}
     needs:
       - check-repository
       - notify-start
@@ -86,6 +85,8 @@ jobs:
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           status: ${{ contains(env.BUILD_RESULTS, 'failure') && 'failure' || contains(env.BUILD_RESULTS, 'cancelled') && 'cancelled' || needs.build-frontend.result == 'success' && 'success' || 'skipped' }}
+          message: >-
+            ${{ needs.build-frontend.outputs.pushed-image-tags != '' && format('Pushed image tags:{0}{1}', fromJSON('"\n"'), needs.build-frontend.outputs.pushed-image-tags) || '' }}
 
   detect-changes:
     runs-on: ubuntu-latest
@@ -198,6 +199,8 @@ jobs:
       - detect-changes
       - resolve-version
       - test-frontend
+    outputs:
+      pushed-image-tags: ${{ steps.pushed-tags.outputs.image-tags }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -271,6 +274,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          pushed_image_tags_file="$(mktemp "$RUNNER_TEMP/pushed-image-tags.XXXXXX")"
+          printf 'PUSHED_IMAGE_TAGS_FILE=%s\n' "$pushed_image_tags_file" >> "$GITHUB_ENV"
           push_log="$(mktemp "$RUNNER_TEMP/image-push.XXXXXX")"
           trap 'rm -f "$push_log"' EXIT
           image_ref="${IMAGE_NAME}:${BUILD_REVISION}"
@@ -285,6 +290,7 @@ jobs:
           push_image() {
             local image_ref="$1"
             docker push "$image_ref" 2>&1 | tee "$push_log"
+            printf '%s\n' "$image_ref" >> "$pushed_image_tags_file"
             printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
               "${image_ref##*:}" "$image_ref" "${GITHUB_SHA:0:8}" \
               "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
@@ -325,6 +331,7 @@ jobs:
 
           docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:latest"
+          printf '%s\n' "${IMAGE_NAME}:latest" >> "$PUSHED_IMAGE_TAGS_FILE"
 
           {
             echo "## Promoted verified container tag"
@@ -358,6 +365,7 @@ jobs:
             image_ref="${IMAGE_NAME}:${image_tag}"
             docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "$image_ref"
             docker push "$image_ref"
+            printf '%s\n' "$image_ref" >> "$PUSHED_IMAGE_TAGS_FILE"
             printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
               "$image_tag" "$image_ref" "${GITHUB_SHA:0:8}" \
               "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
@@ -399,4 +407,23 @@ jobs:
           fi
           if [[ -n "${DOCKER_CONFIG:-}" ]]; then
             rm -rf -- "$DOCKER_CONFIG"
+          fi
+      - name: Collect pushed image tags
+        id: pushed-tags
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+
+          if [[ -f "${PUSHED_IMAGE_TAGS_FILE:-}" ]]; then
+            output_delimiter="image_tags_$(cat /proc/sys/kernel/random/uuid)"
+            {
+              printf 'image-tags<<%s\n' "$output_delimiter"
+              while IFS= read -r image_ref; do
+                printf -- '- %s\n' "$image_ref"
+              done < "$PUSHED_IMAGE_TAGS_FILE"
+              printf '%s\n' "$output_delimiter"
+            } >> "$GITHUB_OUTPUT"
+            rm -f -- "$PUSHED_IMAGE_TAGS_FILE"
+          else
+            printf 'image-tags=\n' >> "$GITHUB_OUTPUT"
           fi
