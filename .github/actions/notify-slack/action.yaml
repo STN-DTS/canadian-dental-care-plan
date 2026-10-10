@@ -65,21 +65,26 @@ runs:
           {
             "channel": ${{ toJSON(inputs.channel-id) }},
             "text": ${{ toJSON(format('{0}: {1}. {2}', inputs.workflow-name, inputs.status, inputs.run-url)) }},
-            "blocks": [
+            "attachments": [
               {
-                "type": "section",
-                "text": {
-                  "type": "plain_text",
-                  "text": ${{ toJSON(format('{0}: {1} | Ref: {2}', inputs.workflow-name, inputs.status, inputs.ref)) }}
-                }
-              },
-              ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
-              {
-                "type": "section",
-                "text": {
-                  "type": "plain_text",
-                  "text": ${{ toJSON(inputs.run-url) }}
-                }
+                "color": ${{ toJSON(inputs.status == 'success' && 'good' || inputs.status == 'failure' && 'danger' || inputs.status == 'cancelled' && 'warning' || inputs.status == 'started' && '#359FA3' || '#808080') }},
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "plain_text",
+                      "text": ${{ toJSON(format('{0}: {1} | Ref: {2}', inputs.workflow-name, inputs.status, inputs.ref)) }}
+                    }
+                  },
+                  ${{ inputs.message && format('{{"type":"section","text":{{"type":"plain_text","text":{0}}}}},', toJSON(inputs.message)) || '' }}
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "plain_text",
+                      "text": ${{ toJSON(inputs.run-url) }}
+                    }
+                  }
+                ]
               }
             ]
           }
