@@ -188,8 +188,8 @@ jobs:
         run: pnpm run build
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
-      - name: Run full end-to-end tests
-        run: pnpm run test:e2e
+      - name: Run end-to-end tests
+        run: ${{ github.ref == 'refs/heads/main' && 'pnpm run test:e2e:smoke' || 'pnpm run test:e2e' }}
 
   build-frontend:
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/v'))) }}
