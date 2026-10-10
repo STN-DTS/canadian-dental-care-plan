@@ -3,6 +3,18 @@
 This composite action sends STN-DTS workflow notifications through Slack's
 official GitHub Action. It authenticates with a bot token fetched from Vault.
 
+## How It Works
+
+1. `action.yaml` rejects a blank channel ID and fetches the Slack bot token from
+   Vault using AppRole authentication.
+2. `prepare-notification.mjs` reads the supplied environment variables, prepares
+   links and failure details, and optionally fetches elapsed time from GitHub.
+3. The script builds a JavaScript object and exports it as JSON in the `payload`
+   step output. It does not send messages or include authentication tokens in
+   the payload.
+4. Slack's official action calls `chat.postMessage` with that payload and the
+   Vault token. The composite action returns the posted message timestamp as `ts`.
+
 ## Message Content
 
 - Workflow name, readable status, and a status-colored left border.
@@ -81,9 +93,17 @@ After checkout, post a start message:
     status: started
 ```
 
-Expose `steps.slack.outputs.ts` as the start job's `slack-ts` output. The
-completion job must directly depend on that job and every build/test job whose
-result it reports. Pass these additional inputs to the completion call:
+In the `notify-start` job, expose the start message timestamp:
+
+```yaml
+outputs:
+  slack-ts: ${{ steps.slack.outputs.ts }}
+```
+
+The `notify-complete` job must directly depend on `notify-start`, the repository
+gate, and every build/test job whose result it reports. Its action call uses the
+same Vault and channel inputs as the start call, plus a final `status` and these
+optional inputs:
 
 ```yaml
 thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
@@ -107,7 +127,7 @@ See the complete integrations in
 [the tag build](../../workflows/build-publish-tag-nonprod.yaml), and
 [nightly E2E](../../workflows/nightly-e2e.yaml).
 
-## Behavior and Verification
+## Behavior
 
 - Completion posts a reply under the start message. The parent remains
   `Started`; it is not updated. Replies are not broadcast to the channel.
@@ -125,13 +145,26 @@ See the complete integrations in
   or deployment succeeded; check the final result and failed jobs.
 - Cancellation replies are best-effort: GitHub can stop notification jobs too.
 
-Test a new run after publishing the action and workflow changes. Confirm start
-delivery, the threaded result, links, and image details. Test failure and rerun
-cases without publishing unwanted images. `not_in_channel` means the bot needs
-an invitation; `missing_scope` means Slack permissions need updating and app
-reinstallation. Vault `403` errors require checking the AppRole read policy.
-Disable `/github` workflow subscriptions only after verifying delivery if they
-would otherwise produce duplicate build notifications.
+## Verify Delivery
+
+1. Publish the action and workflow changes, then trigger a new run.
+2. Confirm the start message, completion reply, status color, and GitHub links.
+   For publishing workflows, also check the pushed-image list and digest.
+3. Check failure and rerun cases without publishing unwanted images.
+4. Once delivery works, disable `/github` workflow subscriptions if they produce
+   duplicate notifications. Other GitHub app subscriptions can stay enabled.
+
+Local tests validate payload preparation, not live Slack delivery or Vault access.
+
+## Troubleshooting
+
+- `not_in_channel`: invite the Slack app to the destination channel.
+- `missing_scope`: add `chat:write` and reinstall the Slack app.
+- Vault `403`: check the AppRole's read policy for the fixed secret path.
+- Missing elapsed time: check the completion job's `actions: read` permission and
+  the preparation step's warning logs. Other message details still post.
+- Standalone completion message: check whether the start notification succeeded
+  and its timestamp reached the completion call.
 
 ## Local Tests
 
