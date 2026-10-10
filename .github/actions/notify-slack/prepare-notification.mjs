@@ -150,18 +150,23 @@ function createNotificationPayload(duration) {
   return {
     channel: process.env.SLACK_CHANNEL_ID,
     ...(process.env.THREAD_TS ? { thread_ts: process.env.THREAD_TS, reply_broadcast: true } : {}),
-    text: [
-      `${presentation.label} · ${process.env.WORKFLOW_NAME} #${process.env.RUN_NUMBER}`,
-      `${REPOSITORY} | Ref: ${REF_NAME} | Commit: ${commitSha.slice(0, 8)}`,
-      fallbackMetadata,
-      links.failures,
-      message,
-      publishedImage,
-      process.env.RUN_URL,
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    attachments: [{ color: presentation.color, blocks }],
+    attachments: [
+      {
+        color: presentation.color,
+        blocks,
+        fallback: [
+          `${presentation.label} · ${process.env.WORKFLOW_NAME} #${process.env.RUN_NUMBER}`,
+          `${REPOSITORY} | Ref: ${REF_NAME} | Commit: ${commitSha.slice(0, 8)}`,
+          fallbackMetadata,
+          links.failures,
+          message,
+          publishedImage,
+          process.env.RUN_URL,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      },
+    ],
   };
 }
 

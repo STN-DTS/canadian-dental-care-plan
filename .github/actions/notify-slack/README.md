@@ -28,10 +28,12 @@ official GitHub Action. It authenticates with a bot token fetched from Vault.
   derived from the optional `image-ref` input. Matching pushed tags appear as
   short tag names without repeating the registry and image path.
 
-The repository remains in the notification fallback text and GitHub link destinations.
+The repository remains in the attachment fallback text and GitHub link destinations.
 Completion replies keep ref and commit so channel broadcasts retain source context.
-The fallback text also includes failures and published-image details for notifications
-and accessibility. Unrecognized messages and tags for other images remain unchanged.
+The attachment's `fallback` includes failures and published-image details for clients
+that cannot render its blocks. Top-level `text` is omitted because Slack renders it
+above the attachment, duplicating the message. Unrecognized messages and tags for
+other images remain unchanged.
 
 Success is green, failure red, cancellation amber, start teal, and other statuses
 gray. Empty optional sections are omitted.

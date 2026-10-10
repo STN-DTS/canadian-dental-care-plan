@@ -104,9 +104,15 @@ for (const [status, color, label] of [
     assert.equal(payload.thread_ts, undefined);
     assert.equal(payload.reply_broadcast, undefined);
     assert.equal(request, undefined);
-    assert.ok(payload.text.startsWith(`${label} · Build and test #42`));
+    assert.ok(payload.attachments[0].fallback.startsWith(`${label} · Build and test #42`));
   });
 }
+
+test("renders only the attachment instead of duplicating it in top-level text", () => {
+  const { payload } = runNotification();
+  assert.equal(Object.hasOwn(payload, "text"), false);
+  assert.equal(payload.attachments.length, 1);
+});
 
 test("preserves GitHub links, encoded refs, and escaped labels", () => {
   const { payload } = runNotification({
@@ -165,8 +171,8 @@ test("groups matching published tags under their ACR and image without repeating
     payload.attachments[0].blocks[2].text.text,
     `Published image\nACR: testregistry.azurecr.io\nImage: canada-dental-care-plan/frontend\nTags: v1, latest\nDigest: ${digest}`,
   );
-  assert.ok(payload.text.includes("Tags: v1, latest"));
-  assert.ok(payload.text.includes(digest));
+  assert.ok(payload.attachments[0].fallback.includes("Tags: v1, latest"));
+  assert.ok(payload.attachments[0].fallback.includes(digest));
   assert.ok(!JSON.stringify(payload).includes(`${imageName}:v1`));
 });
 
@@ -174,8 +180,8 @@ test("preserves pushed tags after partial publication without an immutable refer
   const message = "Pushed image tags:\n- testregistry.azurecr.io/frontend:v1";
   const { payload } = runNotification({ NOTIFICATION_STATUS: "failure", MESSAGE: message });
   assert.equal(payload.attachments[0].blocks[2].text.text, message);
-  assert.ok(payload.text.includes(message));
-  assert.ok(!payload.text.includes("Digest:"));
+  assert.ok(payload.attachments[0].fallback.includes(message));
+  assert.ok(!payload.attachments[0].fallback.includes("Digest:"));
 });
 
 test("preserves tag lists for other images instead of grouping them under the wrong image", () => {
