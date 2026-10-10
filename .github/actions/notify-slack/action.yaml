@@ -15,6 +15,9 @@ inputs:
   channel-id:
     description: Slack channel ID where the bot posts the notification
     required: true
+  thread-ts:
+    description: Parent Slack message timestamp; omit to post a new message
+    default: ""
   status:
     description: Build status to report, such as started, success, failure, or cancelled
     required: true
@@ -30,6 +33,11 @@ inputs:
   ref:
     description: Branch or tag being reported
     default: ${{ github.ref_name }}
+
+outputs:
+  ts:
+    description: Timestamp of the posted Slack message
+    value: ${{ steps.notification.outputs.ts }}
 
 runs:
   using: composite
@@ -79,6 +87,7 @@ runs:
         }
         NODE
     - name: Post notification to Slack
+      id: notification
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
       with:
         method: chat.postMessage
@@ -87,6 +96,7 @@ runs:
         payload: |
           {
             "channel": ${{ toJSON(inputs.channel-id) }},
+            ${{ inputs.thread-ts && format('"thread_ts":{0},', toJSON(inputs.thread-ts)) || '' }}
             "text": ${{ toJSON(format('{0}: {1}. {2}', inputs.workflow-name, inputs.status, inputs.run-url)) }},
             "attachments": [
               {

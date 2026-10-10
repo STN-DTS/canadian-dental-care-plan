@@ -23,6 +23,8 @@ jobs:
   notify-start:
     continue-on-error: true
     needs: check-repository
+    outputs:
+      slack-ts: ${{ steps.slack.outputs.ts }}
     runs-on: arc-runners-dshp-dev
     timeout-minutes: 5
     permissions:
@@ -33,6 +35,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Notify Slack of E2E start
+        id: slack
         uses: ./.github/actions/notify-slack
         with:
           vault-url: ${{ secrets.VAULT_URL_NONPROD }}
@@ -64,6 +67,7 @@ jobs:
           vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
           vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          thread-ts: ${{ needs.notify-start.outputs.slack-ts }}
           status: ${{ needs.run-e2e-tests.result }}
 
   run-e2e-tests:
