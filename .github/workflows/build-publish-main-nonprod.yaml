@@ -60,7 +60,7 @@ jobs:
       - name: Publish change-detection output
         id: changes
         run: |
-          echo "frontend=${{ github.event_name != 'push' || steps.filter.outputs.frontend == 'true' }}" >> "$GITHUB_OUTPUT"
+          echo "frontend=${{ github.event_name != 'push' || (github.event.created == true && startsWith(github.ref, 'refs/heads/release/v')) || steps.filter.outputs.frontend == 'true' }}" >> "$GITHUB_OUTPUT"
 
   resolve-version:
     needs: check-repository
