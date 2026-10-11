@@ -83,8 +83,11 @@ require an acknowledgement handler, so this action does not use buttons.
    need to be preinstalled on the runner.
    Existing notification jobs use `arc-runners-dshp-dev`.
 
-Register the custom event type `stn_dts.workflow_run` in the Slack app manifest's
+Register the custom event type `stn_dts_workflow_run` in the Slack app manifest's
 `metadata.event_subscriptions`, using a schema for this event payload:
+
+Use underscores, not dots: Slack rejected the former `stn_dts.workflow_run`
+event name with `invalid_metadata_schema` and ignored its metadata.
 
 ```json
 {
@@ -165,7 +168,7 @@ passed only to the job metadata script, not the Slack posting action. The job lo
 paginated, uses ten-second request timeouts, and treats failed or timed-out jobs
 as failures. It does not fetch custom build outputs.
 
-Messages carry `metadata.event_type = stn_dts.workflow_run` with repository,
+Messages carry `metadata.event_type = stn_dts_workflow_run` with repository,
 source run ID, attempt, and phase in `event_payload`. Lookup considers only messages
 owned by the bot returned from `auth.test`, in the configured channel. It paginates
 history from sixty seconds before source run creation, with at most 100 pages.

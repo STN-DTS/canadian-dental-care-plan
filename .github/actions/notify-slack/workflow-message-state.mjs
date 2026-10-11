@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const METADATA_EVENT_TYPE = "stn_dts.workflow_run";
+export const METADATA_EVENT_TYPE = "stn_dts_workflow_run";
 
 /**
  * @typedef {object} MessageState

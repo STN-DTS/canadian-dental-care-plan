@@ -490,7 +490,7 @@ test("attaches run identity and lifecycle phase to new and updated payloads", ()
   ]) {
     const { payload } = runNotification({ NOTIFICATION_STATUS: status, MESSAGE_TS: "123.456" });
     assert.deepEqual(payload.metadata, {
-      event_type: "stn_dts.workflow_run",
+      event_type: "stn_dts_workflow_run",
       event_payload: { repository: "STN-DTS/repo", run_id: "123", attempt: "2", phase },
     });
   }
@@ -530,6 +530,11 @@ function legacyMessage(timestamp = "123.456", label = "Queued", attempt = "1") {
     ],
   };
 }
+
+test("uses a Slack-compatible metadata event name without dots", () => {
+  const metadata = messageMetadata("STN-DTS/repo", "123", "1", "queued");
+  assert.match(metadata.event_type, /^[a-z][a-z0-9_]*$/);
+});
 
 test("adopts a unique legacy Queued message by exact run link and attempt", () => {
   const result = runMessageState({ pages: [{ ok: true, messages: [legacyMessage()] }] });
@@ -598,9 +603,9 @@ test("does not fall back to legacy parsing when nonmatching metadata is present"
 
 test("fails closed when workflow metadata is incomplete or malformed", () => {
   for (const metadata of [
-    { event_type: "stn_dts.workflow_run" },
+    { event_type: "stn_dts_workflow_run" },
     {
-      event_type: "stn_dts.workflow_run",
+      event_type: "stn_dts_workflow_run",
       event_payload: {
         repository: "STN-DTS/repo",
         run_id: "123",
