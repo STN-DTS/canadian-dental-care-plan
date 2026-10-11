@@ -44,10 +44,10 @@ for (const [conclusion, label, color] of [
       { ...options, fetch: async () => response([]) },
     );
     assert.equal(payload.attachments[0].color, color);
-    assert.equal(payload.attachments[0].blocks[0].fields[0].text, `*Result: ${label}*`);
+    assert.equal(payload.attachments[0].blocks.length, 1);
     assert.equal(
       payload.text,
-      "Workflow *<https://github.com/org/repo/actions/runs/123/attempts/2|Build &lt;image&gt;&amp;&#124;test #41>* completed",
+      `Workflow *<https://github.com/org/repo/actions/runs/123/attempts/2|Build &lt;image&gt;&amp;&#124;test #41>* - *${label}*`,
     );
     assert.ok(!JSON.stringify(payload).includes(options.token));
   });
@@ -55,15 +55,13 @@ for (const [conclusion, label, color] of [
 
 test("links commit and triggering actor with inline-code context", async () => {
   const payload = await buildPayload(event, { ...options, fetch: async () => response([]) });
-  const fields = payload.attachments[0].blocks[0].fields;
-  assert.equal(fields[1].text, "Ref: `release/v7.3.4`");
-  assert.equal(fields[3].text, "Attempt: `2`");
+  const section = payload.attachments[0].blocks[0];
+  assert.equal(section.fields, undefined);
+  assert.equal(section.text.type, "mrkdwn");
   assert.equal(
-    fields[4].text,
-    "Commit: <https://github.com/org/repo/commit/abcdef1234567890|abcdef12>",
+    section.text.text,
+    "In _org/repo_, triggered by `push` on `release/v7.3.4` at commit <https://github.com/org/repo/commit/abcdef1234567890|abcdef12> by <https://github.com/dependabot%5Bbot%5D|dependabot[bot]> (attempt `2`).",
   );
-  assert.equal(fields[5].text, "Actor: <https://github.com/dependabot%5Bbot%5D|dependabot[bot]>");
-  assert.equal(fields[6].text, "Trigger: `push`");
 });
 
 test("paginates and excludes expired artifacts", async () => {
@@ -83,13 +81,14 @@ test("paginates and excludes expired artifacts", async () => {
   });
   assert.equal(requests.length, 2);
   assert.ok(requests[1].endsWith("page=2"));
-  assert.ok(
-    payload.attachments[0].blocks[1].text.text.includes("/artifacts/77|coverage &lt;test&gt;>"),
+  assert.equal(
+    payload.attachments[0].blocks[1].text.text,
+    "<https://github.com/org/repo/actions/runs/123#artifacts|1 artifact>",
   );
   assert.ok(!JSON.stringify(payload).includes("expired"));
 });
 
-test("budgets escaped artifact text and preserves complete links", async () => {
+test("links the artifact count without individual artifact names", async () => {
   const payload = await buildPayload(event, {
     ...options,
     fetch: async () =>
@@ -98,26 +97,72 @@ test("budgets escaped artifact text and preserves complete links", async () => {
       ),
   });
   const text = payload.attachments[0].blocks[1].text.text;
-  assert.ok(text.length <= 3000);
-  const lines = text.split("\n").filter((line) => line.startsWith("- "));
-  assert.ok(lines.length < 10);
-  assert.ok(lines.every((line) => line.endsWith("&amp;".repeat(150) + ">")));
+  assert.equal(text, "<https://github.com/org/repo/actions/runs/123#artifacts|12 artifacts>");
+  assert.ok(!JSON.stringify(payload).includes("&amp;".repeat(150)));
   assert.ok(
-    text.endsWith("<https://github.com/org/repo/actions/runs/123|View artifacts in workflow run>"),
+    payload.attachments[0].fallback.endsWith(
+      "12 artifacts: https://github.com/org/repo/actions/runs/123#artifacts",
+    ),
   );
 });
 
-test("caps short artifact lists at ten links", async () => {
+test("counts all pages even when the first has more than ten retained artifacts", async () => {
+  let requests = 0;
   const payload = await buildPayload(event, {
     ...options,
-    fetch: async () =>
-      response(
-        Array.from({ length: 12 }, (_, id) => ({ id, name: `report-${id}`, expired: false })),
-      ),
+    fetch: async () => {
+      requests++;
+      return response(
+        Array.from({ length: requests === 1 ? 100 : 3 }, (_, id) => ({
+          id,
+          expired: false,
+        })),
+      );
+    },
   });
-  const text = payload.attachments[0].blocks[1].text.text;
-  assert.equal(text.split("\n").filter((line) => line.startsWith("- ")).length, 10);
-  assert.ok(text.length <= 3000);
+  assert.equal(requests, 2);
+  assert.equal(
+    payload.attachments[0].blocks[1].text.text,
+    "<https://github.com/org/repo/actions/runs/123#artifacts|103 artifacts>",
+  );
+});
+
+test("uses total_count to stop on a full final page", async () => {
+  let requests = 0;
+  const payload = await buildPayload(event, {
+    ...options,
+    fetch: async () => {
+      requests++;
+      return {
+        ok: true,
+        json: async () => ({
+          total_count: 100,
+          artifacts: Array.from({ length: 100 }, () => ({ expired: false })),
+        }),
+      };
+    },
+  });
+  assert.equal(requests, 1);
+  assert.equal(
+    payload.attachments[0].blocks[1].text.text,
+    "<https://github.com/org/repo/actions/runs/123#artifacts|100 artifacts>",
+  );
+});
+
+test("omits an incomplete count when the pagination limit is reached", async () => {
+  let requests = 0;
+  const warnings = [];
+  const payload = await buildPayload(event, {
+    ...options,
+    warn: (warning) => warnings.push(warning),
+    fetch: async () => {
+      requests++;
+      return response(Array.from({ length: 100 }, () => ({ expired: false })));
+    },
+  });
+  assert.equal(requests, 10);
+  assert.equal(payload.attachments[0].blocks.length, 1);
+  assert.equal(warnings.length, 1);
 });
 
 test("falls back to the original actor and handles a missing ref", async () => {
@@ -128,9 +173,9 @@ test("falls back to the original actor and handles a missing ref", async () => {
     },
     { ...options, fetch: async () => response([]) },
   );
-  const fields = payload.attachments[0].blocks[0].fields;
-  assert.equal(fields[1].text, "Ref: `Unknown`");
-  assert.equal(fields[5].text, "Actor: <https://github.com/original|original>");
+  const text = payload.attachments[0].blocks[0].text.text;
+  assert.ok(text.includes("on `Unknown`"));
+  assert.ok(text.includes("by <https://github.com/original|original>"));
 });
 
 for (const mode of ["http", "network"]) {

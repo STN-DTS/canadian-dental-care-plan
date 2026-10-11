@@ -59,9 +59,10 @@ That workflow must exist on the default branch to receive completion events.
 
 ## Message Content
 
-- A headline linking the workflow name and run number to the specific attempt.
-- A colored attachment with a bold result, ref, repository, attempt, commit link,
-  actor profile link, and trigger.
+- A headline linking the workflow name and run number to the specific attempt,
+  followed by the bold result separated by a simple hyphen.
+- A colored attachment with a sentence describing the repository, trigger, ref,
+  commit link, actor profile link, and attempt.
 - Inline code for ref, attempt, and trigger; escaped labels for Slack links.
 - Actor selection prefers `triggering_actor`, then the original `actor`.
   A missing ref is displayed as `Unknown`.
@@ -71,17 +72,30 @@ Success is green; failure, timeout, and startup failure are red; cancellation an
 action-required results are amber. Skipped, neutral, stale, and unknown results
 are gray. The action prepares all completion results; selection is the caller's policy.
 
+## Example Output
+
+Illustrative message for a successful run with two retained artifacts:
+
+Workflow **[Build, test, and publish nonprod images #41](https://github.com/org/repo/actions/runs/123/attempts/2)** - **Succeeded**
+
+> In _org/repo_, triggered by `push` on `release/v7.3.4` at commit [abcdef12](https://github.com/org/repo/commit/abcdef1234567890) by [dependabot\[bot\]](https://github.com/dependabot%5Bbot%5D) (attempt `2`).
+>
+> [2 artifacts](https://github.com/org/repo/actions/runs/123#artifacts)
+
+Slack displays a green bar beside the attachment for this success result.
+The artifact link is omitted when no retained artifacts exist.
+
 ## Artifact Links
 
 The action lists artifacts for the originating run, excluding expired artifacts.
-It requests up to ten pages of 100 artifacts and stops once it has at least ten
-retained artifacts. Each request has a ten-second timeout.
+It counts all retained artifacts across up to ten pages of 100 artifacts.
+Each request has a ten-second timeout. If the pagination limit prevents a complete
+count, the action emits a warning and omits the artifact link.
 
-The attachment shows at most ten links. Names are shortened to 150 characters,
-and the final escaped section is limited to 3,000 characters. Links are never
-split. Space is reserved for a link to the workflow run where users can view the
-full artifact list. GitHub authentication and repository access are still required
-to download the linked artifacts.
+The attachment shows one link to the workflow run's `#artifacts` section, labeled with the retained
+artifact count, such as `1 artifact` or `12 artifacts`. Individual artifact names
+and links are not included. GitHub authentication and repository access are still
+required to download artifacts from the run.
 
 Artifact listing is run-wide: reruns may include reports uploaded by previous
 attempts. The action does not create coverage or E2E reports; source workflows
@@ -103,6 +117,6 @@ node --test .github/actions/prepare-slack-completion/prepare-payload.test.mjs
 ```
 
 Tests cover result labels and colors, escaping, links, actor/ref fallbacks,
-pagination, expiration, artifact caps, the escaped-text budget, and API failures.
+artifact counts, pagination limits, expiration, empty results, and API failures.
 They require no npm packages, Vault access, or Slack token. They do not verify
 live Slack rendering or delivery.

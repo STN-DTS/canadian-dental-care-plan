@@ -8,6 +8,7 @@ on:
     workflows:
       - Build, test, and publish nonprod images
       - Build, test, and publish nonprod tag images
+      - Build, test, and publish PROD tag images
       - Nightly e2e tests
     types: [completed]
 

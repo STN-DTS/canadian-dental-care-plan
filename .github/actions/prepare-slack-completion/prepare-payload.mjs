@@ -18,42 +18,27 @@ function inlineCode(value) {
 }
 
 /**
- * Adds retained artifact links without exceeding Slack's section text limit.
+ * Adds one workflow-run link labeled with the retained artifact count.
  * @param {object} attachment Completion attachment.
- * @param {object[]} artifacts API artifact objects.
+ * @param {number} count Non-expired artifact count.
  * @param {object} run Originating run.
- * @param {string} repository Repository full name.
- * @param {string} serverUrl GitHub browser origin.
  */
-function addArtifacts(attachment, artifacts, run, repository, serverUrl) {
-  if (!artifacts.length) return;
-  const footer = `\n<${run.html_url}|View artifacts in workflow run>`;
-  let text = "*Artifacts*";
-  if (text.length + footer.length > 3000) throw new Error("Artifact summary link is too long");
-  const displayed = [];
-  for (const artifact of artifacts.slice(0, 10)) {
-    const url = `${serverUrl}/${repository}/actions/runs/${encodeURIComponent(run.id)}/artifacts/${encodeURIComponent(artifact.id)}`;
-    const name = artifact.name.length > 150 ? `${artifact.name.slice(0, 147)}...` : artifact.name;
-    const line = `\n- <${url}|${escape(name)}>`;
-    if (text.length + line.length + footer.length > 3000) break;
-    text += line;
-    displayed.push(`${name}: ${url}`);
-  }
-  attachment.blocks.push({ type: "section", text: { type: "mrkdwn", text: text + footer } });
-  attachment.fallback += `\nArtifacts:\n${displayed.join("\n")}\nView artifacts in workflow run: ${run.html_url}`;
+function addArtifacts(attachment, count, run) {
+  if (!count) return;
+  const label = `${count} ${count === 1 ? "artifact" : "artifacts"}`;
+  const url = new URL(run.html_url);
+  url.hash = "artifacts";
+  const text = `<${url.href}|${label}>`;
+  attachment.blocks.push({ type: "section", text: { type: "mrkdwn", text } });
+  attachment.fallback += `\n${label}: ${url.href}`;
 }
 
 /**
- * Builds the colored result attachment and source-run fields.
- * @param {object} run Originating workflow run.
- * @param {string} repository Repository full name.
- * @param {string} serverUrl GitHub browser origin.
- * @returns {object} Slack attachment with plain-text fallback.
+ * Maps a conclusion to its display label and attachment color.
+ * @param {string} conclusion Workflow conclusion.
+ * @returns {string[]} Label and color.
  */
-function createResultAttachment(run, repository, serverUrl) {
-  const actor = run.triggering_actor?.login || run.actor.login;
-  const ref = run.head_branch ?? "Unknown";
-  const attempt = String(run.run_attempt);
+function resultPresentation(conclusion) {
   const results = {
     success: ["Succeeded", "#2DA44E"],
     failure: ["Failed", "#CF222E"],
@@ -65,30 +50,33 @@ function createResultAttachment(run, repository, serverUrl) {
     neutral: ["Neutral", "#808080"],
     stale: ["Stale", "#808080"],
   };
-  const [label, color] = Object.hasOwn(results, run.conclusion)
-    ? results[run.conclusion]
-    : [run.conclusion || "Unknown", "#808080"];
+  return Object.hasOwn(results, conclusion)
+    ? results[conclusion]
+    : [conclusion || "Unknown", "#808080"];
+}
+
+/**
+ * Builds a colored attachment with source-run context in one sentence.
+ * @param {object} run Originating workflow run.
+ * @param {string} repository Repository full name.
+ * @param {string} serverUrl GitHub browser origin.
+ * @returns {object} Slack attachment with plain-text fallback.
+ */
+function createResultAttachment(run, repository, serverUrl) {
+  const actor = run.triggering_actor?.login || run.actor.login;
+  const ref = run.head_branch ?? "Unknown";
+  const attempt = String(run.run_attempt);
+  const [label, color] = resultPresentation(run.conclusion);
   return {
     color,
     fallback: `Result: ${label} | ${repository} | Ref: ${ref} | Attempt ${attempt} | Commit: ${run.head_sha.slice(0, 8)} | Actor: ${actor} | Trigger: ${run.event}`,
     blocks: [
       {
         type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Result: ${escape(label)}*` },
-          { type: "mrkdwn", text: `Ref: ${inlineCode(ref)}` },
-          { type: "plain_text", text: `Repository: ${repository}` },
-          { type: "mrkdwn", text: `Attempt: ${inlineCode(attempt)}` },
-          {
-            type: "mrkdwn",
-            text: `Commit: <${serverUrl}/${repository}/commit/${encodeURIComponent(run.head_sha)}|${escape(run.head_sha.slice(0, 8))}>`,
-          },
-          {
-            type: "mrkdwn",
-            text: `Actor: <${serverUrl}/${encodeURIComponent(actor)}|${escape(actor)}>`,
-          },
-          { type: "mrkdwn", text: `Trigger: ${inlineCode(run.event)}` },
-        ],
+        text: {
+          type: "mrkdwn",
+          text: `In _${escape(repository)}_, triggered by ${inlineCode(run.event)} on ${inlineCode(ref)} at commit <${serverUrl}/${repository}/commit/${encodeURIComponent(run.head_sha)}|${escape(run.head_sha.slice(0, 8))}> by <${serverUrl}/${encodeURIComponent(actor)}|${escape(actor)}> (attempt ${inlineCode(attempt)}).`,
+        },
       },
     ],
   };
@@ -102,11 +90,12 @@ function createResultAttachment(run, repository, serverUrl) {
  */
 function createCompletionPayload(event, options) {
   const run = event.workflow_run;
+  const [label] = resultPresentation(run.conclusion);
   const url = new URL(run.html_url);
   url.pathname = `${url.pathname.replace(/\/$/, "")}/attempts/${encodeURIComponent(String(run.run_attempt))}`;
   return {
     channel: options.channelId,
-    text: `Workflow *<${url.href}|${escape(run.name)} #${escape(String(run.run_number))}>* completed`,
+    text: `Workflow *<${url.href}|${escape(run.name)} #${escape(String(run.run_number))}>* - *${escape(label)}*`,
     attachments: [createResultAttachment(run, event.repository.full_name, options.serverUrl)],
     unfurl_links: false,
     unfurl_media: false,
@@ -114,15 +103,15 @@ function createCompletionPayload(event, options) {
 }
 
 /**
- * Lists retained artifacts with bounded pagination and request timeouts.
+ * Counts retained artifacts with bounded pagination and request timeouts.
  * @param {object} run Originating workflow run.
  * @param {string} repository Repository full name.
  * @param {{apiUrl: string, token: string, fetch?: typeof globalThis.fetch}} options API configuration.
- * @returns {Promise<object[]>} Non-expired artifact objects.
+ * @returns {Promise<number>} Non-expired artifact count.
  */
-async function fetchArtifacts(run, repository, options) {
-  const artifacts = [];
-  for (let page = 1; page <= 10 && artifacts.length < 10; page++) {
+async function fetchArtifactCount(run, repository, options) {
+  let count = 0;
+  for (let page = 1; page <= 10; page++) {
     const endpoint = new URL(
       `${options.apiUrl}/repos/${repository}/actions/runs/${run.id}/artifacts`,
     );
@@ -137,10 +126,10 @@ async function fetchArtifacts(run, repository, options) {
     });
     if (!response.ok) throw new Error("Artifacts unavailable");
     const data = await response.json();
-    artifacts.push(...data.artifacts.filter((artifact) => !artifact.expired));
-    if (data.artifacts.length < 100) break;
+    count += data.artifacts.filter((artifact) => !artifact.expired).length;
+    if (data.artifacts.length < 100 || page * 100 >= data.total_count) return count;
   }
-  return artifacts;
+  throw new Error("Artifact count exceeds pagination limit");
 }
 
 /**
@@ -154,8 +143,8 @@ export async function buildPayload(event, options) {
   const run = event.workflow_run;
   const repository = event.repository.full_name;
   try {
-    const artifacts = await fetchArtifacts(run, repository, options);
-    addArtifacts(payload.attachments[0], artifacts, run, repository, options.serverUrl);
+    const count = await fetchArtifactCount(run, repository, options);
+    addArtifacts(payload.attachments[0], count, run);
   } catch {
     (options.warn ?? console.log)(
       "::warning::Unable to list workflow artifacts; posting completion without artifact links.",
