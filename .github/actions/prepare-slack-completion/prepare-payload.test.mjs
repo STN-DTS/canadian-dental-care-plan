@@ -64,6 +64,54 @@ test("links commit and triggering actor with inline-code context", async () => {
   );
 });
 
+for (const [elapsedSeconds, expected] of [
+  [0, "0s"],
+  [59, "59s"],
+  [60, "1m 0s"],
+  [252, "4m 12s"],
+  [3600, "1h 0m 0s"],
+  [3723, "1h 2m 3s"],
+]) {
+  test(`renders source-run duration ${expected}`, async () => {
+    const payload = await buildPayload(
+      {
+        ...event,
+        workflow_run: {
+          ...event.workflow_run,
+          created_at: "2026-10-10T00:00:00Z",
+          run_started_at: "2026-10-11T00:00:00Z",
+          updated_at: new Date(
+            Date.parse("2026-10-11T00:00:00Z") + elapsedSeconds * 1000,
+          ).toISOString(),
+        },
+      },
+      { ...options, fetch: async () => response([]) },
+    );
+    assert.ok(
+      payload.attachments[0].blocks[0].text.text.endsWith(
+        `(attempt \`2\`, duration \`${expected}\`).`,
+      ),
+    );
+    assert.ok(payload.attachments[0].fallback.endsWith(` | Duration: ${expected}`));
+  });
+}
+
+for (const timestamps of [
+  {},
+  { run_started_at: "2026-10-11T00:00:00Z" },
+  { run_started_at: "invalid", updated_at: "2026-10-11T00:00:00Z" },
+  { run_started_at: "2026-10-11T00:00:01Z", updated_at: "2026-10-11T00:00:00Z" },
+]) {
+  test(`omits unavailable or invalid duration ${JSON.stringify(timestamps)}`, async () => {
+    const payload = await buildPayload(
+      { ...event, workflow_run: { ...event.workflow_run, ...timestamps } },
+      { ...options, fetch: async () => response([]) },
+    );
+    assert.ok(payload.attachments[0].blocks[0].text.text.endsWith("(attempt `2`)."));
+    assert.ok(!payload.attachments[0].fallback.includes("Duration:"));
+  });
+}
+
 test("paginates and excludes expired artifacts", async () => {
   const requests = [];
   const payload = await buildPayload(event, {

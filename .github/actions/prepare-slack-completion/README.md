@@ -62,8 +62,12 @@ That workflow must exist on the default branch to receive completion events.
 - A headline linking the workflow name and run number to the specific attempt,
   followed by the bold result separated by a simple hyphen.
 - A colored attachment with a sentence describing the repository, trigger, ref,
-  commit link, actor profile link, and attempt.
+  commit link, actor profile link, attempt, and available duration.
 - Inline code for ref, attempt, and trigger; escaped labels for Slack links.
+- Duration uses `updated_at - run_started_at` from the source run's completion
+  event, formatted as `4m 12s` or `1h 2m 3s`. It measures elapsed time, including
+  waits between jobs, not summed job execution or billable time. It excludes
+  notification delay and is omitted when timestamps are missing or invalid.
 - Actor selection prefers `triggering_actor`, then the original `actor`.
   A missing ref is displayed as `Unknown`.
 - Plain-text attachment fallback and disabled link/media unfurling.
@@ -78,7 +82,7 @@ Illustrative message for a successful run with two retained artifacts:
 
 Workflow **[Build, test, and publish nonprod images #41](https://github.com/org/repo/actions/runs/123/attempts/2)** - **Succeeded**
 
-> In _org/repo_, triggered by `push` on `release/v7.3.4` at commit [abcdef12](https://github.com/org/repo/commit/abcdef1234567890) by [dependabot\[bot\]](https://github.com/dependabot%5Bbot%5D) (attempt `2`).
+> In _org/repo_, triggered by `push` on `release/v7.3.4` at commit [abcdef12](https://github.com/org/repo/commit/abcdef1234567890) by [dependabot\[bot\]](https://github.com/dependabot%5Bbot%5D) (attempt `2`, duration `4m 12s`).
 >
 > [2 artifacts](https://github.com/org/repo/actions/runs/123#artifacts)
 

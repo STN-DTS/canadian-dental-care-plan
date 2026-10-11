@@ -56,6 +56,23 @@ function resultPresentation(conclusion) {
 }
 
 /**
+ * Formats elapsed source-run time from the completion event's timestamps.
+ * @param {object} run Originating workflow run.
+ * @returns {string | null} Duration, or null when timestamps are unavailable or invalid.
+ */
+function runDuration(run) {
+  const elapsed = Date.parse(run.updated_at) - Date.parse(run.run_started_at);
+  if (!Number.isFinite(elapsed) || elapsed < 0) return null;
+  const totalSeconds = Math.floor(elapsed / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours ? `${hours}h` : null, hours || minutes ? `${minutes}m` : null, `${seconds}s`]
+    .filter((part) => part !== null)
+    .join(" ");
+}
+
+/**
  * Builds a colored attachment with source-run context in one sentence.
  * @param {object} run Originating workflow run.
  * @param {string} repository Repository full name.
@@ -66,16 +83,17 @@ function createResultAttachment(run, repository, serverUrl) {
   const actor = run.triggering_actor?.login || run.actor.login;
   const ref = run.head_branch ?? "Unknown";
   const attempt = String(run.run_attempt);
+  const duration = runDuration(run);
   const [label, color] = resultPresentation(run.conclusion);
   return {
     color,
-    fallback: `Result: ${label} | ${repository} | Ref: ${ref} | Attempt ${attempt} | Commit: ${run.head_sha.slice(0, 8)} | Actor: ${actor} | Trigger: ${run.event}`,
+    fallback: `Result: ${label} | ${repository} | Ref: ${ref} | Attempt ${attempt} | Commit: ${run.head_sha.slice(0, 8)} | Actor: ${actor} | Trigger: ${run.event}${duration === null ? "" : ` | Duration: ${duration}`}`,
     blocks: [
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `In _${escape(repository)}_, triggered by ${inlineCode(run.event)} on ${inlineCode(ref)} at commit <${serverUrl}/${repository}/commit/${encodeURIComponent(run.head_sha)}|${escape(run.head_sha.slice(0, 8))}> by <${serverUrl}/${encodeURIComponent(actor)}|${escape(actor)}> (attempt ${inlineCode(attempt)}).`,
+          text: `In _${escape(repository)}_, triggered by ${inlineCode(run.event)} on ${inlineCode(ref)} at commit <${serverUrl}/${repository}/commit/${encodeURIComponent(run.head_sha)}|${escape(run.head_sha.slice(0, 8))}> by <${serverUrl}/${encodeURIComponent(actor)}|${escape(actor)}> (attempt ${inlineCode(attempt)}${duration === null ? "" : `, duration ${inlineCode(duration)}`}).`,
         },
       },
     ],
