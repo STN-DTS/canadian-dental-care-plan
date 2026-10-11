@@ -192,19 +192,23 @@ jobs:
           set -euo pipefail
 
           short_sha="${SOURCE_SHA:0:8}"
+          image_version="$BUILD_VERSION"
+          if [[ "$REF_NAME" == release/* ]]; then
+            rc_label=$(printf '%03d' "$RUN_NUMBER")
+            image_version="${BUILD_VERSION}-RC${rc_label}"
+          fi
           docker build \
             --file frontend/dockerfile frontend \
             --build-arg BUILD_DATE="$BUILD_DATE" \
             --build-arg BUILD_ID="$BUILD_NUMBER" \
             --build-arg BUILD_REVISION="$short_sha" \
-            --build-arg BUILD_VERSION="$BUILD_VERSION" \
+            --build-arg BUILD_VERSION="$image_version" \
             --tag "$IMAGE_NAME:$BUILD_REVISION"
 
           if [[ "$REF_NAME" == main ]]; then
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha"
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER"
           elif [[ "$REF_NAME" == release/* ]]; then
-            rc_label=$(printf '%03d' "$RUN_NUMBER")
             docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label-$short_sha"
           fi
       - name: Scan frontend OCI image
