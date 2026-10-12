@@ -5,7 +5,8 @@
 
 name: Build, test, and publish nonprod images
 
-permissions: read-all
+permissions:
+  contents: read
 
 concurrency:
   group: frontend-${{ github.ref }}
