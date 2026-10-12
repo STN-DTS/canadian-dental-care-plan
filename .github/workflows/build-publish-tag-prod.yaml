@@ -107,7 +107,7 @@ jobs:
             frontend/test-results/
           retention-days: 7
   build-frontend:
-    runs-on: arc-runners-dshp-dev
+    runs-on: arc-runners-dshp-prod
     needs:
       - check-repository
       - resolve-version
