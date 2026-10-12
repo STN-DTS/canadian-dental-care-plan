@@ -18,6 +18,11 @@ blockExoticSubdeps: true
 # https://pnpm.io/settings/cli#enginestrict
 engineStrict: true
 
+# Lockfile settings
+# https://pnpm.io/settings/store#lockfile-settings
+lockfile:
+  includeResolutionSettings: true
+
 # Delays installation of newly published packages by 3 days (4320 minutes),
 # giving time for the community and security tools to detect compromised releases.
 # https://pnpm.io/settings#minimumreleaseage
