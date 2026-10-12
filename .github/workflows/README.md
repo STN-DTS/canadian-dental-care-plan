@@ -4,31 +4,38 @@ CI validation, image publication, and reporting for the Canadian Dental Care Pla
 
 ## Workflow Summary
 
-| Workflow                                                                             | Triggers                                                          | Purpose                                                                                                                                      |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable            | Detect changes, validate the frontend, run smoke tests, and build an image without publishing.                                               |
-| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
-| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                       | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
-| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                       | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                        | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
-| [notify-workflow-completion.yaml](notify-workflow-completion.yaml)                   | All workflow completions except PR checks and the notifier itself | Post Slack results and artifact links using trusted default-branch helpers. Notification failures are non-blocking.                          |
-| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                           | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
+| Workflow                                                                             | Triggers                                                                   | Purpose                                                                                                                                      |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Detect changes, validate the frontend, run smoke tests, and build an image without publishing.                                               |
+| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                         | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
+| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
+| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
+| [notify-workflow-completion.yaml](notify-workflow-completion.yaml)                   | Workflow requests and completions except PR checks and the notifier itself | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
+| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                    | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
 
-Slack notifications include all completion outcomes, including failures and
-cancellations. Ordered workflow-name patterns include future workflows automatically:
+Slack notifications post **Queued** on `requested`, then the result on `completed`,
+including failures and cancellations. Ordered workflow-name patterns include
+future workflows automatically:
 
 ```yaml
 workflows:
-  - "**"
-  - "!Build and test pull request"
-  - "!Notify workflow completions"
+  - '**'
+  - '!Build and test pull request'
+  - '!Notify workflow completions'
 ```
 
 The positive catch-all must precede the quoted negative patterns. Exclusions
 match each workflow's `name`, not its filename; update them when renaming workflows.
 PR checks are excluded to reduce noise, and the notifier excludes itself to avoid
-notification loops. Each eligible completion from this repository posts its own
-result using trusted default-branch code. Notification failures are non-blocking.
+notification loops. Trusted default-branch code finds the queued parent using
+`cdcp_workflow_run` metadata keyed by repository, run ID, and attempt. Completion
+replies use `reply_broadcast: true` to appear in both the thread and channel.
+Missing parents or lookup failures produce standalone results. GitHub does not
+emit `requested` for reruns. Notification failures are non-blocking.
+
+The Slack bot needs channel history access and a registered metadata schema;
+see [notification setup](../actions/prepare-slack-completion/README.md#usage).
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
 must select a release-tag ref; branch refs are rejected. Pushing a matching tag

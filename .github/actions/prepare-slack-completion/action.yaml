@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 
-# Creates a Slack completion payload with source-run status and artifact links.
-# Reads GitHub metadata only; posting the payload and supplying Slack credentials are caller responsibilities.
+# Creates queued/completed Slack payloads with source-run metadata and artifact links.
+# Finds queued parents in Slack history; the caller supplies credentials and posts messages.
 
 name: Prepare Slack completion
 
-description: Create a Slack completion payload with workflow status and source-run artifact links
+description: Create queued and threaded completion payloads using workflow metadata and artifact links
 
 inputs:
   channel-id:
@@ -14,6 +14,10 @@ inputs:
   github-token:
     description: Token with actions read permission for artifact lookup
     required: true
+  slack-token:
+    description: Optional bot token with channel history access for queued-message lookup
+    required: false
+    default: ''
 outputs:
   payload:
     description: JSON chat.postMessage payload without authentication credentials
@@ -21,11 +25,12 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Prepare completion payload
+    - name: Prepare workflow notification payload
       id: message
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
         GH_TOKEN: ${{ inputs.github-token }}
+        SLACK_BOT_TOKEN: ${{ inputs.slack-token }}
         SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
       run: node "$ACTION_PATH/prepare-payload.mjs"

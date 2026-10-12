@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Posts Slack results for all workflow completions, including failures and cancellations.
+# Posts queued messages and completion replies, also broadcast to the channel.
+# Correlates messages by source-run metadata; missing parents produce standalone results.
 # Ordered name patterns include ** first, then exclude PR checks and this notifier.
 # Keep quoted exclusions aligned with workflow names when renaming workflows.
 # Uses trusted default-branch helpers; fork sources are excluded and failures are non-blocking.
@@ -10,10 +11,10 @@ name: Notify workflow completions
 on:
   workflow_run:
     workflows:
-      - "**"
-      - "!Build and test pull request"
-      - "!Notify workflow completions"
-    types: [completed]
+      - '**'
+      - '!Build and test pull request'
+      - '!Notify workflow completions'
+    types: [requested, completed]
 
 permissions: {}
 
@@ -53,13 +54,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.21.0"
-      - name: Prepare completion message
-        id: message
-        uses: ./.github/actions/prepare-slack-completion
-        with:
-          channel-id: ${{ env.SLACK_CHANNEL_ID }}
-          github-token: ${{ github.token }}
+          node-version: '24.21.0'
       - name: Fetch Slack bot token
         id: vault
         uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
@@ -72,7 +67,14 @@ jobs:
           secrets: |
             canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
           url: ${{ secrets.NONPROD_VAULT_URL }}
-      - name: Post completion notification
+      - name: Prepare workflow notification
+        id: message
+        uses: ./.github/actions/prepare-slack-completion
+        with:
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          github-token: ${{ github.token }}
+          slack-token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+      - name: Post workflow notification
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           errors: true

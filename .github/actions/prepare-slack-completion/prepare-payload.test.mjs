@@ -27,6 +27,199 @@ const options = {
 };
 const response = async (artifacts) => await Promise.resolve({ ok: true, json: async () => await Promise.resolve({ artifacts }) });
 
+test('renders requested workflows as queued without duration or artifact lookup', async () => {
+  const payload = await buildPayload(
+    {
+      ...event,
+      action: 'requested',
+      workflow_run: {
+        ...event.workflow_run,
+        status: 'queued',
+        conclusion: null,
+        run_started_at: '2026-10-12T00:00:00Z',
+        updated_at: '2026-10-12T00:01:00Z',
+      },
+    },
+    {
+      ...options,
+      slackToken: 'slack-fixture-token',
+      fetch: () => assert.fail('Requested workflows must not fetch artifacts.'),
+      warn: () => assert.fail('Requested workflows must not warn about artifacts.'),
+    },
+  );
+  assert.equal(payload.text, 'Workflow *<https://github.com/org/repo/actions/runs/123/attempts/2|Build &lt;image&gt;&amp;&#124;test #41>* - *Queued*');
+  assert.equal(payload.attachments[0].color, '#0969DA');
+  assert.equal(payload.attachments[0].blocks.length, 1);
+  assert.ok(payload.attachments[0].fallback.startsWith('Result: Queued |'));
+  assert.ok(!JSON.stringify(payload).includes('Duration:'));
+  assert.ok(!payload.attachments[0].blocks[0].text.text.includes('duration'));
+  assert.ok(!JSON.stringify(payload).includes(options.token));
+});
+
+for (const action of ['requested', 'completed']) {
+  test(`adds source-run metadata to ${action} messages`, async () => {
+    const payload = await buildPayload({ ...event, action }, { ...options, fetch: async () => await response([]) });
+    assert.deepEqual(payload.metadata, {
+      event_type: 'cdcp_workflow_run',
+      event_payload: {
+        repository: 'org/repo',
+        run_id: '123',
+        run_attempt: '2',
+        action,
+      },
+    });
+  });
+}
+
+test('finds queued-message metadata and broadcasts completion in its thread', async () => {
+  const calls = [];
+  const payload = await buildPayload(
+    {
+      ...event,
+      action: 'completed',
+      workflow_run: { ...event.workflow_run, created_at: '2026-10-12T00:00:00Z' },
+    },
+    {
+      ...options,
+      slackToken: 'slack-fixture-token',
+      fetch: async (url, config) => {
+        calls.push(String(url));
+        if (url.origin === 'https://slack.com') {
+          assert.equal(url.pathname, '/api/conversations.history');
+          assert.equal(url.searchParams.get('channel'), 'C123');
+          assert.equal(url.searchParams.get('include_all_metadata'), 'true');
+          assert.equal(url.searchParams.get('oldest'), '1791763140');
+          assert.equal(config.headers.Authorization, 'Bearer slack-fixture-token');
+          assert.ok(config.signal instanceof AbortSignal);
+          return {
+            ok: true,
+            json: async () =>
+              await Promise.resolve({
+                ok: true,
+                messages: [
+                  {
+                    ts: '1791763200.000001',
+                    metadata: {
+                      event_type: 'cdcp_workflow_run',
+                      event_payload: {
+                        repository: 'org/repo',
+                        run_id: '123',
+                        run_attempt: '2',
+                        action: 'requested',
+                      },
+                    },
+                  },
+                ],
+              }),
+          };
+        }
+        return await response([]);
+      },
+    },
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(payload.thread_ts, '1791763200.000001');
+  assert.equal(payload.reply_broadcast, true);
+  assert.ok(!JSON.stringify(payload).includes('slack-fixture-token'));
+});
+
+function queuedMessage(context = {}, overrides = {}) {
+  return {
+    ts: '1791763200.000001',
+    metadata: {
+      event_type: 'cdcp_workflow_run',
+      event_payload: {
+        repository: 'org/repo',
+        run_id: '123',
+        run_attempt: '2',
+        action: 'requested',
+        ...context,
+      },
+    },
+    ...overrides,
+  };
+}
+
+test('paginates Slack history and ignores other runs, attempts, repositories, and replies', async () => {
+  let pages = 0;
+  const payload = await buildPayload(event, {
+    ...options,
+    slackToken: 'slack-fixture-token',
+    fetch: async (url) => {
+      if (url.origin !== 'https://slack.com') return await response([]);
+      pages++;
+      assert.equal(url.searchParams.get('cursor'), pages === 1 ? null : 'next-page');
+      return {
+        ok: true,
+        json: async () =>
+          await Promise.resolve(
+            pages === 1
+              ? {
+                  ok: true,
+                  messages: [
+                    queuedMessage({ repository: 'other/repo' }),
+                    queuedMessage({ run_id: '999' }),
+                    queuedMessage({ run_attempt: '1' }),
+                    queuedMessage({ action: 'completed' }),
+                    queuedMessage({}, { metadata: { event_type: 'other' } }),
+                    queuedMessage({}, { thread_ts: '1791763200.999999' }),
+                    queuedMessage({}, { ts: 'invalid' }),
+                    { ts: '1791763200.000002' },
+                  ],
+                  has_more: true,
+                  response_metadata: { next_cursor: 'next-page' },
+                }
+              : { ok: true, messages: [queuedMessage()] },
+          ),
+      };
+    },
+  });
+  assert.equal(pages, 2);
+  assert.equal(payload.thread_ts, '1791763200.000001');
+  assert.equal(payload.reply_broadcast, true);
+});
+
+for (const mode of ['missing parent', 'http', 'api', 'rate limit', 'network', 'malformed', 'missing cursor', 'pagination limit']) {
+  test(`posts standalone completion after Slack history ${mode}`, async () => {
+    let requests = 0;
+    const warnings = [];
+    const payload = await buildPayload(event, {
+      ...options,
+      slackToken: 'slack-fixture-token',
+      warn: (warning) => warnings.push(warning),
+      fetch: async (url) => {
+        if (url.origin !== 'https://slack.com') return await response([{ expired: false }]);
+        requests++;
+        if (mode === 'network') throw new Error('slack-fixture-token');
+        if (mode === 'http' || mode === 'rate limit') return { ok: false, status: mode === 'rate limit' ? 429 : 503 };
+        const data =
+          mode === 'api'
+            ? { ok: false, error: 'missing_scope' }
+            : mode === 'malformed'
+              ? { ok: true }
+              : mode === 'missing cursor'
+                ? { ok: true, messages: [], has_more: true }
+                : mode === 'pagination limit'
+                  ? {
+                      ok: true,
+                      messages: [],
+                      has_more: true,
+                      response_metadata: { next_cursor: 'more' },
+                    }
+                  : { ok: true, messages: [] };
+        return { ok: true, json: async () => await Promise.resolve(data) };
+      },
+    });
+    assert.equal(requests, mode === 'pagination limit' ? 10 : 1);
+    assert.equal(warnings.length, mode === 'missing parent' ? 0 : 1);
+    assert.equal(Object.hasOwn(payload, 'thread_ts'), false);
+    assert.equal(Object.hasOwn(payload, 'reply_broadcast'), false);
+    assert.equal(payload.attachments[0].blocks.length, 2);
+    assert.ok(payload.text.endsWith('*Succeeded*'));
+    assert.ok(!JSON.stringify({ payload, warnings }).includes('slack-fixture-token'));
+  });
+}
+
 for (const [conclusion, label, color] of [
   ['success', 'Succeeded', '#2DA44E'],
   ['failure', 'Failed', '#CF222E'],

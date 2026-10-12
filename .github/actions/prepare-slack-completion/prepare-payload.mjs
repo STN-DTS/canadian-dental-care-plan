@@ -1,4 +1,4 @@
-/** @file Builds completion messages; does not access Vault or send Slack messages. */
+/** @file Builds requested/completed workflow messages; does not access Vault or send Slack messages. */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,11 +34,13 @@ function addArtifacts(attachment, count, run) {
 }
 
 /**
- * Maps a conclusion to its display label and attachment color.
+ * Maps a workflow event and conclusion to its display label and attachment color.
  * @param {string} conclusion Workflow conclusion.
+ * @param {string} action Workflow event action.
  * @returns {string[]} Label and color.
  */
-function resultPresentation(conclusion) {
+function resultPresentation(conclusion, action) {
+  if (action === 'requested') return ['Queued', '#0969DA'];
   const results = {
     success: ['Succeeded', '#2DA44E'],
     failure: ['Failed', '#CF222E'],
@@ -73,14 +75,15 @@ function runDuration(run) {
  * @param {object} run Originating workflow run.
  * @param {string} repository Repository full name.
  * @param {string} serverUrl GitHub browser origin.
+ * @param {string} action Workflow event action.
  * @returns {object} Slack attachment with plain-text fallback.
  */
-function createResultAttachment(run, repository, serverUrl) {
+function createResultAttachment(run, repository, serverUrl, action) {
   const actor = run.triggering_actor?.login ?? run.actor.login;
   const ref = run.head_branch ?? 'Unknown';
   const attempt = String(run.run_attempt);
-  const duration = runDuration(run);
-  const [label, color] = resultPresentation(run.conclusion);
+  const duration = action === 'requested' ? null : runDuration(run);
+  const [label, color] = resultPresentation(run.conclusion, action);
   return {
     color,
     fallback: `Result: ${label} | ${repository} | Ref: ${ref} | Attempt ${attempt} | Commit: ${run.head_sha.slice(0, 8)} | Actor: ${actor} | Trigger: ${run.event}${duration === null ? '' : ` | Duration: ${duration}`}`,
@@ -100,17 +103,26 @@ function createResultAttachment(run, repository, serverUrl) {
  * Creates the headline and result details without performing network requests.
  * @param {object} event GitHub workflow_run webhook payload.
  * @param {{channelId: string, serverUrl: string}} options Rendering configuration.
- * @returns {object} Slack completion payload.
+ * @returns {object} Slack workflow notification payload.
  */
 function createCompletionPayload(event, options) {
   const run = event.workflow_run;
-  const [label] = resultPresentation(run.conclusion);
+  const [label] = resultPresentation(run.conclusion, event.action);
   const url = new URL(run.html_url);
   url.pathname = `${url.pathname.replace(/\/$/, '')}/attempts/${encodeURIComponent(String(run.run_attempt))}`;
   return {
     channel: options.channelId,
     text: `Workflow *<${url.href}|${escape(run.name)} #${escape(String(run.run_number))}>* - *${escape(label)}*`,
-    attachments: [createResultAttachment(run, event.repository.full_name, options.serverUrl)],
+    attachments: [createResultAttachment(run, event.repository.full_name, options.serverUrl, event.action)],
+    metadata: {
+      event_type: 'cdcp_workflow_run',
+      event_payload: {
+        repository: event.repository.full_name,
+        run_id: String(run.id),
+        run_attempt: String(run.run_attempt),
+        action: event.action ?? 'completed',
+      },
+    },
     unfurl_links: false,
     unfurl_media: false,
   };
@@ -146,15 +158,77 @@ async function fetchArtifactCount(run, repository, options) {
 }
 
 /**
- * Creates a payload; artifact lookup failures leave the completion details intact.
+ * Finds a queued parent by repository, run ID, and attempt in bounded Slack history.
+ * @param {object} run Originating workflow run; created_at bounds history when valid.
+ * @param {string} repository Repository full name.
+ * @param {{channelId: string, slackToken: string, fetch?: typeof globalThis.fetch}} options Slack API configuration.
+ * @returns {Promise<string | null>} Parent message timestamp, or null when no match exists.
+ * @throws {Error} When history is unavailable, malformed, or exceeds ten pages.
+ */
+async function findQueueMessage(run, repository, options) {
+  const createdAt = Date.parse(run.created_at);
+  async function fetchPage(page, cursor) {
+    const endpoint = new URL('https://slack.com/api/conversations.history');
+    endpoint.searchParams.set('channel', options.channelId);
+    endpoint.searchParams.set('include_all_metadata', 'true');
+    endpoint.searchParams.set('limit', '100');
+    if (Number.isFinite(createdAt)) endpoint.searchParams.set('oldest', String(Math.max(0, Math.floor(createdAt / 1000) - 60)));
+    if (cursor) endpoint.searchParams.set('cursor', cursor);
+    const response = await (options.fetch ?? globalThis.fetch)(endpoint, {
+      headers: { Authorization: `Bearer ${options.slackToken}` },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('Slack history unavailable');
+    const data = await response.json();
+    if (!data.ok || !Array.isArray(data.messages)) throw new Error('Slack history unavailable');
+    const message = data.messages.find((message) => {
+      const metadata = message.metadata;
+      const context = metadata?.event_payload;
+      return (
+        metadata?.event_type === 'cdcp_workflow_run' &&
+        context?.action === 'requested' &&
+        context.repository === repository &&
+        context.run_id === String(run.id) &&
+        context.run_attempt === String(run.run_attempt) &&
+        (!message.thread_ts || message.thread_ts === message.ts) &&
+        typeof message.ts === 'string' &&
+        /^\d+\.\d+$/.test(message.ts)
+      );
+    });
+    if (message) return message.ts;
+    const nextCursor = data.response_metadata?.next_cursor?.trim() ?? '';
+    if (!nextCursor) {
+      if (data.has_more) throw new Error('Slack history pagination unavailable');
+      return null;
+    }
+    if (page === 10) throw new Error('Slack history exceeds pagination limit');
+    return await fetchPage(page + 1, nextCursor);
+  }
+  return await fetchPage(1, '');
+}
+
+/**
+ * Creates a payload; lookup failures preserve a standalone completion notification.
  * @param {object} event GitHub workflow_run webhook payload.
- * @param {{channelId: string, token: string, serverUrl: string, apiUrl: string, fetch?: typeof globalThis.fetch, warn?: (message: string) => void}} options Runtime configuration and test dependencies.
+ * @param {{channelId: string, token: string, serverUrl: string, apiUrl: string, slackToken?: string, fetch?: typeof globalThis.fetch, warn?: (message: string) => void}} options Runtime configuration and test dependencies.
  * @returns {Promise<object>} Slack payload without tokens.
  */
 export async function buildPayload(event, options) {
   const payload = createCompletionPayload(event, options);
+  if (event.action === 'requested') return payload;
   const run = event.workflow_run;
   const repository = event.repository.full_name;
+  if (options.slackToken) {
+    try {
+      const threadTs = await findQueueMessage(run, repository, options);
+      if (threadTs) {
+        payload.thread_ts = threadTs;
+        payload.reply_broadcast = true;
+      }
+    } catch {
+      (options.warn ?? console.log)('::warning::Unable to find queued Slack message; posting completion as a standalone message.');
+    }
+  }
   try {
     const count = await fetchArtifactCount(run, repository, options);
     addArtifacts(payload.attachments[0], count, run);
@@ -169,6 +243,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const payload = await buildPayload(event, {
     channelId: process.env.SLACK_CHANNEL_ID,
     token: process.env.GH_TOKEN,
+    slackToken: process.env.SLACK_BOT_TOKEN,
     serverUrl: process.env.GITHUB_SERVER_URL,
     apiUrl: process.env.GITHUB_API_URL,
   });

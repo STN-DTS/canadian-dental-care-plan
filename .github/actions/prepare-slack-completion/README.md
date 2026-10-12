@@ -1,17 +1,18 @@
 # Prepare Slack Completion
 
-Builds a JSON Slack `chat.postMessage` payload for a completed GitHub workflow run.
+Builds JSON Slack `chat.postMessage` payloads for requested and completed workflow runs.
 This action does not fetch Vault secrets, send Slack messages, download artifacts,
-or maintain message state. Authentication and delivery belong to the calling workflow.
+or maintain external message state. Slack metadata correlates completion replies
+with their queued messages; authentication and delivery belong to the caller.
 
 ## Requirements
 
-- Invoke from a `workflow_run` workflow with `types: [completed]`.
+- Invoke from a `workflow_run` workflow with `types: [requested, completed]`.
 - Check out the repository so the local action is available. Use trusted
   default-branch code, not the originating run's branch or commit.
 - Provide Bash and Node.js 24. The action does not install Node.js.
 - Grant `contents: read` for checkout and `actions: read` for artifact lookup.
-- Allow outbound access to GitHub's API.
+- Allow outbound access to GitHub's API and Slack's API.
 
 The script reads the originating run from `GITHUB_EVENT_PATH` and uses
 `GITHUB_SERVER_URL`, `GITHUB_API_URL`, and `GITHUB_OUTPUT` supplied by the runner.
@@ -19,10 +20,11 @@ It does not use the notification workflow's own run number, commit, or conclusio
 
 ## Inputs And Output
 
-| Input          | Required | Purpose                                                 |
-| -------------- | -------- | ------------------------------------------------------- |
-| `channel-id`   | Yes      | Destination Slack channel ID                            |
-| `github-token` | Yes      | GitHub token with `actions: read` for listing artifacts |
+| Input          | Required | Purpose                                                    |
+| -------------- | -------- | ---------------------------------------------------------- |
+| `channel-id`   | Yes      | Destination Slack channel ID                               |
+| `github-token` | Yes      | GitHub token with `actions: read` for listing artifacts    |
+| `slack-token`  | No       | Bot token with history access for locating queued messages |
 
 Output `payload` is a single-line JSON string suitable for Slack's official
 action. It contains no authentication credentials. The caller should validate
@@ -33,14 +35,15 @@ that the channel ID is nonblank before invoking this action.
 After trusted checkout and Node.js setup:
 
 ```yaml
-- name: Prepare completion message
+- name: Prepare workflow notification
   id: message
   uses: ./.github/actions/prepare-slack-completion
   with:
     channel-id: ${{ vars.SLACK_CHANNEL_ID }}
     github-token: ${{ github.token }}
+    slack-token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
 
-- name: Post completion notification
+  - name: Post workflow notification
   uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
   with:
     method: chat.postMessage
@@ -49,13 +52,52 @@ After trusted checkout and Node.js setup:
     payload: ${{ steps.message.outputs.payload }}
 ```
 
-The example assumes a preceding Vault step provides `SLACK_BOT_TOKEN`. The Slack
-bot needs `chat:write` and membership in the destination channel. No history-read
-scope, message metadata schema, or interactivity endpoint is needed.
+The example assumes a preceding Vault step provides `SLACK_BOT_TOKEN`. The bot
+needs `chat:write` and membership in the destination channel. For threading,
+configure `channels:history` for public channels or `groups:history` for private
+channels, plus `metadata.message:read`. Reinstall the app after changing scopes.
+Register the `cdcp_workflow_run` metadata schema in the Slack app manifest:
+
+```yaml
+metadata:
+  event_subscriptions:
+    - event_type: cdcp_workflow_run
+      schema:
+        type: object
+        properties:
+          repository: { type: string }
+          run_id: { type: string }
+          run_attempt: { type: string }
+          action: { type: string, enum: [requested, completed] }
+        required: [repository, run_id, run_attempt, action]
+```
+
+No metadata event receiver or interactivity endpoint is required; lookup uses
+`conversations.history`. Metadata is visible to channel members and other apps;
+never include credentials. See [Slack metadata documentation](https://docs.slack.dev/messaging/message-metadata/).
 
 See [the completion workflow](../../workflows/notify-workflow-completion.yaml)
-for runtime setup, Vault authentication, repository guards, and the workflow allowlist.
-That workflow must exist on the default branch to receive completion events.
+for runtime setup, Vault authentication, repository guards, and workflow exclusions.
+That workflow must exist on the default branch to receive these events.
+
+## Threaded Notifications
+
+Requested events create blue **Queued** messages without duration or artifact lookup.
+Both phases attach `cdcp_workflow_run` metadata containing the repository, run ID,
+attempt, and action. Completion searches channel history with
+`include_all_metadata=true` for an exact matching requested parent, then sets
+`thread_ts` and `reply_broadcast: true` so the result appears in the thread and channel.
+
+History lookup scans at most ten pages of 100 messages with ten-second request
+timeouts. When available, the source run's creation time bounds the search with
+a sixty-second clock-skew allowance. Internal Slack apps use Tier 3 history limits;
+non-Marketplace commercially distributed apps may face stricter limits.
+
+Missing parents, insufficient scopes, rate limits, malformed responses, or lookup
+failures preserve a standalone completion message. This includes reruns, because
+GitHub does not emit `requested` again, and fast workflows whose queued message
+has not been posted yet. Different runs and attempts never share a thread.
+Retrying a notifier can post duplicates; metadata lookup does not make posting atomic.
 
 ## Message Content
 
@@ -72,7 +114,7 @@ That workflow must exist on the default branch to receive completion events.
   A missing ref is displayed as `Unknown`.
 - Plain-text attachment fallback and disabled link/media unfurling.
 
-Success is green; failure, timeout, and startup failure are red; cancellation and
+Queued is blue. Success is green; failure, timeout, and startup failure are red; cancellation and
 action-required results are amber. Skipped, neutral, stale, and unknown results
 are gray. The action prepares all completion results; selection is the caller's policy.
 
@@ -91,7 +133,7 @@ The artifact link is omitted when no retained artifacts exist.
 
 ## Artifact Links
 
-The action lists artifacts for the originating run, excluding expired artifacts.
+For completed events, the action lists artifacts for the originating run, excluding expired artifacts.
 It counts all retained artifacts across up to ten pages of 100 artifacts.
 Each request has a ten-second timeout. If the pagination limit prevents a complete
 count, the action emits a warning and omits the artifact link.
@@ -110,8 +152,8 @@ fail preparation; live Slack delivery is handled separately.
 
 ## Development
 
-The script exposes `buildPayload(event, options)` for tests. Rendering and artifact
-fetching are separate helpers; `options.fetch` and `options.warn` allow tests to
+The script exposes `buildPayload(event, options)` for tests. Rendering, history lookup,
+and artifact fetching are separate helpers; `options.fetch` and `options.warn` allow tests to
 replace network calls and capture warnings without credentials.
 
 Run from the repository root:
@@ -121,6 +163,7 @@ node --test .github/actions/prepare-slack-completion/prepare-payload.test.mjs
 ```
 
 Tests cover result labels and colors, escaping, links, actor/ref fallbacks,
-artifact counts, pagination limits, expiration, empty results, and API failures.
+queued rendering, metadata matching, broadcast replies, artifact counts,
+pagination limits, expiration, empty results, and API failures.
 They require no npm packages, Vault access, or Slack token. They do not verify
 live Slack rendering or delivery.
