@@ -1,17 +1,18 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Posts Slack results for selected completed workflows from this repository.
-# Uses default-branch helpers and artifact metadata; notification failures are non-blocking.
+# Posts Slack results for all workflow completions, including failures and cancellations.
+# Ordered name patterns include ** first, then exclude PR checks and this notifier.
+# Keep quoted exclusions aligned with workflow names when renaming workflows.
+# Uses trusted default-branch helpers; fork sources are excluded and failures are non-blocking.
 
 name: Notify workflow completions
 
 on:
   workflow_run:
     workflows:
-      - Build, test, and publish nonprod images
-      - Build, test, and publish nonprod tag images
-      - Build, test, and publish PROD tag images
-      - Nightly e2e tests
+      - "**"
+      - "!Build and test pull request"
+      - "!Notify workflow completions"
     types: [completed]
 
 permissions: {}
