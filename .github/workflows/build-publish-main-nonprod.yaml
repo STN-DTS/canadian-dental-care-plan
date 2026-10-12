@@ -18,6 +18,14 @@ on:
     branches:
       - main
       - release/v*
+    paths:
+      - .github/actions/aqua-scan/**
+      - .github/actions/azure-acr-login/**
+      - .github/actions/generate-build-vars/**
+      - .github/actions/push-container-image/**
+      - .github/actions/sign-container-image/**
+      - .github/workflows/build-publish-main-nonprod.yaml
+      - frontend/**
   workflow_call: {}
   workflow_dispatch:
     inputs:
@@ -55,8 +63,12 @@ jobs:
         with:
           filters: |
             frontend:
+              - .github/actions/aqua-scan/**
+              - .github/actions/azure-acr-login/**
+              - .github/actions/generate-build-vars/**
+              - .github/actions/push-container-image/**
+              - .github/actions/sign-container-image/**
               - .github/workflows/build-publish-main-nonprod.yaml
-              - .github/actions/**
               - frontend/**
       - name: Publish change-detection output
         id: changes

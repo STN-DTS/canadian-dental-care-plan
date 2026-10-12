@@ -51,6 +51,34 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
+### Nonprod Branch Guards
+
+[build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts
+automatically only for pushes to `main` or `release/v*` that change at least one
+of these repository-relative paths:
+
+```yaml
+paths:
+  - .github/actions/aqua-scan/**
+  - .github/actions/azure-acr-login/**
+  - .github/actions/generate-build-vars/**
+  - .github/actions/push-container-image/**
+  - .github/actions/sign-container-image/**
+  - .github/workflows/build-publish-main-nonprod.yaml
+  - frontend/**
+```
+
+The `detect-changes` job checks the same paths before enabling frontend testing
+and publishing. Changes limited to GitOps, infrastructure, documentation outside
+these paths, or unrelated local actions do not trigger this workflow. Keep both
+path lists aligned when adding or removing a local action used by the workflow.
+
+Manual dispatches and reusable calls bypass path-based change detection. A push
+that creates a `release/v*` branch also enables frontend jobs once the workflow
+has been triggered; it does not bypass the push path filter. Publishing still
+requires a `main` or `release/v*` ref and successful version resolution and tests.
+All jobs remain dependent on the non-fork `check-repository` gate.
+
 ## Manual Runs and Retries
 
 Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
