@@ -2,8 +2,8 @@
 
 # Posts queued messages and completion replies, also broadcast to the channel.
 # Correlates messages by source-run metadata; missing parents produce standalone results.
-# Ordered name patterns include ** first, then exclude PR checks and this notifier.
-# Keep quoted exclusions aligned with workflow names when renaming workflows.
+# Explicitly subscribes to repository-owned workflows, excluding PR checks and this notifier.
+# Keep the subscription list aligned with workflow names when adding or renaming workflows.
 # Uses trusted default-branch helpers; fork sources are excluded and failures are non-blocking.
 
 name: Notify workflow completions
@@ -11,9 +11,11 @@ name: Notify workflow completions
 on:
   workflow_run:
     workflows:
-      - '**'
-      - '!Build and test pull request'
-      - '!Notify workflow completions'
+      - Build, test, and publish nonprod images
+      - Build, test, and publish PROD tag images
+      - Build, test, and publish nonprod tag images
+      - Nightly e2e tests
+      - Upload PROD test results to SharePoint
     types: [requested, completed]
 
 permissions: {}
@@ -54,7 +56,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.21.0'
+          node-version: "24.21.0"
       - name: Fetch Slack bot token
         id: vault
         uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
