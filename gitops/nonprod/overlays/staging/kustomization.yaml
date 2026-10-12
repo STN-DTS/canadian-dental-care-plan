@@ -1,0 +1,65 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: canada-dental-care-plan
+nameSuffix: -staging
+labels:
+  - pairs:
+      app.kubernetes.io/instance: staging
+    includeSelectors: true
+  - pairs:
+      app.kubernetes.io/part-of: canada-dental-care-plan
+      app.kubernetes.io/managed-by: teamcity
+      app.kubernetes.io/cluster: dts-dev-sced-rhp-spoke-aks
+      app.kubernetes.io/environment: staging
+      app.kubernetes.io/tier: nonprod
+resources:
+  - ../../base/error-pages/404
+  - ../../base/frontend/
+  - ../../base/fluentd-archiver/
+  - ../../base/redis/
+  - ./external-secrets.yaml
+  - ./hpas.yaml
+  # For renewal application downtime with a 404 response, uncomment ./ingresses-renew-error-404.yaml and comment ./ingresses.yaml
+  - ./ingresses.yaml
+  # - ./ingresses-renew-error-404.yaml
+patches:
+  - path: ./patches/deployments.yaml
+  - path: ./patches/services.yaml
+  - path: ./patches/stateful-sets.yaml
+configMapGenerator:
+  - name: frontend
+    behavior: merge
+    envs:
+      - ./configs/frontend/config.conf
+  - name: frontend-fluentd
+    behavior: create
+    files:
+      - ./configs/frontend/fluentd.conf
+  - name: redis
+    behavior: merge
+    files:
+      - ./configs/redis/replica.conf
+      - ./configs/redis/sentinel.conf
+  - name: oauth-proxy
+    behavior: create
+    files:
+      - ./configs/oauth-proxy/config.conf
+secretGenerator:
+  - name: frontend
+    behavior: replace
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true
+  - name: oauth-proxy
+    behavior: create
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true
+  - name: redis
+    behavior: replace
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true

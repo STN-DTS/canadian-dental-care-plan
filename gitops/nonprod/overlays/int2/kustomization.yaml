@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: canada-dental-care-plan
+nameSuffix: -int2
+labels:
+  - pairs:
+      app.kubernetes.io/instance: int2
+    includeSelectors: true
+  - pairs:
+      app.kubernetes.io/part-of: canada-dental-care-plan
+      app.kubernetes.io/managed-by: teamcity
+      app.kubernetes.io/cluster: dts-dev-sced-rhp-spoke-aks
+      app.kubernetes.io/environment: int2
+      app.kubernetes.io/tier: nonprod
+resources:
+  - ../../base/frontend/
+  - ../../base/redis/
+  - ./external-secrets.yaml
+  - ./ingresses.yaml
+patches:
+  - path: ./patches/deployments.yaml
+  - path: ./patches/services.yaml
+  - path: ./patches/stateful-sets.yaml
+configMapGenerator:
+  - name: frontend
+    behavior: merge
+    envs:
+      - ./configs/frontend/config.conf
+  - name: redis
+    behavior: merge
+    files:
+      - ./configs/redis/replica.conf
+      - ./configs/redis/sentinel.conf
+  - name: oauth-proxy
+    behavior: create
+    files:
+      - ./configs/oauth-proxy/config.conf
+secretGenerator:
+  - name: frontend
+    behavior: replace
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true
+  - name: oauth-proxy
+    behavior: create
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true
+  - name: redis
+    behavior: replace
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true

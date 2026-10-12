@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: canada-dental-care-plan
+nameSuffix: -prototype
+labels:
+  - pairs:
+      app.kubernetes.io/instance: prototype
+    includeSelectors: true
+  - pairs:
+      app.kubernetes.io/part-of: canada-dental-care-plan
+      app.kubernetes.io/managed-by: teamcity
+      app.kubernetes.io/cluster: dts-dev-sced-rhp-spoke-aks
+      app.kubernetes.io/environment: prototype
+      app.kubernetes.io/tier: nonprod
+resources:
+  - ../../base/frontend/
+  - ./external-secrets.yaml
+  - ./ingresses.yaml
+patches:
+  - path: ./patches/deployments.yaml
+configMapGenerator:
+  - name: frontend
+    behavior: merge
+    envs:
+      - ./configs/frontend/config.conf
+secretGenerator:
+  - name: frontend
+    behavior: replace
+    options:
+      # disable suffix hash so it can effectively
+      # be managed by external secrets operator
+      disableNameSuffixHash: true

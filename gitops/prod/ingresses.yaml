@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: frontend
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: wildcardservicecanadaca
+      hosts:
+        - srv024.service.canada.ca
+  rules:
+    - host: srv024.service.canada.ca
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-internal
+  labels:
+    app.kubernetes.io/name: frontend
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: proddpinternaldtsstncom
+      hosts:
+        - canada-dental-care-plan.prod-dp-internal.dts-stn.com
+  rules:
+    - host: canada-dental-care-plan.prod-dp-internal.dts-stn.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http

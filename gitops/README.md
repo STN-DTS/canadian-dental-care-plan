@@ -3,100 +3,105 @@
 This repository contains the Kustomize configuration and application manifests used to manage both the production and
 non-production Canadian Dental Care Plan Kubernetes clusters.
 
-All resources deploy to the `canada-dental-care-plan` namespace. Environments are distinguished by a `nameSuffix`
-(e.g., `-dev`, `-prod`) applied to every resource name.
+All resources deploy to the `canada-dental-care-plan` namespace. Nonproduction environments use a `nameSuffix`
+(e.g., `-dev`); production preserves its existing unsuffixed resource names.
 
 ## Repository Structure
 
 ```text
 gitops/
-├── base/                   # Environment-agnostic resource definitions
-│   ├── error-pages/404/    # Custom nginx 404 error page
-│   ├── fluentd-archiver/   # Centralized audit log aggregation
-│   ├── frontend/           # Node.js/React web application
-│   ├── maintenance/        # 503 maintenance page
-│   ├── redis/              # Redis with Sentinel high availability
-│   ├── reloader/           # Stakater Reloader (auto-restart on config changes)
-│   └── squid-proxy/        # HTTP/HTTPS forward proxy
-├── overlays/               # Environment-specific customizations
-│   ├── dev/                # Development environment
-│   ├── int1/               # Integration environment 1
-│   ├── int2/               # Integration environment 2
-│   ├── otto/               # Otto integration environment
-│   ├── perf/               # Performance testing environment
-│   ├── prod/               # Production environment
-│   ├── prototype/          # Prototype environment
-│   ├── shared/             # Shared non-prod services (maintenance, reloader, squid-proxy)
-│   ├── staging/            # Staging (production-like) environment
-│   ├── training/           # Training environment
-│   ├── uat1/               # User acceptance testing 1
-│   └── uat2/               # User acceptance testing 2
+├── nonprod/                # Independent nonproduction source tree
+│   ├── base/               # Nonproduction-only component definitions
+│   └── overlays/           # Eleven nonproduction environments
+└── prod/                   # Standalone production root
+  ├── kustomization.yaml
+  ├── deployments.yaml    # Effective production deployment definitions
+  ├── services.yaml
+  ├── stateful-sets.yaml
+  ├── pvcs.yaml
+  ├── service-accounts.yaml
+  ├── roles.yaml
+  ├── role-bindings.yaml
+  ├── hpas.yaml
+  ├── external-secrets.yaml
+  ├── ingresses.yaml      # Active routing; alternatives are local files
+  └── configs/            # Production-only generator inputs
 ```
 
-See [base/README.md](base/README.md) for details on each base component and the individual overlay READMEs for
-environment-specific configuration.
+Use [nonprod/README.md](nonprod/README.md) for nonproduction and [prod/README.md](prod/README.md) for production.
+The old root-level `base/` and `overlays/` directories have been removed. Validation tooling and the
+[migration plan](../.github/plans/gitops-nonprod-prod-split.md) live outside the manifest tree.
 
 ## Environment Feature Matrix
 
-| Environment                               | Tier | Frontend | Redis | OAuth Proxy | Fluentd Logging | HPA (Auto-scaling) | Error Pages (404) | Maintenance Page | Reloader | Squid Proxy |
-| ----------------------------------------- | ---- | -------- | ----- | ----------- | --------------- | ------------------ | ----------------- | ---------------- | -------- | ----------- |
-| [Dev](overlays/dev/README.md)             | np   | ✅       | ❌    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Int1](overlays/int1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Int2](overlays/int2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Otto](overlays/otto/README.md)           | np   | ✅       | ✅    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Perf](overlays/perf/README.md)           | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ❌                | ❌               | ❌       | ❌          |
-| [Prod](overlays/prod/README.md)           | prod | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ✅               | ✅       | ❌          |
-| [Prototype](overlays/prototype/README.md) | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Shared](overlays/shared/README.md)       | np   | ❌       | ❌    | ❌          | ❌              | ❌                 | ❌                | ✅               | ✅       | ✅          |
-| [Staging](overlays/staging/README.md)     | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ❌               | ❌       | ❌          |
-| [Training](overlays/training/README.md)   | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [UAT1](overlays/uat1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
-| [UAT2](overlays/uat2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
+| Environment                                       | Tier | Frontend | Redis | OAuth Proxy | Fluentd Logging | HPA (Auto-scaling) | Error Pages (404) | Maintenance Page | Reloader | Squid Proxy |
+| ------------------------------------------------- | ---- | -------- | ----- | ----------- | --------------- | ------------------ | ----------------- | ---------------- | -------- | ----------- |
+| [Dev](nonprod/overlays/dev/README.md)             | np   | ✅       | ❌    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Int1](nonprod/overlays/int1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Int2](nonprod/overlays/int2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Otto](nonprod/overlays/otto/README.md)           | np   | ✅       | ✅    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Perf](nonprod/overlays/perf/README.md)           | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ❌                | ❌               | ❌       | ❌          |
+| [Prod](prod/README.md)                            | prod | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ✅               | ✅       | ❌          |
+| [Prototype](nonprod/overlays/prototype/README.md) | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Shared](nonprod/overlays/shared/README.md)       | np   | ❌       | ❌    | ❌          | ❌              | ❌                 | ❌                | ✅               | ✅       | ✅          |
+| [Staging](nonprod/overlays/staging/README.md)     | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ❌               | ❌       | ❌          |
+| [Training](nonprod/overlays/training/README.md)   | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [UAT1](nonprod/overlays/uat1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
+| [UAT2](nonprod/overlays/uat2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
 
 > **np** = nonprod
 
 ## Key Patterns
 
-- **External Secrets** — Overlays use `ExternalSecret` resources to pull secrets from HashiCorp Vault
+- **External Secrets** — Environment roots use `ExternalSecret` resources to pull secrets from HashiCorp Vault
   (`secretStoreRef: vault-backend`), refreshing every hour.
 - **Reloader** — Deployments annotated with `secret.reloader.stakater.com/auto: 'true'` automatically restart
   when their referenced secrets change.
-- **Strategic Merge Patches** — Overlays inject sidecars (oauth2-proxy, fluentd) and override images/resources
-  via patch files in `patches/`.
-- **ConfigMap/Secret Generators** — Base components define generators; overlays use `behavior: merge` or
-  `behavior: replace` to override values per environment.
+- **Strategic Merge Patches** — Nonprod overlays inject sidecars (oauth2-proxy, fluentd) and override images/resources
+  via patch files in `patches/`. Production contains the effective values directly.
+- **ConfigMap/Secret Generators** — Nonprod base components define generators; overlays use `behavior: merge` or
+  `behavior: replace` to override values per environment. Production defines its effective generators once.
 - **Image Registries** — Nonprod uses `dtsrhpdevscedacr.azurecr.io`; prod uses `dtsrhpprodscedspokeacr.azurecr.io`
   with pinned image versions.
 
-> **⚠️ Warning:** Changes to `base/` affect **all** environments, including production. Review base changes carefully
-> before merging. Some projects mitigate this risk by maintaining separate bases for nonprod and prod; this project
-> uses a single shared base with overlay patches to differentiate environments.
+> Production is isolated in `prod/`; changes under `nonprod/` are not production Kustomize inputs. Old deployment
+> entry points no longer exist in this revision. Coordinate consumers' source-path updates before they reconcile
+> this change. Local render equivalence does not prove a no-op live handoff. Never synchronize nonprod into production.
 
 ## Requirements
 
 This project has been tested with the following toolchain:
 
-| Tool                                               | Version  |
-| -------------------------------------------------- | -------- |
-| [Kubectl](https://kubernetes.io/docs/tasks/tools/) | ≥ 1.25.x |
-| [Kustomize](https://kustomize.io/)                 | ≥ 5.0.x  |
+| Tool                                               | Version |
+| -------------------------------------------------- | ------- |
+| [Kubectl](https://kubernetes.io/docs/tasks/tools/) | 1.37.1  |
+| Embedded [Kustomize](https://kustomize.io/)        | 5.8.1   |
+
+The PR validation job installs this pinned renderer and checks its published checksum. The actual external
+deployment toolchain and no-op source-path handoff still require operational verification.
+
+From the repository root, run `python3 -m unittest discover -s .github/scripts/gitops/tests -v` after installing
+[validation requirements](../.github/scripts/gitops/requirements.txt). The isolation guard rejects remote/escaping or missing inputs and fails
+closed for unsupported Kustomize fields, including plugin generators/transformers and Helm inputs.
 
 ## Usage
 
 ### Preview rendered manifests
 
 ```shell
-kustomize build ./overlays/{target-environment}
+kubectl kustomize ./nonprod/overlays/{target-environment}
+kubectl kustomize ./prod
 ```
 
 ### Apply manifests to a cluster
 
 ```shell
-kubectl --kubeconfig {path-to-kubeconfig} -n canada-dental-care-plan apply --kustomize ./overlays/{target-environment}
+# Deployment/apply remains outside this repository-only migration.
 ```
 
 ### Validate manifests without applying
 
 ```shell
-kubectl --kubeconfig {path-to-kubeconfig} -n canada-dental-care-plan apply --kustomize ./overlays/{target-environment} --dry-run=client
+kubectl kustomize ./nonprod/overlays/{target-environment} >/dev/null
+kubectl kustomize ./prod >/dev/null
 ```

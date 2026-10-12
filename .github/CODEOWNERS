@@ -1,5 +1,5 @@
 # Production deployment configuration owners.
-/gitops/overlays/prod/ @STN-DTS/cdcp-admins
+/gitops/prod/ @STN-DTS/cdcp-admins
 
 # Signing public-key owners for key rotation and verification trust changes.
 /.github/actions/sign-container-image/*.pub @STN-DTS/cdcp-admins

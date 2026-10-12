@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: redis
+  name: redis
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  serviceName: redis-headless
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+    spec:
+      containers:
+      - args:
+        - /data/redis.conf
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        - --masterauth
+        - $(REDIS_PASSWORD)
+        envFrom:
+        - secretRef:
+            name: redis
+        image: docker.io/redis:8.8.0
+        livenessProbe:
+          exec:
+            command:
+            - /usr/local/bin/redis-cli
+            - --pass
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 10
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        readinessProbe:
+          exec:
+            command:
+            - /usr/local/bin/redis-cli
+            - --pass
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      - args:
+        - /data/sentinel.conf
+        - --sentinel
+        image: docker.io/redis:8.8.0
+        name: redis-sentinel
+        ports:
+        - containerPort: 26379
+          name: sentinel
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      initContainers:
+      - command:
+        - bash
+        - /etc/init.sh
+        envFrom:
+        - secretRef:
+            name: redis
+        image: docker.io/redis:8.8.0
+        name: init
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        - mountPath: /etc/init.sh
+          name: config
+          subPath: init.sh
+        - mountPath: /etc/primary.conf
+          name: config
+          subPath: primary.conf
+        - mountPath: /etc/replica.conf
+          name: config
+          subPath: replica.conf
+        - mountPath: /etc/sentinel.conf
+          name: config
+          subPath: sentinel.conf
+      volumes:
+      - configMap:
+          name: redis
+        name: config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2048Mi

@@ -1,0 +1,67 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: canada-dental-care-plan
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: canada-dental-care-plan
+      app.kubernetes.io/managed-by: teamcity
+      app.kubernetes.io/cluster: dts-prod-sced-rhp-spoke-aks
+      app.kubernetes.io/environment: prod
+      app.kubernetes.io/tier: prod
+resources:
+  - ./service-accounts.yaml
+  - ./roles.yaml
+  - ./role-bindings.yaml
+  - ./services.yaml
+  - ./pvcs.yaml
+  - ./deployments.yaml
+  - ./stateful-sets.yaml
+  - ./hpas.yaml
+  - ./external-secrets.yaml
+  - ./ingresses.yaml
+  # - ./ingresses-maintenance.yaml
+  # - ./ingresses-apply-maintenance.yaml
+  # - ./ingresses-letters-maintenance.yaml
+  # - ./ingresses-renew-error-404.yaml
+configMapGenerator:
+  - name: error-404
+    files:
+      - ./configs/error-pages/404.html
+      - ./configs/error-pages/config.conf
+  - name: frontend
+    envs:
+      - ./configs/frontend/config.conf
+  - name: frontend-fluentd
+    files:
+      - ./configs/frontend/fluentd.conf
+  - name: fluentd-archiver
+    files:
+      - ./configs/fluentd-archiver/fluentd.conf
+  - name: maintenance
+    files:
+      - ./configs/maintenance/503.html
+      - ./configs/maintenance/config.conf
+    literals:
+      - startTimeEn=June 2, 2026, at 12:00 a.m. (EDT)
+      - startTimeFr=2 juin 2026 à 00 h 00 (HAE)
+      - endTimeEn=June 2, 2026, at 7:00 a.m. (EDT)
+      - endTimeFr=2 juin 2026 à 07 h 00 (HAE)
+  - name: redis
+    files:
+      - ./configs/redis/init.sh
+      - ./configs/redis/primary.conf
+      - ./configs/redis/replica.conf
+      - ./configs/redis/sentinel.conf
+  - name: oauth-proxy
+    files:
+      - ./configs/oauth-proxy/config.conf
+secretGenerator:
+  - name: frontend
+    options:
+      disableNameSuffixHash: true
+  - name: oauth-proxy
+    options:
+      disableNameSuffixHash: true
+  - name: redis
+    options:
+      disableNameSuffixHash: true
