@@ -1,0 +1,206 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Uploads exact-run test reports after a successful PROD tag build in this
+# repository. Requires this workflow on the default branch; forks are skipped.
+# Writes <release-tag>.zip to SharePoint, overwriting any existing file.
+#
+# Variables: PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL,
+# PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER (decoded path with literal spaces),
+# and AZURE_TENANT_ID. PROD_VAULT_* secrets provide access to
+# canada-dental-care-plan/data/shared/cicd/sharepoint for certificate login.
+# The application needs SharePoint write access to the destination.
+#
+# Retry using Actions > Re-run failed jobs while source reports are unexpired.
+# No image rebuild or publish occurs. New manual runs by tag are not supported.
+
+name: Upload PROD test results to SharePoint
+
+on:
+  workflow_run:
+    workflows:
+      - Build, test, and publish PROD tag images
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
+  upload-reports:
+    needs: check-repository
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') }}
+    runs-on: arc-runners-dshp-prod
+    timeout-minutes: 10
+    permissions:
+      actions: read
+    env:
+      M365_CLI_IMAGE: m365pnp/cli-microsoft365:11.11.0@sha256:75c54491828cefd2b34486df2887d0d530b6a64e72355eaf033f12add4245293
+      SHAREPOINT_SITE_URL: ${{ vars.PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL }}
+      SHAREPOINT_TEST_REPORT_FOLDER: ${{ vars.PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER }}
+      TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.21.0"
+      - name: Validate SharePoint destination
+        run: |
+          set -euo pipefail
+          : "${SHAREPOINT_SITE_URL:?PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL is required.}"
+          : "${SHAREPOINT_TEST_REPORT_FOLDER:?PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER is required.}"
+          : "${TENANT_ID:?AZURE_TENANT_ID is required.}"
+      - name: Download originating run test reports
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import { createWriteStream } from 'node:fs';
+          import { appendFile, mkdtemp, readFile, stat } from 'node:fs/promises';
+          import { join } from 'node:path';
+          import { Readable } from 'node:stream';
+          import { pipeline } from 'node:stream/promises';
+
+          const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const sourceRun = event.workflow_run;
+          const releaseTag = sourceRun.head_branch;
+          if (typeof releaseTag !== 'string' || !/^v[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$/.test(releaseTag)) {
+            throw new Error('Originating run does not identify a valid release tag.');
+          }
+
+          const artifactName = `test-reports-${sourceRun.id}-${sourceRun.run_attempt}`;
+          const headers = {
+            Authorization: `Bearer ${process.env.GH_TOKEN}`,
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          };
+          const baseUri = `${process.env.GITHUB_API_URL}/repos/${process.env.GITHUB_REPOSITORY}/actions`;
+          const artifacts = [];
+          for (let page = 1; ; page++) {
+            const response = await fetch(`${baseUri}/runs/${sourceRun.id}/artifacts?per_page=100&page=${page}`, { headers });
+            if (!response.ok) {
+              throw new Error(`Listing test-report artifacts failed: HTTP ${response.status}.`);
+            }
+            const result = await response.json();
+            artifacts.push(...result.artifacts.filter(artifact => artifact.name === artifactName));
+            if (result.artifacts.length < 100) break;
+          }
+          if (artifacts.length !== 1 || artifacts[0].expired) {
+            throw new Error('Expected one unexpired test-report artifact from the originating run attempt.');
+          }
+
+          const reportDirectory = await mkdtemp(join(process.env.RUNNER_TEMP, 'cdcp-sharepoint-reports-'));
+          const archivePath = join(reportDirectory, `${releaseTag}.zip`);
+          await appendFile(process.env.GITHUB_ENV, `REPORT_DIRECTORY=${reportDirectory}\nREPORT_ARCHIVE_PATH=${archivePath}\n`);
+          const response = await fetch(`${baseUri}/artifacts/${artifacts[0].id}/zip`, { headers });
+          if (!response.ok) {
+            throw new Error(`Downloading test reports failed: HTTP ${response.status}.`);
+          }
+          await pipeline(Readable.fromWeb(response.body), createWriteStream(archivePath));
+          if ((await stat(archivePath)).size === 0) {
+            throw new Error('Downloaded test-report archive is empty.');
+          }
+          NODE
+      - name: Pull Microsoft 365 CLI image
+        run: |
+          set -euo pipefail
+          docker pull --platform linux/amd64 "$M365_CLI_IMAGE"
+      - name: Fetch SharePoint credentials
+        id: vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          exportEnv: false
+          exportToken: false
+          method: approle
+          roleId: ${{ secrets.PROD_VAULT_APPROLE_ROLE_ID }}
+          secretId: ${{ secrets.PROD_VAULT_APPROLE_SECRET_ID }}
+          secrets: |
+            canada-dental-care-plan/data/shared/cicd/sharepoint SHAREPOINT_CLIENT_CERT_PFX | CLIENT_CERT_PFX;
+            canada-dental-care-plan/data/shared/cicd/sharepoint SHAREPOINT_CLIENT_CERT_PFX_PASSWORD | CLIENT_CERT_PFX_PASSWORD;
+            canada-dental-care-plan/data/shared/cicd/sharepoint SHAREPOINT_CLIENT_ID | CLIENT_ID;
+          url: ${{ secrets.PROD_VAULT_URL }}
+
+      - name: Upload reports to SharePoint
+        env:
+          CLIENT_CERT_PFX_PASSWORD: ${{ steps.vault.outputs.CLIENT_CERT_PFX_PASSWORD }}
+          CLIENT_CERT_PFX: ${{ steps.vault.outputs.CLIENT_CERT_PFX }}
+          CLIENT_ID: ${{ steps.vault.outputs.CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          : "${CLIENT_ID:?SharePoint client ID is required.}"
+          : "${CLIENT_CERT_PFX:?SharePoint certificate is required.}"
+          : "${REPORT_ARCHIVE_PATH:?Test-report archive is required.}"
+
+          M365_CONTAINER_NAME="cdcp-sharepoint-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf 'M365_CONTAINER_NAME=%s\n' "$M365_CONTAINER_NAME" >> "$GITHUB_ENV"
+          export CONTAINER_ARCHIVE_PATH="/reports/$(basename "$REPORT_ARCHIVE_PATH")"
+          docker run --rm --interactive \
+            --name "$M365_CONTAINER_NAME" \
+            --platform linux/amd64 \
+            --user "$(id -u):$(id -g)" \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
+            --volume "$REPORT_DIRECTORY:/reports:ro" \
+            --env CLIENT_CERT_PFX_PASSWORD \
+            --env CLIENT_CERT_PFX \
+            --env CLIENT_ID \
+            --env TENANT_ID \
+            --env SHAREPOINT_SITE_URL \
+            --env SHAREPOINT_TEST_REPORT_FOLDER \
+            --env CONTAINER_ARCHIVE_PATH \
+            --entrypoint bash \
+            "$M365_CLI_IMAGE" -s <<'BASH'
+          set -euo pipefail
+          umask 077
+          test -s "$CONTAINER_ARCHIVE_PATH"
+          export HOME
+          HOME="$(mktemp -d /tmp/cdcp-m365-auth.XXXXXX)"
+          cleanup() {
+            m365 logout --output none >/dev/null 2>&1 || true
+            rm -rf -- "$HOME"
+          }
+          trap cleanup EXIT
+          printf '%s' "$CLIENT_CERT_PFX" | base64 --decode > "$HOME/client-cert.pfx"
+
+          m365 login \
+            --authType certificate \
+            --appId "$CLIENT_ID" \
+            --tenant "$TENANT_ID" \
+            --certificateFile "$HOME/client-cert.pfx" \
+            --password "$CLIENT_CERT_PFX_PASSWORD" \
+            --output none
+          m365 spo file add \
+            --webUrl "$SHAREPOINT_SITE_URL" \
+            --folder "$SHAREPOINT_TEST_REPORT_FOLDER" \
+            --path "$CONTAINER_ARCHIVE_PATH" \
+            --overwrite true \
+            --output none
+          BASH
+
+          printf 'Uploaded `%s` to SharePoint.\n' "$(basename "$REPORT_ARCHIVE_PATH")" >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up upload container and reports
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${M365_CONTAINER_NAME:-}" ]]; then
+            docker rm --force "$M365_CONTAINER_NAME" >/dev/null 2>&1 || true
+          fi
+          if [[ -n "${REPORT_DIRECTORY:-}" ]]; then
+            rm -rf -- "$REPORT_DIRECTORY"
+          fi
