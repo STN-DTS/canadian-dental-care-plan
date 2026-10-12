@@ -105,7 +105,7 @@ function createResultAttachment(run, repository, serverUrl, action) {
  * @param {{channelId: string, serverUrl: string}} options Rendering configuration.
  * @returns {object} Slack workflow notification payload.
  */
-function createCompletionPayload(event, options) {
+function createWorkflowPayload(event, options) {
   const run = event.workflow_run;
   const [label] = resultPresentation(run.conclusion, event.action);
   const url = new URL(run.html_url);
@@ -158,21 +158,68 @@ async function fetchArtifactCount(run, repository, options) {
 }
 
 /**
- * Finds a queued parent by repository, run ID, and attempt in bounded Slack history.
+ * Resolves the Slack token's authenticated user before trusting queued messages.
+ * @param {{slackToken: string, fetch?: typeof globalThis.fetch}} options Slack API configuration.
+ * @returns {Promise<string>} Authenticated Slack user ID.
+ * @throws {Error} When the request fails or does not identify a user.
+ */
+async function fetchSlackUserId(options) {
+  const identityResponse = await (options.fetch ?? globalThis.fetch)(new URL('https://slack.com/api/auth.test'), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${options.slackToken}` },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!identityResponse.ok) throw new Error('Slack identity unavailable');
+  const identity = await identityResponse.json();
+  if (identity?.ok !== true || typeof identity.user_id !== 'string' || !identity.user_id.trim()) {
+    throw new Error('Slack identity unavailable');
+  }
+  return identity.user_id;
+}
+
+/**
+ * Checks sender identity, run metadata, and whether a message is a thread parent.
+ * @param {object} message Slack history message.
+ * @param {{userId: string, repository: string, runId: string, runAttempt: string}} expected Required sender and source run.
+ * @returns {boolean} Whether this is the queued parent for the source run.
+ */
+function matchesQueuedParent(message, expected) {
+  if (message.user !== expected.userId) return false;
+
+  const metadata = message.metadata;
+  const context = metadata?.event_payload;
+  if (metadata?.event_type !== 'cdcp_workflow_run' || context?.action !== 'requested') return false;
+  if (context.repository !== expected.repository || context.run_id !== expected.runId || context.run_attempt !== expected.runAttempt) return false;
+  if (message.thread_ts && message.thread_ts !== message.ts) return false;
+
+  return typeof message.ts === 'string' && /^\d+\.\d+$/.test(message.ts);
+}
+
+/**
+ * Finds the authenticated bot's queued parent in bounded Slack history.
  * @param {object} run Originating workflow run; created_at bounds history when valid.
  * @param {string} repository Repository full name.
  * @param {{channelId: string, slackToken: string, fetch?: typeof globalThis.fetch}} options Slack API configuration.
- * @returns {Promise<string | null>} Parent message timestamp, or null when no match exists.
- * @throws {Error} When history is unavailable, malformed, or exceeds ten pages.
+ * @returns {Promise<string | null>} Parent timestamp, or null when no match exists.
+ * @throws {Error} When identity/history is unavailable, malformed, or exceeds ten pages.
  */
 async function findQueueMessage(run, repository, options) {
+  const expected = {
+    userId: await fetchSlackUserId(options),
+    repository,
+    runId: String(run.id),
+    runAttempt: String(run.run_attempt),
+  };
   const createdAt = Date.parse(run.created_at);
   async function fetchPage(page, cursor) {
     const endpoint = new URL('https://slack.com/api/conversations.history');
     endpoint.searchParams.set('channel', options.channelId);
     endpoint.searchParams.set('include_all_metadata', 'true');
     endpoint.searchParams.set('limit', '100');
-    if (Number.isFinite(createdAt)) endpoint.searchParams.set('oldest', String(Math.max(0, Math.floor(createdAt / 1000) - 60)));
+    if (Number.isFinite(createdAt)) {
+      const earliestTimestamp = Math.max(0, Math.floor(createdAt / 1000) - 60);
+      endpoint.searchParams.set('oldest', String(earliestTimestamp));
+    }
     if (cursor) endpoint.searchParams.set('cursor', cursor);
     const response = await (options.fetch ?? globalThis.fetch)(endpoint, {
       headers: { Authorization: `Bearer ${options.slackToken}` },
@@ -181,20 +228,7 @@ async function findQueueMessage(run, repository, options) {
     if (!response.ok) throw new Error('Slack history unavailable');
     const data = await response.json();
     if (!data.ok || !Array.isArray(data.messages)) throw new Error('Slack history unavailable');
-    const message = data.messages.find((message) => {
-      const metadata = message.metadata;
-      const context = metadata?.event_payload;
-      return (
-        metadata?.event_type === 'cdcp_workflow_run' &&
-        context?.action === 'requested' &&
-        context.repository === repository &&
-        context.run_id === String(run.id) &&
-        context.run_attempt === String(run.run_attempt) &&
-        (!message.thread_ts || message.thread_ts === message.ts) &&
-        typeof message.ts === 'string' &&
-        /^\d+\.\d+$/.test(message.ts)
-      );
-    });
+    const message = data.messages.find((message) => matchesQueuedParent(message, expected));
     if (message) return message.ts;
     const nextCursor = data.response_metadata?.next_cursor?.trim() ?? '';
     if (!nextCursor) {
@@ -214,7 +248,7 @@ async function findQueueMessage(run, repository, options) {
  * @returns {Promise<object>} Slack payload without tokens.
  */
 export async function buildPayload(event, options) {
-  const payload = createCompletionPayload(event, options);
+  const payload = createWorkflowPayload(event, options);
   if (event.action === 'requested') return payload;
   const run = event.workflow_run;
   const repository = event.repository.full_name;

@@ -84,8 +84,10 @@ That workflow must exist on the default branch to receive these events.
 
 Requested events create blue **Queued** messages without duration or artifact lookup.
 Both phases attach `cdcp_workflow_run` metadata containing the repository, run ID,
-attempt, and action. Completion searches channel history with
-`include_all_metadata=true` for an exact matching requested parent, then sets
+attempt, and action. Completion verifies the token's user ID with `auth.test`,
+then searches channel history with `include_all_metadata=true` for a requested
+parent posted by that user with matching run metadata. `auth.test` needs no extra scopes.
+The payload sets
 `thread_ts` and `reply_broadcast: true` so the result appears in the thread and channel.
 
 History lookup scans at most ten pages of 100 messages with ten-second request
@@ -93,8 +95,9 @@ timeouts. When available, the source run's creation time bounds the search with
 a sixty-second clock-skew allowance. Internal Slack apps use Tier 3 history limits;
 non-Marketplace commercially distributed apps may face stricter limits.
 
-Missing parents, insufficient scopes, rate limits, malformed responses, or lookup
-failures preserve a standalone completion message. This includes reruns, because
+Unverified bot identity, missing parents, insufficient scopes, rate limits,
+malformed responses, or lookup failures preserve a standalone completion message.
+This includes reruns, because
 GitHub does not emit `requested` again, and fast workflows whose queued message
 has not been posted yet. Different runs and attempts never share a thread.
 Retrying a notifier can post duplicates; metadata lookup does not make posting atomic.

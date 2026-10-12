@@ -25,7 +25,9 @@ const options = {
   serverUrl: 'https://github.com',
   apiUrl: 'https://api.github.com',
 };
-const response = async (artifacts) => await Promise.resolve({ ok: true, json: async () => await Promise.resolve({ artifacts }) });
+const jsonResponse = async (body) => await Promise.resolve({ ok: true, json: async () => await Promise.resolve(body) });
+const response = async (artifacts) => await jsonResponse({ artifacts });
+const identityResponse = async () => await jsonResponse({ ok: true, user_id: 'U123BOT' });
 
 test('renders requested workflows as queued without duration or artifact lookup', async () => {
   const payload = await buildPayload(
@@ -85,39 +87,24 @@ test('finds queued-message metadata and broadcasts completion in its thread', as
       fetch: async (url, config) => {
         calls.push(String(url));
         if (url.origin === 'https://slack.com') {
+          assert.equal(config.headers.Authorization, 'Bearer slack-fixture-token');
+          assert.ok(config.signal instanceof AbortSignal);
+          if (url.pathname === '/api/auth.test') {
+            assert.equal(config.method, 'POST');
+            return await identityResponse();
+          }
           assert.equal(url.pathname, '/api/conversations.history');
           assert.equal(url.searchParams.get('channel'), 'C123');
           assert.equal(url.searchParams.get('include_all_metadata'), 'true');
           assert.equal(url.searchParams.get('oldest'), '1791763140');
-          assert.equal(config.headers.Authorization, 'Bearer slack-fixture-token');
-          assert.ok(config.signal instanceof AbortSignal);
-          return {
-            ok: true,
-            json: async () =>
-              await Promise.resolve({
-                ok: true,
-                messages: [
-                  {
-                    ts: '1791763200.000001',
-                    metadata: {
-                      event_type: 'cdcp_workflow_run',
-                      event_payload: {
-                        repository: 'org/repo',
-                        run_id: '123',
-                        run_attempt: '2',
-                        action: 'requested',
-                      },
-                    },
-                  },
-                ],
-              }),
-          };
+          return await jsonResponse({ ok: true, messages: [queuedMessage()] });
         }
         return await response([]);
       },
     },
   );
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0], 'https://slack.com/api/auth.test');
   assert.equal(payload.thread_ts, '1791763200.000001');
   assert.equal(payload.reply_broadcast, true);
   assert.ok(!JSON.stringify(payload).includes('slack-fixture-token'));
@@ -126,6 +113,7 @@ test('finds queued-message metadata and broadcasts completion in its thread', as
 function queuedMessage(context = {}, overrides = {}) {
   return {
     ts: '1791763200.000001',
+    user: 'U123BOT',
     metadata: {
       event_type: 'cdcp_workflow_run',
       event_payload: {
@@ -140,6 +128,23 @@ function queuedMessage(context = {}, overrides = {}) {
   };
 }
 
+test('rejects copied queue metadata from another Slack sender', async () => {
+  const payload = await buildPayload(event, {
+    ...options,
+    slackToken: 'slack-fixture-token',
+    fetch: async (url) => {
+      if (url.origin !== 'https://slack.com') return await response([]);
+      if (url.pathname === '/api/auth.test') return await identityResponse();
+      return await jsonResponse({
+        ok: true,
+        messages: [queuedMessage({}, { user: 'UOTHER', ts: '1791763200.999999' }), queuedMessage()],
+      });
+    },
+  });
+  assert.equal(payload.thread_ts, '1791763200.000001');
+  assert.equal(payload.reply_broadcast, true);
+});
+
 test('paginates Slack history and ignores other runs, attempts, repositories, and replies', async () => {
   let pages = 0;
   const payload = await buildPayload(event, {
@@ -147,37 +152,44 @@ test('paginates Slack history and ignores other runs, attempts, repositories, an
     slackToken: 'slack-fixture-token',
     fetch: async (url) => {
       if (url.origin !== 'https://slack.com') return await response([]);
+      if (url.pathname === '/api/auth.test') return await identityResponse();
       pages++;
       assert.equal(url.searchParams.get('cursor'), pages === 1 ? null : 'next-page');
-      return {
+      if (pages === 2) return await jsonResponse({ ok: true, messages: [queuedMessage()] });
+      return await jsonResponse({
         ok: true,
-        json: async () =>
-          await Promise.resolve(
-            pages === 1
-              ? {
-                  ok: true,
-                  messages: [
-                    queuedMessage({ repository: 'other/repo' }),
-                    queuedMessage({ run_id: '999' }),
-                    queuedMessage({ run_attempt: '1' }),
-                    queuedMessage({ action: 'completed' }),
-                    queuedMessage({}, { metadata: { event_type: 'other' } }),
-                    queuedMessage({}, { thread_ts: '1791763200.999999' }),
-                    queuedMessage({}, { ts: 'invalid' }),
-                    { ts: '1791763200.000002' },
-                  ],
-                  has_more: true,
-                  response_metadata: { next_cursor: 'next-page' },
-                }
-              : { ok: true, messages: [queuedMessage()] },
-          ),
-      };
+        messages: [
+          queuedMessage({ repository: 'other/repo' }),
+          queuedMessage({ run_id: '999' }),
+          queuedMessage({ run_attempt: '1' }),
+          queuedMessage({ action: 'completed' }),
+          queuedMessage({}, { metadata: { event_type: 'other' } }),
+          queuedMessage({}, { thread_ts: '1791763200.999999' }),
+          queuedMessage({}, { ts: 'invalid' }),
+          { ts: '1791763200.000002' },
+        ],
+        has_more: true,
+        response_metadata: { next_cursor: 'next-page' },
+      });
     },
   });
   assert.equal(pages, 2);
   assert.equal(payload.thread_ts, '1791763200.000001');
   assert.equal(payload.reply_broadcast, true);
 });
+
+const historyResponses = {
+  'missing parent': { ok: true, messages: [] },
+  api: { ok: false, error: 'missing_scope' },
+  malformed: { ok: true },
+  'missing cursor': { ok: true, messages: [], has_more: true },
+  'pagination limit': {
+    ok: true,
+    messages: [],
+    has_more: true,
+    response_metadata: { next_cursor: 'more' },
+  },
+};
 
 for (const mode of ['missing parent', 'http', 'api', 'rate limit', 'network', 'malformed', 'missing cursor', 'pagination limit']) {
   test(`posts standalone completion after Slack history ${mode}`, async () => {
@@ -189,29 +201,72 @@ for (const mode of ['missing parent', 'http', 'api', 'rate limit', 'network', 'm
       warn: (warning) => warnings.push(warning),
       fetch: async (url) => {
         if (url.origin !== 'https://slack.com') return await response([{ expired: false }]);
+        if (url.pathname === '/api/auth.test') return await identityResponse();
         requests++;
         if (mode === 'network') throw new Error('slack-fixture-token');
         if (mode === 'http' || mode === 'rate limit') return { ok: false, status: mode === 'rate limit' ? 429 : 503 };
-        const data =
-          mode === 'api'
-            ? { ok: false, error: 'missing_scope' }
-            : mode === 'malformed'
-              ? { ok: true }
-              : mode === 'missing cursor'
-                ? { ok: true, messages: [], has_more: true }
-                : mode === 'pagination limit'
-                  ? {
-                      ok: true,
-                      messages: [],
-                      has_more: true,
-                      response_metadata: { next_cursor: 'more' },
-                    }
-                  : { ok: true, messages: [] };
-        return { ok: true, json: async () => await Promise.resolve(data) };
+        return await jsonResponse(historyResponses[mode]);
       },
     });
     assert.equal(requests, mode === 'pagination limit' ? 10 : 1);
     assert.equal(warnings.length, mode === 'missing parent' ? 0 : 1);
+    assert.equal(Object.hasOwn(payload, 'thread_ts'), false);
+    assert.equal(Object.hasOwn(payload, 'reply_broadcast'), false);
+    assert.equal(payload.attachments[0].blocks.length, 2);
+    assert.ok(payload.text.endsWith('*Succeeded*'));
+    assert.ok(!JSON.stringify({ payload, warnings }).includes('slack-fixture-token'));
+  });
+}
+
+for (const sender of ['UOTHER', undefined, 123]) {
+  test(`posts standalone completion for an untrusted queued sender: ${String(sender)}`, async () => {
+    const payload = await buildPayload(event, {
+      ...options,
+      slackToken: 'slack-fixture-token',
+      fetch: async (url) => {
+        if (url.origin !== 'https://slack.com') return await response([]);
+        if (url.pathname === '/api/auth.test') return await identityResponse();
+        return await jsonResponse({ ok: true, messages: [queuedMessage({}, { user: sender })] });
+      },
+    });
+    assert.equal(Object.hasOwn(payload, 'thread_ts'), false);
+    assert.equal(Object.hasOwn(payload, 'reply_broadcast'), false);
+  });
+}
+
+const invalidIdentities = {
+  api: { ok: false, error: 'invalid_auth' },
+  malformed: null,
+  'missing user': { ok: true },
+  'empty user': { ok: true, user_id: '' },
+  'blank user': { ok: true, user_id: ' ' },
+  'numeric user': { ok: true, user_id: 123 },
+};
+
+for (const mode of [...Object.keys(invalidIdentities), 'http', 'network', 'invalid JSON']) {
+  test(`posts standalone completion after Slack identity failure: ${mode}`, async () => {
+    const requests = [];
+    const warnings = [];
+    const payload = await buildPayload(event, {
+      ...options,
+      slackToken: 'slack-fixture-token',
+      warn: (warning) => warnings.push(warning),
+      fetch: async (url) => {
+        if (url.origin !== 'https://slack.com') return await response([{ expired: false }]);
+        requests.push(String(url));
+        if (mode === 'network') throw new Error('slack-fixture-token');
+        if (mode === 'http') return { ok: false, status: 503 };
+        if (mode === 'invalid JSON') {
+          return {
+            ok: true,
+            json: async () => await Promise.reject(new Error('slack-fixture-token')),
+          };
+        }
+        return await jsonResponse(invalidIdentities[mode]);
+      },
+    });
+    assert.deepEqual(requests, ['https://slack.com/api/auth.test']);
+    assert.equal(warnings.length, 1);
     assert.equal(Object.hasOwn(payload, 'thread_ts'), false);
     assert.equal(Object.hasOwn(payload, 'reply_broadcast'), false);
     assert.equal(payload.attachments[0].blocks.length, 2);
