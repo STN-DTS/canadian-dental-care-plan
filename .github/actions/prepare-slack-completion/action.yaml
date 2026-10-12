@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 name: Prepare Slack completion
+
 description: Build a Slack completion payload from a workflow_run event and artifact links
 inputs:
   channel-id:
@@ -19,7 +20,7 @@ runs:
       id: message
       shell: bash
       env:
-        SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
-        GH_TOKEN: ${{ inputs.github-token }}
         ACTION_PATH: ${{ github.action_path }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        SLACK_CHANNEL_ID: ${{ inputs.channel-id }}
       run: node "$ACTION_PATH/prepare-payload.mjs"

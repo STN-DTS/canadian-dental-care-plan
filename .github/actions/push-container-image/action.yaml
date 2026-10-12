@@ -1,0 +1,22 @@
+name: Push container image
+
+description: Push OCI image references, report published tags, and return the primary image digest
+
+inputs:
+  additional-image-refs:
+    description: Optional newline-separated image references to push after the primary image
+    default: ""
+  application-name:
+    description: Application label in the published tags summary
+    default: CDCP frontend
+  image-ref:
+    description: Primary local image reference to push
+    required: true
+
+outputs:
+  image-digest:
+    description: Immutable sha256 digest returned by the primary image push
+
+runs:
+  using: node24
+  main: push-image.mjs

@@ -10,7 +10,7 @@ on:
       - Build, test, and publish nonprod tag images
       - Build, test, and publish PROD tag images
       - Nightly e2e tests
-    types: [completed]
+    types: [ completed ]
 
 permissions: {}
 
@@ -39,8 +39,8 @@ jobs:
       - name: Checkout trusted payload action
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
+          ref: ${{ github.event.repository.default_branch }}
       - name: Validate Slack channel
         run: |
           if [[ -z "${SLACK_CHANNEL_ID//[[:space:]]/}" ]]; then
@@ -61,18 +61,18 @@ jobs:
         id: vault
         uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
         with:
-          method: approle
-          url: ${{ secrets.VAULT_URL_NONPROD }}
-          roleId: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          secretId: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
           exportEnv: false
           exportToken: false
+          method: approle
+          roleId: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          secretId: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
           secrets: |
             canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
+          url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Post completion notification
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
-          method: chat.postMessage
-          token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
           errors: true
+          method: chat.postMessage
           payload: ${{ steps.message.outputs.payload }}
+          token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}

@@ -1,27 +1,31 @@
 name: Azure ACR login
+
 description: Authenticate to Azure and Azure Container Registry
 
 inputs:
-  vault-url:
-    description: Vault URL
+  acr-domain:
+    description: Azure Container Registry domain
     required: true
-  vault-role-id:
-    description: Vault AppRole role ID
+  azure-client-id-vault-selector:
+    description: Vault API path and key for the Azure client ID (path key); the AppRole must have read access
     required: true
-  vault-secret-id:
-    description: Vault AppRole secret ID
-    required: true
-  azure-vault-path:
-    description: Vault API path holding SPN_ID and SPN_PASSWORD; the AppRole must have read access
-    default: canada-dental-care-plan/data/SPN
-  azure-tenant-id:
-    description: Azure tenant ID
+  azure-client-secret-vault-selector:
+    description: Vault API path and key for the Azure client secret (path key); the AppRole must have read access
     required: true
   azure-subscription-id:
     description: Azure subscription ID
     required: true
-  acr-domain:
-    description: Azure Container Registry domain
+  azure-tenant-id:
+    description: Azure tenant ID
+    required: true
+  vault-approle-role-id:
+    description: Vault AppRole role ID
+    required: true
+  vault-approle-secret-id:
+    description: Vault AppRole secret ID
+    required: true
+  vault-url:
+    description: Vault URL
     required: true
 
 outputs:
@@ -39,15 +43,15 @@ runs:
       id: vault
       uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
       with:
-        method: approle
-        url: ${{ inputs.vault-url }}
-        roleId: ${{ inputs.vault-role-id }}
-        secretId: ${{ inputs.vault-secret-id }}
         exportEnv: false
         exportToken: false
+        method: approle
+        roleId: ${{ inputs.vault-approle-role-id }}
+        secretId: ${{ inputs.vault-approle-secret-id }}
         secrets: |
-          ${{ inputs.azure-vault-path }} SPN_ID | AZURE_CLIENT_ID;
-          ${{ inputs.azure-vault-path }} SPN_PASSWORD | AZURE_CLIENT_SECRET;
+          ${{ inputs.azure-client-id-vault-selector }} | AZURE_CLIENT_ID;
+          ${{ inputs.azure-client-secret-vault-selector }} | AZURE_CLIENT_SECRET;
+        url: ${{ inputs.vault-url }}
     - name: Authenticate to Azure and setup ACR credentials
       shell: bash
       env:

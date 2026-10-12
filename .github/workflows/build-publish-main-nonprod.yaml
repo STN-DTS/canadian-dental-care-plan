@@ -136,9 +136,9 @@ jobs:
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.vitest.outcome == 'success' || steps.vitest.outcome == 'failure') }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
+          if-no-files-found: warn
           name: vitest-coverage-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: frontend/coverage/
-          if-no-files-found: warn
           retention-days: 7
       - name: Build frontend
         run: pnpm run build
@@ -151,13 +151,12 @@ jobs:
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
+          if-no-files-found: warn
           name: playwright-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             frontend/playwright-report/
             frontend/test-results/
-          if-no-files-found: warn
           retention-days: 7
-
   build-frontend:
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/v')) }}
     runs-on: arc-runners-dshp-dev
@@ -166,23 +165,28 @@ jobs:
       - detect-changes
       - resolve-version
       - test-frontend
+    env:
+      IMAGE_NAME: ${{ vars.NONPROD_ACR_DOMAIN }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+      PUBLIC_KEY_PATH: .github/actions/sign-container-image/nonprod-cosign-v1.pub
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify image signing configuration
         run: |
           set -euo pipefail
-          test -s .github/actions/sign-container-image/cosign.pub
+          test -s "$PUBLIC_KEY_PATH"
       - name: Authenticate to Azure and setup ACR credentials
         id: acr-login
         uses: ./.github/actions/azure-acr-login
         with:
-          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
-          azure-tenant-id: ${{ vars.ENTRA_ID_TENANT_NONPROD }}
-          azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
-          acr-domain: ${{ vars.ACR_DOMAIN_NONPROD }}
+          acr-domain: ${{ vars.NONPROD_ACR_DOMAIN }}
+          azure-client-id-vault-selector: canada-dental-care-plan/data/SPN SPN_ID
+          azure-client-secret-vault-selector: canada-dental-care-plan/data/SPN SPN_PASSWORD
+          azure-subscription-id: ${{ vars.NONPROD_AZURE_SUBSCRIPTION_ID }}
+          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Generate dynamic build variables
         id: build-vars
         uses: ./.github/actions/generate-build-vars
@@ -194,104 +198,55 @@ jobs:
           BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
           BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
           BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          IMAGE_VERSION: ${{ steps.build-vars.outputs.image-version }}
+          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
           REF_NAME: ${{ github.ref_name }}
-          RUN_NUMBER: ${{ github.run_number }}
-          SOURCE_SHA: ${{ github.sha }}
-          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+          SHORT_SHA: ${{ steps.build-vars.outputs.short-sha }}
         run: |
           set -euo pipefail
 
-          short_sha="${SOURCE_SHA:0:8}"
-          image_version="$BUILD_VERSION"
-          if [[ "$REF_NAME" == release/* ]]; then
-            rc_label=$(printf '%03d' "$RUN_NUMBER")
-            image_version="${BUILD_VERSION}-RC${rc_label}"
-          fi
           docker build \
             --file frontend/dockerfile frontend \
             --build-arg BUILD_DATE="$BUILD_DATE" \
             --build-arg BUILD_ID="$BUILD_NUMBER" \
-            --build-arg BUILD_REVISION="$short_sha" \
-            --build-arg BUILD_VERSION="$image_version" \
+            --build-arg BUILD_REVISION="$SHORT_SHA" \
+            --build-arg BUILD_VERSION="$IMAGE_VERSION" \
             --tag "$IMAGE_NAME:$BUILD_REVISION"
 
           if [[ "$REF_NAME" == main ]]; then
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$short_sha-$BUILD_NUMBER"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA-$BUILD_NUMBER"
           elif [[ "$REF_NAME" == release/* ]]; then
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$rc_label-$short_sha"
+            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$RC_LABEL-$SHORT_SHA"
           fi
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
         with:
-          image-ref: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend:${{ steps.build-vars.outputs.build-revision }}
           artifact-prefix: cdcp-frontend
-          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-revision }}
           scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Push frontend OCI image to registry
         id: push
-        env:
-          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
-          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
-          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
-          REF_NAME: ${{ github.ref_name }}
-          RUN_NUMBER: ${{ github.run_number }}
-          SOURCE_SHA: ${{ github.sha }}
-          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
-        run: |
-          set -euo pipefail
-
-          push_log="$(mktemp "$RUNNER_TEMP/image-push.XXXXXX")"
-          trap 'rm -f "$push_log"' EXIT
-          image_ref="${IMAGE_NAME}:${BUILD_REVISION}"
-
-          {
-            echo "## Published container tags"
-            echo
-            echo "| Application | Tag | Image | Source commit |"
-            echo "| --- | --- | --- | --- |"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          push_image() {
-            local image_ref="$1"
-            docker push "$image_ref" 2>&1 | tee "$push_log"
-            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
-              "${image_ref##*:}" "$image_ref" "${GITHUB_SHA:0:8}" \
-              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
-          }
-
-          push_image "$image_ref"
-          image_digest="$(awk '/digest: sha256:/ { for (i = 1; i < NF; i++) if ($i == "digest:") { print $(i + 1); exit } }' "$push_log")"
-          short_sha="${SOURCE_SHA:0:8}"
-          if [[ "$REF_NAME" == main ]]; then
-            push_image "${IMAGE_NAME}:${BUILD_VERSION}-${short_sha}"
-          elif [[ "$REF_NAME" == release/* ]]; then
-            rc_label=$(printf '%03d' "$RUN_NUMBER")
-            push_image "${IMAGE_NAME}:${BUILD_VERSION}-RC${rc_label}-${short_sha}"
-          fi
-
-          if [[ ! "$image_digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-            echo "Unable to determine the pushed frontend image digest." >&2
-            exit 1
-          fi
-
-          printf 'image-digest=%s\n' "$image_digest" >> "$GITHUB_OUTPUT"
-          printf '\nImage digest: `%s`\n' "$image_digest" >> "$GITHUB_STEP_SUMMARY"
+        uses: ./.github/actions/push-container-image
+        with:
+          additional-image-refs: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.image-version }}-${{ steps.build-vars.outputs.short-sha }}
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-revision }}
       - name: Sign and verify frontend OCI image
         uses: ./.github/actions/sign-container-image
         with:
-          image: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend@${{ steps.push.outputs.image-digest }}
-          vault-url: ${{ secrets.VAULT_URL_NONPROD }}
-          vault-role-id: ${{ secrets.VAULT_ROLE_ID_NONPROD }}
-          vault-secret-id: ${{ secrets.VAULT_SECRET_ID_NONPROD }}
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.image-digest }}
+          public-key-path: ${{ env.PUBLIC_KEY_PATH }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Promote verified frontend image to latest
         if: ${{ success() && github.ref_name == 'main' }}
         env:
           BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
           IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
-          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
         run: |
           set -euo pipefail
 
@@ -313,12 +268,10 @@ jobs:
           BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
           BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
           IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
-          IMAGE_NAME: ${{ vars.ACR_DOMAIN_NONPROD }}/canada-dental-care-plan/canada-dental-care-plan-frontend
-          RUN_NUMBER: ${{ github.run_number }}
+          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
         run: |
           set -euo pipefail
 
-          rc_label=$(printf '%03d' "$RUN_NUMBER")
           {
             echo "## Promoted verified release tags"
             echo
@@ -326,7 +279,7 @@ jobs:
             echo "| --- | --- | --- | --- |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          for image_tag in "${BUILD_VERSION}-RC${rc_label}" "${BUILD_VERSION}-RC"; do
+          for image_tag in "${BUILD_VERSION}-RC${RC_LABEL}" "${BUILD_VERSION}-RC"; do
             image_ref="${IMAGE_NAME}:${image_tag}"
             docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "$image_ref"
             docker push "$image_ref"
@@ -340,9 +293,9 @@ jobs:
         env:
           AZURE_CLIENT_ID: ${{ steps.acr-login.outputs.azure-client-id }}
           AZURE_CLIENT_SECRET: ${{ steps.acr-login.outputs.azure-client-secret }}
-          K8S_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NONPROD }}
-          K8S_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP_NONPROD }}
-          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_NONPROD }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.NONPROD_AZURE_SUBSCRIPTION_ID }}
+          K8S_CLUSTER_NAME: ${{ vars.NONPROD_AKS_CLUSTER_NAME }}
+          K8S_RESOURCE_GROUP: ${{ vars.NONPROD_AKS_RESOURCE_GROUP }}
         run: |
           set -euo pipefail
 

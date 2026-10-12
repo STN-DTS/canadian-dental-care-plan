@@ -1,22 +1,23 @@
 name: Sign container image
+
 description: Sign and verify an immutable OCI image digest with Cosign and HashiCorp Vault
 
 inputs:
-  image:
+  image-ref:
     description: Full registry image reference including an immutable sha256 digest
+    required: true
+  public-key-path:
+    description: Path to the cosign public key in the repository
+    required: true
+  vault-approle-role-id:
+    description: Vault AppRole role ID
+    required: true
+  vault-approle-secret-id:
+    description: Vault AppRole secret ID
     required: true
   vault-url:
     description: Vault URL
     required: true
-  vault-role-id:
-    description: Vault AppRole role ID
-    required: true
-  vault-secret-id:
-    description: Vault AppRole secret ID
-    required: true
-  public-key-path:
-    description: Path to the cosign public key in the repository
-    default: .github/actions/sign-container-image/cosign.pub
 
 runs:
   using: composite
@@ -25,14 +26,14 @@ runs:
       id: cosign
       uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
       with:
-        method: approle
-        url: ${{ inputs.vault-url }}
-        roleId: ${{ inputs.vault-role-id }}
-        secretId: ${{ inputs.vault-secret-id }}
         exportEnv: false
+        method: approle
+        roleId: ${{ inputs.vault-approle-role-id }}
+        secretId: ${{ inputs.vault-approle-secret-id }}
         secrets: |
           canada-dental-care-plan/data/shared/cicd/cosign COSIGN_PRIVATE_KEY | COSIGN_PRIVATE_KEY;
           canada-dental-care-plan/data/shared/cicd/cosign COSIGN_PASSWORD | COSIGN_PASSWORD;
+        url: ${{ inputs.vault-url }}
     - name: Install envsubst
       shell: bash
       run: |
@@ -50,9 +51,9 @@ runs:
     - name: Sign and verify immutable image digest
       shell: bash
       env:
-        COSIGN_PRIVATE_KEY: ${{ steps.cosign.outputs.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ steps.cosign.outputs.COSIGN_PASSWORD }}
-        IMAGE: ${{ inputs.image }}
+        COSIGN_PRIVATE_KEY: ${{ steps.cosign.outputs.COSIGN_PRIVATE_KEY }}
+        IMAGE: ${{ inputs.image-ref }}
         PUB_KEY: ${{ inputs.public-key-path }}
       run: |
         set -euo pipefail

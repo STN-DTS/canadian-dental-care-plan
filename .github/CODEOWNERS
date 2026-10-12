@@ -1,1 +1,8 @@
-/gitops/overlays/prod/ @gregory-j-baker @sebcomeau @AdamP-HRSDC-RHDCC @Fbasham
+# Production deployment configuration owners.
+/gitops/overlays/prod/ @STN-DTS/cdcp-admins
+
+# Signing public-key owners for key rotation and verification trust changes.
+/.github/actions/sign-container-image/*.pub @STN-DTS/cdcp-admins
+
+# Protect changes to ownership rules.
+/.github/CODEOWNERS @STN-DTS/cdcp-admins

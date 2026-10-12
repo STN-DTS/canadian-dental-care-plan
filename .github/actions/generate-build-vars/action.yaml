@@ -1,5 +1,6 @@
 name: Generate build variables
-description: Generate build metadata for main and feature branch images
+
+description: Generate build metadata for main, release, feature branch, and tag images
 
 inputs:
   version:
@@ -19,9 +20,18 @@ outputs:
   build-version:
     description: Version string supplied by the caller
     value: ${{ steps.build-vars.outputs.build-version }}
+  image-version:
+    description: Version used in image metadata, including the RC label for release branches
+    value: ${{ steps.build-vars.outputs.image-version }}
+  rc-label:
+    description: GitHub run number formatted as a decimal release candidate label
+    value: ${{ steps.build-vars.outputs.rc-label }}
   scan-timestamp:
     description: UTC timestamp used in scan report names
     value: ${{ steps.build-vars.outputs.scan-timestamp }}
+  short-sha:
+    description: First eight characters of the source commit SHA
+    value: ${{ steps.build-vars.outputs.short-sha }}
 
 runs:
   using: composite
@@ -40,7 +50,12 @@ runs:
 
         BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         BUILD_NUMBER=$(printf '%05x' "$RUN_NUMBER")
+        RC_LABEL=$(printf '%03d' "$RUN_NUMBER")
         SHORT_SHA=${SOURCE_SHA:0:8}
+        IMAGE_VERSION="$VERSION"
+        if [[ "$REF_TYPE" != "tag" && "$REF_NAME" == release/* ]]; then
+          IMAGE_VERSION="${VERSION}-RC${RC_LABEL}"
+        fi
 
         if [[ "$REF_TYPE" == "tag" ]]; then
           BUILD_REVISION="$SHORT_SHA"
@@ -61,5 +76,8 @@ runs:
           echo "build-number=${BUILD_NUMBER}"
           echo "build-revision=${BUILD_REVISION}"
           echo "build-version=${VERSION}"
+          echo "image-version=${IMAGE_VERSION}"
+          echo "rc-label=${RC_LABEL}"
           echo "scan-timestamp=$(date -u +'%Y%m%d-%H%M%S')"
+          echo "short-sha=${SHORT_SHA}"
         } >> "$GITHUB_OUTPUT"
