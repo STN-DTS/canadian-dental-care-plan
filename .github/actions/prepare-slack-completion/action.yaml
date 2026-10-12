@@ -1,7 +1,12 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Creates a Slack completion payload with source-run status and artifact links.
+# Reads GitHub metadata only; posting the payload and supplying Slack credentials are caller responsibilities.
+
 name: Prepare Slack completion
 
-description: Build a Slack completion payload from a workflow_run event and artifact links
+description: Create a Slack completion payload with workflow status and source-run artifact links
+
 inputs:
   channel-id:
     description: Destination Slack channel

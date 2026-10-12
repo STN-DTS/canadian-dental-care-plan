@@ -1,4 +1,8 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Tests the frontend and scans, publishes, and signs OCI images for v* tags.
+# Uses PROD ACR and runners; manual runs must target a valid release tag.
+
 name: Build, test, and publish PROD tag images
 
 permissions:
@@ -18,7 +22,6 @@ env:
   CI: true
 
 jobs:
-
   check-repository:
     if: ${{ github.event.repository.fork != true }}
     runs-on: ubuntu-latest

@@ -1,6 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Authenticates to Azure and ACR with Vault-managed service principal credentials.
+# Exposes isolated Azure/Docker credential directories; callers must remove them.
+
 name: Azure ACR login
 
-description: Authenticate to Azure and Azure Container Registry
+description: Authenticate to Azure and ACR using Vault-managed service principal credentials
 
 inputs:
   acr-domain:

@@ -1,8 +1,8 @@
-# ============================================================================
-# Workflow: Build, test, and publish nonprod tag images
-# Purpose:  Validates the frontend and publishes release-tagged images to nonprod ACR.
-# Security: Third-party GitHub Actions are pinned to immutable commit SHAs.
-# ============================================================================
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Tests the frontend and scans, publishes, and signs OCI images for v* tags.
+# Uses nonprod ACR and runners; manual runs must target a valid release tag.
+
 name: Build, test, and publish nonprod tag images
 
 permissions: read-all

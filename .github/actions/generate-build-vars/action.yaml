@@ -1,6 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Generates OCI build metadata for main, release branches, feature branches, and tags.
+# Returns versions, revisions, timestamps, and RC labels without registry access.
+
 name: Generate build variables
 
-description: Generate build metadata for main, release, feature branch, and tag images
+description: Generate version, revision, timestamp, and release-candidate metadata for OCI images
 
 inputs:
   version:

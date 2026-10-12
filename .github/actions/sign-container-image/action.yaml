@@ -1,6 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Signs an immutable OCI image digest with a Vault-managed key and verifies it.
+# Requires existing registry credentials and a repository Cosign public key.
+
 name: Sign container image
 
-description: Sign and verify an immutable OCI image digest with Cosign and HashiCorp Vault
+description: Sign an immutable OCI image digest with a Vault-managed key and verify it with Cosign
 
 inputs:
   image-ref:

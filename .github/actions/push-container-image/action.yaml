@@ -1,6 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Pushes the primary image and optional extra tags, returning the primary digest.
+# Uses runner Docker credentials and reports published tags in the job summary.
+
 name: Push container image
 
-description: Push OCI image references, report published tags, and return the primary image digest
+description: Push OCI image tags, summarize publication, and return the primary image digest
 
 inputs:
   additional-image-refs:

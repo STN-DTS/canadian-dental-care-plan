@@ -1,3 +1,8 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Builds the frontend and runs Chromium end-to-end tests at 00:00 UTC daily
+# or on manual dispatch. Publishes Playwright reports for completed test runs.
+
 name: Nightly e2e tests
 
 on:

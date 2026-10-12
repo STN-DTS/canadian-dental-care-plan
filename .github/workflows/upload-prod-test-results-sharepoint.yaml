@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Uploads exact-run test reports after a successful PROD tag build in this
-# repository. Requires this workflow on the default branch; forks are skipped.
+# Uploads reports from the exact successful PROD tag build run to SharePoint.
+# Requires this workflow on the default branch; forks are skipped.
 # Writes <release-tag>.zip to SharePoint, overwriting any existing file.
 #
 # Variables: PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL,

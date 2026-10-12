@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-# Posts a Slack summary for every completion result of the selected workflows.
-# Uses a trusted local payload action and originating-run metadata without downloading artifacts.
+
+# Posts Slack results for selected completed workflows from this repository.
+# Uses default-branch helpers and artifact metadata; notification failures are non-blocking.
+
 name: Notify workflow completions
 
 on:
@@ -10,7 +12,7 @@ on:
       - Build, test, and publish nonprod tag images
       - Build, test, and publish PROD tag images
       - Nightly e2e tests
-    types: [ completed ]
+    types: [completed]
 
 permissions: {}
 

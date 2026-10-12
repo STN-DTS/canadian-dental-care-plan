@@ -1,6 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+# Scans a local OCI image with Trivy and Aqua and publishes HTML reports.
+# Retrieves scanner credentials from Vault; scannercli failures remain advisory.
+
 name: Aqua scan
 
-description: Scan a local container image with Trivy and Aqua
+description: Scan a local OCI image with Trivy and Aqua and publish vulnerability reports
 
 inputs:
   artifact-prefix:
