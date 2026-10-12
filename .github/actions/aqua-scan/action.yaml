@@ -62,7 +62,7 @@ runs:
         image-ref: ${{ inputs.image-ref }}
         output: .github/aqua-reports/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
         scanners: vuln
-        template: "@contrib/html.tpl"
+        template: '@contrib/html.tpl'
     - name: Upload Aqua scan report
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:

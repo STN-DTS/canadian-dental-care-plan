@@ -1,5 +1,5 @@
 ---
-applyTo: "frontend/app/.server/express-server/**/*.ts"
+applyTo: 'frontend/app/.server/express-server/**/*.ts'
 ---
 
 # Frontend Express Middleware Naming

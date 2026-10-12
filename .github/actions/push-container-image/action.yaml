@@ -10,7 +10,7 @@ description: Push OCI image tags, summarize publication, and return the primary 
 inputs:
   additional-image-refs:
     description: Optional newline-separated image references to push after the primary image
-    default: ""
+    default: ''
   application-name:
     description: Application label in the published tags summary
     default: CDCP frontend

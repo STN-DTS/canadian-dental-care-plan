@@ -14,7 +14,7 @@ concurrency:
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch: {}
 
 env:
