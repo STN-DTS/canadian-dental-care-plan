@@ -65,7 +65,14 @@ export default defineConfig({
     'unicorn/no-useless-undefined': ['error', { checkArguments: false }],
     'vitest/require-mock-type-parameters': 'off',
     'vitest/require-to-throw-message': 'off',
-    '@stylistic/padding-line-between-statements': ['error', { blankLine: 'always', prev: '*', next: 'block-like' }, { blankLine: 'always', prev: 'block-like', next: '*' }],
+    '@stylistic/padding-line-between-statements': [
+      'error',
+      // Require blank lines before and after block-like statements.
+      { blankLine: 'always', prev: '*', next: 'block-like' },
+      { blankLine: 'always', prev: 'block-like', next: '*' },
+      // Preserve spacing between switch labels, including shared scopes.
+      { blankLine: 'any', prev: ['case', 'default'], next: ['case', 'default'] },
+    ],
   },
   settings: {
     react: {
