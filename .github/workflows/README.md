@@ -96,6 +96,20 @@ The ten Kubernetes environment overlays share one AKS cluster and the
 `canada-dental-care-plan` namespace. They are not GitHub deployment environments
 or separate clusters. The `shared` overlay provides common resources.
 
+This workflow replaces TeamCity's **Synchronize all environments** job, which
+already watches `gitops/nonprod/**` on the default branch and applies all eleven
+overlays, including `shared`, using `kubectl apply --kustomize ... --force`.
+TeamCity is paused for this CI handoff; this is not a new manifest source-path
+cutover.
+
+Merging the workflow into `main` intentionally activates GitHub deployment.
+The merge changes the workflow file, selecting shared resources and all ten
+environments for the first run. No separate activation flag is required.
+Before merging, confirm GitHub's target settings and deployment credentials,
+runner tools, Vault access, and AKS permissions. Confirm that no TeamCity build
+is still running, and keep that job paused. GitHub's concurrency lock does not
+coordinate with TeamCity.
+
 Push deployments select targets as follows:
 
 - Changes under an environment overlay select that environment only.
@@ -122,8 +136,8 @@ The optional `debug` input prints tool versions and allowlisted GitHub and runne
 context. It does not dump the full environment or print secret values.
 
 This workflow does not deploy production and is not currently subscribed to the
-Slack notification allowlist. Live deployment and source-path handoff must still
-be verified operationally.
+Slack notification allowlist. A successful live GitHub deployment has not been
+verified; check the first run after the handoff.
 
 ## Manual Runs and Retries
 
