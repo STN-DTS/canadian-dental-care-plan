@@ -98,8 +98,8 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
         run: |
           set -euo pipefail
-          env | sort
-          env | sort | base64
+          printf 'GITHUB_EVENT_NAME=%s\nGITHUB_REF=%s\nGITHUB_SHA=%s\nGITHUB_RUN_ID=%s\nGITHUB_RUN_ATTEMPT=%s\nRUNNER_NAME=%s\nRUNNER_OS=%s\nRUNNER_ARCH=%s\n' \
+            "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_NAME" "$RUNNER_OS" "$RUNNER_ARCH"
 
       - name: Apply shared overlay
         run: |
@@ -208,8 +208,8 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
         run: |
           set -euo pipefail
-          env | sort
-          env | sort | base64
+          printf 'GITHUB_EVENT_NAME=%s\nGITHUB_REF=%s\nGITHUB_SHA=%s\nGITHUB_RUN_ID=%s\nGITHUB_RUN_ATTEMPT=%s\nRUNNER_NAME=%s\nRUNNER_OS=%s\nRUNNER_ARCH=%s\n' \
+            "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_NAME" "$RUNNER_OS" "$RUNNER_ARCH"
 
       - name: Render overlay secrets files
         env:
