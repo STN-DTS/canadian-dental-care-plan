@@ -64,9 +64,10 @@ The old root-level `base/` and `overlays/` directories have been removed. Valida
 - **Image Registries** — Nonprod uses `dtsrhpdevscedacr.azurecr.io`; prod uses `dtsrhpprodscedspokeacr.azurecr.io`
   with pinned image versions.
 
-> Production is isolated in `prod/`; changes under `nonprod/` are not production Kustomize inputs. Old deployment
-> entry points no longer exist in this revision. Coordinate consumers' source-path updates before they reconcile
-> this change. Local render equivalence does not prove a no-op live handoff. Never synchronize nonprod into production.
+> Production is isolated in `prod/`; changes under `nonprod/` are not production Kustomize inputs. The earlier
+> directory restructure is separate from the TeamCity-to-GitHub CI handoff: TeamCity already applies
+> `gitops/nonprod/overlays/`. Local render checks do not verify live GitHub deployment. Never synchronize
+> nonprod into production.
 
 ## Requirements
 
@@ -77,8 +78,8 @@ This project has been tested with the following toolchain:
 | [Kubectl](https://kubernetes.io/docs/tasks/tools/) | 1.37.1  |
 | Embedded [Kustomize](https://kustomize.io/)        | 5.8.1   |
 
-The PR validation job installs this pinned renderer and checks its published checksum. The actual external
-deployment toolchain and no-op source-path handoff still require operational verification.
+The PR validation job installs this pinned renderer and checks its published checksum. Verify the GitHub
+deployment runner's tools, target settings, and permissions before merging the deployment workflow.
 
 From the repository root, run `python3 -m unittest discover -s .github/scripts/gitops/tests -v` after installing
 [validation requirements](../.github/scripts/gitops/requirements.txt). The isolation guard rejects remote/escaping or missing inputs and fails
@@ -95,9 +96,30 @@ kubectl kustomize ./prod
 
 ### Apply manifests to a cluster
 
+The [GitOps operator (nonprod) workflow](../.github/workflows/gitops-main-nonprod.yaml)
+applies Kustomizations when nonprod manifests change on `main`. Pushes select
+overlays based on changed files. Manual and reusable runs apply shared resources
+and all ten nonprod Kubernetes environments. These environments share one AKS
+cluster and namespace. Every deployment run must use `main`.
+
+This replaces the paused TeamCity **Synchronize all environments** job, which
+already applies the same overlay paths. Merging the workflow intentionally
+starts a full nonprod deployment. Before merging, confirm GitHub targets the
+intended cluster and has deployment access, and verify no TeamCity build is
+still running. Keep TeamCity paused to avoid competing deployments.
+
+From the repository root, request a full nonprod deployment with:
+
 ```shell
-# Deployment/apply remains outside this repository-only migration.
+gh workflow run gitops-main-nonprod.yaml --ref main
 ```
+
+See the [workflow documentation](../.github/workflows/README.md#nonprod-gitops-deployment)
+for target selection, credentials, and runner requirements. External Secrets
+Operator supplies application secrets; CI does not generate secret files.
+Verify the first live GitHub deployment after the CI handoff. This workflow does
+not deploy `prod/`. See [workflow rollback](nonprod/README.md#workflow-rollback)
+for recovery through a revert on `main`.
 
 ### Validate manifests without applying
 
