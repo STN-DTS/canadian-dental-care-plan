@@ -52,9 +52,11 @@ runs:
       run: |
         set -euo pipefail
 
+        echo "Preparing scan report directories and downloading the pinned Trivy template..."
         mkdir -p .github/aqua-reports contrib
         curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_TEMPLATE_COMMIT}/contrib/html.tpl" -o contrib/html.tpl
         printf '%s  %s\n' "$TRIVY_TEMPLATE_SHA256" contrib/html.tpl | sha256sum --check
+        echo "Trivy report template checksum verified."
     - name: Run Aqua vulnerability scanner
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
       with:
@@ -91,6 +93,7 @@ runs:
         chmod 600 "$password_file"
         printf '%s' "$AQUA_PASSWORD" > "$password_file"
 
+        printf 'Running Aqua scannercli for image: %s\n' "$IMAGE_REF"
         if docker run --rm \
           --env AQUA_HOST \
           --env AQUA_POLICIES \
@@ -109,6 +112,7 @@ runs:
           scan_status=$?
         fi
         printf 'exit-code=%s\n' "$scan_status" >> "$GITHUB_OUTPUT"
+        printf 'Aqua scannercli finished with exit code %s.\n' "$scan_status"
         if (( scan_status == 4 )); then
           printf '::warning::Aqua scan completed, but compliance policies failed; publishing continues in advisory mode.\n'
         elif (( scan_status != 0 )); then
@@ -162,6 +166,8 @@ runs:
             ;;
         esac
 
+        printf 'Aqua scanner result: %s (exit code %s).\n' "$result" "${SCAN_EXIT_CODE:-unavailable}"
+        printf '%s\n' "$next_steps"
         {
           printf '## Aqua scanner result\n\n'
           printf '| Field | Value |\n| --- | --- |\n'

@@ -58,9 +58,11 @@ jobs:
       - name: Validate SharePoint destination
         run: |
           set -euo pipefail
+          echo "Validating SharePoint destination configuration..."
           : "${SHAREPOINT_SITE_URL:?PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL is required.}"
           : "${SHAREPOINT_TEST_REPORT_FOLDER:?PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER is required.}"
           : "${TENANT_ID:?AZURE_TENANT_ID is required.}"
+          echo "SharePoint destination configuration is available."
       - name: Download originating run test reports
         env:
           GH_TOKEN: ${{ github.token }}
@@ -82,6 +84,7 @@ jobs:
           }
 
           const artifactName = `test-reports-${sourceRun.id}-${sourceRun.run_attempt}`;
+          console.log(`Locating ${artifactName} from the originating run for ${releaseTag}...`);
           const headers = {
             Authorization: `Bearer ${process.env.GH_TOKEN}`,
             Accept: 'application/vnd.github+json',
@@ -101,6 +104,7 @@ jobs:
           if (artifacts.length !== 1 || artifacts[0].expired) {
             throw new Error('Expected one unexpired test-report artifact from the originating run attempt.');
           }
+          console.log('Found one unexpired test-report artifact. Downloading archive...');
 
           const reportDirectory = await mkdtemp(join(process.env.RUNNER_TEMP, 'cdcp-sharepoint-reports-'));
           const archivePath = join(reportDirectory, `${releaseTag}.zip`);
@@ -113,6 +117,7 @@ jobs:
           if ((await stat(archivePath)).size === 0) {
             throw new Error('Downloaded test-report archive is empty.');
           }
+          console.log(`Downloaded test reports for ${releaseTag} (${(await stat(archivePath)).size} bytes).`);
           NODE
       - name: Pull Microsoft 365 CLI image
         run: |
@@ -148,6 +153,7 @@ jobs:
           M365_CONTAINER_NAME="cdcp-sharepoint-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           printf 'M365_CONTAINER_NAME=%s\n' "$M365_CONTAINER_NAME" >> "$GITHUB_ENV"
           export CONTAINER_ARCHIVE_PATH="/reports/$(basename "$REPORT_ARCHIVE_PATH")"
+          echo "Starting the isolated Microsoft 365 upload container..."
           docker run --rm --interactive \
             --name "$M365_CONTAINER_NAME" \
             --platform linux/amd64 \
@@ -178,6 +184,7 @@ jobs:
           trap cleanup EXIT
           printf '%s' "$CLIENT_CERT_PFX" | base64 --decode > "$HOME/client-cert.pfx"
 
+          echo "Authenticating to Microsoft 365 with the Vault-managed certificate..."
           m365 login \
             --authType certificate \
             --appId "$CLIENT_ID" \
@@ -185,22 +192,26 @@ jobs:
             --certificateFile "$HOME/client-cert.pfx" \
             --password "$CLIENT_CERT_PFX_PASSWORD" \
             --output none
+          echo "Microsoft 365 authentication succeeded. Uploading test-report archive..."
           m365 spo file add \
             --webUrl "$SHAREPOINT_SITE_URL" \
             --folder "$SHAREPOINT_TEST_REPORT_FOLDER" \
             --path "$CONTAINER_ARCHIVE_PATH" \
             --overwrite true \
             --output none
+          echo "SharePoint test-report upload completed."
           BASH
 
-          printf 'Uploaded `%s` to SharePoint.\n' "$(basename "$REPORT_ARCHIVE_PATH")" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Uploaded `%s` to SharePoint.\n' "$(basename "$REPORT_ARCHIVE_PATH")" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Clean up upload container and reports
         if: ${{ always() }}
         run: |
           set -euo pipefail
+          echo "Cleaning up the upload container and temporary reports..."
           if [[ -n "${M365_CONTAINER_NAME:-}" ]]; then
             docker rm --force "$M365_CONTAINER_NAME" >/dev/null 2>&1 || true
           fi
           if [[ -n "${REPORT_DIRECTORY:-}" ]]; then
             rm -rf -- "$REPORT_DIRECTORY"
           fi
+          echo "Upload cleanup completed."

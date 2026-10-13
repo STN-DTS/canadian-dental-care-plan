@@ -45,10 +45,12 @@ runs:
         set -euo pipefail
 
         if ! command -v envsubst >/dev/null 2>&1; then
+          echo "Installing envsubst..."
           sudo -n apt-get update
           sudo -n apt-get install --yes gettext-base
         fi
         command -v envsubst >/dev/null
+        echo "envsubst is available."
     - name: Install Cosign
       uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       with:
@@ -72,9 +74,13 @@ runs:
 
         signing_config="$(mktemp "$RUNNER_TEMP/cosign-signing-config.XXXXXX")"
         trap 'rm -f "$signing_config"' EXIT
+        echo "Creating temporary Cosign signing configuration..."
         cosign signing-config create --out "$signing_config"
+        printf 'Signing immutable image: %s\n' "$IMAGE"
         cosign sign --yes --signing-config "$signing_config" --key env://COSIGN_PRIVATE_KEY "$IMAGE"
+        echo "Verifying the image signature with the repository public key..."
         cosign verify --insecure-ignore-tlog --key "$PUB_KEY" "$IMAGE"
+        echo "Image signing and verification completed."
 
         {
           printf '## Signed OCI image\n\n'

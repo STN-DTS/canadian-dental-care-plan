@@ -66,6 +66,10 @@ test('pushes only the supplied primary reference and reports its digest', () => 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, [['push', primary]]);
   assert.equal(result.output, `image-digest=${digest}\n`);
+  assert.ok(result.stdout.includes(`Pushing container image: ${primary}`));
+  assert.ok(result.stdout.includes(`digest: ${digest} size: 123`));
+  assert.ok(result.stdout.includes(`Docker push completed for ${primary}.`));
+  assert.ok(result.stdout.includes(`Container publication completed. Primary image digest: ${digest}`));
   assert.ok(result.summary.includes(`| CDCP frontend | \`1.2.3-abcdef12-00007\` | \`${primary}\``));
   assert.ok(result.summary.includes('https://github.com/org/repo/commit/abcdef1234567890'));
   assert.ok(result.summary.includes(`Image digest: \`${digest}\``));
@@ -89,6 +93,10 @@ test('pushes additional references in order, skips empty lines, and retains the 
   const position = (reference) => result.summary.indexOf(reference + String.fromCharCode(96));
   assert.ok(position(primary) < position(first));
   assert.ok(position(first) < position(second));
+  for (const reference of [primary, first, second]) {
+    assert.ok(result.stdout.includes(`Pushing container image: ${reference}`));
+    assert.ok(result.stdout.includes(`Docker push completed for ${reference}.`));
+  }
 });
 
 test('fails on an invalid primary digest without producing a digest output', () => {
@@ -96,6 +104,7 @@ test('fails on an invalid primary digest without producing a digest output', () 
   assert.equal(result.status, 1);
   assert.equal(result.output, '');
   assert.match(result.stderr, /Unable to determine the pushed image digest/);
+  assert.ok(!result.stdout.includes('Container publication completed.'));
   assert.deepEqual(result.temporaryLogs, []);
 });
 
@@ -103,6 +112,7 @@ test('captures a digest from stderr without a trailing newline', () => {
   const result = execute({ digestStream: 'stderr', noTrailingNewline: true });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.output, `image-digest=${digest}\n`);
+  assert.ok(result.stdout.includes(`digest: ${digest} size: 123\nDocker push completed`));
 });
 
 test('fails immediately when the primary push fails', () => {
@@ -110,6 +120,10 @@ test('fails immediately when the primary push fails', () => {
   assert.equal(result.status, 17);
   assert.deepEqual(result.calls, [['push', primary]]);
   assert.equal(result.output, '');
+  assert.ok(result.stdout.includes(`Pushing container image: ${primary}`));
+  assert.ok(!result.stdout.includes('Docker push completed'));
+  assert.ok(!result.stdout.includes('Container publication completed.'));
+  assert.match(result.stderr, /Docker push failed/);
   assert.deepEqual(result.temporaryLogs, []);
 });
 
@@ -122,5 +136,8 @@ test('fails when an additional push fails and does not publish a digest output',
     ['push', additional],
   ]);
   assert.equal(result.output, '');
+  assert.ok(result.stdout.includes(`Pushing container image: ${additional}`));
+  assert.ok(!result.stdout.includes(`Docker push completed for ${additional}.`));
+  assert.ok(!result.stdout.includes('Container publication completed.'));
   assert.deepEqual(result.temporaryLogs, []);
 });

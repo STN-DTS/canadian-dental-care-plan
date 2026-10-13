@@ -54,10 +54,11 @@ jobs:
             echo "::error::SLACK_CHANNEL_ID is required."
             exit 1
           fi
+          echo "Slack channel configuration is available."
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "24.21.0"
+          node-version: '24.21.0'
       - name: Fetch Slack bot token
         id: vault
         uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0

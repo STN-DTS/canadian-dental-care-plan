@@ -60,6 +60,7 @@ jobs:
           fi
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          printf 'Validated release version: %s\nImage tag: %s\n' "$version" "$generated_tag"
 
   test-frontend:
     needs:
@@ -135,7 +136,12 @@ jobs:
       - name: Verify image signing configuration
         run: |
           set -euo pipefail
-          test -s "$PUBLIC_KEY_PATH"
+          echo "Checking the image signing public key..."
+          if [[ ! -s "$PUBLIC_KEY_PATH" ]]; then
+            echo "::error::Image signing public key is missing or empty." >&2
+            exit 1
+          fi
+          echo "Image signing public key is available."
       - name: Authenticate to Azure and setup ACR credentials
         uses: ./.github/actions/azure-acr-login
         with:
@@ -162,14 +168,18 @@ jobs:
           set -euo pipefail
 
           IMAGE_TAG="${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          printf 'Building frontend image: %s:%s\n' "$IMAGE_NAME" "$IMAGE_TAG"
           docker build \
+            --progress plain \
             --file frontend/dockerfile frontend \
             --build-arg BUILD_DATE="$BUILD_DATE" \
             --build-arg BUILD_ID="$BUILD_NUMBER" \
             --build-arg BUILD_REVISION="$BUILD_REVISION" \
             --build-arg BUILD_VERSION="$BUILD_VERSION" \
             --tag "$IMAGE_NAME:$IMAGE_TAG"
+          echo "Creating the release version image alias..."
           docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$BUILD_VERSION"
+          echo "Frontend image build and tagging completed."
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
         with:
@@ -201,8 +211,10 @@ jobs:
           set -euo pipefail
 
           image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          printf 'Publishing signed release alias: %s:%s\n' "$IMAGE_NAME" "$BUILD_VERSION"
           docker tag "$image_ref" "${IMAGE_NAME}:${BUILD_VERSION}"
           docker push "${IMAGE_NAME}:${BUILD_VERSION}"
+          echo "Signed release version alias published."
 
           {
             echo "## Published release alias"
@@ -215,9 +227,11 @@ jobs:
         if: ${{ always() }}
         run: |
           set -euo pipefail
+          echo "Cleaning up temporary Azure and registry credentials..."
           if [[ -n "${AZURE_CONFIG_DIR:-}" ]]; then
             rm -rf -- "$AZURE_CONFIG_DIR"
           fi
           if [[ -n "${DOCKER_CONFIG:-}" ]]; then
             rm -rf -- "$DOCKER_CONFIG"
           fi
+          echo "Credential cleanup completed."

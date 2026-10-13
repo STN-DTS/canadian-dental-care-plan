@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 
 async function pushImage(reference, applicationName) {
+  console.log(`Pushing container image: ${reference}`);
   const digest = await new Promise((resolve, reject) => {
     const docker = spawn('docker', ['push', reference], { stdio: ['ignore', 'pipe', 'pipe'] });
     let imageDigest;
@@ -34,6 +35,7 @@ async function pushImage(reference, applicationName) {
   const tag = reference.slice(reference.lastIndexOf(':') + 1);
   const source = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/commit/${process.env.GITHUB_SHA}`;
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `| ${applicationName} | \`${tag}\` | \`${reference}\` | [\`${process.env.GITHUB_SHA.slice(0, 8)}\`](${source}) |\n`);
+  console.log(`\nDocker push completed for ${reference}.`);
   return digest;
 }
 
@@ -56,6 +58,7 @@ async function main() {
   }
   appendFileSync(process.env.GITHUB_OUTPUT, `image-digest=${digest}\n`);
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nImage digest: \`${digest}\`\n`);
+  console.log(`Container publication completed. Primary image digest: ${digest}`);
 }
 
 try {

@@ -273,6 +273,7 @@ export async function buildPayload(event, options) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  console.log('Preparing workflow notification...');
   const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   const payload = await buildPayload(event, {
     channelId: process.env.SLACK_CHANNEL_ID,
@@ -282,4 +283,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     apiUrl: process.env.GITHUB_API_URL,
   });
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `payload=${JSON.stringify(payload)}\n`);
+  console.log(`Workflow notification prepared (${payload.thread_ts ? 'thread reply' : 'standalone message'}).`);
 }

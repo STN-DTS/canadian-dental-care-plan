@@ -27,7 +27,7 @@ on:
       debug:
         description: Print tool versions and non-sensitive deployment context
         required: false
-        default: "false"
+        default: 'false'
 
 env:
   CI: true
@@ -89,6 +89,8 @@ jobs:
           };
           for (const overlay of overlays) filters[`overlay_${overlay}`] = [`${root}/${overlay}/**`];
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `overlays=${JSON.stringify(overlays)}\nfilters=${JSON.stringify(filters)}\n`);
+          console.log(`Discovered environment overlays: ${overlays.join(', ') || 'none'}`);
+          console.log('Shared overlay is available.');
           NODE
 
       - name: Detect changed overlays
@@ -117,6 +119,9 @@ jobs:
             : overlays.filter(overlay => changes.includes(`overlay_${overlay}`));
           const shared = fullDeploy || changes.includes('shared');
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `overlays=${JSON.stringify(selected)}\noverlay-list=${selected.join(' ')}\nshared=${shared}\n`);
+          console.log(`Full deployment requested: ${fullDeploy}`);
+          console.log(`Selected environment overlays: ${selected.join(', ') || 'none'}`);
+          console.log(`Apply shared overlay: ${shared}`);
           NODE
 
   apply-overlays:
@@ -164,22 +169,26 @@ jobs:
           kubeconfig="$(mktemp "$RUNNER_TEMP/cdcp-nonprod-kubeconfig.XXXXXX")"
           echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
 
+          echo "Authenticating to Azure with the Vault-managed service principal..."
           az login --service-principal \
             --tenant "$AZURE_TENANT_ID" \
             --username "$SP_ID" \
             --password "$SP_PASSWORD"
 
+          echo "Fetching nonprod AKS credentials into a temporary kubeconfig..."
           az aks get-credentials --overwrite-existing \
             --subscription "$AZURE_SUBSCRIPTION_ID" \
             --resource-group "$K8S_RESOURCE_GROUP" \
             --name "$K8S_CLUSTER_NAME" \
             --file "$kubeconfig"
 
+          echo "Configuring service principal authentication for kubectl..."
           kubelogin convert-kubeconfig \
             --login spn \
             --client-id "$SP_ID" \
             --client-secret "$SP_PASSWORD" \
             --kubeconfig "$kubeconfig"
+          echo "Azure authentication and AKS access configuration completed."
 
       - name: Print tool versions
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
@@ -195,11 +204,14 @@ jobs:
         run: |
           set -euo pipefail
           printf '### Shared Overlay\n\n| Overlay | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          echo "Applying the shared overlay..."
           if kubectl --kubeconfig "$KUBECONFIG" apply --kustomize ./gitops/nonprod/overlays/shared/ --force; then
             printf '| `shared` | Success |\n' >> "$GITHUB_STEP_SUMMARY"
+            echo "Shared overlay applied successfully."
           else
             status=$?
             printf '| `shared` | Failed |\n' >> "$GITHUB_STEP_SUMMARY"
+            printf '::error::Failed to apply the shared overlay (exit code %s).\n' "$status" >&2
             exit "$status"
           fi
 
@@ -233,11 +245,13 @@ jobs:
             printf '\n**Failed overlays:** %s\n' "${failed[*]}" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+          echo "All selected environment overlays applied successfully."
 
       - name: Clean up credentials
         if: ${{ always() }}
         run: |
           set -euo pipefail
+          echo "Cleaning up temporary kubeconfig and Azure credentials..."
           if [[ -n "${KUBECONFIG:-}" ]]; then
             rm -f -- "$KUBECONFIG"
           fi
@@ -246,3 +260,4 @@ jobs:
             az account clear || true
             rm -rf -- "$AZURE_CONFIG_DIR"
           fi
+          echo "Credential cleanup completed."

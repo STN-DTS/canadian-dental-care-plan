@@ -78,12 +78,26 @@ runs:
           printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG"
         } >> "$GITHUB_ENV"
 
-        az login --service-principal \
+        echo "Authenticating to Azure with the Vault-managed service principal..."
+        if az login --service-principal \
           --tenant "$AZURE_TENANT_ID" \
           --username "$AZURE_CLIENT_ID" \
           --password "$AZURE_CLIENT_SECRET" \
-          --output none >/dev/null 2>&1
+          --output none >/dev/null 2>&1; then
+          echo "Azure authentication succeeded."
+        else
+          login_status=$?
+          printf '::error::Azure authentication failed (exit code %s). Check Vault credentials, tenant configuration, and Azure connectivity. Raw CLI output is suppressed to protect credentials.\n' "$login_status" >&2
+          exit "$login_status"
+        fi
 
-        az acr login --name "${ACR_DOMAIN%%.*}" \
+        echo "Authenticating Docker to Azure Container Registry..."
+        if az acr login --name "${ACR_DOMAIN%%.*}" \
           --subscription "$AZURE_SUBSCRIPTION_ID" \
-          --output none >/dev/null 2>&1
+          --output none >/dev/null 2>&1; then
+          echo "Azure Container Registry authentication succeeded."
+        else
+          login_status=$?
+          printf '::error::Azure Container Registry authentication failed (exit code %s). Check registry configuration, service principal permissions, and registry connectivity. Raw CLI output is suppressed to protect credentials.\n' "$login_status" >&2
+          exit "$login_status"
+        fi

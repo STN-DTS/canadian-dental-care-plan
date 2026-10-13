@@ -85,4 +85,4 @@ runs:
           echo "rc-label=${RC_LABEL}"
           echo "scan-timestamp=$(date -u +'%Y%m%d-%H%M%S')"
           echo "short-sha=${SHORT_SHA}"
-        } >> "$GITHUB_OUTPUT"
+        } | tee -a "$GITHUB_OUTPUT"
