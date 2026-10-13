@@ -134,11 +134,13 @@ export function buildRequestAttributes(request: ReadonlyRequest): Attributes {
   }
 
   const userAgent = request.headers.get('user-agent');
+
   if (userAgent) {
     attributes[ATTR_USER_AGENT_ORIGINAL] = userAgent;
   }
 
   const clientAddress = getClientAddress(request.headers);
+
   if (clientAddress) {
     attributes[ATTR_CLIENT_ADDRESS] = clientAddress;
   }
@@ -185,11 +187,13 @@ function urlAttributes(url: URL): Attributes {
  */
 function paramAttributes(params: Params): Attributes {
   const attributes: Attributes = {};
+
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined) {
       attributes[`${ATTR_RR_PARAM_PREFIX}${key}`] = value;
     }
   }
+
   return attributes;
 }
 
@@ -208,16 +212,20 @@ export function normalizeMethod(method: string): string {
  */
 function getClientAddress(headers: Pick<Headers, 'get'>): string | undefined {
   const forwarded = headers.get('forwarded');
+
   if (forwarded) {
     const match = /for="?\[?([^\];,"]+)/i.exec(forwarded);
+
     if (match?.[1]) {
       return removePort(match[1]);
     }
   }
 
   const xForwardedFor = headers.get('x-forwarded-for');
+
   if (xForwardedFor) {
     const first = xForwardedFor.split(',', 1)[0]?.trim();
+
     if (first) {
       return removePort(first);
     }
@@ -233,6 +241,7 @@ function removePort(address: string): string {
   if (address.startsWith('[')) {
     return address.slice(1, address.indexOf(']'));
   }
+
   // Only strip a port for IPv4 / hostnames (single colon); bare IPv6 has multiple colons.
   const colonCount = (address.match(/:/g) ?? []).length;
   return colonCount === 1 ? address.slice(0, address.indexOf(':')) : address;
@@ -354,9 +363,11 @@ export async function withMiddlewareCounter<T>(handler: () => Promise<T>): Promi
  */
 export function nextMiddlewareIndex(routeId: string): number {
   const store = context.active().getValue(MIDDLEWARE_COUNTER_KEY) as MiddlewareCounterStore | undefined;
+
   if (!store) {
     return 0;
   }
+
   const index = store.counters[routeId] ?? 0;
   store.counters[routeId] = index + 1;
   return index;

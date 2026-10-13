@@ -31,9 +31,11 @@ function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
     case 'intake-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     case 'renewal-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `protected/application/$id/${applicationFlow}/contact-information`;
     }

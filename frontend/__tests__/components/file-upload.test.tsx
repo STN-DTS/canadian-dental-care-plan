@@ -89,9 +89,11 @@ describe('FileUpload', () => {
       </FileUpload>,
     );
     const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+
     if (!input) {
       throw new Error('Expected the hidden native file input');
     }
+
     const inputClick = vi.spyOn(input, 'click');
     const user = userEvent.setup();
     const trigger = screen.getByRole('button', { name: 'Upload file' });

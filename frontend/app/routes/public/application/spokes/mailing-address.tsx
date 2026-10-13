@@ -45,9 +45,11 @@ function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
     case 'full-children': {
       return `public/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     case 'simplified-children': {
       return `public/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `public/application/$id/${applicationFlow}/contact-information`;
     }
@@ -241,8 +243,10 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
 
   // Adjust the state while rendering to ensure the dialog opens when the address response changes
   const [prevFetcherAddressResponse, setPrevFetcherAddressResponse] = useState(fetcherAddressResponse);
+
   if (prevFetcherAddressResponse !== fetcherAddressResponse) {
     setPrevFetcherAddressResponse(fetcherAddressResponse);
+
     if (fetcherAddressResponse) {
       setAddressDialogContent(fetcherAddressResponse);
     }
@@ -287,15 +291,18 @@ export default function MailingAddress({ loaderData, params }: Route.ComponentPr
   const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedMailingCountry);
 
   let postalCodeHelpMessage: string | undefined;
+
   switch (selectedMailingCountry) {
     case CANADA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.address.addressField.postalCodeHelp);
       break;
     }
+
     case USA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.address.addressField.postalCodeHelpUs);
       break;
     }
+
     default: {
       postalCodeHelpMessage = undefined;
       break;

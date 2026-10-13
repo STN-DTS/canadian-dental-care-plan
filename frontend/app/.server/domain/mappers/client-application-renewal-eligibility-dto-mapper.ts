@@ -77,6 +77,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     }
 
     const clientNumbers = this.listClientNumbers(clientApplicationDto, applicationYear);
+
     if (clientNumbers.length === 0) {
       this.log.debug('No client numbers found for client application, returning ineligible result');
       return {
@@ -86,6 +87,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     }
 
     const clientEligibilities = await this.listClientEligibilities(clientNumbers);
+
     if (clientEligibilities.size === 0) {
       this.log.debug('No client eligibilities found for client application, returning ineligible result');
       return {
@@ -95,6 +97,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     }
 
     const enrolledAndEligibleClients = this.getEnrolledAndEligibleClients(clientEligibilities);
+
     if (enrolledAndEligibleClients.size === 0) {
       this.log.debug('No enrolled and eligible clients found for client application, returning ineligible result');
       return {
@@ -193,6 +196,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
       // Step 1: enrollment gate — skip clients that are not enrolled.
       const isEnrolled = eligibility.enrollmentStatusCode === this.serverConfig.ENROLLMENT_STATUS_CODE_ENROLLED;
       this.log.trace('Checking client number [%s] enrollment status: isEnrolled=[%s]', clientNumber, isEnrolled);
+
       if (!isEnrolled) {
         continue;
       }
@@ -200,6 +204,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
       // Step 2: profile eligibility
       const isEligible = eligibility.eligibilityStatusCode === this.serverConfig.ELIGIBILITY_STATUS_CODE_ELIGIBLE;
       this.log.trace('Checking client number [%s] profile eligibility: isEnrolled=[%s], isEligible=[%s]', clientNumber, isEnrolled, isEligible);
+
       if (isEligible) {
         entries.push([clientNumber, eligibility]);
       }

@@ -31,6 +31,7 @@ export async function configureDevServer(app: express.Express): Promise<void> {
       if (typeof error === 'object' && error instanceof Error) {
         viteDevServer.ssrFixStacktrace(error);
       }
+
       next(error);
     }
   });

@@ -426,6 +426,7 @@ export function generateRandomString(length: number) {
 
 function validateAuthorizationToken(tokenEndpointResponse: TokenEndpointResponse) {
   const log = createLogger('raoidc-utils/validateAuthorizationToken');
+
   if (!tokenEndpointResponse.access_token) {
     throw new Error('Authorization token is missing access_token claim');
   }
@@ -439,6 +440,7 @@ function validateAuthorizationToken(tokenEndpointResponse: TokenEndpointResponse
 
 function validateUserInfoTokenResponse(userInfoResponse: UserinfoResponse) {
   const log = createLogger('raoidc-utils/validateUserInfoTokenResponse');
+
   if (!userInfoResponse.userinfo_token) {
     throw new Error('Userinfo token is missing userinfo_token claim');
   }
@@ -451,6 +453,7 @@ function validateUserInfoTokenResponse(userInfoResponse: UserinfoResponse) {
  */
 function validateJwkSet(jwkSet: JWKSet) {
   const log = createLogger('raoidc-utils/validateJwkSet');
+
   if (jwkSet.keys.length === 0) {
     throw new Error('JWK set has no keys');
   }

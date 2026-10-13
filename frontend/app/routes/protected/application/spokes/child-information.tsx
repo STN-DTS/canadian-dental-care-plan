@@ -255,6 +255,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childState.id) {
           return child;
         }
+
         const information = { ...parsedDataResult.data, ...parsedSinDataResult.data };
         return { ...child, information };
       }),

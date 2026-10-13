@@ -36,9 +36,11 @@ function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
     case 'intake-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     case 'renewal-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `protected/application/$id/${applicationFlow}/contact-information`;
     }
@@ -165,6 +167,7 @@ export default function ApplicationSpokeCommunicationPreferences({ loaderData, p
 
         function getCheckedValue(name: string, fieldId: string) {
           const selectedEl = document.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]:checked`);
+
           if (selectedEl) {
             formValues.set(fieldId, {
               elementType: 'radio',

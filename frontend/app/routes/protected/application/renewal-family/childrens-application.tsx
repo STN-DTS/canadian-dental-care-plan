@@ -81,6 +81,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
         const benefits = await benefitsPromise;
 
         const federalProgram = await federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(id, locale);
+
         if (federalProgram.isSome()) {
           return {
             ...benefits,
@@ -92,6 +93,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
         }
 
         const provincialProgram = await provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(id, locale);
+
         if (provincialProgram.isSome()) {
           return {
             ...benefits,
@@ -171,6 +173,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           if (child.id !== childId) {
             return child;
           }
+
           return {
             ...child,
             dentalBenefits: { hasChanged: false },

@@ -11,6 +11,7 @@ export function moveToTop<T>(array: ReadonlyArray<T>, predicate: (item: T) => bo
 
   // Find all indices of elements that match the predicate
   const matchingIndices: number[] = [];
+
   for (const [i, element] of newArray.entries()) {
     if (predicate(element)) {
       matchingIndices.push(i);
@@ -19,13 +20,16 @@ export function moveToTop<T>(array: ReadonlyArray<T>, predicate: (item: T) => bo
 
   // Extract matching elements and remove them from their original positions
   const extractedElements: T[] = [];
+
   for (let i = matchingIndices.length - 1; i >= 0; i--) {
     const index = matchingIndices[i];
+
     if (index === undefined) {
       continue;
     }
 
     const [item] = newArray.splice(index, 1);
+
     if (item) {
       extractedElements.unshift(item);
     }

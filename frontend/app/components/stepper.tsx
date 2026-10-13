@@ -43,12 +43,15 @@ type StepperProps = ComponentProps<'ol'> & {
 export function Stepper({ steps, activeStep, className, ...props }: StepperProps) {
   const getStatus = (index: number) => {
     const stepNumber = index + 1;
+
     if (activeStep === -1 || stepNumber < activeStep) {
       return 'completed';
     }
+
     if (stepNumber === activeStep) {
       return 'current';
     }
+
     return 'upcoming';
   };
 

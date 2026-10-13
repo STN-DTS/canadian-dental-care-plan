@@ -34,6 +34,7 @@ export function useErrorAlert(showErrorAlert: boolean, errorAlertId: string = 'e
     if (alertRef.current && showErrorAlert) {
       alertRef.current.scrollIntoView({ behavior: 'smooth' });
       alertRef.current.focus();
+
       if (adobeAnalytics.isConfigured()) {
         adobeAnalytics.pushValidationErrorEvent([errorAlertId]);
       }

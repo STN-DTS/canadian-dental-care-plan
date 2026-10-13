@@ -21,6 +21,7 @@ export function LanguageSwitcher({ children, ...props }: LanguageSwitcherProps) 
   const [searchParams] = useSearchParams();
 
   const currentRoute = matches.at(-1);
+
   if (!currentRoute) {
     throw new AppError(`No current route found (this should never happen)`, ErrorCodes.ROUTE_NOT_FOUND);
   }

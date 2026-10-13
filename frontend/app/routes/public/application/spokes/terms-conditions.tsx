@@ -81,6 +81,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           path: ['doNotConsent'],
         });
       }
+
       if (!val.doNotConsent && !val.acknowledgeTerms) {
         ctx.addIssue({
           code: 'custom',
@@ -88,6 +89,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           path: ['acknowledgeTerms'],
         });
       }
+
       if (!val.doNotConsent && !val.acknowledgePrivacy) {
         ctx.addIssue({
           code: 'custom',
@@ -95,6 +97,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           path: ['acknowledgePrivacy'],
         });
       }
+
       if (!val.doNotConsent && !val.shareData) {
         ctx.addIssue({
           code: 'custom',

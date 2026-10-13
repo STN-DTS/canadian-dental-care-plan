@@ -33,6 +33,7 @@ describe('usePromptOnUnsavedChanges', () => {
   ])('blocks pathname changes only when dirty: $isDirty, $nextPathname', ({ isDirty, nextPathname, expected }) => {
     renderHook(() => usePromptOnUnsavedChanges(isDirty));
     const shouldBlock = vi.mocked(useBlocker).mock.calls[0]?.[0];
+
     if (typeof shouldBlock !== 'function') {
       throw new Error('Expected a navigation blocker predicate');
     }
@@ -56,9 +57,11 @@ describe('usePromptOnUnsavedChanges', () => {
     rerender({ isDirty: false });
     const updatedPredicate = vi.mocked(useBlocker).mock.lastCall?.[0];
     expect(updatedPredicate).not.toBe(initialPredicate);
+
     if (typeof updatedPredicate !== 'function') {
       throw new Error('Expected a navigation blocker predicate');
     }
+
     expect(
       updatedPredicate({
         currentLocation: { pathname: '/current', search: '', hash: '', state: null, key: 'current' },

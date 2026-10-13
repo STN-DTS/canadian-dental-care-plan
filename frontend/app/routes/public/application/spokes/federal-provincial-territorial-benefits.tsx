@@ -201,6 +201,7 @@ export default function ApplicationSpokeFederalProvincialTerritorialBenefits({ l
 
   function handleOnHasProvincialTerritorialBenefitChanged(e: React.ChangeEvent<HTMLInputElement>) {
     setHasProvincialTerritorialBenefitValue(e.target.value === HAS_PROVINCIAL_TERRITORIAL_BENEFITS_OPTION.yes);
+
     if (e.target.value !== HAS_PROVINCIAL_TERRITORIAL_BENEFITS_OPTION.yes) {
       setProvinceValue(undefined);
       setProvincialTerritorialSocialProgramValue(undefined);

@@ -53,12 +53,15 @@ export class DefaultAddressValidationDtoMapper implements AddressValidationDtoMa
       case 'Corrected': {
         return 'corrected';
       }
+
       case 'NotCorrect': {
         return 'not-correct';
       }
+
       case 'Valid': {
         return 'valid';
       }
+
       default: {
         throw new Error(`Unknown correction result status: [${statusCode}]`);
       }

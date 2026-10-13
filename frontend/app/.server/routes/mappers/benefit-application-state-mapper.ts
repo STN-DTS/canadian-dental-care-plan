@@ -133,6 +133,7 @@ export interface BenefitApplicationStateMapper {
 export class DefaultBenefitApplicationStateMapper implements BenefitApplicationStateMapper {
   mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationAdultState.applicantInformation.dateOfBirth, applicationAdultState.applicationYear);
+
     if (ageCategory === 'youth' && applicationAdultState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }
@@ -175,6 +176,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
 
   mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationFamilyState.applicantInformation.dateOfBirth, applicationFamilyState.applicationYear);
+
     if (ageCategory === 'youth' && applicationFamilyState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }
@@ -216,6 +218,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
 
   mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationChildrenState.applicantInformation.dateOfBirth, applicationChildrenState.applicationYear);
+
     if (ageCategory === 'youth' && applicationChildrenState.livingIndependently === undefined) {
       throw new Error('Expected livingIndependently to be defined');
     }

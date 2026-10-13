@@ -17,6 +17,7 @@ import type { ApiSessionRedirectTo } from '~/routes/api/session';
  */
 export function getApiSessionRedirectToUrl(redirectTo: ApiSessionRedirectTo, locale: AppLocale): string {
   const log = createLogger('api-session-utils/getApiSessionRedirectToUrl');
+
   switch (redirectTo) {
     case 'cdcp-website': {
       return getCdcpWebsiteUrl(locale);

@@ -37,6 +37,7 @@ export class DefaultDynatraceDtoMapper implements DynatraceDtoMapper {
     });
 
     const validatedScript = scriptSchema.safeParse(xmlParsedScript);
+
     if (!validatedScript.success) {
       this.log.error('Script tag is invalid; parsedBody: [%j]; error: [%j]', xmlParsedScript, validatedScript.error);
       throw new Error(`Mapping validation failed for Dynatrace RUM Script: [${dynatraceRumScript}]`);

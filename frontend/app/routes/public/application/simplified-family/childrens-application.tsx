@@ -142,6 +142,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childId) {
           return child;
         }
+
         return {
           id: child.id,
           dentalInsurance: child.dentalInsurance,

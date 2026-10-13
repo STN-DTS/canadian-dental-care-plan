@@ -53,12 +53,14 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
     const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;
 
     const idTokenOption = session.find('idToken');
+
     if (idTokenOption.isNone()) {
       this.log.debug('idToken not found in session [%s]', session.id);
       return { isValid: false, errorMessage: `RAOIDC session validation failed; idToken not found in session [${session.id}]` };
     }
 
     const userInfoTokenOption = session.find('userInfoToken');
+
     if (userInfoTokenOption.isNone()) {
       this.log.debug('userInfoToken not found in session [%s]', session.id);
       return { isValid: false, errorMessage: `RAOIDC session validation failed; userInfoToken not found in session [${session.id}]` };

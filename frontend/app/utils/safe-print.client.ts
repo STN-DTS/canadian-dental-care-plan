@@ -52,6 +52,7 @@ export function safePrint(onUnavailable?: () => void): void {
 
   setTimeout(() => {
     cleanupBeforePrintListener();
+
     if (!printDialogOpened) {
       onUnavailable?.();
     }

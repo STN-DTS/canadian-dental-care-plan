@@ -410,12 +410,14 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     await Promise.all(
       state.clientApplication.dentalBenefits.map(async (benefitId) => {
         const federalProgram = await this.federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(benefitId, locale);
+
         if (federalProgram.isSome()) {
           federalGovernmentInsurancePlan = federalProgram.unwrap();
           return;
         }
 
         const provincialProgram = await this.provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(benefitId, locale);
+
         if (provincialProgram.isSome()) {
           provincialGovernmentInsurancePlan = provincialProgram.unwrap();
         }
@@ -463,12 +465,14 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     await Promise.all(
       childClientApplication.dentalBenefits.map(async (benefitId) => {
         const federalProgram = await this.federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(benefitId, locale);
+
         if (federalProgram.isSome()) {
           federalGovernmentInsurancePlan = federalProgram.unwrap();
           return;
         }
 
         const provincialProgram = await this.provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(benefitId, locale);
+
         if (provincialProgram.isSome()) {
           provincialGovernmentInsurancePlan = provincialProgram.unwrap();
         }

@@ -14,6 +14,7 @@ interface InputSelectProps extends OmitStrict<ComponentProps<'select'>, 'aria-de
   name: string;
   options: OmitStrict<ComponentProps<typeof InputOption>, 'id'>[];
 }
+
 export function InputSelect(props: InputSelectProps) {
   const { errorMessage, helpMessage, id, label, options, className, required, ...restInputProps } = props;
 

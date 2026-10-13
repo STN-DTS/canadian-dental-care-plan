@@ -13,6 +13,7 @@ const sizeKeys = Object.entries(buttonSizeStyles) as [keyof typeof buttonSizeSty
 
 type StyleCombination = [(typeof pillOptions)[number], (typeof disabledOptions)[number], keyof typeof buttonSizeStyles];
 const styleCombinations: StyleCombination[] = [];
+
 for (const pill of pillOptions) {
   for (const disabled of disabledOptions) {
     for (const [sizeKey] of sizeKeys) {

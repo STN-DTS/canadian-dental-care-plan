@@ -101,6 +101,7 @@ export function createRequestLoggerMiddleware(isProduction: boolean): RequestHan
     if (shouldIgnore(ignorePatterns, request.path)) {
       return next();
     }
+
     return morganLoggerMiddleware(request, response, next);
   };
 }

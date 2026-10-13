@@ -72,6 +72,7 @@ describe('DocumentUploadForm', () => {
     const keepButton = within(dialog).getByRole('button', { name: 'upload.removeFileConfirmation.keep' });
     expect(keepButton).toHaveClass(buttonVariantStyles.secondary, buttonSizeStyles.sm);
     await waitFor(() => expect(keepButton).toHaveFocus());
+
     if (action === 'escape') {
       await user.keyboard('{Escape}');
     } else {

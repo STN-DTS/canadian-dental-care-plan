@@ -231,6 +231,7 @@ function resolveHomeAddress(
   if (isCopyMailingToHome || !existingHomeAddress) {
     return mailingAddress;
   }
+
   return {
     address: existingHomeAddress.address,
     city: existingHomeAddress.city,
@@ -260,8 +261,10 @@ export default function EditMailingAddress({ loaderData, params }: Route.Compone
 
   // Adjust the state while rendering to ensure the dialog opens when the address response changes
   const [prevFetcherAddressResponse, setPrevFetcherAddressResponse] = useState(fetcherAddressResponse);
+
   if (prevFetcherAddressResponse !== fetcherAddressResponse) {
     setPrevFetcherAddressResponse(fetcherAddressResponse);
+
     if (fetcherAddressResponse) {
       setAddressDialogContent(fetcherAddressResponse);
     }
@@ -305,15 +308,18 @@ export default function EditMailingAddress({ loaderData, params }: Route.Compone
   const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedMailingCountry);
 
   let postalCodeHelpMessage: string | undefined;
+
   switch (selectedMailingCountry) {
     case CANADA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.mailingAddress.postalCodeHelp);
       break;
     }
+
     case USA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.mailingAddress.postalCodeHelpUs);
       break;
     }
+
     default: {
       postalCodeHelpMessage = undefined;
       break;

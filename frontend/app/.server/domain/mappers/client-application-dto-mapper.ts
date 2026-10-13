@@ -248,12 +248,15 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
 
   private toBenefitApplicationCategoryCode(typeOfApplication: string): 'adult' | 'children' | 'family' {
     const { APPLICANT_CATEGORY_CODE_INDIVIDUAL, APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY } = this.serverConfig;
+
     if (typeOfApplication === APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY) {
       return 'children';
     }
+
     if (typeOfApplication === APPLICANT_CATEGORY_CODE_INDIVIDUAL) {
       return 'adult';
     }
+
     return 'family';
   }
 }

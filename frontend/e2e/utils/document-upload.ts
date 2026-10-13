@@ -44,6 +44,7 @@ export class DocumentUploadApi {
   async post(fields: UploadField[], url = this.page.url(), csrfToken?: string) {
     const form = new FormData();
     form.set('_csrf', csrfToken ?? (await this.page.locator('input[name="_csrf"]').inputValue()));
+
     for (const [name, value] of fields) {
       if (typeof value === 'string') {
         form.append(name, value);
@@ -51,6 +52,7 @@ export class DocumentUploadApi {
         form.append(name, new Blob([Uint8Array.from(value.buffer)], { type: value.mimeType }), value.name);
       }
     }
+
     const cookies = await this.page.context().cookies();
     return await this.page.request.post(url, {
       multipart: form,
@@ -109,9 +111,11 @@ export async function waitForUploadRouter(page: Page) {
 export async function navigateUploadRouter(page: Page, url: string) {
   await page.evaluate((target) => {
     const routerWindow = window as typeof window & { __reactRouterDataRouter?: { navigate: (url: string) => Promise<void> } };
+
     if (!routerWindow.__reactRouterDataRouter) {
       throw new Error('React Router test hook is unavailable');
     }
+
     void routerWindow.__reactRouterDataRouter.navigate(target);
   }, url);
 }

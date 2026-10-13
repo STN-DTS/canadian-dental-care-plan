@@ -81,6 +81,7 @@ export async function findDuplicateFile(files: ReadonlyArray<File>): Promise<Fil
 
   for (const hashedFiles of hashedFileGroups) {
     const duplicateFile = findDuplicateByHash(hashedFiles);
+
     if (duplicateFile) {
       return duplicateFile;
     }
@@ -99,6 +100,7 @@ function groupPotentialDuplicateFiles(files: ReadonlyArray<File>): ReadonlyArray
   for (const file of files) {
     const metadataKey = JSON.stringify([file.name, file.size]);
     const matchingFiles = filesByMetadata.get(metadataKey);
+
     if (matchingFiles) {
       matchingFiles.push(file);
     } else {
@@ -117,10 +119,12 @@ function groupPotentialDuplicateFiles(files: ReadonlyArray<File>): ReadonlyArray
  */
 function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | undefined {
   const seenHashes = new Set<string>();
+
   for (const { file, hash } of hashedFiles) {
     if (seenHashes.has(hash)) {
       return file;
     }
+
     seenHashes.add(hash);
   }
 }
@@ -258,6 +262,7 @@ export function findMimeType(extension: string): Option<string> {
   if (!extension.startsWith('.')) {
     return None;
   }
+
   return Option.from(mime.getType(extension));
 }
 
@@ -312,9 +317,11 @@ export function isValidExtension(extension: string): boolean {
  */
 export function getFileExtension(filename: string): string {
   const lastDotIndex = filename.lastIndexOf('.');
+
   if (lastDotIndex === -1 || lastDotIndex === 0) {
     return '';
   }
+
   return filename.slice(lastDotIndex);
 }
 
@@ -340,8 +347,10 @@ export function arrayBufferToBase64(fileBuffer: ArrayBuffer): string {
 
   // Browser-safe fallback (no Buffer available)
   let binary = '';
+
   for (const byte of bytes) {
     binary += String.fromCodePoint(byte);
   }
+
   return btoa(binary);
 }

@@ -262,6 +262,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     this.log.debug('Validating hCaptcha response');
 
     const isHcaptchaEnabled = this.serverConfig.ENABLED_FEATURES.includes('hcaptcha');
+
     if (!isHcaptchaEnabled) {
       this.log.debug('hCaptcha feature is disabled; skipping hCaptcha validation');
       return;
@@ -271,6 +272,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     const ipAddress = getClientIpAddress(request) ?? undefined;
 
     const result = await this.hCaptchaValidator.validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId });
+
     if (!result.isValid) {
       this.log.debug('hCaptcha response is invalid; errorMessage: %s', result.errorMessage);
       await invalidHCaptchaCallback();

@@ -199,6 +199,7 @@ function sanitizeSensitiveValue(value: unknown, seen: WeakMap<object, unknown>):
   if (Array.isArray(value)) {
     // Register container before descending so self-references resolve without recursion overflow.
     const existing = seen.get(value);
+
     if (existing) {
       return existing;
     }
@@ -219,6 +220,7 @@ function sanitizeSensitiveValue(value: unknown, seen: WeakMap<object, unknown>):
     if (prototype === Object.prototype || prototype === null) {
       // Preserve null-prototype records and register output before traversing circular properties.
       const existing = seen.get(value);
+
       if (existing) {
         return existing;
       }

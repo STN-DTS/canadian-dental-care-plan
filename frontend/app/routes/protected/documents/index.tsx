@@ -58,6 +58,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
         if (!recordSourceId) {
           return t(($) => $.index.uploadMethodUnknown);
         }
+
         if (!serviceName) {
           return t(($) => $.index.uploadMethodUnknown);
         }

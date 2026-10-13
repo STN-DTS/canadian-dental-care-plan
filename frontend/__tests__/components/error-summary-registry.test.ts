@@ -97,6 +97,7 @@ describe('errorSummaryReducer', () => {
 describe('sortRegisteredErrors', () => {
   it('sorts by target DOM order and preserves registration order for ties and missing targets', () => {
     const targetContainer = document.createElement('div');
+
     for (const fieldId of ['field-earlier', 'field-later']) {
       const target = document.createElement('input');
       target.id = fieldId;
@@ -112,6 +113,7 @@ describe('sortRegisteredErrors', () => {
     ]);
 
     document.body.append(targetContainer);
+
     try {
       expect(sortRegisteredErrors(registeredErrors)).toEqual(['earlier', 'later-first', 'later-second', 'missing-first', 'missing-second']);
     } finally {

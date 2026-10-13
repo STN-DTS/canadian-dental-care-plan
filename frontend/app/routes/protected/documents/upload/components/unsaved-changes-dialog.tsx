@@ -34,6 +34,7 @@ export function UnsavedChangesDialog({ isDirty }: UnsavedChangesDialogProps) {
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
+
           if (returnFocusRef.current?.isConnected) {
             returnFocusRef.current.focus();
           }

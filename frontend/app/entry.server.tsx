@@ -41,6 +41,7 @@ export function handleError(error: unknown, { context, request }: LoaderFunction
   // Avoid logging aborted requests because React Router cancellation and
   // race-condition handling can abort requests during normal operation.
   const log = createLogger('entry.server/handleError');
+
   if (!request.signal.aborted) {
     if (error instanceof Error) {
       log.error(error);

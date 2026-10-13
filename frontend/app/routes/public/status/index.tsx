@@ -78,6 +78,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (parsedCheckFor.data.checkFor === CHECK_FOR.myself) {
     return redirect(getPathById('public/status/myself', { ...params }));
   }
+
   // Child selected
   return redirect(getPathById('public/status/child', { ...params }));
 }

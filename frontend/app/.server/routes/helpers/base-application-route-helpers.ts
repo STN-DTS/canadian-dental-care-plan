@@ -226,15 +226,19 @@ export function getAgeCategoryFromAge(age: number): AgeCategory {
   if (age >= 65) {
     return 'seniors';
   }
+
   if (age >= 18 && age < 65) {
     return 'adults';
   }
+
   if (age >= 16 && age < 18) {
     return 'youth';
   }
+
   if (age >= 0 && age < 16) {
     return 'children';
   }
+
   throw new Error(`Invalid age [${age}]`);
 }
 
@@ -303,9 +307,11 @@ export function getEligibilityStatus({ hasPrivateDentalInsurance, privateDentalI
   if (!hasPrivateDentalInsurance && !privateDentalInsuranceOnRecord) {
     return 'eligible';
   }
+
   if (!hasPrivateDentalInsurance && privateDentalInsuranceOnRecord) {
     return 'eligible-proof';
   }
+
   return 'ineligible';
 }
 
@@ -337,6 +343,7 @@ export function isChildClientNumberValid(context: 'intake' | 'renewal', clientAp
   if (context === 'intake' || clientApplication === undefined || clientNumber === undefined) {
     return true;
   }
+
   const isChildrensClientNumberValid = clientApplication.children.some((child) => child.information.clientNumber === clientNumber);
   const isEligibleClientNumberValid = clientApplication.eligibleClientNumbers.includes(clientNumber) && clientNumber !== clientApplication.applicantInformation.clientNumber;
   return isChildrensClientNumberValid && isEligibleClientNumberValid;
@@ -396,6 +403,7 @@ export function maritalStatusHasPartner(maritalStatus?: string) {
   if (!maritalStatus) {
     return false;
   }
+
   const { MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED } = getEnv();
   return [MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED].includes(maritalStatus);
 }
@@ -418,6 +426,7 @@ export function isSinReserved(sin: string, reservedSins: ReadonlyArray<string | 
     if (!s || !isValidSin(s)) {
       return [];
     }
+
     return [formatSin(s)];
   });
 

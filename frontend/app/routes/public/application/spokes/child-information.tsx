@@ -276,6 +276,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (state.context === 'renewal') {
     invariant(state.clientApplication, 'state.clientApplication must be defined for a renewal application');
     const memberId = parsedDataResult.data.memberId;
+
     if (
       !memberId || // memberId must be provided
       !state.clientApplication.children.some((child) => {
@@ -297,6 +298,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childState.id) {
           return child;
         }
+
         const information = { ...parsedDataResult.data, ...parsedSinDataResult.data };
         return { ...child, information };
       }),

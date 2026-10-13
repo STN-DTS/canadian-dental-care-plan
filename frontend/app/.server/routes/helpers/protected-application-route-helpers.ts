@@ -334,6 +334,7 @@ export function validateApplicationFlow<
   }
 
   const flowKey = `${context}-${type}` as const;
+
   if (!allowedFlows.includes(flowKey)) {
     const redirectUrl = getInitialApplicationFlowUrl(flowKey, params);
     log.warn('Flow [%s] is not allowed; allowedTypesAndFlows: [%s], redirecting to [%s], stateId: [%s]', flowKey, allowedFlows, redirectUrl, state.id);
@@ -363,30 +364,39 @@ export function getInitialApplicationFlowUrl(applicationFlow: ApplicationFlow, p
     case 'entry': {
       return getPathById('protected/application/$id/eligibility-requirements', params);
     }
+
     case 'intake-adult': {
       return getPathById('protected/application/$id/intake-adult/marital-status', params);
     }
+
     case 'intake-children': {
       return getPathById('protected/application/$id/intake-children/parent-or-guardian', params);
     }
+
     case 'intake-family': {
       return getPathById('protected/application/$id/intake-family/marital-status', params);
     }
+
     case 'intake-delegate': {
       return getPathById('protected/application/$id/application-delegate', params);
     }
+
     case 'renewal-adult': {
       return getPathById('protected/application/$id/renewal-adult/marital-status', params);
     }
+
     case 'renewal-children': {
       return getPathById('protected/application/$id/renewal-children/parent-or-guardian', params);
     }
+
     case 'renewal-family': {
       return getPathById('protected/application/$id/renewal-family/marital-status', params);
     }
+
     case 'renewal-delegate': {
       return getPathById('protected/application/$id/application-delegate', params);
     }
+
     default: {
       throw new Error(`Unknown applicationFlow value: [${applicationFlow}]`);
     }
@@ -491,15 +501,19 @@ export function getTypeOfApplicationFromRenewalSelectionClientIds(state: Protect
   invariant(state.clientApplication, 'Expected clientApplication to be defined');
   const hasPrimaryApplicant = clientIds.some((id) => isPrimaryApplicant(state, id));
   const hasDependent = clientIds.some((id) => isPrimaryApplicantChild(state, id));
+
   if (hasPrimaryApplicant && hasDependent) {
     return 'family';
   }
+
   if (hasPrimaryApplicant) {
     return 'adult';
   }
+
   if (hasDependent) {
     return 'children';
   }
+
   return 'delegate';
 }
 
@@ -508,9 +522,11 @@ export function getDeclaredChangeValueOrClientValue<T>(declaredChange: { hasChan
   if (declaredChange?.hasChanged === true) {
     return declaredChange.value;
   }
+
   if (declaredChange?.hasChanged === false) {
     return clientValue;
   }
+
   return undefined;
 }
 
@@ -544,9 +560,11 @@ export function shouldSkipMaritalStatus(state: PickDeep<ProtectedApplicationStat
   if (state.context !== 'renewal') {
     return false;
   }
+
   if (state.clientApplication === undefined) {
     return false;
   }
+
   return state.clientApplication.inputModel === 'simplified';
 }
 
@@ -563,6 +581,7 @@ export function isNewOrReturningMember(state: PickDeep<ProtectedApplicationState
   if (state.context !== 'intake') {
     return false;
   }
+
   if (state.applicantInformation?.dateOfBirth === undefined) {
     return false;
   }

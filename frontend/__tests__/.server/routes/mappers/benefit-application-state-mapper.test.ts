@@ -141,6 +141,7 @@ const setupMocks = (config: { ageCategory?: 'adults' | 'youth' | 'children'; ema
   const { ageCategory = 'adults', emailRequired = true, emailValid = true, email = 'test@example.com' } = config;
   vi.mocked(getContextualAgeCategoryFromDate).mockReturnValue(ageCategory);
   vi.mocked(isEmailAddressRequired).mockReturnValue(emailRequired);
+
   if (emailValid) {
     vi.mocked(checkValidAndVerifiedEmailAddress).mockReturnValue({ success: true, email, emailVerified: true });
   } else {

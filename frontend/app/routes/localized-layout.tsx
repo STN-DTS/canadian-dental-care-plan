@@ -21,6 +21,7 @@ const appLocaleMiddleware: Route.MiddlewareFunction = async ({ params }, next) =
     log.warn('Invalid lang requested [%s]; responding with 404', params.lang);
     throw data(null, { status: 404 });
   }
+
   return await next();
 };
 

@@ -29,6 +29,7 @@ export function useNProgress(delay = 500) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+
       if (startedRef.current) {
         NProgress.done();
         startedRef.current = false;

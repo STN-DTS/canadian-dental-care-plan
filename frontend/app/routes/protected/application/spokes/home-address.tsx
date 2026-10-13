@@ -44,9 +44,11 @@ function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
     case 'intake-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     case 'renewal-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `protected/application/$id/${applicationFlow}/contact-information`;
     }
@@ -214,8 +216,10 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
 
   // Adjust the state while rendering to ensure the dialog opens when the address response changes
   const [prevFetcherAddressResponse, setPrevFetcherAddressResponse] = useState(fetcherAddressResponse);
+
   if (prevFetcherAddressResponse !== fetcherAddressResponse) {
     setPrevFetcherAddressResponse(fetcherAddressResponse);
+
     if (fetcherAddressResponse) {
       setAddressDialogContent(fetcherAddressResponse);
     }
@@ -226,6 +230,7 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
       setAddressDialogContent(undefined);
     }
   }
+
   const homeCountryChangeHandler = (event: React.SyntheticEvent<HTMLSelectElement>) => {
     const countryId = event.currentTarget.value;
     setSelectedHomeCountry(countryId);
@@ -254,15 +259,18 @@ export default function HomeAddress({ loaderData, params }: Route.ComponentProps
   const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedHomeCountry);
 
   let postalCodeHelpMessage: string | undefined;
+
   switch (selectedHomeCountry) {
     case CANADA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.address.addressField.postalCodeHelp);
       break;
     }
+
     case USA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.address.addressField.postalCodeHelpUs);
       break;
     }
+
     default: {
       postalCodeHelpMessage = undefined;
       break;

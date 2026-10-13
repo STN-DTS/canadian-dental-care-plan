@@ -38,6 +38,7 @@ function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
     case 'full-children': {
       return `public/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `public/application/$id/${applicationFlow}/marital-status`;
     }

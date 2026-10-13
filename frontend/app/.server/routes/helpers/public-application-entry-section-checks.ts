@@ -58,6 +58,7 @@ export function isPersonalInformationSectionCompleted(state: Pick<PublicApplicat
   if (state.inputModel === undefined || state.applicantInformation === undefined) {
     return false;
   }
+
   const ageCategory = getContextualAgeCategoryFromDate(state.applicantInformation.dateOfBirth, state.applicationYear);
 
   if (ageCategory === 'children') {

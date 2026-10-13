@@ -120,6 +120,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           path: ['dentalInsuranceEligibilityConfirmationYes'],
         });
       }
+
       if (hasDentalInsurance === false && dentalInsuranceEligibilityConfirmationNo === false) {
         ctx.addIssue({
           code: 'custom',
@@ -147,6 +148,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childState.id) {
           return child;
         }
+
         return {
           ...child,
           dentalInsurance: {

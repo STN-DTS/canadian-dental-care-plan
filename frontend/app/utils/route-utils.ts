@@ -130,6 +130,7 @@ export function findRouteById(id: string, routes: I18nRoute[] = i18nRoutes): I18
 
     if (isI18nLayoutRoute(route)) {
       const matchingRoute = findRouteById(id, route.children);
+
       if (matchingRoute) {
         return matchingRoute;
       }

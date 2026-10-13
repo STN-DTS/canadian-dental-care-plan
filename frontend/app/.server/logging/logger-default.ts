@@ -97,6 +97,7 @@ export class DefaultLogger implements Logger {
 
     // Scenario 2: Standard message logging with no splat args.
     const msg = String(messageOrObject); // Ensure message is a string.
+
     if (splat.length === 0) {
       // Merge baseEntry with message.
       const entry: LogEntry = Object.assign(baseEntry, { message: msg });

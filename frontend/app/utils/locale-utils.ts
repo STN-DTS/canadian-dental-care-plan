@@ -30,6 +30,7 @@ export function isAppLocale(value: unknown): value is AppLocale {
   if (typeof value !== 'string') {
     return false;
   }
+
   return APP_LOCALES.includes(value as AppLocale);
 }
 
@@ -42,9 +43,11 @@ export function getAltLanguage(language: string): AppLocale {
     case 'en': {
       return 'fr';
     }
+
     case 'fr': {
       return 'en';
     }
+
     default: {
       throw new Error(`Could not determine altLanguage for language: ${language}.`);
     }

@@ -17,9 +17,11 @@ function getReporterConfig(): ReporterDescription[] {
   if (!isCI) {
     return [['list'], ['html']];
   }
+
   if (isTeamCity) {
     return [['playwright-teamcity-reporter']];
   }
+
   return [['dot'], ['html', { open: 'never' }]];
 }
 

@@ -25,22 +25,27 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
       log.debug('Handling request for [%s]', url);
       return handleOpenidConfigurationRequest({ context });
     }
+
     case 'authorize': {
       log.debug('Handling request for [%s]', url);
       return handleMockAuthorizeRequest({ context, url });
     }
+
     case 'jwks': {
       log.debug('Handling request for [%s]', url);
       return await handleJwksRequest({ context });
     }
+
     case 'userinfo': {
       log.debug('Handling request for [%s]', url);
       return await handleUserInfoRequest({ context });
     }
+
     case 'validatesession': {
       log.debug('Handling request for [%s]', url);
       return handleValidateSessionRequest();
     }
+
     default: {
       log.warn('Invalid oidc route requested: [%s]', slug);
       return Response.json(null, { status: 404 });
@@ -63,6 +68,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       log.debug('Handling request for [%s]', url);
       return await handleTokenRequest({ context });
     }
+
     default: {
       log.warn('Invalid oidc route requested: [%s]', slug);
       return Response.json(null, { status: 404 });

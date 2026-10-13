@@ -91,6 +91,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childState.id) {
           return child;
         }
+
         return {
           ...child,
           information: {

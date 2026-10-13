@@ -40,9 +40,11 @@ describe('useDocumentUploadForm', () => {
 
     const selectionFormData = submit.mock.calls[0]?.[0];
     expect(selectionFormData).toBeInstanceOf(FormData);
+
     if (!(selectionFormData instanceof FormData)) {
       throw new Error('Expected file selection to submit multipart form data');
     }
+
     expect(selectionFormData.get('_action')).toBe(FORM_ACTION.addFiles);
     expect(selectionFormData.getAll('file_object')).toEqual([file]);
 
@@ -72,9 +74,11 @@ describe('useDocumentUploadForm', () => {
     expect(submit).toHaveBeenCalledTimes(2);
 
     const retrySelectionFormData = submit.mock.calls[1]?.[0];
+
     if (!(retrySelectionFormData instanceof FormData)) {
       throw new Error('Expected file selection to submit multipart form data');
     }
+
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(
       createFetcher(
         {
@@ -131,9 +135,11 @@ describe('useDocumentUploadForm', () => {
 
     const submittedFormData = submit.mock.calls[0]?.[0];
     expect(submittedFormData).toBeInstanceOf(FormData);
+
     if (!(submittedFormData instanceof FormData)) {
       throw new Error('Expected upload to submit multipart form data');
     }
+
     expect(submittedFormData.get('_action')).toBe(FORM_ACTION.upload);
     expect(submittedFormData.get('_csrf')).toBe('csrf-token');
     expect(submittedFormData.getAll('file_id')).toEqual(['file-1', 'file-2']);
@@ -190,9 +196,11 @@ describe('useDocumentUploadForm', () => {
 
     const retryFormData = submit.mock.calls[0]?.[0];
     expect(retryFormData).toBeInstanceOf(FormData);
+
     if (!(retryFormData instanceof FormData)) {
       throw new Error('Expected upload retry to submit multipart form data');
     }
+
     expect(retryFormData.getAll('file_id')).toEqual(['file-2']);
     expect(retryFormData.getAll('file_object')).toEqual([proof]);
     expect(retryFormData.getAll('file_document_type')).toEqual(['proof-of-coverage']);
@@ -203,9 +211,11 @@ describe('useDocumentUploadForm', () => {
 
     const selectionFormData = submit.mock.calls[1]?.[0];
     expect(selectionFormData).toBeInstanceOf(FormData);
+
     if (!(selectionFormData instanceof FormData)) {
       throw new Error('Expected file selection to submit multipart form data');
     }
+
     expect.soft(selectionFormData.get('current_file_count')).toBe('2');
     expect.soft(selectionFormData.getAll('existing_file_object')).toEqual([receipt, proof]);
 
@@ -250,6 +260,7 @@ describe('useDocumentUploadForm', () => {
     expect(uploadStatusRegion).toHaveFocus();
 
     const form = document.createElement('form');
+
     for (const [name, value] of [
       ['_csrf', 'csrf-token'],
       ['file_id', 'removed-file'],
@@ -260,13 +271,16 @@ describe('useDocumentUploadForm', () => {
       input.value = value;
       form.append(input);
     }
+
     act(() => {
       result.current.submitForm(form);
     });
     const finishFormData = submit.mock.lastCall?.[0];
+
     if (!(finishFormData instanceof FormData)) {
       throw new Error('Expected a finish submission');
     }
+
     expect(finishFormData.get('_action')).toBe(FORM_ACTION.finish);
     expect(finishFormData.get('_csrf')).toBe('csrf-token');
     expect(finishFormData.getAll('file_id')).toEqual([]);

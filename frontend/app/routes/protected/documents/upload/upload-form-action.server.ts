@@ -64,6 +64,7 @@ function finishAction({ formAction, formData, params, session, uploadState }: Fi
   }
 
   const uploadedDocuments = uploadState.documents.filter((document) => document.status === 'uploaded');
+
   if (uploadState.status === 'finished' || uploadedDocuments.length === 0) {
     throw data(null, { status: 409 });
   }
@@ -97,12 +98,14 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   const fileIds = formData.getAll('file_id');
   const fileObjects = formData.getAll('file_object');
+
   if (fileIds.length === 0 || fileIds.length !== fileObjects.length || fileIds.some((value) => typeof value !== 'string' || !value.trim()) || fileObjects.some((value) => typeof value === 'string') || new Set(fileIds).size !== fileIds.length) {
     throw data(null, { status: 400 });
   }
 
   const files = await getFiles(formData);
   const hasFiles = files.size !== 0;
+
   if (!hasFiles) {
     throw data(null, { status: 400 });
   }
@@ -114,6 +117,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   // Validate the upload form against the schema.
   const validationResult = validateUploadedFiles({ files, locale, t });
+
   if (!validationResult.success) {
     return data({ formAction, source, responseType: 'validation-errors', errors: validationResult.errors } as const, 400);
   }
@@ -133,6 +137,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents } });
 
   const scanResult = await scanDocuments(validationResult.data.files);
+
   if (!scanResult.success) {
     return data({ formAction, source, responseType: 'scan-errors', errors: scanResult.errors } as const, 400);
   }
@@ -142,10 +147,12 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     if (document.status === 'uploaded' || (!uploadResult.success && hasUploadError(document.id, uploadResult))) {
       return document;
     }
+
     return Object.assign({}, document, { status: 'uploaded' as const });
   });
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });
+
   if (!uploadResult.success) {
     return data({ formAction, source, responseType: 'upload-errors', errors: uploadResult.errors, documents: processedDocuments } as const, 400);
   }

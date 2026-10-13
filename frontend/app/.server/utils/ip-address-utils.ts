@@ -13,6 +13,7 @@ import { getEnv } from '~/.server/utils/env-utils';
  */
 export function getClientIpAddress(request: Pick<Request, 'headers'>): string | null {
   const { NODE_ENV } = getEnv();
+
   if (NODE_ENV === 'development') {
     return '127.0.0.1';
   }

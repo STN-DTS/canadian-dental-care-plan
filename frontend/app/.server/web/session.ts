@@ -196,9 +196,11 @@ export class ExpressSession implements Session {
 
   has(key: SessionKey): boolean {
     const sanitizedKey = this.sanitizeKey(key);
+
     if (this.isReservedKey(sanitizedKey)) {
       return false;
     }
+
     const exists = sanitizedKey in this.session;
     this.log.trace('Session [%s]: Checking for key "%s", exists: %s', this.id, key, exists);
     return exists;
@@ -209,6 +211,7 @@ export class ExpressSession implements Session {
       this.log.trace('Session [%s]: Key "%s" not found', this.id, key);
       return None;
     }
+
     const sanitizedKey = this.sanitizeKey(key);
     const value = this.session[sanitizedKey] as SessionTypeMap[K];
     this.log.trace('Session [%s]: Found key "%s"', this.id, key);
@@ -217,6 +220,7 @@ export class ExpressSession implements Session {
 
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     const value = this.find(key);
+
     if (value.isNone()) {
       this.log.error('Session [%s]: Attempted to get non-existent key "%s"', this.id, key);
       throw new Error(`Key '${key}' not found in session [${this.id}]`);
@@ -298,9 +302,11 @@ export class ExpressSession implements Session {
   protected sanitizeKey(key: string): string {
     assert.ok(!isEmpty(key, { ignore_whitespace: true }), 'Session key cannot be empty');
     let sanitized = key.replaceAll(/[^a-zA-Z0-9_$]/g, '_');
+
     if (!/^[a-zA-Z_$]/.test(sanitized)) {
       sanitized = '_' + sanitized;
     }
+
     return sanitized;
   }
 

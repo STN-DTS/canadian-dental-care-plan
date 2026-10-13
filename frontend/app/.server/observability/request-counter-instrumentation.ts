@@ -83,6 +83,7 @@ const pathCache = new Map<string, CachedRouteId>();
 // Set of route ids that should be ignored for request counting. These are typically
 // routes that are either low-level (e.g. health checks) or catch-all (e.g. 404s).
 const ignoredRouteIds: Set<string> = new Set(['api/locales', 'routes/catchall']);
+
 /**
  * Resolves a handled request to its route id and emits an HTTP status counter metric.
  *

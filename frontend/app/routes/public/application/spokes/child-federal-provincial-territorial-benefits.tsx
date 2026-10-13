@@ -196,6 +196,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         if (child.id !== childState.id) {
           return child;
         }
+
         return {
           ...child,
           dentalBenefits: {
@@ -232,6 +233,7 @@ export default function SpokeChildAccessToDentalDentalBenefits({ loaderData, par
 
   function handleOnHasProvincialTerritorialBenefitChanged(e: React.ChangeEvent<HTMLInputElement>) {
     setHasProvincialTerritorialBenefitValue(e.target.value === HAS_PROVINCIAL_TERRITORIAL_BENEFITS_OPTION.yes);
+
     if (e.target.value !== HAS_PROVINCIAL_TERRITORIAL_BENEFITS_OPTION.yes) {
       setProvinceValue(undefined);
       setProvincialTerritorialSocialProgramValue(undefined);

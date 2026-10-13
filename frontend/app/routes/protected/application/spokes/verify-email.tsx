@@ -43,9 +43,11 @@ const MAX_ATTEMPTS = 5;
 function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
   switch (applicationFlow) {
     case 'intake-children':
+
     case 'renewal-children': {
       return `protected/application/$id/${applicationFlow}/parent-or-guardian`;
     }
+
     default: {
       return `protected/application/$id/${applicationFlow}/contact-information`;
     }
@@ -119,6 +121,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       return { status: 'verification-code-sent' } as const;
     }
   }
+
   if (formAction === FORM_ACTION.submit) {
     const verificationCodeSchema = z.object({
       verificationCode: z
@@ -200,8 +203,10 @@ export default function ApplicationVerifyEmail({ loaderData, params }: Route.Com
 
   // Adjust the state while rendering to ensure the dialog opens when the verification code is sent
   const [prevFetcherStatus, setPrevFetcherStatus] = useState(fetcherStatus);
+
   if (prevFetcherStatus !== fetcherStatus) {
     setPrevFetcherStatus(fetcherStatus);
+
     if (fetcherStatus?.status === 'verification-code-sent') {
       setShowDialog(true);
     }

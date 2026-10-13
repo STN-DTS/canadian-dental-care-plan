@@ -73,6 +73,7 @@ export function AddressSuggestionDialogContent({ enteredAddress, suggestedAddres
     formData.set('countryId', selectedAddressSuggestion.countryId);
     formData.set('postalZipCode', selectedAddressSuggestion.postalZipCode);
     formData.set('provinceStateId', selectedAddressSuggestion.provinceStateId);
+
     if (syncAddresses) {
       formData.set('syncAddresses', 'true');
     }
@@ -186,6 +187,7 @@ export function AddressInvalidDialogContent({ formAction, invalidAddress, syncAd
     formData.set('countryId', invalidAddress.countryId);
     formData.set('postalZipCode', invalidAddress.postalZipCode);
     formData.set('provinceStateId', invalidAddress.provinceStateId);
+
     if (syncAddresses) {
       formData.set('syncAddresses', 'true');
     }

@@ -37,6 +37,7 @@ export function loadProtectedApplicationRenewalChildState({ params, requestUrl, 
   // Redirect to the confirmation page if the application has been submitted and
   // the current route is not the confirmation page.
   const confirmationRouteUrl = getPathById('protected/application/$id/renewal-children/confirmation', params);
+
   if (applicationState.submissionInfo && !pathname.endsWith(confirmationRouteUrl)) {
     log.warn('Redirecting user to "%s" since the application has been submitted; sessionId: [%s], ', confirmationRouteUrl, applicationState.id);
     throw redirect(confirmationRouteUrl);
@@ -45,6 +46,7 @@ export function loadProtectedApplicationRenewalChildState({ params, requestUrl, 
   // Redirect to the first flow page if the application has not been submitted and
   // the current route is the confirmation page.
   const typeOfApplicationRouteUrl = getPathById('protected/application/$id/type-application', params);
+
   if (!applicationState.submissionInfo && pathname.endsWith(confirmationRouteUrl)) {
     log.warn('Redirecting user to "%s" since the application has not been submitted; sessionId: [%s], ', typeOfApplicationRouteUrl, applicationState.id);
     throw redirect(typeOfApplicationRouteUrl);

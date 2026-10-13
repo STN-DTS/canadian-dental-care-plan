@@ -20,6 +20,7 @@ export function KillswitchDialog({ timeoutSecs }: KillswitchDialogProps) {
 
   // resets `remainingTime` if the parent changes the timeout
   const [prevTimeoutSecs, setPrevTimeoutSecs] = useState(timeoutSecs);
+
   if (prevTimeoutSecs !== timeoutSecs) {
     setPrevTimeoutSecs(timeoutSecs);
     setRemainingTime(timeoutSecs);

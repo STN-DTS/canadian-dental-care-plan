@@ -10,9 +10,11 @@ export const isValidPostalCode = (countryCode: string, postalCode: string) => {
     case CANADA_COUNTRY_ID: {
       return postalCodeRegex.test(postalCode);
     }
+
     case USA_COUNTRY_ID: {
       return zipCodeRegex.test(postalCode);
     }
+
     default: {
       return true;
     }
@@ -36,50 +38,66 @@ export function isValidCanadianPostalCode(provinceCode: string, postalCode: stri
     NORTHWEST_TERRITORIES_PROVINCE_ID,
     YUKON_PROVINCE_ID,
   } = getEnv();
+
   if (!isValidPostalCode(CANADA_COUNTRY_ID, postalCode)) {
     return false;
   }
+
   const upperCasePostalCode = postalCode.toUpperCase();
+
   switch (provinceCode) {
     case BRITISH_COLUMBIA_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('V');
     }
+
     case ALBERTA_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('T');
     }
+
     case SASKATCHEWAN_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('S');
     }
+
     case MANITOBA_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('R');
     }
+
     case ONTARIO_PROVINCE_ID: {
       return /^[KLNMP]/.test(upperCasePostalCode);
     }
+
     case QUEBEC_PROVINCE_ID: {
       return /^[GHJ]/.test(upperCasePostalCode);
     }
+
     case NEW_BRUNSWICK_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('E');
     }
+
     case NOVA_SCOTIA_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('B');
     }
+
     case PRINCE_EDWARD_ISLAND_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('C');
     }
+
     case NEWFOUNDLAND_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('A');
     }
+
     case YUKON_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('Y');
     }
+
     case NORTHWEST_TERRITORIES_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('X');
     }
+
     case NUNAVUT_PROVINCE_ID: {
       return upperCasePostalCode.startsWith('X');
     }
+
     default: {
       return false;
     }

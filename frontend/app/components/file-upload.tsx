@@ -55,6 +55,7 @@ type StoreAction =
 
 function createStore(listeners: Set<() => void>, files: Map<string, File>, invalid: boolean) {
   let onValueChange = (_files: ReadonlyArray<FileState>) => {};
+
   let state: StoreState = {
     files,
     dragOver: false,
@@ -65,6 +66,7 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
     switch (action.type) {
       case 'ADD_FILES': {
         const nextFiles = new Map(state.files);
+
         for (const file of action.files) {
           nextFiles.set(crypto.randomUUID(), file);
         }
@@ -95,6 +97,7 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
         if (state.invalid === action.invalid) {
           return state;
         }
+
         return { ...state, invalid: action.invalid };
       }
 
@@ -115,11 +118,13 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
 
   function dispatch(action: StoreAction) {
     const nextState = reducer(state, action);
+
     if (nextState === state) {
       return;
     }
 
     state = nextState;
+
     for (const listener of listeners) {
       listener();
     }
@@ -141,9 +146,11 @@ const StoreContext = createContext<ReturnType<typeof createStore> | null>(null);
 
 function useStoreContext(consumerName: string) {
   const context = use(StoreContext);
+
   if (!context) {
     throw new Error(`\`${consumerName}\` must be used within \`${ROOT_NAME}\``);
   }
+
   return context;
 }
 
@@ -182,9 +189,11 @@ const FileUploadContext = createContext<FileUploadContextValue | null>(null);
 
 function useFileUploadContext(consumerName: string) {
   const context = use(FileUploadContext);
+
   if (!context) {
     throw new Error(`\`${consumerName}\` must be used within \`${ROOT_NAME}\``);
   }
+
   return context;
 }
 
@@ -257,9 +266,11 @@ function FileUploadRoot(props: FileUploadRootProps) {
       if (disabled || files.length === 0) {
         return;
       }
+
       if (onBeforeFilesAdd?.(files) === false) {
         return;
       }
+
       store.dispatch({ type: 'ADD_FILES', files });
     },
     [store, onBeforeFilesAdd, disabled],
@@ -387,6 +398,7 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
       }
 
       const relatedTarget = event.relatedTarget;
+
       if (relatedTarget && relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
         return;
       }
@@ -410,11 +422,13 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
 
       const files = [...event.dataTransfer.files];
       const inputElement = context.inputRef.current;
+
       if (!inputElement) {
         return;
       }
 
       const dataTransfer = new DataTransfer();
+
       for (const file of files) {
         dataTransfer.items.add(file);
       }
@@ -440,9 +454,11 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
       const items = event.clipboardData.items;
 
       const files: File[] = [];
+
       for (const item of items) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
+
           if (file) {
             files.push(file);
           }
@@ -454,11 +470,13 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
       }
 
       const inputElement = context.inputRef.current;
+
       if (!inputElement) {
         return;
       }
 
       const dataTransfer = new DataTransfer();
+
       for (const file of files) {
         dataTransfer.items.add(file);
       }
@@ -589,9 +607,11 @@ const FileUploadItemContext = createContext<FileUploadItemContextValue | null>(n
 
 function useFileUploadItemContext(consumerName: string) {
   const context = use(FileUploadItemContext);
+
   if (!context) {
     throw new Error(`\`${consumerName}\` must be used within \`${ITEM_NAME}\``);
   }
+
   return context;
 }
 
@@ -659,6 +679,7 @@ function formatBytes(bytes: number) {
   if (bytes === 0) {
     return '0 B';
   }
+
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / 1024 ** i).toFixed(i ? 1 : 0)} ${sizes[i]}`;

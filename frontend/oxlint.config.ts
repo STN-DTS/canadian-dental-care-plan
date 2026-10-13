@@ -2,6 +2,12 @@ import { defineConfig } from 'oxlint';
 
 export default defineConfig({
   plugins: ['typescript', 'unicorn', 'oxc', 'import', 'react', 'jsx-a11y', 'vitest'],
+  jsPlugins: [
+    {
+      name: '@stylistic',
+      specifier: '@stylistic/eslint-plugin',
+    },
+  ],
   categories: {
     correctness: 'error',
     nursery: 'error',
@@ -59,6 +65,7 @@ export default defineConfig({
     'unicorn/no-useless-undefined': ['error', { checkArguments: false }],
     'vitest/require-mock-type-parameters': 'off',
     'vitest/require-to-throw-message': 'off',
+    '@stylistic/padding-line-between-statements': ['error', { blankLine: 'always', prev: '*', next: 'block-like' }, { blankLine: 'always', prev: 'block-like', next: '*' }],
   },
   settings: {
     react: {

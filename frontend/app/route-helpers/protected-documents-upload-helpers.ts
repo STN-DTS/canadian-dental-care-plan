@@ -37,9 +37,11 @@ export async function validateFileSelection({ formData, locale, t }: ValidateFil
   });
 
   let errorMessage: string | undefined;
+
   if (validationResult.success) {
     const existingFiles = formData.getAll('existing_file_object') as File[];
     const duplicateFile = await findDuplicateFile([...existingFiles, ...incomingFiles]);
+
     if (duplicateFile) {
       errorMessage = t(($) => $.upload.errorMessage.duplicateFile, { filename: duplicateFile.name });
     }
@@ -161,6 +163,7 @@ function createFileSelectionSchema({ locale, t }: CreateFileSelectionSchemaArgs)
 
       for (const file of files) {
         const issue = fileSchema.safeParse(file).error?.issues[0];
+
         if (issue) {
           ctx.addIssue({ code: 'custom', message: issue.message, path: ['files'] });
           return;
@@ -232,6 +235,7 @@ function createDocumentUploadSchema({ locale, t }: CreateDocumentUploadSchemaArg
     })
     .superRefine((data, ctx) => {
       const fileIssue = fileValidationSchema.safeParse(data.file).error?.issues[0];
+
       if (fileIssue) {
         ctx.addIssue({ code: 'custom', message: fileIssue.message, path: ['file'] });
       } else if (!data.documentType) {
@@ -252,8 +256,10 @@ function createDocumentUploadSchema({ locale, t }: CreateDocumentUploadSchemaArg
       )
       .superRefine((files, ctx) => {
         const seenFiles = new Set<string>();
+
         for (const [id, { file, fileHash }] of Object.entries(files)) {
           const fileKey = JSON.stringify([file.name, file.size, fileHash]);
+
           if (seenFiles.has(fileKey)) {
             ctx.addIssue({ code: 'custom', message: t(($) => $.upload.errorMessage.duplicateFile, { filename: file.name }), path: [id, 'file'] });
           } else {

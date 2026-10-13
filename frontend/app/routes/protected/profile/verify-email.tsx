@@ -226,8 +226,10 @@ export default function ProtectedProfileVerifyEmail({ loaderData, params }: Rout
 
   // Adjust the state while rendering to ensure the dialog opens when the verification code is sent
   const [prevFetcherStatus, setPrevFetcherStatus] = useState(fetcherStatus);
+
   if (prevFetcherStatus !== fetcherStatus) {
     setPrevFetcherStatus(fetcherStatus);
+
     if (fetcherStatus?.status === 'verification-code-sent') {
       setShowDialog(true);
     }

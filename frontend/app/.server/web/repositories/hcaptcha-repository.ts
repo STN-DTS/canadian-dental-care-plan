@@ -53,6 +53,7 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     const url = new URL(this.baseUrl);
     url.searchParams.set('response', hCaptchaResponse);
     url.searchParams.set('secret', this.serverConfig.HCAPTCHA_SECRET_KEY);
+
     if (ipAddress) {
       url.searchParams.set('remoteip', ipAddress);
     }

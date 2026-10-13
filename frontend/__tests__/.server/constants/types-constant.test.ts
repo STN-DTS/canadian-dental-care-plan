@@ -17,6 +17,7 @@ describe('TYPES constant', () => {
   it('should contain unique service identifiers for each entry', () => {
     const flattenedKeys = flatKeys(TYPES);
     expect.hasAssertions();
+
     for (const identifierKey of Object.keys(flattenedKeys)) {
       const identifier = flattenedKeys[identifierKey as keyof typeof flattenedKeys];
       expect(identifier).toBeTypeOf('symbol');

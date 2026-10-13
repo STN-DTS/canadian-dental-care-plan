@@ -74,9 +74,11 @@ export const padWithZero = (value: number, maxLength: number) => {
   if (Number.isNaN(value)) {
     return value.toString();
   }
+
   if (value.toString().length >= maxLength) {
     return value.toString();
   }
+
   return value.toString().padStart(maxLength, '0');
 };
 
@@ -131,6 +133,7 @@ export function formatPercent(value: number, locale: string) {
   if (!/en|fr/i.test(locale)) {
     throw new Error(`locale must be 'en' or 'fr'`);
   }
+
   return Intl.NumberFormat(`${locale}-CA`, { style: 'percent' }).format(value / 100);
 }
 

@@ -21,6 +21,7 @@ export function InputError({ className, fieldId, message, id, ...props }: InputE
 
   useEffect(() => {
     registerError?.(registrationId, { fieldId, message });
+
     return () => {
       unregisterError?.(registrationId);
     };

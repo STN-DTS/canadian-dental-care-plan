@@ -116,6 +116,7 @@ export function useSafeFetcherSubmit<TFetcher extends Pick<ReturnType<typeof use
 
         if (onSubmit) {
           const result = await onSubmit({ event, data: formData });
+
           if (result instanceof FormData) {
             formData = result;
           }

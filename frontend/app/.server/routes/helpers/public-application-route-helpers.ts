@@ -338,30 +338,39 @@ export function getInitialApplicationFlowUrl(applicationFlow: ApplicationFlow, p
     case 'entry': {
       return getPathById('public/application/$id/eligibility-requirements', params);
     }
+
     case 'full-adult': {
       return getPathById('public/application/$id/full-adult/marital-status', params);
     }
+
     case 'full-children': {
       return getPathById('public/application/$id/full-children/parent-or-guardian', params);
     }
+
     case 'full-family': {
       return getPathById('public/application/$id/full-family/marital-status', params);
     }
+
     case 'full-delegate': {
       return getPathById('public/application/$id/application-delegate', params);
     }
+
     case 'simplified-adult': {
       return getPathById('public/application/$id/simplified-adult/contact-information', params);
     }
+
     case 'simplified-children': {
       return getPathById('public/application/$id/simplified-children/parent-or-guardian', params);
     }
+
     case 'simplified-family': {
       return getPathById('public/application/$id/simplified-family/contact-information', params);
     }
+
     case 'simplified-delegate': {
       return getPathById('public/application/$id/application-delegate', params);
     }
+
     default: {
       throw new Error(`Unknown applicationFlow value: [${applicationFlow}]`);
     }
@@ -452,6 +461,7 @@ export function isNewOrReturningMember(state: PickDeep<PublicApplicationState, '
   if (state.context !== 'intake') {
     return false;
   }
+
   if (state.applicantInformation?.dateOfBirth === undefined) {
     return false;
   }
@@ -480,6 +490,7 @@ export function getMemberIdForFullApplication(state: PickDeep<PublicApplicationS
   if (state.context === 'intake') {
     return shouldSkipNewOrReturningMember(state) ? undefined : state.newOrReturningMember?.memberId;
   }
+
   return state.applicantInformation?.memberId;
 }
 

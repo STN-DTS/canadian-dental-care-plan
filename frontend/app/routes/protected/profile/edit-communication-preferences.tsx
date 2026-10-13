@@ -139,6 +139,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   // Redirect to edit email address if digital communication method is selected without a verified email address
   const isDigitalCommunicationMethodSelected = parsedDataResult.data.preferredMethodSunLife === COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID || parsedDataResult.data.preferredMethodGovernmentOfCanada === COMMUNICATION_METHOD_GC_DIGITAL_ID;
+
   if (isDigitalCommunicationMethodSelected && !isClientApplicationEmailAddressVerified(clientApplication)) {
     const profileEmailContext: ProfileEmailContext = {
       context: 'communication-preferences',
@@ -200,6 +201,7 @@ export default function EditCommunicationPreferences({ loaderData, params }: Rou
 
         function getCheckedValue(name: string, fieldId: string) {
           const selectedEl = document.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]:checked`);
+
           if (selectedEl) {
             formValues.set(fieldId, {
               elementType: 'radio',

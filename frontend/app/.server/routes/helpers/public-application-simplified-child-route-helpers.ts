@@ -38,6 +38,7 @@ export function loadPublicApplicationSimplifiedChildState({ params, requestUrl, 
   // Redirect to the confirmation page if the application has been submitted and
   // the current route is not the confirmation page.
   const confirmationRouteUrl = getPathById('public/application/$id/simplified-children/confirmation', params);
+
   if (applicationState.submissionInfo && !pathname.endsWith(confirmationRouteUrl)) {
     log.warn('Redirecting user to "%s" since the application has been submitted; sessionId: [%s], ', confirmationRouteUrl, applicationState.id);
     throw redirect(confirmationRouteUrl);
@@ -46,6 +47,7 @@ export function loadPublicApplicationSimplifiedChildState({ params, requestUrl, 
   // Redirect to the first flow page if the application has not been submitted and
   // the current route is the confirmation page.
   const typeOfApplicationRouteUrl = getPathById('public/application/$id/type-application', params);
+
   if (!applicationState.submissionInfo && pathname.endsWith(confirmationRouteUrl)) {
     log.warn('Redirecting user to "%s" since the application has not been submitted; sessionId: [%s], ', typeOfApplicationRouteUrl, applicationState.id);
     throw redirect(typeOfApplicationRouteUrl);
@@ -170,11 +172,13 @@ export function validatePublicApplicationSimplifiedChildStateForReview({ params,
   }
 
   const resolvedSunLifePreferredMethod = communicationPreferences.hasChanged ? communicationPreferences.value.preferredMethod : clientApplication.communicationPreferences.preferredMethodSunLife;
+
   if (resolvedSunLifePreferredMethod === undefined) {
     throw redirect(getPathById('public/application/$id/simplified-children/parent-or-guardian', params));
   }
 
   const resolvedGovernmentOfCanadaPreferredMethod = communicationPreferences.hasChanged ? communicationPreferences.value.preferredNotificationMethod : clientApplication.communicationPreferences.preferredMethodGovernmentOfCanada;
+
   if (resolvedGovernmentOfCanadaPreferredMethod === undefined) {
     throw redirect(getPathById('public/application/$id/simplified-children/parent-or-guardian', params));
   }

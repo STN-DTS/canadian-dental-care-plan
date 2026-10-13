@@ -22,9 +22,11 @@ export function removePathSegment(url: string | URL, position: number) {
 export function replacePathSegment(url: string | URL, position: number, replacement: string): string {
   const urlObj = new URL(url);
   const segments = urlObj.pathname.split('/');
+
   if (position >= 0 && position < segments.length) {
     segments[position + 1] = replacement;
   }
+
   urlObj.pathname = segments.join('/');
   return urlObj.href;
 }

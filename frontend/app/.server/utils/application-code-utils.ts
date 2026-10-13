@@ -18,9 +18,11 @@ export function getContextualAlertType(statusId: string | null, nullStatusMappin
     case INVALID_CLIENT_FRIENDLY_STATUS: {
       return 'danger';
     }
+
     case CLIENT_STATUS_SUCCESS_ID: {
       return 'success';
     }
+
     default: {
       return 'info';
     }

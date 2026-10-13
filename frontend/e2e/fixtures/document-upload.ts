@@ -27,8 +27,10 @@ export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadS
       const captureWindow = window as typeof window & { uploadSubmissions: UploadSubmission[] };
       captureWindow.uploadSubmissions = [];
       const originalFetch = window.fetch.bind(window);
+
       window.fetch = async (input, init) => {
         const request = new Request(input instanceof Request ? input.clone() : input, init);
+
         if (request.method === 'POST' && new URL(request.url).pathname.includes('/documents/upload/')) {
           // Inspect a clone so reading FormData does not consume the real request.
           const form = await request.clone().formData();
@@ -41,6 +43,7 @@ export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadS
             fieldNames: [...form.keys()],
           });
         }
+
         // Observe uploads without replacing the application's server responses.
         return await originalFetch(input, init);
       };

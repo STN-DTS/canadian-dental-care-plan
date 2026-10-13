@@ -253,6 +253,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (ageCategory === 'youth') {
     return redirect(getPathById('public/application/$id/living-independently', params));
   }
+
   if (ageCategory === 'children') {
     return redirect(getPathById('public/application/$id/parent-or-guardian', params));
   }

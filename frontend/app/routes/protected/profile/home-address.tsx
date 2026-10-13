@@ -244,8 +244,10 @@ export default function EditHomeAddress({ loaderData, params }: Route.ComponentP
 
   // Adjust the state while rendering to ensure the dialog opens when the address response changes
   const [prevFetcherAddressResponse, setPrevFetcherAddressResponse] = useState(fetcherAddressResponse);
+
   if (prevFetcherAddressResponse !== fetcherAddressResponse) {
     setPrevFetcherAddressResponse(fetcherAddressResponse);
+
     if (fetcherAddressResponse) {
       setAddressDialogContent(fetcherAddressResponse);
     }
@@ -285,15 +287,18 @@ export default function EditHomeAddress({ loaderData, params }: Route.ComponentP
   const isPostalCodeRequired = postalCodeRequiredCountryIds.includes(selectedHomeCountry);
 
   let postalCodeHelpMessage: string | undefined;
+
   switch (selectedHomeCountry) {
     case CANADA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.homeAddress.postalCodeHelp);
       break;
     }
+
     case USA_COUNTRY_ID: {
       postalCodeHelpMessage = t(($) => $.homeAddress.postalCodeHelpUs);
       break;
     }
+
     default: {
       postalCodeHelpMessage = undefined;
       break;

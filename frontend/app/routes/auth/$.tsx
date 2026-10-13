@@ -44,15 +44,19 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     case 'login': {
       return handleLoginRequest({ context, url });
     }
+
     case 'logout': {
       return await handleLogoutRequest({ context, url });
     }
+
     case 'login/raoidc': {
       return await handleRaoidcLoginRequest({ context, url });
     }
+
     case 'callback/raoidc': {
       return await handleRaoidcCallbackRequest({ context, url });
     }
+
     default: {
       log.warn('Invalid authentication route requested: [%s]', slug);
 
@@ -164,12 +168,15 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
 
   if (codeVerifier.isNone() || state.isNone()) {
     const missingSessionKeys: string[] = [];
+
     if (codeVerifier.isNone()) {
       missingSessionKeys.push('authCodeVerifier');
     }
+
     if (state.isNone()) {
       missingSessionKeys.push('authState');
     }
+
     const missingKeys = missingSessionKeys.join(' and ');
     const authLoginUrl = `/auth/login?${new URLSearchParams({ returnto: returnUrl })}`;
     log.warn('Missing %s in session [%s]; possible stale or replayed callback -- redirecting to [%s]', missingKeys, session.id, authLoginUrl);

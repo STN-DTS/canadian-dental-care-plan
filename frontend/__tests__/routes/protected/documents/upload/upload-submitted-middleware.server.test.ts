@@ -17,6 +17,7 @@ vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'), async 
 const uploadId = '00000000-0000-0000-0000-000000000000';
 const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const };
 const guard = middleware[0];
+
 if (!guard) {
   throw new Error('Expected a submitted upload lifecycle guard');
 }
@@ -58,9 +59,11 @@ describe('submitted upload lifecycle middleware', () => {
 
     const response = await Promise.resolve(guard(args, next)).catch((error: unknown) => error);
     expect(response).toBeInstanceOf(Response);
+
     if (!(response instanceof Response)) {
       throw new Error('Expected a documents listing redirect');
     }
+
     expect(response.status).toBe(302);
     expect(response.headers.get('Location')).toBe(destination);
     expect(response.headers.get('X-Remix-Replace')).toBe('true');

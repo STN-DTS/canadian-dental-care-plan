@@ -55,6 +55,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const viewPayloadEnabled = ENABLED_FEATURES.includes('view-payload');
   let payload;
+
   if (state.context === 'intake') {
     const benefitApplicationDtoMapper = appContainer.get(TYPES.BenefitApplicationDtoMapper);
     const benefitApplicationStateMapper = appContainer.get(TYPES.BenefitApplicationStateMapper);

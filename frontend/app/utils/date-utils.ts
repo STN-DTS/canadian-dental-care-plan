@@ -14,11 +14,13 @@ import { padWithZero } from '~/utils/string-utils';
  */
 export function extractDateParts(date: string) {
   const dateParts = date.split('-');
+
   if (dateParts.length !== 3) {
     return {};
   }
 
   const [yearStr, monthStr, dayStr] = dateParts;
+
   if (!yearStr || !monthStr || !dayStr) {
     return {};
   }
@@ -53,6 +55,7 @@ export function extractDateParts(date: string) {
  */
 export function getAgeFromDateString(date: string, referenceDate?: string) {
   invariant(isValidDateString(date), `date is invalid [${date}]`);
+
   if (!referenceDate) {
     return getAgeFromDate(parseDateString(date));
   }
@@ -72,6 +75,7 @@ export function getAgeFromDateString(date: string, referenceDate?: string) {
  */
 export function getAgeFromDateTimeString(dateTime: string, referenceDateTime?: string) {
   invariant(isValidDateTimeString(dateTime), `dateTime is invalid [${dateTime}]`);
+
   if (!referenceDateTime) {
     return getAgeFromDate(parseDateTimeString(dateTime));
   }

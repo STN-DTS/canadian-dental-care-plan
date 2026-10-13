@@ -148,11 +148,13 @@ test.describe('selection and editing', () => {
       const trigger = uploadPage.item('evidence.txt').getByRole('button', { name: 'Remove file', exact: true });
       await trigger.click();
       const dialog = uploadPage.removeDialog;
+
       if (dismiss === 'Escape') {
         await dialog.press('Escape');
       } else {
         await dialog.getByRole('button', { name: dismiss, exact: true }).click();
       }
+
       await expect(dialog).not.toBeVisible();
       await expect(uploadPage.item('evidence.txt')).toBeVisible();
       await expect(trigger).toBeFocused();
@@ -200,9 +202,11 @@ test.describe('validation, scanning and uploading', () => {
       if (route.request().method() !== 'POST') {
         return await route.continue();
       }
+
       await pendingResponse;
       await route.continue();
     });
+
     try {
       await uploadPage.submit();
       await expect(uploadPage.uploadButton).toBeDisabled();
@@ -212,6 +216,7 @@ test.describe('validation, scanning and uploading', () => {
     } finally {
       release();
     }
+
     await submittedPage.confirmation(['evidence.txt']);
   });
 
@@ -370,11 +375,13 @@ test.describe('navigation and refresh', () => {
       await navigateUploadRouter(uploadPage.page, '/en/protected/documents');
       const dialog = uploadPage.unsavedChangesDialog;
       await expect(dialog).toBeVisible();
+
       if (dismiss === 'Escape') {
         await dialog.press('Escape');
       } else {
         await dialog.getByRole('button', { name: dismiss, exact: true }).click();
       }
+
       await expect(dialog).not.toBeVisible();
       await expect(page).toHaveURL(flowUrl);
       await expect(uploadPage.item('evidence.txt')).toBeVisible();

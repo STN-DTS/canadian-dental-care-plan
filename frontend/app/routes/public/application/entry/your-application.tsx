@@ -80,12 +80,15 @@ export default function TypeOfApplication({ loaderData, params }: Route.Componen
       case APPLICANT_TYPE.adult: {
         return t(($) => $.yourApplication.typeApplicationPersonal);
       }
+
       case APPLICANT_TYPE.family: {
         return t(($) => $.yourApplication.typeApplicationFamily);
       }
+
       case APPLICANT_TYPE.children: {
         return t(($) => $.yourApplication.typeApplicationChildren);
       }
+
       default: {
         return '';
       }

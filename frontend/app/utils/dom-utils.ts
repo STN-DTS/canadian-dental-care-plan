@@ -6,6 +6,7 @@
  */
 export function scheduleNextFrame(callback: FrameRequestCallback): () => void {
   const frameId = window.requestAnimationFrame(callback);
+
   return function cancelScheduledNextFrame() {
     window.cancelAnimationFrame(frameId);
   };

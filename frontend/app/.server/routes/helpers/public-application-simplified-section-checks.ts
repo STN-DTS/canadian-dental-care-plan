@@ -134,9 +134,11 @@ export function isDentalBenefitsSectionCompleted(state: PickDeep<PublicApplicati
   if (!state.dentalBenefits) {
     return false;
   } // user must indicate if their access to government dental benefits has changed
+
   if (state.dentalBenefits.hasChanged) {
     return true;
   } // if access has changed, section is complete regardless of whether they have access or not
+
   return state.clientApplication?.dentalBenefits !== undefined; // if access has not changed, existing access must be indicated
 }
 

@@ -42,6 +42,7 @@ export function useErrorSummaryFocusHandler(context: ErrorSummaryContextValue | 
     if (!hasSummaryErrors(errors) || !summaryId) {
       return;
     }
+
     focusErrorSummary(summaryId);
   });
 
@@ -77,6 +78,7 @@ export function useErrorSummaryAnalyticsReporter(context: ErrorSummaryContextVal
     if (!hasSummaryErrors(errors)) {
       return;
     }
+
     reportValidationErrorsToAnalytics(errors);
   });
 
@@ -115,6 +117,7 @@ function hasSummaryErrors(errors: ReadonlyArray<ErrorMessage> | undefined): erro
  */
 function focusErrorSummary(summaryId: string): void {
   const element = document.querySelector<HTMLElement>(`[data-error-summary-id="${summaryId}"]`);
+
   if (!element) {
     return;
   }
@@ -136,6 +139,7 @@ function reportValidationErrorsToAnalytics(errors: ReadonlyArray<ErrorMessage>):
   if (!adobeAnalytics.isConfigured()) {
     return;
   }
+
   adobeAnalytics.pushValidationErrorEvent(errors.map(({ fieldId }) => fieldId));
 }
 

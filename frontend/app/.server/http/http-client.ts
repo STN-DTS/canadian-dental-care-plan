@@ -115,6 +115,7 @@ export class DefaultHttpClient implements HttpClient {
   getFetchFn(options: FetchOptions): FetchFn {
     this.log.debug('Getting fetch function; options: [%j]', options);
     const { proxyUrl, timeout } = options;
+
     if (proxyUrl) {
       const { HTTP_PROXY_TLS_TIMEOUT } = getEnv();
       const proxyTlsTimeout = timeout ?? HTTP_PROXY_TLS_TIMEOUT;
@@ -194,6 +195,7 @@ export class DefaultHttpClient implements HttpClient {
 
     // Retry only if the body matches one of the configured retry conditions (string or regex)
     const matchedCondition = conditions.find((condition) => (typeof condition === 'string' ? condition === body : condition.test(body)));
+
     if (matchedCondition) {
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
       throw new AppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; matched condition: [${matchedCondition}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_CONDITION_MATCHED);

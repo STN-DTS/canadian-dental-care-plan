@@ -102,6 +102,7 @@ export function phoneSchema(
       if (!phoneNumber) {
         return '';
       }
+
       // Format valid phone number to international format
       return parsePhoneNumberWithError(phoneNumber, 'CA').formatInternational();
     });

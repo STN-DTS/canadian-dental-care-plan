@@ -295,18 +295,22 @@ function createFileSelectionFormData(files: ReadonlyArray<File>, currentFileCoun
   const formData = new FormData();
   formData.set('_validation_id', 'validation-id');
   formData.set('current_file_count', String(currentFileCount));
+
   for (const file of files) {
     formData.append('file_object', file);
   }
+
   return formData;
 }
 
 function createUploadFormData(entries: ReadonlyArray<{ readonly id: string; readonly file: File; readonly documentType: string }>): FormData {
   const formData = new FormData();
+
   for (const { id, file, documentType } of entries) {
     formData.append('file_id', id);
     formData.append('file_object', file);
     formData.append('file_document_type', documentType);
   }
+
   return formData;
 }

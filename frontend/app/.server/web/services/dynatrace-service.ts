@@ -63,6 +63,7 @@ export class DefaultDynatraceService implements DynatraceService {
       this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get', { userId });
 
       const dynatraceRumScript = await this.dynatraceRepository.findDynatraceRumScript();
+
       if (!dynatraceRumScript) {
         this.log.debug('No Dynatrace RUM script found; returning null.');
         return null;

@@ -61,6 +61,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   type ClientDentalBenefits = ProtectedApplicationDentalFederalBenefitsState & ProtectedApplicationDentalProvincialTerritorialBenefitsState;
   const clientDentalBenefits = state.clientApplication.dentalBenefits?.reduce<ClientDentalBenefits>((benefits, planId) => {
     const federalProgram = federalGovernmentInsurancePlans.find(({ id }) => id === planId);
+
     if (federalProgram) {
       return Object.assign<ClientDentalBenefits, ProtectedApplicationDentalFederalBenefitsState>(benefits, {
         hasFederalBenefits: true,
@@ -69,6 +70,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }
 
     const provincialProgram = provincialGovernmentInsurancePlans.find(({ id }) => id === planId);
+
     if (provincialProgram) {
       return Object.assign<ClientDentalBenefits, ProtectedApplicationDentalProvincialTerritorialBenefitsState>(benefits, {
         hasProvincialTerritorialBenefits: true,

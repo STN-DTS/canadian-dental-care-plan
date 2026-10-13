@@ -87,15 +87,19 @@ function comparePositionedErrors(left: PositionedError, right: PositionedError):
   }
 
   const position = left.target.compareDocumentPosition(right.target);
+
   if (position & Node.DOCUMENT_POSITION_DISCONNECTED) {
     return left.registrationOrder - right.registrationOrder;
   }
+
   if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
     return -1;
   }
+
   if (position & Node.DOCUMENT_POSITION_PRECEDING) {
     return 1;
   }
+
   return left.registrationOrder - right.registrationOrder;
 }
 
@@ -119,6 +123,7 @@ export function sortRegisteredErrors(registeredErrors: ReadonlyMap<string, Error
 
   for (const error of registeredErrors.values()) {
     const target = document.getElementById(error.fieldId);
+
     if (target) {
       positionedErrors.push({ error, target, registrationOrder });
     } else {
@@ -153,6 +158,7 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
   switch (action.type) {
     case 'REGISTER_ERROR': {
       const existing = state.registeredErrors.get(action.registrationId);
+
       if (existing?.fieldId === action.error.fieldId && existing.message === action.error.message) {
         return state;
       }
@@ -178,6 +184,7 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
 
     case 'SORT_ERRORS': {
       const orderIsUnchanged = state.orderedErrorIds.length === action.registrationIds.length && state.orderedErrorIds.every((registrationId, index) => registrationId === action.registrationIds[index]);
+
       if (orderIsUnchanged) {
         return state;
       }
@@ -193,6 +200,7 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
       if (!state.pendingValidation) {
         return state;
       }
+
       return { ...state, pendingValidation: false, validationRun: state.validationRun + 1 };
     }
 

@@ -20,6 +20,7 @@ import { getClientEnv } from '~/utils/env-utils';
 import { useLayoutOptions } from '~/utils/route-utils';
 
 export const publicLayoutI18nNamespace = 'gcweb' satisfies Namespace;
+
 /**
  * GCWeb Application page template.
  * see: https://wet-boew.github.io/GCWeb/templates/application/application-docs-en.html

@@ -61,6 +61,7 @@ export default function ProtectedApplicationBaseLayout({ loaderData, params }: R
   async function handleOnSessionExtend() {
     // extends the application state if 'id' param exists
     const id = params.id;
+
     if (typeof id === 'string') {
       await apiProtectedApplicationState.submit({ action: 'extend', id });
       return;

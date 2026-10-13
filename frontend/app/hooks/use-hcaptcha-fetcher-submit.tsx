@@ -64,11 +64,13 @@ export function useHCaptchaFetcherSubmit<TFetcher extends Pick<ReturnType<typeof
     ...restOptions,
     onSubmit: async ({ event, data }) => {
       const newData = new FormData();
+
       for (const [key, value] of data.entries()) {
         newData.append(key, value);
       }
 
       const captcha = captchaRef.current;
+
       if (hCaptchaEnabled && captcha) {
         try {
           const { response } = await captcha.execute({ async: true });

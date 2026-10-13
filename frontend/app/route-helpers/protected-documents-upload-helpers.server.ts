@@ -132,6 +132,7 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
  */
 function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): UploadDocumentsResponse {
   const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
+
   if (failures.length === 0) {
     return { success: true };
   }
