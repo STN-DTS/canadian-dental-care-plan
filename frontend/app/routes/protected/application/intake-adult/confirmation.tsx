@@ -2,8 +2,6 @@ import { redirect, useFetcher } from 'react-router';
 
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/confirmation';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationIntakeAdultState } from '~/.server/routes/helpers/protected-application-intake-adult-route-helpers';
@@ -26,6 +24,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
+
+import type { Route } from './+types/confirmation';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.intakeAdult.confirmation,

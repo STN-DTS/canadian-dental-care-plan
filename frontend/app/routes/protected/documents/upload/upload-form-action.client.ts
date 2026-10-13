@@ -4,12 +4,12 @@ import type { TFunction } from 'i18next';
 import { getI18n } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/upload-form';
-
 import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import type { FormAction } from '~/routes/protected/documents/upload/upload-form-action';
 import { getLanguage } from '~/utils/locale-utils';
+
+import type { Route } from './+types/upload-form';
 
 const source = 'client' as const;
 

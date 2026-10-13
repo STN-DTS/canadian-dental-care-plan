@@ -2,8 +2,6 @@ import { invariant } from '@dts-stn/invariant';
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/renew';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { isRenewalSelectionCompleted } from '~/.server/routes/helpers/protected-application-entry-section-checks';
@@ -22,6 +20,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/renew';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.typeOfApplication,

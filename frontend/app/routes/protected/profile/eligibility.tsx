@@ -4,8 +4,6 @@ import { faCheckCircle, faCircleXmark, faExclamationTriangle } from '@fortawesom
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/eligibility';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -20,6 +18,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/eligibility';
 
 export const handle = {
   i18nPreloadNamespace: ['protectedProfile', 'gcweb'],

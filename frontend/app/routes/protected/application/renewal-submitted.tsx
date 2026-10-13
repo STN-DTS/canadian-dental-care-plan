@@ -2,8 +2,6 @@ import { redirect, useFetcher } from 'react-router';
 
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/renewal-submitted';
-
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
@@ -14,6 +12,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/renewal-submitted';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.renewalSubmitted,

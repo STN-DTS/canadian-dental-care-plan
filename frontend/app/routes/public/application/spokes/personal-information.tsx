@@ -5,8 +5,6 @@ import { addHours, startOfHour } from 'date-fns';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/personal-information';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -37,6 +35,8 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
 import { extractDigits, hasDigits, isAllValidInputCharacters } from '~/utils/string-utils';
+
+import type { Route } from './+types/personal-information';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.spokes.personalInformation,

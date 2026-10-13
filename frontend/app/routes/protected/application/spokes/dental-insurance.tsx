@@ -5,8 +5,6 @@ import { data, redirect, useFetcher } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/dental-insurance';
-
 import { appContext } from '~/.server/context';
 import { getProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -27,6 +25,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import { getPathById } from '~/utils/route-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/dental-insurance';
 
 const CHECKBOX_VALUE = {
   yes: 'yes',

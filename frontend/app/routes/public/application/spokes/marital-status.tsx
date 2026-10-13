@@ -6,8 +6,6 @@ import { data, redirect, useFetcher } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/marital-status';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { isSinReserved, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -32,6 +30,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
+
+import type { Route } from './+types/marital-status';
 
 function getRouteFromApplicationFlow(applicationFlow: ApplicationFlow) {
   switch (applicationFlow) {

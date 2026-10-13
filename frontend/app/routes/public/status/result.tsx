@@ -4,8 +4,6 @@ import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/result';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { clearStatusState, getStatusStateIdFromUrl, loadStatusState } from '~/.server/routes/helpers/status-route-helpers';
@@ -22,6 +20,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/result';
 
 const FORM_ACTION = {
   cancel: 'cancel',

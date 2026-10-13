@@ -3,8 +3,6 @@ import { redirect, useFetcher } from 'react-router';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/exit-application';
-
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationIntakeChildState } from '~/.server/routes/helpers/protected-application-intake-child-route-helpers';
 import { clearProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -18,6 +16,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/exit-application';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.intakeChild.exitApplication,

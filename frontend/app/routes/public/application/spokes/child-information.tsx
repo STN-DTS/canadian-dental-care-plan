@@ -7,8 +7,6 @@ import { invariant } from '@dts-stn/invariant';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/child-information';
-
 import { appContext } from '~/.server/context';
 import { isChildOrYouth, isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getPublicApplicantSin, getPublicApplicationState, getPublicChildrenSins, getPublicPartnerSin, getSingleChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -38,6 +36,8 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
 import { extractDigits, hasDigits, isAllValidInputCharacters } from '~/utils/string-utils';
+
+import type { Route } from './+types/child-information';
 
 const YES_NO_OPTION = {
   yes: 'yes',

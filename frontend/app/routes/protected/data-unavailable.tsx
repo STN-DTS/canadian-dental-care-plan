@@ -1,7 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/data-unavailable';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -13,6 +11,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/data-unavailable';
 
 export const handle = {
   i18nPreloadNamespace: ['dataUnavailable', 'gcweb'],

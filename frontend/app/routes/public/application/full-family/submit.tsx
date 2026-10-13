@@ -5,8 +5,6 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/submit';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadPublicApplicationFullFamilyStateForReview } from '~/.server/routes/helpers/public-application-full-family-route-helpers';
@@ -30,6 +28,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/submit';
 
 const CHECKBOX_VALUE = {
   yes: 'yes',

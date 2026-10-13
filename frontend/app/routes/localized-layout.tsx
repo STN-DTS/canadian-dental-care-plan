@@ -2,13 +2,13 @@ import { Outlet, data, isRouteErrorResponse } from 'react-router';
 
 import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
-import type { Route } from './+types/localized-layout';
-
 import { createLogger } from '~/.server/logging';
 import { BilingualNotFoundError, BilingualServerError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
 import { csrfTokenMiddleware, getCsrfToken } from '~/middlewares/csrf-token.server';
 import { csrfMiddleware } from '~/middlewares/csrf.server';
 import { isAppLocale } from '~/utils/locale-utils';
+
+import type { Route } from './+types/localized-layout';
 
 const log = createLogger('localized-layout');
 

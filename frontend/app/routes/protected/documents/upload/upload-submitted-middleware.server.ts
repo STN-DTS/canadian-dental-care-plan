@@ -1,10 +1,10 @@
 import { replace } from 'react-router';
 
-import type { Route } from './+types/upload-submitted';
-
 import { appContext } from '~/.server/context';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getPathById } from '~/utils/route-utils';
+
+import type { Route } from './+types/upload-submitted';
 
 /**
  * Prevents open upload flows from reaching the confirmation loader.

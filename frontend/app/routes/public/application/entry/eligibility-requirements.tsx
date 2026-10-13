@@ -1,8 +1,6 @@
 import { faCircleCheck, faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/eligibility-requirements';
-
 import { appContext } from '~/.server/context';
 import { isTaxFilingSectionCompleted, isTermsAndConditionsSectionCompleted } from '~/.server/routes/helpers/public-application-entry-section-checks';
 import { getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -17,6 +15,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/eligibility-requirements';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.eligibilityRequirements,

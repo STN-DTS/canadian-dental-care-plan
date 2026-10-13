@@ -2,8 +2,6 @@ import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/your-application';
-
 import { appContext } from '~/.server/context';
 import { getTypeOfApplicationSectionCompletionResult, isNewOrReturningMemberSectionCompleted, isPersonalInformationSectionCompleted } from '~/.server/routes/helpers/public-application-entry-section-checks';
 import type { ApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -24,6 +22,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
 import { cn } from '~/utils/tw-utils';
+
+import type { Route } from './+types/your-application';
 
 const APPLICANT_TYPE = { adult: 'adult', family: 'family', children: 'children' } as const;
 

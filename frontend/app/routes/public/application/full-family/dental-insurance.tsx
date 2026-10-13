@@ -1,8 +1,6 @@
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/dental-insurance';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadPublicApplicationFullFamilyState } from '~/.server/routes/helpers/public-application-full-family-route-helpers';
@@ -21,6 +19,8 @@ import { ProgressStepper } from '~/routes/public/application/full-family/progres
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/dental-insurance';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.fullFamily.dentalInsurance,

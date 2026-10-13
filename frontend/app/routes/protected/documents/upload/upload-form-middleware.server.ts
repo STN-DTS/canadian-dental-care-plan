@@ -1,9 +1,9 @@
 import { replace } from 'react-router';
 
-import type { Route } from './+types/upload-form';
-
 import { appContext } from '~/.server/context';
 import { getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+
+import type { Route } from './+types/upload-form';
 
 /**
  * Prevents finished upload flows from reaching the form loader or action.

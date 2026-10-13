@@ -1,9 +1,9 @@
-import type { Route } from './+types/language-chooser';
-
 import { ButtonLink } from '~/components/buttons';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getDescriptionMetaTags, getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/language-chooser';
 
 export const handle = {
   i18nPreloadNamespace: 'gcweb',

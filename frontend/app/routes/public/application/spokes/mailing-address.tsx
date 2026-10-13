@@ -6,8 +6,6 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/mailing-address';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getPublicApplicationState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -33,6 +31,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatAddressLine } from '~/utils/string-utils';
+
+import type { Route } from './+types/mailing-address';
 
 const FORM_ACTION = {
   submit: 'submit',

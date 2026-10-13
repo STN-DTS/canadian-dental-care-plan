@@ -2,10 +2,10 @@ import type { HealthCheckOptions } from '@dts-stn/health-checks';
 import { HealthCheckConfig, execute, getHttpStatusCode } from '@dts-stn/health-checks';
 import { isEmpty } from 'moderndash';
 
-import type { Route } from './+types/health';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+
+import type { Route } from './+types/health';
 
 export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);

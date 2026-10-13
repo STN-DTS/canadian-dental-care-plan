@@ -1,7 +1,5 @@
 import { Outlet } from 'react-router';
 
-import type { Route } from './+types/layout';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getLocale } from '~/.server/utils/locale-utils';
@@ -9,6 +7,8 @@ import { PublicLayout, publicLayoutI18nNamespace } from '~/components/layouts/pu
 import SessionTimeout from '~/components/session-timeout';
 import { useApiSession } from '~/utils/api-session-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
+
+import type { Route } from './+types/layout';
 
 export const handle = {
   // Declare all i18n namespaces required by this route and its descendants.

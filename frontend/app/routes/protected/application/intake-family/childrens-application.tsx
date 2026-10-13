@@ -6,8 +6,6 @@ import { announce } from '@react-aria/live-announcer';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/childrens-application';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationIntakeFamilyState } from '~/.server/routes/helpers/protected-application-intake-family-route-helpers';
@@ -31,6 +29,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
+
+import type { Route } from './+types/childrens-application';
 
 const FORM_ACTION = { add: 'add', remove: 'remove' } as const;
 

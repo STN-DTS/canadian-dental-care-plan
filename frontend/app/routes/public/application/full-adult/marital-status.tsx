@@ -1,8 +1,6 @@
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/marital-status';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadPublicApplicationFullAdultState } from '~/.server/routes/helpers/public-application-full-adult-route-helpers';
@@ -22,6 +20,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin } from '~/utils/sin-utils';
+
+import type { Route } from './+types/marital-status';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.fullAdult.maritalStatus,

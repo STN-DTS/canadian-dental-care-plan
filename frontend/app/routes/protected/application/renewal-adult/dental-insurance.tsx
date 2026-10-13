@@ -7,8 +7,6 @@ import { faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/dental-insurance';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { loadProtectedApplicationRenewalAdultState } from '~/.server/routes/helpers/protected-application-renewal-adult-route-helpers';
@@ -29,6 +27,8 @@ import { ProgressStepper } from '~/routes/protected/application/renewal-adult/pr
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/dental-insurance';
 
 const FORM_ACTION = {
   DENTAL_BENEFITS_NOT_CHANGED: 'dental-benefits-not-changed',

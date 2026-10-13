@@ -7,8 +7,6 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { PickDeep } from 'type-fest';
 import * as z from 'zod';
 
-import type { Route } from './+types/edit-communication-preferences';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -32,6 +30,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/edit-communication-preferences';
 
 export const handle = {
   i18nPreloadNamespace: ['protectedProfile', 'gcweb'],

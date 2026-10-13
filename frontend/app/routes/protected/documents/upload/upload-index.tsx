@@ -1,10 +1,10 @@
 import { replace } from 'react-router';
 
-import type { Route } from './+types/upload-index';
-
 import { appContext } from '~/.server/context';
 import { getDocumentUploadFormUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { generateId } from '~/utils/id-utils';
+
+import type { Route } from './+types/upload-index';
 
 /**
  * Loader function for initiating a new document upload and redirecting to

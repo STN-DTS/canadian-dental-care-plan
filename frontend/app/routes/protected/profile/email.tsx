@@ -5,8 +5,6 @@ import { data, redirect, useFetcher } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/email';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -27,6 +25,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isEmail } from '~/utils/string-utils';
+
+import type { Route } from './+types/email';
 
 // oxfmt-ignore
 const profileEmailContextSchema = z

@@ -4,8 +4,6 @@ import { UTCDate } from '@date-fns/utc';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/stub-login';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -25,6 +23,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
+
+import type { Route } from './+types/stub-login';
 
 export const handle = {
   i18nPreloadNamespace: ['stubLogin', 'gcweb'],

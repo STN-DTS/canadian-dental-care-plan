@@ -1,9 +1,9 @@
 import { Outlet } from 'react-router';
 
-import type { Route } from './+types/layout';
-
 import { useApplicationFlowCheck } from '~/hooks/use-application-flow-check';
 import { getPathById } from '~/utils/route-utils';
+
+import type { Route } from './+types/layout';
 
 /**
  * This layout component is responsible for enforcing the application flow on all protected application routes except

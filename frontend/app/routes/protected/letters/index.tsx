@@ -6,8 +6,6 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/index';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
@@ -24,6 +22,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/index';
 
 export const handle = {
   i18nPreloadNamespace: ['letters', 'gcweb'],

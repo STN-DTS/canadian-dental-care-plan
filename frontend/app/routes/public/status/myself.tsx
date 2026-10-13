@@ -6,8 +6,6 @@ import { randomUUID } from 'node:crypto';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/myself';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getStatusResultUrl, saveStatusState, startStatusState } from '~/.server/routes/helpers/status-route-helpers';
@@ -29,6 +27,8 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin, isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
 import { extractDigits } from '~/utils/string-utils';
+
+import type { Route } from './+types/myself';
 
 export const handle = {
   pageIdentifier: pageIds.public.status.myself,

@@ -7,37 +7,11 @@ export default defineConfig({
   tabWidth: 2,
   sortImports: {
     customGroups: [
-      {
-        groupName: 'react',
-        elementNamePattern: ['react', 'react-dom', 'react-dom/**'],
-      },
-      {
-        groupName: 'testing-library',
-        elementNamePattern: ['@testing-library/**'],
-      },
-      {
-        groupName: 'react-router',
-        elementNamePattern: ['react-router', 'react-router/**', '@react-router/**'],
-      },
-      {
-        groupName: 'tilde',
-        elementNamePattern: ['~/**'],
-      },
+      { groupName: 'react', elementNamePattern: ['react', 'react-dom', 'react-dom/**'] },
+      { groupName: 'testing-library', elementNamePattern: ['@testing-library/**'] },
+      { groupName: 'react-router', elementNamePattern: ['react-router', 'react-router/**', '@react-router/**'] },
     ],
-    groups: [
-      'react',
-      { newlinesBetween: true },
-      'testing-library',
-      { newlinesBetween: true },
-      'react-router',
-      { newlinesBetween: true },
-      ['builtin', 'external'],
-      { newlinesBetween: true },
-      ['parent', 'sibling', 'index'],
-      { newlinesBetween: true },
-      'tilde',
-      'unknown',
-    ],
+    groups: ['react', 'testing-library', 'react-router', 'type-import', ['builtin', 'external'], 'internal', ['parent', 'sibling', 'index'], 'unknown', 'style'],
   },
   sortTailwindcss: {
     functions: ['clsx', 'cn', 'cva'],

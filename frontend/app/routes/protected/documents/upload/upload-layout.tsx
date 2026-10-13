@@ -1,11 +1,11 @@
 import { Outlet, redirect } from 'react-router';
 
-import type { Route } from './+types/upload-layout';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getPathById } from '~/utils/route-utils';
+
+import type { Route } from './+types/upload-layout';
 
 /**
  * Middleware that permits access to the document upload route only for eligible applicants.

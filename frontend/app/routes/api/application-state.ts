@@ -3,13 +3,13 @@
  */
 import * as z from 'zod';
 
-import type { Route } from './+types/application-state';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import { savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { ApplicationStateParams } from '~/.server/routes/helpers/public-application-route-helpers';
+
+import type { Route } from './+types/application-state';
 
 const API_APPLICATION_STATE_ACTIONS = ['extend'] as const;
 export type ApiApplicationStateAction = (typeof API_APPLICATION_STATE_ACTIONS)[number];

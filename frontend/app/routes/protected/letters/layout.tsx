@@ -2,10 +2,10 @@ import { Outlet } from 'react-router';
 
 import type { JSX } from 'react/jsx-runtime';
 
-import type { Route } from './+types/layout';
-
 import { applicantMiddleware } from '~/middlewares/applicant.server';
 import { createFeatureMiddleware } from '~/middlewares/feature.server';
+
+import type { Route } from './+types/layout';
 
 /**
  * Protects letter routes with the view-letters feature flag and program applicant resolution.

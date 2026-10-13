@@ -1,11 +1,11 @@
-import type { Route } from './+types/upload-form';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getUser } from '~/.server/context/user-context';
 import { resetDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
+
+import type { Route } from './+types/upload-form';
 
 /**
  * Resets an open upload flow and loads localized form data, recording a page-view audit.

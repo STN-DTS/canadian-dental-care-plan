@@ -6,8 +6,6 @@ import { data, redirect, useFetcher } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/child-information';
-
 import { appContext } from '~/.server/context';
 import { isChildOrYouth, isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ProtectedApplicationChildInformationState, ProtectedApplicationChildSinState } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -44,6 +42,8 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
 import { hasDigits, isAllValidInputCharacters } from '~/utils/string-utils';
+
+import type { Route } from './+types/child-information';
 
 const YES_NO_OPTION = {
   yes: 'yes',

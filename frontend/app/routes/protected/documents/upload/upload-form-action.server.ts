@@ -3,8 +3,6 @@ import { data, replace } from 'react-router';
 import type { TFunction } from 'i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/upload-form';
-
 import { appContext } from '~/.server/context';
 import { finishDocumentUploadState, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
@@ -15,6 +13,8 @@ import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-docume
 import type { UploadDocumentsResponseFailure } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import type { FormAction } from '~/routes/protected/documents/upload/upload-form-action';
+
+import type { Route } from './+types/upload-form';
 
 const source = 'server' as const;
 

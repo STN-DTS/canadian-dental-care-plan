@@ -1,13 +1,13 @@
-/**
- * A dev-only API that force-enabled the application killswitch.
- */
-import type { Route } from './+types/killswitch';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+
+/**
+ * A dev-only API that force-enabled the application killswitch.
+ */
+import type { Route } from './+types/killswitch';
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const log = createLogger('killswitch/loader');

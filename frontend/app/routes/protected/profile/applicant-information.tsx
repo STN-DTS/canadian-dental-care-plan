@@ -1,7 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/applicant-information';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -14,6 +12,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { formatSin, isValidSin } from '~/utils/sin-utils';
+
+import type { Route } from './+types/applicant-information';
 
 export const handle = {
   i18nPreloadNamespace: ['protectedProfile', 'gcweb'],

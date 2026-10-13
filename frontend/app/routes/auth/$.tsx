@@ -1,7 +1,5 @@
 import { redirectDocument } from 'react-router';
 
-import type { Route } from './+types/$';
-
 import { TYPES } from '~/.server/constants';
 /**
  * Handler for /auth/logout{?locale=(en|fr)} requests
@@ -11,6 +9,8 @@ import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
+
+import type { Route } from './+types/$';
 
 const defaultProviderId = 'raoidc';
 const defaultReturnUrl = '/';

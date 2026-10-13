@@ -3,8 +3,6 @@ import { redirect, useFetcher } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/parent-or-guardian';
-
 import { appContext } from '~/.server/context';
 import { clearPublicApplicationState, getContextualAgeCategoryFromDate, getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -18,6 +16,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/parent-or-guardian';
 
 export const handle = {
   pageIdentifier: pageIds.public.application.spokes.parentOrGuardian,

@@ -3,8 +3,6 @@ import { data, redirect, useFetcher } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/personal-information';
-
 import { appContext } from '~/.server/context';
 import { isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ProtectedApplicationApplicantInformationState } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -38,6 +36,8 @@ import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { isValidSin, sinInputPatternFormat } from '~/utils/sin-utils';
 import { hasDigits, isAllValidInputCharacters } from '~/utils/string-utils';
+
+import type { Route } from './+types/personal-information';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.spokes.personalInformation,

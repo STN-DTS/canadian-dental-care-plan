@@ -2,9 +2,9 @@ import { data } from 'react-router';
 
 import type { Namespace } from 'i18next';
 
-import type { Route } from './+types/locales';
-
 import { initI18n } from '~/.server/utils/locale-utils';
+
+import type { Route } from './+types/locales';
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const language = params.lng;

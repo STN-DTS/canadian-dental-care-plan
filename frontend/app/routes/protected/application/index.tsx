@@ -5,8 +5,6 @@ import { redirect, useNavigate, useNavigation } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/index';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -22,6 +20,8 @@ import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
 import { secondsToMilliseconds } from '~/utils/units-utils';
+
+import type { Route } from './+types/index';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.index,

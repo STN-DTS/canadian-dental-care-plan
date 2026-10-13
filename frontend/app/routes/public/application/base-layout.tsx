@@ -1,7 +1,5 @@
 import { Outlet } from 'react-router';
 
-import type { Route } from './+types/base-layout';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
@@ -13,6 +11,8 @@ import { transformAdobeAnalyticsUrl } from '~/route-helpers/adobe-analytics-rout
 import { useApiApplicationState } from '~/utils/api-application-state-utils';
 import { useApiSession } from '~/utils/api-session-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
+
+import type { Route } from './+types/base-layout';
 
 export const handle = {
   // Declare all i18n namespaces required by this route and its descendants.

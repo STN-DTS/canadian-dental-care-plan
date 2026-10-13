@@ -4,8 +4,6 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/renewal-selection';
-
 import { appContext } from '~/.server/context';
 import {
   getContextualAgeCategoryFromDate,
@@ -30,6 +28,8 @@ import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/renewal-selection';
 
 export const handle = {
   pageIdentifier: pageIds.protected.application.spokes.renewalSelection,

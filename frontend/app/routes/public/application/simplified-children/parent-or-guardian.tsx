@@ -6,8 +6,6 @@ import { faCircleCheck, faCirclePlus, faPenToSquare } from '@fortawesome/free-so
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import type { Route } from './+types/parent-or-guardian';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -28,6 +26,8 @@ import { ProgressStepper } from '~/routes/public/application/simplified-children
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/parent-or-guardian';
 
 const FORM_ACTION = {
   PHONE_NUMBER_NOT_CHANGED: 'phone-number-not-changed',

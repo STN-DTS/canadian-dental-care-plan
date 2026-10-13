@@ -1,7 +1,7 @@
-import type { Route } from './+types/buildinfo';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
+
+import type { Route } from './+types/buildinfo';
 
 /**
  * An API endpoint that returns the build info.

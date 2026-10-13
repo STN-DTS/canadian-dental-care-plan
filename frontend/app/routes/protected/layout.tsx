@@ -2,8 +2,6 @@ import { Outlet, isRouteErrorResponse, useNavigate } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/layout';
-
 import { NotFoundError, ProtectedLayout, ServerError, protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
 import { useClientEnv } from '~/hooks';
@@ -11,6 +9,8 @@ import { authMiddleware } from '~/middlewares/auth.server';
 import { useApiSession } from '~/utils/api-session-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
+
+import type { Route } from './+types/layout';
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 

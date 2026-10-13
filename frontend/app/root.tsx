@@ -5,8 +5,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, 
 import { config as fontAwesomeConfig } from '@fortawesome/fontawesome-svg-core';
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/root';
-
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
@@ -17,14 +15,17 @@ import { TooltipProvider } from '~/components/tooltip';
 import { ZodConfig } from '~/components/zod-config';
 import { useNonce } from '~/hooks/use-nonce';
 import { useNProgress } from '~/hooks/use-nprogress';
-import indexStyleSheet from '~/index.css?url';
 import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
-import tailwindStyleSheet from '~/tailwind.css?url';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { ClientHintCheck, getHints } from '~/utils/client-hints';
 import { isAppLocale } from '~/utils/locale-utils';
 import { useTransformAdobeAnalyticsUrl } from '~/utils/route-utils';
 import { getDescriptionMetaTags, getTitleMetaTags, useAlternateLanguages, useCanonicalURL } from '~/utils/seo-utils';
+
+import type { Route } from './+types/root';
+
+import indexStyleSheet from '~/index.css?url';
+import tailwindStyleSheet from '~/tailwind.css?url';
 
 // see: https://docs.fontawesome.com/web/dig-deeper/security#content-security-policy
 fontAwesomeConfig.autoAddCss = false;

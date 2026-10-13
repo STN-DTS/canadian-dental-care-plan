@@ -4,8 +4,6 @@ import type { ShouldRevalidateFunction } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/upload-form';
-
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
@@ -16,6 +14,8 @@ import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-act
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/upload-form';
 
 export const handle = {
   i18nPreloadNamespace: ['documents', 'gcweb'],

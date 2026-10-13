@@ -1,7 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
 
-import type { Route } from './+types/unable-to-process-request';
-
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { InlineLink } from '~/components/inline-link';
@@ -10,6 +8,8 @@ import { pageIds } from '~/page-ids';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
+
+import type { Route } from './+types/unable-to-process-request';
 
 export const handle = {
   i18nPreloadNamespace: ['unableToProcessRequest', 'gcweb'],
