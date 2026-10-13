@@ -55,13 +55,3 @@ configMapGenerator:
   - name: oauth-proxy
     files:
       - ./configs/oauth-proxy/config.conf
-secretGenerator:
-  - name: frontend
-    options:
-      disableNameSuffixHash: true
-  - name: oauth-proxy
-    options:
-      disableNameSuffixHash: true
-  - name: redis
-    options:
-      disableNameSuffixHash: true

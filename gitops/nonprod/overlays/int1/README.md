@@ -30,4 +30,4 @@ Integration environment 1 for the Canadian Dental Care Plan.
 
 - `configs/frontend/config.conf` — Environment-specific frontend settings
 - `configs/redis/replica.conf`, `configs/redis/sentinel.conf` — Redis HA configuration
-- OAuth proxy secret created via `secretGenerator`
+- OAuth proxy Secret populated from Vault by External Secrets Operator

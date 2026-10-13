@@ -24,10 +24,3 @@ configMapGenerator:
     behavior: merge
     envs:
       - ./configs/frontend/config.conf
-secretGenerator:
-  - name: frontend
-    behavior: replace
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true

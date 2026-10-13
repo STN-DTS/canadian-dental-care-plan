@@ -34,7 +34,7 @@ Staging (production-like) environment for the Canadian Dental Care Plan.
 - `configs/frontend/config.conf` — Environment-specific frontend settings
 - `configs/frontend-fluentd/fluentd.conf` — Fluentd forwarding rules
 - `configs/redis/` — Redis configuration overrides
-- OAuth proxy secret created via `secretGenerator`
+- OAuth proxy Secret populated from Vault by External Secrets Operator
 
 ## Notes
 

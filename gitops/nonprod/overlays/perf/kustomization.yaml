@@ -41,22 +41,3 @@ configMapGenerator:
     behavior: create
     files:
       - ./configs/oauth-proxy/config.conf
-secretGenerator:
-  - name: frontend
-    behavior: replace
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true
-  - name: oauth-proxy
-    behavior: create
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true
-  - name: redis
-    behavior: replace
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true

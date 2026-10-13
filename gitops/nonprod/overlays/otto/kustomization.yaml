@@ -31,16 +31,3 @@ configMapGenerator:
     files:
       - ./configs/redis/replica.conf
       - ./configs/redis/sentinel.conf
-secretGenerator:
-  - name: frontend
-    behavior: replace
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true
-  - name: redis
-    behavior: replace
-    options:
-      # disable suffix hash so it can effectively
-      # be managed by external secrets operator
-      disableNameSuffixHash: true

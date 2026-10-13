@@ -27,4 +27,4 @@ Development environment for the Canadian Dental Care Plan.
 ## Configuration Overrides
 
 - `configs/frontend/config.conf` — Environment-specific frontend settings
-- OAuth proxy secret created via `secretGenerator`
+- OAuth proxy Secret populated from Vault by External Secrets Operator

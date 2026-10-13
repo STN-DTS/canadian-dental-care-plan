@@ -59,8 +59,10 @@ The old root-level `base/` and `overlays/` directories have been removed. Valida
   when their referenced secrets change.
 - **Strategic Merge Patches** — Nonprod overlays inject sidecars (oauth2-proxy, fluentd) and override images/resources
   via patch files in `patches/`. Production contains the effective values directly.
-- **ConfigMap/Secret Generators** — Nonprod base components define generators; overlays use `behavior: merge` or
-  `behavior: replace` to override values per environment. Production defines its effective generators once.
+- **ConfigMap Generators** — Nonprod base components define configuration generators; overlays use
+  `behavior: merge` to override values per environment. Production defines its ConfigMap generators in its root.
+  External Secrets Operator creates application Secrets in both tiers instead of Secret generators. Nonprod
+  name-reference configuration preserves environment-specific Secret references; production uses unsuffixed names.
 - **Image Registries** — Nonprod uses `dtsrhpdevscedacr.azurecr.io`; prod uses `dtsrhpprodscedspokeacr.azurecr.io`
   with pinned image versions.
 

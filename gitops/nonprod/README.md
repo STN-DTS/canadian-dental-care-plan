@@ -69,3 +69,24 @@ gate rejects every ref except `refs/heads/main`.
 
 Applying reverted manifests does not automatically delete resources introduced
 by the reverted change. Review resource removals separately before rollback.
+
+## Secret Management
+
+External Secrets Operator creates and populates the frontend, OAuth proxy, and
+Redis Secrets from Vault through `vault-backend`. Nonprod bases and overlays do
+not generate Secret placeholders or require secret-input files. ConfigMap
+generators remain responsible for application configuration.
+
+The frontend base loads
+[secret-name-references.yaml](base/frontend/secret-name-references.yaml), which
+lets Kustomize rewrite workload `envFrom.secretRef.name` values using
+`ExternalSecret` names. This covers Deployment and StatefulSet containers and
+init containers. For example, `frontend` becomes `frontend-uat1`, matching the
+Secret populated by the operator. This relies on each `ExternalSecret` using
+its own name for the target Secret.
+
+When migrating an existing deployment, do not delete or prune the live
+operator-managed Secrets because their generated placeholders disappear from
+rendered manifests. On a new deployment, workloads must wait until the operator
+creates and populates their referenced Secrets. Verify that every workload Secret
+reference matches an `ExternalSecret` target when rendering an overlay.

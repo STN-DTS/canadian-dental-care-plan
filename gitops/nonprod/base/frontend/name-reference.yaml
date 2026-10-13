@@ -1,0 +1,27 @@
+# This file configures Kustomize; it is not a Kubernetes resource.
+#
+# Match each listed secretRef.name to an ExternalSecret's original metadata.name.
+# When an overlay suffix changes that name (redis becomes redis-uat1), Kustomize
+# updates matching references in containers and init containers. The Deployment
+# or StatefulSet's own name is not used for this match.
+#
+# External Secrets Operator creates and populates the Secret. These rules assume
+# spec.target.name is omitted, so the Secret and ExternalSecret share a name.
+# If an explicit target name differs, adjust the reference rules.
+#
+# This replaces the name-rewriting role of empty Secret generators.
+# https://github.com/kubernetes-sigs/kustomize/blob/master/examples/transformerconfigs/README.md#name-reference-transformer
+
+nameReference:
+  - kind: ExternalSecret
+    group: external-secrets.io
+    version: v1
+    fieldSpecs:
+      - kind: Deployment
+        path: spec/template/spec/containers/envFrom/secretRef/name
+      - kind: Deployment
+        path: spec/template/spec/initContainers/envFrom/secretRef/name
+      - kind: StatefulSet
+        path: spec/template/spec/containers/envFrom/secretRef/name
+      - kind: StatefulSet
+        path: spec/template/spec/initContainers/envFrom/secretRef/name

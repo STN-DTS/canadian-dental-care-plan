@@ -4,11 +4,9 @@ namespace: canada-dental-care-plan
 resources:
   - ./deployments.yaml
   - ./services.yaml
+configurations:
+  - ./name-reference.yaml
 configMapGenerator:
   - name: frontend
     envs:
       - ./configs/config.conf
-secretGenerator:
-  - name: frontend
-    envs:
-      - ./configs/secrets.conf
