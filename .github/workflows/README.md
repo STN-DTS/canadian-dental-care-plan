@@ -1,6 +1,6 @@
 # GitHub Workflows
 
-CI validation, image publication, and reporting for the Canadian Dental Care Plan.
+CI validation, image publication, GitOps deployment, and reporting for the Canadian Dental Care Plan.
 
 ## Workflow Summary
 
@@ -8,6 +8,7 @@ CI validation, image publication, and reporting for the Canadian Dental Care Pla
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Detect changes, validate the frontend, run smoke tests, and build an image without publishing.                                               |
 | [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                         | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
+| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
 | [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
@@ -79,6 +80,51 @@ has been triggered; it does not bypass the push path filter. Publishing still
 requires a `main` or `release/v*` ref and successful version resolution and tests.
 All jobs remain dependent on the non-fork `check-repository` gate.
 
+### Nonprod GitOps Deployment
+
+**GitOps operator (nonprod)**, defined in
+[gitops-main-nonprod.yaml](gitops-main-nonprod.yaml), responds to pushes on `main`
+that change `gitops/nonprod/**` or the workflow itself. It applies selected
+Kustomizations to the nonprod AKS cluster using `kubectl apply --kustomize`.
+It runs in response to workflow events, not as a continuous cluster reconciler.
+
+All deployment runs must use `refs/heads/main`, including manual and reusable
+runs. The prerequisite gate rejects other branches and tags. Fork repositories
+skip the gate and all dependent jobs.
+
+The ten Kubernetes environment overlays share one AKS cluster and the
+`canada-dental-care-plan` namespace. They are not GitHub deployment environments
+or separate clusters. The `shared` overlay provides common resources.
+
+Push deployments select targets as follows:
+
+- Changes under an environment overlay select that environment only.
+- Changes under `gitops/nonprod/base/**` select all ten environment overlays.
+- Changes to the shared overlay or its maintenance, reloader, or squid-proxy
+  bases select shared deployment.
+- Workflow changes, manual runs, reusable calls, and branch-creation pushes
+  select shared resources and all ten environments.
+
+When shared deployment is selected, it must succeed before environment jobs
+start. When it is skipped because its inputs are unchanged, selected environment
+jobs can still run. Up to six environment jobs run in parallel. Each deployment
+job, including shared deployment, has a 20-minute timeout. Runs targeting the
+same cluster are serialized, with up to 100 pending runs retained and no
+cancellation of active runs.
+
+Vault supplies deployment credentials `SPN_ID` and `SPN_PASSWORD` from
+`canada-dental-care-plan/data/SPN`. External Secrets Operator retrieves application
+secrets through the cluster's `vault-backend` SecretStore; CI does not generate
+application-secret files. Each deployment job creates a private temporary Azure
+configuration directory and kubeconfig file. Best-effort cleanup removes both;
+forced runner termination can prevent cleanup.
+The optional `debug` input prints tool versions and allowlisted GitHub and runner
+context. It does not dump the full environment or print secret values.
+
+This workflow does not deploy production and is not currently subscribed to the
+Slack notification allowlist. Live deployment and source-path handoff must still
+be verified operationally.
+
 ## Manual Runs and Retries
 
 Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
@@ -86,6 +132,7 @@ Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
 ```bash
 gh workflow run nightly-e2e.yaml
 gh workflow run build-publish-main-nonprod.yaml --ref main -f version=1.2.3
+gh workflow run gitops-main-nonprod.yaml --ref main
 gh workflow run build-publish-tag-prod.yaml --ref v1.2.3
 ```
 
@@ -102,15 +149,15 @@ rerunning the uploader. Uploading the same release tag overwrites its ZIP.
 
 Configure GitHub variables for the workflows that use them:
 
-| Variables                                                | Usage                                                                                  |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `AZURE_TENANT_ID`                                        | Azure and SharePoint application tenant.                                               |
-| `NONPROD_ACR_DOMAIN`, `NONPROD_AZURE_SUBSCRIPTION_ID`    | Nonprod image publication.                                                             |
-| `PROD_ACR_DOMAIN`, `PROD_AZURE_SUBSCRIPTION_ID`          | PROD image publication.                                                                |
-| `NONPROD_AKS_CLUSTER_NAME`, `NONPROD_AKS_RESOURCE_GROUP` | Main-branch dev/int1 deployment restarts.                                              |
-| `SLACK_CHANNEL_ID`                                       | Completion notification destination.                                                   |
-| `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL`            | SharePoint site URL, not a library view or Graph endpoint.                             |
-| `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER`              | Decoded folder path, such as `Shared Documents/CDCP/Test Results`; use literal spaces. |
+| Variables                                                | Usage                                                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `AZURE_TENANT_ID`                                        | Azure and SharePoint application tenant.                                                |
+| `NONPROD_ACR_DOMAIN`, `NONPROD_AZURE_SUBSCRIPTION_ID`    | Nonprod image publication; the subscription is also used for nonprod GitOps deployment. |
+| `PROD_ACR_DOMAIN`, `PROD_AZURE_SUBSCRIPTION_ID`          | PROD image publication.                                                                 |
+| `NONPROD_AKS_CLUSTER_NAME`, `NONPROD_AKS_RESOURCE_GROUP` | Main-branch dev/int1 deployment restarts and nonprod GitOps deployment.                 |
+| `SLACK_CHANNEL_ID`                                       | Completion notification destination.                                                    |
+| `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL`            | SharePoint site URL, not a library view or Graph endpoint.                              |
+| `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER`              | Decoded folder path, such as `Shared Documents/CDCP/Test Results`; use literal spaces.  |
 
 GitHub secrets provide Vault access: `NONPROD_VAULT_URL`,
 `NONPROD_VAULT_APPROLE_ROLE_ID`, `NONPROD_VAULT_APPROLE_SECRET_ID`, and the
@@ -131,11 +178,19 @@ upload separate Vitest coverage and Playwright artifacts; nightly runs upload
 Playwright reports. PROD uploads `test-reports-<run-id>-<run-attempt>`, containing
 coverage, Playwright HTML reports, and test results for the SharePoint uploader.
 
-Validation uses GitHub-hosted runners. Nonprod publishing and Slack use
+Validation uses GitHub-hosted runners. Nonprod publishing, GitOps deployment,
+and Slack use
 `arc-runners-dshp-dev`; PROD publishing and SharePoint use
 `arc-runners-dshp-prod`. Self-hosted runners need the tools and network access
-used by their jobs. The SharePoint upload requires Docker with `linux/amd64`
-support and access to Docker Hub; its CLI image is pinned by digest.
+used by their jobs.
+
+GitOps deployment requires Azure CLI, kubectl, kubelogin,
+Vault and Azure connectivity, and network access to the target AKS API. The
+service principal must be authorized to obtain cluster credentials and apply
+resources in `canada-dental-care-plan`.
+
+The SharePoint upload requires Docker with `linux/amd64` support and access to
+Docker Hub; its CLI image is pinned by digest.
 
 Every workflow gates execution through `check-repository` to skip repositories
 marked as forks. This is an operational safeguard, not a security boundary;

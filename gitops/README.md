@@ -95,9 +95,24 @@ kubectl kustomize ./prod
 
 ### Apply manifests to a cluster
 
+The [GitOps operator (nonprod) workflow](../.github/workflows/gitops-main-nonprod.yaml)
+applies Kustomizations when nonprod manifests change on `main`. Pushes select
+overlays based on changed files. Manual and reusable runs apply shared resources
+and all ten nonprod Kubernetes environments. These environments share one AKS
+cluster and namespace. Every deployment run must use `main`.
+
+From the repository root, request a full nonprod deployment with:
+
 ```shell
-# Deployment/apply remains outside this repository-only migration.
+gh workflow run gitops-main-nonprod.yaml --ref main
 ```
+
+See the [workflow documentation](../.github/workflows/README.md#nonprod-gitops-deployment)
+for target selection, credentials, and runner requirements. External Secrets
+Operator supplies application secrets; CI does not generate secret files.
+Verify the live source-path handoff before enabling deployment. This workflow
+does not deploy `prod/`. See [workflow rollback](nonprod/README.md#workflow-rollback)
+for recovery through a revert on `main`.
 
 ### Validate manifests without applying
 
