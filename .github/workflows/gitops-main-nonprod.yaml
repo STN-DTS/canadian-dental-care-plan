@@ -1,0 +1,297 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Applies nonprod GitOps overlays to AKS when nonprod manifests change on main,
+# or when manually/reusably invoked.
+name: GitOps operator (nonprod)
+
+permissions: read-all
+
+concurrency:
+  group: gitops-nonprod-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - gitops/nonprod/**
+      - .github/workflows/gitops-main-nonprod.yaml
+  workflow_call: {}
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: Dump environment variables for debugging (use cautiously)
+        required: false
+        default: "false"
+
+env:
+  CI: true
+
+jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
+  apply-shared:
+    name: Apply shared GitOps overlay
+    needs: check-repository
+    runs-on: arc-runners-dshp-dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch deployment credentials from HashiCorp Vault
+        id: vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          method: approle
+          url: ${{ secrets.NONPROD_VAULT_URL }}
+          roleId: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          secretId: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          exportEnv: false
+          secrets: |
+            canada-dental-care-plan/data/SPN SPN_ID | SPN_ID;
+            canada-dental-care-plan/data/SPN SPN_PASSWORD | SPN_PASSWORD;
+
+      - name: Authenticate to Azure and configure AKS access
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.NONPROD_AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          K8S_CLUSTER_NAME: ${{ vars.NONPROD_AKS_CLUSTER_NAME }}
+          K8S_RESOURCE_GROUP: ${{ vars.NONPROD_AKS_RESOURCE_GROUP }}
+          SP_ID: ${{ steps.vault.outputs.SPN_ID }}
+          SP_PASSWORD: ${{ steps.vault.outputs.SPN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          umask 077
+          kubeconfig="$(mktemp "$RUNNER_TEMP/cdcp-nonprod-kubeconfig.XXXXXX")"
+          echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
+
+          az login --service-principal \
+            --tenant "$AZURE_TENANT_ID" \
+            --username "$SP_ID" \
+            --password "$SP_PASSWORD"
+
+          az aks get-credentials --overwrite-existing \
+            --subscription "$AZURE_SUBSCRIPTION_ID" \
+            --resource-group "$K8S_RESOURCE_GROUP" \
+            --name "$K8S_CLUSTER_NAME" \
+            --file "$kubeconfig"
+
+          kubelogin convert-kubeconfig \
+            --login spn \
+            --client-id "$SP_ID" \
+            --client-secret "$SP_PASSWORD" \
+            --kubeconfig "$kubeconfig"
+
+      - name: Dump environment variables
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
+        run: |
+          set -euo pipefail
+          env | sort
+          env | sort | base64
+
+      - name: Apply shared overlay
+        run: |
+          set -euo pipefail
+          kubectl --kubeconfig "$KUBECONFIG" apply --kustomize ./gitops/nonprod/overlays/shared/ --force
+
+      - name: Clean up credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${KUBECONFIG:-}" ]]; then
+            rm -f -- "$KUBECONFIG"
+          fi
+          az logout || true
+          az account clear || true
+
+  apply-environment-overlays:
+    name: Apply ${{ matrix.overlay }} overlay
+    needs:
+      - check-repository
+      - apply-shared
+    runs-on: arc-runners-dshp-dev
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        overlay:
+          [
+            dev,
+            int1,
+            int2,
+            otto,
+            perf,
+            prototype,
+            staging,
+            training,
+            uat1,
+            uat2,
+          ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch deployment and app secrets from HashiCorp Vault
+        id: vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          method: approle
+          url: ${{ secrets.NONPROD_VAULT_URL }}
+          roleId: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          secretId: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          exportEnv: false
+          secrets: |
+            canada-dental-care-plan/data/SPN SPN_ID | SPN_ID;
+            canada-dental-care-plan/data/SPN SPN_PASSWORD | SPN_PASSWORD;
+            canada-dental-care-plan/data/cdcp-dev AUTH_JWT_PRIVATE_KEY | AUTH_JWT_PRIVATE_KEY_DEV;
+            canada-dental-care-plan/data/cdcp-dev AUTH_JWT_PUBLIC_KEY | AUTH_JWT_PUBLIC_KEY_DEV;
+            canada-dental-care-plan/data/cdcp-dev DYNATRACE_API_KEY | DYNATRACE_API_KEY;
+            canada-dental-care-plan/data/cdcp-dev DYNATRACE_API_RUM_SCRIPT_TOKEN | DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV;
+            canada-dental-care-plan/data/cdcp-dev GC_NOTIFY_API_KEY | GC_NOTIFY_API_KEY;
+            canada-dental-care-plan/data/cdcp-dev HCAPTCHA_SECRET_KEY | HCAPTCHA_SECRET_KEY_DEV;
+            canada-dental-care-plan/data/cdcp-dev INTEROP_API_SUBSCRIPTION_KEY_INT | INTEROP_API_SUBSCRIPTION_KEY_INT;
+            canada-dental-care-plan/data/cdcp-dev INTEROP_API_SUBSCRIPTION_KEY_INT_OLD | INTEROP_API_SUBSCRIPTION_KEY_INT_OLD;
+            canada-dental-care-plan/data/cdcp-dev INTEROP_API_SUBSCRIPTION_KEY_PERF | INTEROP_API_SUBSCRIPTION_KEY_PERF;
+            canada-dental-care-plan/data/cdcp-dev INTEROP_API_SUBSCRIPTION_KEY_UAT | INTEROP_API_SUBSCRIPTION_KEY_UAT;
+            canada-dental-care-plan/data/cdcp-dev OAUTH2_PROXY_CLIENT_SECRET | OAUTH2_PROXY_CLIENT_SECRET;
+            canada-dental-care-plan/data/cdcp-dev OAUTH2_PROXY_COOKIE_SECRET | OAUTH2_PROXY_COOKIE_SECRET;
+            canada-dental-care-plan/data/cdcp-dev REDIS_PASSWORD | REDIS_PASSWORD_DEV;
+            canada-dental-care-plan/data/cdcp-dev SESSION_COOKIE_SECRET | SESSION_COOKIE_SECRET;
+
+      - name: Authenticate to Azure and configure AKS access
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.NONPROD_AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          K8S_CLUSTER_NAME: ${{ vars.NONPROD_AKS_CLUSTER_NAME }}
+          K8S_RESOURCE_GROUP: ${{ vars.NONPROD_AKS_RESOURCE_GROUP }}
+          SP_ID: ${{ steps.vault.outputs.SPN_ID }}
+          SP_PASSWORD: ${{ steps.vault.outputs.SPN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          umask 077
+          kubeconfig="$(mktemp "$RUNNER_TEMP/cdcp-nonprod-kubeconfig.XXXXXX")"
+          echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
+
+          az login --service-principal \
+            --tenant "$AZURE_TENANT_ID" \
+            --username "$SP_ID" \
+            --password "$SP_PASSWORD"
+
+          az aks get-credentials --overwrite-existing \
+            --subscription "$AZURE_SUBSCRIPTION_ID" \
+            --resource-group "$K8S_RESOURCE_GROUP" \
+            --name "$K8S_CLUSTER_NAME" \
+            --file "$kubeconfig"
+
+          kubelogin convert-kubeconfig \
+            --login spn \
+            --client-id "$SP_ID" \
+            --client-secret "$SP_PASSWORD" \
+            --kubeconfig "$kubeconfig"
+
+      - name: Dump environment variables
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
+        run: |
+          set -euo pipefail
+          env | sort
+          env | sort | base64
+
+      - name: Render overlay secrets files
+        env:
+          OVERLAY: ${{ matrix.overlay }}
+          AUTH_JWT_PRIVATE_KEY_DEV: ${{ steps.vault.outputs.AUTH_JWT_PRIVATE_KEY_DEV }}
+          AUTH_JWT_PUBLIC_KEY_DEV: ${{ steps.vault.outputs.AUTH_JWT_PUBLIC_KEY_DEV }}
+          DYNATRACE_API_KEY: ${{ steps.vault.outputs.DYNATRACE_API_KEY }}
+          DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV: ${{ steps.vault.outputs.DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV }}
+          GC_NOTIFY_API_KEY: ${{ steps.vault.outputs.GC_NOTIFY_API_KEY }}
+          HCAPTCHA_SECRET_KEY_DEV: ${{ steps.vault.outputs.HCAPTCHA_SECRET_KEY_DEV }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT: ${{ steps.vault.outputs.INTEROP_API_SUBSCRIPTION_KEY_INT }}
+          INTEROP_API_SUBSCRIPTION_KEY_INT_OLD: ${{ steps.vault.outputs.INTEROP_API_SUBSCRIPTION_KEY_INT_OLD }}
+          INTEROP_API_SUBSCRIPTION_KEY_PERF: ${{ steps.vault.outputs.INTEROP_API_SUBSCRIPTION_KEY_PERF }}
+          INTEROP_API_SUBSCRIPTION_KEY_UAT: ${{ steps.vault.outputs.INTEROP_API_SUBSCRIPTION_KEY_UAT }}
+          OAUTH2_PROXY_CLIENT_SECRET: ${{ steps.vault.outputs.OAUTH2_PROXY_CLIENT_SECRET }}
+          OAUTH2_PROXY_COOKIE_SECRET: ${{ steps.vault.outputs.OAUTH2_PROXY_COOKIE_SECRET }}
+          REDIS_PASSWORD_DEV: ${{ steps.vault.outputs.REDIS_PASSWORD_DEV }}
+          SESSION_COOKIE_SECRET: ${{ steps.vault.outputs.SESSION_COOKIE_SECRET }}
+        run: |
+          set -euo pipefail
+
+          overlay_root="./gitops/nonprod/overlays/${OVERLAY}"
+          mkdir -p "$overlay_root/configs/frontend"
+
+          interop_key="$INTEROP_API_SUBSCRIPTION_KEY_UAT"
+          case "$OVERLAY" in
+            dev) interop_key="$INTEROP_API_SUBSCRIPTION_KEY_INT_OLD" ;;
+            int1|prototype|training) interop_key="$INTEROP_API_SUBSCRIPTION_KEY_INT" ;;
+            perf) interop_key="$INTEROP_API_SUBSCRIPTION_KEY_PERF" ;;
+            int2|otto|staging|uat1|uat2) interop_key="$INTEROP_API_SUBSCRIPTION_KEY_UAT" ;;
+            *) echo "Unsupported overlay '$OVERLAY'." >&2; exit 1 ;;
+          esac
+
+          {
+            echo "AUTH_JWT_PRIVATE_KEY=${AUTH_JWT_PRIVATE_KEY_DEV}"
+            echo "AUTH_JWT_PUBLIC_KEY=${AUTH_JWT_PUBLIC_KEY_DEV}"
+            if [[ "$OVERLAY" == "staging" ]]; then
+              echo "DYNATRACE_API_RUM_SCRIPT_TOKEN=${DYNATRACE_API_RUM_SCRIPT_TOKEN_DEV}"
+            fi
+            echo "GC_NOTIFY_API_KEY=${GC_NOTIFY_API_KEY}"
+            echo "HCAPTCHA_SECRET_KEY=${HCAPTCHA_SECRET_KEY_DEV}"
+            echo "INTEROP_API_SUBSCRIPTION_KEY=${interop_key}"
+            echo "OTEL_API_KEY=${DYNATRACE_API_KEY}"
+            echo "SESSION_COOKIE_SECRET=${SESSION_COOKIE_SECRET}"
+          } > "$overlay_root/configs/frontend/secrets.conf"
+
+          if [[ "$OVERLAY" != "otto" && "$OVERLAY" != "prototype" && "$OVERLAY" != "training" ]]; then
+            mkdir -p "$overlay_root/configs/oauth-proxy"
+            {
+              echo "OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}"
+              echo "OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}"
+            } > "$overlay_root/configs/oauth-proxy/secrets.conf"
+          fi
+
+          if [[ "$OVERLAY" != "dev" && "$OVERLAY" != "prototype" && "$OVERLAY" != "training" ]]; then
+            mkdir -p "$overlay_root/configs/redis"
+            {
+              echo "REDIS_PASSWORD=${REDIS_PASSWORD_DEV}"
+            } > "$overlay_root/configs/redis/secrets.conf"
+          fi
+
+      - name: Apply environment overlay
+        env:
+          OVERLAY: ${{ matrix.overlay }}
+        run: |
+          set -euo pipefail
+          kubectl --kubeconfig "$KUBECONFIG" apply --kustomize "./gitops/nonprod/overlays/${OVERLAY}/" --force
+
+      - name: Remove generated secret files
+        if: ${{ always() }}
+        env:
+          OVERLAY: ${{ matrix.overlay }}
+        run: |
+          set -euo pipefail
+          rm -f "./gitops/nonprod/overlays/${OVERLAY}/configs/frontend/secrets.conf"
+          rm -f "./gitops/nonprod/overlays/${OVERLAY}/configs/oauth-proxy/secrets.conf"
+          rm -f "./gitops/nonprod/overlays/${OVERLAY}/configs/redis/secrets.conf"
+
+      - name: Clean up credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${KUBECONFIG:-}" ]]; then
+            rm -f -- "$KUBECONFIG"
+          fi
+          az logout || true
+          az account clear || true
