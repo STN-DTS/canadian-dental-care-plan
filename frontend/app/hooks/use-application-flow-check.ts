@@ -46,7 +46,9 @@ export function useApplicationFlowCheck({ id, indexRoutePath }: UseApplicationFl
       applicationFlowStorageEnabled && // skip if flow storage is not available
       !isApplicationFlowCheckCompletedRef.current; // skip if already checked
 
-    if (!shouldCheckApplicationFlow) return;
+    if (!shouldCheckApplicationFlow) {
+      return;
+    }
 
     if (applicationFlowStorageValue !== 'active') {
       void navigate(indexRoutePath, { replace: true });

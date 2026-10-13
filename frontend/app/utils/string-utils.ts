@@ -71,8 +71,12 @@ export function randomString(length: number, allowedChars = '0123456789abcdefghi
  * @returns The padded string or the value as a string if it's not a number or its length is already greater than or equal to maxLength.
  */
 export const padWithZero = (value: number, maxLength: number) => {
-  if (Number.isNaN(value)) return value.toString();
-  if (value.toString().length >= maxLength) return value.toString();
+  if (Number.isNaN(value)) {
+    return value.toString();
+  }
+  if (value.toString().length >= maxLength) {
+    return value.toString();
+  }
   return value.toString().padStart(maxLength, '0');
 };
 
@@ -124,7 +128,9 @@ export function normalizeHyphens(str: string) {
  * @returns - The number formatted as a percentage in the givenlocale
  */
 export function formatPercent(value: number, locale: string) {
-  if (!/en|fr/i.test(locale)) throw new Error(`locale must be 'en' or 'fr'`);
+  if (!/en|fr/i.test(locale)) {
+    throw new Error(`locale must be 'en' or 'fr'`);
+  }
   return Intl.NumberFormat(`${locale}-CA`, { style: 'percent' }).format(value / 100);
 }
 

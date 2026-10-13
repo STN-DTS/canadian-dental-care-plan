@@ -68,7 +68,9 @@ export function phoneSchema(
     .nonempty(message.required_error)
 
     .superRefine((phoneNumber, ctx) => {
-      if (!phoneNumber) return;
+      if (!phoneNumber) {
+        return;
+      }
 
       const phoneDigits = extractDigits(phoneNumber);
 
@@ -81,7 +83,9 @@ export function phoneSchema(
         : isValidPhoneNumber(phoneNumber);
 
       // Return early if valid
-      if (isValid) return;
+      if (isValid) {
+        return;
+      }
 
       // Add appropriate error message based on validation type
       const issueMessage = requiresCanadianValidation //
@@ -95,7 +99,9 @@ export function phoneSchema(
       });
     })
     .transform((phoneNumber) => {
-      if (!phoneNumber) return '';
+      if (!phoneNumber) {
+        return '';
+      }
       // Format valid phone number to international format
       return parsePhoneNumberWithError(phoneNumber, 'CA').formatInternational();
     });

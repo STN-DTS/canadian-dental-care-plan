@@ -82,12 +82,20 @@ type ErrorSummaryAction =
  * comes first, or zero when neither registration precedes the other.
  */
 function comparePositionedErrors(left: PositionedError, right: PositionedError): number {
-  if (left.target === right.target) return left.registrationOrder - right.registrationOrder;
+  if (left.target === right.target) {
+    return left.registrationOrder - right.registrationOrder;
+  }
 
   const position = left.target.compareDocumentPosition(right.target);
-  if (position & Node.DOCUMENT_POSITION_DISCONNECTED) return left.registrationOrder - right.registrationOrder;
-  if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-  if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+  if (position & Node.DOCUMENT_POSITION_DISCONNECTED) {
+    return left.registrationOrder - right.registrationOrder;
+  }
+  if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+    return -1;
+  }
+  if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+    return 1;
+  }
   return left.registrationOrder - right.registrationOrder;
 }
 
@@ -145,7 +153,9 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
   switch (action.type) {
     case 'REGISTER_ERROR': {
       const existing = state.registeredErrors.get(action.registrationId);
-      if (existing?.fieldId === action.error.fieldId && existing.message === action.error.message) return state;
+      if (existing?.fieldId === action.error.fieldId && existing.message === action.error.message) {
+        return state;
+      }
 
       const registeredErrors = new Map(state.registeredErrors);
       registeredErrors.set(action.registrationId, { ...action.error, id: action.registrationId });
@@ -153,7 +163,9 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
     }
 
     case 'UNREGISTER_ERROR': {
-      if (!state.registeredErrors.has(action.registrationId)) return state;
+      if (!state.registeredErrors.has(action.registrationId)) {
+        return state;
+      }
 
       const registeredErrors = new Map(state.registeredErrors);
       registeredErrors.delete(action.registrationId);
@@ -166,7 +178,9 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
 
     case 'SORT_ERRORS': {
       const orderIsUnchanged = state.orderedErrorIds.length === action.registrationIds.length && state.orderedErrorIds.every((registrationId, index) => registrationId === action.registrationIds[index]);
-      if (orderIsUnchanged) return state;
+      if (orderIsUnchanged) {
+        return state;
+      }
 
       return { ...state, orderedErrorIds: action.registrationIds };
     }
@@ -176,7 +190,9 @@ export function errorSummaryReducer(state: ErrorSummaryState, action: ErrorSumma
     }
 
     case 'COMPLETE_VALIDATION': {
-      if (!state.pendingValidation) return state;
+      if (!state.pendingValidation) {
+        return state;
+      }
       return { ...state, pendingValidation: false, validationRun: state.validationRun + 1 };
     }
 

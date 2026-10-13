@@ -295,7 +295,9 @@ function createFileSelectionFormData(files: ReadonlyArray<File>, currentFileCoun
   const formData = new FormData();
   formData.set('_validation_id', 'validation-id');
   formData.set('current_file_count', String(currentFileCount));
-  for (const file of files) formData.append('file_object', file);
+  for (const file of files) {
+    formData.append('file_object', file);
+  }
   return formData;
 }
 

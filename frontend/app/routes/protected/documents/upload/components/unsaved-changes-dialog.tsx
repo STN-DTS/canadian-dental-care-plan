@@ -23,7 +23,9 @@ export function UnsavedChangesDialog({ isDirty }: UnsavedChangesDialogProps) {
     <Dialog
       open={blocker.state === 'blocked'}
       onOpenChange={(open) => {
-        if (!open && blocker.state === 'blocked') blocker.reset();
+        if (!open && blocker.state === 'blocked') {
+          blocker.reset();
+        }
       }}
     >
       <DialogContent
@@ -32,7 +34,9 @@ export function UnsavedChangesDialog({ isDirty }: UnsavedChangesDialogProps) {
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+          if (returnFocusRef.current?.isConnected) {
+            returnFocusRef.current.focus();
+          }
         }}
       >
         <DialogHeader>
@@ -49,7 +53,9 @@ export function UnsavedChangesDialog({ isDirty }: UnsavedChangesDialogProps) {
             variant="secondary"
             type="button"
             onClick={() => {
-              if (blocker.state === 'blocked') blocker.proceed();
+              if (blocker.state === 'blocked') {
+                blocker.proceed();
+              }
             }}
           >
             {t(($) => $.upload.unsavedChanges.leave)}

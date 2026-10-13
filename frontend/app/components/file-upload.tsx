@@ -92,7 +92,9 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
       }
 
       case 'SET_INVALID': {
-        if (state.invalid === action.invalid) return state;
+        if (state.invalid === action.invalid) {
+          return state;
+        }
         return { ...state, invalid: action.invalid };
       }
 
@@ -113,7 +115,9 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
 
   function dispatch(action: StoreAction) {
     const nextState = reducer(state, action);
-    if (nextState === state) return;
+    if (nextState === state) {
+      return;
+    }
 
     state = nextState;
     for (const listener of listeners) {
@@ -250,8 +254,12 @@ function FileUploadRoot(props: FileUploadRootProps) {
 
   const onFilesChange = useCallback(
     (files: ReadonlyArray<File>) => {
-      if (disabled || files.length === 0) return;
-      if (onBeforeFilesAdd?.(files) === false) return;
+      if (disabled || files.length === 0) {
+        return;
+      }
+      if (onBeforeFilesAdd?.(files) === false) {
+        return;
+      }
       store.dispatch({ type: 'ADD_FILES', files });
     },
     [store, onBeforeFilesAdd, disabled],
@@ -327,7 +335,9 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: MouseEvent<HTMLDivElement>) => {
       onClickProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       const target = event.target;
 
@@ -344,7 +354,9 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: DragEvent<HTMLDivElement>) => {
       onDragOverProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       event.preventDefault();
       store.dispatch({ type: 'SET_DRAG_OVER', dragOver: true });
@@ -356,7 +368,9 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: DragEvent<HTMLDivElement>) => {
       onDragEnterProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       event.preventDefault();
       store.dispatch({ type: 'SET_DRAG_OVER', dragOver: true });
@@ -368,7 +382,9 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: DragEvent<HTMLDivElement>) => {
       onDragLeaveProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       const relatedTarget = event.relatedTarget;
       if (relatedTarget && relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
@@ -385,14 +401,18 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: DragEvent<HTMLDivElement>) => {
       onDropProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       event.preventDefault();
       store.dispatch({ type: 'SET_DRAG_OVER', dragOver: false });
 
       const files = [...event.dataTransfer.files];
       const inputElement = context.inputRef.current;
-      if (!inputElement) return;
+      if (!inputElement) {
+        return;
+      }
 
       const dataTransfer = new DataTransfer();
       for (const file of files) {
@@ -410,7 +430,9 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
     (event: ClipboardEvent<HTMLDivElement>) => {
       onPasteProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       event.preventDefault();
       store.dispatch({ type: 'SET_DRAG_OVER', dragOver: false });
@@ -427,10 +449,14 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
         }
       }
 
-      if (files.length === 0) return;
+      if (files.length === 0) {
+        return;
+      }
 
       const inputElement = context.inputRef.current;
-      if (!inputElement) return;
+      if (!inputElement) {
+        return;
+      }
 
       const dataTransfer = new DataTransfer();
       for (const file of files) {
@@ -500,7 +526,9 @@ function FileUploadTrigger(props: FileUploadTriggerProps) {
     (event: MouseEvent<HTMLButtonElement>) => {
       onClickProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       context.inputRef.current?.click();
     },
@@ -525,7 +553,9 @@ function FileUploadList(props: FileUploadListProps) {
   const fileCount = useStore((state) => state.files.size);
   const shouldRender = forceMount ?? fileCount > 0;
 
-  if (!shouldRender) return null;
+  if (!shouldRender) {
+    return null;
+  }
 
   const ListPrimitive = asChild ? Slot : 'div';
 
@@ -599,7 +629,9 @@ function FileUploadItem(props: FileUploadItemProps) {
     [id, file, nameId, sizeId],
   );
 
-  if (!file) return null;
+  if (!file) {
+    return null;
+  }
 
   const ItemPrimitive = asChild ? Slot : 'div';
 
@@ -624,7 +656,9 @@ function FileUploadItem(props: FileUploadItemProps) {
 }
 
 function formatBytes(bytes: number) {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) {
+    return '0 B';
+  }
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / 1024 ** i).toFixed(i ? 1 : 0)} ${sizes[i]}`;
@@ -675,7 +709,9 @@ function FileUploadItemPreview(props: FileUploadItemPreviewProps) {
 
   const itemContext = useFileUploadItemContext(ITEM_PREVIEW_NAME);
 
-  if (!itemContext.file) return null;
+  if (!itemContext.file) {
+    return null;
+  }
 
   const ItemPreviewPrimitive = asChild ? Slot : 'div';
 
@@ -698,7 +734,9 @@ function FileUploadItemMetadata(props: FileUploadItemMetadataProps) {
   const context = useFileUploadContext(ITEM_METADATA_NAME);
   const itemContext = useFileUploadItemContext(ITEM_METADATA_NAME);
 
-  if (!itemContext.file) return null;
+  if (!itemContext.file) {
+    return null;
+  }
 
   const ItemMetadataPrimitive = asChild ? Slot : 'div';
 
@@ -732,7 +770,9 @@ function FileUploadItemDelete(props: FileUploadItemDeleteProps) {
     (event: MouseEvent<HTMLButtonElement>) => {
       onClickProp?.(event);
 
-      if (!itemContext.file || event.defaultPrevented) return;
+      if (!itemContext.file || event.defaultPrevented) {
+        return;
+      }
 
       store.dispatch({
         type: 'REMOVE_FILE',
@@ -742,7 +782,9 @@ function FileUploadItemDelete(props: FileUploadItemDeleteProps) {
     [store, itemContext.file, onClickProp],
   );
 
-  if (!itemContext.file) return null;
+  if (!itemContext.file) {
+    return null;
+  }
 
   const ItemDeletePrimitive = asChild ? Slot : 'button';
 
@@ -767,7 +809,9 @@ function FileUploadClear(props: FileUploadClearProps) {
     (event: MouseEvent<HTMLButtonElement>) => {
       onClickProp?.(event);
 
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented) {
+        return;
+      }
 
       store.dispatch({ type: 'CLEAR' });
     },
@@ -776,7 +820,9 @@ function FileUploadClear(props: FileUploadClearProps) {
 
   const shouldRender = forceMount ?? fileCount > 0;
 
-  if (!shouldRender) return null;
+  if (!shouldRender) {
+    return null;
+  }
 
   const ClearPrimitive = asChild ? Slot : 'button';
 

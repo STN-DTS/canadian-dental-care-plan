@@ -139,7 +139,9 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   const uploadResult = await uploadDocuments(validationResult.data.files);
   const processedDocuments = documents.map((document) => {
-    if (document.status === 'uploaded' || (!uploadResult.success && hasUploadError(document.id, uploadResult))) return document;
+    if (document.status === 'uploaded' || (!uploadResult.success && hasUploadError(document.id, uploadResult))) {
+      return document;
+    }
     return Object.assign({}, document, { status: 'uploaded' as const });
   });
 

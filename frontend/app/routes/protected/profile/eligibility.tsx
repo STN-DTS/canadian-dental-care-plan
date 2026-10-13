@@ -172,7 +172,9 @@ function getEligibilityStatus({ applicant, taxationYear, isNextYear, ELIGIBILITY
 
   // Fallback to earnings if no status code is present
   const earning = applicant.earnings.find((earning) => earning.taxationYear === taxationYear);
-  if (!earning) return 'not-enrolled';
+  if (!earning) {
+    return 'not-enrolled';
+  }
   const hasEligibleStatusCode = earning.eligibilityStatusCode === ELIGIBILITY_STATUS_CODE_ELIGIBLE;
   const hasCoverageCopayTierTpcCode = !!earning.coverageCopayTierTpcCode;
   return hasEligibleStatusCode && hasCoverageCopayTierTpcCode ? 'eligible' : 'not-eligible';

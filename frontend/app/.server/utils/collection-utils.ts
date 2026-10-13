@@ -21,10 +21,14 @@ export function moveToTop<T>(array: ReadonlyArray<T>, predicate: (item: T) => bo
   const extractedElements: T[] = [];
   for (let i = matchingIndices.length - 1; i >= 0; i--) {
     const index = matchingIndices[i];
-    if (index === undefined) continue;
+    if (index === undefined) {
+      continue;
+    }
 
     const [item] = newArray.splice(index, 1);
-    if (item) extractedElements.unshift(item);
+    if (item) {
+      extractedElements.unshift(item);
+    }
   }
 
   // Unshift extracted elements to the beginning of the array

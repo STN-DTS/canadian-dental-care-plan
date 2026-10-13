@@ -24,7 +24,9 @@ export function RemoveFileDialog({ fileName, fileNameId, disabled }: RemoveFileD
   return (
     <Dialog
       onOpenChange={(open) => {
-        if (open) removalConfirmedRef.current = false;
+        if (open) {
+          removalConfirmedRef.current = false;
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -35,7 +37,9 @@ export function RemoveFileDialog({ fileName, fileNameId, disabled }: RemoveFileD
       <DialogContent
         className="sm:max-w-md"
         onCloseAutoFocus={(event) => {
-          if (removalConfirmedRef.current) event.preventDefault();
+          if (removalConfirmedRef.current) {
+            event.preventDefault();
+          }
         }}
       >
         <DialogHeader>

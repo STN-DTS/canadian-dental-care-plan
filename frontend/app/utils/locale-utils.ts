@@ -27,7 +27,9 @@ export const APP_LOCALES = ['en', 'fr'] as const;
  * ```
  */
 export function isAppLocale(value: unknown): value is AppLocale {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {
+    return false;
+  }
   return APP_LOCALES.includes(value as AppLocale);
 }
 

@@ -98,7 +98,9 @@ export function createRequestLoggerMiddleware(isProduction: boolean): RequestHan
   const ignorePatterns: string[] = ['/api/readyz'];
 
   return function requestLoggerMiddleware(request, response, next) {
-    if (shouldIgnore(ignorePatterns, request.path)) return next();
+    if (shouldIgnore(ignorePatterns, request.path)) {
+      return next();
+    }
     return morganLoggerMiddleware(request, response, next);
   };
 }

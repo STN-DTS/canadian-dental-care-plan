@@ -39,12 +39,16 @@ export function useErrorSummaryFocusHandler(context: ErrorSummaryContextValue | 
   const previousValidationRun = useRef(validationRun);
 
   const focusCurrentErrorSummary = useEffectEvent(() => {
-    if (!hasSummaryErrors(errors) || !summaryId) return;
+    if (!hasSummaryErrors(errors) || !summaryId) {
+      return;
+    }
     focusErrorSummary(summaryId);
   });
 
   useEffect(() => {
-    if (validationRun === undefined) return;
+    if (validationRun === undefined) {
+      return;
+    }
 
     const isNewValidation = previousValidationRun.current !== validationRun;
     previousValidationRun.current = validationRun;
@@ -70,12 +74,16 @@ export function useErrorSummaryAnalyticsReporter(context: ErrorSummaryContextVal
   const previousValidationRun = useRef(validationRun);
 
   const reportCurrentErrors = useEffectEvent(() => {
-    if (!hasSummaryErrors(errors)) return;
+    if (!hasSummaryErrors(errors)) {
+      return;
+    }
     reportValidationErrorsToAnalytics(errors);
   });
 
   useEffect(() => {
-    if (validationRun === undefined) return;
+    if (validationRun === undefined) {
+      return;
+    }
 
     const isNewValidation = previousValidationRun.current !== validationRun;
     previousValidationRun.current = validationRun;
@@ -107,7 +115,9 @@ function hasSummaryErrors(errors: ReadonlyArray<ErrorMessage> | undefined): erro
  */
 function focusErrorSummary(summaryId: string): void {
   const element = document.querySelector<HTMLElement>(`[data-error-summary-id="${summaryId}"]`);
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.scrollIntoView({ behavior: 'smooth' });
   element.focus({ preventScroll: true });
@@ -123,7 +133,9 @@ function focusErrorSummary(summaryId: string): void {
  * @param errors The current errors in summary display order.
  */
 function reportValidationErrorsToAnalytics(errors: ReadonlyArray<ErrorMessage>): void {
-  if (!adobeAnalytics.isConfigured()) return;
+  if (!adobeAnalytics.isConfigured()) {
+    return;
+  }
   adobeAnalytics.pushValidationErrorEvent(errors.map(({ fieldId }) => fieldId));
 }
 

@@ -43,7 +43,9 @@ function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 
   formData.set('_action', 'add-files');
   formData.set('_validation_id', 'validation-1');
   formData.set('current_file_count', String(currentFileCount));
-  for (const file of files) formData.append('file_object', file, file.name);
+  for (const file of files) {
+    formData.append('file_object', file, file.name);
+  }
   return formData;
 }
 
@@ -53,7 +55,9 @@ function createUploadFormData(entries: ReadonlyArray<{ id: string; file: File; d
   for (const { id, file, documentType } of entries) {
     formData.append('file_id', id);
     formData.append('file_object', file, file.name);
-    if (documentType !== undefined) formData.append('file_document_type', documentType);
+    if (documentType !== undefined) {
+      formData.append('file_document_type', documentType);
+    }
   }
   return formData;
 }
@@ -177,9 +181,15 @@ describe('action', () => {
   it.each(['empty batch', 'missing file', 'missing ID', 'text instead of a file'])('rejects an upload with $0 before changing state', async (caseName) => {
     const formData = new FormData();
     formData.set('_action', 'upload');
-    if (caseName !== 'empty batch' && caseName !== 'missing ID') formData.set('file_id', 'file-1');
-    if (caseName === 'missing ID') formData.set('file_object', new File(['content'], 'document.pdf'));
-    if (caseName === 'text instead of a file') formData.set('file_object', 'document.pdf');
+    if (caseName !== 'empty batch' && caseName !== 'missing ID') {
+      formData.set('file_id', 'file-1');
+    }
+    if (caseName === 'missing ID') {
+      formData.set('file_object', new File(['content'], 'document.pdf'));
+    }
+    if (caseName === 'text instead of a file') {
+      formData.set('file_object', 'document.pdf');
+    }
 
     await expect(action(createActionArgs(formData))).rejects.toMatchObject({ init: { status: 400 } });
     expect(validateUploadedFiles).not.toHaveBeenCalled();

@@ -17,7 +17,9 @@ vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'), async 
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
 const guard = middleware[0];
-if (!guard) throw new Error('Expected an upload form lifecycle guard');
+if (!guard) {
+  throw new Error('Expected an upload form lifecycle guard');
+}
 
 function createArgs(method: string): Parameters<(typeof middleware)[number]>[0] {
   const session = mock<Session>();
@@ -38,7 +40,9 @@ describe('upload form lifecycle middleware', () => {
 
     const response = await Promise.resolve(guard(createArgs(method), next)).catch((error: unknown) => error);
     expect(response).toBeInstanceOf(Response);
-    if (!(response instanceof Response)) throw new Error('Expected a confirmation redirect');
+    if (!(response instanceof Response)) {
+      throw new Error('Expected a confirmation redirect');
+    }
     expect(response.status).toBe(302);
     expect(response.headers.get('Location')).toBe(`/en/protected/documents/upload/${uploadId}/submitted`);
     expect(response.headers.get('X-Remix-Replace')).toBe('true');
@@ -74,8 +78,12 @@ describe('upload form revalidation', () => {
   it.each(['different flow', 'different search', 'different action target', 'unknown action'])('allows default revalidation for a %s', (caseName) => {
     const currentUrl = new URL(`http://localhost/en/protected/documents/upload/${uploadId}`);
     const nextUrl = new URL(currentUrl);
-    if (caseName === 'different flow') nextUrl.pathname += '/other';
-    if (caseName === 'different search') nextUrl.search = '?refresh=true';
+    if (caseName === 'different flow') {
+      nextUrl.pathname += '/other';
+    }
+    if (caseName === 'different search') {
+      nextUrl.search = '?refresh=true';
+    }
     const formData = new FormData();
     formData.set('_action', caseName === 'unknown action' ? 'unknown' : 'upload');
     const args: Parameters<typeof shouldRevalidate>[0] = {

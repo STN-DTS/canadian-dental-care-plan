@@ -223,10 +223,18 @@ export function getAgeCategoryFromDateString(date: string, referenceDate?: strin
  * @returns The age category.
  */
 export function getAgeCategoryFromAge(age: number): AgeCategory {
-  if (age >= 65) return 'seniors';
-  if (age >= 18 && age < 65) return 'adults';
-  if (age >= 16 && age < 18) return 'youth';
-  if (age >= 0 && age < 16) return 'children';
+  if (age >= 65) {
+    return 'seniors';
+  }
+  if (age >= 18 && age < 65) {
+    return 'adults';
+  }
+  if (age >= 16 && age < 18) {
+    return 'youth';
+  }
+  if (age >= 0 && age < 16) {
+    return 'children';
+  }
   throw new Error(`Invalid age [${age}]`);
 }
 
@@ -292,8 +300,12 @@ interface GetEligibilityStatusArgs {
  * @returns The eligibility status as 'eligible', 'eligible-proof', or 'ineligible'.
  */
 export function getEligibilityStatus({ hasPrivateDentalInsurance, privateDentalInsuranceOnRecord }: GetEligibilityStatusArgs): EligibilityType {
-  if (!hasPrivateDentalInsurance && !privateDentalInsuranceOnRecord) return 'eligible';
-  if (!hasPrivateDentalInsurance && privateDentalInsuranceOnRecord) return 'eligible-proof';
+  if (!hasPrivateDentalInsurance && !privateDentalInsuranceOnRecord) {
+    return 'eligible';
+  }
+  if (!hasPrivateDentalInsurance && privateDentalInsuranceOnRecord) {
+    return 'eligible-proof';
+  }
   return 'ineligible';
 }
 
@@ -322,7 +334,9 @@ export function getEligibilityStatus({ hasPrivateDentalInsurance, privateDentalI
  *          - False for renewal context if clientNumber is not found in the valid set
  */
 export function isChildClientNumberValid(context: 'intake' | 'renewal', clientApplication?: ClientApplicationRenewalEligibleDto, clientNumber?: string) {
-  if (context === 'intake' || clientApplication === undefined || clientNumber === undefined) return true;
+  if (context === 'intake' || clientApplication === undefined || clientNumber === undefined) {
+    return true;
+  }
   const isChildrensClientNumberValid = clientApplication.children.some((child) => child.information.clientNumber === clientNumber);
   const isEligibleClientNumberValid = clientApplication.eligibleClientNumbers.includes(clientNumber) && clientNumber !== clientApplication.applicantInformation.clientNumber;
   return isChildrensClientNumberValid && isEligibleClientNumberValid;
@@ -379,7 +393,9 @@ export function getAllowedTypeOfApplication({
  * @returns `true` if the marital status is either common law or married, `false` otherwise.
  */
 export function maritalStatusHasPartner(maritalStatus?: string) {
-  if (!maritalStatus) return false;
+  if (!maritalStatus) {
+    return false;
+  }
   const { MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED } = getEnv();
   return [MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED].includes(maritalStatus);
 }
@@ -399,7 +415,9 @@ export function isSinReserved(sin: string, reservedSins: ReadonlyArray<string | 
   }
 
   const formattedReserved: ReadonlyArray<string> = reservedSins.flatMap((s) => {
-    if (!s || !isValidSin(s)) return [];
+    if (!s || !isValidSin(s)) {
+      return [];
+    }
     return [formatSin(s)];
   });
 

@@ -140,7 +140,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     session,
     state: {
       children: state.children.map((child) => {
-        if (child.id !== childId) return child;
+        if (child.id !== childId) {
+          return child;
+        }
         return {
           id: child.id,
           dentalInsurance: child.dentalInsurance,

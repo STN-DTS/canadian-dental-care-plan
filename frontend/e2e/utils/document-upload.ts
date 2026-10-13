@@ -45,8 +45,11 @@ export class DocumentUploadApi {
     const form = new FormData();
     form.set('_csrf', csrfToken ?? (await this.page.locator('input[name="_csrf"]').inputValue()));
     for (const [name, value] of fields) {
-      if (typeof value === 'string') form.append(name, value);
-      else form.append(name, new Blob([Uint8Array.from(value.buffer)], { type: value.mimeType }), value.name);
+      if (typeof value === 'string') {
+        form.append(name, value);
+      } else {
+        form.append(name, new Blob([Uint8Array.from(value.buffer)], { type: value.mimeType }), value.name);
+      }
     }
     const cookies = await this.page.context().cookies();
     return await this.page.request.post(url, {
@@ -69,7 +72,9 @@ export class DocumentUploadApi {
 export function collectUploadRequests(page: Page) {
   const requests: Request[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith(uploadEntryUrl)) requests.push(request);
+    if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith(uploadEntryUrl)) {
+      requests.push(request);
+    }
   });
   return requests;
 }
@@ -104,7 +109,9 @@ export async function waitForUploadRouter(page: Page) {
 export async function navigateUploadRouter(page: Page, url: string) {
   await page.evaluate((target) => {
     const routerWindow = window as typeof window & { __reactRouterDataRouter?: { navigate: (url: string) => Promise<void> } };
-    if (!routerWindow.__reactRouterDataRouter) throw new Error('React Router test hook is unavailable');
+    if (!routerWindow.__reactRouterDataRouter) {
+      throw new Error('React Router test hook is unavailable');
+    }
     void routerWindow.__reactRouterDataRouter.navigate(target);
   }, url);
 }

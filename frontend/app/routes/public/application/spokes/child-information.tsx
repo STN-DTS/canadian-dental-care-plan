@@ -121,7 +121,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
           (memberId) => {
             // memberId is only required to be unique across children in the application for renewal applications since
             // only renewal applications have eligible client numbers tied to children in the application
-            if (state.context !== 'renewal') return true;
+            if (state.context !== 'renewal') {
+              return true;
+            }
 
             // memberId must be unique within the application across all children unless the memberId belongs to the
             // current child being edited (i.e. in edit mode the memberId can be unchanged and match the existing memberId)
@@ -221,7 +223,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       socialInsuranceNumber: z.string().trim().optional(),
     })
     .superRefine((val, ctx) => {
-      if (!val.hasSocialInsuranceNumber) return;
+      if (!val.hasSocialInsuranceNumber) {
+        return;
+      }
 
       if (!val.socialInsuranceNumber) {
         ctx.addIssue({ code: 'custom', message: t(($) => $.children.information.errorMessage.sinRequired), path: ['socialInsuranceNumber'] });
@@ -290,7 +294,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     session,
     state: {
       children: state.children.map((child) => {
-        if (child.id !== childState.id) return child;
+        if (child.id !== childState.id) {
+          return child;
+        }
         const information = { ...parsedDataResult.data, ...parsedSinDataResult.data };
         return { ...child, information };
       }),

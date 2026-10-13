@@ -196,7 +196,9 @@ export class ExpressSession implements Session {
 
   has(key: SessionKey): boolean {
     const sanitizedKey = this.sanitizeKey(key);
-    if (this.isReservedKey(sanitizedKey)) return false;
+    if (this.isReservedKey(sanitizedKey)) {
+      return false;
+    }
     const exists = sanitizedKey in this.session;
     this.log.trace('Session [%s]: Checking for key "%s", exists: %s', this.id, key, exists);
     return exists;

@@ -115,7 +115,9 @@ export function useDocumentUploadForm() {
       const data = fetcher.data;
       const isPendingValidationResponse = pendingValidation && data?.source === 'client' && data.formAction === FORM_ACTION.addFiles && data.validationId === pendingValidation.validationId;
 
-      if (!isPendingValidationResponse) return;
+      if (!isPendingValidationResponse) {
+        return;
+      }
       pendingFileSelectionValidationRef.current = undefined;
 
       if (!data.errors) {
@@ -142,7 +144,9 @@ export function useDocumentUploadForm() {
       const data = fetcher.data;
       const isUnsuccessfulUploadResponse = data?.source === 'server' && data.responseType === 'upload-errors';
 
-      if (!isUnsuccessfulUploadResponse) return;
+      if (!isUnsuccessfulUploadResponse) {
+        return;
+      }
       pendingFileSelectionValidationRef.current = undefined;
     },
     [fetcher.data],

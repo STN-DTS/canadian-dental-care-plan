@@ -40,7 +40,9 @@ export { loader } from '~/routes/protected/documents/upload/upload-form-loader.s
  * @returns False for known same-page POST actions, otherwise the router's default decision.
  */
 export const shouldRevalidate: ShouldRevalidateFunction = ({ currentUrl, nextUrl, formAction, formData, formMethod, defaultShouldRevalidate }) => {
-  if (formMethod?.toUpperCase() !== 'POST' || !formAction) return defaultShouldRevalidate;
+  if (formMethod?.toUpperCase() !== 'POST' || !formAction) {
+    return defaultShouldRevalidate;
+  }
 
   const isSamePage = currentUrl.pathname === nextUrl.pathname && currentUrl.search === nextUrl.search && new URL(formAction, currentUrl).pathname === currentUrl.pathname;
   const isUploadFormAction = Object.values(FORM_ACTION).some((action) => action === formData?.get('_action'));

@@ -37,7 +37,9 @@ function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 
   formData.set('_action', 'add-files');
   formData.set('_validation_id', 'validation-1');
   formData.set('current_file_count', String(currentFileCount));
-  for (const file of files) formData.append('file_object', file, file.name);
+  for (const file of files) {
+    formData.append('file_object', file, file.name);
+  }
   return formData;
 }
 
@@ -47,7 +49,9 @@ function createUploadFormData(entries: ReadonlyArray<{ id: string; file: File; d
   for (const { id, file, documentType } of entries) {
     formData.append('file_id', id);
     formData.append('file_object', file, file.name);
-    if (documentType !== undefined) formData.append('file_document_type', documentType);
+    if (documentType !== undefined) {
+      formData.append('file_document_type', documentType);
+    }
   }
   return formData;
 }

@@ -88,7 +88,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     session,
     state: {
       children: state.children.map((child) => {
-        if (child.id !== childState.id) return child;
+        if (child.id !== childState.id) {
+          return child;
+        }
         return {
           ...child,
           information: {

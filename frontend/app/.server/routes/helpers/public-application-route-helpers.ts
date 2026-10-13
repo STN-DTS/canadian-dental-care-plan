@@ -449,8 +449,12 @@ export function isWithinRenewalPeriod(date: Date = new Date()): boolean {
  * @returns `true` when the section is available; otherwise, `false`.
  */
 export function isNewOrReturningMember(state: PickDeep<PublicApplicationState, 'context' | 'applicantInformation.dateOfBirth'>): boolean {
-  if (state.context !== 'intake') return false;
-  if (state.applicantInformation?.dateOfBirth === undefined) return false;
+  if (state.context !== 'intake') {
+    return false;
+  }
+  if (state.applicantInformation?.dateOfBirth === undefined) {
+    return false;
+  }
 
   const yearOfBirth = parseDateString(state.applicantInformation.dateOfBirth).getFullYear();
   return yearOfBirth >= 2007;

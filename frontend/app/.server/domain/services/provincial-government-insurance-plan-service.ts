@@ -103,7 +103,9 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     this.log.debug('Get provincial government insurance plan with id: [%s]', id);
     const provincialGovernmentInsurancePlanDtoOption = await this.findProvincialGovernmentInsurancePlanById(id);
 
-    if (provincialGovernmentInsurancePlanDtoOption.isNone()) throw new ProvincialGovernmentInsurancePlanNotFoundException(`Provincial government insurance plan with id: [${id}] not found`);
+    if (provincialGovernmentInsurancePlanDtoOption.isNone()) {
+      throw new ProvincialGovernmentInsurancePlanNotFoundException(`Provincial government insurance plan with id: [${id}] not found`);
+    }
 
     const provincialGovernmentInsurancePlanDto = provincialGovernmentInsurancePlanDtoOption.unwrap();
 

@@ -81,7 +81,9 @@ export async function findDuplicateFile(files: ReadonlyArray<File>): Promise<Fil
 
   for (const hashedFiles of hashedFileGroups) {
     const duplicateFile = findDuplicateByHash(hashedFiles);
-    if (duplicateFile) return duplicateFile;
+    if (duplicateFile) {
+      return duplicateFile;
+    }
   }
 }
 
@@ -97,8 +99,11 @@ function groupPotentialDuplicateFiles(files: ReadonlyArray<File>): ReadonlyArray
   for (const file of files) {
     const metadataKey = JSON.stringify([file.name, file.size]);
     const matchingFiles = filesByMetadata.get(metadataKey);
-    if (matchingFiles) matchingFiles.push(file);
-    else filesByMetadata.set(metadataKey, [file]);
+    if (matchingFiles) {
+      matchingFiles.push(file);
+    } else {
+      filesByMetadata.set(metadataKey, [file]);
+    }
   }
 
   return [...filesByMetadata.values()].filter((matchingFiles) => matchingFiles.length > 1);
@@ -113,7 +118,9 @@ function groupPotentialDuplicateFiles(files: ReadonlyArray<File>): ReadonlyArray
 function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | undefined {
   const seenHashes = new Set<string>();
   for (const { file, hash } of hashedFiles) {
-    if (seenHashes.has(hash)) return file;
+    if (seenHashes.has(hash)) {
+      return file;
+    }
     seenHashes.add(hash);
   }
 }
@@ -248,7 +255,9 @@ export function base64ToArrayBuffer(base64Content: string): ArrayBuffer | undefi
  * ```
  */
 export function findMimeType(extension: string): Option<string> {
-  if (!extension.startsWith('.')) return None;
+  if (!extension.startsWith('.')) {
+    return None;
+  }
   return Option.from(mime.getType(extension));
 }
 

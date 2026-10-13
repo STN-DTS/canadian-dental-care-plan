@@ -36,10 +36,14 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 
   const clientDentalBenefits = clientApplication.dentalBenefits?.flatMap((id) => {
     const federalBenefit = listAllLocalizedDentalBenefits.find((benefit) => benefit.id === id);
-    if (federalBenefit) return [federalBenefit.name];
+    if (federalBenefit) {
+      return [federalBenefit.name];
+    }
 
     const provincialBenefit = listAllLocalizedProvincialDentalBenefits.find((benefit) => benefit.id === id);
-    if (provincialBenefit) return [provincialBenefit.name];
+    if (provincialBenefit) {
+      return [provincialBenefit.name];
+    }
 
     return [];
   });
@@ -47,10 +51,14 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const children = clientApplication.children.map((child) => {
     const dentalBenefits = child.dentalBenefits.flatMap((id) => {
       const federalBenefit = listAllLocalizedDentalBenefits.find((benefit) => benefit.id === id);
-      if (federalBenefit) return [federalBenefit.name];
+      if (federalBenefit) {
+        return [federalBenefit.name];
+      }
 
       const provincialBenefit = listAllLocalizedProvincialDentalBenefits.find((benefit) => benefit.id === id);
-      if (provincialBenefit) return [provincialBenefit.name];
+      if (provincialBenefit) {
+        return [provincialBenefit.name];
+      }
 
       return [];
     });

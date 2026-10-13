@@ -61,7 +61,9 @@ export function isDentalBenefitsSectionCompleted(state: Pick<ProtectedApplicatio
  * Checks if the marital status section is completed for intake application.
  */
 export function isMaritalStatusSectionCompleted(state: Pick<ProtectedApplicationState, 'maritalStatus' | 'partnerInformation'>): boolean {
-  if (state.maritalStatus === undefined) return false; // marital status not selected
+  if (state.maritalStatus === undefined) {
+    return false;
+  } // marital status not selected
 
   const { MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED } = getEnv();
   const partnerMaritalStatuses = [MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED]; // statuses that require partner information

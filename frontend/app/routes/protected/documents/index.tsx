@@ -55,8 +55,12 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
       const serviceName = recordSourceId ? recordSourceMap.get(recordSourceId) : undefined;
 
       const uploadMethod = (() => {
-        if (!recordSourceId) return t(($) => $.index.uploadMethodUnknown);
-        if (!serviceName) return t(($) => $.index.uploadMethodUnknown);
+        if (!recordSourceId) {
+          return t(($) => $.index.uploadMethodUnknown);
+        }
+        if (!serviceName) {
+          return t(($) => $.index.uploadMethodUnknown);
+        }
 
         if (recordSourceId === RECORD_SOURCE_API) {
           return t(($) => $.index.uploadMethodOverrides.api, { defaultValue: serviceName });

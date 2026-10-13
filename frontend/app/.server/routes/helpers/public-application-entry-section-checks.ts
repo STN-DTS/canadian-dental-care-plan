@@ -55,7 +55,9 @@ export function getTypeOfApplicationSectionCompletionResult(
  * For youth applicants, livingIndependently must also be completed.
  */
 export function isPersonalInformationSectionCompleted(state: Pick<PublicApplicationState, 'context' | 'inputModel' | 'applicantInformation' | 'livingIndependently' | 'applicationYear'>): boolean {
-  if (state.inputModel === undefined || state.applicantInformation === undefined) return false;
+  if (state.inputModel === undefined || state.applicantInformation === undefined) {
+    return false;
+  }
   const ageCategory = getContextualAgeCategoryFromDate(state.applicantInformation.dateOfBirth, state.applicationYear);
 
   if (ageCategory === 'children') {

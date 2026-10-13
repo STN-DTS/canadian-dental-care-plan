@@ -72,8 +72,11 @@ describe('DocumentUploadForm', () => {
     const keepButton = within(dialog).getByRole('button', { name: 'upload.removeFileConfirmation.keep' });
     expect(keepButton).toHaveClass(buttonVariantStyles.secondary, buttonSizeStyles.sm);
     await waitFor(() => expect(keepButton).toHaveFocus());
-    if (action === 'escape') await user.keyboard('{Escape}');
-    else await user.click(action === 'keep' ? keepButton : within(dialog).getByRole('button', { name: 'dialog.close' }));
+    if (action === 'escape') {
+      await user.keyboard('{Escape}');
+    } else {
+      await user.click(action === 'keep' ? keepButton : within(dialog).getByRole('button', { name: 'dialog.close' }));
+    }
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(form.handleFileChange).not.toHaveBeenCalled();

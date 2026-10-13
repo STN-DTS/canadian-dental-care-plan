@@ -201,7 +201,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       socialInsuranceNumber: z.string().trim().optional(),
     })
     .superRefine((val, ctx) => {
-      if (!val.hasSocialInsuranceNumber) return;
+      if (!val.hasSocialInsuranceNumber) {
+        return;
+      }
 
       if (!val.socialInsuranceNumber) {
         ctx.addIssue({ code: 'custom', message: t(($) => $.children.information.errorMessage.sinRequired), path: ['socialInsuranceNumber'] });
@@ -250,7 +252,9 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     session,
     state: {
       children: state.children.map((child) => {
-        if (child.id !== childState.id) return child;
+        if (child.id !== childState.id) {
+          return child;
+        }
         const information = { ...parsedDataResult.data, ...parsedSinDataResult.data };
         return { ...child, information };
       }),

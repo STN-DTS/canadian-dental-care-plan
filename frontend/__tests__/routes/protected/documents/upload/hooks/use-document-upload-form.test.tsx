@@ -264,7 +264,9 @@ describe('useDocumentUploadForm', () => {
       result.current.submitForm(form);
     });
     const finishFormData = submit.mock.lastCall?.[0];
-    if (!(finishFormData instanceof FormData)) throw new Error('Expected a finish submission');
+    if (!(finishFormData instanceof FormData)) {
+      throw new Error('Expected a finish submission');
+    }
     expect(finishFormData.get('_action')).toBe(FORM_ACTION.finish);
     expect(finishFormData.get('_csrf')).toBe('csrf-token');
     expect(finishFormData.getAll('file_id')).toEqual([]);

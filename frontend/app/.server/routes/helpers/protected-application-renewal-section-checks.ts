@@ -87,8 +87,12 @@ export function isDentalInsuranceSectionCompleted(state: Pick<ProtectedApplicati
  * their existing access to government dental benefits for the section to be considered complete.
  */
 export function isDentalBenefitsSectionCompleted(state: PickDeep<ProtectedApplicationState, 'dentalBenefits' | 'clientApplication.dentalBenefits'>): boolean {
-  if (!state.dentalBenefits) return false; // user must indicate if their access to government dental benefits has changed
-  if (state.dentalBenefits.hasChanged) return true; // if access has changed, section is complete regardless of whether they have access or not
+  if (!state.dentalBenefits) {
+    return false;
+  } // user must indicate if their access to government dental benefits has changed
+  if (state.dentalBenefits.hasChanged) {
+    return true;
+  } // if access has changed, section is complete regardless of whether they have access or not
   return state.clientApplication?.dentalBenefits !== undefined; // if access has not changed, existing access must be indicated
 }
 
@@ -96,7 +100,9 @@ export function isDentalBenefitsSectionCompleted(state: PickDeep<ProtectedApplic
  * Checks if the marital status section is completed for renewal application.
  */
 export function isMaritalStatusSectionCompleted(state: Pick<ProtectedApplicationState, 'maritalStatus' | 'partnerInformation'>): boolean {
-  if (state.maritalStatus === undefined) return false; // marital status not selected
+  if (state.maritalStatus === undefined) {
+    return false;
+  } // marital status not selected
 
   const { MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED } = getEnv();
   const partnerMaritalStatuses = [MARITAL_STATUS_CODE_COMMON_LAW, MARITAL_STATUS_CODE_MARRIED]; // statuses that require partner information

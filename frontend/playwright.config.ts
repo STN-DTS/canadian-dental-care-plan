@@ -14,8 +14,12 @@ const webServerHost = process.env.WSL_DISTRO_NAME ? '[::1]' : 'localhost';
  * @returns An array of Playwright reporter configurations based on the environment.
  */
 function getReporterConfig(): ReporterDescription[] {
-  if (!isCI) return [['list'], ['html']];
-  if (isTeamCity) return [['playwright-teamcity-reporter']];
+  if (!isCI) {
+    return [['list'], ['html']];
+  }
+  if (isTeamCity) {
+    return [['playwright-teamcity-reporter']];
+  }
   return [['dot'], ['html', { open: 'never' }]];
 }
 

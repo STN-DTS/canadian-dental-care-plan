@@ -491,16 +491,26 @@ export function getTypeOfApplicationFromRenewalSelectionClientIds(state: Protect
   invariant(state.clientApplication, 'Expected clientApplication to be defined');
   const hasPrimaryApplicant = clientIds.some((id) => isPrimaryApplicant(state, id));
   const hasDependent = clientIds.some((id) => isPrimaryApplicantChild(state, id));
-  if (hasPrimaryApplicant && hasDependent) return 'family';
-  if (hasPrimaryApplicant) return 'adult';
-  if (hasDependent) return 'children';
+  if (hasPrimaryApplicant && hasDependent) {
+    return 'family';
+  }
+  if (hasPrimaryApplicant) {
+    return 'adult';
+  }
+  if (hasDependent) {
+    return 'children';
+  }
   return 'delegate';
 }
 
 // Helper function to get value from either state or client application
 export function getDeclaredChangeValueOrClientValue<T>(declaredChange: { hasChanged: boolean; value?: T } | undefined, clientValue: T | undefined): T | undefined {
-  if (declaredChange?.hasChanged === true) return declaredChange.value;
-  if (declaredChange?.hasChanged === false) return clientValue;
+  if (declaredChange?.hasChanged === true) {
+    return declaredChange.value;
+  }
+  if (declaredChange?.hasChanged === false) {
+    return clientValue;
+  }
   return undefined;
 }
 
@@ -531,8 +541,12 @@ export function validateProtectedApplicationContext<TState extends ProtectedAppl
  * input model; otherwise, it should not be skipped.
  */
 export function shouldSkipMaritalStatus(state: PickDeep<ProtectedApplicationState, 'context' | 'clientApplication.inputModel'>): boolean {
-  if (state.context !== 'renewal') return false;
-  if (state.clientApplication === undefined) return false;
+  if (state.context !== 'renewal') {
+    return false;
+  }
+  if (state.clientApplication === undefined) {
+    return false;
+  }
   return state.clientApplication.inputModel === 'simplified';
 }
 
@@ -546,8 +560,12 @@ export function shouldSkipMaritalStatus(state: PickDeep<ProtectedApplicationStat
  * @returns `true` when the section is available; otherwise, `false`.
  */
 export function isNewOrReturningMember(state: PickDeep<ProtectedApplicationState, 'context' | 'applicantInformation.dateOfBirth'>): boolean {
-  if (state.context !== 'intake') return false;
-  if (state.applicantInformation?.dateOfBirth === undefined) return false;
+  if (state.context !== 'intake') {
+    return false;
+  }
+  if (state.applicantInformation?.dateOfBirth === undefined) {
+    return false;
+  }
 
   const yearOfBirth = parseDateString(state.applicantInformation.dateOfBirth).getFullYear();
   return yearOfBirth >= 2007;

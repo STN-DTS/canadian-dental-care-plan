@@ -32,7 +32,9 @@ class OpenTelemetryLogger {
   }
 
   private _print(level: OpenTelemetryLogLevel, message: string, ...args: unknown[]): void {
-    if (level === 'DEBUG' && !this.showDebug) return;
+    if (level === 'DEBUG' && !this.showDebug) {
+      return;
+    }
 
     const timestamp = this._getTimestamp();
     const plainMsg = `[${timestamp}] [${level}] [${this.label}] ${message}`;

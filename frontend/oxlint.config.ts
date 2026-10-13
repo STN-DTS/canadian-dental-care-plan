@@ -26,6 +26,7 @@ export default defineConfig({
     },
   ],
   rules: {
+    curly: 'error',
     'eslint/no-param-reassign': 'error',
     'eslint/no-unused-vars': ['error', { args: 'none' }],
     'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
