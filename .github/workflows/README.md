@@ -22,8 +22,9 @@ repository-owned workflows:
 ```yaml
 workflows:
   - Build, test, and publish nonprod images
-  - Build, test, and publish PROD tag images
   - Build, test, and publish nonprod tag images
+  - Build, test, and publish PROD tag images
+  - GitOps operator (nonprod)
   - Nightly e2e tests
   - Upload PROD test results to SharePoint
 ```
@@ -135,9 +136,9 @@ forced runner termination can prevent cleanup.
 The optional `debug` input prints tool versions and allowlisted GitHub and runner
 context. It does not dump the full environment or print secret values.
 
-This workflow does not deploy production and is not currently subscribed to the
-Slack notification allowlist. A successful live GitHub deployment has not been
-verified; check the first run after the handoff.
+This workflow does not deploy production. Slack notifications report queued runs
+and completion results through the notification workflow. A successful live
+GitHub deployment has not been verified; check the first run after the handoff.
 
 ## Manual Runs and Retries
 

@@ -12,8 +12,9 @@ on:
   workflow_run:
     workflows:
       - Build, test, and publish nonprod images
-      - Build, test, and publish PROD tag images
       - Build, test, and publish nonprod tag images
+      - Build, test, and publish PROD tag images
+      - GitOps operator (nonprod)
       - Nightly e2e tests
       - Upload PROD test results to SharePoint
     types: [requested, completed]
