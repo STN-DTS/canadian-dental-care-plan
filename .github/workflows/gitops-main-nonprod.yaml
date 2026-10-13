@@ -1,7 +1,9 @@
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-
-# Applies nonprod GitOps overlays to AKS when nonprod manifests change on main,
-# or when manually/reusably invoked.
+# ============================================================================
+# Workflow: GitOps operator (nonprod)
+# Purpose:  Applies nonprod GitOps overlays to the AKS cluster when GitOps
+#           manifests change on the main branch, and when manually triggered
+#           or invoked as a reusable workflow.
+# ============================================================================
 name: GitOps operator (nonprod)
 
 permissions: read-all
