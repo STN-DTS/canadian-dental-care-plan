@@ -93,9 +93,16 @@ All deployment runs must use `refs/heads/main`, including manual and reusable
 runs. The prerequisite gate rejects other branches and tags. Fork repositories
 skip the gate and all dependent jobs.
 
-The ten Kubernetes environment overlays share one AKS cluster and the
+The Kubernetes environment overlays share one AKS cluster and the
 `canada-dental-care-plan` namespace. They are not GitHub deployment environments
 or separate clusters. The `shared` overlay provides common resources.
+
+Environment targets are discovered from immediate subdirectories of
+`gitops/nonprod/overlays` containing `kustomization.yaml`, `kustomization.yml`,
+or `Kustomization`. Names must contain only lowercase letters, digits, and
+hyphens. Non-overlay directories are ignored; `shared` is handled separately.
+Change-detection filters are generated from these directories, so adding an
+overlay does not require editing the workflow's target list or apply steps.
 
 This workflow replaces TeamCity's **Synchronize all environments** job, which
 already watches `gitops/nonprod/**` on the default branch and applies all eleven
@@ -104,8 +111,8 @@ TeamCity is paused for this CI handoff; this is not a new manifest source-path
 cutover.
 
 Merging the workflow into `main` intentionally activates GitHub deployment.
-The merge changes the workflow file, selecting shared resources and all ten
-environments for the first run. No separate activation flag is required.
+The merge changes the workflow file, selecting shared resources and all
+discovered environments for the first run. No separate activation flag is required.
 Before merging, confirm GitHub's target settings and deployment credentials,
 runner tools, Vault access, and AKS permissions. Confirm that no TeamCity build
 is still running, and keep that job paused. GitHub's concurrency lock does not
@@ -114,24 +121,36 @@ coordinate with TeamCity.
 Push deployments select targets as follows:
 
 - Changes under an environment overlay select that environment only.
-- Changes under `gitops/nonprod/base/**` select all ten environment overlays.
+- Changes under `gitops/nonprod/base/**` select all discovered environment overlays.
 - Changes to the shared overlay or its maintenance, reloader, or squid-proxy
   bases select shared deployment.
 - Workflow changes, manual runs, reusable calls, and branch-creation pushes
-  select shared resources and all ten environments.
+  select shared resources and all discovered environments.
 
-When shared deployment is selected, it must succeed before environment jobs
-start. When it is skipped because its inputs are unchanged, selected environment
-jobs can still run. Up to six environment jobs run in parallel. Each deployment
-job, including shared deployment, has a 20-minute timeout. Runs targeting the
-same cluster are serialized, with up to 100 pending runs retained and no
-cancellation of active runs.
+One deployment job uses one ARC runner, checkout, Vault fetch, and Azure login
+for all selected overlays. Selected shared resources are applied first; a failure
+there blocks environment steps. Skipping unchanged shared resources does not
+block selected environments. Selected environments are applied in alphabetical
+order by one Bash loop, with a collapsible log group for each overlay. An
+environment failure does not stop the remaining selected environments, but the
+job reports failure after all have been attempted.
+
+The run's job summary lists Success or Failed for each attempted overlay,
+including `shared`, and names failed environment overlays. Apply steps write
+these results to `GITHUB_STEP_SUMMARY` before returning a failure. Detailed
+kubectl output remains in the step logs and per-overlay log groups.
+
+The complete deployment job has a 20-minute timeout. Reusing one runner avoids
+repeated runner provisioning and authentication when the ARC pool effectively
+processes jobs one at a time. Runs targeting the same cluster are serialized,
+with up to 100 pending runs retained and no cancellation of active runs.
 
 Vault supplies deployment credentials `SPN_ID` and `SPN_PASSWORD` from
 `canada-dental-care-plan/data/SPN`. External Secrets Operator retrieves application
 secrets through the cluster's `vault-backend` SecretStore; CI does not generate
-application-secret files. Each deployment job creates a private temporary Azure
-configuration directory and kubeconfig file. Best-effort cleanup removes both;
+application-secret files. The deployment job creates a private temporary Azure
+configuration directory and kubeconfig file, shared by its apply steps.
+Best-effort cleanup removes both;
 forced runner termination can prevent cleanup.
 The optional `debug` input prints tool versions and allowlisted GitHub and runner
 context. It does not dump the full environment or print secret values.

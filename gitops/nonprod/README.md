@@ -27,11 +27,21 @@ merging, confirm the GitHub target settings, credentials, runner tools, and
 cluster access, and verify that no TeamCity build is still running. Keep
 TeamCity paused; GitHub's concurrency lock cannot serialize TeamCity builds.
 
+The workflow discovers environment directories containing a Kustomization under
+`gitops/nonprod/overlays`, excluding `shared`. New overlays are included without
+adding workflow filters or apply steps; directories without a Kustomization are
+ignored.
+
 On pushes, environment-overlay changes select those environments; base changes
-select all ten environments. Shared-overlay changes or changes to its referenced
+select all discovered environments. Shared-overlay changes or changes to its referenced
 bases select shared deployment. Workflow-file changes select all overlays.
-When shared deployment is selected, it must succeed before environment jobs
-start. Skipping unchanged shared resources does not block selected environments.
+All selected overlays use one runner and Azure authentication session. When
+shared deployment is selected, it must succeed before environment steps start.
+Skipping unchanged shared resources does not block selected environments.
+Environments are applied sequentially in alphabetical order, with grouped logs
+for each overlay. A failed environment does not stop the
+remaining selected environments, but the overall deployment job fails. The
+complete deployment job has a 20-minute timeout.
 
 Manual and reusable runs apply shared resources and all environments. From the
 repository root, request a manual run with:

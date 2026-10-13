@@ -99,7 +99,7 @@ kubectl kustomize ./prod
 The [GitOps operator (nonprod) workflow](../.github/workflows/gitops-main-nonprod.yaml)
 applies Kustomizations when nonprod manifests change on `main`. Pushes select
 overlays based on changed files. Manual and reusable runs apply shared resources
-and all ten nonprod Kubernetes environments. These environments share one AKS
+and all discovered nonprod Kubernetes environments. These environments share one AKS
 cluster and namespace. Every deployment run must use `main`.
 
 This replaces the paused TeamCity **Synchronize all environments** job, which
