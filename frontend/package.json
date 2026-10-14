@@ -1,6 +1,10 @@
 {
-  "name": "canadian-dental-care-plan",
+  "name": "@cdcp-rcsd/frontend",
   "private": true,
+  "files": [
+    "build",
+    "public"
+  ],
   "type": "module",
   "sideEffects": false,
   "scripts": {
@@ -11,8 +15,8 @@
     "dev": "cross-env NODE_ENV=development tsx --conditions development --env-file-if-exists=./.env --import ./app/.server/express-server/opentelemetry-register.ts --import ./app/.server/express-server/opentelemetry.ts ./app/.server/express-server/server.ts",
     "preview": "pnpm run build && cross-env NODE_ENV=production SESSION_COOKIE_SECURE=false node --env-file-if-exists=./.env --import ./build/server/opentelemetry-register.js --import ./build/server/opentelemetry.js ./build/server/server.js",
     "start": "cross-env NODE_ENV=production node --import ./build/server/opentelemetry-register.js --import ./build/server/opentelemetry.js ./build/server/server.js",
-    "format:check": "oxfmt --check",
-    "format:fix": "oxfmt",
+    "format:check": "pnpm --dir .. exec oxfmt --check frontend",
+    "format:fix": "pnpm --dir .. exec oxfmt frontend",
     "lint": "run-s --continue-on-error -l format:check typecheck lint:oxlint",
     "lint:fix": "run-s --continue-on-error -l format:fix lint:oxlint:fix",
     "lint:oxlint": "oxlint .",
@@ -22,6 +26,7 @@
     "test:e2e:ci": "cross-env CI=true pnpm run test:e2e",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:smoke": "playwright test --grep @smoke",
+    "test": "vitest run",
     "test:unit": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:unit:ui": "vitest --ui --coverage.enabled=true"
@@ -137,7 +142,6 @@
     "i18next-cli": "^1.75.2",
     "jsdom": "30.1.2",
     "npm-run-all2": "^9.0.3",
-    "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2003",
     "playwright-teamcity-reporter": "^1.0.5",
@@ -154,7 +158,6 @@
     "node": ">=26.0.0 <27.0.0",
     "pnpm": ">=12.0.0 <13.0.0"
   },
-  "packageManager": "pnpm@12.11.2",
   "allowScripts": {
     "@swc/core": false,
     "esbuild": false,

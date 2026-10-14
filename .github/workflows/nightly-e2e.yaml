@@ -34,12 +34,12 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: frontend/package.json
+          node-version-file: package.json
       - name: Install pnpm
         run: |
           corepack enable
           corepack prepare --activate
-        working-directory: frontend/
+        working-directory: .
       - name: Verify versions
         run: |
           node -v
@@ -47,7 +47,7 @@ jobs:
         working-directory: frontend/
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: frontend/
+        working-directory: .
       - name: Build frontend
         run: pnpm run build
         working-directory: frontend/

@@ -172,6 +172,12 @@ overrides:
 importers:
 
   .:
+    devDependencies:
+      oxfmt:
+        specifier: ^0.72.0
+        version: 0.72.0
+
+  frontend:
     dependencies:
       '@date-fns/utc':
         specifier: ^2.1.1
@@ -498,9 +504,6 @@ importers:
       npm-run-all2:
         specifier: ^9.0.3
         version: 9.0.3
-      oxfmt:
-        specifier: ^0.72.0
-        version: 0.72.0
       oxlint:
         specifier: ^1.87.0
         version: 1.87.0(oxlint-tsgolint@7.0.2003)

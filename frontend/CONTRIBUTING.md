@@ -2,12 +2,17 @@
 
 Guidance for changes to the Canadian Dental Care Plan frontend.
 
+Read the [root contributing guide](../CONTRIBUTING.md) for shared workspace
+setup, dependency management, formatting, and pull request guidance.
+The commands below run from `frontend/` unless stated otherwise.
+
 ## Before you start
 
-1. Install Node.js `>=26.0.0 <27.0.0` and pnpm `>=12.0.0 <13.0.0`.
-2. Run `pnpm install`.
-3. Copy `.env.example` to `.env` and keep local credentials out of source control.
-4. Read the relevant documentation under `other/docs/` before changing authentication, routes, eligibility, document upload, or telemetry.
+Complete the workspace setup in the [root guide](../CONTRIBUTING.md#before-you-start),
+then:
+
+1. Copy `.env.example` to `.env` and keep local credentials out of source control.
+2. Read the relevant documentation under `other/docs/` before changing authentication, routes, eligibility, document upload, or telemetry.
 
 Start the application with:
 
@@ -55,11 +60,16 @@ CRUD names do not express intent clearly.
 Add or update focused tests with behavior changes. Keep unit tests in
 `__tests__/` and end-to-end tests in `e2e/`.
 
+For bug fixes, add a regression test that reproduces the failure and confirms
+the corrected behavior.
+
 Run a focused test while developing:
 
 ```sh
-pnpm run test:unit -- path/to/test.ts
+pnpm test path/to/test.ts
 ```
+
+Use `pnpm run test:unit path/to/test.ts` to watch that test during development.
 
 Run the normal pull request checks before submitting:
 
@@ -107,20 +117,20 @@ in environment configuration.
 
 ## Pull request checklist
 
-- Explain user-visible and technical behavior changes.
-- Link relevant work item or issue.
-- Include tests for changed behavior.
+Follow the [root PR expectations and checklist](../CONTRIBUTING.md#pull-request-expectations).
+For frontend changes, also:
+
 - Check English and French flows.
 - Check keyboard access, labels, errors, and focus behavior for UI changes.
 - Run `pnpm run lint`, focused tests, and `pnpm run build`.
-- Update relevant documentation.
-- Confirm no secrets, `.env` files, generated output, or local telemetry data are committed.
+- Build before running browser tests, and state which journeys were tested.
+- Keep screenshots and reproduction steps free of applicant information.
 
 ## Related documentation
 
 - [README](README.md)
 - [Application routes reference](other/docs/application-routes-reference.md)
-- [Authentication](other/docs/authentication.md)
+- [Authentication](other/docs/Authentication.md)
 - [Member eligibility](other/docs/member-eligibility-feature.md)
 - [Document upload](other/docs/document-upload-feature.md)
 - [Local observability](other/docs/observability.md)

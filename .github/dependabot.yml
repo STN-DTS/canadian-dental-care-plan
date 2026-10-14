@@ -3,7 +3,7 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: /frontend
+    directory: /
     schedule:
       interval: daily
     cooldown:
@@ -15,27 +15,27 @@ updates:
           - minor
           - patch
         patterns:
-          - "*"
+          - '*'
         exclude-patterns:
-          - "react-router"
-          - "@react-router/*"
+          - 'react-router'
+          - '@react-router/*'
       prod-minor-versions:
         dependency-type: production
         update-types:
           - minor
           - patch
         patterns:
-          - "*"
+          - '*'
         exclude-patterns:
-          - "react-router"
-          - "@react-router/*"
+          - 'react-router'
+          - '@react-router/*'
       react-router-versions:
         update-types:
           - minor
           - patch
         patterns:
-          - "react-router"
-          - "@react-router/*"
+          - 'react-router'
+          - '@react-router/*'
 
   - package-ecosystem: docker
     directory: /frontend
@@ -45,8 +45,8 @@ updates:
       default-days: 3
     # Ignore major updates
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: terraform
     directory: /infrastructure

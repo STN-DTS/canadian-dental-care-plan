@@ -1,5 +1,8 @@
 # Monorepo Copilot Instructions
 
+See [root agent guidance](../AGENTS.md) for task scope and validation, and the
+nested `AGENTS.md` in the repository area being changed for area-specific rules.
+
 This repository contains three independently scoped areas:
 
 - `frontend/`: React Router, React, TypeScript, and Express application code.

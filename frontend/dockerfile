@@ -13,7 +13,7 @@
 #
 # Example:
 #
-#   docker build . \
+#   docker build --file frontend/dockerfile . \
 #     --tag canadian-dental-care-plan \
 #     --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 #     --build-arg BUILD_ID="0001" \
@@ -24,7 +24,7 @@
 #
 #   docker run --init --interactive --tty --rm \
 #     --publish 3000:3000 \
-#     --env-file .env \
+#     --env-file frontend/.env \
 #     --name canadian-dental-care-plan \
 #     canadian-dental-care-plan
 
@@ -55,28 +55,26 @@ USER node
 
 
 # ---------------------------------------------------------------------------- #
+# Stage: Workspace
+# Copy workspace manifests before installing dependencies.
+# ---------------------------------------------------------------------------- #
+
+FROM pnpm AS workspace
+
+COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node frontend/package.json ./frontend/
+COPY --chown=node:node frontend/patches/ ./frontend/patches/
+
+
+# ---------------------------------------------------------------------------- #
 # Stage: Dependencies
 # Install the complete dependency set, including development dependencies
 # required to build the application.
 # ---------------------------------------------------------------------------- #
 
-FROM pnpm AS deps
-
-COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --chown=node:node patches/ ./patches/
+FROM workspace AS deps
 
 RUN pnpm install --frozen-lockfile
-
-
-# ---------------------------------------------------------------------------- #
-# Stage: Runtime Dependencies
-# Derive the production dependency tree from the completed installation by
-# removing development dependencies.
-# ---------------------------------------------------------------------------- #
-
-FROM deps AS runtime-deps
-
-RUN pnpm prune --prod
 
 
 # ---------------------------------------------------------------------------- #
@@ -86,14 +84,28 @@ RUN pnpm prune --prod
 
 FROM deps AS build
 
-COPY --chown=node:node app/ ./app/
-COPY --chown=node:node public/ ./public/
-COPY --chown=node:node react-router.config.ts ./
-COPY --chown=node:node tsconfig.json ./
-COPY --chown=node:node vite.config.ts ./
-COPY --chown=node:node vite.server.config.ts ./
+WORKDIR /home/node/frontend
+
+COPY --chown=node:node frontend/app/ ./app/
+COPY --chown=node:node frontend/public/ ./public/
+COPY --chown=node:node frontend/react-router.config.ts ./
+COPY --chown=node:node frontend/tsconfig.json ./
+COPY --chown=node:node frontend/vite.config.ts ./
+COPY --chown=node:node frontend/vite.server.config.ts ./
 
 RUN pnpm --config.verify-deps-before-run=false run build
+
+
+# ---------------------------------------------------------------------------- #
+# Stage: Deploy
+# Package the frontend with an isolated production dependency tree.
+# ---------------------------------------------------------------------------- #
+
+FROM build AS deploy
+
+WORKDIR /home/node
+
+RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 
 
 # ---------------------------------------------------------------------------- #
@@ -136,10 +148,9 @@ LABEL org.opencontainers.image.authors="${IMAGE_AUTHORS}" \
 # The server build preserves bare package imports, so production node_modules
 # must be included. package.json is retained for Node package settings such as
 # "type": "module".
-COPY --from=runtime-deps --chown=node:node /home/node/node_modules/ ./node_modules/
-COPY --from=runtime-deps --chown=node:node /home/node/package.json ./package.json
-COPY --from=build --chown=node:node /home/node/public/ ./public/
-COPY --from=build --chown=node:node /home/node/build/ ./build/
+COPY --from=deploy --chown=node:node /home/node/deploy/ ./frontend/
+
+WORKDIR /home/node/frontend
 
 USER node
 

@@ -1,0 +1,42 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit",
+    "source.fixAll.ts": "explicit",
+    // Let Oxfmt handle import sorting instead of VS Code.
+    "source.sortImports": "never",
+    // Let Oxfmt handle import organization instead of VS Code.
+    "source.organizeImports": "never"
+  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "files.trimTrailingWhitespace": true,
+  "oxc.path.oxlint": "${workspaceFolder}/frontend/node_modules/oxlint/bin/oxlint",
+  "oxc.path.oxfmt": "${workspaceFolder}/node_modules/oxfmt/bin/oxfmt",
+  "oxc.tsConfigPath": "${workspaceFolder}/frontend/tsconfig.json",
+  // always import files from the root (~) of the project
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  // Tailwind Regex List
+  // see: https://github.com/paolotiu/tailwind-intellisense-regex-list?tab=readme-ov-file#classnames
+  "tailwindCSS.classFunctions": ["clsx", "cn", "cva"],
+  "tailwindCSS.experimental.configFile": "frontend/app/tailwind.css",
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cva\\(([^;]*)[\\);]", "[`'\"`]([^'\"`;]*)[`'\"`]"],
+    [
+      // JavaScript string that likely contains tailwind classes.
+      // This regex looks for lines of JavaScript code that:
+      //
+      // 1. Optionally start with `const`, `let`, or `var`.
+      // 2. Have a variable name, that:
+      // 3. End with `styles`, `classes`, or `classnames`.
+      // 4. Have an equals sign (=) or +=.
+      // 5. Have a string in single or double quotes.
+      "(?:\\b(?:const|let|var)\\s+)?[\\w$_]*(?:[Ss]tyles|[Cc]lasses|[Cc]lassnames)[\\w\\d]*\\s*(?:=|\\+=)\\s*['\"]([^'\"]*)['\"]"
+    ],
+    // https://github.com/paolotiu/tailwind-intellisense-regex-list/pull/44
+    ["(?:\\b(?:const|let|var)\\s+)?[\\w$_]*(?:[Ss]tyles|[Cc]lasses|[Cc]lassnames)[\\w\\d]*\\s*=\\s*{([\\s\\S]*?)}", "\\s?[\\w].*:\\s*?[\"'`]([^\"'`]*).*?,?\\s?"]
+  ],
+  "vitest.disableWorkspaceWarning": true
+}

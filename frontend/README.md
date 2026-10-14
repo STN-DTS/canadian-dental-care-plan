@@ -32,16 +32,21 @@ Versions are enforced in `package.json`.
 
 ### Install
 
+Run this example from the repository root. The final `cd` enters `frontend/`;
+run the remaining commands in this guide from that directory unless noted otherwise.
+
 ```sh
 npm install --global corepack@latest
 corepack enable pnpm
 pnpm install
+cd frontend
 cp .env.example .env
 ```
 
-Corepack uses the `packageManager` version pinned in `package.json`.
+Dependencies use the root workspace and lockfile. Corepack selects the version
+pinned in the root `package.json`.
 
-PowerShell equivalent:
+To copy the environment file in PowerShell from `frontend/`:
 
 ```powershell
 Copy-Item .env.example .env
@@ -89,6 +94,7 @@ Available commands:
 - `pnpm run lint`: run Oxfmt, TypeScript, and Oxlint checks
 - `pnpm run lint:fix`: apply formatting and Oxlint fixes
 - `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript Go-based type-aware checks
+- `pnpm test`: run unit tests once
 - `pnpm run test:unit`: run Vitest in watch mode
 - `pnpm run test:unit:coverage`: run Vitest with coverage
 - `pnpm run test:e2e`: run Playwright end-to-end tests
@@ -105,8 +111,12 @@ pnpm run test:e2e
 ## Linting
 
 Oxlint provides syntax and type-aware linting, Oxfmt handles formatting, and
-TypeScript performs project type checking. Configuration lives in
-`oxlint.config.ts`, `oxfmt.config.ts`, and `tsconfig.json`.
+TypeScript performs project type checking. Frontend configuration lives in
+`oxlint.config.ts` and `tsconfig.json`. [oxfmt.config.ts](oxfmt.config.ts) imports
+the [root formatting defaults](../oxfmt.config.ts) and adds frontend-specific
+rules. Oxfmt discovers this nested config from both root and frontend commands.
+Frontend formatting scripts target this directory; root scripts check the
+whole repository.
 
 Run `pnpm run typecheck` before `pnpm run lint:oxlint`: typecheck generates the
 React Router route types that Oxlint's type-aware rules depend on. CI jobs that
@@ -143,7 +153,7 @@ Local development and end-to-end tests use mock integrations configured through
 hCaptcha, and document upload. `ENABLED_MOCKS` controls mocked external
 services.
 
-Check [authentication.md](other/docs/authentication.md) before changing local
+Check [Authentication.md](other/docs/Authentication.md) before changing local
 authentication. Keep mock values local and use environment variables for all
 service credentials and endpoints.
 
@@ -177,13 +187,19 @@ build/
 Do not launch the server entry point directly. The `dev`, `preview`, and `start`
 scripts preload the required OpenTelemetry modules.
 
+Container builds run from the repository root using `frontend/dockerfile`.
+After the build, the Dockerfile runs
+`pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy` to package
+`build/`, `public/`, the package manifest, and isolated production dependencies.
+The final image does not depend on the repository's workspace directory layout.
+
 ## Documentation
 
 - [Contributing](CONTRIBUTING.md)
 - [React Router documentation](https://reactrouter.com/)
 - [Application routes reference](other/docs/application-routes-reference.md)
 - [React Router middleware](other/docs/middleware.md)
-- [Authentication](other/docs/authentication.md)
+- [Authentication](other/docs/Authentication.md)
 - [Member eligibility](other/docs/member-eligibility-feature.md)
 - [Document upload](other/docs/document-upload-feature.md)
 - [Local observability](other/docs/observability.md)

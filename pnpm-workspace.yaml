@@ -1,3 +1,8 @@
+packages:
+  - frontend
+
+failIfNoMatch: true
+
 # Explicitly prevent these packages from running installation/build scripts.
 # https://pnpm.io/settings#allowbuilds
 allowBuilds:

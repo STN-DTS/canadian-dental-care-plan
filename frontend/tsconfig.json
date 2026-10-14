@@ -12,6 +12,7 @@
     },
     "module": "esnext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
 
     // Language and Environment
     "target": "es2022",

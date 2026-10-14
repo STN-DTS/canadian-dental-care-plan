@@ -55,6 +55,13 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
+Node jobs install dependencies from the repository root using the shared pnpm
+workspace and lockfile. Frontend checks continue to run from `frontend/`.
+Container builds use the repository root as their context; the root
+`.dockerignore` includes only workspace manifests and frontend build inputs.
+Changes to root package, lockfile, workspace, formatter, or Docker context
+configuration also enable frontend validation and builds.
+
 ### Nonprod Branch Guards
 
 [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts
@@ -70,6 +77,11 @@ paths:
   - .github/actions/sign-container-image/**
   - .github/workflows/build-publish-main-nonprod.yaml
   - frontend/**
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - oxfmt.config.ts
+  - .dockerignore
 ```
 
 The `detect-changes` job checks the same paths before enabling frontend testing

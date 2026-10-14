@@ -26,6 +26,11 @@ on:
       - .github/actions/sign-container-image/**
       - .github/workflows/build-publish-main-nonprod.yaml
       - frontend/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - oxfmt.config.ts
+      - .dockerignore
   workflow_call: {}
   workflow_dispatch:
     inputs:
@@ -71,6 +76,11 @@ jobs:
               - .github/actions/sign-container-image/**
               - .github/workflows/build-publish-main-nonprod.yaml
               - frontend/**
+              - package.json
+              - pnpm-lock.yaml
+              - pnpm-workspace.yaml
+              - oxfmt.config.ts
+              - .dockerignore
       - name: Publish change-detection output
         id: changes
         run: |
@@ -133,12 +143,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: frontend/package.json
+          node-version-file: package.json
       - name: Install pnpm
+        working-directory: .
         run: |
           corepack enable
           corepack prepare --activate
       - name: Install dependencies
+        working-directory: .
         run: pnpm install --frozen-lockfile
       - name: Run format check
         run: pnpm run format:check
@@ -232,7 +244,7 @@ jobs:
           printf 'Building frontend image: %s:%s\n' "$IMAGE_NAME" "$BUILD_REVISION"
           docker build \
             --progress plain \
-            --file frontend/dockerfile frontend \
+            --file frontend/dockerfile . \
             --build-arg BUILD_DATE="$BUILD_DATE" \
             --build-arg BUILD_ID="$BUILD_NUMBER" \
             --build-arg BUILD_REVISION="$SHORT_SHA" \

@@ -60,6 +60,11 @@ jobs:
           filters: |
             src:
               - frontend/**
+              - package.json
+              - pnpm-lock.yaml
+              - pnpm-workspace.yaml
+              - oxfmt.config.ts
+              - .dockerignore
       - name: Detect GitOps changes
         id: gitops
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -96,8 +101,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: frontend/package.json
+          node-version-file: package.json
       - name: Install pnpm
+        working-directory: .
         run: |
           corepack enable
           corepack prepare --activate
@@ -106,6 +112,7 @@ jobs:
           node -v
           pnpm -v
       - name: Install dependencies
+        working-directory: .
         run: pnpm install --frozen-lockfile
       - name: Check formatting
         run: pnpm run format:check
@@ -156,4 +163,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Build Docker image
-        run: podman build --file dockerfile .
+        run: podman build --file dockerfile ..
