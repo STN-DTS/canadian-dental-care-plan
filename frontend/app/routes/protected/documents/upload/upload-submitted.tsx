@@ -61,7 +61,7 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
       <div className="max-w-prose space-y-6">
         <ContextualAlert type="success">
           <div className="space-y-2">
-            <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
+            <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
             <p>{t(($) => $.submitted.youSubmitted)}</p>
             <ol className="list-decimal space-y-1 pl-7">
               {uploadedDocuments.map((document) => (

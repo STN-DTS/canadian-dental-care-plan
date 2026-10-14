@@ -57,7 +57,7 @@ export function BrowserCompatibilityBannerView({ onDismiss }: BrowserCompatibili
               <Trans ns="gcweb" i18nKey={($) => $.browserCompatibilityBanner.contact} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
             </p>
             <div className="text-right">
-              <button type="button" onClick={onDismiss} className="font-lato rounded-sm border border-red-300 px-3 py-2 text-sm text-red-700 outline-offset-4 hover:border-red-400 hover:bg-red-100 focus:border-red-400 focus:bg-red-100">
+              <button type="button" onClick={onDismiss} className="rounded-sm border border-red-300 px-3 py-2 font-lato text-sm text-red-700 outline-offset-4 hover:border-red-400 hover:bg-red-100 focus:border-red-400 focus:bg-red-100">
                 {t(($) => $.browserCompatibilityBanner.dismiss)}
               </button>
             </div>

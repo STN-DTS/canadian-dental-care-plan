@@ -14,31 +14,31 @@ spec:
         app.kubernetes.io/name: error-404
     spec:
       containers:
-      - image: docker.io/nginx:1.27.0
-        name: nginx
-        ports:
-        - containerPort: 80
-          name: http
-        resources:
-          limits:
-            cpu: 200m
-            memory: 256Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-        volumeMounts:
-        - mountPath: /etc/nginx/conf.d/default.conf
-          name: error-404-conf
-          subPath: config.conf
-        - mountPath: /usr/share/nginx/html/404.html
-          name: error-404-conf
-          subPath: 404.html
+        - image: docker.io/nginx:1.27.0
+          name: nginx
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d/default.conf
+              name: error-404-conf
+              subPath: config.conf
+            - mountPath: /usr/share/nginx/html/404.html
+              name: error-404-conf
+              subPath: 404.html
       volumes:
-      - configMap:
-          name: error-404
-        name: error-404-conf
+        - configMap:
+            name: error-404
+          name: error-404-conf
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,29 +56,29 @@ spec:
         app.kubernetes.io/name: fluentd-archiver
     spec:
       containers:
-      - args:
-        - --config
-        - /etc/fluentd.conf
-        image: docker.io/fluentd
-        name: fluentd-archiver
-        ports:
-        - containerPort: 24224
-          name: fluentd
-        volumeMounts:
-        - mountPath: /logs
-          name: audit-logs
-        - mountPath: /etc/fluentd.conf
-          name: fluentd-conf
-          subPath: fluentd.conf
+        - args:
+            - --config
+            - /etc/fluentd.conf
+          image: docker.io/fluentd
+          name: fluentd-archiver
+          ports:
+            - containerPort: 24224
+              name: fluentd
+          volumeMounts:
+            - mountPath: /logs
+              name: audit-logs
+            - mountPath: /etc/fluentd.conf
+              name: fluentd-conf
+              subPath: fluentd.conf
       securityContext:
         fsGroup: 101
       volumes:
-      - name: audit-logs
-        persistentVolumeClaim:
-          claimName: audit-logs
-      - configMap:
-          name: fluentd-archiver
-        name: fluentd-conf
+        - name: audit-logs
+          persistentVolumeClaim:
+            claimName: audit-logs
+        - configMap:
+            name: fluentd-archiver
+          name: fluentd-conf
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -102,101 +102,101 @@ spec:
         app.kubernetes.io/name: frontend
     spec:
       containers:
-      - envFrom:
-        - configMapRef:
-            name: frontend
-        - secretRef:
-            name: frontend
-        - secretRef:
-            name: redis
-        image: dtsrhpprodscedspokeacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.3.3
-        livenessProbe:
-          tcpSocket:
-            port: http
-        name: canada-dental-care-plan-frontend
-        ports:
-        - containerPort: 3000
-          name: http
-        readinessProbe:
-          httpGet:
-            path: /api/readyz
-            port: http
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 1024Mi
-          requests:
-            cpu: 500m
-            memory: 512Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-        volumeMounts:
-        - mountPath: /home/node/logs
-          name: audit-logs
-      - args:
-        - --config
-        - /etc/fluentd.conf
-        image: docker.io/fluentd:v1.16-1
-        name: fluentd
-        resources:
-          limits:
-            cpu: 100m
-            memory: 256Mi
-          requests:
-            cpu: 50m
-            memory: 128Mi
-        volumeMounts:
-        - mountPath: /logs
-          name: audit-logs
-        - mountPath: /etc/fluentd.conf
-          name: fluentd-conf
-          subPath: fluentd.conf
-      - args:
-        - --config=/etc/oauth-proxy.conf
-        envFrom:
-        - secretRef:
-            name: oauth-proxy
-        image: quay.io/oauth2-proxy/oauth2-proxy:v7.10.0
-        livenessProbe:
-          httpGet:
-            path: /ping
-            port: oauth-proxy
-          initialDelaySeconds: 0
-          timeoutSeconds: 1
-        name: oauth-proxy
-        ports:
-        - containerPort: 4180
+        - envFrom:
+            - configMapRef:
+                name: frontend
+            - secretRef:
+                name: frontend
+            - secretRef:
+                name: redis
+          image: dtsrhpprodscedspokeacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.3.3
+          livenessProbe:
+            tcpSocket:
+              port: http
+          name: canada-dental-care-plan-frontend
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /api/readyz
+              port: http
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /home/node/logs
+              name: audit-logs
+        - args:
+            - --config
+            - /etc/fluentd.conf
+          image: docker.io/fluentd:v1.16-1
+          name: fluentd
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /logs
+              name: audit-logs
+            - mountPath: /etc/fluentd.conf
+              name: fluentd-conf
+              subPath: fluentd.conf
+        - args:
+            - --config=/etc/oauth-proxy.conf
+          envFrom:
+            - secretRef:
+                name: oauth-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.10.0
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: oauth-proxy
+            initialDelaySeconds: 0
+            timeoutSeconds: 1
           name: oauth-proxy
-        readinessProbe:
-          httpGet:
-            path: /ping
-            port: oauth-proxy
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: 100m
-            memory: 64Mi
-          requests:
-            cpu: 50m
-            memory: 32Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-        volumeMounts:
-        - mountPath: /etc/oauth-proxy.conf
-          name: oauth-proxy-conf
-          subPath: config.conf
+          ports:
+            - containerPort: 4180
+              name: oauth-proxy
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: oauth-proxy
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /etc/oauth-proxy.conf
+              name: oauth-proxy-conf
+              subPath: config.conf
       volumes:
-      - configMap:
-          name: frontend-fluentd
-        name: fluentd-conf
-      - configMap:
-          name: oauth-proxy
-        name: oauth-proxy-conf
-      - emptyDir: {}
-        name: audit-logs
+        - configMap:
+            name: frontend-fluentd
+          name: fluentd-conf
+        - configMap:
+            name: oauth-proxy
+          name: oauth-proxy-conf
+        - emptyDir: {}
+          name: audit-logs
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -214,56 +214,56 @@ spec:
         app.kubernetes.io/name: maintenance
     spec:
       containers:
-      - image: docker.io/nginx:1.27.0
-        name: nginx
-        ports:
-        - containerPort: 80
-          name: http
-        resources:
-          limits:
-            cpu: 200m
-            memory: 256Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-        volumeMounts:
-        - mountPath: /etc/nginx/conf.d/default.conf
-          name: maintenance-conf
-          subPath: config.conf
-        - mountPath: /usr/share/nginx/html/503.html
-          name: processed-html
-          subPath: 503.html
+        - image: docker.io/nginx:1.27.0
+          name: nginx
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d/default.conf
+              name: maintenance-conf
+              subPath: config.conf
+            - mountPath: /usr/share/nginx/html/503.html
+              name: processed-html
+              subPath: 503.html
       initContainers:
-      - args:
-        - 'cp /tmp/original/503.html /tmp/processed/503.html
+        - args:
+            - 'cp /tmp/original/503.html /tmp/processed/503.html
 
-          sed --in-place "s|{{startTimeEn}}|$(cat /tmp/original/startTimeEn)|g" /tmp/processed/503.html
+              sed --in-place "s|{{startTimeEn}}|$(cat /tmp/original/startTimeEn)|g" /tmp/processed/503.html
 
-          sed --in-place "s|{{startTimeFr}}|$(cat /tmp/original/startTimeFr)|g" /tmp/processed/503.html
+              sed --in-place "s|{{startTimeFr}}|$(cat /tmp/original/startTimeFr)|g" /tmp/processed/503.html
 
-          sed --in-place "s|{{endTimeEn}}|$(cat /tmp/original/endTimeEn)|g"     /tmp/processed/503.html
+              sed --in-place "s|{{endTimeEn}}|$(cat /tmp/original/endTimeEn)|g"     /tmp/processed/503.html
 
-          sed --in-place "s|{{endTimeFr}}|$(cat /tmp/original/endTimeFr)|g"     /tmp/processed/503.html
+              sed --in-place "s|{{endTimeFr}}|$(cat /tmp/original/endTimeFr)|g"     /tmp/processed/503.html
 
-          '
-        command:
-        - /bin/sh
-        - -c
-        image: docker.io/library/alpine:3.20.3
-        name: preprocess-html
-        volumeMounts:
-        - mountPath: /tmp/original
-          name: maintenance-conf
-        - mountPath: /tmp/processed
-          name: processed-html
+              '
+          command:
+            - /bin/sh
+            - -c
+          image: docker.io/library/alpine:3.20.3
+          name: preprocess-html
+          volumeMounts:
+            - mountPath: /tmp/original
+              name: maintenance-conf
+            - mountPath: /tmp/processed
+              name: processed-html
       volumes:
-      - configMap:
-          name: maintenance
-        name: maintenance-conf
-      - emptyDir: {}
-        name: processed-html
+        - configMap:
+            name: maintenance
+          name: maintenance-conf
+        - emptyDir: {}
+          name: processed-html
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -282,52 +282,52 @@ spec:
         app.kubernetes.io/name: reloader
     spec:
       containers:
-      - env:
-        - name: KUBERNETES_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: GOMAXPROCS
-          valueFrom:
-            resourceFieldRef:
-              divisor: '1'
-              resource: limits.cpu
-        - name: GOMEMLIMIT
-          valueFrom:
-            resourceFieldRef:
-              divisor: '1'
-              resource: limits.memory
-        image: ghcr.io/stakater/reloader:v1.4.1
-        livenessProbe:
-          failureThreshold: 5
-          httpGet:
-            path: /live
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
-        name: reloader
-        ports:
-        - containerPort: 9090
-          name: http
-        readinessProbe:
-          failureThreshold: 5
-          httpGet:
-            path: /metrics
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: '1'
-            memory: 512Mi
-          requests:
-            cpu: 10m
-            memory: 512Mi
-        securityContext: {}
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  divisor: '1'
+                  resource: limits.cpu
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  divisor: '1'
+                  resource: limits.memory
+          image: ghcr.io/stakater/reloader:v1.4.1
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: reloader
+          ports:
+            - containerPort: 9090
+              name: http
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /metrics
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: '1'
+              memory: 512Mi
+            requests:
+              cpu: 10m
+              memory: 512Mi
+          securityContext: {}
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534

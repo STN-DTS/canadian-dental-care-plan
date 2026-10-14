@@ -206,7 +206,7 @@ export default function ProtectedRenewFamilyChildrensApplication({ loaderData, p
 
           return (
             <div key={child.id}>
-              <h2 className="font-lato mb-4 text-2xl font-bold">{`${child.information?.firstName} ${child.information?.lastName}`}</h2>
+              <h2 className="mb-4 font-lato text-2xl font-bold">{`${child.information?.firstName} ${child.information?.lastName}`}</h2>
               <div className="space-y-4">
                 <p>{t(($) => $.completeAllSections, { ns: 'protectedApplication' })}</p>
                 <p>

@@ -6,7 +6,7 @@ exports[`AppPageTitle > should render the AppPageTitle > expected html 1`] = `
     class="my-8 max-w-prose after:mt-2 after:block after:h-1.5 after:w-18 after:bg-[#a62a1e] after:content-['']"
   >
     <h2
-      class="font-lato mb-2 font-semibold"
+      class="mb-2 font-lato font-semibold"
     >
       header.applicationTitle
     </h2>

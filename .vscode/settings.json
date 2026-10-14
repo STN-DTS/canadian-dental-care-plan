@@ -19,7 +19,9 @@
   // Tailwind Regex List
   // see: https://github.com/paolotiu/tailwind-intellisense-regex-list?tab=readme-ov-file#classnames
   "tailwindCSS.classFunctions": ["clsx", "cn", "cva"],
-  "tailwindCSS.experimental.configFile": "frontend/app/tailwind.css",
+  "tailwindCSS.experimental.configFile": {
+    "frontend/app/tailwind.css": "frontend/**"
+  },
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],

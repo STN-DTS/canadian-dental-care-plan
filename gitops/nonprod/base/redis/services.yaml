@@ -16,7 +16,6 @@ spec:
     app.kubernetes.io/name: redis
 
 ---
-
 #
 # The headless service is used by sentinel to target individual pods
 #

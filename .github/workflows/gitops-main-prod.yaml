@@ -27,7 +27,7 @@ on:
       debug:
         description: Print tool versions and non-sensitive deployment context
         required: false
-        default: "false"
+        default: 'false'
 
 env:
   CI: true

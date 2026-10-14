@@ -6,7 +6,7 @@ metadata:
   name: audit-logs
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 32Gi

@@ -17,7 +17,7 @@ spec:
         - name: preprocess-html
           # Note: image tag should be pinned to a specific version in overlays
           image: docker.io/library/alpine:latest
-          command: ["/bin/sh", "-c"]
+          command: ['/bin/sh', '-c']
           args:
             - |
               cp /tmp/original/503.html /tmp/processed/503.html

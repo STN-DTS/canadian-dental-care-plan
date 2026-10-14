@@ -212,7 +212,7 @@ export default function RenewChildChildrensApplication({ loaderData, params }: R
 
           return (
             <div key={child.id}>
-              <h2 id={`child-heading-${child.id}`} tabIndex={-1} className="font-lato mb-4 text-2xl font-bold">
+              <h2 id={`child-heading-${child.id}`} tabIndex={-1} className="mb-4 font-lato text-2xl font-bold">
                 {t(($) => $.childrensApplication.childTitle, {
                   childNumber: index + 1,
                 })}

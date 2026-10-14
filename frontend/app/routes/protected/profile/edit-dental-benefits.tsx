@@ -268,7 +268,7 @@ export default function ProtectedAccessToDentalInsuranceQuestion({ loaderData, p
           <fetcher.Form method="post" noValidate>
             <CsrfTokenInput />
             <fieldset className="mb-6">
-              <legend className="font-lato mb-4 text-2xl font-bold">
+              <legend className="mb-4 font-lato text-2xl font-bold">
                 {t(($) => $.editDentalBenefits.federalBenefits.title, {
                   applicantName: applicantName,
                   ns: 'protectedProfile',
@@ -312,7 +312,7 @@ export default function ProtectedAccessToDentalInsuranceQuestion({ loaderData, p
               />
             </fieldset>
             <fieldset className="mb-8">
-              <legend className="font-lato mb-4 text-2xl font-bold">{t(($) => $.editDentalBenefits.provincialTerritorialBenefits.title)}</legend>
+              <legend className="mb-4 font-lato text-2xl font-bold">{t(($) => $.editDentalBenefits.provincialTerritorialBenefits.title)}</legend>
               <InputRadios
                 id="has-provincial-territorial-benefits"
                 name="hasProvincialTerritorialBenefits"

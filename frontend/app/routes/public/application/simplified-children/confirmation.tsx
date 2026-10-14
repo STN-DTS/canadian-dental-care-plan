@@ -312,7 +312,7 @@ export default function RenewChildrenConfirmation({ loaderData, params }: Route.
                 <section key={child.id} className="space-y-10">
                   <h2 className="font-lato text-3xl font-bold">{child.firstName}</h2>
                   <div>
-                    <h3 className="font-lato mb-6 text-2xl font-bold">
+                    <h3 className="mb-6 font-lato text-2xl font-bold">
                       {t(($) => $.confirm.pageSubTitle, {
                         child: child.firstName,
                       })}
@@ -326,7 +326,7 @@ export default function RenewChildrenConfirmation({ loaderData, params }: Route.
                     </DefinitionList>
                   </div>
                   <div>
-                    <h3 className="font-lato mb-6 text-2xl font-bold">
+                    <h3 className="mb-6 font-lato text-2xl font-bold">
                       {t(($) => $.confirm.dentalTitle, {
                         child: child.firstName,
                       })}

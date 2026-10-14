@@ -4,7 +4,7 @@ metadata:
   name: frontend
   annotations:
     nginx.ingress.kubernetes.io/proxy-buffer-size: 32k # required for OAuth proxy
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/use-regex: 'true'
   labels:
     app.kubernetes.io/name: frontend
 spec:

@@ -221,7 +221,7 @@ export default function ApplicationSpokeMaritalStatus({ loaderData, params }: Ro
 
               {(selectedMaritalStatus === MARITAL_STATUS_CODE_COMMON_LAW || selectedMaritalStatus === MARITAL_STATUS_CODE_MARRIED) && (
                 <fieldset className="mb-6 space-y-4">
-                  <legend className="font-lato mb-6 text-2xl font-bold">{t(($) => $.maritalStatus.spouseOrCommonlaw)}</legend>
+                  <legend className="mb-6 font-lato text-2xl font-bold">{t(($) => $.maritalStatus.spouseOrCommonlaw)}</legend>
                   <p className="mb-4">{t(($) => $.maritalStatus.provideSin)}</p>
                   <p className="mb-6">{t(($) => $.maritalStatus.requiredInformation)}</p>
                   <InputPatternField

@@ -48,7 +48,7 @@ exports[`BrowserCompatibilityBannerView > should render the BrowserCompatibility
             class="text-right"
           >
             <button
-              class="font-lato rounded-sm border border-red-300 px-3 py-2 text-sm text-red-700 outline-offset-4 hover:border-red-400 hover:bg-red-100 focus:border-red-400 focus:bg-red-100"
+              class="rounded-sm border border-red-300 px-3 py-2 font-lato text-sm text-red-700 outline-offset-4 hover:border-red-400 hover:bg-red-100 focus:border-red-400 focus:bg-red-100"
               type="button"
             >
               browserCompatibilityBanner.dismiss

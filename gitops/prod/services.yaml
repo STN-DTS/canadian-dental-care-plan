@@ -6,9 +6,9 @@ metadata:
   name: error-404
 spec:
   ports:
-  - name: http
-    port: 80
-    targetPort: http
+    - name: http
+      port: 80
+      targetPort: http
   selector:
     app.kubernetes.io/name: error-404
 ---
@@ -20,9 +20,9 @@ metadata:
   name: fluentd-archiver
 spec:
   ports:
-  - name: fluentd
-    port: 24224
-    targetPort: fluentd
+    - name: fluentd
+      port: 24224
+      targetPort: fluentd
   selector:
     app.kubernetes.io/name: fluentd-archiver
 ---
@@ -34,12 +34,12 @@ metadata:
   name: frontend
 spec:
   ports:
-  - name: http
-    port: 80
-    targetPort: http
-  - name: oauth-proxy
-    port: 81
-    targetPort: oauth-proxy
+    - name: http
+      port: 80
+      targetPort: http
+    - name: oauth-proxy
+      port: 81
+      targetPort: oauth-proxy
   selector:
     app.kubernetes.io/name: frontend
 ---
@@ -51,9 +51,9 @@ metadata:
   name: maintenance
 spec:
   ports:
-  - name: http
-    port: 80
-    targetPort: http
+    - name: http
+      port: 80
+      targetPort: http
   selector:
     app.kubernetes.io/name: maintenance
 ---
@@ -65,12 +65,12 @@ metadata:
   name: redis
 spec:
   ports:
-  - name: redis
-    port: 6379
-    targetPort: redis
-  - name: sentinel
-    port: 26379
-    targetPort: sentinel
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
   selector:
     app.kubernetes.io/name: redis
 ---
@@ -83,11 +83,11 @@ metadata:
 spec:
   clusterIP: None
   ports:
-  - name: redis
-    port: 6379
-    targetPort: redis
-  - name: sentinel
-    port: 26379
-    targetPort: sentinel
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: sentinel
+      port: 26379
+      targetPort: sentinel
   selector:
     app.kubernetes.io/name: redis

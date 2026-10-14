@@ -4,7 +4,7 @@ metadata:
   name: redis
   annotations:
     # reload the pod whenever the secrets change
-    secret.reloader.stakater.com/auto: "true"
+    secret.reloader.stakater.com/auto: 'true'
 spec:
   replicas: 3
   serviceName: redis-headless

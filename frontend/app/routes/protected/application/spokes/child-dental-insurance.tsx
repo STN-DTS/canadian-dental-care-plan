@@ -249,7 +249,7 @@ export default function ChildDentalInsurance({ loaderData, params }: Route.Compo
             {hasDentalInsurance && (
               <div className="space-y-4">
                 <ContextualAlert type="info" id="child-dental-insurance-confirmation">
-                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.yes.title)}</h2>
+                  <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.yes.title)}</h2>
                   <p>
                     {t(($) => $.children.dentalInsurance.alert.yes.body, {
                       childName: childName,
@@ -274,7 +274,7 @@ export default function ChildDentalInsurance({ loaderData, params }: Route.Compo
             {hasDentalInsurance === false && (
               <div className="space-y-4">
                 <ContextualAlert type="info" id="child-dental-insurance-confirmation-no">
-                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.no.title)}</h2>
+                  <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.children.dentalInsurance.alert.no.title)}</h2>
                   <p>
                     {t(($) => $.children.dentalInsurance.alert.no.body, {
                       childName: childName,

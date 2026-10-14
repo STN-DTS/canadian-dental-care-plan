@@ -208,7 +208,7 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
             {hasDentalInsurance === true && (
               <div className="mb-4 space-y-4">
                 <ContextualAlert type="info" id="dental-insurance-confirmation-yes">
-                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.dentalInsurance.yes.alertTitle)}</h2>
+                  <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.dentalInsurance.yes.alertTitle)}</h2>
                   <p>{t(($) => $.dentalInsurance.yes.alertBody)}</p>
                 </ContextualAlert>
                 <InputCheckbox
@@ -227,7 +227,7 @@ export default function ApplicationSpokeDentalInsurance({ loaderData, params }: 
             {hasDentalInsurance === false && (
               <div className="mb-4 space-y-4">
                 <ContextualAlert type="info" id="dental-insurance-confirmation-no">
-                  <h2 className="font-lato mb-2 text-xl font-semibold">{t(($) => $.dentalInsurance.no.alertTitle)}</h2>
+                  <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.dentalInsurance.no.alertTitle)}</h2>
                   <p>{t(($) => $.dentalInsurance.no.alertBody)}</p>
                 </ContextualAlert>
                 <InputCheckbox
