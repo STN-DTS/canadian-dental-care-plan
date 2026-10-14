@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Applies the production Kustomization to AKS when gitops/prod changes on main.
+# Manual and reusable deployments are also restricted to main.
+# External Secrets Operator owns application Secrets; CI fetches only deployment credentials.
+
+name: GitOps operator (prod)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitops-prod-${{ vars.PROD_AKS_CLUSTER_NAME }}
+  cancel-in-progress: false
+  queue: max
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - gitops/prod/**
+      - .github/workflows/gitops-main-prod.yaml
+  workflow_call: {}
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: Print tool versions and non-sensitive deployment context
+        required: false
+        default: "false"
+
+env:
+  CI: true
+
+jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require main branch
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error::GitOps deployments are restricted to the main branch."
+          exit 1
+
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
+  apply-prod:
+    name: Apply production GitOps Kustomization
+    needs: check-repository
+    runs-on: arc-runners-dshp-prod
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate deployment configuration
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.PROD_AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          K8S_CLUSTER_NAME: ${{ vars.PROD_AKS_CLUSTER_NAME }}
+          K8S_RESOURCE_GROUP: ${{ vars.PROD_AKS_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+          for variable in AZURE_SUBSCRIPTION_ID AZURE_TENANT_ID K8S_CLUSTER_NAME K8S_RESOURCE_GROUP; do
+            if [[ -z "${!variable//[[:space:]]/}" ]]; then
+              printf '::error::%s is required for production deployment.\n' "$variable" >&2
+              exit 1
+            fi
+          done
+          test -s gitops/prod/kustomization.yaml
+
+      - name: Fetch deployment credentials from HashiCorp Vault
+        id: vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          method: approle
+          url: ${{ secrets.PROD_VAULT_URL }}
+          roleId: ${{ secrets.PROD_VAULT_APPROLE_ROLE_ID }}
+          secretId: ${{ secrets.PROD_VAULT_APPROLE_SECRET_ID }}
+          exportEnv: false
+          exportToken: false
+          secrets: |
+            canada-dental-care-plan/data/SPN SPN_ID | SPN_ID;
+            canada-dental-care-plan/data/SPN SPN_PASSWORD | SPN_PASSWORD;
+
+      - name: Authenticate to Azure and configure AKS access
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ vars.PROD_AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          K8S_CLUSTER_NAME: ${{ vars.PROD_AKS_CLUSTER_NAME }}
+          K8S_RESOURCE_GROUP: ${{ vars.PROD_AKS_RESOURCE_GROUP }}
+          SP_ID: ${{ steps.vault.outputs.SPN_ID }}
+          SP_PASSWORD: ${{ steps.vault.outputs.SPN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          umask 077
+          azure_config_dir="$(mktemp -d "$RUNNER_TEMP/cdcp-prod-azure.XXXXXX")"
+          export AZURE_CONFIG_DIR="$azure_config_dir"
+          printf 'AZURE_CONFIG_DIR=%s\n' "$AZURE_CONFIG_DIR" >> "$GITHUB_ENV"
+          kubeconfig="$(mktemp "$RUNNER_TEMP/cdcp-prod-kubeconfig.XXXXXX")"
+          printf 'KUBECONFIG=%s\n' "$kubeconfig" >> "$GITHUB_ENV"
+
+          echo "Authenticating to Azure with the Vault-managed service principal..."
+          az login --service-principal \
+            --tenant "$AZURE_TENANT_ID" \
+            --username "$SP_ID" \
+            --password "$SP_PASSWORD"
+
+          echo "Fetching production AKS credentials into a temporary kubeconfig..."
+          az aks get-credentials --overwrite-existing \
+            --subscription "$AZURE_SUBSCRIPTION_ID" \
+            --resource-group "$K8S_RESOURCE_GROUP" \
+            --name "$K8S_CLUSTER_NAME" \
+            --file "$kubeconfig"
+
+          echo "Configuring service principal authentication for kubectl..."
+          kubelogin convert-kubeconfig \
+            --login spn \
+            --client-id "$SP_ID" \
+            --client-secret "$SP_PASSWORD" \
+            --kubeconfig "$kubeconfig"
+          echo "Azure authentication and AKS access configuration completed."
+
+      - name: Print tool versions
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'true' }}
+        run: |
+          set -euo pipefail
+          printf 'GITHUB_EVENT_NAME=%s\nGITHUB_REF=%s\nGITHUB_SHA=%s\nGITHUB_RUN_ID=%s\nGITHUB_RUN_ATTEMPT=%s\nRUNNER_NAME=%s\nRUNNER_OS=%s\nRUNNER_ARCH=%s\n' \
+            "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RUNNER_NAME" "$RUNNER_OS" "$RUNNER_ARCH"
+          az version
+          kubectl version --client
+
+      - name: Apply production Kustomization
+        run: |
+          set -euo pipefail
+          printf '### Production GitOps Deployment\n\n| Target | Result |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          echo "Applying the production Kustomization..."
+          if kubectl --kubeconfig "$KUBECONFIG" apply --kustomize ./gitops/prod/ --force; then
+            printf '| `prod` | Success |\n' >> "$GITHUB_STEP_SUMMARY"
+            echo "Production Kustomization applied successfully."
+          else
+            status=$?
+            printf '| `prod` | Failed |\n' >> "$GITHUB_STEP_SUMMARY"
+            printf '::error::Failed to apply the production Kustomization (exit code %s).\n' "$status" >&2
+            exit "$status"
+          fi
+
+      - name: Clean up credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          echo "Cleaning up temporary kubeconfig and Azure credentials..."
+          if [[ -n "${KUBECONFIG:-}" ]]; then
+            rm -f -- "$KUBECONFIG"
+          fi
+          if [[ -n "${AZURE_CONFIG_DIR:-}" && -d "$AZURE_CONFIG_DIR" ]]; then
+            az logout || true
+            az account clear || true
+            rm -rf -- "$AZURE_CONFIG_DIR"
+          fi
+          echo "Credential cleanup completed."

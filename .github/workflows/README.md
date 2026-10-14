@@ -9,6 +9,7 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Detect changes, validate the frontend, run smoke tests, and build an image without publishing.                                               |
 | [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                         | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
 | [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
+| [gitops-main-prod.yaml](gitops-main-prod.yaml) | GitOps pushes to `main`; manual; reusable, all restricted to `main` | Apply the production root Kustomization to the prod AKS cluster. |
 | [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
@@ -25,6 +26,7 @@ workflows:
   - Build, test, and publish nonprod tag images
   - Build, test, and publish PROD tag images
   - GitOps operator (nonprod)
+  - GitOps operator (prod)
   - Nightly e2e tests
   - Upload PROD test results to SharePoint
 ```
@@ -159,6 +161,37 @@ This workflow does not deploy production. Slack notifications report queued runs
 and completion results through the notification workflow. A successful live
 GitHub deployment has not been verified; check the first run after the handoff.
 
+### Production GitOps Deployment
+
+**GitOps operator (prod)**, defined in [gitops-main-prod.yaml](gitops-main-prod.yaml),
+replaces TeamCity's **Synchronize `prod` environment** deployment. Pushes to `main`
+that change `gitops/prod/**` or the workflow itself trigger an apply of the single
+root Kustomization using `kubectl apply --kustomize ./gitops/prod/ --force`.
+Manual and reusable runs also apply that Kustomization and must target `main`.
+Fork repositories skip the prerequisite gate and dependent deployment job.
+
+The job uses `arc-runners-dshp-prod`, has a 20-minute timeout, and shares a
+cluster-keyed concurrency group across its triggers, retaining queued runs without
+cancelling active deployments. It fetches only `SPN_ID` and `SPN_PASSWORD` from
+`canada-dental-care-plan/data/SPN` in the production Vault instance. Application
+Secrets remain managed by External Secrets Operator through `vault-backend`;
+the workflow does not fetch application secrets or generate secret files.
+ACR login is omitted because this workflow neither builds nor pushes images.
+
+Azure configuration and kubeconfig are private temporary paths with best-effort
+cleanup. Optional debug output is restricted to allowlisted context and tool
+versions. The job summary reports apply success or failure; a successful apply
+does not prove workload readiness or successful ExternalSecret reconciliation.
+Slack queued/completion notifications use the existing notification workflow.
+
+**Before merging:** configure `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP`,
+`PROD_AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, and the `PROD_VAULT_*` secrets.
+Verify Vault access, runner connectivity/tools, and service principal AKS permissions.
+Pause the TeamCity production sync job and ensure no run is active: GitHub's lock
+does not coordinate with TeamCity. Merging this workflow into `main` intentionally
+activates production deployment. Live AKS deployment and workload health still
+need verification; no live deployment was performed during implementation.
+
 ## Manual Runs and Retries
 
 Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
@@ -167,6 +200,7 @@ Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
 gh workflow run nightly-e2e.yaml
 gh workflow run build-publish-main-nonprod.yaml --ref main -f version=1.2.3
 gh workflow run gitops-main-nonprod.yaml --ref main
+gh workflow run gitops-main-prod.yaml --ref main
 gh workflow run build-publish-tag-prod.yaml --ref v1.2.3
 ```
 
@@ -187,8 +221,9 @@ Configure GitHub variables for the workflows that use them:
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `AZURE_TENANT_ID`                                        | Azure and SharePoint application tenant.                                                |
 | `NONPROD_ACR_DOMAIN`, `NONPROD_AZURE_SUBSCRIPTION_ID`    | Nonprod image publication; the subscription is also used for nonprod GitOps deployment. |
-| `PROD_ACR_DOMAIN`, `PROD_AZURE_SUBSCRIPTION_ID`          | PROD image publication.                                                                 |
+| `PROD_ACR_DOMAIN`, `PROD_AZURE_SUBSCRIPTION_ID`          | PROD image publication; the subscription is also used for production GitOps deployment. |
 | `NONPROD_AKS_CLUSTER_NAME`, `NONPROD_AKS_RESOURCE_GROUP` | Main-branch dev/int1 deployment restarts and nonprod GitOps deployment.                 |
+| `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP` | Production GitOps deployment target. |
 | `SLACK_CHANNEL_ID`                                       | Completion notification destination.                                                    |
 | `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL`            | SharePoint site URL, not a library view or Graph endpoint.                              |
 | `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER`              | Decoded folder path, such as `Shared Documents/CDCP/Test Results`; use literal spaces.  |
@@ -214,7 +249,7 @@ coverage, Playwright HTML reports, and test results for the SharePoint uploader.
 
 Validation uses GitHub-hosted runners. Nonprod publishing, GitOps deployment,
 and Slack use
-`arc-runners-dshp-dev`; PROD publishing and SharePoint use
+`arc-runners-dshp-dev`; production GitOps, PROD publishing, and SharePoint use
 `arc-runners-dshp-prod`. Self-hosted runners need the tools and network access
 used by their jobs.
 
