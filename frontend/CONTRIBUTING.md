@@ -74,10 +74,16 @@ Use `pnpm run test:unit path/to/test.ts` to watch that test during development.
 Run the normal pull request checks before submitting:
 
 ```sh
-pnpm run lint
+pnpm --dir .. run check
 pnpm run test:unit:coverage
 pnpm run build
 ```
+
+Run `typecheck` before `lint` or `lint:fix` to generate the route types needed
+by type-aware Oxlint. The frontend `pnpm run check` command handles those two
+checks in order, without formatting. Formatting scripts live at the root;
+use `pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`
+from `frontend/`.
 
 Run browser tests against a fresh production build:
 
@@ -122,7 +128,7 @@ For frontend changes, also:
 
 - Check English and French flows.
 - Check keyboard access, labels, errors, and focus behavior for UI changes.
-- Run `pnpm run lint`, focused tests, and `pnpm run build`.
+- Run formatting, typechecking, linting, focused tests, and `pnpm run build`.
 - Build before running browser tests, and state which journeys were tested.
 - Keep screenshots and reproduction steps free of applicant information.
 

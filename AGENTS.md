@@ -49,12 +49,13 @@
 - Install dependencies from the repository root. The workspace includes
   `@cdcp-rcsd/frontend`; `@cdcp-rcsd/workspace` owns shared tools and scripts.
 - Preserve root pnpm policies and commit manifest changes with any required
-  root lockfile updates. Keep application dependencies in the frontend package.
+  root lockfile and catalog updates. Keep application dependencies in the frontend package.
 - Use the smallest check that proves the requested outcome. Run validation for
   affected areas, including frontend checks when shared tooling affects it.
 - Format only changed files unless a formatting cleanup is requested:
-  `pnpm exec oxfmt --check path/to/changed-file`. The root formatting check has
-  an existing backlog outside the frontend; do not fix unrelated files.
+  `pnpm exec oxfmt --check path/to/changed-file`. Run `pnpm run check` for
+  repository formatting and workspace typechecking and linting; it reports
+  failures across all phases without applying fixes.
 - Build containers from the root with
   `podman build --file frontend/dockerfile --tag canadian-dental-care-plan .`.
   Preserve the isolated `pnpm deploy --prod` runtime, required public/build

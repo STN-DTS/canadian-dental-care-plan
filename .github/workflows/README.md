@@ -6,7 +6,7 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 
 | Workflow                                                                             | Triggers                                                                   | Purpose                                                                                                                                      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Detect changes, validate the frontend, run smoke tests, and build an image without publishing.                                               |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Check repository formatting for all changes; conditionally validate the frontend, run smoke tests, and build an image without publishing.    |
 | [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                         | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
 | [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
 | [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Apply the production root Kustomization to the prod AKS cluster.                                                                             |
@@ -55,8 +55,22 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
+The PR, nonprod branch, and both tag publishing workflows run `check-formatting`
+from the repository root in a separate job after the non-fork `check-repository`
+gate. Tag formatting jobs also wait for release-tag validation. Formatting runs
+independently of frontend tests and, where applicable, frontend change detection.
+In PR checks, documentation-, GitOps-, and infrastructure-only changes also
+receive the repository-wide Oxfmt check. The nonprod branch workflow retains
+its push path filters below.
+
+Frontend tests can run even if formatting fails, but branch and tag image
+publishing requires both formatting and frontend tests to succeed. Frontend
+test jobs do not repeat the formatting check.
+
 Node jobs install dependencies from the repository root using the shared pnpm
-workspace and lockfile. Frontend checks continue to run from `frontend/`.
+workspace and lockfile. Frontend commands also run from the root and explicitly
+select the package with `pnpm --filter @cdcp-rcsd/frontend run <script>`;
+Playwright installation uses `pnpm --filter @cdcp-rcsd/frontend exec playwright`.
 Container builds use the repository root as their context; the root
 `.dockerignore` includes only workspace manifests and frontend build inputs.
 Changes to root package, lockfile, workspace, formatter, or Docker context

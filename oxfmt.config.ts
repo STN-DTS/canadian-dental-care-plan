@@ -14,4 +14,5 @@ export default defineConfig<OxfmtConfig>({
     ],
     groups: ['react', 'testing-library', 'react-router', 'type-import', ['builtin', 'external'], 'internal', ['parent', 'sibling', 'index'], 'unknown', 'style'],
   },
+  sortPackageJson: true,
 });

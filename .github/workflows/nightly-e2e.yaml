@@ -39,25 +39,19 @@ jobs:
         run: |
           corepack enable
           corepack prepare --activate
-        working-directory: .
       - name: Verify versions
         run: |
           node -v
           pnpm -v
-        working-directory: frontend/
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: .
       - name: Build frontend
-        run: pnpm run build
-        working-directory: frontend/
+        run: pnpm --filter @cdcp-rcsd/frontend run build
       - name: Install Playwright dependencies
-        run: pnpm exec playwright install chromium --with-deps
-        working-directory: frontend/
+        run: pnpm --filter @cdcp-rcsd/frontend exec playwright install chromium --with-deps
       - name: Run e2e tests
         id: e2e
-        run: pnpm run test:e2e
-        working-directory: frontend/
+        run: pnpm --filter @cdcp-rcsd/frontend run test:e2e
       - name: Upload Playwright HTML report
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -17,16 +17,18 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
 - Keep unit tests in `__tests__/` and browser tests in `e2e/`. Use existing
   mocks; do not call real government or partner services from unit tests.
 - From the repository root, run focused unit tests with
-  `pnpm test path/to/test.ts`. `pnpm --filter @cdcp-rcsd/frontend run lint` runs frontend
-  formatting, type generation/checking, and Oxlint in the required order.
+  `pnpm --filter @cdcp-rcsd/frontend run test path/to/test.ts`.
+  `pnpm run check` runs repository formatting, workspace type generation/checking,
+  and Oxlint in order, continuing after failures and failing overall if any check fails.
 - Run type generation before standalone type-aware Oxlint. Run
-  `pnpm run build` before Playwright tests; inspect `playwright.config.ts`
+  `pnpm --filter @cdcp-rcsd/frontend run build` before Playwright tests; inspect `playwright.config.ts`
   before changing browser-test startup or environment settings.
 - Use package scripts for server starts. They preload the OpenTelemetry ESM
   registration and instrumentation modules; do not bypass these imports.
 - The package is `@cdcp-rcsd/frontend`. Its deployment `files` list must include
   runtime `build/` and `public/` assets. Preserve the Docker deploy selector
   when changing package names.
-- Oxfmt belongs to the root package. Frontend formatting scripts use the
-  nested `oxfmt.config.ts`, which imports root defaults and adds frontend rules.
-  Do not force the root config or disable nested discovery for frontend checks.
+- Oxfmt and formatting scripts belong to the root package. The nested frontend
+  `oxfmt.config.ts` imports root defaults and adds frontend rules. Frontend
+  `check` runs only typechecking and linting; root `check` also checks formatting.
+  Keep nested config discovery enabled for frontend files.

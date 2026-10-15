@@ -46,7 +46,7 @@ npm install --global corepack@latest
 corepack enable pnpm
 pnpm install
 cp frontend/.env.example frontend/.env
-pnpm run dev
+pnpm --filter @cdcp-rcsd/frontend run dev
 ```
 
 Never commit local environment files or credentials. See the
@@ -55,52 +55,50 @@ mock integrations, and local telemetry.
 
 ## Root commands
 
-| Command                       | Purpose                                                   |
-| ----------------------------- | --------------------------------------------------------- |
-| `pnpm run dev`                | Start the frontend development server                     |
-| `pnpm run dbg`                | Start the frontend with the Node inspector                |
-| `pnpm run build`              | Build the frontend client and server                      |
-| `pnpm test`                   | Run frontend unit tests once                              |
-| `pnpm run test:unit`          | Run frontend unit tests in watch mode                     |
-| `pnpm run test:unit:coverage` | Run frontend unit tests with coverage                     |
-| `pnpm run test:e2e`           | Run frontend Playwright tests                             |
-| `pnpm run test:e2e:smoke`     | Run frontend Playwright smoke tests                       |
-| `pnpm run test:e2e:install`   | Install the Playwright Chromium browser                   |
-| `pnpm run typecheck`          | Generate frontend route types and check TypeScript        |
-| `pnpm run format:check`       | Check supported repository files with Oxfmt               |
-| `pnpm run format:fix`         | Format supported repository files with Oxfmt              |
-| `pnpm run lint`               | Check repository formatting, then frontend types and lint |
-| `pnpm run lint:fix`           | Format repository files, then apply frontend lint fixes   |
+| Command                     | Purpose                                                |
+| --------------------------- | ------------------------------------------------------ |
+| `pnpm run check`            | Check repository formatting, workspace types, and lint |
+| `pnpm run check:workspaces` | Run each workspace's own validation pipeline           |
+| `pnpm run format:check`     | Check supported repository files with Oxfmt            |
+| `pnpm run format:write`     | Format supported repository files with Oxfmt           |
 
-Frontend commands also work from `frontend/`, or with
+`check` runs repository formatting, then each workspace's `check` script.
+The frontend check runs typechecking before linting. Checks continue
+after failures and exit nonzero if any phase or workspace fails. They do not
+apply formatting or lint fixes; frontend typechecking generates route types.
+
+Run frontend commands from `frontend/`, or with
 `pnpm --filter @cdcp-rcsd/frontend run <script>` from the root.
-Frontend formatting scripts use the shared formatter but only target `frontend/`.
+Formatting scripts live only at the root and include frontend files using
+the nested frontend configuration.
 
 The workspace sets `failIfNoMatch: true`, so a filter that matches no package
 fails rather than silently skipping the command.
 
-The repository-wide formatting check currently has a backlog outside the
-frontend. Until it is resolved, check changed files with
-`pnpm exec oxfmt --check path/to/changed-file`. Use
-`pnpm --filter @cdcp-rcsd/frontend run lint` for frontend checks without the
-repository-wide formatting pass.
+During development, check changed files with
+`pnpm exec oxfmt --check path/to/changed-file`. For frontend-only validation,
+run `pnpm --filter @cdcp-rcsd/frontend run check` for typechecking and linting;
+it does not check formatting.
+Apply fixes explicitly with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
+after type generation, and `pnpm run format:write` for formatting.
 
 Build before running end-to-end tests:
 
 ```sh
-pnpm run build
-pnpm run test:e2e
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run test:e2e
 ```
 
 ## Tooling boundaries
 
-The root owns the pnpm workspace settings, shared lockfile, and Oxfmt dependency
-and configuration. Run dependency installs from the root; CI uses
+The root owns the pnpm workspace settings, dependency catalog, shared lockfile,
+Oxfmt, and the task runner for combined checks. Package manifests reference
+versions in `pnpm-workspace.yaml` using `catalog:`. Run dependency installs from the root; CI uses
 `pnpm install --frozen-lockfile`.
 
 [oxfmt.config.ts](oxfmt.config.ts) defines shared formatting defaults and ignores.
 [frontend/oxfmt.config.ts](frontend/oxfmt.config.ts) imports those defaults and
-adds frontend import sorting, Tailwind class sorting, and locale quote overrides.
+adds Tailwind class sorting and locale quote overrides.
 Oxfmt discovers the nearest config for each file; root commands also use the
 nested frontend config. Generated output, dependency directories, and the pnpm
 lockfile are excluded.

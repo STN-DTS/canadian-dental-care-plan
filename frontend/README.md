@@ -78,10 +78,13 @@ modules before Express and other instrumented modules.
 Run before opening a pull request:
 
 ```sh
-pnpm run lint
+pnpm --dir .. run check
 pnpm run test:unit:coverage
 pnpm run build
 ```
+
+The root check includes repository formatting and workspace validation.
+Use `pnpm run check` from `frontend/` for only frontend typechecking and linting.
 
 Available commands:
 
@@ -90,10 +93,10 @@ Available commands:
 - `pnpm run build`: build client and production server
 - `pnpm run preview`: build and run production-style server
 - `pnpm start`: run existing production build
+- `pnpm run check`: generate route types, check TypeScript, and run Oxlint
 - `pnpm run typecheck`: generate route types and run TypeScript checks
-- `pnpm run lint`: run Oxfmt, TypeScript, and Oxlint checks
-- `pnpm run lint:fix`: apply formatting and Oxlint fixes
-- `pnpm run lint:oxlint`: run Oxlint syntax and TypeScript Go-based type-aware checks
+- `pnpm run lint`: run Oxlint syntax and type-aware checks
+- `pnpm run lint:fix`: apply automatic Oxlint fixes
 - `pnpm test`: run unit tests once
 - `pnpm run test:unit`: run Vitest in watch mode
 - `pnpm run test:unit:coverage`: run Vitest with coverage
@@ -114,14 +117,16 @@ Oxlint provides syntax and type-aware linting, Oxfmt handles formatting, and
 TypeScript performs project type checking. Frontend configuration lives in
 `oxlint.config.ts` and `tsconfig.json`. [oxfmt.config.ts](oxfmt.config.ts) imports
 the [root formatting defaults](../oxfmt.config.ts) and adds frontend-specific
-rules. Oxfmt discovers this nested config from both root and frontend commands.
-Frontend formatting scripts target this directory; root scripts check the
-whole repository.
+rules. Formatting scripts live at the root and check the whole repository,
+including frontend files using this nested config. From `frontend/`, run
+`pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`.
 
-Run `pnpm run typecheck` before `pnpm run lint:oxlint`: typecheck generates the
+Run `pnpm run typecheck` before `pnpm run lint` or `pnpm run lint:fix`: typecheck generates the
 React Router route types that Oxlint's type-aware rules depend on. CI jobs that
-run these checks separately must preserve this order; `pnpm run lint` already
-runs formatting, typecheck, and Oxlint in the correct sequence.
+run these checks separately must preserve this order. The root `pnpm run check`
+command runs formatting, typecheck, and Oxlint in the correct sequence and
+continues after failures while reporting an overall failure status. The frontend
+`pnpm run check` runs only typecheck and Oxlint in that order.
 
 ## Code organization
 

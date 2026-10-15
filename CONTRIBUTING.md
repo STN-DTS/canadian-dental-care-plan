@@ -29,7 +29,8 @@ README; a frontend dependency install is not required.
 
 For frontend development, copy `frontend/.env.example` to `frontend/.env` and
 keep local credentials out of source control. Start the application from the
-root with `pnpm run dev`; use `pnpm run dbg` for server debugging.
+root with `pnpm --filter @cdcp-rcsd/frontend run dev`; use
+`pnpm --filter @cdcp-rcsd/frontend run dbg` for server debugging.
 
 ## Scope and boundaries
 
@@ -75,21 +76,24 @@ pnpm --filter @cdcp-rcsd/frontend add <package>
 
 Commit manifest changes with the updated root lockfile. Preserve the existing
 pnpm engine, build-script, release-age, and dependency trust policies.
+Dependency versions are centralized in the `catalog` in `pnpm-workspace.yaml`;
+package manifests use `catalog:` references. Include catalog changes when
+adding or updating dependencies, and retain each dependency in its owning package.
 
 From the repository root, use `pnpm --filter @cdcp-rcsd/frontend run <script>`
-to select the frontend workspace package. Root shortcuts such as
-`pnpm run build` already forward to that package. The workspace sets
+to select the frontend workspace package. Root scripts handle repository
+formatting and orchestrate workspace typechecking and linting. The workspace sets
 `failIfNoMatch: true`, so misspelled or missing package selectors fail.
 
 Use `--dir` when intentionally selecting a working directory instead of a
-workspace package. Frontend formatting scripts retain `--dir ..` to invoke
-the root formatter.
+workspace package. Formatting scripts live at the root; from `frontend/`,
+use `pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`.
 
 Oxfmt handles supported repository file types:
 
 ```sh
 pnpm run format:check
-pnpm run format:fix
+pnpm run format:write
 ```
 
 The root config defines shared defaults. The nested frontend config imports
@@ -103,13 +107,13 @@ Use targeted formatting during development to avoid unrelated changes:
 pnpm exec oxfmt path/to/changed-file
 ```
 
-The repository-wide check currently includes a pre-existing formatting backlog
-outside the frontend. Do not reformat unrelated files as part of a feature or
-tooling change. Check changed files explicitly until that backlog is resolved.
+Do not reformat unrelated files as part of a feature or tooling change.
+Use targeted formatting while developing, then run the repository-wide check
+before submitting.
 
 Use native formatting tools for unsupported formats, such as `terraform fmt`
-for Terraform. Frontend-only formatting is available through
-`pnpm --filter @cdcp-rcsd/frontend run format:check`.
+for Terraform. To check only frontend formatting from the repository root,
+use `pnpm exec oxfmt --check frontend`.
 
 ## Validation
 
@@ -120,31 +124,35 @@ changes also require frontend validation.
 
 ### Frontend
 
-Run these commands from the repository root. The root `lint` command includes
-repository-wide formatting, which currently has a backlog outside the frontend.
-Check changed files and run frontend validation separately:
+Run these commands from the repository root:
 
 ```sh
-pnpm exec oxfmt --check path/to/changed-file
-pnpm --filter @cdcp-rcsd/frontend run lint
-pnpm run test:unit:coverage
-pnpm run build
+pnpm run check
+pnpm --filter @cdcp-rcsd/frontend run test:unit:coverage
+pnpm --filter @cdcp-rcsd/frontend run build
 ```
 
-Once the formatting backlog is resolved, `pnpm run lint` can replace the
-separate formatting and frontend lint commands above.
+`check` runs repository formatting, then each workspace's `check` script.
+It continues after errors and fails overall if any check fails. For frontend-only
+typechecking and linting, run `pnpm --filter @cdcp-rcsd/frontend run check`.
+That command generates the route types required by type-aware Oxlint before
+linting, but does not check formatting.
+
+Apply fixes explicitly with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
+after type generation, then `pnpm run format:write` as needed. There is no
+combined `fix` script.
 
 Run focused unit tests while developing:
 
 ```sh
-pnpm test path/to/test.ts
+pnpm --filter @cdcp-rcsd/frontend run test path/to/test.ts
 ```
 
 Build before running browser tests:
 
 ```sh
-pnpm run build
-pnpm run test:e2e
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run test:e2e
 ```
 
 Use mocks for local tests. Preserve bilingual behavior, accessibility,
