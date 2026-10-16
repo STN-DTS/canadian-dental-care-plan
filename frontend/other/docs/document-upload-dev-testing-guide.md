@@ -2,7 +2,7 @@
 
 This guide is for designers, product owners (POs), business analysts (BAs), and
 the Accessibility Office. It gives simple steps for testing the document upload
-experience in the mocked DEV environment.
+form in the mocked DEV environment.
 
 Use the [technical reference](./document-upload-feature.md) for implementation
 details. This guide does not replace the Accessibility Office’s assessment
@@ -17,30 +17,32 @@ and how people use it. You cannot use these tests to prove real security
 scanning, document storage, downstream processing, or external-service
 accessibility.
 
+DEV uses a hardcoded mock user with access to document upload only. You do not
+need to sign in or obtain a test account. This guide is for testing the document
+upload form, not sign-in, account selection, or other application features.
+
 Ask the testing coordinator for:
 
-- The DEV address and sign-in steps.
-- An eligible test account and, if available, an ineligible account.
 - The deployed build or version.
 - Confirmation that document upload and its mocks are active.
-- Any extra test profiles, controlled delays, or failure conditions you need.
+- Any controlled delays or failure conditions you need.
 
 Do not put passwords, personal information, or applicant details in test notes.
-Use an account alias instead.
 
 ### Open the upload page
 
-Sign in, then open the applicable path on the DEV site:
+1. Open [the DEV documents page](https://cdcp-dev.dev-dp.dts-stn.com/en/protected/documents).
+   No sign-in is needed.
+2. Select **Upload more documents** to open the upload form.
+3. For French testing, switch the page language. The link is labelled
+   **Téléverser plus de documents** in French.
 
-- English: `/en/protected/documents/upload`
-- French: `/fr/protege/documents/televerser`
+Start each independent test from the documents page and select the upload link
+again, rather than using a saved flow-specific page address. The application
+creates a new form address.
 
-This is the entry path. Start each independent test here, not from a saved
-flow-specific page address. The application may redirect to a new form address.
-
-The form uses the signed-in primary applicant. It has no applicant or child
-selector. Access depends on account eligibility. If the account is not eligible,
-the application opens the documents-not-required page instead.
+The form uses the fixed mock user. It has no applicant or child selector.
+Changing accounts or testing ineligible users is not part of this DEV setup.
 
 ### Prepare test files
 
@@ -87,7 +89,7 @@ current mocked DEV experience, not real service processing.
 
 ### F-01 — Upload one or more valid files
 
-1. Start at the upload entry path with an eligible account.
+1. Open the upload form using the steps above.
 2. Select a valid PDF.
 3. Choose a document type for that file.
 4. Select **Submit**.
@@ -191,19 +193,7 @@ the browser. Reloading an unfinished form clears its displayed pending and
 uploaded-file entries. In an integrated environment, this does not undo files
 that were already submitted successfully.
 
-### F-07 — Check an ineligible account
-
-Use only a team-provided account that is known to be ineligible.
-
-1. Sign in with that account.
-2. Open the upload entry path.
-
-**You should see:** The documents-not-required page appears instead of the
-upload form. Mock eligibility is tied to a fixture client number, so not every
-test account can reach the form. If the required account is unavailable, mark
-the scenario **Blocked** and ask the coordinator for help.
-
-### F-08 — Understand the mocked documents list
+### F-07 — Understand the mocked documents list
 
 After a successful upload, open the documents list if it is part of your test.
 
@@ -215,9 +205,11 @@ that has not been translated.
 
 ### Tests that need coordination
 
-Ask development or QA to arrange extra eligibility profiles, outages,
-timeouts, unexpected failures, scan rejection, or controlled delays. Do not
-assume these conditions have tester-facing controls.
+Ask development or QA to arrange outages, timeouts, unexpected failures, scan
+rejection, or controlled delays. Eligibility and ineligible-user checks require
+a separately coordinated setup; they cannot be tested by switching accounts in
+this fixed-user DEV environment. Do not assume these conditions have
+tester-facing controls.
 
 The upload mock detects EICAR antivirus-test content. Use it only through a
 team-approved harmless fixture and procedure. Endpoint protection may block
@@ -231,14 +223,14 @@ version, scope, methods, criteria mapping, and conformance decision.
 
 ### Record the test setup
 
-Record the environment for each assessment. Use aliases and omit personal
-information.
+Record the environment for each assessment. Identify the user as the fixed DEV
+mock user and omit personal information.
 
 | Setup item | Record |
 | --- | --- |
 | DEV build or version and test date | |
 | DEV address or environment name | |
-| Test account alias and eligibility | |
+| Mock user (fixed DEV user, or a separately coordinated profile) | |
 | Active mocks and any coordinated conditions | |
 | Browser and version | |
 | Operating system and version | |
@@ -280,13 +272,13 @@ Steps:
 Expected result:
 Actual result:
 Environment, language, browser, operating system, and assistive technology:
-Build/date, account alias, and mock conditions:
+Build/date, mock user, and mock conditions:
 Evidence location (no personal information):
 Can you repeat it? Steps to reproduce:
 Applicable criterion, standard/version/level, and severity (as assessed by the office):
 Finding type: Observed defect / Design suggestion / Mock limitation / Blocked
 ```
 
-Mark a scenario **Blocked** if the account, fixture, or environment behaviour
+Mark a scenario **Blocked** if the fixture or environment behaviour
 you need is unavailable. Keep observed defects, design suggestions, mock
 limitations, and blocked scenarios separate in your report.
