@@ -25,6 +25,10 @@
     pointer-events: none;
   }
 
+  #test {
+    color: beige;
+  }
+
   #nprogress .bar {
     background: #991b1b;
 
