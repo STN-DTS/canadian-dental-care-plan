@@ -13,10 +13,10 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
-| [notify-workflow-completion.yaml](notify-workflow-completion.yaml)                   | Requests and completions from explicitly listed repository-owned workflows | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
+| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from explicitly listed repository-owned workflows | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
 | [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                    | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
 
-Slack notifications post **Queued** on `requested`, then the result on `completed`,
+**Post workflow updates to Slack** posts **Queued** on `requested`, then the result on `completed`,
 including failures and cancellations. An explicit allowlist subscribes only to
 repository-owned workflows:
 
@@ -32,7 +32,7 @@ workflows:
 ```
 
 Entries match each workflow's `name`, not its filename. Update the allowlist in
-[notify-workflow-completion.yaml](notify-workflow-completion.yaml) and this example
+[notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml) and this example
 when adding or renaming a workflow that should send notifications. New workflows
 are not included automatically. GitHub-managed workflows, such as **Running Copilot
 Code Review**, are deliberately omitted: they are outside our control and can

@@ -6,7 +6,7 @@
 # Keep the subscription list aligned with workflow names when adding or renaming workflows.
 # Uses trusted default-branch helpers; fork sources are excluded and failures are non-blocking.
 
-name: Notify workflow completions
+name: Post workflow updates to Slack
 
 on:
   workflow_run:

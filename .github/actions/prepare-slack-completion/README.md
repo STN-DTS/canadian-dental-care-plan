@@ -76,7 +76,7 @@ No metadata event receiver or interactivity endpoint is required; lookup uses
 `conversations.history`. Metadata is visible to channel members and other apps;
 never include credentials. See [Slack metadata documentation](https://docs.slack.dev/messaging/message-metadata/).
 
-See [the completion workflow](../../workflows/notify-workflow-completion.yaml)
+See [Post workflow updates to Slack](../../workflows/notify-slack-workflow-updates.yaml)
 for runtime setup, Vault authentication, repository guards, and workflow exclusions.
 That workflow must exist on the default branch to receive these events.
 
