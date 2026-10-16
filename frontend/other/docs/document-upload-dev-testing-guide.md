@@ -48,15 +48,15 @@ Changing accounts or testing ineligible users is not part of this DEV setup.
 
 Use harmless files with fictional content. Prepare:
 
-| File | Use |
-| --- | --- |
-| A small, genuine PDF | Test one successful file |
-| A small, genuine image | Test another supported format |
-| Several different valid files | Test multiple selection |
-| A valid file larger than the displayed limit | Test size validation |
-| A harmless file with an unsupported extension, such as `.csv` | Test format validation |
-| A plain-text file named exactly `mock-upload-failure.txt` | Test a repeatable mock upload failure |
-| An unchanged copy of a selected file | Test duplicate detection |
+| File                                                          | Use                                   |
+| ------------------------------------------------------------- | ------------------------------------- |
+| A small, genuine PDF                                          | Test one successful file              |
+| A small, genuine image                                        | Test another supported format         |
+| Several different valid files                                 | Test multiple selection               |
+| A valid file larger than the displayed limit                  | Test size validation                  |
+| A harmless file with an unsupported extension, such as `.csv` | Test format validation                |
+| A plain-text file named exactly `mock-upload-failure.txt`     | Test a repeatable mock upload failure |
+| An unchanged copy of a selected file                          | Test duplicate detection              |
 
 For the failure test, ordinary text such as `Fictional upload test` is enough.
 Check the full filename. It must be `mock-upload-failure.txt`, not
@@ -122,16 +122,16 @@ each addition and removal.
 Try each case from a fresh form, or keep one valid file selected to check that
 an error does not discard other work:
 
-| Case | Do this | You should see |
-| --- | --- | --- |
-| Empty selection | Select **Submit** with no files. | A message says a file is required. |
-| Missing type | Add a valid file, leave its type unselected, then submit. | An error identifies the file that needs a type. |
-| Unsupported extension | Try the harmless unsupported file. | The selection is rejected and the format guidance appears. |
-| Oversized file | Try a file larger than the displayed per-file limit. | The selection is rejected and the size guidance appears. |
-| File count | Fill the displayed limit, then try to add another distinct file. | The additional selection is rejected. Existing files remain. |
-| Exact duplicate | Add the same unchanged file twice. | The second selection is rejected as a duplicate. |
-| Same contents, different name | Try the same contents under a different name. | Matching contents alone do not make it a duplicate. |
-| Same name, different contents | Try different contents with the same name. | Matching names alone do not make it a duplicate. |
+| Case                          | Do this                                                          | You should see                                               |
+| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| Empty selection               | Select **Submit** with no files.                                 | A message says a file is required.                           |
+| Missing type                  | Add a valid file, leave its type unselected, then submit.        | An error identifies the file that needs a type.              |
+| Unsupported extension         | Try the harmless unsupported file.                               | The selection is rejected and the format guidance appears.   |
+| Oversized file                | Try a file larger than the displayed per-file limit.             | The selection is rejected and the size guidance appears.     |
+| File count                    | Fill the displayed limit, then try to add another distinct file. | The additional selection is rejected. Existing files remain. |
+| Exact duplicate               | Add the same unchanged file twice.                               | The second selection is rejected as a duplicate.             |
+| Same contents, different name | Try the same contents under a different name.                    | Matching contents alone do not make it a duplicate.          |
+| Same name, different contents | Try different contents with the same name.                       | Matching names alone do not make it a duplicate.             |
 
 A duplicate requires the same filename, size, and contents. Correct the reported
 problem and check that you can continue without redoing unrelated work.
@@ -226,17 +226,17 @@ version, scope, methods, criteria mapping, and conformance decision.
 Record the environment for each assessment. Identify the user as the fixed DEV
 mock user and omit personal information.
 
-| Setup item | Record |
-| --- | --- |
-| DEV build or version and test date | |
-| DEV address or environment name | |
-| Mock user (fixed DEV user, or a separately coordinated profile) | |
-| Active mocks and any coordinated conditions | |
-| Browser and version | |
-| Operating system and version | |
-| Assistive technology and version | |
-| Language | |
-| Viewport size and zoom, when relevant | |
+| Setup item                                                      | Record |
+| --------------------------------------------------------------- | ------ |
+| DEV build or version and test date                              |        |
+| DEV address or environment name                                 |        |
+| Mock user (fixed DEV user, or a separately coordinated profile) |        |
+| Active mocks and any coordinated conditions                     |        |
+| Browser and version                                             |        |
+| Operating system and version                                    |        |
+| Assistive technology and version                                |        |
+| Language                                                        |        |
+| Viewport size and zoom, when relevant                           |        |
 
 ### Assessment scenarios
 
@@ -244,16 +244,16 @@ For each scenario, record what happened. The expected accessible behaviour is
 what to assess; it is not a claim that the current page already behaves this
 way. Use the office’s chosen criteria and standard, if applicable.
 
-| ID and journey | Repeatable steps | **EXPECTED ACCESSIBLE BEHAVIOUR TO ASSESS** | Actual result, evidence, and findings |
-| --- | --- | --- | --- |
-| A-01 — Keyboard journey (F-01, F-02, F-05) | Use only the keyboard. Select files, choose types, submit, recover from an error, and reach confirmation. | Every action is reachable in a sensible order. Focus is visible and does not get lost. Focus after adding or removing a file is useful. | |
-| A-02 — Names and instructions (F-01, F-02) | Inspect the file picker trigger, each file, each type selector, and its instructions with a screen reader. | Controls have useful accessible names. Each type selector is tied to the right filename. Required status, accepted formats, size limit, and count limit can be found and understood. | |
-| A-03 — Errors and recovery (F-03, F-04) | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error. | Each error is identified, associated with the relevant field or file, announced, and explained in plain language. A person can find and correct it without losing unrelated work. | |
-| A-04 — Dialogs (F-02, F-06) | Open file removal and the leave-page warning. Test initial focus, keyboard movement, Escape, cancel, and confirm. | Each dialog has a clear accessible name. Initial focus is useful; keyboard focus stays within an open dialog; Escape and cancel behave clearly; focus returns sensibly after dismissal. Confirming the action has a clear result. | |
-| A-05 — Status and partial success (F-04, F-05) | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. | Processing, success, and failure are announced and distinguishable. Status updates do not cause unnecessary focus movement. Uploaded and pending files are clearly grouped. Retry, remove, and finish actions are understandable. | |
-| A-06 — Confirmation (F-01, F-05) | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology. | The confirmation has a clear heading, identifies submitted filenames, explains next steps, and offers understandable navigation. | |
-| A-07 — Visual and responsive use (F-01, F-03) | Check contrast and colour use. Try a long filename, narrow viewport, browser zoom, and increased text spacing. | Text and controls remain readable and usable. Meaning does not depend on colour alone. Content reflows without loss, overlap, or unnecessary horizontal scrolling. Long filenames do not hide controls. | |
-| A-08 — English and French (F-01, F-03, F-05) | Repeat key checks in both languages with the chosen assistive technology. | Page language, control names, instructions, errors, and status messages match the selected language and are pronounced meaningfully. Separate `[FR]` mock sample labels from application translation issues. | |
+| ID and journey                                 | Repeatable steps                                                                                                       | **EXPECTED ACCESSIBLE BEHAVIOUR TO ASSESS**                                                                                                                                                                                       | Actual result, evidence, and findings |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| A-01 — Keyboard journey (F-01, F-02, F-05)     | Use only the keyboard. Select files, choose types, submit, recover from an error, and reach confirmation.              | Every action is reachable in a sensible order. Focus is visible and does not get lost. Focus after adding or removing a file is useful.                                                                                           |                                       |
+| A-02 — Names and instructions (F-01, F-02)     | Inspect the file picker trigger, each file, each type selector, and its instructions with a screen reader.             | Controls have useful accessible names. Each type selector is tied to the right filename. Required status, accepted formats, size limit, and count limit can be found and understood.                                              |                                       |
+| A-03 — Errors and recovery (F-03, F-04)        | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error.                 | Each error is identified, associated with the relevant field or file, announced, and explained in plain language. A person can find and correct it without losing unrelated work.                                                 |                                       |
+| A-04 — Dialogs (F-02, F-06)                    | Open file removal and the leave-page warning. Test initial focus, keyboard movement, Escape, cancel, and confirm.      | Each dialog has a clear accessible name. Initial focus is useful; keyboard focus stays within an open dialog; Escape and cancel behave clearly; focus returns sensibly after dismissal. Confirming the action has a clear result. |                                       |
+| A-05 — Status and partial success (F-04, F-05) | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. | Processing, success, and failure are announced and distinguishable. Status updates do not cause unnecessary focus movement. Uploaded and pending files are clearly grouped. Retry, remove, and finish actions are understandable. |                                       |
+| A-06 — Confirmation (F-01, F-05)               | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology. | The confirmation has a clear heading, identifies submitted filenames, explains next steps, and offers understandable navigation.                                                                                                  |                                       |
+| A-07 — Visual and responsive use (F-01, F-03)  | Check contrast and colour use. Try a long filename, narrow viewport, browser zoom, and increased text spacing.         | Text and controls remain readable and usable. Meaning does not depend on colour alone. Content reflows without loss, overlap, or unnecessary horizontal scrolling. Long filenames do not hide controls.                           |                                       |
+| A-08 — English and French (F-01, F-03, F-05)   | Repeat key checks in both languages with the chosen assistive technology.                                              | Page language, control names, instructions, errors, and status messages match the selected language and are pronounced meaningfully. Separate `[FR]` mock sample labels from application translation issues.                      |                                       |
 
 Mock responses can be too fast to assess processing announcements or disabled
 controls reliably. Ask development or QA to arrange a controlled delay or
