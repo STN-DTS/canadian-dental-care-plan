@@ -42,6 +42,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       actions: read
+      contents: read
     env:
       M365_CLI_IMAGE: m365pnp/cli-microsoft365:11.11.0@sha256:75c54491828cefd2b34486df2887d0d530b6a64e72355eaf033f12add4245293
       SHAREPOINT_SITE_URL: ${{ vars.PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL }}
@@ -51,10 +52,15 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Checkout trusted Node.js version manifest
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.repository.default_branch }}
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.21.0'
+          node-version-file: package.json
       - name: Validate SharePoint destination
         run: |
           set -euo pipefail

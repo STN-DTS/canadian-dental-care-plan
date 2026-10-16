@@ -70,6 +70,10 @@ job through `needs.test-frontend.outputs.version`. Formatting failures stop
 subsequent tests, and image publishing requires the test job to succeed.
 Each downstream job retains a direct dependency on the repository gate.
 
+All `actions/setup-node` steps use `node-version-file: package.json` to read the
+Node.js version from the root manifest. Workflows check out the repository before
+setting up Node.js; `workflow_run` consumers use the trusted default branch.
+
 Node jobs install dependencies from the repository root using the shared pnpm
 workspace and lockfile. Frontend commands also run from the root and explicitly
 select the package with `pnpm --filter @cdcp-rcsd/frontend run <script>`;
