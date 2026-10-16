@@ -37,7 +37,7 @@ jobs:
   notify:
     needs: check-repository
     if: ${{ github.event.workflow_run.head_repository.full_name == github.repository }}
-    runs-on: arc-runners-dshp-dev
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
@@ -60,29 +60,17 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: package.json
-      - name: Fetch Slack bot token
-        id: vault
-        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
-        with:
-          exportEnv: false
-          exportToken: false
-          method: approle
-          roleId: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
-          secretId: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
-          secrets: |
-            canada-dental-care-plan/data/shared/cicd/slack SLACK_BOT_TOKEN | SLACK_BOT_TOKEN;
-          url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Prepare workflow notification
         id: message
         uses: ./.github/actions/prepare-slack-completion
         with:
           channel-id: ${{ env.SLACK_CHANNEL_ID }}
           github-token: ${{ github.token }}
-          slack-token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+          slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
       - name: Post workflow notification
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           errors: true
           method: chat.postMessage
           payload: ${{ steps.message.outputs.payload }}
-          token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+          token: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -1,7 +1,7 @@
 # Prepare Slack Completion
 
 Builds JSON Slack `chat.postMessage` payloads for requested and completed workflow runs.
-This action does not fetch Vault secrets, send Slack messages, download artifacts,
+This action does not fetch secrets, send Slack messages, download artifacts,
 or maintain external message state. Slack metadata correlates completion replies
 with their queued messages; authentication and delivery belong to the caller.
 
@@ -41,18 +41,18 @@ After trusted checkout and Node.js setup:
   with:
     channel-id: ${{ vars.SLACK_CHANNEL_ID }}
     github-token: ${{ github.token }}
-    slack-token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+    slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
   - name: Post workflow notification
   uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
   with:
     method: chat.postMessage
-    token: ${{ steps.vault.outputs.SLACK_BOT_TOKEN }}
+    token: ${{ secrets.SLACK_BOT_TOKEN }}
     errors: true
     payload: ${{ steps.message.outputs.payload }}
 ```
 
-The example assumes a preceding Vault step provides `SLACK_BOT_TOKEN`. The bot
+Store the bot token in the GitHub Actions repository secret `SLACK_BOT_TOKEN`. The bot
 needs `chat:write` and membership in the destination channel. For threading,
 configure `channels:history` for public channels or `groups:history` for private
 channels, plus `metadata.message:read`. Reinstall the app after changing scopes.
@@ -77,7 +77,7 @@ No metadata event receiver or interactivity endpoint is required; lookup uses
 never include credentials. See [Slack metadata documentation](https://docs.slack.dev/messaging/message-metadata/).
 
 See [Post workflow updates to Slack](../../workflows/notify-slack-workflow-updates.yaml)
-for runtime setup, Vault authentication, repository guards, and workflow exclusions.
+for runtime setup, repository guards, and workflow exclusions.
 That workflow must exist on the default branch to receive these events.
 
 ## Threaded Notifications

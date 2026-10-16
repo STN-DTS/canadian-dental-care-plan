@@ -266,7 +266,10 @@ Configure GitHub variables for the workflows that use them:
 GitHub secrets provide Vault access: `NONPROD_VAULT_URL`,
 `NONPROD_VAULT_APPROLE_ROLE_ID`, `NONPROD_VAULT_APPROLE_SECRET_ID`, and the
 corresponding `PROD_VAULT_*` secrets. AppRoles must read the relevant Azure,
-Aqua, Cosign, Slack, and SharePoint secrets in their selected Vault instance.
+Aqua, Cosign, and SharePoint secrets in their selected Vault instance.
+
+Slack notifications use the GitHub Actions repository secret `SLACK_BOT_TOKEN`
+directly and do not require Vault access.
 
 SharePoint credentials reside at
 `canada-dental-care-plan/data/shared/cicd/sharepoint`: `SHAREPOINT_CLIENT_ID`,
@@ -282,8 +285,8 @@ upload separate Vitest coverage and Playwright artifacts; nightly runs upload
 Playwright reports. PROD uploads `test-reports-<run-id>-<run-attempt>`, containing
 coverage, Playwright HTML reports, and test results for the SharePoint uploader.
 
-Validation uses GitHub-hosted runners. Nonprod publishing, GitOps deployment,
-and Slack use
+Validation and Slack notifications use GitHub-hosted runners. Nonprod publishing
+and GitOps deployment use
 `arc-runners-dshp-dev`; production GitOps, PROD publishing, and SharePoint use
 `arc-runners-dshp-prod`. Self-hosted runners need the tools and network access
 used by their jobs.
