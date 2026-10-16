@@ -1,18 +1,25 @@
+# Exclude everything except the build inputs listed below.
 **
+
+# Root workspace manifests and dependency patches.
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
+!patches/
+!patches/**
+
+# Frontend workspace source, public assets, and build configuration.
 !frontend/
-!frontend/package.json
-!frontend/patches/
-!frontend/patches/**
+frontend/**
 !frontend/app/
 !frontend/app/**
+!frontend/package.json
 !frontend/public/
 !frontend/public/**
 !frontend/react-router.config.ts
 !frontend/tsconfig.json
 !frontend/vite.config.ts
 !frontend/vite.server.config.ts
-frontend/public/build/
+
+# Keep exclusions last so they override the workspace allowlists.
 **/.env*

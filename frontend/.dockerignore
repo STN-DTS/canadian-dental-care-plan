@@ -1,8 +1,0 @@
-./.cache/
-./build/
-./node_modules/
-./playwright-report/
-./public/build/
-./test-results/
-
-./.env*

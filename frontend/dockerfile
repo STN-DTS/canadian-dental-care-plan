@@ -30,22 +30,15 @@
 
 
 # ---------------------------------------------------------------------------- #
-# Stage: Base
-# Base image used by all subsequent stages.
+# Stage: Build
+# Install dependencies, compile the application, and package production output.
 # ---------------------------------------------------------------------------- #
 
-FROM docker.io/library/node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 AS base
+FROM docker.io/library/node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 AS build
 
 WORKDIR /home/node
 
-
-# ---------------------------------------------------------------------------- #
-# Stage: pnpm
 # Install the pnpm version declared by package.json.
-# ---------------------------------------------------------------------------- #
-
-FROM base AS pnpm
-
 COPY --chown=node:node package.json ./
 
 RUN npm install --global "$(node -p 'require("./package.json").packageManager')" \
@@ -53,68 +46,43 @@ RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
 
 USER node
 
-
-# ---------------------------------------------------------------------------- #
-# Stage: Workspace
-# Copy workspace manifests before installing dependencies.
-# ---------------------------------------------------------------------------- #
-
-FROM pnpm AS workspace
-
+# USER does not set COPY ownership; --chown keeps workspace files writable by node.
+# Copy only dependency inputs here so source changes can reuse the install layer.
 COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY --chown=node:node frontend/package.json ./frontend/
-COPY --chown=node:node frontend/patches/ ./frontend/patches/
+COPY --chown=node:node patches/ ./patches/
 
-
-# ---------------------------------------------------------------------------- #
-# Stage: Dependencies
 # Install the complete dependency set, including development dependencies
 # required to build the application.
-# ---------------------------------------------------------------------------- #
-
-FROM workspace AS deps
-
 RUN pnpm install --frozen-lockfile
 
+# Copy source and build configuration after installation to preserve its cache.
+COPY --chown=node:node frontend/app/ ./frontend/app/
+COPY --chown=node:node frontend/public/ ./frontend/public/
+COPY --chown=node:node frontend/react-router.config.ts ./frontend/
+COPY --chown=node:node frontend/tsconfig.json ./frontend/
+COPY --chown=node:node frontend/vite.config.ts ./frontend/
+COPY --chown=node:node frontend/vite.server.config.ts ./frontend/
 
-# ---------------------------------------------------------------------------- #
-# Stage: Build
-# Compile the application and generate production-ready artifacts.
-# ---------------------------------------------------------------------------- #
+RUN pnpm --filter @cdcp-rcsd/frontend run build
 
-FROM deps AS build
-
-WORKDIR /home/node/frontend
-
-COPY --chown=node:node frontend/app/ ./app/
-COPY --chown=node:node frontend/public/ ./public/
-COPY --chown=node:node frontend/react-router.config.ts ./
-COPY --chown=node:node frontend/tsconfig.json ./
-COPY --chown=node:node frontend/vite.config.ts ./
-COPY --chown=node:node frontend/vite.server.config.ts ./
-
-RUN pnpm --config.verify-deps-before-run=false run build
-
-
-# ---------------------------------------------------------------------------- #
-# Stage: Deploy
 # Package the frontend with an isolated production dependency tree.
-# ---------------------------------------------------------------------------- #
-
-FROM build AS deploy
-
-WORKDIR /home/node
-
 RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 
 
 # ---------------------------------------------------------------------------- #
 # Stage: Final Production Image
-# Include only production dependencies, runtime metadata, public assets, and
-# compiled application code.
+# Use distroless to keep package managers and build tools out of the runtime,
+# reducing image size and attack surface compared with the build image.
+# Include production dependencies, runtime metadata, public assets, and compiled
+# application code.
+#
+# Choose the debug tag to retain a BusyBox shell for troubleshooting:
+# docker exec -it <container> /busybox/sh
+# podman exec -it <container> /busybox/sh
 # ---------------------------------------------------------------------------- #
 
-FROM base AS final
+FROM gcr.io/distroless/nodejs26-debian13:debug@sha256:8d9f0eedfa775b2016bbfd56de469c39e5daa86feef6bf63ec152e1c33f8afbd
 
 ARG BUILD_DATE="1970-01-01T00:00:00.000Z"
 ARG BUILD_ID="000000"
@@ -148,10 +116,10 @@ LABEL org.opencontainers.image.authors="${IMAGE_AUTHORS}" \
 # The server build preserves bare package imports, so production node_modules
 # must be included. package.json is retained for Node package settings such as
 # "type": "module".
-COPY --from=deploy --chown=node:node /home/node/deploy/ ./frontend/
+COPY --from=build --chown=nonroot:nonroot /home/node/deploy/ /app/
 
-WORKDIR /home/node/frontend
+WORKDIR /app
 
-USER node
+USER nonroot:nonroot
 
-CMD ["node", "--import", "./build/server/opentelemetry-register.js", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
+CMD ["--import", "./build/server/opentelemetry-register.js", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]

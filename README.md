@@ -115,14 +115,29 @@ Use the repository root as the build context:
 podman build --file frontend/dockerfile --tag canadian-dental-care-plan .
 ```
 
-[.dockerignore](.dockerignore) limits the context to workspace manifests and
-frontend build inputs. GitOps, infrastructure, local environment files, and
+[.dockerignore](.dockerignore) limits the context to workspace manifests,
+root dependency patches, and frontend build inputs. GitOps, infrastructure, local environment files, and
 generated output are not sent to the builder.
+
+The build stage uses Node.js 26 and installs the pnpm version declared in the
+root `packageManager` field. Dependency inputs are copied before `pnpm install`;
+application source and build configuration are copied afterward. This ordering
+lets Docker and Podman reuse the dependency installation layer for source-only
+changes.
 
 After building, the Dockerfile uses `pnpm deploy --prod` to create a portable
 frontend package with its own production dependencies. The frontend manifest's
 `files` field includes `build/` and `public/`; source code and development tools
 are not included in the final image.
+
+The runtime stage uses distroless Node.js 26 and runs from `/app` as `nonroot`.
+It does not need pnpm at runtime. The `:debug` tag retains a BusyBox shell for
+troubleshooting a running container:
+
+```sh
+podman exec -it <container> /busybox/sh
+docker exec -it <container> /busybox/sh
+```
 
 ## Documentation
 
