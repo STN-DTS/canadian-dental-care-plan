@@ -37,14 +37,14 @@ env:
 jobs:
   check-repository:
     if: ${{ github.event.repository.fork != true }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     permissions: {}
     steps:
       - name: Allow non-fork repository
         run: echo "Repository check passed."
 
   check-formatting:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     needs: check-repository
     steps:
       - name: Checkout source code
@@ -65,7 +65,7 @@ jobs:
         run: pnpm run format:check
 
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     needs: check-repository
     permissions:
       contents: read
@@ -107,7 +107,7 @@ jobs:
       infrastructure-changed: ${{ steps.infrastructure.outputs.src }}
 
   test-frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     needs:
       - check-repository
       - detect-changes
@@ -164,7 +164,7 @@ jobs:
             frontend/test-results/
           retention-days: 7
   build-frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     needs:
       - check-repository
       - detect-changes
