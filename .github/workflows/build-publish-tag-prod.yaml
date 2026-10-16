@@ -30,7 +30,7 @@ jobs:
       - name: Allow non-fork repository
         run: echo "Repository check passed."
 
-  resolve-version:
+  test-frontend:
     runs-on: ubuntu-latest
     needs: check-repository
     outputs:
@@ -62,12 +62,6 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           printf 'Validated release version: %s\nImage tag: %s\n' "$version" "$generated_tag"
 
-  check-formatting:
-    needs:
-      - check-repository
-      - resolve-version
-    runs-on: ubuntu-latest
-    steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -84,27 +78,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check repository formatting
         run: pnpm run format:check
-
-  test-frontend:
-    needs:
-      - check-repository
-      - resolve-version
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 26.9.0
-      - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare --activate
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
       - name: Run typecheck
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint
@@ -132,9 +105,7 @@ jobs:
     runs-on: arc-runners-dshp-prod
     needs:
       - check-repository
-      - resolve-version
       - test-frontend
-      - check-formatting
     env:
       IMAGE_NAME: ${{ vars.PROD_ACR_DOMAIN }}/canada-dental-care-plan/canada-dental-care-plan-frontend
       PUBLIC_KEY_PATH: .github/actions/sign-container-image/prod-cosign-v1.pub
@@ -167,7 +138,7 @@ jobs:
         id: build-vars
         uses: ./.github/actions/generate-build-vars
         with:
-          version: ${{ needs.resolve-version.outputs.version }}
+          version: ${{ needs.test-frontend.outputs.version }}
       - name: Build frontend OCI image
         env:
           BUILD_DATE: ${{ steps.build-vars.outputs.build-date }}

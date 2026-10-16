@@ -55,17 +55,20 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
-The PR, nonprod branch, and both tag publishing workflows run `check-formatting`
-from the repository root in a separate job after the non-fork `check-repository`
-gate. Tag formatting jobs also wait for release-tag validation. Formatting runs
-independently of frontend tests and, where applicable, frontend change detection.
-In PR checks, documentation-, GitOps-, and infrastructure-only changes also
-receive the repository-wide Oxfmt check. The nonprod branch workflow retains
-its push path filters below.
+PR checks run repository-wide formatting in a separate `check-formatting` job
+after the non-fork `check-repository` gate. This includes documentation-, GitOps-,
+and infrastructure-only changes, independently of frontend validation.
+The nonprod branch workflow checks frontend formatting within `test-frontend`
+and retains its push path filters below.
 
-Frontend tests can run even if formatting fails, but branch and tag image
-publishing requires both formatting and frontend tests to succeed. Frontend
-test jobs do not repeat the formatting check.
+Both tag publishing workflows follow `check-repository` -> `test-frontend` ->
+`build-frontend`. The test job validates the release tag before checkout or
+dependency installation, then runs repository-wide formatting, typechecking,
+linting, unit tests, the application build, and end-to-end tests using one setup
+and dependency installation. It exposes the validated version to the image-build
+job through `needs.test-frontend.outputs.version`. Formatting failures stop
+subsequent tests, and image publishing requires the test job to succeed.
+Each downstream job retains a direct dependency on the repository gate.
 
 Node jobs install dependencies from the repository root using the shared pnpm
 workspace and lockfile. Frontend commands also run from the root and explicitly
@@ -107,6 +110,8 @@ Manual dispatches and reusable calls bypass path-based change detection. A push
 that creates a `release/v*` branch also enables frontend jobs once the workflow
 has been triggered; it does not bypass the push path filter. Publishing still
 requires a `main` or `release/v*` ref and successful version resolution and tests.
+Version resolution runs as the first step of the image-build job, after frontend
+tests and formatting succeed, before checkout or authentication.
 All jobs remain dependent on the non-fork `check-repository` gate.
 
 ### Nonprod GitOps Deployment
