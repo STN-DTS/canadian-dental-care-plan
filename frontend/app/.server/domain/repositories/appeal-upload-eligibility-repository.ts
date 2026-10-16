@@ -47,6 +47,14 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
   private readonly httpClient: HttpClient;
   private readonly baseUrl: string;
 
+  /**
+   * The list of application statuses that are considered as pending for appeal upload eligibility purposes.
+   */
+  private readonly applicationPendingStatuses: readonly { id: string; name: string }[] = [
+    { id: '7851084a-c4bd-f111-a059-6045bdcce2c1', name: 'Pending Review' },
+    { id: 'da499a30-71c1-f011-8544-7c1e520630db', name: 'Application Paused' },
+  ];
+
   constructor(
     @inject(TYPES.ServerConfig) serverConfig: DefaultAppealUploadEligibilityRepositoryServerConfig, //
     @inject(TYPES.HttpClient) httpClient: HttpClient,
@@ -57,6 +65,15 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/appeal-upload-eligible/pp/v1`;
   }
 
+  /**
+   * Builds the OData filter string for pending application statuses.
+   *
+   * @returns A string representing the OData filter for pending application statuses.
+   */
+  private buildPendingStatusFilter(): string {
+    return this.applicationPendingStatuses.map(({ id }) => `_esdc_pendingstatusid_value eq '${id}'`).join(' or ');
+  }
+
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching appeal upload eligibility for client number: [%s]', clientNumber);
 
@@ -64,7 +81,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     url.searchParams.set('$select', 'esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon');
     url.searchParams.set(
       '$expand',
-      "esdc_esdc_dentalapplicant_Clientid_esdc_client($select=esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value;$filter=statuscode eq 775170001 and _esdc_pendingstatusid_value eq 'DA499A30-71C1-F011-8544-7C1E520630DB'),esdc_workitem_Clientid_esdc_client($select=esdc_workitemid,_esdc_workitemtypeid_value,statecode,statuscode;$filter=statecode eq 0)",
+      `esdc_esdc_dentalapplicant_Clientid_esdc_client($select=esdc_dentalapplicantid,_esdc_dentalapplicationid_value,_esdc_pendingstatusid_value;$filter=statuscode eq 775170001 and (${this.buildPendingStatusFilter()})),esdc_workitem_Clientid_esdc_client($select=esdc_workitemid,_esdc_workitemtypeid_value,statecode,statuscode;$filter=statecode eq 0)`,
     );
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.appeal-upload-eligible.get', url, {
