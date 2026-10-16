@@ -279,6 +279,12 @@ and Slack use
 `arc-runners-dshp-prod`. Self-hosted runners need the tools and network access
 used by their jobs.
 
+Self-hosted runners must be version `2.327.1` or newer for the Node.js 24
+runtime used by Vault v4 and Trivy's nested cache actions. The shared
+[aqua-scan action](../actions/aqua-scan/action.yaml) pins Trivy action v0.36.0
+for Node.js 24-compatible caching;
+update the scanner version separately from the action runtime.
+
 GitOps deployment requires Azure CLI, kubectl, kubelogin,
 Vault and Azure connectivity, and network access to the target AKS API. The
 service principal must be authorized to obtain cluster credentials and apply
