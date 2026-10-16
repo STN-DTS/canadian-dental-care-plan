@@ -32,6 +32,9 @@ This document describes the current Canadian Dental Care Plan (CDCP) protected d
 
 **Status:** Current implementation reference, reviewed 2026-10-09.
 
+For plain-language DEV test steps and an accessibility assessment aid, see the
+[DEV testing and accessibility assessment guide](./document-upload-dev-testing-guide.md).
+
 The feature is a protected MSCA workflow for submitting evidentiary documents for the authenticated applicant. The browser sends file data to the CDCP server, which validates and submits files to EWDU:
 
 1. The user selects files and a document type for each file.
