@@ -314,6 +314,20 @@ Successful image publication or signing does not establish Aqua compliance.
 
 ## Shared Actions
 
+### Action Dependency Updates
+
+[Dependabot](../dependabot.yml) checks GitHub Actions dependencies daily with a
+three-day cooldown. The `/` directory covers workflow `.yml` and `.yaml` files
+and root action metadata. The `/.github/actions/*` directory wildcard includes
+each local composite action's `action.yml` or `action.yaml`, including newly
+added action directories. Root coverage alone does not scan these directories.
+
+Keep external actions pinned to full commit SHAs with release-version comments;
+Dependabot supports updating these pins. Major updates are not excluded for
+GitHub Actions. After this configuration reaches the default branch, use
+**Insights > Dependency graph > Dependabot > Recent update jobs** to inspect the
+GitHub Actions update logs and confirm composite action files are included.
+
 | Action                                                                    | Responsibility                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [azure-acr-login](../actions/azure-acr-login/action.yaml)                 | Authenticate with Vault-managed credentials; callers clean up credential directories. |
