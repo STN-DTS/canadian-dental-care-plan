@@ -82,7 +82,7 @@ RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 # podman exec -it <container> /busybox/sh
 # ---------------------------------------------------------------------------- #
 
-FROM gcr.io/distroless/nodejs26-debian13:debug@sha256:8d9f0eedfa775b2016bbfd56de469c39e5daa86feef6bf63ec152e1c33f8afbd
+FROM gcr.io/distroless/nodejs26-debian13:debug@sha256:ccef27fb98352b353d66f9bad69cd323fb9a027052b5898485caa115a4399012
 
 ARG BUILD_DATE="1970-01-01T00:00:00.000Z"
 ARG BUILD_ID="000000"
