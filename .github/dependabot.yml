@@ -56,7 +56,10 @@ updates:
       default-days: 3
 
   - package-ecosystem: github-actions
-    directory: /
+    # Root covers workflows; composite actions need their own directories.
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: daily
     cooldown:
