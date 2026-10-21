@@ -366,14 +366,21 @@ without updating this configuration, including managers beyond those listed belo
 - The pinned Renovate runtime itself, through the custom-manager preset. It
   recognizes explicitly annotated `_VERSION` variables in supported workflow
   and composite-action files, not arbitrary environment variables. Currently only
-  the Renovate runtime is annotated. The action wrapper and runtime are updated
+  the Renovate runtime is annotated. Its version lookup uses GitHub releases,
+  which provide publication timestamps for the three-day release-age check;
+  the action still downloads that version's container image from GHCR.
+  Runtime upgrades are limited to the weekly Monday 00:00-03:59 UTC window.
+  `updateNotScheduled: false` also prevents refreshing existing runtime PRs outside
+  that window, avoiding hourly version churn. This restriction applies only to
+  the custom runtime dependency, not the action wrapper or the workflow cadence.
+  The action wrapper and runtime are updated
   separately. Other default-enabled managers, including Kubernetes and Kustomize,
   can discover supported GitOps files as well.
 
 The annotation must be immediately above the version variable:
 
 ```yaml
-# renovate: datasource=docker depName=ghcr.io/renovatebot/renovate versioning=semver
+# renovate: datasource=github-releases depName=renovatebot/renovate versioning=semver
 RENOVATE_VERSION: 44.175.2
 ```
 

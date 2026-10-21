@@ -9,6 +9,14 @@
   },
   "packageRules": [
     {
+      // Limit frequent runtime releases and existing PR refreshes to the weekly window.
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["renovatebot/renovate"],
+      "extends": ["schedule:weekly"],
+      "updateNotScheduled": false
+    },
+    {
       // GCR does not expose image release timestamps for Renovate's minimumReleaseAge check.
       "matchDatasources": ["docker"],
       "matchPackageNames": ["gcr.io/distroless/nodejs26-debian13"],

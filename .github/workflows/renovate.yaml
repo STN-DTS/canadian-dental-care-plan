@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate versioning=semver
+  # renovate: datasource=github-releases depName=renovatebot/renovate versioning=semver
   RENOVATE_VERSION: 44.175.2
 
 jobs:
