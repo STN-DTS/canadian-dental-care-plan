@@ -342,6 +342,38 @@ types and `chore` for other updates; catalog entries retain their catalog types.
 The final squash message still depends on GitHub's repository settings and
 maintainer edits.
 
+**Formatting before dependency commits**
+
+Renovate runs `pnpm format:write` once per update
+branch through `postUpgradeTasks`, after dependency/lockfile updates and before
+creating its commit. This uses the existing root script (`oxfmt --write .`),
+including normal nested configuration and ignore-file discovery. It formats
+the whole repository; any unrelated formatting corrections can therefore be
+included in the dependency commit. The generated pnpm lockfile remains ignored.
+
+The workflow reads the root minimum Node.js version and exact pnpm version into
+`RENOVATE_CONSTRAINTS`; Renovate's `postUpgradeTasks.installTools` provisions
+those tools using Containerbase. Before formatting, it
+installs all workspace packages and the root explicitly with
+`pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts` so the
+workspace-pinned Oxfmt and its configuration imports are available. The first
+formatting task in a run may therefore require dependency downloads; this
+installation does not enable lifecycle scripts.
+
+The frontend's nested Oxfmt config loads Tailwind CSS and its plugins from frontend
+dependencies. A root-only install is insufficient; do not replace the recursive
+install with `pnpm install --workspace-root`. Oxfmt can emit plugin-resolution
+warnings without a failing exit code, so check dry-run logs for those warnings too.
+
+The workflow allows only the exact `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts`
+and `pnpm format:write` commands through `RENOVATE_ALLOWED_COMMANDS`; arbitrary
+post-upgrade commands and shell execution are not enabled. This explicitly trusts
+the root format script and its
+formatter configuration from the repository, so protect them like workflow code.
+Provisioning, installation, or formatting failures become Renovate artifact
+errors and require maintainer attention. Verify the task in a full dry run
+before activating write runs; existing formatting CI remains the final check.
+
 Development-dependency pinning matches dependency types such as `devDependencies`;
 shared pnpm catalog entries retain their catalog dependency type rather than
 inheriting the consumer's development classification. The preset does not split
