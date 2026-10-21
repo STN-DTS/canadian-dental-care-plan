@@ -13,6 +13,7 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
+| [renovate.yaml](renovate.yaml)                                                       | Hourly at minute 17 UTC; manual, default branch only                       | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
 | [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from explicitly listed repository-owned workflows | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
 | [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                    | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
 
@@ -314,19 +315,244 @@ Successful image publication or signing does not establish Aqua compliance.
 
 ## Shared Actions
 
-### Action Dependency Updates
+### Dependency Updates with Renovate
 
-[Dependabot](../dependabot.yml) checks GitHub Actions dependencies daily with a
-three-day cooldown. The `/` directory covers workflow `.yml` and `.yaml` files
-and root action metadata. The `/.github/actions/*` directory wildcard includes
-each local composite action's `action.yml` or `action.yaml`, including newly
-added action directories. Root coverage alone does not scan these directories.
+[Renovate](renovate.yaml) uses
+[`renovatebot/github-action`](https://github.com/renovatebot/github-action) and
+[repository policy](../renovate.json) to replace Dependabot update PRs.
+**During rollout, Dependabot remains active and Renovate write runs are disabled.**
+Do not remove [Dependabot configuration](../dependabot.yml) or disable its security
+updates until the validation and cutover steps below pass.
 
-Keep external actions pinned to full commit SHAs with release-version comments;
-Dependabot supports updating these pins. Major updates are not excluded for
-GitHub Actions. After this configuration reaches the default branch, use
-**Insights > Dependency graph > Dependabot > Recent update jobs** to inspect the
-GitHub Actions update logs and confirm composite action files are included.
+#### Scope and update policy
+
+The configuration extends `config:best-practices`,
+`customManagers:githubActionsVersions`, and `:semanticCommits`.
+The best-practices baseline includes
+`config:recommended`, the Dependency Dashboard, curated grouping, replacement
+rules and workarounds, changelog helpers, Docker digest and action-SHA pinning,
+configuration-migration PRs, development-dependency pinning, abandonment checks,
+npm release-age protection, and weekly lockfile maintenance. The custom-manager
+preset adds annotated workflow-version updates.
+
+`:semanticCommits` explicitly enables Conventional Commit formatting for
+Renovate PR titles and commits instead of depending on history detection.
+The inherited prefix rules select `fix` for recognized production dependency
+types and `chore` for other updates; catalog entries retain their catalog types.
+The final squash message still depends on GitHub's repository settings and
+maintainer edits.
+
+Development-dependency pinning matches dependency types such as `devDependencies`;
+shared pnpm catalog entries retain their catalog dependency type rather than
+inheriting the consumer's development classification. The preset does not split
+the catalog or automatically pin all development-only catalog versions.
+
+File discovery uses Renovate's default enabled managers and file patterns, without
+manager or path allowlists. New supported dependency files can be discovered
+without updating this configuration, including managers beyond those listed below.
+
+- npm dependencies in the root/frontend pnpm workspace, including the centralized
+  catalog and root lockfile.
+- Images in Dockerfiles, including the lowercase `frontend/dockerfile`, and
+  supported Docker Compose files, including `frontend/compose.otel-local.yaml`.
+  Docker updates follow the enabled managers' default behavior; major updates
+  are not excluded.
+- Terraform declarations and associated lockfiles under `infrastructure/`;
+  Terragrunt files are also eligible under default manager discovery.
+- External GitHub Actions in workflow files and nested composite action metadata.
+  Keep full commit-SHA pins with release-version comments. Action major updates
+  remain eligible. Supported runner and language-runtime inputs follow the
+  GitHub Actions manager's default behavior.
+- The pinned Renovate runtime itself, through the custom-manager preset. It
+  recognizes explicitly annotated `_VERSION` variables in supported workflow
+  and composite-action files, not arbitrary environment variables. Currently only
+  the Renovate runtime is annotated. The action wrapper and runtime are updated
+  separately. Other default-enabled managers, including Kubernetes and Kustomize,
+  can discover supported GitOps files as well.
+
+The annotation must be immediately above the version variable:
+
+```yaml
+# renovate: datasource=docker depName=ghcr.io/renovatebot/renovate versioning=semver
+RENOVATE_VERSION: 44.175.2
+```
+
+Ordinary updates have a three-day minimum release age. Release timestamps are
+required by default, so updates without timestamps can remain blocked. Digest
+updates to `gcr.io/distroless/nodejs26-debian13` are the explicit exception: GCR does not
+provide release timestamps through Renovate's Docker datasource, so those
+updates use `timestamp-optional` and are eligible on each hourly run.
+Their release age cannot be enforced. Other registries without
+timestamps need maintainer review rather than a global bypass. This is not an
+exact equivalent of Dependabot's cooldown.
+
+The frontend runtime uses
+`gcr.io/distroless/nodejs26-debian13:debug@sha256:...`, so its full image name
+matches the Distroless rule. Renovate can refresh the pinned digest as the `debug`
+tag moves; Node.js 26 and Debian 13 are encoded in the image name, not its tag.
+This rule does not automatically migrate to a different Node.js major or Debian
+release. The Dockerfile's non-root user and OpenTelemetry startup imports remain
+unchanged.
+
+Update PRs receive the `renovate` label; security-fix PRs additionally receive
+`security`. Create these repository labels before activation.
+For npm datasources, `security:minimumReleaseAgeNpm` uses strict internal-check
+filtering to exclude releases that have not satisfied the three-day age check
+from update selection. It also documents exceptions for update types where
+Renovate cannot enforce release age, including lockfile maintenance, replacements,
+pinning, bumps, lockfile updates, and rollbacks. These exceptions do not disable
+pnpm's independent safeguards. The global three-day delay remains in effect
+for other ecosystems.
+Automerge is enabled only for digest updates to
+`gcr.io/distroless/nodejs26-debian13`, using PR-based squash merging. All other
+updates retain the default disabled automerge behavior.
+Weekly lockfile maintenance uses the preset's default
+Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
+configuration override. GitHub may delay or skip scheduled runs; manual dispatch
+is available when processing is urgent.
+pnpm still enforces its release-age and trust policies during lockfile refreshes.
+The Dependency
+Dashboard is created on the first write run and lists pending updates and
+repository problems; it is not created during a dry run.
+
+The narrowly scoped Distroless digest rule sets `automerge: true`,
+`automergeType: "pr"`, and `automergeStrategy: "squash"`.
+The default `platformAutomerge: true` lets GitHub
+wait for all applicable merge requirements rather than waiting for another
+Renovate run. It does not grant the App permission to bypass those requirements.
+With the current `main` rules, required `build-frontend` and `test-frontend`
+checks, an authorized approval satisfying code-owner review, resolved review
+threads, and signed-commit requirements still apply. A failed check or missing
+approval leaves the PR unmerged; a new push dismisses stale approvals.
+Do not grant the App blanket ruleset bypass to remove the approval step.
+There is no weekly Distroless restriction. Confirm the first eligible PR actually
+queues GitHub squash auto-merge after activation.
+
+npm and other supported dependencies inherit `group:monorepos` and
+`group:recommended` through the best-practices baseline for Renovate-maintained
+monorepo and related-package grouping. Examples include React Router, Tailwind CSS,
+Vitest, Playwright, and Testing Library. The preset generally matches upstream
+source URLs, with package-name matchers for some groups; matching source metadata
+must be available for source-based rules. Preset group names are used.
+
+There are no custom grouping rules. OpenTelemetry core and contrib follow their
+separate inherited monorepo groups. React runtime and corresponding type packages
+are grouped together by the inherited `group:reactMonorepo` and `group:react`
+presets.
+
+Packages not matched by a preset receive individual updates.
+Scope membership alone no longer groups packages such as `@fortawesome/*` or
+`@vitejs/*`; their resolved metadata and the curated preset determine membership.
+The shared catalog remains unchanged, with no duplicate package inventory.
+The monorepo preset groups digest, patch, minor, and major updates; other inherited
+rules use their own matching criteria.
+Renovate's default `separateMajorMinor: true` keeps major updates separate from
+minor/patch updates, but multiple packages' major updates can be grouped.
+There is no Docker-major exclusion; Docker majors remain eligible, subject to
+the Distroless schedule/age exception and other inherited rules. Grouping only
+applies where an inherited preset matches.
+
+#### GitHub App and credentials
+
+Use the organization-owned **STN-DTS Renovate** App. Disable webhooks and user
+authorization; restrict installation to the STN-DTS account and select only
+approved repositories, initially `canadian-dental-care-plan`.
+
+Following [Renovate's App guidance](https://docs.renovatebot.com/modules/platform/github/#running-as-a-github-app),
+grant repository Administration read, Metadata read, Dependabot alerts read,
+Checks read/write, Commit statuses read/write, Contents read/write, Issues
+read/write, Pull requests read/write, and Workflows read/write. Grant organization
+Members read. Merge-queue permission is not needed for this setup. Do not grant
+branch-protection bypass.
+
+| Setting                    | Location                                                  | Purpose                                                                      |
+| -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `RENOVATE_APP_CLIENT_ID`   | Organization Actions variable, selected repositories only | App Client ID, not its numeric App ID                                        |
+| `RENOVATE_APP_PRIVATE_KEY` | Organization Actions secret, selected repositories only   | Complete generated PEM private key                                           |
+| `RENOVATE_ENABLED`         | Repository Actions variable                               | Set to `false` during validation; `true` enables scheduled/manual write runs |
+
+Each workflow requests an installation token for its own repository, not the
+entire organization. App-created PRs can trigger normal CI, unlike PRs created
+using the default workflow token. Checkout does not persist credentials. Package
+installation scripts are disabled. API-based App commits are enabled.
+
+The reusable App shares a private-key trust boundary: anyone able to extract
+that key can mint tokens for other repositories in its installation. Grant the
+organization secret only to trusted repositories. New repositories must be
+added separately to the App installation and both credential access lists;
+their activation variable remains independent. Use separate Apps when stronger
+credential isolation is required.
+
+For key rotation, generate a replacement key, update the organization secret,
+verify authentication in the consuming repositories, and revoke the previous
+key. Never put keys or installation tokens in Git or logs.
+
+#### Validation and cutover
+
+1. Merge the configuration and workflow into the default branch while
+   `RENOVATE_ENABLED` remains `false`. Non-default branch runs are skipped.
+   No push or PR event starts this privileged workflow.
+2. Run **Actions > Renovate > Run workflow** on the default branch, keeping
+   **dry_run** checked (the default). CLI equivalent:
+   `gh workflow run renovate.yaml --ref main -F dry_run=true`.
+   This full dry run must not create branches, PRs, or dashboard issues.
+3. Inspect debug logs for root/frontend catalog extraction and the root lockfile,
+   both Docker stages, Compose service images, Terraform declarations, workflow
+   and composite actions, and the Renovate runtime. Confirm related-package grouping,
+   age eligibility, default Docker update eligibility (including majors),
+   alert access, tool compatibility, and absence of artifact-update
+   errors. Do not treat extraction alone or a green job as proof that every
+   dependency can be updated.
+4. Verify direct and transitive pnpm security-fix proposals against available
+   GitHub alerts. If no suitable live alert exists, record the gap and test
+   fixtures without introducing vulnerable dependencies into the repository.
+   Keep Dependabot security updates active until security-fix readiness is proven.
+5. At cutover, remove Dependabot's configuration in a reviewed change, disable
+   **Dependabot security updates** in repository settings, and leave **Dependency
+   graph** and **Dependabot alerts** enabled. Then set `RENOVATE_ENABLED=true`
+   and run the workflow with **dry_run** unchecked. Coordinate these operations
+   rather than leaving an unattended coverage gap.
+6. Verify an App-authored PR triggers existing PR checks and that npm updates
+   include a working root lockfile (`pnpm install --frozen-lockfile`). Inspect
+   the first scheduled run. Close existing Dependabot PRs only after confirming they
+   duplicate Renovate replacements; do not bulk-close security PRs.
+
+Runs are serialized without cancelling an in-progress run. Forks skip the
+prerequisite gate and dependent job. Missing credentials fail explicitly.
+The hourly schedule polls GitHub for existing PRs, conflicts, checks, and new
+dependency versions; no persistent Renovate service or webhook receiver is
+required. `rebaseWhen: "auto"` and `updateNotScheduled: true` retain their defaults
+for maintaining existing PRs. New branch pushes rerun relevant PR checks and can
+dismiss stale approvals under the repository rules. An hourly check without a
+branch update does not itself rerun application CI. GitHub platform auto-merge can
+complete an approved, passing PR between Renovate runs.
+The job is bounded to 50 minutes because installation tokens expire after one
+hour. Renovate is intentionally absent from the Slack notification allowlist.
+
+#### Security fixes and recovery
+
+Renovate reads GitHub's Dependabot alerts; it does not replace the alert scanner.
+Security-fix PRs are ungrouped, never automerged, and use the lowest fixed version.
+The configuration enables alerts and relies on Renovate's built-in security
+defaults for immediate PR creation, no grouping, and no release-age gate; global
+automerge remains disabled outside the Distroless digest rule. Processing still happens only
+when the hourly workflow runs; dispatch a manual write run for urgent fixes once
+Renovate is enabled.
+
+pnpm's independent release-age, trust, build, and override policies remain in
+force. A young security fix may fail lockfile generation even when Renovate
+considers it eligible. Inspect artifact errors and the Dependency Dashboard;
+review a package-and-version-specific `minimumReleaseAgeExclude` exception when
+necessary. Do not weaken the global pnpm policy or automatically bypass it.
+Some transitive fixes or ecosystems may not be supported; unresolved alerts and
+artifact failures require maintainer review.
+
+If authentication, security-fix processing, or CI triggering fails after cutover,
+set `RENOVATE_ENABLED=false`, restore the original Dependabot configuration from
+the pre-migration revision through a reviewed change, and re-enable Dependabot
+security updates. Keep GitHub alerts enabled throughout recovery.
+
+### Shared Action Responsibilities
 
 | Action                                                                    | Responsibility                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |

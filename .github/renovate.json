@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits"],
+  "labels": ["renovate"],
+  "minimumReleaseAge": "3 days",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "addLabels": ["security"]
+  },
+  "packageRules": [
+    {
+      // GCR does not expose image release timestamps for Renovate's minimumReleaseAge check.
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["gcr.io/distroless/nodejs26-debian13"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    }
+  ]
+}
