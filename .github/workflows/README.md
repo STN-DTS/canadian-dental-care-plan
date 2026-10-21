@@ -442,9 +442,8 @@ Renovate cannot enforce release age, including lockfile maintenance, replacement
 pinning, bumps, lockfile updates, and rollbacks. These exceptions do not disable
 pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
-Automerge is enabled only for digest updates to
-`gcr.io/distroless/nodejs26-debian13`, using PR-based squash merging. All other
-updates retain the default disabled automerge behavior.
+Automerge is enabled globally for Renovate update PRs, including major upgrades,
+security fixes, and lockfile maintenance, using PR-based squash merging.
 Weekly lockfile maintenance uses the preset's default
 Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
 configuration override. GitHub may delay or skip scheduled runs; manual dispatch
@@ -454,8 +453,8 @@ The Dependency
 Dashboard is created on the first write run and lists pending updates and
 repository problems; it is not created during a dry run.
 
-The narrowly scoped Distroless digest rule sets `automerge: true`,
-`automergeType: "pr"`, and `automergeStrategy: "squash"`.
+Global `automerge: true`, `automergeType: "pr"`, and
+`automergeStrategy: "squash"` apply to Renovate update PRs.
 The default `platformAutomerge: true` lets GitHub
 wait for all applicable merge requirements rather than waiting for another
 Renovate run. It does not grant the App permission to bypass those requirements.
@@ -571,10 +570,11 @@ hour. Renovate is intentionally absent from the Slack notification allowlist.
 #### Security fixes and recovery
 
 Renovate reads GitHub's Dependabot alerts; it does not replace the alert scanner.
-Security-fix PRs are ungrouped, never automerged, and use the lowest fixed version.
+Security-fix PRs are ungrouped, eligible for squash auto-merge after required
+checks and approvals, and use the lowest fixed version.
 The configuration enables alerts and relies on Renovate's built-in security
 defaults for immediate PR creation, no grouping, and no release-age gate; global
-automerge remains disabled outside the Distroless digest rule. Processing still happens only
+automerge follows the global PR-based squash policy. Processing still happens only
 when the hourly workflow runs; dispatch a manual write run for urgent fixes once
 Renovate is enabled.
 

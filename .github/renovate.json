@@ -3,6 +3,9 @@
   "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits"],
   "labels": ["renovate"],
   "minimumReleaseAge": "3 days",
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
   "postUpgradeTasks": {
     "commands": ["pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts", "pnpm format:write"],
     "executionMode": "branch",
@@ -30,10 +33,7 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["gcr.io/distroless/nodejs26-debian13"],
       "matchUpdateTypes": ["digest"],
-      "minimumReleaseAgeBehaviour": "timestamp-optional",
-      "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash"
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ]
 }
