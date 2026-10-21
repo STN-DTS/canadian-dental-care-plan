@@ -327,7 +327,7 @@ updates until the validation and cutover steps below pass.
 #### Scope and update policy
 
 The configuration extends `config:best-practices`,
-`customManagers:githubActionsVersions`, and `:semanticCommits`.
+`customManagers:githubActionsVersions`, `:semanticCommits`, and `:automergeAll`.
 The best-practices baseline includes
 `config:recommended`, the Dependency Dashboard, curated grouping, replacement
 rules and workarounds, changelog helpers, Docker digest and action-SHA pinning,
@@ -453,8 +453,9 @@ The Dependency
 Dashboard is created on the first write run and lists pending updates and
 repository problems; it is not created during a dry run.
 
-Global `automerge: true`, `automergeType: "pr"`, and
-`automergeStrategy: "squash"` apply to Renovate update PRs.
+The `:automergeAll` preset enables global automerge. The default
+`automergeType: "pr"` and explicit `automergeStrategy: "squash"` apply to
+Renovate update PRs.
 The default `platformAutomerge: true` lets GitHub
 wait for all applicable merge requirements rather than waiting for another
 Renovate run. It does not grant the App permission to bypass those requirements.

@@ -1,10 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits"],
+  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits", ":automergeAll"],
   "labels": ["renovate"],
   "minimumReleaseAge": "3 days",
-  "automerge": true,
-  "automergeType": "pr",
   "automergeStrategy": "squash",
   "postUpgradeTasks": {
     "commands": ["pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts", "pnpm format:write"],
