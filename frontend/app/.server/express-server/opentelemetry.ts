@@ -10,8 +10,8 @@ import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
 import { AggregationTemporality, ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import type { SpanExporter } from '@opentelemetry/sdk-trace-base';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import type { SpanExporter } from '@opentelemetry/sdk-trace';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
