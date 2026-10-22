@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fluentd-archiver
-          image: docker.io/fluentd
+          image: docker.io/fluentd@sha256:53de419e76061f3ed62fda817a49976dffa73f8333d74e10b2ad033eef463d0c
           args: [--config, /etc/fluentd.conf]
           ports:
             - name: fluentd
