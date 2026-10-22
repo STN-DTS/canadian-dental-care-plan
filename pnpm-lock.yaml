@@ -409,8 +409,8 @@ catalogs:
       specifier: 9.10.3
       version: 9.10.3
     micro-memoize:
-      specifier: 5.2.0
-      version: 5.2.0
+      specifier: 5.2.1
+      version: 5.2.1
     mime:
       specifier: 4.1.1
       version: 4.1.1
@@ -712,7 +712,7 @@ importers:
         version: 9.10.3(react@19.3.0)
       micro-memoize:
         specifier: 'catalog:'
-        version: 5.2.0
+        version: 5.2.1
       mime:
         specifier: 'catalog:'
         version: 4.1.1
@@ -4536,8 +4536,8 @@ packages:
     resolution: {integrity: sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==}
     engines: {node: '>=18'}
 
-  micro-memoize@5.2.0:
-    resolution: {integrity: sha512-r9HPHhVUAbjFxOhf5dP/lK5fRRkkKATXMuTBUR/YInx/CPmmrfo9hKHvXq1+iU+zrR1cORT25g3yWlLfEZsmqQ==}
+  micro-memoize@5.2.1:
+    resolution: {integrity: sha512-NUjnaqAYZfhmg2Dcx1+ftN0Jca3Nz/xCqVTnbJaBiL74V2wPQxXGfj9nZSgDqrT7l5+sKifzVuPq88sOZGnCyQ==}
 
   mime-db@1.54.0:
     resolution: {integrity: sha512-aU5EJuIN2WDemCcAp2vFBfp/m4EAhWJnUNSSw0ixs7/kXbd6Pg64EmwJkNdFhB8aWt1sH2CTXrLxo/iAGV3oPQ==}
@@ -9042,7 +9042,7 @@ snapshots:
 
   merge-descriptors@2.0.0: {}
 
-  micro-memoize@5.2.0:
+  micro-memoize@5.2.1:
     dependencies:
       fast-equals: 5.4.4
       fast-stringify: 4.0.2
