@@ -89,7 +89,7 @@ catalog:
   express: 5.3.0
   express-session: 1.19.0
   fast-xml-parser: 5.11.2
-  file-type: 22.1.1
+  file-type: 22.2.0
   filesize: 11.0.26
   i18next: 26.4.4
   i18next-cli: 1.75.3
