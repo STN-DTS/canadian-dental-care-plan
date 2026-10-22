@@ -319,10 +319,13 @@ Successful image publication or signing does not establish Aqua compliance.
 
 [Renovate](renovate.yaml) uses
 [`renovatebot/github-action`](https://github.com/renovatebot/github-action) and
-[repository policy](../renovate.json) to replace Dependabot update PRs.
-**During rollout, Dependabot remains active and Renovate write runs are disabled.**
-Do not remove [Dependabot configuration](../dependabot.yml) or disable its security
-updates until the validation and cutover steps below pass.
+[repository policy](../renovate.json) for dependency update PRs.
+[Dependabot configuration](../dependabot.yml) is retained for rollback, with
+`open-pull-requests-limit: 0` in every ecosystem entry to pause new version-update
+PRs. Existing Dependabot PRs are not automatically closed by this setting.
+Dependabot security-update PRs and GitHub alerts remain independently enabled
+until Renovate security-fix readiness is verified. Routine Renovate writes are
+controlled by the repository variable `RENOVATE_ENABLED`.
 
 #### Scope and update policy
 
@@ -478,9 +481,10 @@ pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
 The intended baseline enables automerge for Renovate update PRs, including major
 upgrades, security fixes, and lockfile maintenance, using PR-based squash merging.
-GitOps updates are permanently excluded. Rollout remains limited to one concurrent
-normal update PR and one new normal update PR per hour while App-requested
-squash auto-merge is verified; security-fix PRs can bypass these limits.
+GitOps updates are permanently excluded from automerge. The temporary one-PR
+rollout limits have been removed; the pinned Renovate runtime's defaults allow
+10 concurrent normal update PRs and two new normal update PRs per hour.
+Security-fix PRs have independent limits and can bypass the normal PR budget.
 Weekly lockfile maintenance uses the preset's default
 Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
 configuration override. GitHub may delay or skip scheduled runs; manual dispatch
@@ -583,15 +587,18 @@ key. Never put keys or installation tokens in Git or logs.
    GitHub alerts. If no suitable live alert exists, record the gap and test
    fixtures without introducing vulnerable dependencies into the repository.
    Keep Dependabot security updates active until security-fix readiness is proven.
-5. At cutover, remove Dependabot's configuration in a reviewed change, disable
-   **Dependabot security updates** in repository settings, and leave **Dependency
-   graph** and **Dependabot alerts** enabled. Then set `RENOVATE_ENABLED=true`
-   and run the workflow with **dry_run** unchecked. Coordinate these operations
-   rather than leaving an unattended coverage gap.
+5. For version-update cutover, keep Dependabot's configuration with
+   `open-pull-requests-limit: 0` in every ecosystem entry. Set
+   `RENOVATE_ENABLED=true` and run the workflow with **dry_run** unchecked.
+   Keep **Dependabot security updates**, **Dependency graph**, and **Dependabot
+   alerts** enabled. Disable Dependabot security-update PRs only in a separately
+   coordinated change after Renovate security-fix readiness is verified.
 6. Verify an App-authored PR triggers existing PR checks and that npm updates
    include a working root lockfile (`pnpm install --frozen-lockfile`). Inspect
    the first scheduled run. Close existing Dependabot PRs only after confirming they
-   duplicate Renovate replacements; do not bulk-close security PRs.
+   duplicate Renovate replacements; do not bulk-close security PRs. Confirm signed
+   commits and App-requested squash auto-merge obey required CI and reviews before
+   removing temporary rollout limits. The committed policy now uses default limits.
 
 Runs are serialized without cancelling an in-progress run. Forks skip the
 prerequisite gate and dependent job. Missing credentials fail explicitly.
@@ -625,9 +632,12 @@ Some transitive fixes or ecosystems may not be supported; unresolved alerts and
 artifact failures require maintainer review.
 
 If authentication, security-fix processing, or CI triggering fails after cutover,
-set `RENOVATE_ENABLED=false`, restore the original Dependabot configuration from
-the pre-migration revision through a reviewed change, and re-enable Dependabot
-security updates. Keep GitHub alerts enabled throughout recovery.
+set `RENOVATE_ENABLED=false` and remove `open-pull-requests-limit: 0` from each
+retained Dependabot entry (or set a positive limit) through a reviewed change.
+This resumes version-update PRs without reconstructing the original schedules
+and groups. Keep Dependabot security updates enabled during the transition;
+re-enable them if they were disabled in a later security cutover. Keep GitHub
+alerts enabled throughout recovery.
 
 ### Shared Action Responsibilities
 
