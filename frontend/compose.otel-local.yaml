@@ -2,6 +2,7 @@
 # metrics, and traces. The frontend sends all signals to Alloy, which routes
 # logs to Loki, metrics to Prometheus, and traces to Tempo. Grafana provides UI.
 # This file starts observability services; it does not start the frontend.
+# Version/digest pins replace floating tags with releases published at least three days before selection.
 services:
   loki:
     # Stores OTLP logs forwarded by Alloy.
@@ -17,7 +18,7 @@ services:
 
   prometheus:
     # Stores metrics forwarded by Alloy using Prometheus remote write.
-    image: docker.io/prom/prometheus:latest
+    image: docker.io/prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
     container_name: canadian-dental-care-plan-prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -30,7 +31,8 @@ services:
 
   tempo:
     # Stores traces forwarded by Alloy over OTLP/HTTP.
-    image: docker.io/grafana/tempo:latest
+    # Back up existing 2.x data before upgrading: Tempo 3.x has no supported downgrade path.
+    image: docker.io/grafana/tempo:3.1.0@sha256:3076b8dcdfb32fd6bc5ccef85e7b7313e6199b9cb84366257fc17ecb696db5fd
     container_name: canadian-dental-care-plan-tempo
     command:
       - -config.file=/etc/tempo/tempo.yaml
@@ -42,7 +44,7 @@ services:
 
   alloy:
     # Receives all OTLP/HTTP signals from the host frontend on port 4318.
-    image: docker.io/grafana/alloy:latest
+    image: docker.io/grafana/alloy:v1.21.0@sha256:9726bfba078de9bc2212c60c6e643238c700b4fe0868ea78cbe03163d03d95bf
     container_name: canadian-dental-care-plan-alloy
     command:
       - run
@@ -63,7 +65,7 @@ services:
 
   grafana:
     # Provides the local UI for exploring logs, metrics, and traces.
-    image: docker.io/grafana/grafana:latest
+    image: docker.io/grafana/grafana:13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f
     container_name: canadian-dental-care-plan-grafana
     environment:
       GF_FEATURE_TOGGLES_ENABLE: grafanaAdvisor
