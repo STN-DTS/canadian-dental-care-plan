@@ -11,3 +11,4 @@ configMapGenerator:
       - ./configs/primary.conf
       - ./configs/replica.conf
       - ./configs/sentinel.conf
+      - ./configs/start-redis.sh

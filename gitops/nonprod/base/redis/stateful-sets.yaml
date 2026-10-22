@@ -42,6 +42,7 @@ spec:
           # Note: image tag should be pinned to a specific version in overlays
           #       ex: 8.8 in nonprod; 8.8.0 in prod
           image: docker.io/redis:8
+          command: [bash, /etc/start-redis.sh]
           args: [/data/redis.conf, --requirepass, $(REDIS_PASSWORD), --masterauth, $(REDIS_PASSWORD)]
           envFrom:
             - secretRef:
@@ -68,6 +69,9 @@ spec:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
           volumeMounts:
+            - name: config
+              mountPath: /etc/start-redis.sh
+              subPath: start-redis.sh
             - name: data
               mountPath: /data
         - name: redis-sentinel
