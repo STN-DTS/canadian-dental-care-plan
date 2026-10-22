@@ -52,6 +52,7 @@ configMapGenerator:
       - ./configs/redis/primary.conf
       - ./configs/redis/replica.conf
       - ./configs/redis/sentinel.conf
+      - ./configs/redis/start-redis.sh
   - name: oauth-proxy
     files:
       - ./configs/oauth-proxy/config.conf
