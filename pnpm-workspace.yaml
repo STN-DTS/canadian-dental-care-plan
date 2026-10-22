@@ -34,7 +34,7 @@ catalog:
   '@fortawesome/react-fontawesome': 3.5.0
   '@hcaptcha/react-hcaptcha': 2.2.0
   '@opentelemetry/api': 1.9.1
-  '@opentelemetry/auto-instrumentations-node': 0.81.0
+  '@opentelemetry/auto-instrumentations-node': 0.81.2
   '@opentelemetry/core': 2.12.0
   '@opentelemetry/exporter-logs-otlp-proto': 0.223.0
   '@opentelemetry/exporter-metrics-otlp-proto': 0.223.0
