@@ -109,7 +109,7 @@ catalog:
   morgan: 1.12.1
   npm-run-all2: 9.0.3
   nprogress: 0.2.0
-  oxfmt: 0.72.0
+  oxfmt: 0.74.0
   oxide.ts: 1.1.0
   oxlint: 1.87.0
   oxlint-tsgolint: 7.0.2004
