@@ -16,7 +16,7 @@ terraform {
     azurerm = {
       # see: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs
       source  = "hashicorp/azurerm"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
   }
 }
