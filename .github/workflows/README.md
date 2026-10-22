@@ -417,6 +417,12 @@ removed. A nonprod GitOps PR still triggers deployment when manually merged;
 review its rendered overlays first. Dependency updates outside GitOps retain
 their inherited grouping and automerge policy.
 
+All Docker images under the private nonprod registry
+`dtsrhpdevscedacr.azurecr.io/**` are explicitly disabled before update lookup.
+Application builds and reviewed environment promotion own those tags; Renovate
+does not need ACR credentials to inspect or update them. Images from other
+registries remain eligible under the existing policies.
+
 The annotation must be immediately above the version variable:
 
 ```yaml

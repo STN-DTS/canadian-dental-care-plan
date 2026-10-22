@@ -30,6 +30,12 @@
   },
   "packageRules": [
     {
+      // Application builds and environment promotion manage this private registry, not Renovate.
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["dtsrhpdevscedacr.azurecr.io/**"],
+      "enabled": false
+    },
+    {
       "matchFileNames": ["gitops/**"],
       "automerge": false,
       // Keep deployment changes out of cross-file dependency groups.
