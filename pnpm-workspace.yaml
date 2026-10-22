@@ -93,7 +93,7 @@ catalog:
   filesize: 11.0.26
   i18next: 26.4.4
   i18next-cli: 1.75.3
-  i18next-http-backend: 4.0.2
+  i18next-http-backend: 4.0.4
   import-in-the-middle: 3.5.2
   inversify: 8.2.3
   isbot: 5.2.2
