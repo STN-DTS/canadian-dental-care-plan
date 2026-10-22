@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits", ":automergeAll", ":pinAllExceptPeerDependencies"],
+  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits", ":automergeAll"],
   "labels": ["renovate"],
   "minimumReleaseAge": "3 days",
   // Production image promotion is reviewed separately from Renovate updates.
@@ -26,6 +26,12 @@
     "addLabels": ["security"]
   },
   "packageRules": [
+    {
+      // Pin application dependencies and catalogs without pinning Terraform constraints.
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["!engines", "!peerDependencies"],
+      "rangeStrategy": "pin"
+    },
     {
       // Aqua's IP allowlist rejects App-authenticated API lookups; public Git tags retain SHA pinning.
       "matchManagers": ["github-actions"],
