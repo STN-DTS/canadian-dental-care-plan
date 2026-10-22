@@ -31,7 +31,7 @@ function hydrateDocument(i18n: i18n): void {
 }
 
 startTransition(() => {
-  const routeModules = Object.values(globalThis.__reactRouterRouteModules);
+  const routeModules = Object.values(globalThis.__reactRouterRouteModules ?? {});
   const routes = routeModules.filter((routeModule) => routeModule !== undefined);
   void initI18n(getNamespaces(routes)).then(hydrateDocument);
 });
