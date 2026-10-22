@@ -24,6 +24,26 @@
   },
   "packageRules": [
     {
+      // Keep application lockfile refreshes separate from infrastructure provider updates.
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "lockFileMaintenance": {
+        "branchTopic": "npm-lock-file-maintenance",
+        "commitMessageAction": "npm lock file maintenance"
+      }
+    },
+    {
+      "matchFileNames": ["infrastructure/**"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "automerge": false,
+      "groupName": null,
+      "lockFileMaintenance": {
+        "branchTopic": "terraform-lock-file-maintenance",
+        "commitMessageAction": "terraform lock file maintenance",
+        "automerge": false
+      }
+    },
+    {
       // Pin application dependencies and catalogs without pinning Terraform constraints.
       "matchManagers": ["npm"],
       "matchDepTypes": ["!engines", "!peerDependencies"],

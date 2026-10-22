@@ -481,7 +481,8 @@ pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
 The intended baseline enables automerge for Renovate update PRs, including major
 upgrades, security fixes, and lockfile maintenance, using PR-based squash merging.
-GitOps updates are permanently excluded from automerge. The temporary one-PR
+GitOps updates and infrastructure lockfile maintenance are excluded from automerge.
+The temporary one-PR
 rollout limits have been removed; the pinned Renovate runtime's defaults allow
 10 concurrent normal update PRs and two new normal update PRs per hour.
 Security-fix PRs have independent limits and can bypass the normal PR budget.
@@ -490,6 +491,23 @@ Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
 configuration override. GitHub may delay or skip scheduled runs; manual dispatch
 is available when processing is urgent.
 pnpm still enforces its release-age and trust policies during lockfile refreshes.
+
+Weekly maintenance uses separate branches and PRs:
+
+- `renovate/npm-lock-file-maintenance` refreshes application lockfiles and retains
+  the normal PR-based squash automerge policy, subject to required checks and reviews.
+- `renovate/terraform-lock-file-maintenance` refreshes infrastructure provider
+  lockfiles, including those used by Terragrunt, and always requires manual merging.
+
+Both retain the inherited Monday window. Infrastructure maintenance has
+`automerge: false` independently of GitOps rules and is not grouped into the
+application maintenance branch. Refreshing a Terraform lockfile can upgrade
+providers within declared ranges; frontend CI does not validate those changes.
+Review provider release notes and run the appropriate infrastructure validation
+and an authorized nonprod plan before merging. Do not apply infrastructure merely
+to validate the PR. After this configuration reaches `main`, rerun Renovate to
+replace an existing mixed maintenance PR with the separate proposals.
+
 The Dependency
 Dashboard is created on the first write run and lists pending updates and
 repository problems; it is not created during a dry run.
