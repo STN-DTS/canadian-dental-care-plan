@@ -327,7 +327,8 @@ updates until the validation and cutover steps below pass.
 #### Scope and update policy
 
 The configuration extends `config:best-practices`,
-`customManagers:githubActionsVersions`, `:semanticCommits`, and `:automergeAll`.
+`customManagers:githubActionsVersions`, `:semanticCommits`, `:automergeAll`,
+and `:pinAllExceptPeerDependencies`.
 The best-practices baseline includes
 `config:recommended`, the Dependency Dashboard, curated grouping, replacement
 rules and workarounds, changelog helpers, Docker digest and action-SHA pinning,
@@ -374,10 +375,15 @@ Provisioning, installation, or formatting failures become Renovate artifact
 errors and require maintainer attention. Verify the task in a full dry run
 before activating write runs; existing formatting CI remains the final check.
 
-Development-dependency pinning matches dependency types such as `devDependencies`;
-shared pnpm catalog entries retain their catalog dependency type rather than
-inheriting the consumer's development classification. The preset does not split
-the catalog or automatically pin all development-only catalog versions.
+`:pinAllExceptPeerDependencies` adds application-style exact-version pinning,
+including shared pnpm catalog entries. Renovate proposes removing version ranges
+and subsequently updating exact catalog versions alongside the lockfile, rather
+than updating only in-range lockfile resolutions. Engines and peer dependency
+declarations retain `rangeStrategy: auto`. A shared catalog entry still has a
+catalog dependency type, so a peer consumer does not automatically exempt that
+entry from pinning. This broader preset also applies to other supported managers;
+it does not bypass the production exclusion or private-registry rules.
+No catalog split or package inventory is needed.
 
 File discovery uses Renovate's default enabled managers and file patterns, except
 that `gitops/prod/**` is ignored entirely and Kubernetes deployment YAML discovery
@@ -511,7 +517,7 @@ presets.
 Packages not matched by a preset receive individual updates.
 Scope membership alone no longer groups packages such as `@fortawesome/*` or
 `@vitejs/*`; their resolved metadata and the curated preset determine membership.
-The shared catalog remains unchanged, with no duplicate package inventory.
+The shared catalog remains centralized, with no duplicate package inventory.
 The monorepo preset groups digest, patch, minor, and major updates; other inherited
 rules use their own matching criteria.
 Renovate's default `separateMajorMinor: true` keeps major updates separate from

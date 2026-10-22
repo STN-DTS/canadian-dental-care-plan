@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits", ":automergeAll"],
+  "extends": ["config:best-practices", "customManagers:githubActionsVersions", ":semanticCommits", ":automergeAll", ":pinAllExceptPeerDependencies"],
   "labels": ["renovate"],
   "minimumReleaseAge": "3 days",
   // Production image promotion is reviewed separately from Renovate updates.
