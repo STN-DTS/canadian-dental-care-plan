@@ -132,7 +132,7 @@ catalog:
   tsx: 4.23.15
   type-fest: 5.10.0
   typescript: 7.0.2
-  undici: 8.11.2
+  undici: 8.12.3
   usehooks-ts: 3.1.1
   validator: 13.15.35
   vite: 8.3.4
