@@ -15,8 +15,7 @@ spec:
     spec:
       initContainers:
         - name: preprocess-html
-          # Note: image tag should be pinned to a specific version in overlays
-          image: docker.io/library/alpine:latest
+          image: docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
           command: ['/bin/sh', '-c']
           args:
             - |
@@ -32,8 +31,7 @@ spec:
               mountPath: /tmp/processed
       containers:
         - name: nginx
-          # Note: image tag should be pinned to a specific version in overlays
-          image: docker.io/nginx:latest
+          image: docker.io/nginx:1.31.6@sha256:60f0d4e986561e08804f75c211dcaf7fc5455699eada29f42cbe8a0a7253dd86
           ports:
             - name: http
               containerPort: 80

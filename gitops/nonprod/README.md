@@ -16,6 +16,13 @@ introduce a new manifest source path.
 
 ## Automated Deployment
 
+Shared Squid, maintenance-page, and 404-page images use explicit version tags and
+multi-platform digest pins, selected only after their Docker Hub tags were more
+than three days old. Maintenance and 404 overlay overrides retain the same pins.
+Squid uses Canonical's versioned `6.6-24.04_edge` image on Ubuntu 24.04 LTS;
+`_edge` is the upstream tag designation, not a stable-channel guarantee.
+These nonproduction image choices do not alter production's independent pins.
+
 The [GitOps operator (nonprod) workflow](../../.github/workflows/gitops-main-nonprod.yaml)
 applies Kustomizations from this tree to one nonprod AKS cluster, in the
 `canada-dental-care-plan` namespace. Every deployment run must use `main`.
