@@ -6,7 +6,7 @@
 services:
   loki:
     # Stores OTLP logs forwarded by Alloy.
-    image: docker.io/grafana/loki:3.5.0
+    image: docker.io/grafana/loki:3.5.0@sha256:4c431d2e6b9b38718694b31c5d56be7c80dc69c513215fde1aeb5b02cd4e2665
     container_name: canadian-dental-care-plan-loki
     command:
       - -config.file=/etc/loki/config.yaml
