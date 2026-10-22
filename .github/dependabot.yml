@@ -2,7 +2,9 @@
 
 version: 2
 updates:
+  # Pause version-update PRs during the Renovate transition; security updates remain independent.
   - package-ecosystem: npm
+    open-pull-requests-limit: 0
     directory: /
     schedule:
       interval: daily
@@ -38,6 +40,7 @@ updates:
           - '@react-router/*'
 
   - package-ecosystem: docker
+    open-pull-requests-limit: 0
     directory: /frontend
     schedule:
       interval: daily
@@ -49,6 +52,7 @@ updates:
         update-types: ['version-update:semver-major']
 
   - package-ecosystem: terraform
+    open-pull-requests-limit: 0
     directory: /infrastructure
     schedule:
       interval: daily
@@ -56,6 +60,7 @@ updates:
       default-days: 3
 
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 0
     # Root covers workflows; composite actions need their own directories.
     directories:
       - /
