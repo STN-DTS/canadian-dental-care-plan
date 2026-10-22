@@ -417,6 +417,19 @@ removed. A nonprod GitOps PR still triggers deployment when manually merged;
 review its rendered overlays first. Dependency updates outside GitOps retain
 their inherited grouping and automerge policy.
 
+Trivy action updates use a narrowly scoped datasource override:
+`aquasecurity/trivy-action` is looked up through public Git tags instead of
+App-authenticated GitHub GraphQL. Aqua's organization IP allowlist rejects the
+runner's authenticated API requests even though the public Git repository is
+accessible. The override retains the original action name, release-version
+comment, and full commit-SHA pin; annotated tags resolve to their underlying
+commit rather than the tag-object SHA. It does not add a PAT or broaden App
+permissions. Because Renovate's `git-tags` datasource provides no publication
+timestamps, only this action is exempt from the three-day release-age check.
+All other dependencies retain their existing age policies. Verify the first
+workflow run after this change has no Trivy lookup warning; changelog API calls
+may still be restricted even when tag and digest updates succeed.
+
 All Docker images under the private nonprod registry
 `dtsrhpdevscedacr.azurecr.io/**` are explicitly disabled before update lookup.
 Application builds and reviewed environment promotion own those tags; Renovate

@@ -30,6 +30,15 @@
   },
   "packageRules": [
     {
+      // Aqua's IP allowlist rejects App-authenticated API lookups; public Git tags retain SHA pinning.
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["aquasecurity/trivy-action"],
+      "overrideDatasource": "git-tags",
+      "overridePackageName": "https://github.com/aquasecurity/trivy-action.git",
+      // Git tag lookup has no publication timestamps.
+      "minimumReleaseAge": null
+    },
+    {
       // Application builds and environment promotion manage this private registry, not Renovate.
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dtsrhpdevscedacr.azurecr.io/**"],
