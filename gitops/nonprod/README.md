@@ -23,6 +23,12 @@ Squid uses Canonical's versioned `6.6-24.04_edge` image on Ubuntu 24.04 LTS;
 `_edge` is the upstream tag designation, not a stable-channel guarantee.
 These nonproduction image choices do not alter production's independent pins.
 
+Renovate discovers nonprod Kubernetes images and proposes updates without
+automerge. Review the consuming overlay renders before merging, because a merge
+to `main` triggers deployment. Production is excluded from Renovate discovery;
+promote tested pins through a separate reviewed production change rather than
+synchronizing the trees automatically.
+
 The [GitOps operator (nonprod) workflow](../../.github/workflows/gitops-main-nonprod.yaml)
 applies Kustomizations from this tree to one nonprod AKS cluster, in the
 `canada-dental-care-plan` namespace. Every deployment run must use `main`.

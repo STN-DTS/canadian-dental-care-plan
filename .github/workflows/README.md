@@ -379,9 +379,10 @@ shared pnpm catalog entries retain their catalog dependency type rather than
 inheriting the consumer's development classification. The preset does not split
 the catalog or automatically pin all development-only catalog versions.
 
-File discovery uses Renovate's default enabled managers and file patterns, without
-manager or path allowlists. New supported dependency files can be discovered
-without updating this configuration, including managers beyond those listed below.
+File discovery uses Renovate's default enabled managers and file patterns, except
+that `gitops/prod/**` is ignored entirely and Kubernetes deployment YAML discovery
+is explicitly limited to `gitops/nonprod/**`. Other new supported dependency files
+can be discovered without updating this configuration.
 
 - npm dependencies in the root/frontend pnpm workspace, including the centralized
   catalog and root lockfile.
@@ -406,8 +407,15 @@ without updating this configuration, including managers beyond those listed belo
   that window, avoiding hourly version churn. This restriction applies only to
   the custom runtime dependency, not the action wrapper or the workflow cadence.
   The action wrapper and runtime are updated
-  separately. Other default-enabled managers, including Kubernetes and Kustomize,
-  can discover supported GitOps files as well.
+  separately. Kubernetes and Kustomize can discover nonprod GitOps images;
+  production remains excluded.
+
+Production promotion is a separate human-controlled PR after validation in
+nonprod. All `gitops/**` updates have a permanent `automerge: false` override and
+no inherited cross-file grouping, even after the temporary rollout override is
+removed. A nonprod GitOps PR still triggers deployment when manually merged;
+review its rendered overlays first. Dependency updates outside GitOps retain
+their inherited grouping and automerge policy.
 
 The annotation must be immediately above the version variable:
 
@@ -442,8 +450,10 @@ Renovate cannot enforce release age, including lockfile maintenance, replacement
 pinning, bumps, lockfile updates, and rollbacks. These exceptions do not disable
 pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
-Automerge is enabled globally for Renovate update PRs, including major upgrades,
-security fixes, and lockfile maintenance, using PR-based squash merging.
+The intended baseline enables automerge for Renovate update PRs, including major
+upgrades, security fixes, and lockfile maintenance, using PR-based squash merging.
+GitOps updates are permanently excluded, and the temporary rollout override
+currently disables all automerge until testing is complete.
 Weekly lockfile maintenance uses the preset's default
 Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
 configuration override. GitHub may delay or skip scheduled runs; manual dispatch
