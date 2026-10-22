@@ -60,7 +60,7 @@ spec:
               mountPath: /etc/oauth-proxy.conf
               subPath: config.conf
         - name: fluentd
-          image: docker.io/fluentd:v1.16-1
+          image: docker.io/fluentd:v1.19.3-debian-1.0@sha256:76f953822920134da33b14dae9b4948f59d4541b250dff8cdc2d4f33c5bfdde8
           args: [--config, /etc/fluentd.conf]
           resources:
             requests:

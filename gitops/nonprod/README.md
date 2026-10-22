@@ -23,6 +23,12 @@ Squid uses Canonical's versioned `6.6-24.04_edge` image on Ubuntu 24.04 LTS;
 `_edge` is the upstream tag designation, not a stable-channel guarantee.
 These nonproduction image choices do not alter production's independent pins.
 
+Fluentd archivers and perf/staging frontend sidecars use the same
+`docker.io/fluentd:v1.19.3-debian-1.0` multi-platform digest pin. This Debian image
+was published more than three days before selection. Perf upgrades from 1.16;
+validate log forwarding and archive writes after deployment. Production Fluentd
+references remain independent and unchanged.
+
 Renovate discovers nonprod Kubernetes images and proposes updates without
 automerge. Review the consuming overlay renders before merging, because a merge
 to `main` triggers deployment. Production is excluded from Renovate discovery;
