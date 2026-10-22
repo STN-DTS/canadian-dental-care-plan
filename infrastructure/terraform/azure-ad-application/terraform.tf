@@ -4,19 +4,19 @@
 ###############################################################################
 
 terraform {
-  required_version = ">= 1.7.0, < 2.0.0"
+  required_version = "1.17.0"
 
   required_providers {
     azuread = {
       # see: https://registry.terraform.io/providers/hashicorp/azuread/latest/docs
       source  = "hashicorp/azuread"
-      version = "~> 3.0"
+      version = "3.10.0"
     }
 
     azurerm = {
       # see: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs
       source  = "hashicorp/azurerm"
-      version = "~> 4.0"
+      version = "4.81.0"
     }
   }
 }
