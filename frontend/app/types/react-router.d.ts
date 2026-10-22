@@ -14,10 +14,4 @@ declare module 'react-router' {
   interface RouteModule {
     handle?: RouteHandle;
   }
-
-  /**
-   * Override the default React Router RouteModules
-   * to include the new RouteModule type.
-   */
-  interface RouteModules extends Record<string, RouteModule | undefined> {}
 }
