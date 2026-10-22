@@ -418,8 +418,8 @@ can be discovered without updating this configuration.
 
 Production promotion is a separate human-controlled PR after validation in
 nonprod. All `gitops/**` updates have a permanent `automerge: false` override and
-no inherited cross-file grouping, even after the temporary rollout override is
-removed. A nonprod GitOps PR still triggers deployment when manually merged;
+no inherited cross-file grouping, independently of the global automerge policy.
+A nonprod GitOps PR still triggers deployment when manually merged;
 review its rendered overlays first. Dependency updates outside GitOps retain
 their inherited grouping and automerge policy.
 
@@ -477,8 +477,9 @@ pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
 The intended baseline enables automerge for Renovate update PRs, including major
 upgrades, security fixes, and lockfile maintenance, using PR-based squash merging.
-GitOps updates are permanently excluded, and the temporary rollout override
-currently disables all automerge until testing is complete.
+GitOps updates are permanently excluded. Rollout remains limited to one concurrent
+normal update PR and one new normal update PR per hour while App-requested
+squash auto-merge is verified; security-fix PRs can bypass these limits.
 Weekly lockfile maintenance uses the preset's default
 Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
 configuration override. GitHub may delay or skip scheduled runs; manual dispatch

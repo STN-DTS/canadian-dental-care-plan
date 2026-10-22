@@ -9,12 +9,9 @@
     "managerFilePatterns": ["/^gitops\\/nonprod\\/.+\\.ya?ml$/"]
   },
   "automergeStrategy": "squash",
-  // ------------------------------------
-  // temporary test configuration
-  "automerge": false,
+  // Keep rollout limited while verifying App-requested squash auto-merge.
   "prConcurrentLimit": 1,
   "prHourlyLimit": 1,
-  // ------------------------------------
   "postUpgradeTasks": {
     "commands": ["pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts", "pnpm format:write"],
     "executionMode": "branch",
