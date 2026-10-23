@@ -95,5 +95,9 @@ jobs:
           RENOVATE_IGNORE_SCRIPTS: 'true'
           RENOVATE_ALLOW_SCRIPTS: 'false'
           RENOVATE_ALLOWED_COMMANDS: '["^pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts$","^pnpm format:write$"]'
+          # Workaround for Renovate + Docker Hub anonymous pagination 403 on deep tag pages (>1000 tags):
+          # https://github.com/renovatebot/renovate/issues/46925
+          # Keeps release timestamps available so minimumReleaseAge continues to work predictably.
+          RENOVATE_DOCKER_MAX_PAGES: '10'
           RENOVATE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'full' || 'null' }}
           LOG_LEVEL: debug
