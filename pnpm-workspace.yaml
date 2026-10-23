@@ -97,7 +97,7 @@ catalog:
   import-in-the-middle: 3.5.2
   inversify: 8.2.3
   isbot: 5.2.2
-  jose: 6.2.12
+  jose: 6.2.13
   jsdom: 30.1.3
   libphonenumber-js: 1.13.15
   logform: 2.7.0
