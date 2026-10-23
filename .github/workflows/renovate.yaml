@@ -4,7 +4,8 @@ name: Renovate
 
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '*/15 8-16 * * 1-5'
+      timezone: 'America/Toronto'
   workflow_dispatch:
     inputs:
       dry_run:
