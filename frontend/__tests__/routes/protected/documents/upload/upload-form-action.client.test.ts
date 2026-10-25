@@ -4,14 +4,12 @@ import { mock } from 'vitest-mock-extended';
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
-import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
 import { getLanguage } from '~/utils/locale-utils';
 
 vi.mock(import('node:crypto'));
 vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'));
 vi.mock(import('~/.server/utils/locale-utils'));
-vi.mock(import('~/route-helpers/protected-documents-upload-helpers.server'));
 vi.mock(import('~/route-helpers/protected-documents-upload-helpers'));
 vi.mock(import('~/utils/locale-utils'));
 
@@ -84,8 +82,6 @@ beforeEach(() => {
     data: { files: Object.fromEntries(parsedFiles) },
   });
   vi.mocked(getLanguage).mockReturnValue('en');
-  vi.mocked(scanDocuments).mockResolvedValue({ success: true });
-  vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', documents: [] });
 });

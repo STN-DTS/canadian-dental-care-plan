@@ -10,7 +10,7 @@
  * Server validation of crafted HTTP payloads belongs in upload-contract.spec.ts.
  */
 import { expect, test } from '../../fixtures/document-upload';
-import { collectUploadRequests, uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl, navigateUploadRouter, readUploadSubmissions } from '../../utils/document-upload';
+import { collectUploadRequests, uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl, navigateUploadRouter, readUploadSubmissions, waitForUploadRouter } from '../../utils/document-upload';
 
 const maxBytes = 5 * 1024 * 1024;
 
@@ -91,9 +91,9 @@ test.describe('selection and editing', () => {
   });
 
   for (const scenario of [
-    { name: 'unsupported extension', payload: file('evidence.exe'), error: /file type you're trying to upload is not supported/ },
-    { name: 'oversized file', payload: { ...file('oversized.txt'), buffer: Buffer.alloc(maxBytes + 1, 'a') }, error: /file you are trying to upload is too large/ },
-    { name: 'duplicate file', payload: file(), error: /matches a file you've already selected or uploaded/ },
+    { name: 'unsupported extension', payload: file('evidence.exe'), error: /You can’t upload this file format\. Choose a file in one of these formats:/ },
+    { name: 'oversized file', payload: { ...file('oversized.txt'), buffer: Buffer.alloc(maxBytes + 1, 'a') }, error: 'The file is too large to upload. Make sure the file size is less than 5 MB.' },
+    { name: 'duplicate file', payload: file(), error: 'The file “evidence.txt” is already selected or uploaded. You must choose a different file.' },
   ]) {
     test(`rejects ${scenario.name} without changing existing selection`, async ({ uploadPage }) => {
       const { page } = uploadPage;
@@ -137,7 +137,7 @@ test.describe('selection and editing', () => {
     const picker = page.waitForEvent('filechooser');
     await uploadPage.uploadButton.click();
     await (await picker).setFiles(file('eleventh.txt'));
-    await expect(page.getByText(/You can upload up to 10 documents at a time/).first()).toBeVisible();
+    await expect(page.getByText('You can upload up to 10 files at a time. Submit before uploading more.').first()).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('10 of 10 files selected');
     await expect(uploadPage.item('eleventh.txt')).toHaveCount(0);
   });
@@ -229,19 +229,19 @@ test.describe('validation, scanning and uploading', () => {
     await submittedPage.confirmation(['first.txt', 'second.txt']);
   });
 
-  test('scan rejection prevents every file in the batch from uploading', async ({ uploadPage, submittedPage }) => {
+  test('scan rejection preserves successful uploads from the same batch', async ({ uploadPage, submittedPage }) => {
     const { page } = uploadPage;
     await uploadPage.addFile();
     await uploadPage.chooseType('evidence.txt');
     await uploadPage.addFile(file('scan-test.txt', 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'));
     await uploadPage.chooseType('scan-test.txt');
     await uploadPage.submit();
-    await expect(uploadPage.item('scan-test.txt')).toContainText('does not meet security requirements');
+    await expect(uploadPage.item('scan-test.txt')).toContainText('An unexpected error occurred while uploading file “scan-test.txt”. Try to upload your file again.');
+    await expect(uploadPage.item('evidence.txt')).toContainText('Uploaded successfully');
     await expect(page).toHaveURL(flowUrl);
-    await expect(page.getByRole('combobox')).toHaveCount(2);
-    await expect(page.getByText('Uploaded successfully', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('combobox')).toHaveCount(1);
     await uploadPage.removeFile('scan-test.txt');
-    await uploadPage.submit();
+    await uploadPage.finishButton.click();
     await submittedPage.confirmation(['evidence.txt']);
   });
 
@@ -254,7 +254,7 @@ test.describe('validation, scanning and uploading', () => {
       await uploadPage.addFile(scenario.payload);
       await uploadPage.chooseType(scenario.payload.name);
       await uploadPage.submit();
-      await expect(uploadPage.item(scenario.payload.name)).toContainText('not supported');
+      await expect(uploadPage.item(scenario.payload.name)).toContainText(`You can’t upload this file format for “${scenario.payload.name}”. Choose a file in one of these formats:`);
       await expect(page).toHaveURL(flowUrl);
     });
   }
@@ -264,12 +264,12 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.addFile(file(failureName));
     await uploadPage.chooseType(failureName);
     await uploadPage.submit();
-    await expect(uploadPage.item(failureName)).toContainText('There was a problem uploading');
+    await expect(uploadPage.item(failureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
     await expect(page.getByRole('combobox')).toHaveCount(1);
     const response = page.waitForResponse((value) => value.request().method() === 'POST' && value.url().includes('/documents/upload/'));
     await uploadPage.submit();
     expect((await response).status()).toBe(400);
-    await expect(uploadPage.item(failureName)).toContainText('There was a problem uploading');
+    await expect(uploadPage.item(failureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
   });
 
   test('truncated image content rejects every upload in the batch', async ({ uploadPage }) => {
@@ -278,7 +278,7 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.addFile({ ...file('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) });
     await uploadPage.chooseType('truncated.png');
     await uploadPage.submit();
-    await expect(uploadPage.item('truncated.png')).toContainText('not supported');
+    await expect(uploadPage.item('truncated.png')).toContainText('You can’t upload this file format for “truncated.png”. Choose a file in one of these formats:');
     await expect(uploadPage.page.getByText('Uploaded successfully', { exact: true })).toHaveCount(0);
     await expect(uploadPage.page.getByRole('combobox')).toHaveCount(2);
   });
@@ -301,7 +301,7 @@ test.describe('partial recovery and explicit completion', () => {
     await uploadPage.submit();
     await response;
     expect((await readUploadSubmissions(uploadPage.page)).at(-1)?.fileNames).toEqual([failureName]);
-    await expect(uploadPage.item(failureName)).toContainText('There was a problem uploading');
+    await expect(uploadPage.item(failureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
     await expect(uploadPage.item('evidence.txt')).toContainText('Uploaded successfully');
   });
 
@@ -311,7 +311,7 @@ test.describe('partial recovery and explicit completion', () => {
     const picker = page.waitForEvent('filechooser');
     await uploadPage.uploadButton.click();
     await (await picker).setFiles(file());
-    await expect(page.getByText(/matches a file you've already selected or uploaded/).first()).toBeVisible();
+    await expect(page.getByText('The file “evidence.txt” is already selected or uploaded. You must choose a different file.').first()).toBeVisible();
     await expect(page.getByRole('status')).toContainText('2 of 10 files selected');
   });
 
@@ -349,7 +349,7 @@ test.describe('partial recovery and explicit completion', () => {
     const picker = page.waitForEvent('filechooser');
     await uploadPage.uploadButton.click();
     await (await picker).setFiles(file('eleventh.txt'));
-    await expect(page.getByText(/You can upload up to 10 documents at a time/).first()).toBeVisible();
+    await expect(page.getByText('You can upload up to 10 files at a time. Submit before uploading more.').first()).toBeVisible();
     await expect(page.getByRole('status')).toContainText('10 of 10 files selected');
   });
 });
@@ -447,6 +447,7 @@ test.describe('navigation and refresh', () => {
     });
     await page.reload();
     await uploadPage.isLoaded(flowUrl, 'Submit documents');
+    await waitForUploadRouter(page);
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
     await page.goto('/en/protected/documents');

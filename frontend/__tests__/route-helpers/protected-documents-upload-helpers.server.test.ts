@@ -3,14 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, mockFn } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
+import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
+import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
-import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
+import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-utils';
 
 vi.mock(import('~/.server/context'));
@@ -28,8 +30,7 @@ const translations = {
   upload: {
     errorMessage: {
       invalidFileType: 'invalid file type',
-      scanFailed: 'scan failed',
-      scanError: 'scan error',
+      contentValidationError: 'content validation error',
       uploadFailed: 'upload failed',
       uploadError: 'upload error',
     },
@@ -56,28 +57,29 @@ beforeEach(() => {
   isFileContentTypeAllowedMock.mockResolvedValue(true);
 
   appContainerMock.get.mockReset();
-  appContainerMock.get.mockReturnValueOnce(documentUploadServiceMock).mockReturnValueOnce({
+  appContainerMock.get.mockReturnValue({
     DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
   });
 });
 
 describe('protected-documents-upload-helpers.server', () => {
-  describe('scanDocuments', () => {
-    it('should scan valid documents', async () => {
-      documentUploadServiceMock.scanDocument.mockResolvedValue({ DataId: 'scan-123' });
-
-      await expect(scanDocuments(createFiles())).resolves.toEqual({ success: true });
-      expect(documentUploadServiceMock.scanDocument).toHaveBeenCalledWith({
-        fileName: 'document.txt',
-        binary: 'base64-content',
-        userId: 'user-123',
+  describe('validateDocumentContents', () => {
+    it('should accept allowed content using only server configuration', async () => {
+      await expect(validateDocumentContents(createFiles())).resolves.toEqual({ success: true });
+      expect(isFileContentTypeAllowedMock).toHaveBeenCalledWith({
+        allowedExtensions: ['.txt'],
+        declaredMimeType: 'text/plain',
+        fileBuffer: new TextEncoder().encode('content').buffer,
       });
+      expect(appContainerMock.get).toHaveBeenCalledOnce();
+      expect(appContainerMock.get).toHaveBeenCalledWith(TYPES.ServerConfig);
+      expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
     });
 
     it('should reject content whose detected type is not allowed', async () => {
       isFileContentTypeAllowedMock.mockResolvedValue(false);
 
-      const result = await scanDocuments(createFiles());
+      const result = await validateDocumentContents(createFiles());
 
       expect(result).toMatchObject({
         success: false,
@@ -100,10 +102,10 @@ describe('protected-documents-upload-helpers.server', () => {
       expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
     });
 
-    it('should return service scan errors for affected files', async () => {
-      documentUploadServiceMock.scanDocument.mockResolvedValue({ Error: { ErrorCode: 'SCAN-1', ErrorMessage: 'Threat detected' } });
+    it('should translate unexpected content validation errors for affected files', async () => {
+      isFileContentTypeAllowedMock.mockRejectedValue(new Error('content detection unavailable'));
 
-      const result = await scanDocuments(createFiles());
+      const result = await validateDocumentContents(createFiles());
 
       expect(result).toMatchObject({
         success: false,
@@ -114,30 +116,7 @@ describe('protected-documents-upload-helpers.server', () => {
                 first: {
                   properties: {
                     file: {
-                      errors: ['scan failed'],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-    });
-
-    it('should return a scan error when scanning throws', async () => {
-      documentUploadServiceMock.scanDocument.mockRejectedValue(new Error('scan unavailable'));
-
-      await expect(scanDocuments(createFiles())).resolves.toMatchObject({
-        success: false,
-        errors: {
-          properties: {
-            files: {
-              properties: {
-                first: {
-                  properties: {
-                    file: {
-                      errors: ['scan error'],
+                      errors: ['content validation error'],
                     },
                   },
                 },
@@ -193,26 +172,32 @@ describe('protected-documents-upload-helpers.server', () => {
       });
     });
 
-    it('should return an upload error when uploading throws', async () => {
-      documentUploadServiceMock.uploadDocument.mockRejectedValue(new Error('upload unavailable'));
+    it.each([
+      ['EICAR_DETECTED', 'Threat detected'],
+      ['400', 'Threat detected'],
+      ['400', 'Missing mandatory field'],
+      ['404', 'Document not found'],
+    ])('should use the generic upload rejection for code %s and message %s', async (ErrorCode, ErrorMessage) => {
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ Error: { ErrorCode, ErrorMessage } });
 
       await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
         success: false,
-        errors: {
-          properties: {
-            files: {
-              properties: {
-                first: {
-                  properties: {
-                    file: {
-                      errors: ['upload error'],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['upload failed'] } } } } } } },
+      });
+    });
+
+    it.each([
+      ['HTTP bad request', new DocumentUploadException('http', 400)],
+      ['HTTP failure', new DocumentUploadException('http', 503)],
+      ['network failure', new DocumentUploadException('network')],
+      ['invalid response', new DocumentUploadException('invalid-response', 200)],
+      ['unexpected failure', new Error('upload unavailable')],
+    ])('should use the generic technical upload error for a $0', async (_caseName, error) => {
+      documentUploadServiceMock.uploadDocument.mockRejectedValue(error);
+
+      await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
+        success: false,
+        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['upload error'] } } } } } } },
       });
     });
   });

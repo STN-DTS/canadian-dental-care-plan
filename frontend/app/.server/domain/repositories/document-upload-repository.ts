@@ -1,13 +1,18 @@
 import { inject, injectable } from 'inversify';
+import type { Response } from 'undici';
+import * as z from 'zod';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { DocumentScanRequestEntity, DocumentScanResponseEntity, DocumentUploadRequestEntity, DocumentUploadResponseEntity } from '~/.server/domain/entities';
+import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { base64ToArrayBuffer, detectEicarContent } from '~/utils/file-utils';
+
+const uploadResponseSchema = z.union([z.object({ DocumentFileName: z.string().min(1), Error: z.null() }), z.object({ DocumentFileName: z.null(), Error: z.object({ ErrorCode: z.string(), ErrorMessage: z.string() }) })]);
 
 /**
  * A repository that provides document uploading and scanning functionality.
@@ -86,24 +91,24 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
 
     const requestBody = this.addCredentialsToRequestBody(documentUploadRequestEntity);
 
-    const response = await this.httpClient.instrumentedFetch('http.client.document-scan-api.spo-upload-document.posts', url, {
-      proxyUrl: this.serverConfig.HTTP_PROXY_URL,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
-      },
-      body: JSON.stringify(requestBody),
-      retryOptions: {
-        retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
-        backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-          [HttpStatusCodes.SERVICE_UNAVAILABLE]: [],
-          [HttpStatusCodes.GATEWAY_TIMEOUT]: [],
+    let response: Response;
+
+    try {
+      response = await this.httpClient.instrumentedFetch('http.client.document-scan-api.spo-upload-document.posts', url, {
+        proxyUrl: this.serverConfig.HTTP_PROXY_URL,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
         },
-      },
-    });
+        body: JSON.stringify(requestBody),
+        // A retry can save the same file twice if the first response was lost.
+        // Keep HTTP responses available for classification instead of retrying them.
+        retryOptions: { retries: 0, retryConditions: {} },
+      });
+    } catch (cause) {
+      throw new DocumentUploadException('network', undefined, { cause });
+    }
 
     if (!response.ok) {
       this.log.error('%j', {
@@ -111,17 +116,21 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
         status: response.status,
         statusText: response.statusText,
         url: url,
-        filename: documentUploadRequestEntity.filename,
-        responseBody: await response.text(),
       });
 
-      throw new Error(`Failed to 'POST' for document upload. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throw new DocumentUploadException('http', response.status);
     }
 
-    const documentUploadResponseEntity = (await response.json()) as DocumentUploadResponseEntity;
+    let documentUploadResponseEntity: DocumentUploadResponseEntity;
+
+    try {
+      documentUploadResponseEntity = uploadResponseSchema.parse(await response.json());
+    } catch (cause) {
+      throw new DocumentUploadException('invalid-response', response.status, { cause });
+    }
 
     if (documentUploadResponseEntity.Error) {
-      this.log.warn('Document upload completed with error: [%j]', documentUploadResponseEntity.Error);
+      this.log.warn('Document upload rejected with code: [%s]', documentUploadResponseEntity.Error.ErrorCode);
     } else {
       this.log.trace('Successfully uploaded document. DocumentFileName: [%s]', documentUploadResponseEntity.DocumentFileName);
     }
@@ -198,6 +207,13 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
 
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
     this.log.debug('Uploading document for filename [%s]', documentUploadRequestEntity.filename);
+
+    // Model the scan performed by the real upload endpoint, without a separate caller request.
+    const scanResult = await this.scanDocument(documentUploadRequestEntity);
+
+    if (scanResult.Error) {
+      return { DocumentFileName: null, Error: scanResult.Error };
+    }
 
     if (documentUploadRequestEntity.filename === 'mock-upload-failure.txt') {
       this.log.warn('Mock document upload failed for filename [%s]', documentUploadRequestEntity.filename);
