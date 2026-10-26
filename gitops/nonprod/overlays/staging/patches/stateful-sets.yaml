@@ -18,9 +18,9 @@ spec:
     spec:
       initContainers:
         - name: init
-          image: docker.io/redis:8.8
+          image: docker.io/redis:8.8@sha256:418e397fd48d66e450af13baab123397f2d2580b07ef310c3a5dbe96c3d731f1
       containers:
         - name: redis
-          image: docker.io/redis:8.8
+          image: docker.io/redis:8.8@sha256:418e397fd48d66e450af13baab123397f2d2580b07ef310c3a5dbe96c3d731f1
         - name: redis-sentinel
-          image: docker.io/redis:8.8
+          image: docker.io/redis:8.8@sha256:418e397fd48d66e450af13baab123397f2d2580b07ef310c3a5dbe96c3d731f1
