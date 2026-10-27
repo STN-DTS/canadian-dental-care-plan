@@ -30,7 +30,7 @@
 
 This document describes the current Canadian Dental Care Plan (CDCP) protected document upload implementation. It is a shared reference for business, support, and technical teams working with Enterprise Wide Document Upload (EWDU) and Power Platform.
 
-**Status:** Current implementation reference, reviewed 2026-10-09.
+**Status:** Current implementation reference, reviewed 2026-10-21.
 
 For plain-language DEV test steps and an accessibility assessment aid, see the
 [DEV testing and accessibility assessment guide](./document-upload-dev-testing-guide.md).
@@ -39,11 +39,10 @@ The feature is a protected MSCA workflow for submitting evidentiary documents fo
 
 1. The user selects files and a document type for each file.
 2. The CDCP server validates the submission and computes a SHA-256 hash for each file. Files with matching filenames, sizes, and contents are rejected as duplicates.
-3. The server checks each file extension and detected content type.
-4. The server sends each file to EWDU through the Interop API `Scan` operation.
-5. Only after every file passes scanning does the server send the files to EWDU through `ScanAndSave`.
-6. The server records per-file outcomes in the session. Successful files remain uploaded if other files fail; retries submit only pending files. When all pending uploads succeed, or the user removes the remaining files and explicitly finishes, the server shows confirmation for the successful uploads.
-7. Power Platform pulls and processes EWDU submissions asynchronously. The documents list shows records after that process makes them available.
+3. The server checks each file extension and detected content type locally.
+4. The server sends each validated file to EWDU through the Interop API `SPOUploadDocument` operation, which scans and uploads it in one request.
+5. The server records per-file outcomes in the session. Successful files remain uploaded if other files are rejected; retries submit only pending files. When all pending uploads succeed, or the user removes the remaining files and explicitly finishes, the server shows confirmation for the successful uploads.
+6. Power Platform pulls and processes EWDU submissions asynchronously. The documents list shows records after that process makes them available.
 
 EWDU owns threat scanning and the predetermined drop location. Power Platform owns downstream ingestion and the evidentiary-document records shown in the CDCP documents list. DTS does not create Power Platform metadata as part of the synchronous upload request.
 
@@ -112,24 +111,25 @@ These scenarios describe the current implementation, not proposed requirements. 
 | Scenario                                                                                                       | Outcome                                                                                                                               |
 | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | User submits an empty selection                                                                                | Client validation displays a required-file error without invoking the server action.                                                  |
-| Pending file has no document type                                                                              | Displays a file-specific document-type error; no scan or upload occurs.                                                               |
+| Pending file has no document type                                                                              | Displays a file-specific document-type error; no content check or upload occurs.                                                      |
 | Submitted batch has an invalid extension, oversized file, excessive count, or duplicate files                  | Client validation blocks submission; the server repeats validation if invoked.                                                        |
 | Upload payload has no file IDs, mismatched IDs and file objects, blank IDs, non-file objects, or duplicate IDs | Server returns HTTP 400 before processing file bytes.                                                                                 |
 | Submitted ID belongs to an already-uploaded file in this flow                                                  | Server returns HTTP 409 without changing state.                                                                                       |
-| Detected content type is not allowed                                                                           | Returns a file-specific type error before that file's security scan; none of the pending batch uploads.                               |
+| Detected content type is not allowed                                                                           | Returns a file-specific type error before any upload request.                                                                         |
 | Content type cannot be detected                                                                                | Only declared `text/plain` passes the content-type fallback; otherwise the file is rejected.                                          |
-| Security service rejects one or more files                                                                     | Returns file-specific security errors and skips the upload phase for the entire pending batch.                                        |
-| Content checking or security scanning throws                                                                   | Returns an unexpected scan error for the affected file and skips the batch's upload phase.                                            |
+| EWDU rejects one or more files during scan-and-upload                                                          | Uses `uploadFailed`; successful files remain uploaded and rejected files remain pending.                                              |
+| Local content checking throws                                                                                  | Returns an unexpected content-validation error for the affected file before upload.                                                   |
 | Every pending file passes scanning and uploading                                                               | Marks files uploaded, finishes the flow, and replaces the form URL with confirmation.                                                 |
 | Every upload fails                                                                                             | Keeps all submitted files pending and returns file-specific upload errors.                                                            |
 | Some uploads succeed and others fail                                                                           | Retains successful files as uploaded and failed files as pending, preserving selection order; returns errors rather than redirecting. |
-| Upload service returns an error or throws                                                                      | Displays the corresponding upload-failed or unexpected-upload-error message for that file. Other concurrent uploads may succeed.      |
+| EWDU returns a rejection, including a security threat or invalid-data response                                 | Displays the generic `uploadFailed` error for that file. Other concurrent uploads may succeed.                                        |
+| Upload service has a technical failure                                                                         | Displays the generic `uploadError` error for that file. Other concurrent uploads may succeed.                                         |
 
 ### Recovery and completion
 
 | Scenario                                                                                            | Outcome                                                                                                                                                                |
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| User retries after scan failure                                                                     | Revalidates and rescans all pending files.                                                                                                                             |
+| User retries after an EWDU rejection                                                                | Revalidates and sends only pending files to EWDU for scanning and uploading.                                                                                           |
 | User retries after partial upload                                                                   | Sends only pending files; successful files are not scanned or uploaded again. The UI shows separate uploaded and remaining counts and a Submit remaining files action. |
 | User adds files after partial success                                                               | Retains successful uploads and appends new pending files, subject to selection limits and duplicate checks.                                                            |
 | User changes types or removes failed files before retrying                                          | Uses the current pending selection; the next validated submission replaces obsolete pending session metadata while retaining successful uploads.                       |
@@ -165,32 +165,25 @@ sequenceDiagram
     Browser->>App: Submit selections and files with CSRF token
     App->>App: Validate session, feature flag, CSRF, applicant
     App->>App: Validate fields, limits, types, and size
+    App->>App: Validate detected content types for the entire batch
+    Note over App: Stop before any upload if local content validation fails
     loop Each file, concurrently
-      App->>App: Detect file type from buffer
-      App->>EWDU: POST /Scan with filename and base64 binary
-      EWDU-->>App: DataId or Error
+      App->>EWDU: POST /SPOUploadDocument with metadata and base64 binary
+      EWDU-->>App: DocumentFileName or Error
     end
-    alt Any scan fails
-      App-->>Browser: Return scan errors and skip ScanAndSave
-    else All scans pass
-      loop Each file, concurrently
-        App->>EWDU: POST /ScanAndSave with file metadata
-        EWDU-->>App: DocumentFileName or Error
-      end
-      alt Any upload fails
-        App->>App: Record successful files as uploaded and failures as pending
-        App-->>Browser: Return upload errors
-        Applicant->>Browser: Retry pending files or remove them and finish
-      else All uploads pass
-        App->>App: Mark documents uploaded and flow finished in session
-        App-->>Browser: Show upload confirmation
-        Note over EWDU,PP: Power Platform pulls and processes EWDU submissions asynchronously.
-        Applicant->>Browser: Open documents list later
-        Browser->>App: Request documents
-        App->>PP: GET available document metadata
-        PP-->>App: Return ingested documents
-        App-->>Browser: Display documents
-      end
+    alt Any upload is rejected or fails
+      App->>App: Record successful files as uploaded and failures as pending
+      App-->>Browser: Return file-specific errors
+      Applicant->>Browser: Retry pending files or remove them and finish
+    else All uploads pass
+      App->>App: Mark documents uploaded and flow finished in session
+      App-->>Browser: Show upload confirmation
+      Note over EWDU,PP: Power Platform pulls and processes EWDU submissions asynchronously.
+      Applicant->>Browser: Open documents list later
+      Browser->>App: Request documents
+      App->>PP: GET available document metadata
+      PP-->>App: Return ingested documents
+      App-->>Browser: Display documents
     end
 ```
 
@@ -216,7 +209,7 @@ Validation rules include:
 - A document type is required for every file.
 - The document-type schema checks only for a nonempty value, not membership in the active choices. The upload service resolves the submitted ID downstream.
 - File selection rejects duplicates within the new selection and against all listed pending and uploaded documents. A duplicate has the same filename, size, and SHA-256 content hash. Final upload validation repeats the duplicate check within the submitted batch in both the browser and on the server.
-- The file content is inspected with `file-type` when scanning. If no type is detected, only a declared `text/plain` file is accepted. A detected MIME type must map to one of the configured extensions.
+- The file content is inspected locally with `file-type`. If no type is detected, only a declared `text/plain` file is accepted. A detected MIME type must map to one of the configured extensions.
 
 Selection count and duplicate checks include previously uploaded files still listed in the browser. Server submission validation checks the pending batch, not the combined flow count or duplicates against earlier uploaded contents. The size schema has no minimum-size check; empty files are not explicitly rejected by size validation. Content inspection accepts any allowed detected MIME type, rather than requiring it to match the filename's particular extension.
 
@@ -224,40 +217,9 @@ The server reads each file while parsing the submission, computes its SHA-256 ha
 
 ### 2. EWDU processing
 
-#### Scan
+For each locally validated file, the server calls `DocumentUploadService.uploadDocument()`. The service resolves the selected document type ID to its configured code, maps the request to EWDU format, and calls the repository. EWDU scans and uploads each file within that single request; a rejection for one file does not prevent other concurrent files from completing.
 
-For each validated file, the server calls `DocumentUploadService.scanDocument()`. The service maps the request to EWDU format and calls `DocumentUploadRepository.scanDocument()`.
-
-All file scans run concurrently. The server waits for the complete batch and returns errors for failed files. Any scan failure stops the upload phase for the entire submission.
-
-A scan request sent to EWDU has this logical shape:
-
-```json
-{
-  "filename": "evidence.pdf",
-  "binary": "<base64 file bytes>",
-  "username": "<EWDU encapsulation username>",
-  "password": "<EWDU encapsulation password>",
-  "programActivityIdentificationID": "<program activity ID>"
-}
-```
-
-The current adapter sends this request to:
-
-```text
-POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/cct/v1/api/Scan
-```
-
-Headers:
-
-- `Content-Type: application/json`
-- `Ocp-Apim-Subscription-Key: {INTEROP_API_SUBSCRIPTION_KEY}`
-
-The successful response contains `DataId`; a downstream error contains `ErrorCode` and `ErrorMessage`. Non-success HTTP responses are logged and raised as exceptions. The application converts caught failures into a localized generic scan error.
-
-#### ScanAndSave
-
-After the complete scan batch succeeds, the server sends each file through `DocumentUploadService.uploadDocument()`. The service resolves the selected document type ID to its configured code, maps the request to EWDU format, and calls the repository.
+The standalone `Scan` adapter remains available for repository health checks. The document-submission flow does not invoke it.
 
 The upload request has this logical shape:
 
@@ -277,10 +239,10 @@ The upload request has this logical shape:
 The current adapter sends this request to:
 
 ```text
-POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/cct/v1/api/ScanAndSave
+POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument
 ```
 
-Headers and error handling match the scan operation. The successful response contains `DocumentFileName`.
+The successful response contains a nonempty `DocumentFileName`. A returned rejection, including a security threat or invalid-data response, contains an `ErrorCode` and `ErrorMessage`; this application does not document or infer production error codes. Returned rejections, including mock EICAR and `400` responses, use `uploadFailed`. HTTP, network, invalid-response, and unexpected exceptions use `uploadError`. Both errors show the same generic user copy: “An unexpected error occurred while uploading file “{{filename}}”. Try to upload your file again.” The internal exception kind and HTTP status remain in server logs; uncertainty is retained internally rather than presented as a separate UI outcome.
 
 The client number comes from the authenticated applicant context. `documentCategoryText` is not the display label; it is the code loaded by `EvidentiaryDocumentTypeService` for the selected Power Platform document-type ID.
 
@@ -351,7 +313,7 @@ Technical reference for developers and integration teams. Key implementation fil
 - [`env-utils.ts`](../../app/.server/utils/env-utils.ts) and [`env-utils.ts`](../../app/utils/env-utils.ts): server integration settings and shared upload-limit configuration.
 - [`application-routes-reference.md`](./application-routes-reference.md): protected document route list.
 
-The production bindings are configured through Inversify. `DefaultDocumentUploadRepository` is used unless the `document-upload` mock is enabled; the mock returns successful scan and upload responses without calling EWDU, except that uploading `mock-upload-failure.txt` returns an error to exercise upload failure recovery.
+The production bindings are configured through Inversify. `DefaultDocumentUploadRepository` is used unless the `document-upload` mock is enabled. The mock performs its EICAR and invalid-binary checks inside `uploadDocument()`, mirroring EWDU's combined scan-and-upload operation. It also rejects `mock-upload-failure.txt` to exercise upload failure recovery. These mock-only responses are not a list of production EWDU codes.
 
 ## Configuration, Security, and Operations
 
@@ -381,11 +343,10 @@ The DTS application uses the shared Interop API subscription key for EWDU reques
 
 | Operation                   | Retryable statuses currently configured |
 | --------------------------- | --------------------------------------- |
-| EWDU `Scan`                 | 502, 503, 504                           |
-| EWDU `ScanAndSave`          | 502, 503, 504                           |
+| EWDU `SPOUploadDocument`    | None; POST retries are disabled         |
 | Power Platform document GET | 502                                     |
 
-HTTP retries occur inside the shared instrumented HTTP client. Separately, user-initiated retries in the active form submit only pending files. Power Platform background-ingestion retries are owned by Power Platform. The DTS application does not implement a transaction, compensation, or a persistent resume mechanism; running the form loader resets an open flow's metadata.
+`SPOUploadDocument` has no automatic HTTP retries because a lost response can leave an uncertain, already accepted upload. This uncertainty remains an internal technical condition; both returned rejections and technical failures use the same generic user copy while retaining their distinct `uploadFailed` and `uploadError` classifications in logs. User-initiated retries in the active form submit only pending files. Power Platform background-ingestion retries are owned by Power Platform. The DTS application does not implement a transaction, compensation, or a persistent resume mechanism; running the form loader resets an open flow's metadata.
 
 ### Security and privacy
 
@@ -401,8 +362,9 @@ HTTP retries occur inside the shared instrumented HTTP client. Separately, user-
 The current implementation is batch-oriented but not transactional across systems:
 
 - Validation failure: no downstream calls are made.
-- Any scan failure: no file is sent to `ScanAndSave`.
-- Upload failure for one file: other concurrent EWDU uploads may already have succeeded. The application records successful files separately and returns errors without automatically showing confirmation. Users can retry pending files or remove them and explicitly finish with the successful uploads.
+- Local content validation failure: no upload request is made for any file in the submitted batch.
+- Returned EWDU rejection, including security threats or invalid data, for one file: other concurrent EWDU uploads may already have succeeded. The application records successful files separately and returns the generic `uploadFailed` error without automatically showing confirmation. Users can retry pending files or remove them and explicitly finish with the successful uploads.
+- HTTP, network, invalid-response, and unexpected technical failures use the generic `uploadError` error. The application does not automatically retry them; uncertainty remains internal, with exception details retained in server logs rather than exposed as a separate UI outcome.
 - Power Platform ingestion is asynchronous. DTS can show EWDU submission confirmation before records appear in the documents list. Ingestion failures and retries belong to the Power Platform background process.
 - After a partial upload failure, the form retains successful files separately and retries only pending files. Both collections count toward the file-selection limit and are checked when adding files. The upload contract has no idempotency key, so independently resubmitting a successful file in a new upload flow can still create a duplicate.
 - The immediate confirmation uses session data. The documents page retrieves records from Power Platform when the user opens the list; newly submitted files can appear after background ingestion completes.

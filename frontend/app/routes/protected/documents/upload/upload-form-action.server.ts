@@ -9,7 +9,7 @@ import type { DocumentUploadState } from '~/.server/routes/helpers/document-uplo
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
-import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
+import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import type { UploadDocumentsResponseFailure } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import type { FormAction } from '~/routes/protected/documents/upload/upload-form-action';
@@ -85,10 +85,10 @@ type UploadActionParams = {
 };
 
 /**
- * Validates, scans, and uploads the submitted pending batch, preserving earlier successful uploads.
- * Records the validated batch as pending before scanning and retains failed files for retry.
+ * Validates and uploads the submitted pending batch, preserving earlier successful uploads.
+ * Records the validated batch as pending before content checking; EWDU scans during upload.
  * @param args - The upload action, submitted fields, locale, route parameters, session, translator, and flow.
- * @returns A tagged validation, scan, or upload error response, or a redirect after completion.
+ * @returns A tagged validation, content-check, or upload error response, or a redirect after completion.
  * @throws If the action or flow is invalid, parsing fails, no files are present, or an uploaded ID is resubmitted.
  */
 async function uploadAction({ formAction, formData, locale, params, session, t, uploadState }: UploadActionParams) {
@@ -136,10 +136,10 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents } });
 
-  const scanResult = await scanDocuments(validationResult.data.files);
+  const contentValidationResult = await validateDocumentContents(validationResult.data.files);
 
-  if (!scanResult.success) {
-    return data({ formAction, source, responseType: 'scan-errors', errors: scanResult.errors } as const, 400);
+  if (!contentValidationResult.success) {
+    return data({ formAction, source, responseType: 'content-validation-errors', errors: contentValidationResult.errors } as const, 400);
   }
 
   const uploadResult = await uploadDocuments(validationResult.data.files);

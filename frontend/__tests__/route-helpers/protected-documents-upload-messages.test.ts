@@ -1,0 +1,96 @@
+import { createInstance } from 'i18next';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import enDocuments from '~/.server/locales/en/documents';
+import frDocuments from '~/.server/locales/fr/documents';
+import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getClientEnv } from '~/utils/env-utils';
+import { bytesToFilesize } from '~/utils/units-utils';
+
+vi.mock(import('~/utils/env-utils'));
+
+const uploadLimits = {
+  DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
+  DOCUMENT_UPLOAD_MAX_FILE_COUNT: 3,
+  DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 1,
+};
+const getClientEnvMock = vi.mocked(getClientEnv, { partial: true });
+
+beforeEach(() => {
+  getClientEnvMock.mockReturnValue(uploadLimits);
+});
+
+describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) => {
+  async function getTranslator() {
+    const i18n = createInstance();
+    await i18n.init({ lng: locale, defaultNS: 'documents', resources: { en: { documents: enDocuments }, fr: { documents: frDocuments } } });
+    return i18n.getFixedT(locale, 'documents');
+  }
+
+  it('uses the same approved wording for returned rejections and technical failures', async () => {
+    const t = await getTranslator();
+    const expected =
+      locale === 'en'
+        ? 'An unexpected error occurred while uploading file “document.txt”. Try to upload your file again.'
+        : "Une erreur s'est produite lors du téléversement du fichier «\u00A0document.txt\u00A0». Essayez de téléverser le fichier à nouveau.";
+
+    expect(t(($) => $.upload.errorMessage.uploadFailed, { filename: 'document.txt' })).toBe(expected);
+    expect(t(($) => $.upload.errorMessage.uploadError, { filename: 'document.txt' })).toBe(expected);
+  });
+
+  it('validates oversized files both during selection and during submission', async () => {
+    const t = await getTranslator();
+    const file = new File([new Uint8Array(1024 * 1024 + 1)], 'oversized.txt');
+    const selection = new FormData();
+    selection.set('_validation_id', 'validation-id');
+    selection.set('current_file_count', '0');
+    selection.append('file_object', file);
+
+    const submission = new FormData();
+    submission.append('file_id', 'first');
+    submission.append('file_object', file);
+    submission.append('file_document_type', 'receipt');
+    const files = await getFiles(submission);
+    const filesize = bytesToFilesize(1024 * 1024, `${locale}-CA`);
+    const expected = locale === 'en' ? `The file is too large to upload. Make sure the file size is less than ${filesize}.` : `La taille du fichier est trop grande. Assurez-vous que la taille du fichier est de moins de ${filesize}.`;
+
+    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({
+      success: false,
+      errors: { properties: { files: { errors: [expected] } } },
+    });
+    expect(validateUploadedFiles({ files, locale, t })).toMatchObject({
+      success: false,
+      errors: { properties: { files: { properties: { first: { properties: { file: { errors: [expected] } } } } } } },
+    });
+  });
+
+  it.each([1, 3])('supports selection and submission when the maximum file count is %i', async (count) => {
+    getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
+    const t = await getTranslator();
+    const selection = new FormData();
+    selection.set('_validation_id', 'validation-id');
+    selection.set('current_file_count', String(count));
+    selection.append('file_object', new File(['content'], 'extra.txt'));
+
+    const submission = new FormData();
+
+    for (let index = 0; index <= count; index++) {
+      submission.append('file_id', String(index));
+      submission.append('file_object', new File(['content'], `${index}.txt`));
+      submission.append('file_document_type', 'receipt');
+    }
+
+    const files = await getFiles(submission);
+    const expected =
+      locale === 'en' ? `You can upload up to ${count} ${count === 1 ? 'file' : 'files'} at a time. Submit before uploading more.` : `Vous pouvez téléverser jusqu'à ${count} fichiers à la fois. Vous devez les soumettre avant d’en téleverser d’autres.`;
+
+    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({
+      success: false,
+      errors: { properties: { files: { errors: [expected] } } },
+    });
+    expect(validateUploadedFiles({ files, locale, t })).toMatchObject({
+      success: false,
+      errors: { properties: { files: { errors: [expected] } } },
+    });
+  });
+});

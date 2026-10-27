@@ -103,7 +103,7 @@ export class UploadPage extends BasePage {
     await this.chooseType(uploadFailureName);
     await this.submit();
     await expect(this.item('evidence.txt')).toContainText('Uploaded successfully');
-    await expect(this.item(uploadFailureName)).toContainText('There was a problem uploading');
+    await expect(this.item(uploadFailureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
     await expect(this.submitButton).toHaveText('Submit remaining files');
     await expect(this.submitButton).toBeEnabled();
   }

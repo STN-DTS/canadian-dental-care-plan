@@ -10,7 +10,7 @@ import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
-import { scanDocuments, uploadDocuments } from '~/route-helpers/protected-documents-upload-helpers.server';
+import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { action } from '~/routes/protected/documents/upload/upload-form-action.server';
 import { getLanguage } from '~/utils/locale-utils';
 
@@ -106,7 +106,7 @@ beforeEach(() => {
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(getLanguage).mockReturnValue('en');
   vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
-  vi.mocked(scanDocuments).mockResolvedValue({ success: true });
+  vi.mocked(validateDocumentContents).mockResolvedValue({ success: true });
   vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
 });
@@ -131,7 +131,7 @@ describe('action', () => {
     expect(updateDocumentUploadState).not.toHaveBeenCalled();
     expect(getFiles).not.toHaveBeenCalled();
     expect(validateUploadedFiles).not.toHaveBeenCalled();
-    expect(scanDocuments).not.toHaveBeenCalled();
+    expect(validateDocumentContents).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
   });
 
@@ -202,7 +202,7 @@ describe('action', () => {
     await expect(action(createActionArgs(formData))).rejects.toMatchObject({ init: { status: 400 } });
     expect(validateUploadedFiles).not.toHaveBeenCalled();
     expect(updateDocumentUploadState).not.toHaveBeenCalled();
-    expect(scanDocuments).not.toHaveBeenCalled();
+    expect(validateDocumentContents).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
     expect(finishDocumentUploadState).not.toHaveBeenCalled();
   });
@@ -216,7 +216,7 @@ describe('action', () => {
     expect(uploadDocuments).not.toHaveBeenCalled();
   });
 
-  it('returns validation errors without scanning invalid upload data', async () => {
+  it('returns validation errors without validating content for invalid upload data', async () => {
     vi.mocked(validateUploadedFiles).mockReturnValue({ success: false, errors: uploadErrors });
     const args = createActionArgs(createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf') }]));
 
@@ -251,17 +251,17 @@ describe('action', () => {
       },
       type: 'DataWithResponseInit',
     });
-    expect(scanDocuments).not.toHaveBeenCalled();
+    expect(validateDocumentContents).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
   });
 
-  it('replaces stale pending metadata with the submitted batch even when scanning fails', async () => {
+  it('replaces stale pending metadata with the submitted batch even when content validation fails', async () => {
     const args = createActionArgs(validUploadFormData());
     const { session } = args.context.get(appContext);
     const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
     vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'removed-file', fileName: 'removed.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }, uploadedDocument] });
-    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['scan failed'] } } } } } satisfies DocumentUploadSchemaErrorTree;
-    vi.mocked(scanDocuments).mockResolvedValue({ success: false, errors });
+    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['invalid file type'] } } } } } satisfies DocumentUploadSchemaErrorTree;
+    vi.mocked(validateDocumentContents).mockResolvedValue({ success: false, errors });
 
     const result = await action(args);
 
@@ -274,7 +274,7 @@ describe('action', () => {
               errors: [],
               properties: {
                 'file-1': {
-                  errors: ['scan failed'],
+                  errors: ['invalid file type'],
                 },
               },
             },
@@ -282,7 +282,7 @@ describe('action', () => {
         },
         formAction: 'upload',
         source: 'server',
-        responseType: 'scan-errors',
+        responseType: 'content-validation-errors',
       },
       init: {
         status: 400,
@@ -296,7 +296,7 @@ describe('action', () => {
       params: args.params,
       state: { documents: [uploadedDocument, { id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }] },
     });
-    expect(vi.mocked(updateDocumentUploadState).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(scanDocuments).mock.invocationCallOrder[0]!);
+    expect(vi.mocked(updateDocumentUploadState).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(validateDocumentContents).mock.invocationCallOrder[0]!);
   });
 
   it('returns upload errors without starting submitted state', async () => {
@@ -308,7 +308,7 @@ describe('action', () => {
     const result = await action(args);
 
     expect(loadDocumentUploadState).toHaveBeenCalledWith({ id: args.params.id, session, params: args.params });
-    expect(scanDocuments).toHaveBeenCalledOnce();
+    expect(validateDocumentContents).toHaveBeenCalledOnce();
     expect(result).toEqual({
       data: {
         errors,
@@ -405,7 +405,7 @@ describe('action', () => {
 
     expect(getFiles).toHaveBeenCalledExactlyOnceWith(formData);
     expect(validateUploadedFiles).toHaveBeenCalledExactlyOnceWith({ files: parsedBatch, locale: 'fr', t: expect.any(Function) });
-    expect(scanDocuments).toHaveBeenCalledExactlyOnceWith(files);
+    expect(validateDocumentContents).toHaveBeenCalledExactlyOnceWith(files);
     expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
     expect(updateDocumentUploadState).toHaveBeenCalledWith({
       id: uploadId,

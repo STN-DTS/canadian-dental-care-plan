@@ -74,8 +74,8 @@ for (const scenario of [
 
 for (const scenario of [
   { name: 'missing document type', file: validFile, type: '', error: 'Select a document type for file' },
-  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'not supported' },
-  { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'too large' },
+  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'You can’t upload this file format for “evidence.exe”. Choose a file in one of these formats:' },
+  { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'The file is too large to upload. Make sure the file size is less than 5\u00A0MB.' },
 ]) {
   test(`server repeats ${scenario.name} validation when client checks are bypassed`, async ({ uploadPage, uploadApi }) => {
     const response = await uploadApi.post([
@@ -92,7 +92,7 @@ for (const scenario of [
 test('server rejects duplicate file contents with distinct IDs', async ({ uploadApi }) => {
   const response = await uploadApi.post([...validFields, ['file_id', 'second'], ['file_object', validFile], ['file_document_type', 'invalid-type-id']]);
   expect(response.status()).toBe(400);
-  expect(await response.text()).toContain('matches a file');
+  expect(await response.text()).toContain('The file “evidence.txt” is already selected or uploaded. You must choose a different file.');
 });
 
 test('server rejects an excessive pending batch', async ({ uploadApi }) => {
@@ -107,13 +107,13 @@ test('server rejects an excessive pending batch', async ({ uploadApi }) => {
   ).flat();
   const response = await uploadApi.post([['_action', 'upload'], ...fields]);
   expect(response.status()).toBe(400);
-  expect(await response.text()).toContain('You can upload up to 10 documents');
+  expect(await response.text()).toContain('You can upload up to 10 files at a time. Submit before uploading more.');
 });
 
-test('unknown nonempty type reaches upload processing and returns an unexpected upload error', async ({ uploadApi }) => {
+test('returned EWDU rejection uses the generic upload error', async ({ uploadApi }) => {
   const response = await uploadApi.post(validFields);
   expect(response.status()).toBe(400);
-  expect(await response.text()).toContain('An unexpected error occurred while uploading');
+  expect(await response.text()).toContain('An unexpected error occurred while uploading file “evidence.txt”. Try to upload your file again.');
 });
 
 for (const fields of [[['file_id', 'first']], [['file_object', validFile]], [['unexpected', validFile]]] satisfies UploadField[][]) {
