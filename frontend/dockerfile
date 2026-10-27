@@ -85,7 +85,7 @@ RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 # podman exec -it <container> /busybox/sh
 # ---------------------------------------------------------------------------- #
 
-FROM gcr.io/distroless/nodejs26-debian13:debug@sha256:af7c073f55652b5b6cf653b8da72dcbcecc31d7df8f9776801ca91fb595ef6d6
+FROM gcr.io/distroless/nodejs26-debian13:debug@sha256:24e55362e4b028872f7ef6fb06b8a24ac17b6b30cac2023ed8910a776852094d
 
 # Fail if Node still trusts emSign ECC Root CA - G3 (eMudhra key compromise, GHSA-6q48-6c7w-9gw2).
 RUN ["/nodejs/bin/node", "-e", "const { X509Certificate } = require('node:crypto'); if (require('node:tls').rootCertificates.some((pem) => new X509Certificate(pem).subject.includes('CN=emSign ECC Root CA - G3'))) { console.error('Node trusts emSign ECC Root CA - G3'); process.exit(1); }"]
