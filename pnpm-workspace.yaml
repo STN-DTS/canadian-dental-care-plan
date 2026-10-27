@@ -107,7 +107,7 @@ catalog:
   minimatch: 10.2.6
   moderndash: 4.0.2
   morgan: 1.12.1
-  npm-run-all2: 9.0.3
+  npm-run-all2: 9.0.4
   nprogress: 0.2.0
   oxfmt: 0.74.0
   oxide.ts: 1.1.0
