@@ -98,7 +98,7 @@ DEV mock responses, not real service processing.
 
 Before submission, check that each file shows its filename and type.
 After a successful mock response, the confirmation should list the uploaded filenames
-and explains the next steps. Refreshing the finished confirmation shows it
+and explain the next steps. Refreshing the finished confirmation shows it
 again while the session remains valid.
 
 ### F-02. Add, edit, and remove files
