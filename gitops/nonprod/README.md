@@ -48,7 +48,7 @@ From the repository root, run:
 bash gitops/nonprod/base/redis/tests/redis-startup.sh
 ```
 
-The test uses `redis:8.8.0` to reproduce the failure without the workaround.
+The test uses `redis:8.10.3-trixie` by default to reproduce the failure without the workaround.
 It then runs two cycles of `CONFIG REWRITE` and restart through the startup
 script. It checks data, authentication, replication settings, file ownership,
 permissions, non-root Redis execution, and invalid configurations.
@@ -70,7 +70,7 @@ log excerpt before changing the workaround.
 To check another affected image, set `REDIS_TEST_IMAGE`:
 
 ```sh
-REDIS_TEST_IMAGE=docker.io/library/redis:8.8.3 bash gitops/nonprod/base/redis/tests/redis-startup.sh
+REDIS_TEST_IMAGE=docker.io/library/redis:8.10.3-trixie bash gitops/nonprod/base/redis/tests/redis-startup.sh
 ```
 
 The test expects the unmodified entrypoint to reproduce the bug.

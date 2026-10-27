@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
+  annotations:
+    # reload the pod whenever the secrets change
+    secret.reloader.stakater.com/auto: 'true'
   labels:
     app.kubernetes.io/name: redis
 spec:
@@ -17,7 +20,7 @@ spec:
     spec:
       initContainers:
         - name: init
-          image: docker.io/redis:8@sha256:97ec88159e6d7cfb5ddef9015386087d58a912de80112f06ebdfa78fa5989901
+          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
           command: [bash, /etc/init.sh]
           envFrom:
             - secretRef:
@@ -39,9 +42,7 @@ spec:
               subPath: sentinel.conf
       containers:
         - name: redis
-          # Note: image tag should be pinned to a specific version in overlays
-          #       ex: 8.8 in nonprod; 8.8.0 in prod
-          image: docker.io/redis:8@sha256:97ec88159e6d7cfb5ddef9015386087d58a912de80112f06ebdfa78fa5989901
+          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
           command: [bash, /etc/start-redis.sh]
           args: [/data/redis.conf, --requirepass, $(REDIS_PASSWORD), --masterauth, $(REDIS_PASSWORD)]
           envFrom:
@@ -75,9 +76,7 @@ spec:
             - name: data
               mountPath: /data
         - name: redis-sentinel
-          # Note: image tag should be pinned to a specific version in overlays
-          #       ex: 8.8 in nonprod; 8.8.0 in prod
-          image: docker.io/redis:8@sha256:97ec88159e6d7cfb5ddef9015386087d58a912de80112f06ebdfa78fa5989901
+          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
           args: [/data/sentinel.conf, --sentinel]
           ports:
             - name: sentinel

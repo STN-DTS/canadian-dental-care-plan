@@ -24,7 +24,6 @@ Otto integration environment for the Canadian Dental Care Plan.
 
 - `patches/deployments.yaml` — Frontend deployment overrides
 - `patches/services.yaml` — Service customizations
-- `patches/stateful-sets.yaml` — Redis StatefulSet overrides
 
 ## Configuration Overrides
 

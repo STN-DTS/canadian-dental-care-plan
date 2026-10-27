@@ -26,7 +26,6 @@ User acceptance testing environment 2 for the Canadian Dental Care Plan.
 - `patches/deployments.yaml` — Adds OAuth proxy sidecar to the frontend deployment
 - `patches/deployments-maintenance.yaml` — Maintenance page deployment overrides
 - `patches/services.yaml` — Service customizations
-- `patches/stateful-sets.yaml` — Redis StatefulSet overrides
 
 ## Configuration Overrides
 

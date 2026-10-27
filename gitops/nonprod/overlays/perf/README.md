@@ -26,7 +26,7 @@ Performance testing environment for the Canadian Dental Care Plan.
 
 - `patches/deployments.yaml` — Adds OAuth proxy and fluentd sidecars to the frontend deployment
 - `patches/services.yaml` — Service customizations
-- `patches/stateful-sets.yaml` — Redis StatefulSet overrides
+- `patches/stateful-sets.yaml` — Redis StatefulSet replica count
 
 ## Configuration Overrides
 

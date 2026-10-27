@@ -31,7 +31,6 @@ patches:
   - path: ./patches/deployments.yaml
   - path: ./patches/deployments-maintenance.yaml
   - path: ./patches/services.yaml
-  - path: ./patches/stateful-sets.yaml
 configMapGenerator:
   - name: frontend
     behavior: merge

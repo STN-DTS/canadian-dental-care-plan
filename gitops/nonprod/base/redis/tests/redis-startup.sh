@@ -7,7 +7,7 @@ if [[ ${1:-} != --container ]]; then
     --tmpfs /data:rw,mode=0777 --tmpfs /tmp:rw,mode=1777 \
     --volume "$test_directory/../configs/start-redis.sh:/etc/start-redis.sh:ro" \
     --volume "$test_directory/redis-startup.sh:/etc/test-redis-startup.sh:ro" \
-    --entrypoint bash "${REDIS_TEST_IMAGE:-docker.io/library/redis:8.8.0}" \
+    --entrypoint bash "${REDIS_TEST_IMAGE:-docker.io/library/redis:8.10.3-trixie}" \
     /etc/test-redis-startup.sh --container
 fi
 
