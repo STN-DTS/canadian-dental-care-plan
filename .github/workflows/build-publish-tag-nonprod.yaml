@@ -3,7 +3,8 @@
 # Tests the frontend and scans, publishes, and signs OCI images for v* tags.
 # Uses nonprod ACR and runners; manual runs must target a valid release tag.
 
-name: Build, test, and publish nonprod tag images
+name: build-publish-tag-nonprod
+run-name: Build, test, and publish nonprod tag images
 
 permissions:
   contents: read

@@ -3,7 +3,8 @@
 # Validates frontend changes on main and release/v* pushes, or on manual and
 # reusable runs. Scans, publishes, and signs OCI images in nonprod ACR.
 
-name: Build, test, and publish nonprod images
+name: build-publish-main-nonprod
+run-name: Build, test, and publish nonprod images
 
 permissions:
   contents: read

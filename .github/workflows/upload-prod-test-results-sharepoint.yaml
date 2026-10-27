@@ -13,12 +13,13 @@
 # Retry using Actions > Re-run failed jobs while source reports are unexpired.
 # No image rebuild or publish occurs. New manual runs by tag are not supported.
 
-name: Upload PROD test results to SharePoint
+name: upload-prod-test-results-sharepoint
+run-name: Upload PROD test results to SharePoint
 
 on:
   workflow_run:
     workflows:
-      - Build, test, and publish PROD tag images
+      - build-publish-tag-prod
     types: [completed]
 
 permissions: {}

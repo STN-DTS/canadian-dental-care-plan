@@ -23,16 +23,19 @@ repository-owned workflows:
 
 ```yaml
 workflows:
-  - Build, test, and publish nonprod images
-  - Build, test, and publish nonprod tag images
-  - Build, test, and publish PROD tag images
-  - GitOps operator (nonprod)
-  - GitOps operator (prod)
-  - Nightly e2e tests
-  - Upload PROD test results to SharePoint
+  - build-publish-main-nonprod
+  - build-publish-tag-nonprod
+  - build-publish-tag-prod
+  - gitops-main-nonprod
+  - gitops-main-prod
+  - nightly-e2e
+  - upload-prod-test-results-sharepoint
 ```
 
-Entries match each workflow's `name`, not its filename. Update the allowlist in
+Entries match each workflow's `name`, not its `run-name`. For these workflows,
+`name` matches the filename without `.yaml`, while `run-name` retains the descriptive
+title shown for individual runs. The PROD SharePoint upload also uses the PROD tag
+workflow's `name` in its completion trigger. Update the allowlist in
 [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml) and this example
 when adding or renaming a workflow that should send notifications. New workflows
 are not included automatically. GitHub-managed workflows, such as **Running Copilot

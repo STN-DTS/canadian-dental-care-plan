@@ -3,7 +3,8 @@
 # Builds the frontend and runs Chromium end-to-end tests at 00:00 UTC daily
 # or on manual dispatch. Publishes Playwright reports for completed test runs.
 
-name: Nightly e2e tests
+name: nightly-e2e
+run-name: Nightly e2e tests
 
 on:
   schedule:

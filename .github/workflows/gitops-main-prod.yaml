@@ -4,7 +4,8 @@
 # Manual and reusable deployments are also restricted to main.
 # External Secrets Operator owns application Secrets; CI fetches only deployment credentials.
 
-name: GitOps operator (prod)
+name: gitops-main-prod
+run-name: GitOps operator (prod)
 
 permissions:
   contents: read

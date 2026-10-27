@@ -4,7 +4,8 @@
 # nonprod AKS cluster when changes are pushed.
 # Manual and reusable runs apply all overlays; deployments are restricted to main.
 
-name: GitOps operator (nonprod)
+name: gitops-main-nonprod
+run-name: GitOps operator (nonprod)
 
 permissions:
   contents: read

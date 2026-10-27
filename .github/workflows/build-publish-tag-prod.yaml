@@ -3,7 +3,8 @@
 # Tests the frontend and scans, publishes, and signs OCI images for v* tags.
 # Uses PROD ACR and runners; manual runs must target a valid release tag.
 
-name: Build, test, and publish PROD tag images
+name: build-publish-tag-prod
+run-name: Build, test, and publish PROD tag images
 
 permissions:
   contents: read

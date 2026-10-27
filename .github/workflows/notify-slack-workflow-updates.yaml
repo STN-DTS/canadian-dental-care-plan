@@ -11,13 +11,13 @@ name: Post workflow updates to Slack
 on:
   workflow_run:
     workflows:
-      - Build, test, and publish nonprod images
-      - Build, test, and publish nonprod tag images
-      - Build, test, and publish PROD tag images
-      - GitOps operator (nonprod)
-      - GitOps operator (prod)
-      - Nightly e2e tests
-      - Upload PROD test results to SharePoint
+      - build-publish-main-nonprod
+      - build-publish-tag-nonprod
+      - build-publish-tag-prod
+      - gitops-main-nonprod
+      - gitops-main-prod
+      - nightly-e2e
+      - upload-prod-test-results-sharepoint
     types: [requested, completed]
 
 permissions: {}
