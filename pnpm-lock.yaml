@@ -472,8 +472,8 @@ catalogs:
       specifier: 0.2.2
       version: 0.2.2
     remix-utils:
-      specifier: 10.0.0
-      version: 10.0.0
+      specifier: 10.0.1
+      version: 10.0.1
     source-map-support:
       specifier: 0.5.21
       version: 0.5.21
@@ -757,7 +757,7 @@ importers:
         version: 0.2.2
       remix-utils:
         specifier: 'catalog:'
-        version: 10.0.0(@oslojs/crypto@1.0.1)(@oslojs/encoding@1.1.0)(react-router@8.5.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+        version: 10.0.1(@oslojs/crypto@1.0.1)(@oslojs/encoding@1.1.0)(react-router@8.5.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       source-map-support:
         specifier: 'catalog:'
         version: 0.5.21
@@ -5174,8 +5174,8 @@ packages:
   reflect-metadata@0.2.2:
     resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
 
-  remix-utils@10.0.0:
-    resolution: {integrity: sha512-v5voIsJQof6e/1m8te4qyH5YXATWxv+zEgbxd98CwtVxRLCXVc+P9rQ2uDRRYPLCvF9A2ZBOizK0ZTUfm4qJpw==}
+  remix-utils@10.0.1:
+    resolution: {integrity: sha512-9W1j8oJzIEm55PVpN7dZsEnDD1bQ+0nSuUMIk2WoOWZA6XhIHNOTuUH+8MdICYAwaanZse8Z3lKozWNn/u4niA==}
     engines: {node: '>=22.22.0'}
     peerDependencies:
       '@edgefirst-dev/batcher': ^1.0.0
@@ -9888,7 +9888,7 @@ snapshots:
 
   reflect-metadata@0.2.2: {}
 
-  remix-utils@10.0.0(@oslojs/crypto@1.0.1)(@oslojs/encoding@1.1.0)(react-router@8.5.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1):
+  remix-utils@10.0.1(@oslojs/crypto@1.0.1)(@oslojs/encoding@1.1.0)(react-router@8.5.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1):
     optionalDependencies:
       '@oslojs/crypto': 1.0.1
       '@oslojs/encoding': 1.1.0
