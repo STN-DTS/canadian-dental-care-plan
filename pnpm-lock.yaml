@@ -373,8 +373,8 @@ catalogs:
       specifier: 22.2.0
       version: 22.2.0
     filesize:
-      specifier: 11.0.26
-      version: 11.0.26
+      specifier: 11.0.28
+      version: 11.0.28
     i18next:
       specifier: 26.5.3
       version: 26.5.3
@@ -682,7 +682,7 @@ importers:
         version: 22.2.0
       filesize:
         specifier: 'catalog:'
-        version: 11.0.26
+        version: 11.0.28
       i18next:
         specifier: 'catalog:'
         version: 26.5.3(typescript@7.0.2)
@@ -3965,8 +3965,8 @@ packages:
     resolution: {integrity: sha512-XmEVJsRpQMVYC+sWFW+FKAVo2P7/lPctDdWH4UQ1r6oxhdrTobnowdM3z+ZJ93a4J8D3yDpxX0bEvRuFev0vUQ==}
     engines: {node: '>=22'}
 
-  filesize@11.0.26:
-    resolution: {integrity: sha512-CgbdcjFLDJzMUnxQxHZ5uVxREmTVkjoXnppVB0AH8X0N8Uz4CZarWZLFALLv/Ymyf6EEu1AgaLPS6laXiqBEWA==}
+  filesize@11.0.28:
+    resolution: {integrity: sha512-tsZcwUmhL0WQpsxe9Oua6FBjb0aBTRkXobZBhQdkoII0pYgy9h+cXm5tp13Fsr8dSwp1+UVDxNwAFULDpxkXaw==}
     engines: {node: '>= 10.8.0'}
 
   finalhandler@2.1.1:
@@ -8551,7 +8551,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  filesize@11.0.26: {}
+  filesize@11.0.28: {}
 
   finalhandler@2.1.1:
     dependencies:
