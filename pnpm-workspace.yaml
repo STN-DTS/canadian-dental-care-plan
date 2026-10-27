@@ -168,9 +168,7 @@ minimumReleaseAge: 4320
 # Overrides allows you to instruct pnpm to override any dependency in the dependency graph,
 # including peer dependencies.
 # https://pnpm.io/settings/dependency-resolution#overrides
-overrides:
-  # GHSA-27r3-jxmh-p828
-  'body-parser@>=2.0.0 <2.4.0': '2.4.0'
+# overrides:
 
 # Patches specific dependencies to apply custom fixes or modifications.
 # https://pnpm.io/settings#patcheddependencies
@@ -183,10 +181,11 @@ trustPolicy: no-downgrade
 # even if their trust level has decreased.
 # https://pnpm.io/settings#trustpolicyexclude
 trustPolicyExclude:
-  - 'semver@6.3.1' # See https://github.com/npm/node-semver/issues/838
-
-minimumReleaseAgeExclude:
-  - qs@6.16.1
+  # semver@6.3.1 is a v6 backport published (2023/7/10) after 7.5.1+ which had provenance.
+  # pnpm evaluates trust by publish date (not semver), so this triggers a false downgrade.
+  # The semver maintainer states this is not a security concern.
+  # See: https://github.com/npm/node-semver/issues/838
+  - 'semver@6.3.1'
 
 # Sets the prefix used when saving dependencies with pnpm install.
 # "=" ensures exact versions are saved.
