@@ -1,5 +1,5 @@
 import { Response } from 'undici';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -7,6 +7,7 @@ import type { DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import { DefaultDocumentUploadRepository, MockDocumentUploadRepository } from '~/.server/domain/repositories';
 import type { HttpClient } from '~/.server/http';
+import { expectDefined } from '~/utils/assert-utils';
 
 const uploadRequest = {
   filename: 'document.txt',
@@ -86,6 +87,33 @@ describe('DefaultDocumentUploadRepository', () => {
       kind: 'http',
       httpStatus: 503,
     } satisfies Partial<DocumentUploadException>);
+  });
+
+  it('cancels the body of a non-success HTTP response before reporting the HTTP failure', async () => {
+    const response = new Response('Upstream error details', { status: 503 });
+    const cancel = vi.spyOn(expectDefined(response.body, 'Expected response body'), 'cancel');
+    httpClientMock.instrumentedFetch.mockResolvedValue(response);
+
+    await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
+      name: 'DocumentUploadException',
+      kind: 'http',
+      httpStatus: 503,
+    } satisfies Partial<DocumentUploadException>);
+    expect(cancel).toHaveBeenCalledExactlyOnceWith();
+    expect(response.bodyUsed).toBe(true);
+  });
+
+  it('preserves the HTTP failure when response body cancellation fails', async () => {
+    const response = new Response('Upstream error details', { status: 400 });
+    const cancel = vi.spyOn(expectDefined(response.body, 'Expected response body'), 'cancel').mockRejectedValue(new Error('Cancellation failed'));
+    httpClientMock.instrumentedFetch.mockResolvedValue(response);
+
+    await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
+      name: 'DocumentUploadException',
+      kind: 'http',
+      httpStatus: 400,
+    } satisfies Partial<DocumentUploadException>);
+    expect(cancel).toHaveBeenCalledExactlyOnceWith();
   });
 
   it.each([

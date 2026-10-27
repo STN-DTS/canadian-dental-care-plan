@@ -118,6 +118,10 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
         url: url,
       });
 
+      await response.body?.cancel().catch(() => {
+        // Preserve the original HTTP failure if cleanup fails.
+      });
+
       throw new DocumentUploadException('http', response.status);
     }
 
