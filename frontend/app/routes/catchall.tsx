@@ -1,7 +1,7 @@
 import { data } from 'react-router';
 
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
-import { BilingualNotFoundError, NotFoundError, publicLayoutI18nNamespace } from '~/components/layouts/public-layout';
+import { BilingualNotFoundError, NotFoundError } from '~/components/layouts/public-layout';
 import { pageIds } from '~/page-ids';
 import { isAppLocale } from '~/utils/locale-utils';
 import { mergeMeta } from '~/utils/meta-utils';
@@ -11,7 +11,7 @@ import { getTitleMetaTags } from '~/utils/seo-utils';
 import type { Route } from './+types/catchall';
 
 export const handle = {
-  i18nPreloadNamespace: publicLayoutI18nNamespace,
+  i18nPreloadNamespace: 'gcweb',
   pageIdentifier: pageIds.public.notFound,
 } as const satisfies RouteHandleData;
 

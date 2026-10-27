@@ -104,6 +104,13 @@ User-facing content must exist in both English and French. Keep translation
 keys consistent between locale files. Use the existing i18next helpers and
 components instead of embedding user-facing strings in route modules.
 
+Check translation coverage from the repository root with
+`pnpm --filter @cdcp-rcsd/frontend exec i18next-cli status`.
+The extractor configuration registers the server-side `getFixedT` helper with
+its namespace in the second argument. Pass the bound `t` function to `Trans`
+when using a namespace constant so extraction can resolve the namespace.
+Define context variants used by the application explicitly in both locales.
+
 When adding a localized route:
 
 - add both language paths in the route definition

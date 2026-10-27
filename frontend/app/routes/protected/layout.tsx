@@ -2,7 +2,7 @@ import { Outlet, isRouteErrorResponse, useNavigate } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
 
-import { NotFoundError, ProtectedLayout, ServerError, protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
+import { NotFoundError, ProtectedLayout, ServerError } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
 import { useClientEnv } from '~/hooks';
 import { authMiddleware } from '~/middlewares/auth.server';
@@ -15,7 +15,7 @@ import type { Route } from './+types/layout';
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 export const handle = {
-  i18nPreloadNamespace: protectedLayoutI18nNamespace,
+  i18nPreloadNamespace: 'gcweb',
 } as const satisfies RouteHandleData;
 
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {

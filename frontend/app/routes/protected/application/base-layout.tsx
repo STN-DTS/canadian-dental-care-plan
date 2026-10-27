@@ -7,7 +7,6 @@ import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { getLocale } from '~/.server/utils/locale-utils';
 import { KillswitchDialog } from '~/components/killswitch-dialog';
-import { protectedLayoutI18nNamespace } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
 import { transformAdobeAnalyticsUrl } from '~/route-helpers/adobe-analytics-route-helpers';
 import { useApiProtectedApplicationState } from '~/utils/api-protected-application-state-utils';
@@ -20,7 +19,7 @@ export const handle = {
   // Declare all i18n namespaces required by this route and its descendants.
   // Preloading them upfront ensures translations are available on initial render.
   i18nPreloadNamespace: [
-    protectedLayoutI18nNamespace,
+    'gcweb',
     'common',
     'protectedApplication',
     'protectedApplicationIntakeAdult',

@@ -534,9 +534,9 @@ const ns = {
       legend: "Est-ce que {{childName}} a accès à une assurance ou à une couverture dentaire privée?",
       optionYes: "<strong>Oui</strong>, {{childName}} a accès à une assurance ou à une couverture dentaire privée",
       optionNo: "<strong>Non</strong>, {{childName}} n'a pas accès à une assurance ou à une couverture dentaire privée",
-      dentalInsuranceEligibilityConfirmation: "Je comprends que {{childName}} n’est pas admissible au RCSD puisqu’il ou elle a accès à une assurance ou une couverture dentaire privée. Sa couverture prendra fin s’il ou elle est actuellement membre.",
+      dentalInsuranceEligibilityConfirmation: "Je comprends que {{childName}} n'est pas admissible au RCSD puisqu'il ou elle a accès à une assurance ou une couverture dentaire privée. Sa couverture prendra fin s'il ou elle est actuellement membre.",
       dentalInsuranceEligibilityConfirmationNo:
-        "Je comprends que je devrai fournir une preuve si l’un de mes feuillets T4 ou T4A indique que {{childName}} a accès à une assurance dentaire. Cela s’applique à mes feuillets T4 ou T4A et, le cas échéant, à ceux de mon conjoint ou de mon conjoint de fait.",
+        "Je comprends que je devrai fournir une preuve si l'un de mes feuillets T4 ou T4A indique que {{childName}} a accès à une assurance dentaire. Cela s'applique à mes feuillets T4 ou T4A et, le cas échéant, à ceux de mon conjoint ou de mon conjoint de fait.",
       backBtn: "Retour",
       saveBtn: "Sauvegarder",
       detail: {
@@ -566,11 +566,11 @@ const ns = {
       alert: {
         yes: {
           title: "Confirmation de l'assurance ou couverture dentaire privée",
-          body: "{{childName}} n’est pas admissible au RCSD puisqu’il ou elle a accès à une assurance ou à une couverture dentaire privée. Si cet enfant est actuellement membre du RCSD et que vous poursuivez la demande, sa couverture prendra fin immédiatement.",
+          body: "{{childName}} n'est pas admissible au RCSD puisqu'il ou elle a accès à une assurance ou à une couverture dentaire privée. Si cet enfant est actuellement membre du RCSD et que vous poursuivez la demande, sa couverture prendra fin immédiatement.",
         },
         no: {
           title: "Confirmation de l'assurance ou couverture dentaire privée",
-          body: "{{childName}} pourrait être admissible au RCSD. Nous confirmerons votre réponse en examinant vos feuillets T4 et T4A. Si un feuillet indique que {{childName}} a accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que l’enfant n’a pas de couverture dentaire.",
+          body: "{{childName}} pourrait être admissible au RCSD. Nous confirmerons votre réponse en examinant vos feuillets T4 et T4A. Si un feuillet indique que {{childName}} a accès à une assurance ou à une couverture dentaire fournie par votre employeur ou votre régime de retraite, vous pourriez devoir fournir une preuve que l'enfant n'a pas de couverture dentaire.",
         },
       },
       errorMessage: {

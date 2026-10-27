@@ -121,19 +121,17 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 </ContextualAlert>
               ) : (
                 <p role="status" aria-atomic="true">
-                  {t(($) => $.upload.uploadFiles.filesSelected, {
-                    count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-                    selected: filesWithTypes.length,
-                  })}
-                  {hasUploadedDocuments && (
-                    <>
-                      {'. '}
-                      {t(($) => $.upload.uploadFiles.uploadedFiles, { count: uploadedFileCount })}
-                      {'. '}
-                      {t(($) => $.upload.uploadFiles.pendingFiles, { count: pendingFileCount })}
-                      {'.'}
-                    </>
-                  )}
+                  {hasUploadedDocuments
+                    ? t(($) => $.upload.uploadFiles.uploadProgress, {
+                        maximum: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
+                        selected: filesWithTypes.length,
+                        uploaded: uploadedFileCount,
+                        pending: pendingFileCount,
+                      })
+                    : t(($) => $.upload.uploadFiles.filesSelected, {
+                        count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
+                        selected: filesWithTypes.length,
+                      })}
                 </p>
               )}
               <FileUploadList className="gap-4 sm:gap-6">

@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 
 import { Link } from 'react-router';
 
-import type { Namespace } from 'i18next';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Banner } from '~/components/banner';
@@ -18,8 +17,6 @@ import { useCurrentLanguage, useFeature } from '~/hooks';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { getClientEnv } from '~/utils/env-utils';
 import { useLayoutOptions } from '~/utils/route-utils';
-
-export const publicLayoutI18nNamespace = 'gcweb' satisfies Namespace;
 
 /**
  * GCWeb Application page template.
@@ -42,7 +39,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
 
 function PageHeader() {
   const { currentLanguage } = useCurrentLanguage();
-  const { t } = useTranslation(publicLayoutI18nNamespace);
+  const { t } = useTranslation('gcweb');
   const { HEADER_LOGO_URL_EN, HEADER_LOGO_URL_FR } = getClientEnv();
 
   // Select the correct logo URL based on the current language
@@ -184,7 +181,7 @@ interface NotFoundErrorProps {
 }
 
 export function NotFoundError({ error }: NotFoundErrorProps) {
-  const { t } = useTranslation(publicLayoutI18nNamespace);
+  const { t } = useTranslation('gcweb');
   const cdcpLink = <InlineLink to={t(($) => $.publicNotFound.cdcpLink)} className="external-link" newTabIndicator target="_blank" />;
 
   useEffect(() => {
@@ -204,7 +201,7 @@ export function NotFoundError({ error }: NotFoundErrorProps) {
         <p className="mb-8 text-lg text-gray-500">{t(($) => $.publicNotFound.pageMessage)}</p>
         <ul className="list-disc space-y-2 pl-10">
           <li>
-            <Trans ns={publicLayoutI18nNamespace} i18nKey={($) => $.publicNotFound.unilingualReturnCdcp} components={{ cdcpLink }} />
+            <Trans ns={'gcweb'} i18nKey={($) => $.publicNotFound.unilingualReturnCdcp} components={{ cdcpLink }} />
           </li>
         </ul>
         <PageDetails />
@@ -303,7 +300,7 @@ interface ServerErrorProps {
 }
 
 export function ServerError({ error }: ServerErrorProps) {
-  const { t } = useTranslation(publicLayoutI18nNamespace);
+  const { t } = useTranslation('gcweb');
   const home = <InlineLink to="/" />;
 
   useEffect(() => {
@@ -328,7 +325,7 @@ export function ServerError({ error }: ServerErrorProps) {
         <ul className="list-disc space-y-2 pl-10">
           <li>{t(($) => $.serverError.option01)}</li>
           <li>
-            <Trans ns={publicLayoutI18nNamespace} i18nKey={($) => $.serverError.option02} components={{ home }} />
+            <Trans ns={'gcweb'} i18nKey={($) => $.serverError.option02} components={{ home }} />
           </li>
         </ul>
         <PageDetails />

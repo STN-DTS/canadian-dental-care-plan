@@ -243,7 +243,8 @@ describe('DocumentUploadForm', () => {
     setDocuments([...uploaded, createDocument('replacement', 'pending')]);
     rerender(<RoutesStub key="pending" initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
 
-    expect(screen.getByRole('status')).toHaveTextContent(/upload.uploadFiles.filesSelected.*\..*upload.uploadFiles.uploadedFiles.*\..*upload.uploadFiles.pendingFiles/);
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadProgress', options: { maximum: 10, selected: 3, uploaded: 2, pending: 1 } }));
+    expect(screen.getByRole('status')).toHaveAttribute('aria-atomic', 'true');
     expect(screen.getByRole('button', { name: 'upload.submitRemaining' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'upload.viewSubmissionConfirmation' })).not.toBeInTheDocument();
   });
@@ -252,7 +253,7 @@ describe('DocumentUploadForm', () => {
     setDocuments([createDocument('first', 'uploaded'), createDocument('second', 'pending'), createDocument('third', 'pending')]);
     renderForm('fr');
 
-    expect(screen.getByRole('status')).toHaveTextContent(/upload.uploadFiles.filesSelected.*\..*upload.uploadFiles.uploadedFiles.*\..*upload.uploadFiles.pendingFiles/);
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadProgress', options: { maximum: 10, selected: 3, uploaded: 1, pending: 2 } }));
     expect(screen.getByRole('button', { name: 'upload.submitRemaining' })).toBeInTheDocument();
   });
 });
