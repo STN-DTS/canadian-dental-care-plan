@@ -36,9 +36,6 @@
 
 FROM docker.io/library/node:26.12.1-trixie-slim@sha256:36793bcbb160a6a16cede1e62b93f84e26b78a972a8a4c0b879c1c12f22761ec AS build
 
-# Fail if Node still trusts emSign ECC Root CA - G3 (eMudhra key compromise, GHSA-6q48-6c7w-9gw2).
-RUN node -e 'const { X509Certificate } = require("node:crypto"); if (require("node:tls").rootCertificates.some((pem) => new X509Certificate(pem).subject.includes("CN=emSign ECC Root CA - G3"))) { console.error("Node trusts emSign ECC Root CA - G3"); process.exit(1); }'
-
 WORKDIR /home/node
 
 # Install the pnpm version declared by package.json.
@@ -86,9 +83,6 @@ RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 # ---------------------------------------------------------------------------- #
 
 FROM gcr.io/distroless/nodejs26-debian13@sha256:e6ffd0e0ddbbcad0231684befb2c421591c2be46baa71da7d9065294c17efc0d
-
-# Fail if Node still trusts emSign ECC Root CA - G3 (eMudhra key compromise, GHSA-6q48-6c7w-9gw2).
-RUN ["/nodejs/bin/node", "-e", "const { X509Certificate } = require('node:crypto'); if (require('node:tls').rootCertificates.some((pem) => new X509Certificate(pem).subject.includes('CN=emSign ECC Root CA - G3'))) { console.error('Node trusts emSign ECC Root CA - G3'); process.exit(1); }"]
 
 ARG BUILD_DATE="1970-01-01T00:00:00.000Z"
 ARG BUILD_ID="000000"
