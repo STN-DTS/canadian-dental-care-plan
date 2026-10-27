@@ -23,8 +23,8 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
 - Run type generation before standalone type-aware Oxlint. Run
   `pnpm --filter @cdcp-rcsd/frontend run build` before Playwright tests; inspect `playwright.config.ts`
   before changing browser-test startup or environment settings.
-- Use package scripts for server starts. They preload the OpenTelemetry ESM
-  registration and instrumentation modules; do not bypass these imports.
+- Use package scripts for server starts. They load the official OpenTelemetry
+  ESM hook and preload the SDK configuration; do not bypass either.
 - The package is `@cdcp-rcsd/frontend`. Its deployment `files` list must include
   runtime `build/` and `public/` assets. Preserve the Docker deploy selector
   when changing package names.

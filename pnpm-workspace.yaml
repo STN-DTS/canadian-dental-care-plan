@@ -39,6 +39,7 @@ catalog:
   '@opentelemetry/exporter-logs-otlp-proto': 0.300.0
   '@opentelemetry/exporter-metrics-otlp-proto': 0.300.0
   '@opentelemetry/exporter-trace-otlp-proto': 0.300.0
+  '@opentelemetry/instrumentation': 0.300.0
   '@opentelemetry/otlp-exporter-base': 0.300.0
   '@opentelemetry/resources': 3.0.0
   '@opentelemetry/sdk-logs': 3.0.0
@@ -94,7 +95,6 @@ catalog:
   i18next: 26.5.10
   i18next-cli: 1.80.0
   i18next-http-backend: 4.0.5
-  import-in-the-middle: 3.5.2
   inversify: 8.2.3
   isbot: 5.2.2
   jose: 6.2.13

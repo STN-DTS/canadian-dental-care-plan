@@ -91,8 +91,17 @@ podman volume import <volume-name> <volume-name>.tar
 
 ## Application instrumentation
 
-The `dev`, `preview`, and `start` scripts preload the OpenTelemetry ESM
-registration modules. Do not start the server entry point directly.
+The `dev`, `dbg`, `preview`, and `start` scripts load the official OpenTelemetry
+ESM hook with
+`--experimental-loader=@opentelemetry/instrumentation/hook.mjs` and preload
+the SDK configuration in `opentelemetry.ts` (or its built JavaScript output)
+with `--import`. The production container uses the same hook and SDK preload.
+Do not start the server entry point directly: ESM auto-instrumentation requires
+the hook, and the SDK must start before application dependencies are imported.
+
+The loader uses Node's asynchronous ESM loader mechanism. Node may print an
+`ExperimentalWarning` about `--experimental-loader`; this is expected with the
+currently documented OpenTelemetry entry point, not an SDK initialization failure.
 
 See [Express conventions](express.md) for middleware naming rules that preserve
 meaningful telemetry metadata and span names.

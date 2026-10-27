@@ -219,6 +219,9 @@ catalogs:
     '@opentelemetry/exporter-trace-otlp-proto':
       specifier: 0.300.0
       version: 0.300.0
+    '@opentelemetry/instrumentation':
+      specifier: 0.300.0
+      version: 0.300.0
     '@opentelemetry/otlp-exporter-base':
       specifier: 0.300.0
       version: 0.300.0
@@ -384,9 +387,6 @@ catalogs:
     i18next-http-backend:
       specifier: 4.0.5
       version: 4.0.5
-    import-in-the-middle:
-      specifier: 3.5.2
-      version: 3.5.2
     inversify:
       specifier: 8.2.3
       version: 8.2.3
@@ -593,6 +593,9 @@ importers:
       '@opentelemetry/exporter-trace-otlp-proto':
         specifier: 'catalog:'
         version: 0.300.0(@opentelemetry/api@1.10.0)
+      '@opentelemetry/instrumentation':
+        specifier: 'catalog:'
+        version: 0.300.0(@opentelemetry/api@1.10.0)
       '@opentelemetry/otlp-exporter-base':
         specifier: 'catalog:'
         version: 0.300.0(@opentelemetry/api@1.10.0)
@@ -689,9 +692,6 @@ importers:
       i18next-http-backend:
         specifier: 'catalog:'
         version: 4.0.5
-      import-in-the-middle:
-        specifier: 'catalog:'
-        version: 3.5.2
       inversify:
         specifier: 'catalog:'
         version: 8.2.3(reflect-metadata@0.2.2)

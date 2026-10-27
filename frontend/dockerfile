@@ -122,4 +122,4 @@ WORKDIR /app
 
 USER nonroot:nonroot
 
-CMD ["--import", "./build/server/opentelemetry-register.js", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
+CMD ["--experimental-loader=@opentelemetry/instrumentation/hook.mjs", "--import", "./build/server/opentelemetry.js", "./build/server/server.js"]
