@@ -27,7 +27,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     return i18n.getFixedT(locale, 'documents');
   }
 
-  it('uses the same approved wording for returned rejections and technical failures', async () => {
+  it('uses the same approved wording for non-security rejections and technical failures', async () => {
     const t = await getTranslator();
     const expected =
       locale === 'en'
@@ -36,6 +36,17 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
 
     expect(t(($) => $.upload.errorMessage.uploadFailed, { filename: 'document.txt' })).toBe(expected);
     expect(t(($) => $.upload.errorMessage.uploadError, { filename: 'document.txt' })).toBe(expected);
+  });
+
+  it('uses distinct security-check wording for unsafe files', async () => {
+    const t = await getTranslator();
+    const expected =
+      locale === 'en' ? 'The file “document.txt” does not pass our security checks. You must choose a different file.' : 'Le fichier «\u00A0document.txt\u00A0» ne passe pas notre vérification de sécurité. Vous devez choisir un autre fichier.';
+    const unsafeMessage = t(($) => $.upload.errorMessage.scanFailed, { filename: 'document.txt' });
+
+    expect(unsafeMessage).toBe(expected);
+    expect(unsafeMessage).not.toBe(t(($) => $.upload.errorMessage.uploadFailed, { filename: 'document.txt' }));
+    expect(unsafeMessage).not.toBe(t(($) => $.upload.errorMessage.uploadError, { filename: 'document.txt' }));
   });
 
   it('validates oversized files both during selection and during submission', async () => {
@@ -64,7 +75,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     });
   });
 
-  it.each([1, 3])('supports selection and submission when the maximum file count is %i', async (count) => {
+  it.each([1, 3])('rejects selection and submission above the maximum file count of %i', async (count) => {
     getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
     const t = await getTranslator();
     const selection = new FormData();
@@ -92,5 +103,26 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
       success: false,
       errors: { properties: { files: { errors: [expected] } } },
     });
+  });
+
+  it.each([1, 3])('accepts selection and submission at the maximum file count of %i', async (count) => {
+    getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
+    const t = await getTranslator();
+    const selection = new FormData();
+    selection.set('_validation_id', 'validation-id');
+    selection.set('current_file_count', String(count - 1));
+    selection.append('file_object', new File(['extra content'], 'extra.txt'));
+
+    const submission = new FormData();
+
+    for (let index = 0; index < count; index++) {
+      submission.append('file_id', String(index));
+      submission.append('file_object', new File([`content ${index}`], `${index}.txt`));
+      submission.append('file_document_type', 'receipt');
+    }
+
+    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({ success: true });
+    const files = await getFiles(submission);
+    expect(validateUploadedFiles({ files, locale, t })).toMatchObject({ success: true });
   });
 });

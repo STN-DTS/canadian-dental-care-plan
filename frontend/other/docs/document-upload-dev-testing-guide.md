@@ -1,25 +1,24 @@
-# Document Upload — DEV Testing and Accessibility Assessment Guide
+# Document upload DEV testing and accessibility assessment guide
 
-This guide is for designers, product owners (POs), business analysts (BAs), and
-the Accessibility Office. It gives simple steps for testing the document upload
-form in the mocked DEV environment.
+Use this guide to test the document upload form in DEV with mock services.
+It is for designers, product owners, business analysts, and the Accessibility
+Office.
 
 Use the [technical reference](./document-upload-feature.md) for implementation
-details. This guide does not replace the Accessibility Office’s assessment
-method or determine whether the feature conforms to a standard.
+details. The Accessibility Office decides how to assess the form and whether
+it meets a standard.
 
 ## Shared setup
 
 ### What this DEV test can show
 
-DEV mocks simulate service responses. You can assess what the interface displays
-and how people use it. You cannot use these tests to prove real security
-scanning, document storage, downstream processing, or external-service
-accessibility.
+DEV mocks simulate service responses. These tests cover the form's display
+and controls. They do not verify real security scanning, document storage,
+downstream processing, or external-service accessibility.
 
-DEV uses a hardcoded mock user with access to document upload only. You do not
-need to sign in or obtain a test account. This guide is for testing the document
-upload form, not sign-in, account selection, or other application features.
+DEV uses one fixed mock user with access to document upload only. You do not
+need to sign in or get a test account. Sign-in, account selection, and other
+application features are outside this guide.
 
 Ask the testing coordinator for:
 
@@ -37,12 +36,12 @@ Do not put passwords, personal information, or applicant details in test notes.
 3. For French testing, switch the page language. The link is labelled
    **Téléverser plus de documents** in French.
 
-Start each independent test from the documents page and select the upload link
-again, rather than using a saved flow-specific page address. The application
-creates a new form address.
+Start each independent test from the documents page and select the upload link.
+This creates a new upload form with its own address. Do not reuse a saved form
+address.
 
-The form uses the fixed mock user. It has no applicant or child selector.
-Changing accounts or testing ineligible users is not part of this DEV setup.
+The form has no applicant or child selector. This DEV setup does not support
+switching accounts or testing ineligible users.
 
 ### Prepare test files
 
@@ -63,31 +62,32 @@ Check the full filename. It must be `mock-upload-failure.txt`, not
 `mock-upload-failure.txt.txt`. Renaming a file extension does not make a genuine
 file of that format.
 
-The current defaults are **5 MB per file**, **10 files**, and these extensions:
+The default limits are 5 MB per file and 10 files. The allowed extensions are:
 `.pdf`, `.docx`, `.rtf`, `.xlsx`, `.pptx`, `.txt`, `.jpg`, `.jpeg`, `.png`,
 `.gif`, `.bmp`, `.tif`, and `.tiff`. DEV settings can differ. Use the limits
-shown on the page. The size limit applies to each file; the file count applies
-to the selection, including files already uploaded in the current form. A file
-at the configured size limit is accepted; use a larger file to test rejection.
+shown on the page. The file count includes files already uploaded in the current
+form. A file at the size limit passes size validation. Use a larger file to test
+rejection.
 
 ### Control names
 
-English labels below may help you find controls. French labels are shown in
-parentheses:
+Use these labels to find the controls in either language:
 
-- **Upload file** (**Ajouter un fichier**)
-- **Document Type** (**Type de document**)
-- **Submit** (**Soumettre**)
-- **Submit remaining files** (**Soumettre les fichiers restants**)
-- **View submission confirmation** (**Consulter la confirmation de soumission**)
-- **Remove file** (**Supprimer le fichier**)
+| English                      | French                                  |
+| ---------------------------- | --------------------------------------- |
+| Upload file                  | Ajouter un fichier                      |
+| Document Type                | Type de document                        |
+| Submit                       | Soumettre                               |
+| Submit remaining files       | Soumettre les fichiers restants         |
+| View submission confirmation | Consulter la confirmation de soumission |
+| Remove file                  | Supprimer le fichier                    |
 
 ## Functional scenarios
 
-Record the scenario ID when reporting a result. Expected results describe the
-current mocked DEV experience, not real service processing.
+Record the scenario ID with each result. The expected results below describe
+DEV mock responses, not real service processing.
 
-### F-01 — Upload one or more valid files
+### F-01. Upload one or more valid files
 
 1. Open the upload form using the steps above.
 2. Select a valid PDF.
@@ -96,12 +96,12 @@ current mocked DEV experience, not real service processing.
 5. Repeat with several distinct valid files. Choose a type for each file before
    submitting.
 
-**You should see:** Each selected filename and its type before submission.
-After a successful mock response, the confirmation lists the uploaded filenames
+Before submission, check that each file shows its filename and type.
+After a successful mock response, the confirmation should list the uploaded filenames
 and explains the next steps. Refreshing the finished confirmation shows it
 again while the session remains valid.
 
-### F-02 — Add, edit, and remove files
+### F-02. Add, edit, and remove files
 
 1. Select a valid file and choose its document type.
 2. Select **Upload file** again and add another valid file.
@@ -111,13 +111,13 @@ again while the session remains valid.
    confirmation. Open it again and confirm removal.
 6. Remove the remaining pending files.
 
-**You should see:** Adding a file keeps earlier files and types. Cancelling the
-picker changes nothing. Changing a type affects only that file. Cancelling
-removal keeps the file; confirming removes it. Removing all pending files
-returns the form to an empty selection. Check where keyboard focus goes after
-each addition and removal.
+Check that adding a file keeps earlier files and types. Cancelling the picker
+should change nothing, and changing a type should affect only that file.
+Cancelling removal should keep the file. Confirming removal should remove it.
+After you remove all pending files, the form should show an empty selection.
+Check where keyboard focus goes after each addition and removal.
 
-### F-03 — Check validation and correct errors
+### F-03. Check validation and correct errors
 
 Try each case from a fresh form, or keep one valid file selected to check that
 an error does not discard other work:
@@ -136,45 +136,45 @@ an error does not discard other work:
 A duplicate requires the same filename, size, and contents. Correct the reported
 problem and check that you can continue without redoing unrelated work.
 
-### F-04 — Repeat the mock upload failure
+### F-04. Repeat the mock upload failure
 
 1. Select the exact file `mock-upload-failure.txt`.
 2. Choose its document type and submit.
 3. Submit again without changing the file.
 
-**You should see:** The file has an upload error and remains pending. The
-confirmation does not appear. The retry fails again. This exact filename always
-triggers the mock failure; waiting or retrying will not make it succeed.
+The file should show an upload error and stay pending. The form should not show
+confirmation. Retrying should fail again because this filename always triggers
+the mock failure.
 
 To recover, remove the failed file, select a valid file with a different
 filename, choose its type, and submit.
 
-### F-05 — Check partial success and recovery
+### F-05. Check partial success and recovery
 
 1. Start a new form.
 2. Select a valid PDF and `mock-upload-failure.txt`.
 3. Choose a type for each file and submit.
 4. Select **Submit remaining files** to retry.
 
-**You should see:** The valid PDF is marked uploaded. The text file stays
-pending with an error. The uploaded file has no edit or remove controls. There
-is no final confirmation while a file is still pending. Retrying submits only
-the pending file; the failure repeats and the PDF stays uploaded.
+The form should mark the PDF as uploaded, with no edit or remove controls.
+The text file should stay pending with an error. The form should not show
+confirmation while a file is pending. Retrying should submit only the pending
+file. The failure should repeat, and the PDF should stay uploaded.
 
 Now remove the failed file and confirm removal. When only the successful PDF
 remains, select **View submission confirmation**.
 
-**You should see:** The confirmation lists the PDF, not the removed failed file.
+The confirmation should list the PDF, not the removed failed file.
 
 To test replacement instead, repeat the partial-success steps, remove the
 failed file, add a valid file with a different filename, choose its type, and
-submit. The confirmation lists the original PDF and the replacement. Do not
-try to rename a file in the form; renaming there is not a supported action.
+submit. The confirmation should list the original PDF and the replacement.
+The form does not support renaming files.
 
 Uploaded files remain in the selection and count toward the displayed file
 limit.
 
-### F-06 — Leave, refresh, or close the form
+### F-06. Leave, refresh, or close the form
 
 1. Select a file but do not submit it.
 2. Follow an in-app link to another page.
@@ -183,83 +183,86 @@ limit.
    the refresh.
 5. Compare with an empty form and with an uploaded-only form.
 
-**You should see:** With pending files, in-app navigation opens a warning.
-Staying or dismissing it keeps the form and restores focus. Leaving continues
-to the other page. Empty and uploaded-only forms do not show this in-app
-warning.
+With pending files, in-app navigation should open a warning. Staying or
+dismissing the warning should keep the form and restore focus. Leaving should
+open the other page. Empty forms and forms with only uploaded files should not
+show this warning.
 
 The browser may show its own warning on refresh or tab close. This depends on
-the browser. Reloading an unfinished form clears its displayed pending and
-uploaded-file entries. In an integrated environment, this does not undo files
-that were already submitted successfully.
+the browser. Reloading an unfinished form should clear its displayed pending
+and uploaded-file entries. With real services, this does not undo successful
+uploads.
 
-### F-07 — Understand the mocked documents list
+### F-07. Understand the mocked documents list
 
 After a successful upload, open the documents list if it is part of your test.
 
-**You should see:** The mock list keeps its fixed sample records. It does not
-grow to include files uploaded in this test. This is a mock limitation, not
-evidence that the upload failed. Some French sample document-type labels include
-`[FR]`; record those as sample-data labels, separately from application text
-that has not been translated.
+The list should show the same fixed sample records after the upload. The mock
+does not add uploaded files to the list, so their absence does not mean the
+upload failed. Some French sample document-type labels include `[FR]`. Record
+these separately from untranslated application text.
 
 ### Tests that need coordination
 
 Ask development or QA to arrange outages, timeouts, unexpected failures, scan
-rejection, or controlled delays. Eligibility and ineligible-user checks require
-a separately coordinated setup; they cannot be tested by switching accounts in
-this fixed-user DEV environment. Do not assume these conditions have
-tester-facing controls.
+rejections, or delays. Testers cannot trigger all of these conditions through
+the form. Eligibility checks need a separate setup because DEV uses a fixed
+user.
 
 The upload mock detects EICAR antivirus-test content. Use it only through a
 team-approved harmless fixture and procedure. Endpoint protection may block
 the fixture. Do not create or use real malware or bypass security controls.
 
+The expected result is a security-check message asking you to choose a different
+file, not the generic retry message shown for `mock-upload-failure.txt`. Other
+files successfully uploaded in the same submission remain uploaded.
+
 ## Accessibility Office assessment
 
-Use this section as an assessment aid, not as a compliance claim or a complete
-certification plan. The Accessibility Office owns the applicable standard and
-version, scope, methods, criteria mapping, and conformance decision.
+Use these scenarios to support the Accessibility Office's assessment. They do
+not establish compliance or provide a complete certification plan. The office
+chooses the standard and version, scope, methods, and criteria, and decides
+whether the form conforms.
 
 ### Record the test setup
 
 Record the environment for each assessment. Identify the user as the fixed DEV
 mock user and omit personal information.
 
-| Setup item                                                      | Record |
-| --------------------------------------------------------------- | ------ |
-| DEV build or version and test date                              |        |
-| DEV address or environment name                                 |        |
-| Mock user (fixed DEV user, or a separately coordinated profile) |        |
-| Active mocks and any coordinated conditions                     |        |
-| Browser and version                                             |        |
-| Operating system and version                                    |        |
-| Assistive technology and version                                |        |
-| Language                                                        |        |
-| Viewport size and zoom, when relevant                           |        |
+| Setup item                                                            | Record |
+| --------------------------------------------------------------------- | ------ |
+| DEV build or version and test date                                    |        |
+| DEV address or environment name                                       |        |
+| Mock user, either the fixed DEV user or a separately arranged profile |        |
+| Active mocks and any coordinated conditions                           |        |
+| Browser and version                                                   |        |
+| Operating system and version                                          |        |
+| Assistive technology and version                                      |        |
+| Language                                                              |        |
+| Viewport size and zoom, when relevant                                 |        |
 
 ### Assessment scenarios
 
-For each scenario, record what happened. The expected accessible behaviour is
-what to assess; it is not a claim that the current page already behaves this
-way. Use the office’s chosen criteria and standard, if applicable.
+Record what happened in each scenario and compare it with the expected
+accessible behaviour. These expectations are assessment criteria, not verified
+results. Use the office's chosen criteria and standard.
 
-| ID and journey                                 | Repeatable steps                                                                                                       | **EXPECTED ACCESSIBLE BEHAVIOUR TO ASSESS**                                                                                                                                                                                       | Actual result, evidence, and findings |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| A-01 — Keyboard journey (F-01, F-02, F-05)     | Use only the keyboard. Select files, choose types, submit, recover from an error, and reach confirmation.              | Every action is reachable in a sensible order. Focus is visible and does not get lost. Focus after adding or removing a file is useful.                                                                                           |                                       |
-| A-02 — Names and instructions (F-01, F-02)     | Inspect the file picker trigger, each file, each type selector, and its instructions with a screen reader.             | Controls have useful accessible names. Each type selector is tied to the right filename. Required status, accepted formats, size limit, and count limit can be found and understood.                                              |                                       |
-| A-03 — Errors and recovery (F-03, F-04)        | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error.                 | Each error is identified, associated with the relevant field or file, announced, and explained in plain language. A person can find and correct it without losing unrelated work.                                                 |                                       |
-| A-04 — Dialogs (F-02, F-06)                    | Open file removal and the leave-page warning. Test initial focus, keyboard movement, Escape, cancel, and confirm.      | Each dialog has a clear accessible name. Initial focus is useful; keyboard focus stays within an open dialog; Escape and cancel behave clearly; focus returns sensibly after dismissal. Confirming the action has a clear result. |                                       |
-| A-05 — Status and partial success (F-04, F-05) | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. | Processing, success, and failure are announced and distinguishable. Status updates do not cause unnecessary focus movement. Uploaded and pending files are clearly grouped. Retry, remove, and finish actions are understandable. |                                       |
-| A-06 — Confirmation (F-01, F-05)               | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology. | The confirmation has a clear heading, identifies submitted filenames, explains next steps, and offers understandable navigation.                                                                                                  |                                       |
-| A-07 — Visual and responsive use (F-01, F-03)  | Check contrast and colour use. Try a long filename, narrow viewport, browser zoom, and increased text spacing.         | Text and controls remain readable and usable. Meaning does not depend on colour alone. Content reflows without loss, overlap, or unnecessary horizontal scrolling. Long filenames do not hide controls.                           |                                       |
-| A-08 — English and French (F-01, F-03, F-05)   | Repeat key checks in both languages with the chosen assistive technology.                                              | Page language, control names, instructions, errors, and status messages match the selected language and are pronounced meaningfully. Separate `[FR]` mock sample labels from application translation issues.                      |                                       |
+| ID and journey                               | Repeatable steps                                                                                                       | Expected accessible behaviour                                                                                                                                                                                              | Actual result, evidence, and findings |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| A-01. Keyboard journey. F-01, F-02, F-05     | Use only the keyboard. Select files, choose types, submit, recover from an error, and reach confirmation.              | Users can reach every action in a sensible order. Focus stays visible. After a file is added or removed, focus moves to a control or status that helps the user continue.                                                  |                                       |
+| A-02. Names and instructions. F-01, F-02     | Inspect the file picker button, each file, each type selector, and its instructions with a screen reader.              | Controls have accessible names that describe their actions. Each type selector identifies its file. Users can find the required fields, accepted formats, size limit, and count limit.                                     |                                       |
+| A-03. Errors and recovery. F-03, F-04        | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error.                 | Each error identifies the relevant field or file. The screen reader announces it, and the message explains how to correct it. Users can fix errors without losing other work.                                              |                                       |
+| A-04. Dialogs. F-02, F-06                    | Open file removal and the leave-page warning. Test initial focus, keyboard movement, Escape, cancel, and confirm.      | Each dialog has an accessible name that describes its purpose. Focus starts on a relevant control and stays inside the open dialog. Escape and cancel dismiss it and restore focus. Confirming performs the stated action. |                                       |
+| A-05. Status and partial success. F-04, F-05 | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. | The screen reader announces processing, success, and failure as distinct states. Updates do not move focus unnecessarily. The form separates uploaded and pending files and explains how to retry, remove, or finish.      |                                       |
+| A-06. Confirmation. F-01, F-05               | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology. | The confirmation identifies submitted filenames, explains next steps, and provides navigation with descriptive labels. Its heading describes the page.                                                                     |                                       |
+| A-07. Visual and responsive use. F-01, F-03  | Check contrast and colour use. Try a long filename, narrow viewport, browser zoom, and increased text spacing.         | Users can read text and operate controls. Meaning does not depend on colour alone. Content reflows without loss, overlap, or unnecessary horizontal scrolling. Long filenames do not hide controls.                        |                                       |
+| A-08. English and French. F-01, F-03, F-05   | Repeat key checks in both languages with the chosen assistive technology.                                              | Page language, control names, instructions, errors, and statuses match the selected language. The screen reader uses that language. Record `[FR]` mock sample labels separately from application translation issues.       |                                       |
 
-Mock responses can be too fast to assess processing announcements or disabled
-controls reliably. Ask development or QA to arrange a controlled delay or
-additional failure conditions. External-service behaviour and end-to-end
-integration are outside this mocked assessment. Findings apply only to the
-build and configuration tested.
+If mock responses finish before you can assess processing announcements or
+disabled controls, ask development or QA to add a delay. Ask them to arrange
+other failure conditions as needed. This assessment does not test external
+services or end-to-end integration. Findings apply only to the tested build and
+configuration.
 
 ### Result record
 
@@ -279,6 +282,6 @@ Applicable criterion, standard/version/level, and severity (as assessed by the o
 Finding type: Observed defect / Design suggestion / Mock limitation / Blocked
 ```
 
-Mark a scenario **Blocked** if the fixture or environment behaviour
-you need is unavailable. Keep observed defects, design suggestions, mock
-limitations, and blocked scenarios separate in your report.
+Mark a scenario as Blocked if the required test file or environment condition
+is unavailable. Report observed defects, design suggestions, mock limitations,
+and blocked scenarios separately.

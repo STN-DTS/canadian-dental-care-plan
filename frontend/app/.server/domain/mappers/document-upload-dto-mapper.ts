@@ -1,16 +1,14 @@
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
-import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadErrorDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
-import type { DocumentScanRequestEntity, DocumentScanResponseEntity, DocumentUploadErrorEntity, DocumentUploadRequestEntity, DocumentUploadResponseEntity } from '~/.server/domain/entities';
+import type { DocumentScanRequestDto, DocumentUploadErrorDto, DocumentUploadRequestDto } from '~/.server/domain/dtos';
+import type { DocumentScanRequestEntity, DocumentUploadErrorEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 
 export interface DocumentUploadDtoMapper {
   mapDocumentScanRequestDtoToEntity(documentScanRequestDto: DocumentScanRequestDto): DocumentScanRequestEntity;
-  mapDocumentScanResponseEntityToDto(documentScanResponseEntity: DocumentScanResponseEntity): DocumentScanResponseDto;
   mapDocumentUploadErrorEntityToDto(documentUploadErrorEntity: DocumentUploadErrorEntity): DocumentUploadErrorDto;
   mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadRequestEntity>;
-  mapDocumentUploadResponseEntityToDto(documentUploadResponseEntity: DocumentUploadResponseEntity): DocumentUploadResponseDto;
 }
 
 @injectable()
@@ -28,16 +26,10 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
     };
   }
 
-  mapDocumentScanResponseEntityToDto(documentScanResponseEntity: DocumentScanResponseEntity): DocumentScanResponseDto {
-    return documentScanResponseEntity.DataId === null //
-      ? { Error: this.mapDocumentUploadErrorEntityToDto(documentScanResponseEntity.Error) }
-      : { DataId: documentScanResponseEntity.DataId };
-  }
-
   mapDocumentUploadErrorEntityToDto(documentUploadErrorEntity: DocumentUploadErrorEntity): DocumentUploadErrorDto {
     return {
-      ErrorCode: documentUploadErrorEntity.ErrorCode,
-      ErrorMessage: documentUploadErrorEntity.ErrorMessage,
+      errorCode: documentUploadErrorEntity.ErrorCode,
+      errorMessage: documentUploadErrorEntity.ErrorMessage,
     };
   }
 
@@ -54,11 +46,5 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
       persist: true,
       commit: true,
     };
-  }
-
-  mapDocumentUploadResponseEntityToDto(documentUploadResponseEntity: DocumentUploadResponseEntity): DocumentUploadResponseDto {
-    return documentUploadResponseEntity.DocumentFileName === null //
-      ? { Error: this.mapDocumentUploadErrorEntityToDto(documentUploadResponseEntity.Error) }
-      : { DocumentFileName: documentUploadResponseEntity.DocumentFileName };
   }
 }

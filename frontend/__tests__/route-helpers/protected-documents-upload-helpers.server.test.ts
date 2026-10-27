@@ -7,7 +7,6 @@ import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
-import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
@@ -33,6 +32,7 @@ const translations = {
       contentValidationError: 'content validation error',
       uploadFailed: 'upload failed',
       uploadError: 'upload error',
+      scanFailed: 'file not safe',
     },
   },
 };
@@ -47,6 +47,8 @@ const isFileContentTypeAllowedMock = vi.mocked(isFileContentTypeAllowed);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  documentUploadServiceMock.uploadDocument.mockReset();
+  documentUploadServiceMock.scanDocument.mockReset();
   tMock.mockImplementation((selector) => selector(translations as never));
   getAppContextMock.mockReturnValue({ appContainer: appContainerMock });
   getApplicantMock.mockReturnValue({ clientNumber: 'client-123' });
@@ -135,7 +137,10 @@ describe('protected-documents-upload-helpers.server', () => {
     });
 
     it('should upload documents with applicant and user context', async () => {
-      documentUploadServiceMock.uploadDocument.mockResolvedValue({ DocumentFileName: 'document.txt' });
+      vi.useFakeTimers();
+      const uploadDate = new Date('2026-10-27T17:00:00Z');
+      vi.setSystemTime(uploadDate);
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'success', documentFileName: 'document.txt' });
 
       await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledWith({
@@ -143,14 +148,16 @@ describe('protected-documents-upload-helpers.server', () => {
         evidentiaryDocumentTypeId: 'receipt',
         fileName: 'document.txt',
         binary: 'base64-content',
-        uploadDate: expect.any(Date),
+        uploadDate,
         lastModifiedDate: new Date(1_000),
         userId: 'user-123',
       });
+      expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledOnce();
+      expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
     });
 
     it('should return service upload errors for affected files', async () => {
-      documentUploadServiceMock.uploadDocument.mockResolvedValue({ Error: { ErrorCode: 'UPLOAD-1', ErrorMessage: 'Upload rejected' } });
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'rejected', error: { errorCode: 'UPLOAD-1', errorMessage: 'Upload rejected' } });
 
       await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
         success: false,
@@ -177,8 +184,9 @@ describe('protected-documents-upload-helpers.server', () => {
       ['400', 'Threat detected'],
       ['400', 'Missing mandatory field'],
       ['404', 'Document not found'],
-    ])('should use the generic upload rejection for code %s and message %s', async (ErrorCode, ErrorMessage) => {
-      documentUploadServiceMock.uploadDocument.mockResolvedValue({ Error: { ErrorCode, ErrorMessage } });
+      ['400', 'File not safe'],
+    ])('should translate the rejected status without reclassifying code %s and message %s', async (errorCode, errorMessage) => {
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'rejected', error: { errorCode, errorMessage } });
 
       await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
         success: false,
@@ -186,24 +194,55 @@ describe('protected-documents-upload-helpers.server', () => {
       });
     });
 
-    it.each([
-      ['HTTP bad request', new DocumentUploadException('http', 400)],
-      ['HTTP failure', new DocumentUploadException('http', 503)],
-      ['network failure', new DocumentUploadException('network')],
-      ['invalid response', new DocumentUploadException('invalid-response', 200)],
-      ['unexpected failure', new Error('upload unavailable')],
-    ])('should use the generic technical upload error for a $0', async (_caseName, error) => {
-      documentUploadServiceMock.uploadDocument.mockRejectedValue(error);
+    it('should display the security-check message for an unsafe file', async () => {
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'unsafe', error: { errorCode: '400', errorMessage: 'File not safe' } });
+
+      await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
+        success: false,
+        errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['file not safe'] } } } } } } },
+      });
+      expect(tMock).toHaveBeenCalledWith(expect.any(Function), { filename: 'document.txt' });
+    });
+
+    it.each([new Error('internal upstream details'), 'internal upstream details', null, undefined])('should translate a technical error without exposing details: %s', async (error) => {
+      documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'error', error });
 
       await expect(uploadDocuments(createFiles())).resolves.toMatchObject({
         success: false,
         errors: { properties: { files: { properties: { first: { properties: { file: { errors: ['upload error'] } } } } } } },
       });
     });
+
+    it('should keep successful files out of the error tree for mixed outcomes', async () => {
+      documentUploadServiceMock.uploadDocument
+        .mockResolvedValueOnce({ status: 'success', documentFileName: 'document.txt' })
+        .mockResolvedValueOnce({ status: 'rejected', error: { errorCode: 'REJECTED', errorMessage: 'Rejected' } })
+        .mockResolvedValueOnce({ status: 'error', error: new Error('upload unavailable') })
+        .mockResolvedValueOnce({ status: 'unsafe', error: { errorCode: '400', errorMessage: 'File not safe' } });
+
+      const files = createFiles();
+      await expect(uploadDocuments({ ...files, second: files.first, third: files.first, fourth: files.first })).resolves.toEqual({
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                second: { errors: [], properties: { file: { errors: ['upload failed'] } } },
+                third: { errors: [], properties: { file: { errors: ['upload error'] } } },
+                fourth: { errors: [], properties: { file: { errors: ['file not safe'] } } },
+              },
+            },
+          },
+        },
+      });
+      expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledTimes(4);
+    });
   });
 });
 
-function createFiles(): DocumentUploadSchemaOutput['files'] {
+function createFiles() {
   const file = new File(['content'], 'document.txt', { type: 'text/plain', lastModified: 1_000 });
   return {
     first: {
@@ -212,5 +251,5 @@ function createFiles(): DocumentUploadSchemaOutput['files'] {
       fileHash: 'hash',
       documentType: 'receipt',
     },
-  };
+  } satisfies DocumentUploadSchemaOutput['files'];
 }

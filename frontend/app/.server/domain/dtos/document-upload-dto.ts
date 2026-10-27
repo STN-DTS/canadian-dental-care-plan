@@ -27,28 +27,24 @@ export type DocumentUploadRequestDto = Readonly<{
 /**
  * Represents the response from a document upload operation.
  *
- * This is a discriminated union type that represents either a successful upload
- * or an error state, but never both simultaneously.
- *
- * @remarks
- * The type uses a discriminated union pattern where:
- * - On success: `DocumentFileName` contains the filename and `Error` is undefined
- * - On failure: `DocumentFileName` is undefined and `Error` contains error details
+ * `success` contains the uploaded filename, `unsafe` or `rejected` contains the EWDU rejection,
+ * and `error` indicates a technical failure whose details are logged server-side.
  */
-export type DocumentUploadResponseDto = Readonly<
-  | { DocumentFileName: string; Error?: undefined } //
-  | { DocumentFileName?: undefined; Error: DocumentUploadErrorDto }
->;
+export type DocumentUploadResponseDto =
+  | Readonly<{ status: 'success'; documentFileName: string }>
+  | Readonly<{ status: 'unsafe'; error: DocumentUploadErrorDto }>
+  | Readonly<{ status: 'rejected'; error: DocumentUploadErrorDto }>
+  | Readonly<{ status: 'error'; error: unknown }>;
 
 /**
  * Represents a Data Transfer Object (DTO) for Document Upload error.
  */
 export type DocumentUploadErrorDto = Readonly<{
   /** Error code */
-  ErrorCode: string;
+  errorCode: string;
 
   /** Error message */
-  ErrorMessage: string;
+  errorMessage: string;
 }>;
 
 /**
@@ -68,14 +64,7 @@ export type DocumentScanRequestDto = Readonly<{
 /**
  * Represents the response from a document scan operation.
  *
- * This is a discriminated union type that can represent either a successful scan result
- * or an error state.
- *
- * @remarks
- * - On success: Contains a `DataId` string and `Error` is undefined
- * - On failure: Contains an `Error` object of type `DocumentUploadErrorDto` and `DataId` is undefined
+ * `success` contains the scan identifier, `unsafe` or `rejected` contains the EWDU rejection,
+ * and `error` indicates a technical failure whose details are logged server-side.
  */
-export type DocumentScanResponseDto = Readonly<
-  | { DataId: string; Error?: undefined } //
-  | { DataId?: undefined; Error: DocumentUploadErrorDto }
->;
+export type DocumentScanResponseDto = Readonly<{ status: 'success'; DataId: string }> | Readonly<{ status: 'unsafe'; Error: DocumentUploadErrorDto }> | Readonly<{ status: 'rejected'; Error: DocumentUploadErrorDto }> | Readonly<{ status: 'error' }>;

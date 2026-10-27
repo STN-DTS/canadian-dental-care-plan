@@ -236,7 +236,7 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.addFile(file('scan-test.txt', 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'));
     await uploadPage.chooseType('scan-test.txt');
     await uploadPage.submit();
-    await expect(uploadPage.item('scan-test.txt')).toContainText('An unexpected error occurred while uploading file “scan-test.txt”. Try to upload your file again.');
+    await expect(uploadPage.item('scan-test.txt')).toContainText('The file “scan-test.txt” does not pass our security checks. You must choose a different file.');
     await expect(uploadPage.item('evidence.txt')).toContainText('Uploaded successfully');
     await expect(page).toHaveURL(flowUrl);
     await expect(page.getByRole('combobox')).toHaveCount(1);

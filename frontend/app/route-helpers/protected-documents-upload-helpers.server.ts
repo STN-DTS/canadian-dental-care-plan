@@ -4,7 +4,6 @@ import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
-import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import { createLogger } from '~/.server/logging';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
@@ -81,32 +80,26 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
 
   const results = await Promise.all(
     Object.entries(files).map(async ([id, { file, fileBuffer, documentType }]) => {
-      try {
-        const response = await service.uploadDocument({
-          clientNumber: applicant.clientNumber,
-          evidentiaryDocumentTypeId: documentType,
-          fileName: file.name,
-          binary: arrayBufferToBase64(fileBuffer),
-          uploadDate: new Date(),
-          lastModifiedDate: new Date(file.lastModified),
-          userId: user.id,
-        });
+      const response = await service.uploadDocument({
+        clientNumber: applicant.clientNumber,
+        evidentiaryDocumentTypeId: documentType,
+        fileName: file.name,
+        binary: arrayBufferToBase64(fileBuffer),
+        uploadDate: new Date(),
+        lastModifiedDate: new Date(file.lastModified),
+        userId: user.id,
+      });
 
-        if (response.Error) {
-          log.warn('Upload rejected for document [%s] with code [%s]', id, response.Error.ErrorCode);
+      switch (response.status) {
+        case 'unsafe':
+          return { id, error: t(($) => $.upload.errorMessage.scanFailed, { filename: file.name }) };
+        case 'rejected':
           return { id, error: t(($) => $.upload.errorMessage.uploadFailed, { filename: file.name }) };
-        }
-
-        log.trace('Document uploaded successfully: [%s]', id);
-        return { id, success: true };
-      } catch (error) {
-        if (error instanceof DocumentUploadException) {
-          log.error('Technical upload failure for document [%s]; kind [%s]; HTTP status [%s]', id, error.kind, error.httpStatus);
-        } else {
-          log.error('Unexpected file upload error for document [%s]', id);
-        }
-
-        return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
+        case 'error':
+          return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
+        case 'success':
+          log.trace('Document uploaded successfully: [%s]', id);
+          return { id, success: true };
       }
     }),
   );

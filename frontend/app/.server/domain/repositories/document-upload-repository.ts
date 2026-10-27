@@ -12,7 +12,9 @@ import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { base64ToArrayBuffer, detectEicarContent } from '~/utils/file-utils';
 
-const uploadResponseSchema = z.union([z.object({ DocumentFileName: z.string().min(1), Error: z.null() }), z.object({ DocumentFileName: z.null(), Error: z.object({ ErrorCode: z.string(), ErrorMessage: z.string() }) })]);
+const errorSchema = z.object({ ErrorCode: z.string(), ErrorMessage: z.string() });
+const uploadResponseSchema = z.union([z.object({ DocumentFileName: z.string().min(1), Error: z.null() }), z.object({ DocumentFileName: z.null(), Error: errorSchema })]);
+const scanResponseSchema = z.union([z.object({ DataId: z.string().min(1), Error: z.null() }), z.object({ DataId: z.null(), Error: errorSchema })]);
 
 /**
  * A repository that provides document uploading and scanning functionality.
@@ -23,7 +25,8 @@ export interface DocumentUploadRepository {
    * This will process the file through scan for threats and upload the file to an SFTP/FTPS drop location.
    *
    * @param documentUploadRequestEntity The document upload request entity
-   * @returns A Promise that resolves to the document upload response entity.
+   * @returns The validated EWDU response for an OK or HTTP 400 response, without business classification.
+   * @throws On other HTTP statuses, transport failures, or invalid response payloads.
    */
   uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity>;
 
@@ -31,7 +34,8 @@ export interface DocumentUploadRepository {
    * Scan a document for threats and return scan result synchronously.
    *
    * @param scanDocumentRequestEntity The document scan request entity
-   * @returns A Promise that resolves to the document scan response entity.
+   * @returns The validated EWDU response for an OK or HTTP 400 response, without business classification.
+   * @throws On other HTTP statuses, transport failures, or invalid response payloads.
    */
   scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity>;
 
@@ -110,7 +114,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       throw new DocumentUploadException('network', undefined, { cause });
     }
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
       this.log.error('%j', {
         message: `Failed to 'POST' for document upload (SPOUploadDocument)`,
         status: response.status,
@@ -125,21 +129,11 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       throw new DocumentUploadException('http', response.status);
     }
 
-    let documentUploadResponseEntity: DocumentUploadResponseEntity;
-
     try {
-      documentUploadResponseEntity = uploadResponseSchema.parse(await response.json());
+      return uploadResponseSchema.parse(await response.json());
     } catch (cause) {
       throw new DocumentUploadException('invalid-response', response.status, { cause });
     }
-
-    if (documentUploadResponseEntity.Error) {
-      this.log.warn('Document upload rejected with code: [%s]', documentUploadResponseEntity.Error.ErrorCode);
-    } else {
-      this.log.trace('Successfully uploaded document. DocumentFileName: [%s]', documentUploadResponseEntity.DocumentFileName);
-    }
-
-    return documentUploadResponseEntity;
   }
 
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
@@ -166,7 +160,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       },
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
       this.log.error('%j', {
         message: `Failed to 'POST' for document scan`,
         status: response.status,
@@ -179,15 +173,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       throw new Error(`Failed to 'POST' for document scan. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
-    const documentScanResponseEntity = (await response.json()) as DocumentScanResponseEntity;
-
-    if (documentScanResponseEntity.Error) {
-      this.log.warn('Document scan completed with error: [%j]', documentScanResponseEntity.Error);
-    } else {
-      this.log.trace('Successfully scanned document. DocumentFileName: [%s]', scanDocumentRequestEntity.filename);
-    }
-
-    return documentScanResponseEntity;
+    return scanResponseSchema.parse(await response.json());
   }
 
   getMetadata(): Record<string, string> {
@@ -260,8 +246,8 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
       return await Promise.resolve({
         DataId: null,
         Error: {
-          ErrorCode: 'EICAR_DETECTED',
-          ErrorMessage: 'EICAR test content detected in the document.',
+          ErrorCode: '400',
+          ErrorMessage: 'File not safe',
         },
       });
     }
