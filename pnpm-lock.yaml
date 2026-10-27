@@ -382,8 +382,8 @@ catalogs:
       specifier: 1.80.0
       version: 1.80.0
     i18next-http-backend:
-      specifier: 4.0.4
-      version: 4.0.4
+      specifier: 4.0.5
+      version: 4.0.5
     import-in-the-middle:
       specifier: 3.5.2
       version: 3.5.2
@@ -688,7 +688,7 @@ importers:
         version: 26.5.3(typescript@7.0.2)
       i18next-http-backend:
         specifier: 'catalog:'
-        version: 4.0.4
+        version: 4.0.5
       import-in-the-middle:
         specifier: 'catalog:'
         version: 3.5.2
@@ -4262,8 +4262,8 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
-  i18next-http-backend@4.0.4:
-    resolution: {integrity: sha512-nG9OQKvUsPiTVUBg1rCGmvmWhzxC9GOxVbGdTYyejHVMSUjutt1hiBNVSzhB/ZE7keL9Xkb880kUfhDovV5T5g==}
+  i18next-http-backend@4.0.5:
+    resolution: {integrity: sha512-0uXq24ZAVFwbA0MGija0AZYBcs8iA+wbC//UiDyZwPC3/wZfyD20LgGxvjMOqf9o3/pDJ05ZLIlB4U3+AdA9AQ==}
     engines: {node: '>=18'}
 
   i18next-resources-for-ts@2.1.1:
@@ -9072,7 +9072,7 @@ snapshots:
       - react-native
       - typescript
 
-  i18next-http-backend@4.0.4: {}
+  i18next-http-backend@4.0.5: {}
 
   i18next-resources-for-ts@2.1.1(@swc/helpers@0.5.23):
     dependencies:
