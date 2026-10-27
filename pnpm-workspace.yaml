@@ -123,7 +123,7 @@ catalog:
   react-router: 8.5.0
   redis: 6.3.0
   reflect-metadata: 0.2.2
-  remix-utils: 10.0.0
+  remix-utils: 10.0.1
   source-map-support: 0.5.21
   tailwind-merge: 3.7.0
   tailwindcss: 4.3.3
