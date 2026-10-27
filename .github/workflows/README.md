@@ -4,18 +4,18 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 
 ## Workflow Summary
 
-| Workflow                                                                             | Triggers                                                                   | Purpose                                                                                                                                      |
-| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                     | Check repository formatting for all changes; conditionally validate the frontend, run smoke tests, and build an image without publishing.    |
-| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                         | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
-| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
-| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`        | Apply the production root Kustomization to the prod AKS cluster.                                                                             |
-| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
-| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                 | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
-| [renovate.yaml](renovate.yaml)                                                       | Hourly at minute 17 UTC; manual, default branch only                       | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
-| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from explicitly listed repository-owned workflows | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
-| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                    | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
+| Workflow                                                                             | Triggers                                                                                                    | Purpose                                                                                                                                      |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check repository formatting for all changes; conditionally validate the frontend, run smoke tests, and build an image without publishing.    |
+| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                                                          | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
+| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
+| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Apply the production root Kustomization to the prod AKS cluster.                                                                             |
+| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
+| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
+| [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
+| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from explicitly listed repository-owned workflows                                  | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
+| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
 
 **Post workflow updates to Slack** posts **Queued** on `requested`, then the result on `completed`,
 including failures and cancellations. An explicit allowlist subscribes only to
@@ -457,7 +457,7 @@ Ordinary updates have a three-day minimum release age. Release timestamps are
 required by default, so updates without timestamps can remain blocked. Digest
 updates to `gcr.io/distroless/nodejs26-debian13` are the explicit exception: GCR does not
 provide release timestamps through Renovate's Docker datasource, so those
-updates use `timestamp-optional` and are eligible on each hourly run.
+updates use `timestamp-optional` and are eligible on each scheduled run.
 Their release age cannot be enforced. Other registries without
 timestamps need maintainer review rather than a global bypass. This is not an
 exact equivalent of Dependabot's cooldown.
@@ -487,8 +487,11 @@ rollout limits have been removed; the pinned Renovate runtime's defaults allow
 10 concurrent normal update PRs and two new normal update PRs per hour.
 Security-fix PRs have independent limits and can bypass the normal PR budget.
 Weekly lockfile maintenance uses the preset's default
-Monday 00:00-03:59 UTC window. Hourly runs overlap this window without a
-configuration override. GitHub may delay or skip scheduled runs; manual dispatch
+Monday 00:00-03:59 UTC window. Additional hourly workflow runs at minute 17
+during that window cover both lockfile maintenance and Renovate runtime updates
+without a configuration override. These runs use UTC explicitly so Toronto
+daylight-saving changes do not shift them outside the window.
+GitHub may delay or skip scheduled runs; manual dispatch
 is available when processing is urgent.
 pnpm still enforces its release-age and trust policies during lockfile refreshes.
 
@@ -620,11 +623,13 @@ key. Never put keys or installation tokens in Git or logs.
 
 Runs are serialized without cancelling an in-progress run. Forks skip the
 prerequisite gate and dependent job. Missing credentials fail explicitly.
-The hourly schedule polls GitHub for existing PRs, conflicts, checks, and new
+The workflow polls GitHub every 15 minutes on weekdays from 08:00 through 16:59
+in `America/Toronto`, plus hourly on Mondays from 00:17 through 03:17 UTC,
+for existing PRs, conflicts, checks, and new
 dependency versions; no persistent Renovate service or webhook receiver is
 required. `rebaseWhen: "auto"` and `updateNotScheduled: true` retain their defaults
 for maintaining existing PRs. New branch pushes rerun relevant PR checks and can
-dismiss stale approvals under the repository rules. An hourly check without a
+dismiss stale approvals under the repository rules. A scheduled check without a
 branch update does not itself rerun application CI. GitHub platform auto-merge can
 complete an approved, passing PR between Renovate runs.
 The job is bounded to 50 minutes because installation tokens expire after one
@@ -638,7 +643,7 @@ checks and approvals, and use the lowest fixed version.
 The configuration enables alerts and relies on Renovate's built-in security
 defaults for immediate PR creation, no grouping, and no release-age gate; global
 automerge follows the global PR-based squash policy. Processing still happens only
-when the hourly workflow runs; dispatch a manual write run for urgent fixes once
+when the workflow runs; dispatch a manual write run for urgent fixes once
 Renovate is enabled.
 
 pnpm's independent release-age, trust, build, and override policies remain in

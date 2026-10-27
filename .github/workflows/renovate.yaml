@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: '*/15 8-16 * * 1-5'
       timezone: 'America/Toronto'
+    # Cover Renovate's weekly lockfile-maintenance and runtime-update window.
+    - cron: '17 0-3 * * 1'
+      timezone: 'Etc/UTC'
   workflow_dispatch:
     inputs:
       dry_run:
