@@ -376,8 +376,8 @@ catalogs:
       specifier: 11.0.28
       version: 11.0.28
     i18next:
-      specifier: 26.5.3
-      version: 26.5.3
+      specifier: 26.5.10
+      version: 26.5.10
     i18next-cli:
       specifier: 1.80.0
       version: 1.80.0
@@ -685,7 +685,7 @@ importers:
         version: 11.0.28
       i18next:
         specifier: 'catalog:'
-        version: 26.5.3(typescript@7.0.2)
+        version: 26.5.10(typescript@7.0.2)
       i18next-http-backend:
         specifier: 'catalog:'
         version: 4.0.4
@@ -739,7 +739,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       react-i18next:
         specifier: 'catalog:'
-        version: 17.1.0(i18next@26.5.3(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
+        version: 17.1.0(i18next@26.5.10(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
       react-idle-timer:
         specifier: 'catalog:'
         version: 5.7.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -4270,8 +4270,8 @@ packages:
     resolution: {integrity: sha512-Xhz8S8dtNIPawzeWdmssnsII1JYsbvPWOLmstJakNcgKSFLCneA+xN7qajj/zlk5nf9sx1KGDTx8RNZ73h68tw==}
     hasBin: true
 
-  i18next@26.5.3:
-    resolution: {integrity: sha512-6pRwOwJ6lBCBB66fqNZaSoUmvsALHMord7FL6GsDhubT1CrPabTMEJIqddm0nn2YEbKofdI/3VAtGrQPuztY1Q==}
+  i18next@26.5.10:
+    resolution: {integrity: sha512-YS4EiLQhhk0wGThm4Zy+BL2c9rBNIK+kAbksi4l/B+D6kVRQLIFZgu2b/MU2LibJJHwWNTYoOYR52T+jfV8kPQ==}
     peerDependencies:
       typescript: ^5 || ^6 || ^7
     peerDependenciesMeta:
@@ -9053,7 +9053,7 @@ snapshots:
       commander: 15.0.0
       execa: 10.2.0
       glob: 13.0.6
-      i18next: 26.5.3(typescript@7.0.2)
+      i18next: 26.5.10(typescript@7.0.2)
       i18next-resources-for-ts: 2.1.1(@swc/helpers@0.5.23)
       inquirer: 14.2.4(@types/node@26.6.5)
       jiti: 2.7.0
@@ -9062,7 +9062,7 @@ snapshots:
       messageformat: 4.1.0
       minimatch: 10.2.6
       ora: 9.4.1
-      react-i18next: 17.1.0(i18next@26.5.3(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
+      react-i18next: 17.1.0(i18next@26.5.10(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)
       yaml: 2.9.1
     transitivePeerDependencies:
       - '@swc/helpers'
@@ -9083,7 +9083,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  i18next@26.5.3(typescript@7.0.2):
+  i18next@26.5.10(typescript@7.0.2):
     optionalDependencies:
       typescript: 7.0.2
 
@@ -9774,11 +9774,11 @@ snapshots:
       react: 19.3.1
       scheduler: 0.28.0
 
-  react-i18next@17.1.0(i18next@26.5.3(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2):
+  react-i18next@17.1.0(i18next@26.5.10(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2):
     dependencies:
       '@babel/runtime': 7.29.10
       html-parse-stringify: 4.0.1
-      i18next: 26.5.3(typescript@7.0.2)
+      i18next: 26.5.10(typescript@7.0.2)
       react: 19.3.1
       use-sync-external-store: 1.7.0(react@19.3.1)
     optionalDependencies:
