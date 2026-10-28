@@ -437,9 +437,9 @@ timestamps need maintainer review rather than a global bypass. This is not an
 exact equivalent of Dependabot's cooldown.
 
 The frontend runtime uses
-`gcr.io/distroless/nodejs26-debian13:debug@sha256:...`, so its full image name
-matches the Distroless rule. Renovate can refresh the pinned digest as the `debug`
-tag moves; Node.js 26 and Debian 13 are encoded in the image name, not its tag.
+`gcr.io/distroless/nodejs26-debian13@sha256:...`, so its full image name
+matches the Distroless rule. Renovate can refresh the pinned digest;
+Node.js 26 and Debian 13 are encoded in the image name, not its tag.
 This rule does not automatically migrate to a different Node.js major or Debian
 release. The Dockerfile's non-root user and OpenTelemetry startup imports remain
 unchanged.

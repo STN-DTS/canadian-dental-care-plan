@@ -76,10 +76,6 @@ RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 # reducing image size and attack surface compared with the build image.
 # Include production dependencies, runtime metadata, public assets, and compiled
 # application code.
-#
-# Choose the debug tag to retain a BusyBox shell for troubleshooting:
-# docker exec -it <container> /busybox/sh
-# podman exec -it <container> /busybox/sh
 # ---------------------------------------------------------------------------- #
 
 FROM gcr.io/distroless/nodejs26-debian13@sha256:e6ffd0e0ddbbcad0231684befb2c421591c2be46baa71da7d9065294c17efc0d

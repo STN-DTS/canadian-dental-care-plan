@@ -155,13 +155,7 @@ frontend package with its own production dependencies. The frontend manifest's
 are not included in the final image.
 
 The runtime stage uses distroless Node.js 26 and runs from `/app` as `nonroot`.
-It does not need pnpm at runtime. The `:debug` tag retains a BusyBox shell for
-troubleshooting a running container:
-
-```sh
-podman exec -it <container> /busybox/sh
-docker exec -it <container> /busybox/sh
-```
+It does not need pnpm at runtime and does not include a shell.
 
 ## Documentation
 
