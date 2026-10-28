@@ -84,6 +84,16 @@
       "matchPackageNames": ["gcr.io/distroless/nodejs26-debian13"],
       "matchUpdateTypes": ["digest"],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
-    }
+    },
+    {
++      // Internally built application image; intentionally uses :latest.
++      "matchDatasources": ["docker"],
++      "matchPackageNames": [
++        "canadian-dental-care-plan",
++        "library/canadian-dental-care-plan",
++        "docker.io/library/canadian-dental-care-plan"
++      ],
++      "enabled": false
++    },
   ]
 }
