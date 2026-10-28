@@ -53,22 +53,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Setup pnpm, Node.js, and dependencies
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          node-version-file: package.json
-      - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare --activate
-      - name: Restore pnpm store cache
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          cache: true
           cache-dependency-path: pnpm-lock.yaml
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          require-lockfile: true
       - name: Check repository formatting
         run: pnpm run format:check
       - name: Check root TypeScript types
@@ -135,26 +125,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Setup Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - name: Setup pnpm, Node.js, and dependencies
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          node-version-file: package.json
-      - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare --activate
-      - name: Restore pnpm store cache
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          cache: true
           cache-dependency-path: pnpm-lock.yaml
+          require-lockfile: true
       - name: Verify versions
         run: |
           node -v
           pnpm -v
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
       - name: Check TypeScript types
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint

@@ -42,9 +42,13 @@ The build job reads the validated version from
 `needs.test-frontend.outputs.version`. Formatting failures stop subsequent tests.
 The test job must pass before image publishing can run.
 
-All `actions/setup-node` steps use `node-version-file: package.json` to read the
-Node.js version from the root manifest. Workflows check out the repository before
-setting up Node.js; `workflow_run` consumers use the trusted default branch.
+Workflows using `actions/setup-node` use `node-version-file: package.json` to
+read the Node.js version from the root manifest. PR-check jobs use the pinned
+`pnpm/setup` action, which reads Node.js and pnpm versions from the root
+`devEngines.runtime` and `packageManager` fields, respectively. It installs
+dependencies with the required lockfile and caches the pnpm store by lockfile.
+Workflows check out the repository before setting up Node.js; `workflow_run`
+consumers use the trusted default branch.
 
 Node jobs install dependencies from the repository root using the shared pnpm
 workspace and lockfile. Frontend unit tests use the root
