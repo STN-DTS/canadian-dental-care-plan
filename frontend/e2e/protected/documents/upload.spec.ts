@@ -91,7 +91,7 @@ test.describe('selection and editing', () => {
   });
 
   for (const scenario of [
-    { name: 'unsupported extension', payload: file('evidence.exe'), error: /You can’t upload this file format\. Choose a file in one of these formats:/ },
+    { name: 'unsupported extension', payload: file('evidence.exe'), error: /You can't upload this file format\. Choose a file in one of these formats:/ },
     { name: 'oversized file', payload: { ...file('oversized.txt'), buffer: Buffer.alloc(maxBytes + 1, 'a') }, error: 'The file is too large to upload. Make sure the file size is less than 5 MB.' },
     { name: 'duplicate file', payload: file(), error: 'The file “evidence.txt” is already selected or uploaded. You must choose a different file.' },
   ]) {
@@ -254,7 +254,7 @@ test.describe('validation, scanning and uploading', () => {
       await uploadPage.addFile(scenario.payload);
       await uploadPage.chooseType(scenario.payload.name);
       await uploadPage.submit();
-      await expect(uploadPage.item(scenario.payload.name)).toContainText(`You can’t upload this file format for “${scenario.payload.name}”. Choose a file in one of these formats:`);
+      await expect(uploadPage.item(scenario.payload.name)).toContainText(`You can't upload this file format for “${scenario.payload.name}”. Choose a file in one of these formats:`);
       await expect(page).toHaveURL(flowUrl);
     });
   }
@@ -278,7 +278,7 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.addFile({ ...file('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) });
     await uploadPage.chooseType('truncated.png');
     await uploadPage.submit();
-    await expect(uploadPage.item('truncated.png')).toContainText('You can’t upload this file format for “truncated.png”. Choose a file in one of these formats:');
+    await expect(uploadPage.item('truncated.png')).toContainText("You can't upload this file format for “truncated.png”. Choose a file in one of these formats:");
     await expect(uploadPage.page.getByText('Uploaded successfully', { exact: true })).toHaveCount(0);
     await expect(uploadPage.page.getByRole('combobox')).toHaveCount(2);
   });

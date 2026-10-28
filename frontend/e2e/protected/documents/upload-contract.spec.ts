@@ -74,7 +74,7 @@ for (const scenario of [
 
 for (const scenario of [
   { name: 'missing document type', file: validFile, type: '', error: 'Select a document type for file' },
-  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'You can’t upload this file format for “evidence.exe”. Choose a file in one of these formats:' },
+  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: "You can't upload this file format for “evidence.exe”. Choose a file in one of these formats:" },
   { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'The file is too large to upload. Make sure the file size is less than 5\u00A0MB.' },
 ]) {
   test(`server repeats ${scenario.name} validation when client checks are bypassed`, async ({ uploadPage, uploadApi }) => {
