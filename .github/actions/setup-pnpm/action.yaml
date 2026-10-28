@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+name: Setup pnpm, Node.js, and dependencies
+
+description: Install the workspace toolchain and dependencies with lockfile-based pnpm caching
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm, Node.js, and dependencies
+      uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
+      with:
+        cache: true
+        cache-dependency-path: pnpm-lock.yaml
+        require-lockfile: true

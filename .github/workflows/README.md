@@ -42,10 +42,15 @@ The build job reads the validated version from
 `needs.test-frontend.outputs.version`. Formatting failures stop subsequent tests.
 The test job must pass before image publishing can run.
 
-Workflows that require pnpm use the pinned `pnpm/setup` action, which reads
-Node.js and pnpm versions from the root `devEngines.runtime` and `packageManager`
-fields, respectively. PR checks, publishing tests, and nightly E2E jobs install
-dependencies with the required lockfile and cache the pnpm store by lockfile.
+Workflows that require pnpm use the local
+[`setup-pnpm` composite action](../actions/setup-pnpm/action.yaml) after checkout.
+It wraps the SHA-pinned `pnpm/setup` action, which reads Node.js and pnpm versions
+from the root `devEngines.runtime` and `packageManager` fields, respectively.
+The composite action installs workspace dependencies with the required lockfile
+and caches the pnpm store by lockfile. It has no inputs; setup policy and the
+upstream action pin are maintained in one place.
+Changes to the composite action also enable frontend validation in PR checks
+and trigger the nonprod branch workflow.
 The SharePoint report-upload job needs only Node.js and uses `actions/setup-node`
 with `node-version-file: package.json`, without installing pnpm or workspace dependencies.
 Workflows check out the repository before setting up Node.js; `workflow_run`

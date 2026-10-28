@@ -24,6 +24,7 @@ on:
       - .github/actions/azure-acr-login/**
       - .github/actions/generate-build-vars/**
       - .github/actions/push-container-image/**
+      - .github/actions/setup-pnpm/**
       - .github/actions/sign-container-image/**
       - .github/workflows/build-publish-main-nonprod.yaml
       - frontend/**
@@ -75,6 +76,7 @@ jobs:
               - .github/actions/azure-acr-login/**
               - .github/actions/generate-build-vars/**
               - .github/actions/push-container-image/**
+              - .github/actions/setup-pnpm/**
               - .github/actions/sign-container-image/**
               - .github/workflows/build-publish-main-nonprod.yaml
               - frontend/**
@@ -102,11 +104,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
-        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
-        with:
-          cache: true
-          cache-dependency-path: pnpm-lock.yaml
-          require-lockfile: true
+        uses: ./.github/actions/setup-pnpm
       - name: Check formatting
         run: pnpm exec oxfmt --check frontend
       - name: Run typecheck
