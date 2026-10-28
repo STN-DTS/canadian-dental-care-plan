@@ -30,8 +30,8 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^26.12.1",
-      "onFail": "error"
+      "version": "26.12.1",
+      "onFail": "ignore"
     }
   },
   "engines": {
