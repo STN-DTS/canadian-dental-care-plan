@@ -86,14 +86,14 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
-+      // Internally built application image; intentionally uses :latest.
-+      "matchDatasources": ["docker"],
-+      "matchPackageNames": [
-+        "canadian-dental-care-plan",
-+        "library/canadian-dental-care-plan",
-+        "docker.io/library/canadian-dental-care-plan"
-+      ],
-+      "enabled": false
-+    },
+      // Internally built application image; intentionally uses :latest.
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "canadian-dental-care-plan",
+        "library/canadian-dental-care-plan",
+        "docker.io/library/canadian-dental-care-plan"
+      ],
+      "enabled": false
+    },
   ]
 }
