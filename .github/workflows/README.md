@@ -24,9 +24,10 @@ Frontend jobs in PR and nonprod branch workflows use change detection. Publishin
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
 PR checks run repository-wide formatting, root TypeScript checking, root
-linting, and the Vitest `root` project in the `check-formatting` job after
+linting, and the Vitest `root` project in the `check-workspace` job after
 the non-fork `check-repository` gate.
-The job keeps its ID for existing status checks and runs for all changes,
+PR jobs use their job IDs as check names, preserving the required
+`build-frontend` and `test-frontend` checks. The workspace job runs for all changes,
 including documentation, GitOps, and infrastructure. Frontend testing runs
 separately. Publishing workflows do not repeat root typechecking or linting.
 The nonprod branch workflow checks frontend formatting in `test-frontend`
@@ -41,9 +42,13 @@ The build job reads the validated version from
 `needs.test-frontend.outputs.version`. Formatting failures stop subsequent tests.
 The test job must pass before image publishing can run.
 
-All `actions/setup-node` steps use `node-version-file: package.json` to read the
-Node.js version from the root manifest. Workflows check out the repository before
-setting up Node.js; `workflow_run` consumers use the trusted default branch.
+Workflows using `actions/setup-node` use `node-version-file: package.json` to
+read the Node.js version from the root manifest. PR-check jobs use the pinned
+`pnpm/setup` action, which reads Node.js and pnpm versions from the root
+`devEngines.runtime` and `packageManager` fields, respectively. It installs
+dependencies with the required lockfile and caches the pnpm store by lockfile.
+Workflows check out the repository before setting up Node.js; `workflow_run`
+consumers use the trusted default branch.
 
 Node jobs install dependencies from the repository root using the shared pnpm
 workspace and lockfile. Frontend unit tests use the root
