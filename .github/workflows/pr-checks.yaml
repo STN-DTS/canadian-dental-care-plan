@@ -52,11 +52,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
-        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
-        with:
-          cache: true
-          cache-dependency-path: pnpm-lock.yaml
-          require-lockfile: true
+        uses: ./.github/actions/setup-pnpm
       - name: Check repository formatting
         run: pnpm run format:check
       - name: Check root TypeScript types
@@ -83,6 +79,7 @@ jobs:
         with:
           filters: |
             src:
+              - .github/actions/setup-pnpm/**
               - frontend/**
               - package.json
               - pnpm-lock.yaml
@@ -122,11 +119,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
-        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
-        with:
-          cache: true
-          cache-dependency-path: pnpm-lock.yaml
-          require-lockfile: true
+        uses: ./.github/actions/setup-pnpm
       - name: Check TypeScript types
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint
