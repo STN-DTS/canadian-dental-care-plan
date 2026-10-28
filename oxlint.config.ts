@@ -1,7 +1,7 @@
 import { defineConfig } from 'oxlint';
 
 export default defineConfig({
-  plugins: ['typescript', 'unicorn', 'oxc', 'import'],
+  plugins: ['typescript', 'unicorn', 'oxc', 'import', 'vitest'],
   jsPlugins: [
     {
       name: '@stylistic',
@@ -51,6 +51,8 @@ export default defineConfig({
     'unicorn/consistent-function-scoping': ['error', { checkArrowFunctions: false }],
     'unicorn/filename-case': ['error', { case: 'kebabCase', ignore: ['__tests__', '__mocks__'] }],
     'unicorn/no-useless-undefined': ['error', { checkArguments: false }],
+    'vitest/require-mock-type-parameters': 'off',
+    'vitest/require-to-throw-message': 'off',
     '@stylistic/padding-line-between-statements': [
       'error',
       // Require blank lines before and after block-like statements.
@@ -59,5 +61,10 @@ export default defineConfig({
       // Preserve spacing between switch labels, including shared scopes.
       { blankLine: 'any', prev: ['case', 'default'], next: ['case', 'default'] },
     ],
+  },
+  settings: {
+    vitest: {
+      typecheck: true,
+    },
   },
 });

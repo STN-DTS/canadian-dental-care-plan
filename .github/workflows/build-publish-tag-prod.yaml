@@ -84,7 +84,7 @@ jobs:
       - name: Run lint
         run: pnpm --filter @cdcp-rcsd/frontend run lint
       - name: Run unit tests with coverage
-        run: pnpm --filter @cdcp-rcsd/frontend run test:unit:coverage
+        run: pnpm run test:unit:coverage --project frontend
       - name: Build frontend
         run: pnpm --filter @cdcp-rcsd/frontend run build
       - name: Install Playwright browsers

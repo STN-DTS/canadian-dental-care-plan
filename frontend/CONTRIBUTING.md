@@ -4,23 +4,23 @@ Guidance for changes to the Canadian Dental Care Plan frontend.
 
 Read the [root contributing guide](../CONTRIBUTING.md) for shared workspace
 setup, dependency management, formatting, and pull request guidance.
-The commands below run from `frontend/` unless stated otherwise.
+The commands below run from the repository root.
 
 ## Before you start
 
 Complete the workspace setup in the [root guide](../CONTRIBUTING.md#before-you-start),
 then:
 
-1. Copy `.env.example` to `.env` and keep local credentials out of source control.
-2. Read the relevant documentation under `other/docs/` before changing authentication, routes, eligibility, document upload, or telemetry.
+1. Copy `frontend/.env.example` to `frontend/.env` and keep local credentials out of source control.
+2. Read the relevant documentation under `frontend/other/docs/` before changing authentication, routes, eligibility, document upload, or telemetry.
 
 Start the application with:
 
 ```sh
-pnpm run dev
+pnpm --filter @cdcp-rcsd/frontend run dev
 ```
 
-Use `pnpm run dbg` when debugging server code. Use package scripts for all
+Use `pnpm --filter @cdcp-rcsd/frontend run dbg` when debugging server code. Use package scripts for all
 server starts because they preload the OpenTelemetry ESM modules.
 
 ## Code boundaries
@@ -57,8 +57,11 @@ CRUD names do not express intent clearly.
 
 ## Tests
 
-Add or update focused tests with behavior changes. Keep unit tests in
-`__tests__/` and end-to-end tests in `e2e/`.
+Add or update focused tests with behavior changes. Keep Vitest unit tests in
+`__tests__/` and Playwright end-to-end tests in `e2e/`.
+
+The frontend `node` and `jsdom` projects also participate in the root
+`pnpm test` command. Use Playwright for end-to-end tests.
 
 For bug fixes, add a regression test that reproduces the failure and confirms
 the corrected behavior.
@@ -66,36 +69,37 @@ the corrected behavior.
 Run a focused test while developing:
 
 ```sh
-pnpm test path/to/test.ts
+pnpm test frontend/__tests__/path/to/test.ts
 ```
 
-Use `pnpm run test:unit path/to/test.ts` to watch that test during development.
+Use `pnpm run test:unit frontend/__tests__/path/to/test.ts` to watch
+that test during development. Unit-test scripts live at the repository root.
+Use `pnpm test --project frontend` for frontend tests only.
 
 Run the normal pull request checks before submitting:
 
 ```sh
-pnpm --dir .. run check
+pnpm run check
 pnpm run test:unit:coverage
-pnpm run build
+pnpm --filter @cdcp-rcsd/frontend run build
 ```
 
 Run `typecheck` before `lint` or `lint:fix` to generate the route types needed
-by type-aware Oxlint. The frontend `pnpm run check` command handles those two
+by type-aware Oxlint. The `pnpm --filter @cdcp-rcsd/frontend run check` command handles those two
 checks in order, without formatting. Formatting scripts live at the root;
-use `pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`
-from `frontend/`.
+use `pnpm run format:check` or `pnpm run format:write`.
 
 Run browser tests against a fresh production build:
 
 ```sh
-pnpm run build
-pnpm run test:e2e
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run test:e2e
 ```
 
 Install the Playwright browser when needed:
 
 ```sh
-pnpm run test:e2e:install
+pnpm --filter @cdcp-rcsd/frontend run test:e2e:install
 ```
 
 ## Localization
@@ -135,7 +139,7 @@ For frontend changes, also:
 
 - Check English and French flows.
 - Check keyboard access, labels, errors, and focus behavior for UI changes.
-- Run formatting, typechecking, linting, focused tests, and `pnpm run build`.
+- Run formatting, typechecking, linting, focused tests, and `pnpm --filter @cdcp-rcsd/frontend run build`.
 - Build before running browser tests, and state which journeys were tested.
 - Keep screenshots and reproduction steps free of applicant information.
 

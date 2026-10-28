@@ -32,33 +32,31 @@ Versions are enforced in `package.json`.
 
 ### Install
 
-Run this example from the repository root. The final `cd` enters `frontend/`;
-run the remaining commands in this guide from that directory unless noted otherwise.
+Run all commands in this guide from the repository root.
 
 ```sh
 npm install --global corepack@latest
 corepack enable pnpm
 pnpm install
-cd frontend
-cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
 Dependencies use the root workspace and lockfile. Corepack selects the version
 pinned in the root `package.json`.
 
-To copy the environment file in PowerShell from `frontend/`:
+To copy the environment file in PowerShell:
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item frontend/.env.example frontend/.env
 ```
 
-Review `.env` before starting the application. It contains local feature flags
-and mock integration settings. Never commit `.env` or real credentials.
+Review `frontend/.env` before starting the application. It contains local feature flags
+and mock integration settings. Never commit `frontend/.env` or real credentials.
 
 ### Start development server
 
 ```sh
-pnpm run dev
+pnpm --filter @cdcp-rcsd/frontend run dev
 ```
 
 Open <http://localhost:3000>. The root route selects English or French;
@@ -67,7 +65,7 @@ application routes use `/en` and `/fr` prefixes.
 Use the inspector when debugging server code:
 
 ```sh
-pnpm run dbg
+pnpm --filter @cdcp-rcsd/frontend run dbg
 ```
 
 Use package scripts to start the server. They preload the OpenTelemetry ESM
@@ -78,57 +76,62 @@ modules before Express and other instrumented modules.
 Run before opening a pull request:
 
 ```sh
-pnpm --dir .. run check
+pnpm run check
 pnpm run test:unit:coverage
-pnpm run build
+pnpm --filter @cdcp-rcsd/frontend run build
 ```
 
 The root check includes repository formatting and workspace validation.
-Use `pnpm run check` from `frontend/` for only frontend typechecking and linting.
+Use `pnpm --filter @cdcp-rcsd/frontend run check` for only frontend typechecking and linting.
 
 Available commands:
 
-- `pnpm run dev`: start development server with HMR
-- `pnpm run dbg`: start development server with Node inspector
-- `pnpm run build`: build client and production server
-- `pnpm run preview`: build and run production-style server
-- `pnpm start`: run existing production build
-- `pnpm run check`: generate route types, check TypeScript, and run Oxlint
-- `pnpm run typecheck`: generate route types and run TypeScript checks
-- `pnpm run lint`: run Oxlint syntax and type-aware checks
-- `pnpm run lint:fix`: apply automatic Oxlint fixes
-- `pnpm test`: run unit tests once
+- `pnpm --filter @cdcp-rcsd/frontend run dev`: start development server with HMR
+- `pnpm --filter @cdcp-rcsd/frontend run dbg`: start development server with Node inspector
+- `pnpm --filter @cdcp-rcsd/frontend run build`: build client and production server
+- `pnpm --filter @cdcp-rcsd/frontend run preview`: build and run production-style server
+- `pnpm --filter @cdcp-rcsd/frontend run start`: run existing production build
+- `pnpm --filter @cdcp-rcsd/frontend run check`: generate route types, check TypeScript, and run Oxlint
+- `pnpm --filter @cdcp-rcsd/frontend run typecheck`: generate route types and run TypeScript checks
+- `pnpm --filter @cdcp-rcsd/frontend run lint`: run Oxlint syntax and type-aware checks
+- `pnpm --filter @cdcp-rcsd/frontend run lint:fix`: apply automatic Oxlint fixes
+- `pnpm test`: run all root and frontend unit tests once
+- `pnpm test --project frontend`: run frontend unit tests only
 - `pnpm run test:unit`: run Vitest in watch mode
 - `pnpm run test:unit:coverage`: run Vitest with coverage
-- `pnpm run test:e2e`: run Playwright end-to-end tests
-- `pnpm run test:e2e:smoke`: run Playwright smoke tests
-- `pnpm run test:e2e:install`: install Playwright Chromium
+- `pnpm --filter @cdcp-rcsd/frontend run test:e2e`: run Playwright end-to-end tests
+- `pnpm --filter @cdcp-rcsd/frontend run test:e2e:smoke`: run Playwright smoke tests
+- `pnpm --filter @cdcp-rcsd/frontend run test:e2e:install`: install Playwright Chromium
 
 Run end-to-end tests against a fresh production build:
 
 ```sh
-pnpm run build
-pnpm run test:e2e
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run test:e2e
 ```
 
 ## Linting
 
 Oxlint provides syntax and type-aware linting, Oxfmt handles formatting, and
 TypeScript performs project type checking. Frontend configuration lives in
-`oxlint.config.ts` and `tsconfig.json`. [oxfmt.config.ts](oxfmt.config.ts) imports
+`frontend/oxlint.config.ts` and `frontend/tsconfig.json`. [oxfmt.config.ts](oxfmt.config.ts) imports
 the [root formatting defaults](../oxfmt.config.ts) and adds frontend-specific
 rules. Formatting scripts live at the root and check the whole repository,
-including frontend files using this nested config. From `frontend/`, run
-`pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`.
+including frontend files using this nested config. Run
+`pnpm run format:check` or `pnpm run format:write`.
 
-Run `pnpm run typecheck` before `pnpm run lint` or `pnpm run lint:fix`: typecheck generates the
+Run `pnpm --filter @cdcp-rcsd/frontend run typecheck` before
+`pnpm --filter @cdcp-rcsd/frontend run lint` or
+`pnpm --filter @cdcp-rcsd/frontend run lint:fix`: typecheck generates the
 React Router route types that Oxlint's type-aware rules depend on. CI jobs that
 run these checks separately must preserve this order. The root `pnpm run check`
 command runs formatting, typecheck, and Oxlint in the correct sequence and
 continues after failures while reporting an overall failure status. The frontend
-`pnpm run check` runs only typecheck and Oxlint in that order.
+`pnpm --filter @cdcp-rcsd/frontend run check` runs only typecheck and Oxlint in that order.
 
 ## Code organization
+
+Paths below are relative to `frontend/`:
 
 ```text
 app/
@@ -154,7 +157,7 @@ and error-handling patterns before adding new abstractions.
 ## Mock integrations
 
 Local development and end-to-end tests use mock integrations configured through
-`.env`. `ENABLED_FEATURES` controls optional journeys such as status, letters,
+`frontend/.env`. `ENABLED_FEATURES` controls optional journeys such as status, letters,
 hCaptcha, and document upload. `ENABLED_MOCKS` controls mocked external
 services.
 
@@ -168,7 +171,7 @@ Optional Podman Compose stack sends frontend logs, metrics, and traces through
 Grafana Alloy to Loki, Prometheus, and Tempo. Grafana provides the UI.
 
 ```sh
-podman compose -f compose.otel-local.yaml up -d
+podman compose -f frontend/compose.otel-local.yaml up -d
 ```
 
 See [observability.md](other/docs/observability.md) for `.env` configuration,
@@ -177,11 +180,11 @@ volume management, backups, and troubleshooting details.
 ## Production output
 
 ```sh
-pnpm run build
-pnpm start
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run start
 ```
 
-Build output:
+Build output under `frontend/`:
 
 ```text
 build/

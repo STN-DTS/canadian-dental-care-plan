@@ -85,9 +85,8 @@ to select the frontend workspace package. Root scripts handle repository
 formatting and run workspace typechecking and linting. The workspace sets
 `failIfNoMatch: true`, so misspelled or missing package selectors fail.
 
-Use `--dir` to select a working directory instead of a
-workspace package. Formatting scripts live at the root; from `frontend/`,
-use `pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`.
+Run formatting scripts from the repository root with `pnpm run format:check`
+or `pnpm run format:write`.
 
 Oxfmt handles supported repository file types:
 
@@ -107,10 +106,10 @@ Use targeted formatting during development to avoid unrelated changes:
 pnpm exec oxfmt path/to/changed-file
 ```
 
-Oxlint's root config defines shared JavaScript, TypeScript, and stylistic rules.
+Oxlint's root config defines shared JavaScript, TypeScript, stylistic, and Vitest rules.
 It also enables type-aware linting and unused-disable reporting. TypeScript
 compiler checks run separately through `tsc`. The frontend config extends these rules, reuses shared categories
-and environments, and adds React, accessibility, and Vitest checks.
+and environments, and adds React and accessibility checks.
 Keep frontend settings, generated-output ignores, and component exceptions
 in the frontend config.
 
@@ -135,13 +134,26 @@ checks before submitting. Run checks for the areas you changed rather than
 every toolchain in the repository. Shared dependency, workspace, or container
 changes also require frontend validation.
 
+Use Vitest for all JavaScript and TypeScript unit tests, including repository
+automation tests under `.github/`. The root configuration combines repository
+and frontend projects:
+
+```sh
+pnpm test
+pnpm test --project root
+pnpm run test:unit
+```
+
+These commands run all unit tests once, root tests only, and all unit tests in
+watch mode, respectively. Keep Playwright end-to-end tests separate.
+
 ### Frontend
 
 Run these commands from the repository root:
 
 ```sh
 pnpm run check
-pnpm --filter @cdcp-rcsd/frontend run test:unit:coverage
+pnpm run test:unit:coverage
 pnpm --filter @cdcp-rcsd/frontend run build
 ```
 
@@ -158,7 +170,7 @@ combined `fix` script.
 Run focused unit tests while developing:
 
 ```sh
-pnpm --filter @cdcp-rcsd/frontend run test path/to/test.ts
+pnpm test frontend/__tests__/path/to/test.ts
 ```
 
 Build before running browser tests:

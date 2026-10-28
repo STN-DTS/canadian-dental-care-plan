@@ -55,13 +55,17 @@ mock integrations, and local telemetry.
 
 ## Root commands
 
-| Command                     | Purpose                                                |
-| --------------------------- | ------------------------------------------------------ |
-| `pnpm run check`            | Check repository formatting, workspace types, and lint |
-| `pnpm run check:workspaces` | Run each workspace's own validation pipeline           |
-| `pnpm run format:check`     | Check supported repository files with Oxfmt            |
-| `pnpm run format:write`     | Format supported repository files with Oxfmt           |
-| `pnpm run lint`             | Lint non-frontend JavaScript and TypeScript files      |
+| Command                       | Purpose                                                |
+| ----------------------------- | ------------------------------------------------------ |
+| `pnpm run check`              | Check repository formatting, workspace types, and lint |
+| `pnpm run check:workspaces`   | Run each workspace's own validation pipeline           |
+| `pnpm run format:check`       | Check supported repository files with Oxfmt            |
+| `pnpm run format:write`       | Format supported repository files with Oxfmt           |
+| `pnpm run lint`               | Lint non-frontend JavaScript and TypeScript files      |
+| `pnpm test`                   | Run all root and frontend unit tests with Vitest       |
+| `pnpm run test:unit`          | Watch all root and frontend unit tests with Vitest     |
+| `pnpm run test:unit:coverage` | Run all unit tests with coverage                       |
+| `pnpm run test:unit:ui`       | Open the Vitest UI with coverage                       |
 
 `check` runs repository formatting, root typechecking and linting, then each
 workspace's `check` script. The frontend check generates route types and runs
@@ -75,6 +79,15 @@ the nested frontend configuration.
 
 The workspace sets `failIfNoMatch: true`, so a filter that matches no package
 fails rather than silently skipping the command.
+
+The root [Vitest config](vitest.config.ts) combines the `root` project
+for repository tests (including `.github/`) with the `frontend` project's
+nested `node` and `jsdom` projects. Run `pnpm test --project root` for root tests only.
+Use `pnpm test --project frontend` for frontend tests only.
+Unit-test scripts live at the root; [frontend/vitest.config.ts](frontend/vitest.config.ts)
+defines the frontend projects. Coverage reports remain in `frontend/coverage/`
+for compatibility with CI artifacts.
+Playwright end-to-end tests remain separate.
 
 During development, check changed files with
 `pnpm exec oxfmt --check path/to/changed-file`. For frontend-only validation,
@@ -104,16 +117,17 @@ Oxfmt uses the nearest config for each file, including the frontend config when
 run from the root. Its ignore patterns exclude generated output, dependency
 directories, and the pnpm lockfile.
 
-[oxlint.config.ts](oxlint.config.ts) defines framework-neutral lint rules.
+[oxlint.config.ts](oxlint.config.ts) defines shared lint rules, including Vitest
+checks for root and frontend unit tests.
 [frontend/oxlint.config.ts](frontend/oxlint.config.ts) extends those rules with
-React, accessibility, and Vitest checks. Both configs share stylistic rules and
+React and accessibility checks. Both configs share stylistic rules and
 lint options. Root lint scripts use `--config` to disable nested discovery so
 the root `frontend/` ignore applies. Frontend linting uses its own config and
 inherited type-aware options. Generate React Router types before frontend linting.
 
-Shared TypeScript, Node.js types, Oxlint, its type-aware engine, and the
+Shared TypeScript, Node.js types, Vitest, Oxlint, its type-aware engine, and the
 stylistic plugin live in [package.json](package.json). Frontend runtime
-dependencies, Vitest, and Playwright stay in
+dependencies, frontend test dependencies, and Playwright stay in
 [frontend/package.json](frontend/package.json). Use native tools such as
 `terraform fmt` for formats Oxfmt does not support.
 

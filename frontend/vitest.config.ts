@@ -1,14 +1,20 @@
-import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import { defineProject } from 'vitest/config';
 
 /**
  * Defining Vitest Projects
  * https://vitest.dev/guide/projects
  */
-export default defineConfig({
+export default defineProject({
+  plugins: [react()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
+    name: 'frontend',
     projects: [
       {
-        extends: './vite.config.ts',
+        extends: true,
         test: {
           name: 'jsdom',
           environment: 'jsdom',
@@ -17,7 +23,7 @@ export default defineConfig({
         },
       },
       {
-        extends: './vite.config.ts',
+        extends: true,
         test: {
           name: 'node',
           environment: 'node',
@@ -26,5 +32,6 @@ export default defineConfig({
         },
       },
     ],
+    setupFiles: ['./__tests__/setup-test-env.ts'],
   },
 });

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Checks repository formatting and root types/lint for PRs targeting main or release branches.
+# Checks repository formatting and root types/lint/tests for PRs targeting main or release branches.
 # Frontend changes also run validation, smoke tests, and container builds.
 # Supports manual/reusable runs; no publishing.
 
@@ -67,6 +67,8 @@ jobs:
         run: pnpm run typecheck
       - name: Lint root tooling and scripts
         run: pnpm run lint
+      - name: Run root unit tests
+        run: pnpm test --project root
 
   detect-changes:
     runs-on: ubuntu-latest
@@ -91,6 +93,7 @@ jobs:
               - pnpm-workspace.yaml
               - oxfmt.config.ts
               - oxlint.config.ts
+              - vitest.config.ts
               - .dockerignore
       - name: Detect GitOps changes
         id: gitops
@@ -142,7 +145,7 @@ jobs:
         run: pnpm --filter @cdcp-rcsd/frontend run lint
       - name: Run unit tests with coverage
         id: vitest
-        run: pnpm --filter @cdcp-rcsd/frontend run test:unit:coverage --coverage.reportOnFailure
+        run: pnpm run test:unit:coverage --coverage.reportOnFailure --project frontend
       - name: Upload Vitest coverage
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.vitest.outcome == 'success' || steps.vitest.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

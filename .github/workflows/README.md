@@ -4,17 +4,17 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 
 ## Workflow summary
 
-| Workflow                                                                             | Triggers                                                                                                    | Purpose                                                                                                                                      |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check formatting, root types, and root lint for every PR. Run frontend tests and build an unpublished image when relevant files change.      |
-| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                                                          | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
-| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
-| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Apply the production root Kustomization to the prod AKS cluster.                                                                             |
-| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                          |
-| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
-| [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
-| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
+| Workflow                                                                             | Triggers                                                                                                    | Purpose                                                                                                                                                  |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check formatting, root types, root lint, and root unit tests for every PR. Run frontend tests and build an unpublished image when relevant files change. |
+| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                                                          | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases.             |
+| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                                         |
+| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
+| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
+| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
+| [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                                     |
+| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
 must select a release-tag ref; branch refs are rejected. Pushing a matching tag
@@ -23,8 +23,9 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
-PR checks run repository-wide formatting, root TypeScript checking, and root
-linting in the `check-formatting` job after the non-fork `check-repository` gate.
+PR checks run repository-wide formatting, root TypeScript checking, root
+linting, and the Vitest `root` project in the `check-formatting` job after
+the non-fork `check-repository` gate.
 The job keeps its ID for existing status checks and runs for all changes,
 including documentation, GitOps, and infrastructure. Frontend testing runs
 separately. Publishing workflows do not repeat root typechecking or linting.
@@ -45,12 +46,15 @@ Node.js version from the root manifest. Workflows check out the repository befor
 setting up Node.js; `workflow_run` consumers use the trusted default branch.
 
 Node jobs install dependencies from the repository root using the shared pnpm
-workspace and lockfile. Frontend commands also run from the root and
+workspace and lockfile. Frontend unit tests use the root
+`pnpm run test:unit:coverage --project frontend` command for the nested frontend
+Vitest projects; reports remain in `frontend/coverage/`.
+Frontend application commands also run from the root and
 select the package with `pnpm --filter @cdcp-rcsd/frontend run <script>`;
 Playwright installation uses `pnpm --filter @cdcp-rcsd/frontend exec playwright`.
 Container builds use the repository root as their context; the root
 `.dockerignore` includes only workspace manifests and frontend build inputs.
-Changes to root package, lockfile, workspace, formatter, shared linter, or Docker
+Changes to root package, lockfile, workspace, formatter, shared linter, Vitest, or Docker
 context configuration also enable frontend validation and builds. The root
 `tsconfig.json` configures only root tooling and does not trigger frontend jobs.
 The PR root check validates it on every run. Root lint steps use `pnpm run lint`,
@@ -78,6 +82,7 @@ paths:
   - pnpm-workspace.yaml
   - oxfmt.config.ts
   - oxlint.config.ts
+  - vitest.config.ts
   - .dockerignore
 ```
 

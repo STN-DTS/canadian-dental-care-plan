@@ -17,7 +17,7 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
 - Keep unit tests in `__tests__/` and browser tests in `e2e/`. Use existing
   mocks; do not call real government or partner services from unit tests.
 - From the repository root, run focused unit tests with
-  `pnpm --filter @cdcp-rcsd/frontend run test path/to/test.ts`.
+  `pnpm test frontend/__tests__/path/to/test.ts`.
   `pnpm run check` runs repository formatting, workspace type generation/checking,
   and Oxlint in order, continuing after failures and failing overall if any check fails.
 - Run type generation before standalone type-aware Oxlint. Run

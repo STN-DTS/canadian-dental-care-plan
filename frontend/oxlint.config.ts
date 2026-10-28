@@ -4,7 +4,7 @@ import baseConfig from '../oxlint.config.ts';
 
 export default defineConfig({
   extends: [baseConfig],
-  plugins: ['react', 'jsx-a11y', 'vitest'],
+  plugins: ['react', 'jsx-a11y'],
   categories: baseConfig.categories,
   env: {
     ...baseConfig.env,
@@ -24,19 +24,15 @@ export default defineConfig({
     'jsx-a11y/prefer-tag-over-role': 'off',
     'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
     'react/no-unknown-property': ['error', { ignore: ['property', 'resource', 'typeof', 'vocab'] }],
-    'vitest/require-mock-type-parameters': 'off',
-    'vitest/require-to-throw-message': 'off',
   },
   settings: {
+    ...baseConfig.settings,
     react: {
       formComponents: ['Form'],
       linkComponents: [
         { name: 'Link', attribute: 'to' },
         { name: 'NavLink', attribute: 'to' },
       ],
-    },
-    vitest: {
-      typecheck: true,
     },
   },
 });

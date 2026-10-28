@@ -9,16 +9,23 @@
     "format:write": "oxfmt --write",
     "lint": "oxlint --config ./oxlint.config.ts",
     "lint:fix": "oxlint --config ./oxlint.config.ts --fix",
+    "test": "vitest run",
+    "test:unit": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
+    "test:unit:ui": "vitest --ui --coverage.enabled=true",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "catalog:",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
     "npm-run-all2": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=26.10.0 <27.0.0",

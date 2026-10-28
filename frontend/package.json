@@ -22,11 +22,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ci": "cross-env CI=true pnpm run test:e2e",
     "test:e2e:install": "playwright install chromium",
-    "test:e2e:smoke": "playwright test --grep @smoke",
-    "test": "vitest run",
-    "test:unit": "vitest",
-    "test:unit:coverage": "vitest run --coverage",
-    "test:unit:ui": "vitest --ui --coverage.enabled=true"
+    "test:e2e:smoke": "playwright test --grep @smoke"
   },
   "dependencies": {
     "@date-fns/utc": "catalog:",
@@ -132,8 +128,6 @@
     "@types/triple-beam": "catalog:",
     "@types/validator": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
-    "@vitest/ui": "catalog:",
     "i18next-cli": "catalog:",
     "jsdom": "catalog:",
     "playwright-teamcity-reporter": "catalog:",
@@ -142,7 +136,6 @@
     "tsx": "catalog:",
     "type-fest": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:",
     "vitest-mock-extended": "catalog:"
   }
 }

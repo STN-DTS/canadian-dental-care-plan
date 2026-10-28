@@ -3,8 +3,8 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
-import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { test } from 'vitest';
 
 const script = fileURLToPath(new URL('./push-image.mjs', import.meta.url));
 const primary = 'registry.example/cdcp:1.2.3-abcdef12-00007';
