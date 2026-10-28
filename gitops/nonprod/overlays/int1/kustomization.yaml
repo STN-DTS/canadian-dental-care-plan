@@ -8,7 +8,7 @@ labels:
     includeSelectors: true
   - pairs:
       app.kubernetes.io/part-of: canada-dental-care-plan
-      app.kubernetes.io/managed-by: teamcity
+      app.kubernetes.io/managed-by: github-actions
       app.kubernetes.io/cluster: dts-dev-sced-rhp-spoke-aks
       app.kubernetes.io/environment: int1
       app.kubernetes.io/tier: nonprod
