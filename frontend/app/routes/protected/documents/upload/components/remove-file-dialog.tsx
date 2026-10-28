@@ -30,7 +30,7 @@ export function RemoveFileDialog({ fileName, fileNameId, disabled }: RemoveFileD
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm" startIcon={faTimes} disabled={disabled} aria-describedby={fileNameId}>
+        <Button variant="secondary" size="xs" startIcon={faTimes} disabled={disabled} aria-describedby={fileNameId}>
           {t(($) => $.upload.remove)}
         </Button>
       </DialogTrigger>
