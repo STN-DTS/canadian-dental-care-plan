@@ -36,7 +36,6 @@ env:
 
 jobs:
   check-repository:
-    name: Check non-fork repository
     if: ${{ github.event.repository.fork != true }}
     runs-on: ubuntu-latest
     permissions: {}
@@ -45,7 +44,6 @@ jobs:
         run: echo "Repository check passed."
 
   check-workspace:
-    name: Check workspace formatting and root types, lint, and tests
     runs-on: ubuntu-latest
     needs: check-repository
     steps:
@@ -69,7 +67,6 @@ jobs:
         run: pnpm test --project root
 
   detect-changes:
-    name: Detect frontend, GitOps, and infrastructure changes
     runs-on: ubuntu-latest
     needs: check-repository
     permissions:
@@ -114,7 +111,6 @@ jobs:
       infrastructure-changed: ${{ steps.infrastructure.outputs.src }}
 
   test-frontend:
-    name: Check frontend types, lint, unit tests, build, and smoke tests
     runs-on: ubuntu-latest
     needs:
       - check-repository
@@ -164,7 +160,6 @@ jobs:
             frontend/test-results/
           retention-days: 7
   build-frontend:
-    name: Build frontend container image
     runs-on: ubuntu-latest
     needs:
       - check-repository

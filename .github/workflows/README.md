@@ -26,8 +26,8 @@ from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 PR checks run repository-wide formatting, root TypeScript checking, root
 linting, and the Vitest `root` project in the `check-workspace` job after
 the non-fork `check-repository` gate.
-Required-check configuration may need updating for the renamed job and explicit
-job display names. The workspace job runs for all changes,
+PR jobs use their job IDs as check names, preserving the required
+`build-frontend` and `test-frontend` checks. The workspace job runs for all changes,
 including documentation, GitOps, and infrastructure. Frontend testing runs
 separately. Publishing workflows do not repeat root typechecking or linting.
 The nonprod branch workflow checks frontend formatting in `test-frontend`
