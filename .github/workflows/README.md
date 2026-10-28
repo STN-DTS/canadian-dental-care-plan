@@ -563,12 +563,17 @@ key. Never put keys or installation tokens in Git or logs.
 
 #### Validation and cutover
 
+Logging defaults to `info` for scheduled and manual runs. For detailed
+troubleshooting logs, check **debug** under **Actions > Renovate > Run workflow**
+or pass `-F debug=true` to `gh workflow run`. Scheduled runs always use `info`.
+
 1. Merge the configuration and workflow into the default branch while
    `RENOVATE_ENABLED` remains `false`. Non-default branch runs are skipped.
    No push or PR event starts this privileged workflow.
 2. Run **Actions > Renovate > Run workflow** on the default branch, keeping
-   **dry_run** checked (the default). CLI equivalent:
-   `gh workflow run renovate.yaml --ref main -F dry_run=true`.
+   **dry_run** checked (the default) and checking **debug** for validation.
+   CLI equivalent:
+   `gh workflow run renovate.yaml --ref main -F dry_run=true -F debug=true`.
    This full dry run must not create branches, PRs, or dashboard issues.
 3. Inspect debug logs for root/frontend catalog extraction and the root lockfile,
    both Docker stages, Compose service images, Terraform declarations, workflow
