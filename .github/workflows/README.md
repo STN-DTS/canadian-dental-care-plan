@@ -42,11 +42,12 @@ The build job reads the validated version from
 `needs.test-frontend.outputs.version`. Formatting failures stop subsequent tests.
 The test job must pass before image publishing can run.
 
-Workflows using `actions/setup-node` use `node-version-file: package.json` to
-read the Node.js version from the root manifest. PR-check jobs use the pinned
-`pnpm/setup` action, which reads Node.js and pnpm versions from the root
-`devEngines.runtime` and `packageManager` fields, respectively. It installs
-dependencies with the required lockfile and caches the pnpm store by lockfile.
+Workflows that require pnpm use the pinned `pnpm/setup` action, which reads
+Node.js and pnpm versions from the root `devEngines.runtime` and `packageManager`
+fields, respectively. PR checks, publishing tests, and nightly E2E jobs install
+dependencies with the required lockfile and cache the pnpm store by lockfile.
+The SharePoint report-upload job needs only Node.js and uses `actions/setup-node`
+with `node-version-file: package.json`, without installing pnpm or workspace dependencies.
 Workflows check out the repository before setting up Node.js; `workflow_run`
 consumers use the trusted default branch.
 
