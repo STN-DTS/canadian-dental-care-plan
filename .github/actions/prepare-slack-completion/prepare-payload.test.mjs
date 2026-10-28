@@ -86,19 +86,23 @@ test('finds queued-message metadata and broadcasts completion in its thread', as
       slackToken: 'slack-fixture-token',
       fetch: async (url, config) => {
         calls.push(String(url));
+
         if (url.origin === 'https://slack.com') {
           assert.equal(config.headers.Authorization, 'Bearer slack-fixture-token');
           assert.ok(config.signal instanceof AbortSignal);
+
           if (url.pathname === '/api/auth.test') {
             assert.equal(config.method, 'POST');
             return await identityResponse();
           }
+
           assert.equal(url.pathname, '/api/conversations.history');
           assert.equal(url.searchParams.get('channel'), 'C123');
           assert.equal(url.searchParams.get('include_all_metadata'), 'true');
           assert.equal(url.searchParams.get('oldest'), '1791763140');
           return await jsonResponse({ ok: true, messages: [queuedMessage()] });
         }
+
         return await response([]);
       },
     },
@@ -133,8 +137,14 @@ test('rejects copied queue metadata from another Slack sender', async () => {
     ...options,
     slackToken: 'slack-fixture-token',
     fetch: async (url) => {
-      if (url.origin !== 'https://slack.com') return await response([]);
-      if (url.pathname === '/api/auth.test') return await identityResponse();
+      if (url.origin !== 'https://slack.com') {
+        return await response([]);
+      }
+
+      if (url.pathname === '/api/auth.test') {
+        return await identityResponse();
+      }
+
       return await jsonResponse({
         ok: true,
         messages: [queuedMessage({}, { user: 'UOTHER', ts: '1791763200.999999' }), queuedMessage()],
@@ -151,11 +161,21 @@ test('paginates Slack history and ignores other runs, attempts, repositories, an
     ...options,
     slackToken: 'slack-fixture-token',
     fetch: async (url) => {
-      if (url.origin !== 'https://slack.com') return await response([]);
-      if (url.pathname === '/api/auth.test') return await identityResponse();
+      if (url.origin !== 'https://slack.com') {
+        return await response([]);
+      }
+
+      if (url.pathname === '/api/auth.test') {
+        return await identityResponse();
+      }
+
       pages++;
       assert.equal(url.searchParams.get('cursor'), pages === 1 ? null : 'next-page');
-      if (pages === 2) return await jsonResponse({ ok: true, messages: [queuedMessage()] });
+
+      if (pages === 2) {
+        return await jsonResponse({ ok: true, messages: [queuedMessage()] });
+      }
+
       return await jsonResponse({
         ok: true,
         messages: [
@@ -200,11 +220,24 @@ for (const mode of ['missing parent', 'http', 'api', 'rate limit', 'network', 'm
       slackToken: 'slack-fixture-token',
       warn: (warning) => warnings.push(warning),
       fetch: async (url) => {
-        if (url.origin !== 'https://slack.com') return await response([{ expired: false }]);
-        if (url.pathname === '/api/auth.test') return await identityResponse();
+        if (url.origin !== 'https://slack.com') {
+          return await response([{ expired: false }]);
+        }
+
+        if (url.pathname === '/api/auth.test') {
+          return await identityResponse();
+        }
+
         requests++;
-        if (mode === 'network') throw new Error('slack-fixture-token');
-        if (mode === 'http' || mode === 'rate limit') return { ok: false, status: mode === 'rate limit' ? 429 : 503 };
+
+        if (mode === 'network') {
+          throw new Error('slack-fixture-token');
+        }
+
+        if (mode === 'http' || mode === 'rate limit') {
+          return { ok: false, status: mode === 'rate limit' ? 429 : 503 };
+        }
+
         return await jsonResponse(historyResponses[mode]);
       },
     });
@@ -224,8 +257,14 @@ for (const sender of ['UOTHER', undefined, 123]) {
       ...options,
       slackToken: 'slack-fixture-token',
       fetch: async (url) => {
-        if (url.origin !== 'https://slack.com') return await response([]);
-        if (url.pathname === '/api/auth.test') return await identityResponse();
+        if (url.origin !== 'https://slack.com') {
+          return await response([]);
+        }
+
+        if (url.pathname === '/api/auth.test') {
+          return await identityResponse();
+        }
+
         return await jsonResponse({ ok: true, messages: [queuedMessage({}, { user: sender })] });
       },
     });
@@ -252,16 +291,27 @@ for (const mode of [...Object.keys(invalidIdentities), 'http', 'network', 'inval
       slackToken: 'slack-fixture-token',
       warn: (warning) => warnings.push(warning),
       fetch: async (url) => {
-        if (url.origin !== 'https://slack.com') return await response([{ expired: false }]);
+        if (url.origin !== 'https://slack.com') {
+          return await response([{ expired: false }]);
+        }
+
         requests.push(String(url));
-        if (mode === 'network') throw new Error('slack-fixture-token');
-        if (mode === 'http') return { ok: false, status: 503 };
+
+        if (mode === 'network') {
+          throw new Error('slack-fixture-token');
+        }
+
+        if (mode === 'http') {
+          return { ok: false, status: 503 };
+        }
+
         if (mode === 'invalid JSON') {
           return {
             ok: true,
             json: async () => await Promise.reject(new Error('slack-fixture-token')),
           };
         }
+
         return await jsonResponse(invalidIdentities[mode]);
       },
     });
@@ -440,7 +490,10 @@ for (const mode of ['http', 'network']) {
       ...options,
       warn: (warning) => warnings.push(warning),
       fetch: async () => {
-        if (mode === 'network') throw new Error(options.token);
+        if (mode === 'network') {
+          throw new Error(options.token);
+        }
+
         return await Promise.resolve({ ok: false });
       },
     });

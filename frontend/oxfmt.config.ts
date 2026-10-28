@@ -9,7 +9,6 @@ export default defineConfig({
     stylesheet: './app/tailwind.css',
   },
   overrides: [
-    ...(rootConfig.overrides ?? []),
     {
       files: ['app/.server/locales/**/*.ts'],
       options: {

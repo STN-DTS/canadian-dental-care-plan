@@ -31,6 +31,7 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - oxfmt.config.ts
+      - oxlint.config.ts
       - .dockerignore
   workflow_call: {}
   workflow_dispatch:
@@ -80,6 +81,7 @@ jobs:
               - pnpm-lock.yaml
               - pnpm-workspace.yaml
               - oxfmt.config.ts
+              - oxlint.config.ts
               - .dockerignore
       - name: Publish change-detection output
         id: changes

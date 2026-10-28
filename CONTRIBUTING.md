@@ -82,10 +82,10 @@ adding or updating dependencies, and retain each dependency in its owning packag
 
 From the repository root, use `pnpm --filter @cdcp-rcsd/frontend run <script>`
 to select the frontend workspace package. Root scripts handle repository
-formatting and orchestrate workspace typechecking and linting. The workspace sets
+formatting and run workspace typechecking and linting. The workspace sets
 `failIfNoMatch: true`, so misspelled or missing package selectors fail.
 
-Use `--dir` when intentionally selecting a working directory instead of a
+Use `--dir` to select a working directory instead of a
 workspace package. Formatting scripts live at the root; from `frontend/`,
 use `pnpm --dir .. run format:check` or `pnpm --dir .. run format:write`.
 
@@ -107,9 +107,22 @@ Use targeted formatting during development to avoid unrelated changes:
 pnpm exec oxfmt path/to/changed-file
 ```
 
-Do not reformat unrelated files as part of a feature or tooling change.
-Use targeted formatting while developing, then run the repository-wide check
-before submitting.
+Oxlint's root config defines shared JavaScript, TypeScript, and stylistic rules.
+It also enables type-aware linting and unused-disable reporting. TypeScript
+compiler checks run separately through `tsc`. The frontend config extends these rules, reuses shared categories
+and environments, and adds React, accessibility, and Vitest checks.
+Keep frontend settings, generated-output ignores, and component exceptions
+in the frontend config.
+
+Root `lint` and `lint:fix` scripts select `oxlint.config.ts` with `--config`.
+This disables nested discovery so the root `ignorePatterns` excludes `frontend/`.
+Frontend lint scripts use their own config and inherit the shared lint options.
+Run frontend typechecking before standalone linting to generate React Router
+types. The workspace check runs these steps in order.
+The root package contains shared lint tools, the type-aware engine, TypeScript,
+and Node.js types.
+
+Do not reformat unrelated files. Run the repository-wide check before submitting.
 
 Use native formatting tools for unsupported formats, such as `terraform fmt`
 for Terraform. To check only frontend formatting from the repository root,
@@ -132,13 +145,13 @@ pnpm --filter @cdcp-rcsd/frontend run test:unit:coverage
 pnpm --filter @cdcp-rcsd/frontend run build
 ```
 
-`check` runs repository formatting, then each workspace's `check` script.
-It continues after errors and fails overall if any check fails. For frontend-only
-typechecking and linting, run `pnpm --filter @cdcp-rcsd/frontend run check`.
-That command generates the route types required by type-aware Oxlint before
-linting, but does not check formatting.
+`check` runs repository formatting, root typechecking and linting, then each
+workspace's `check` script. It continues after errors and fails if any check
+fails. For frontend-only typechecking and linting, run
+`pnpm --filter @cdcp-rcsd/frontend run check`. That command generates route
+types before linting but does not check formatting.
 
-Apply fixes explicitly with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
+Apply lint fixes with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
 after type generation, then `pnpm run format:write` as needed. There is no
 combined `fix` script.
 
@@ -192,12 +205,12 @@ podman build --file frontend/dockerfile --tag canadian-dental-care-plan .
 
 Use the [pull request template](.github/pull-request-template.md) and provide:
 
-- **What and why:** describe the change and the problem it solves.
-- **Affected areas:** identify frontend, GitOps, infrastructure, CI, or shared tooling.
-- **Context:** link the relevant issue or Azure Boards work item with `AB#<id>`.
-- **Validation:** list the commands run, their results, and any checks not run with a reason.
-- **Review instructions:** explain setup or steps needed to verify the change.
-- **UI evidence:** include screenshots when useful, without personal information or credentials.
+- Describe the change and the problem it solves.
+- Identify the affected areas, such as frontend, GitOps, infrastructure, CI, or shared tooling.
+- Link the relevant issue or Azure Boards work item with `AB#<id>`.
+- List the commands run and their results. Explain any checks you did not run.
+- Explain the setup or steps needed to verify the change.
+- Include screenshots for UI changes when useful, without personal information or credentials.
 
 Add regression tests for bug fixes and tests for new behavior. Root tooling or
 deployment changes need checks of the install, build, or runtime paths they

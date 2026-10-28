@@ -3,14 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format:check": "oxfmt --check .",
-    "format:write": "oxfmt --write .",
+    "check": "run-s --continue-on-error -l format:check typecheck lint check:workspaces",
     "check:workspaces": "pnpm -r --no-bail run check",
-    "check": "run-s --continue-on-error -l format:check check:workspaces"
+    "format:check": "oxfmt --check",
+    "format:write": "oxfmt --write",
+    "lint": "oxlint --config ./oxlint.config.ts",
+    "lint:fix": "oxlint --config ./oxlint.config.ts --fix",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "catalog:",
+    "@types/node": "catalog:",
     "npm-run-all2": "catalog:",
-    "oxfmt": "catalog:"
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=26.10.0 <27.0.0",

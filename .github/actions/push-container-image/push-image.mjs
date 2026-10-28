@@ -9,15 +9,20 @@ async function pushImage(reference, applicationName) {
 
     for (const stream of [docker.stdout, docker.stderr]) {
       let pending = '';
+
       const inspect = (line) => {
         imageDigest ??= line.match(/(?:^|\s)digest:\s+(sha256:\S+)/)?.[1];
       };
+
       stream.setEncoding('utf8');
       stream.on('data', (chunk) => {
         process.stdout.write(chunk);
         const lines = (pending + chunk).split(/[\r\n]/);
         pending = lines.pop();
-        for (const line of lines) inspect(line);
+
+        for (const line of lines) {
+          inspect(line);
+        }
       });
       stream.on('end', () => inspect(pending));
     }
@@ -43,19 +48,26 @@ async function main() {
   const imageRef = process.env['INPUT_IMAGE-REF'];
   const applicationName = process.env['INPUT_APPLICATION-NAME'] ?? 'CDCP frontend';
   const additionalImageRefs = process.env['INPUT_ADDITIONAL-IMAGE-REFS'] ?? '';
-  if (!imageRef) throw new Error('image-ref is required');
+
+  if (!imageRef) {
+    throw new Error('image-ref is required');
+  }
 
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, '## Published container tags\n\n| Application | Tag | Image | Source commit |\n| --- | --- | --- | --- |\n');
 
   const digest = await pushImage(imageRef, applicationName);
   await additionalImageRefs.split(/\r?\n/).reduce(async (previous, reference) => {
     await previous;
-    if (reference) await pushImage(reference, applicationName);
+
+    if (reference) {
+      await pushImage(reference, applicationName);
+    }
   }, Promise.resolve());
 
   if (!/^sha256:[a-f0-9]{64}$/.test(digest ?? '')) {
     throw new Error('Unable to determine the pushed image digest.');
   }
+
   appendFileSync(process.env.GITHUB_OUTPUT, `image-digest=${digest}\n`);
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nImage digest: \`${digest}\`\n`);
   console.log(`Container publication completed. Primary image digest: ${digest}`);

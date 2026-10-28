@@ -533,12 +533,27 @@ importers:
 
   .:
     devDependencies:
+      '@stylistic/eslint-plugin':
+        specifier: 'catalog:'
+        version: 5.10.0(eslint@10.13.0(jiti@2.7.0))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
       npm-run-all2:
         specifier: 'catalog:'
         version: 9.0.4
       oxfmt:
         specifier: 'catalog:'
         version: 0.74.0
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.89.0(oxlint-tsgolint@7.0.2005)
+      oxlint-tsgolint:
+        specifier: 'catalog:'
+        version: 7.0.2005
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   frontend:
     dependencies:
@@ -798,9 +813,6 @@ importers:
       '@react-router/dev':
         specifier: 'catalog:'
         version: 8.5.0(react-router@8.5.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-      '@stylistic/eslint-plugin':
-        specifier: 'catalog:'
-        version: 5.10.0(eslint@10.13.0(jiti@2.7.0))
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.3(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -828,9 +840,6 @@ importers:
       '@types/morgan':
         specifier: 'catalog:'
         version: 1.9.10
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.5
       '@types/nprogress':
         specifier: 'catalog:'
         version: 0.2.3
@@ -864,12 +873,6 @@ importers:
       jsdom:
         specifier: 'catalog:'
         version: 30.1.3
-      oxlint:
-        specifier: 'catalog:'
-        version: 1.89.0(oxlint-tsgolint@7.0.2005)
-      oxlint-tsgolint:
-        specifier: 'catalog:'
-        version: 7.0.2005
       playwright-teamcity-reporter:
         specifier: 'catalog:'
         version: 1.0.5
@@ -885,9 +888,6 @@ importers:
       type-fest:
         specifier: 'catalog:'
         version: 5.10.0
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
       vite:
         specifier: 'catalog:'
         version: 8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)

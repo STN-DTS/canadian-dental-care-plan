@@ -21,11 +21,16 @@ output.write("digest: " + (digests[args[1]] ?? process.env.DEFAULT_DIGEST) + " s
 
 function execute({ additional = '', failImage = '', defaultDigest = digest, digests = {}, digestStream = 'stdout', noTrailingNewline = false } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'cdcp-push-test.'));
+
   try {
     const calls = join(directory, 'calls.jsonl');
     const output = join(directory, 'output');
     const summary = join(directory, 'summary');
-    for (const file of [calls, output, summary]) writeFileSync(file, '');
+
+    for (const file of [calls, output, summary]) {
+      writeFileSync(file, '');
+    }
+
     writeFileSync(join(directory, 'docker'), fakeDocker, { mode: 0o700 });
     const result = spawnSync(process.execPath, [script], {
       encoding: 'utf8',
@@ -93,6 +98,7 @@ test('pushes additional references in order, skips empty lines, and retains the 
   const position = (reference) => result.summary.indexOf(reference + String.fromCharCode(96));
   assert.ok(position(primary) < position(first));
   assert.ok(position(first) < position(second));
+
   for (const reference of [primary, first, second]) {
     assert.ok(result.stdout.includes(`Pushing container image: ${reference}`));
     assert.ok(result.stdout.includes(`Docker push completed for ${reference}.`));

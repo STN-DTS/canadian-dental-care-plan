@@ -1,12 +1,12 @@
-# GitHub Workflows
+# GitHub workflows
 
 CI validation, image publication, GitOps deployment, and reporting for the Canadian Dental Care Plan.
 
-## Workflow Summary
+## Workflow summary
 
 | Workflow                                                                             | Triggers                                                                                                    | Purpose                                                                                                                                      |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check repository formatting for all changes; conditionally validate the frontend, run smoke tests, and build an image without publishing.    |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check formatting, root types, and root lint for every PR. Run frontend tests and build an unpublished image when relevant files change.      |
 | [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                                                          | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases. |
 | [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                             |
 | [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Apply the production root Kustomization to the prod AKS cluster.                                                                             |
@@ -14,12 +14,12 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
 | [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
-| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from explicitly listed repository-owned workflows                                  | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
+| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from workflows on the allowlist                                                    | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
 | [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
 
-**Post workflow updates to Slack** posts **Queued** on `requested`, then the result on `completed`,
-including failures and cancellations. An explicit allowlist subscribes only to
-repository-owned workflows:
+The Post workflow updates to Slack workflow posts Queued on `requested`, then
+the result on `completed`, including failures and cancellations. It subscribes
+to repository-owned workflows on this allowlist:
 
 ```yaml
 workflows:
@@ -33,15 +33,15 @@ workflows:
 ```
 
 Entries match each workflow's `name`, not its `run-name`. For these workflows,
-`name` matches the filename without `.yaml`, while `run-name` retains the descriptive
+`name` matches the filename without `.yaml`, while `run-name` provides the descriptive
 title shown for individual runs. The PROD SharePoint upload also uses the PROD tag
 workflow's `name` in its completion trigger. Update the allowlist in
 [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml) and this example
 when adding or renaming a workflow that should send notifications. New workflows
-are not included automatically. GitHub-managed workflows, such as **Running Copilot
-Code Review**, are deliberately omitted: they are outside our control and can
-trigger notification runs that require maintainer approval. PR checks are omitted
-to reduce noise, and the notifier is omitted to avoid notification loops.
+are not included automatically. The allowlist excludes GitHub-managed workflows,
+such as Running Copilot Code Review. They are outside our control and can trigger
+notification runs that require maintainer approval. It excludes PR checks to
+reduce noise and the notifier to avoid notification loops.
 
 Trusted default-branch code finds the queued parent using
 `cdcp_workflow_run` metadata keyed by repository, run ID, and attempt. Completion
@@ -59,35 +59,42 @@ triggers both nonprod and PROD publication.
 Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
 from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
 
-PR checks run repository-wide formatting in a separate `check-formatting` job
-after the non-fork `check-repository` gate. This includes documentation-, GitOps-,
-and infrastructure-only changes, independently of frontend validation.
-The nonprod branch workflow checks frontend formatting within `test-frontend`
-and retains its push path filters below.
+PR checks run repository-wide formatting, root TypeScript checking, and root
+linting in the `check-formatting` job after the non-fork `check-repository` gate.
+The job keeps its ID for existing status checks and runs for all changes,
+including documentation, GitOps, and infrastructure. Frontend testing runs
+separately. Publishing workflows do not repeat root typechecking or linting.
+The nonprod branch workflow checks frontend formatting in `test-frontend`
+and uses the push path filters below.
 
-Both tag publishing workflows follow `check-repository` -> `test-frontend` ->
-`build-frontend`. The test job validates the release tag before checkout or
-dependency installation, then runs repository-wide formatting, typechecking,
-linting, unit tests, the application build, and end-to-end tests using one setup
-and dependency installation. It exposes the validated version to the image-build
-job through `needs.test-frontend.outputs.version`. Formatting failures stop
-subsequent tests, and image publishing requires the test job to succeed.
-Each downstream job retains a direct dependency on the repository gate.
+In both tag publishing workflows, `test-frontend` depends on `check-repository`,
+and `build-frontend` depends on both jobs. The test job validates the release tag
+before checkout or dependency installation. It then checks repository formatting
+and frontend types and lint, runs unit tests, builds the application, and runs
+end-to-end tests. These steps share one setup and dependency installation.
+The build job reads the validated version from
+`needs.test-frontend.outputs.version`. Formatting failures stop subsequent tests.
+The test job must pass before image publishing can run.
 
 All `actions/setup-node` steps use `node-version-file: package.json` to read the
 Node.js version from the root manifest. Workflows check out the repository before
 setting up Node.js; `workflow_run` consumers use the trusted default branch.
 
 Node jobs install dependencies from the repository root using the shared pnpm
-workspace and lockfile. Frontend commands also run from the root and explicitly
+workspace and lockfile. Frontend commands also run from the root and
 select the package with `pnpm --filter @cdcp-rcsd/frontend run <script>`;
 Playwright installation uses `pnpm --filter @cdcp-rcsd/frontend exec playwright`.
 Container builds use the repository root as their context; the root
 `.dockerignore` includes only workspace manifests and frontend build inputs.
-Changes to root package, lockfile, workspace, formatter, or Docker context
-configuration also enable frontend validation and builds.
+Changes to root package, lockfile, workspace, formatter, shared linter, or Docker
+context configuration also enable frontend validation and builds. The root
+`tsconfig.json` configures only root tooling and does not trigger frontend jobs.
+The PR root check validates it on every run. Root lint steps use `pnpm run lint`,
+which selects the root config and excludes frontend files. Frontend typechecking
+generates React Router types before frontend linting runs. Nightly E2E, GitOps,
+dependency automation, and report-upload workflows do not repeat these checks.
 
-### Nonprod Branch Guards
+### Nonprod branch guards
 
 [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts
 automatically only for pushes to `main` or `release/v*` that change at least one
@@ -106,6 +113,7 @@ paths:
   - pnpm-lock.yaml
   - pnpm-workspace.yaml
   - oxfmt.config.ts
+  - oxlint.config.ts
   - .dockerignore
 ```
 
@@ -122,7 +130,7 @@ Version resolution runs as the first step of the image-build job, after frontend
 tests and formatting succeed, before checkout or authentication.
 All jobs remain dependent on the non-fork `check-repository` gate.
 
-### Nonprod GitOps Deployment
+### Nonprod GitOps deployment
 
 **GitOps operator (nonprod)**, defined in
 [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml), responds to pushes on `main`
@@ -151,7 +159,7 @@ overlays, including `shared`, using `kubectl apply --kustomize ... --force`.
 TeamCity is paused for this CI handoff; this is not a new manifest source-path
 cutover.
 
-Merging the workflow into `main` intentionally activates GitHub deployment.
+Merging the workflow into `main` activates GitHub deployment.
 The merge changes the workflow file, selecting shared resources and all
 discovered environments for the first run. No separate activation flag is required.
 Before merging, confirm GitHub's target settings and deployment credentials,
@@ -200,7 +208,7 @@ This workflow does not deploy production. Slack notifications report queued runs
 and completion results through the notification workflow. A successful live
 GitHub deployment has not been verified; check the first run after the handoff.
 
-### Production GitOps Deployment
+### Production GitOps deployment
 
 **GitOps operator (prod)**, defined in [gitops-main-prod.yaml](gitops-main-prod.yaml),
 replaces TeamCity's **Synchronize `prod` environment** deployment. Pushes to `main`
@@ -223,15 +231,15 @@ versions. The job summary reports apply success or failure; a successful apply
 does not prove workload readiness or successful ExternalSecret reconciliation.
 Slack queued/completion notifications use the existing notification workflow.
 
-**Before merging:** configure `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP`,
+Before merging, configure `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP`,
 `PROD_AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, and the `PROD_VAULT_*` secrets.
 Verify Vault access, runner connectivity/tools, and service principal AKS permissions.
-Pause the TeamCity production sync job and ensure no run is active: GitHub's lock
-does not coordinate with TeamCity. Merging this workflow into `main` intentionally
-activates production deployment. Live AKS deployment and workload health still
+Pause the TeamCity production sync job and confirm no run is active. GitHub's lock
+does not coordinate with TeamCity. Merging this workflow into `main` activates
+production deployment. Live AKS deployment and workload health still
 need verification; no live deployment was performed during implementation.
 
-## Manual Runs and Retries
+## Manual runs and retries
 
 Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
 
@@ -252,7 +260,7 @@ reuse the original PROD run and attempt without rebuilding or publishing images.
 Reports must still exist; expired or deleted artifacts cannot be recovered by
 rerunning the uploader. Uploading the same release tag overwrites its ZIP.
 
-## Required Configuration
+## Required configuration
 
 Configure GitHub variables for the workflows that use them:
 
@@ -282,7 +290,7 @@ SharePoint credentials reside at
 and SharePoint application write access to the destination; Graph permissions
 alone may not suffice. Never put credential values in Git or logs.
 
-## Reports and Runners
+## Reports and runners
 
 Test and scan artifacts have seven-day retention. PR and nonprod workflows
 upload separate Vitest coverage and Playwright artifacts; nightly runs upload
@@ -316,9 +324,9 @@ fork PRs running in the parent repository are not blocked by this check.
 Aqua scannercli is advisory: publishing may continue after scanner failure.
 Successful image publication or signing does not establish Aqua compliance.
 
-## Shared Actions
+## Shared actions
 
-### Dependency Updates with Renovate
+### Dependency updates with Renovate
 
 [Renovate](renovate.yaml) uses
 [`renovatebot/github-action`](https://github.com/renovatebot/github-action) and
@@ -348,19 +356,19 @@ types and `chore` for other updates; catalog entries retain their catalog types.
 The final squash message still depends on GitHub's repository settings and
 maintainer edits.
 
-**Formatting before dependency commits**
+##### Formatting before dependency commits
 
 Renovate runs `pnpm format:write` once per update
 branch through `postUpgradeTasks`, after dependency/lockfile updates and before
-creating its commit. This uses the existing root script (`oxfmt --write .`),
-including normal nested configuration and ignore-file discovery. It formats
-the whole repository; any unrelated formatting corrections can therefore be
-included in the dependency commit. The generated pnpm lockfile remains ignored.
+creating its commit. The root script uses Oxfmt's nested configuration and
+ignore-file discovery. It formats the whole repository, so the dependency
+commit may include unrelated formatting corrections. The formatter ignores
+the generated pnpm lockfile.
 
 The workflow reads the root minimum Node.js version and exact pnpm version into
 `RENOVATE_CONSTRAINTS`; Renovate's `postUpgradeTasks.installTools` provisions
 those tools using Containerbase. Before formatting, it
-installs all workspace packages and the root explicitly with
+installs all workspace packages and the root with
 `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts` so the
 workspace-pinned Oxfmt and its configuration imports are available. The first
 formatting task in a run may therefore require dependency downloads; this
@@ -373,9 +381,9 @@ warnings without a failing exit code, so check dry-run logs for those warnings t
 
 The workflow allows only the exact `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts`
 and `pnpm format:write` commands through `RENOVATE_ALLOWED_COMMANDS`; arbitrary
-post-upgrade commands and shell execution are not enabled. This explicitly trusts
-the root format script and its
-formatter configuration from the repository, so protect them like workflow code.
+post-upgrade commands and shell execution are not enabled. These commands run
+the repository's root format script and formatter configuration, so protect
+those files like workflow code.
 Provisioning, installation, or formatting failures become Renovate artifact
 errors and require maintainer attention. Verify the task in a full dry run
 before activating write runs; existing formatting CI remains the final check.
@@ -386,11 +394,11 @@ and subsequently updating exact catalog versions alongside the lockfile, rather
 than updating only in-range lockfile resolutions. Engines and peer dependency
 declarations retain `rangeStrategy: auto`. A shared catalog entry still has a
 catalog dependency type, so a peer consumer does not automatically exempt that
-entry from pinning. The global `:pinAllExceptPeerDependencies` preset is deliberately
-not used: it would also pin Terraform runtime/provider constraints. Terraform and
+entry from pinning. The configuration does not use
+`:pinAllExceptPeerDependencies` because it would also pin Terraform runtime and
+provider constraints. Terraform and
 other managers retain their inherited range strategies. This rule does not bypass
 the production exclusion or private-registry rules.
-No catalog split or package inventory is needed.
 
 File discovery uses Renovate's default enabled managers and file patterns, except
 that `gitops/prod/**` is ignored entirely and Kubernetes deployment YAML discovery
@@ -482,7 +490,7 @@ Renovate cannot enforce release age, including lockfile maintenance, replacement
 pinning, bumps, lockfile updates, and rollbacks. These exceptions do not disable
 pnpm's independent safeguards. The global three-day delay remains in effect
 for other ecosystems.
-The intended baseline enables automerge for Renovate update PRs, including major
+The configuration enables automerge for Renovate update PRs, including major
 upgrades, security fixes, and lockfile maintenance, using PR-based squash merging.
 GitOps updates and infrastructure lockfile maintenance are excluded from automerge.
 The temporary one-PR
@@ -514,9 +522,8 @@ and an authorized nonprod plan before merging. Do not apply infrastructure merel
 to validate the PR. After this configuration reaches `main`, rerun Renovate to
 replace an existing mixed maintenance PR with the separate proposals.
 
-The Dependency
-Dashboard is created on the first write run and lists pending updates and
-repository problems; it is not created during a dry run.
+Renovate creates the Dependency Dashboard on the first write run. It lists
+pending updates and repository problems. Dry runs do not create it.
 
 The `:automergeAll` preset enables global automerge. The default
 `automergeType: "pr"` and explicit `automergeStrategy: "squash"` apply to
@@ -635,8 +642,8 @@ for maintaining existing PRs. New branch pushes rerun relevant PR checks and can
 dismiss stale approvals under the repository rules. A scheduled check without a
 branch update does not itself rerun application CI. GitHub platform auto-merge can
 complete an approved, passing PR between Renovate runs.
-The job is bounded to 50 minutes because installation tokens expire after one
-hour. Renovate is intentionally absent from the Slack notification allowlist.
+The job has a 50-minute timeout because installation tokens expire after one
+hour. Renovate is not on the Slack notification allowlist.
 
 #### Security fixes and recovery
 
@@ -665,7 +672,7 @@ and groups. Keep Dependabot security updates enabled during the transition;
 re-enable them if they were disabled in a later security cutover. Keep GitHub
 alerts enabled throughout recovery.
 
-### Shared Action Responsibilities
+### Shared action responsibilities
 
 | Action                                                                    | Responsibility                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |

@@ -61,11 +61,12 @@ mock integrations, and local telemetry.
 | `pnpm run check:workspaces` | Run each workspace's own validation pipeline           |
 | `pnpm run format:check`     | Check supported repository files with Oxfmt            |
 | `pnpm run format:write`     | Format supported repository files with Oxfmt           |
+| `pnpm run lint`             | Lint non-frontend JavaScript and TypeScript files      |
 
-`check` runs repository formatting, then each workspace's `check` script.
-The frontend check runs typechecking before linting. Checks continue
-after failures and exit nonzero if any phase or workspace fails. They do not
-apply formatting or lint fixes; frontend typechecking generates route types.
+`check` runs repository formatting, root typechecking and linting, then each
+workspace's `check` script. The frontend check generates route types and runs
+typechecking before linting. Checks continue after failures and exit nonzero
+if any check fails. They do not apply formatting or lint fixes.
 
 Run frontend commands from `frontend/`, or with
 `pnpm --filter @cdcp-rcsd/frontend run <script>` from the root.
@@ -79,7 +80,7 @@ During development, check changed files with
 `pnpm exec oxfmt --check path/to/changed-file`. For frontend-only validation,
 run `pnpm --filter @cdcp-rcsd/frontend run check` for typechecking and linting;
 it does not check formatting.
-Apply fixes explicitly with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
+Apply lint fixes with `pnpm --filter @cdcp-rcsd/frontend run lint:fix`
 after type generation, and `pnpm run format:write` for formatting.
 
 Build before running end-to-end tests:
@@ -91,20 +92,29 @@ pnpm --filter @cdcp-rcsd/frontend run test:e2e
 
 ## Tooling boundaries
 
-The root owns the pnpm workspace settings, dependency catalog, shared lockfile,
-Oxfmt, and the task runner for combined checks. Package manifests reference
-versions in `pnpm-workspace.yaml` using `catalog:`. Run dependency installs from the root; CI uses
-`pnpm install --frozen-lockfile`.
+The root package contains the shared tools and check scripts. Workspace settings,
+the dependency catalog, and the lockfile also live at the root. Package manifests
+use `catalog:` to reference versions in `pnpm-workspace.yaml`. Install dependencies
+from the root. CI uses `pnpm install --frozen-lockfile`.
 
 [oxfmt.config.ts](oxfmt.config.ts) defines shared formatting defaults and ignores.
 [frontend/oxfmt.config.ts](frontend/oxfmt.config.ts) imports those defaults and
 adds Tailwind class sorting and locale quote overrides.
-Oxfmt discovers the nearest config for each file; root commands also use the
-nested frontend config. Generated output, dependency directories, and the pnpm
-lockfile are excluded.
+Oxfmt uses the nearest config for each file, including the frontend config when
+run from the root. Its ignore patterns exclude generated output, dependency
+directories, and the pnpm lockfile.
 
-Frontend runtime dependencies, TypeScript, Oxlint, Vitest, and Playwright stay
-in [frontend/package.json](frontend/package.json). Use native tools such as
+[oxlint.config.ts](oxlint.config.ts) defines framework-neutral lint rules.
+[frontend/oxlint.config.ts](frontend/oxlint.config.ts) extends those rules with
+React, accessibility, and Vitest checks. Both configs share stylistic rules and
+lint options. Root lint scripts use `--config` to disable nested discovery so
+the root `frontend/` ignore applies. Frontend linting uses its own config and
+inherited type-aware options. Generate React Router types before frontend linting.
+
+Shared TypeScript, Node.js types, Oxlint, its type-aware engine, and the
+stylistic plugin live in [package.json](package.json). Frontend runtime
+dependencies, Vitest, and Playwright stay in
+[frontend/package.json](frontend/package.json). Use native tools such as
 `terraform fmt` for formats Oxfmt does not support.
 
 ## Container build
@@ -116,13 +126,13 @@ podman build --file frontend/dockerfile --tag canadian-dental-care-plan .
 ```
 
 [.dockerignore](.dockerignore) limits the context to workspace manifests,
-root dependency patches, and frontend build inputs. GitOps, infrastructure, local environment files, and
-generated output are not sent to the builder.
+root dependency patches, and frontend build inputs. It excludes GitOps,
+infrastructure, local environment files, and generated output.
 
 The build stage uses Node.js 26 and installs the pnpm version declared in the
-root `packageManager` field. Dependency inputs are copied before `pnpm install`;
-application source and build configuration are copied afterward. This ordering
-lets Docker and Podman reuse the dependency installation layer for source-only
+root `packageManager` field. The Dockerfile copies dependency inputs before
+`pnpm install`, then copies application source and build configuration.
+Docker and Podman can reuse the dependency installation layer for source-only
 changes.
 
 After building, the Dockerfile uses `pnpm deploy --prod` to create a portable

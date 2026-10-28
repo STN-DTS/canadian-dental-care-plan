@@ -24,7 +24,10 @@ function inlineCode(value) {
  * @param {object} run Originating run.
  */
 function addArtifacts(attachment, count, run) {
-  if (!count) return;
+  if (!count) {
+    return;
+  }
+
   const label = `${count} ${count === 1 ? 'artifact' : 'artifacts'}`;
   const url = new URL(run.html_url);
   url.hash = 'artifacts';
@@ -40,7 +43,10 @@ function addArtifacts(attachment, count, run) {
  * @returns {string[]} Label and color.
  */
 function resultPresentation(conclusion, action) {
-  if (action === 'requested') return ['Queued', '#0969DA'];
+  if (action === 'requested') {
+    return ['Queued', '#0969DA'];
+  }
+
   const results = {
     success: ['Succeeded', '#2DA44E'],
     failure: ['Failed', '#CF222E'],
@@ -62,7 +68,11 @@ function resultPresentation(conclusion, action) {
  */
 function runDuration(run) {
   const elapsed = Date.parse(run.updated_at) - Date.parse(run.run_started_at);
-  if (!Number.isFinite(elapsed) || elapsed < 0) return null;
+
+  if (!Number.isFinite(elapsed) || elapsed < 0) {
+    return null;
+  }
+
   const totalSeconds = Math.floor(elapsed / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -147,13 +157,25 @@ async function fetchArtifactCount(run, repository, options) {
       },
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) throw new Error('Artifacts unavailable');
+
+    if (!response.ok) {
+      throw new Error('Artifacts unavailable');
+    }
+
     const data = await response.json();
     const retained = count + data.artifacts.filter((artifact) => !artifact.expired).length;
-    if (data.artifacts.length < 100 || page * 100 >= data.total_count) return retained;
-    if (page === 10) throw new Error('Artifact count exceeds pagination limit');
+
+    if (data.artifacts.length < 100 || page * 100 >= data.total_count) {
+      return retained;
+    }
+
+    if (page === 10) {
+      throw new Error('Artifact count exceeds pagination limit');
+    }
+
     return await fetchPage(page + 1, retained);
   }
+
   return await fetchPage(1, 0);
 }
 
@@ -169,11 +191,17 @@ async function fetchSlackUserId(options) {
     headers: { Authorization: `Bearer ${options.slackToken}` },
     signal: AbortSignal.timeout(10000),
   });
-  if (!identityResponse.ok) throw new Error('Slack identity unavailable');
+
+  if (!identityResponse.ok) {
+    throw new Error('Slack identity unavailable');
+  }
+
   const identity = await identityResponse.json();
+
   if (identity?.ok !== true || typeof identity.user_id !== 'string' || !identity.user_id.trim()) {
     throw new Error('Slack identity unavailable');
   }
+
   return identity.user_id;
 }
 
@@ -184,13 +212,24 @@ async function fetchSlackUserId(options) {
  * @returns {boolean} Whether this is the queued parent for the source run.
  */
 function matchesQueuedParent(message, expected) {
-  if (message.user !== expected.userId) return false;
+  if (message.user !== expected.userId) {
+    return false;
+  }
 
   const metadata = message.metadata;
   const context = metadata?.event_payload;
-  if (metadata?.event_type !== 'cdcp_workflow_run' || context?.action !== 'requested') return false;
-  if (context.repository !== expected.repository || context.run_id !== expected.runId || context.run_attempt !== expected.runAttempt) return false;
-  if (message.thread_ts && message.thread_ts !== message.ts) return false;
+
+  if (metadata?.event_type !== 'cdcp_workflow_run' || context?.action !== 'requested') {
+    return false;
+  }
+
+  if (context.repository !== expected.repository || context.run_id !== expected.runId || context.run_attempt !== expected.runAttempt) {
+    return false;
+  }
+
+  if (message.thread_ts && message.thread_ts !== message.ts) {
+    return false;
+  }
 
   return typeof message.ts === 'string' && /^\d+\.\d+$/.test(message.ts);
 }
@@ -211,33 +250,60 @@ async function findQueueMessage(run, repository, options) {
     runAttempt: String(run.run_attempt),
   };
   const createdAt = Date.parse(run.created_at);
+
   async function fetchPage(page, cursor) {
     const endpoint = new URL('https://slack.com/api/conversations.history');
     endpoint.searchParams.set('channel', options.channelId);
     endpoint.searchParams.set('include_all_metadata', 'true');
     endpoint.searchParams.set('limit', '100');
+
     if (Number.isFinite(createdAt)) {
       const earliestTimestamp = Math.max(0, Math.floor(createdAt / 1000) - 60);
       endpoint.searchParams.set('oldest', String(earliestTimestamp));
     }
-    if (cursor) endpoint.searchParams.set('cursor', cursor);
+
+    if (cursor) {
+      endpoint.searchParams.set('cursor', cursor);
+    }
+
     const response = await (options.fetch ?? globalThis.fetch)(endpoint, {
       headers: { Authorization: `Bearer ${options.slackToken}` },
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) throw new Error('Slack history unavailable');
+
+    if (!response.ok) {
+      throw new Error('Slack history unavailable');
+    }
+
     const data = await response.json();
-    if (!data.ok || !Array.isArray(data.messages)) throw new Error('Slack history unavailable');
+
+    if (!data.ok || !Array.isArray(data.messages)) {
+      throw new Error('Slack history unavailable');
+    }
+
     const message = data.messages.find((message) => matchesQueuedParent(message, expected));
-    if (message) return message.ts;
+
+    if (message) {
+      return message.ts;
+    }
+
     const nextCursor = data.response_metadata?.next_cursor?.trim() ?? '';
+
     if (!nextCursor) {
-      if (data.has_more) throw new Error('Slack history pagination unavailable');
+      if (data.has_more) {
+        throw new Error('Slack history pagination unavailable');
+      }
+
       return null;
     }
-    if (page === 10) throw new Error('Slack history exceeds pagination limit');
+
+    if (page === 10) {
+      throw new Error('Slack history exceeds pagination limit');
+    }
+
     return await fetchPage(page + 1, nextCursor);
   }
+
   return await fetchPage(1, '');
 }
 
@@ -249,12 +315,18 @@ async function findQueueMessage(run, repository, options) {
  */
 export async function buildPayload(event, options) {
   const payload = createWorkflowPayload(event, options);
-  if (event.action === 'requested') return payload;
+
+  if (event.action === 'requested') {
+    return payload;
+  }
+
   const run = event.workflow_run;
   const repository = event.repository.full_name;
+
   if (options.slackToken) {
     try {
       const threadTs = await findQueueMessage(run, repository, options);
+
       if (threadTs) {
         payload.thread_ts = threadTs;
         payload.reply_broadcast = true;
@@ -263,12 +335,14 @@ export async function buildPayload(event, options) {
       (options.warn ?? console.log)('::warning::Unable to find queued Slack message; posting completion as a standalone message.');
     }
   }
+
   try {
     const count = await fetchArtifactCount(run, repository, options);
     addArtifacts(payload.attachments[0], count, run);
   } catch {
     (options.warn ?? console.log)('::warning::Unable to list workflow artifacts; posting completion without artifact links.');
   }
+
   return payload;
 }
 

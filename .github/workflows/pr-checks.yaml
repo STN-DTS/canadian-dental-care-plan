@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Checks repository formatting for PRs targeting main or release branches.
+# Checks repository formatting and root types/lint for PRs targeting main or release branches.
 # Frontend changes also run validation, smoke tests, and container builds.
 # Supports manual/reusable runs; no publishing.
 
@@ -63,6 +63,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check repository formatting
         run: pnpm run format:check
+      - name: Check root TypeScript types
+        run: pnpm run typecheck
+      - name: Lint root tooling and scripts
+        run: pnpm run lint
 
   detect-changes:
     runs-on: ubuntu-latest
@@ -86,6 +90,7 @@ jobs:
               - pnpm-lock.yaml
               - pnpm-workspace.yaml
               - oxfmt.config.ts
+              - oxlint.config.ts
               - .dockerignore
       - name: Detect GitOps changes
         id: gitops

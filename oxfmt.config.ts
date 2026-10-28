@@ -1,6 +1,6 @@
-import { defineConfig, type OxfmtConfig } from 'oxfmt';
+import { defineConfig } from 'oxfmt';
 
-export default defineConfig<OxfmtConfig>({
+export default defineConfig({
   printWidth: 256,
   semi: true,
   singleQuote: true,
