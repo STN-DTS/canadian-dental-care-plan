@@ -131,10 +131,6 @@ jobs:
           cache: true
           cache-dependency-path: pnpm-lock.yaml
           require-lockfile: true
-      - name: Verify versions
-        run: |
-          node -v
-          pnpm -v
       - name: Check TypeScript types
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint
