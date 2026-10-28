@@ -15,6 +15,10 @@ on:
         description: Inspect updates without creating branches, PRs, or dashboard issues
         type: boolean
         default: true
+      debug:
+        description: Enable Renovate debug logging
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -101,4 +105,4 @@ jobs:
           # Keeps release timestamps available so minimumReleaseAge continues to work predictably.
           RENOVATE_DOCKER_MAX_PAGES: '10'
           RENOVATE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'full' || 'null' }}
-          LOG_LEVEL: debug
+          LOG_LEVEL: ${{ github.event_name == 'workflow_dispatch' && inputs.debug && 'debug' || 'info' }}
