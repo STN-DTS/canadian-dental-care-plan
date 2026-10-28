@@ -14,43 +14,7 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                             |
 | [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                            |
 | [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                         |
-| [notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml)             | Requests and completions from workflows on the allowlist                                                    | Post queued messages and threaded completion results, also broadcast to the channel. Notification failures are non-blocking.                 |
 | [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                             |
-
-The Post workflow updates to Slack workflow posts Queued on `requested`, then
-the result on `completed`, including failures and cancellations. It subscribes
-to repository-owned workflows on this allowlist:
-
-```yaml
-workflows:
-  - build-publish-main-nonprod
-  - build-publish-tag-nonprod
-  - build-publish-tag-prod
-  - gitops-main-nonprod
-  - gitops-main-prod
-  - nightly-e2e
-  - upload-prod-test-results-sharepoint
-```
-
-Entries match each workflow's `name`, not its `run-name`. For these workflows,
-`name` matches the filename without `.yaml`, while `run-name` provides the descriptive
-title shown for individual runs. The PROD SharePoint upload also uses the PROD tag
-workflow's `name` in its completion trigger. Update the allowlist in
-[notify-slack-workflow-updates.yaml](notify-slack-workflow-updates.yaml) and this example
-when adding or renaming a workflow that should send notifications. New workflows
-are not included automatically. The allowlist excludes GitHub-managed workflows,
-such as Running Copilot Code Review. They are outside our control and can trigger
-notification runs that require maintainer approval. It excludes PR checks to
-reduce noise and the notifier to avoid notification loops.
-
-Trusted default-branch code finds the queued parent using
-`cdcp_workflow_run` metadata keyed by repository, run ID, and attempt. Completion
-replies use `reply_broadcast: true` to appear in both the thread and channel.
-Missing parents or lookup failures produce standalone results. GitHub does not
-emit `requested` for reruns. Notification failures are non-blocking.
-
-The Slack bot needs channel history access and a registered metadata schema;
-see [notification setup](../actions/prepare-slack-completion/README.md#usage).
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
 must select a release-tag ref; branch refs are rejected. Pushing a matching tag
@@ -204,8 +168,7 @@ forced runner termination can prevent cleanup.
 The optional `debug` input prints tool versions and allowlisted GitHub and runner
 context. It does not dump the full environment or print secret values.
 
-This workflow does not deploy production. Slack notifications report queued runs
-and completion results through the notification workflow. A successful live
+This workflow does not deploy production. A successful live
 GitHub deployment has not been verified; check the first run after the handoff.
 
 ### Production GitOps deployment
@@ -229,7 +192,6 @@ Azure configuration and kubeconfig are private temporary paths with best-effort
 cleanup. Optional debug output is restricted to allowlisted context and tool
 versions. The job summary reports apply success or failure; a successful apply
 does not prove workload readiness or successful ExternalSecret reconciliation.
-Slack queued/completion notifications use the existing notification workflow.
 
 Before merging, configure `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP`,
 `PROD_AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, and the `PROD_VAULT_*` secrets.
@@ -254,7 +216,7 @@ gh workflow run build-publish-tag-prod.yaml --ref v1.2.3
 The selected ref must contain the workflow. Scheduled and `workflow_run`
 workflows must exist on the default branch to receive their automatic events.
 
-The Slack and SharePoint workflows have no manual dispatch trigger. Retry an
+The SharePoint workflow has no manual dispatch trigger. Retry an
 existing failed run through **Re-run failed jobs** in Actions. SharePoint retries
 reuse the original PROD run and attempt without rebuilding or publishing images.
 Reports must still exist; expired or deleted artifacts cannot be recovered by
@@ -271,7 +233,6 @@ Configure GitHub variables for the workflows that use them:
 | `PROD_ACR_DOMAIN`, `PROD_AZURE_SUBSCRIPTION_ID`          | PROD image publication; the subscription is also used for production GitOps deployment. |
 | `NONPROD_AKS_CLUSTER_NAME`, `NONPROD_AKS_RESOURCE_GROUP` | Main-branch dev/int1 deployment restarts and nonprod GitOps deployment.                 |
 | `PROD_AKS_CLUSTER_NAME`, `PROD_AKS_RESOURCE_GROUP`       | Production GitOps deployment target.                                                    |
-| `SLACK_CHANNEL_ID`                                       | Completion notification destination.                                                    |
 | `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_SITE_URL`            | SharePoint site URL, not a library view or Graph endpoint.                              |
 | `PROD_SHAREPOINT_TEST_REPORT_UPLOAD_FOLDER`              | Decoded folder path, such as `Shared Documents/CDCP/Test Results`; use literal spaces.  |
 
@@ -279,9 +240,6 @@ GitHub secrets provide Vault access: `NONPROD_VAULT_URL`,
 `NONPROD_VAULT_APPROLE_ROLE_ID`, `NONPROD_VAULT_APPROLE_SECRET_ID`, and the
 corresponding `PROD_VAULT_*` secrets. AppRoles must read the relevant Azure,
 Aqua, Cosign, and SharePoint secrets in their selected Vault instance.
-
-Slack notifications use the GitHub Actions repository secret `SLACK_BOT_TOKEN`
-directly and do not require Vault access.
 
 SharePoint credentials reside at
 `canada-dental-care-plan/data/shared/cicd/sharepoint`: `SHAREPOINT_CLIENT_ID`,
@@ -297,7 +255,7 @@ upload separate Vitest coverage and Playwright artifacts; nightly runs upload
 Playwright reports. PROD uploads `test-reports-<run-id>-<run-attempt>`, containing
 coverage, Playwright HTML reports, and test results for the SharePoint uploader.
 
-Validation and Slack notifications use GitHub-hosted runners. Nonprod publishing
+Validation uses GitHub-hosted runners. Nonprod publishing
 and GitOps deployment use
 `arc-runners-dshp-dev`; production GitOps, PROD publishing, and SharePoint use
 `arc-runners-dshp-prod`. Self-hosted runners need the tools and network access
@@ -643,7 +601,7 @@ dismiss stale approvals under the repository rules. A scheduled check without a
 branch update does not itself rerun application CI. GitHub platform auto-merge can
 complete an approved, passing PR between Renovate runs.
 The job has a 50-minute timeout because installation tokens expire after one
-hour. Renovate is not on the Slack notification allowlist.
+hour.
 
 #### Security fixes and recovery
 
@@ -674,11 +632,10 @@ alerts enabled throughout recovery.
 
 ### Shared action responsibilities
 
-| Action                                                                    | Responsibility                                                                        |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [azure-acr-login](../actions/azure-acr-login/action.yaml)                 | Authenticate with Vault-managed credentials; callers clean up credential directories. |
-| [generate-build-vars](../actions/generate-build-vars/action.yaml)         | Generate versions, revisions, timestamps, and RC labels.                              |
-| [aqua-scan](../actions/aqua-scan/action.yaml)                             | Run Trivy/Aqua scans and publish reports.                                             |
-| [push-container-image](../actions/push-container-image/action.yaml)       | Push tags and return the primary immutable image digest.                              |
-| [sign-container-image](../actions/sign-container-image/README.md)         | Sign and verify image digests with environment-specific public keys.                  |
-| [prepare-slack-completion](../actions/prepare-slack-completion/README.md) | Generate completion payloads from source-run metadata and artifact links.             |
+| Action                                                              | Responsibility                                                                        |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [azure-acr-login](../actions/azure-acr-login/action.yaml)           | Authenticate with Vault-managed credentials; callers clean up credential directories. |
+| [generate-build-vars](../actions/generate-build-vars/action.yaml)   | Generate versions, revisions, timestamps, and RC labels.                              |
+| [aqua-scan](../actions/aqua-scan/action.yaml)                       | Run Trivy/Aqua scans and publish reports.                                             |
+| [push-container-image](../actions/push-container-image/action.yaml) | Push tags and return the primary immutable image digest.                              |
+| [sign-container-image](../actions/sign-container-image/README.md)   | Sign and verify image digests with environment-specific public keys.                  |
