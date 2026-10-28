@@ -113,7 +113,6 @@ catalog:
   oxide.ts: 1.1.0
   oxlint: 1.89.0
   oxlint-tsgolint: 7.0.2005
-  playwright-teamcity-reporter: 1.0.5
   react: 19.3.1
   react-dom: 19.3.1
   react-i18next: 17.1.8

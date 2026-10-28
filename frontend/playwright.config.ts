@@ -2,7 +2,6 @@ import { defineConfig, devices } from '@playwright/test';
 import type { ReporterDescription } from '@playwright/test';
 
 const isCI = Boolean(process.env.CI);
-const isTeamCity = Boolean(process.env.TEAMCITY_VERSION);
 const port = process.env.PORT ?? '3000';
 
 // Playwright's localhost readiness check can hang on IPv4 in WSL, so probe IPv6 loopback instead.
@@ -16,10 +15,6 @@ const webServerHost = process.env.WSL_DISTRO_NAME ? '[::1]' : 'localhost';
 function getReporterConfig(): ReporterDescription[] {
   if (!isCI) {
     return [['list'], ['html']];
-  }
-
-  if (isTeamCity) {
-    return [['playwright-teamcity-reporter']];
   }
 
   return [['dot'], ['html', { open: 'never' }]];

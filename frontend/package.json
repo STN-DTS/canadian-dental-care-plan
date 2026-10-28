@@ -130,7 +130,6 @@
     "@vitejs/plugin-react": "catalog:",
     "i18next-cli": "catalog:",
     "jsdom": "catalog:",
-    "playwright-teamcity-reporter": "catalog:",
     "tailwindcss": "catalog:",
     "tailwindcss-animate": "catalog:",
     "tsx": "catalog:",
