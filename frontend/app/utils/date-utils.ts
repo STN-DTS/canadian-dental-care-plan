@@ -107,10 +107,10 @@ export function isValidDateString(date: string): { valid: true; date: Temporal.P
   }
 }
 
-/** Validates and parses a timestamp with Temporal, retaining millisecond precision. */
+/** Validates and parses a timestamp with Temporal. */
 export function isValidDateTimeString(dateTime: string): { valid: true; date: Temporal.Instant } | { valid: false; error: RangeError } {
   try {
-    return { valid: true, date: Temporal.Instant.from(dateTime.replace(/(\.\d{3})\d+(?=Z$)/, '$1')) };
+    return { valid: true, date: Temporal.Instant.from(dateTime) };
   } catch (error) {
     if (!(error instanceof RangeError)) {
       throw error;
@@ -127,7 +127,7 @@ export function parseDateString(date: string) {
   return result.date;
 }
 
-/** Parses a validated UTC timestamp, retaining the existing millisecond precision. */
+/** Parses a validated timestamp without changing its precision. */
 export function parseDateTimeString(dateTime: string) {
   const result = isValidDateTimeString(dateTime);
   invariant(result.valid, `dateTime is invalid [${dateTime}]`);

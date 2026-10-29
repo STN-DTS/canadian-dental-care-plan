@@ -44,11 +44,11 @@ describe.each([
     expect(isRenewalPeriod(Temporal.Instant.from('2026-07-01T00:00:00.000Z'))).toBe(false);
   });
 
-  it('retains millisecond precision for renewal configuration with long fractional seconds', () => {
+  it('accepts renewal configuration with nanosecond precision', () => {
     vi.mocked(getEnv).mockReturnValue(
       mock<ServerEnv>({
-        RENEWAL_PERIOD_START_DATE: '2026-06-01T00:00:00.000999999999Z',
-        RENEWAL_PERIOD_END_DATE: '2026-06-30T23:59:59.999111111111Z',
+        RENEWAL_PERIOD_START_DATE: '2026-06-01T00:00:00.000000000Z',
+        RENEWAL_PERIOD_END_DATE: '2026-06-30T23:59:59.999111111Z',
       }),
     );
 
@@ -68,5 +68,26 @@ describe.each([
     vi.advanceTimersByTime(1);
     expect(() => loadState(args)).toThrow();
     expect(session.unset).toHaveBeenCalledWith(`${channel}-application-flow-flow`);
+  });
+
+  it('does not expire fractional session timestamps before twenty minutes have elapsed', () => {
+    const session = mock<Session>({ id: 'session' });
+    const fractionalState = { ...state, lastUpdatedOn: '2026-07-01T11:40:00.123456789Z' };
+    session.has.mockReturnValue(true);
+    session.get.mockReturnValue(fractionalState);
+    const args = { params: { id: 'flow', lang: 'en' }, session };
+    const now = vi.spyOn(Temporal.Now, 'instant');
+
+    try {
+      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456788Z'));
+      expect(loadState(args).lastUpdatedOn).toBe(fractionalState.lastUpdatedOn);
+      expect(session.unset).not.toHaveBeenCalled();
+
+      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456789Z'));
+      expect(() => loadState(args)).toThrow();
+      expect(session.unset).toHaveBeenCalledWith(`${channel}-application-flow-flow`);
+    } finally {
+      now.mockRestore();
+    }
   });
 });

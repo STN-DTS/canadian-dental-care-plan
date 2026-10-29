@@ -327,10 +327,11 @@ describe('isValidTimeZone', () => {
       expect(getAgeFromDateString('1900-07-01', `${1900 + age}-07-01`)).toBe(age);
     });
 
-    it('uses Temporal timestamp validation and retains millisecond truncation', () => {
+    it('uses Temporal timestamp validation and preserves nanosecond precision', () => {
       expect(isValidDateTimeString('2024-01-01T00:00:00+00:00')).toEqual({ valid: true, date: Temporal.Instant.from('2024-01-01T00:00:00Z') });
       expect(isValidDateTimeString('2024-01-01T00:00:00')).toEqual({ valid: false, error: expect.any(RangeError) });
-      expect(parseDateTimeString('2024-01-01T00:00:00.123456789123Z').toString()).toBe('2024-01-01T00:00:00.123Z');
+      expect(parseDateTimeString('2024-01-01T00:00:00.123456789Z').toString()).toBe('2024-01-01T00:00:00.123456789Z');
+      expect(isValidDateTimeString('2024-01-01T00:00:00.123456789123Z')).toEqual({ valid: false, error: expect.any(RangeError) });
     });
 
     it('uses the Vitest clock for UTC today and the same-day birthdate check', () => {
