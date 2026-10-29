@@ -14,4 +14,4 @@ Follow the [dates and clocks guide](../../frontend/CONTRIBUTING.md#dates-and-clo
 - Reuse the date utilities. Check the validators' `valid` discriminator and reuse their parsed `date` rather than validating and parsing twice.
 - Keep API, session, and loader values as strings or numbers. Use `instant.toString()` with default precision unless a documented external contract requires otherwise.
 - Freeze clocks with `vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') })`. Use explicit instants instead of host-local dates. Shared test cleanup restores real timers.
-- For changes affecting browser fallback behavior, run focused tests with `TEMPORAL_EXPECT_POLYFILL=true` as described in the guide.
+- For changes affecting browser fallback behavior, run the Temporal Playwright tests, which disable native Temporal before client startup.

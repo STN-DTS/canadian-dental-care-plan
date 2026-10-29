@@ -3,11 +3,6 @@ import { Temporal as implementation } from 'temporal-polyfill/implementation';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('Temporal runtime', () => {
-  it.runIf(process.env.TEMPORAL_EXPECT_POLYFILL === 'true')('installs the fallback namespace in the test worker', () => {
-    expect(Temporal).toBe(importedTemporal);
-    expect(Function.prototype.toString.call(Temporal.Instant.from)).not.toContain('[native code]');
-  });
-
   it('uses the Vitest clock for the global Temporal API', () => {
     const now = Temporal.Instant.from('2024-01-01T00:00:00Z');
     vi.useFakeTimers({ now });

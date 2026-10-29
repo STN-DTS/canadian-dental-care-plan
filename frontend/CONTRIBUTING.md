@@ -106,7 +106,7 @@ pnpm --filter @cdcp-rcsd/frontend run test:e2e:install
 
 Initialize `temporal-polyfill/global` only in the client entrypoint, not in
 consumers. Node.js 26 provides native Temporal for SSR, Express, OpenTelemetry,
-and Playwright. Shared Vitest setup also supports explicit fallback testing.
+and Playwright.
 Use the global `Temporal` namespace so Vitest can replace its clock with
 `vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') })`.
 The shared test setup restores real timers after each test. Named Temporal
@@ -120,10 +120,6 @@ with `instant.toString()` using Temporal's default precision.
 Use `overflow: 'reject'` when constructing calendar dates from form fields.
 The date validators return `{ valid: true, date }` or `{ valid: false, error }`.
 Check `valid` and reuse `date` instead of validating and parsing separately.
-
-Run `TEMPORAL_EXPECT_POLYFILL=true pnpm test` to force the JavaScript
-implementation in test workers. The runtime test verifies that native Temporal
-is not being used in this mode.
 
 ## Localization
 
