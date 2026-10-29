@@ -186,7 +186,17 @@ trustPolicyExclude:
   # See: https://github.com/npm/node-semver/issues/838
   - 'semver@6.3.1'
 
+# Save exact versions of dependencies.
+# This ensures that the installed versions match exactly what is specified in package.json.
+# https://pnpm.io/settings/other#saveexact
+saveExact: true
+
 # Sets the prefix used when saving dependencies with pnpm install.
-# "=" ensures exact versions are saved.
+# "" ensures exact versions are saved.
 # https://pnpm.io/settings/other#saveprefix
-savePrefix: '='
+savePrefix: ''
+
+# Save type dependencies with the same prefix as regular dependencies.
+# This ensures that @types packages are saved with exact versions.
+# https://pnpm.io/settings/other#savetypes
+saveTypes: true
