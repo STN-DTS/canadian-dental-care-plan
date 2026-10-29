@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { faArrowUpFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/components/buttons';
 import { ContextualAlert } from '~/components/contextual-alert';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/components/dialog';
 import { ErrorSummary } from '~/components/error-summary';
 import { ErrorSummaryProvider } from '~/components/error-summary-provider';
 import { FileUpload, FileUploadList, FileUploadTrigger } from '~/components/file-upload';
@@ -32,8 +33,12 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
   const fetcher = useDocumentUploadFetcher();
-  const { isSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
-  const { documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, submitForm } = useDocumentUploadForm();
+  const { isSubmitting: isFetcherSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
+  const { actionData, confirmSubmit, dismissReview, documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, isValidating, reviewState, submitForm } = useDocumentUploadForm();
+  const formRef = useRef<HTMLFormElement>(null);
+  const reviewConfirmedRef = useRef(false);
+  const isReviewSubmitting = reviewState === 'submitting';
+  const isSubmitting = isFetcherSubmitting || isValidating || isReviewSubmitting;
 
   const filesWithTypes = useMemo(() => [...documentUploadFormState.documents], [documentUploadFormState.documents]);
   const uploadedFileCount = filesWithTypes.filter(({ status }) => status === 'uploaded').length;
@@ -41,7 +46,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const hasUploadedDocuments = uploadedFileCount > 0;
   const hasUploadedOnly = hasUploadedDocuments && pendingFileCount === 0;
 
-  const errors = fetcher.data?.errors;
+  const errors = actionData?.errors;
   const filesError = errors?.properties?.files?.errors[0];
   const fileUploadDescriptionId = filesError ? 'files-error file-upload-instructions' : 'file-upload-instructions';
 
@@ -58,13 +63,14 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   }, [documentTypes, t]);
 
   return (
-    <ErrorSummaryProvider actionData={fetcher.data}>
+    <ErrorSummaryProvider actionData={actionData}>
       <ErrorSummary />
       <fetcher.Form
+        ref={formRef}
         method="post"
         onSubmit={(event) => {
           event.preventDefault();
-          submitForm(event.currentTarget);
+          void submitForm(event.currentTarget);
         }}
         noValidate
       >
@@ -163,18 +169,94 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
         </div>
 
         {!hasUploadedOnly && (
-          <div className="mt-8">
-            <LoadingButton
-              id="submit-button"
-              variant="primary"
-              type="submit"
-              loading={isSubmitting && submitAction === FORM_ACTION.upload}
-              disabled={isSubmitting}
-              data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+          <Dialog
+            open={reviewState === 'reviewing' || isReviewSubmitting}
+            onOpenChange={(open) => {
+              if (!open) {
+                dismissReview();
+              }
+            }}
+          >
+            <div className="mt-8">
+              <DialogTrigger asChild>
+                <LoadingButton
+                  id="submit-button"
+                  variant="primary"
+                  type="submit"
+                  loading={isSubmitting && submitAction === FORM_ACTION.upload}
+                  disabled={isSubmitting}
+                  onClick={(event) => {
+                    // Review opens only after shared validation, not from the trigger's default click.
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }}
+                  data-gc-analytics-customclick="ESDC-EDSC:CDCP Applicant Documents-Protected:Submit - Upload my documents click"
+                >
+                  {hasUploadedDocuments ? t(($) => $.upload.submitRemaining) : t(($) => $.upload.submit)}
+                </LoadingButton>
+              </DialogTrigger>
+            </div>
+            <DialogContent
+              className="sm:max-w-2xl"
+              showCloseButton={!isReviewSubmitting}
+              onOpenAutoFocus={() => {
+                reviewConfirmedRef.current = false;
+              }}
+              onCloseAutoFocus={(event) => {
+                // On an action response, the existing page error summary owns focus.
+                if (reviewConfirmedRef.current) {
+                  event.preventDefault();
+                }
+              }}
+              onEscapeKeyDown={(event) => {
+                if (isReviewSubmitting) {
+                  event.preventDefault();
+                }
+              }}
+              onInteractOutside={(event) => {
+                if (isReviewSubmitting) {
+                  event.preventDefault();
+                }
+              }}
+              aria-busy={isReviewSubmitting}
             >
-              {hasUploadedDocuments ? t(($) => $.upload.submitRemaining) : t(($) => $.upload.submit)}
-            </LoadingButton>
-          </div>
+              <DialogHeader>
+                <DialogTitle>{t(($) => $.upload.review.title)}</DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="text-base text-inherit">{t(($) => $.upload.review.description)}</DialogDescription>
+              <ul className="space-y-2">
+                {filesWithTypes
+                  .filter(({ status }) => status === 'pending')
+                  .map(({ id, file, documentType }) => (
+                    <li key={id} className="wrap-break-word">
+                      {file.name}, {documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)}
+                    </li>
+                  ))}
+              </ul>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="secondary" size="sm" type="button" disabled={isReviewSubmitting}>
+                    {t(($) => $.upload.review.back)}
+                  </Button>
+                </DialogClose>
+                <LoadingButton
+                  variant="primary"
+                  size="sm"
+                  type="button"
+                  loading={isReviewSubmitting}
+                  disabled={isReviewSubmitting}
+                  onClick={() => {
+                    if (formRef.current) {
+                      reviewConfirmedRef.current = true;
+                      void confirmSubmit(formRef.current);
+                    }
+                  }}
+                >
+                  {t(($) => $.upload.review.submit)}
+                </LoadingButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </fetcher.Form>
       <UnsavedChangesDialog isDirty={pendingFileCount > 0} />

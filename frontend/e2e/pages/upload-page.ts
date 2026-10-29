@@ -11,6 +11,7 @@ export class UploadPage extends BasePage {
   /** Announces selection counts while pending files remain or the form is empty. */
   readonly status;
   readonly submitButton;
+  readonly reviewDialog;
   readonly removeDialog;
   readonly unsavedChangesDialog;
   readonly finishButton;
@@ -24,6 +25,7 @@ export class UploadPage extends BasePage {
     this.uploadButton = page.getByRole('button', { name: 'Upload file', exact: true });
     this.status = page.getByRole('status');
     this.submitButton = page.getByRole('button', { name: /^(Submit|Submit remaining files)$/ });
+    this.reviewDialog = page.getByRole('dialog', { name: 'Confirm submission', exact: true });
     this.removeDialog = page.getByRole('dialog', { name: 'Remove this file?' });
     this.unsavedChangesDialog = page.getByRole('dialog', { name: 'Leave this page?' });
     this.finishButton = page.getByRole('button', { name: 'View submission confirmation', exact: true });
@@ -90,9 +92,25 @@ export class UploadPage extends BasePage {
     await expect(this.item(name)).toHaveCount(0);
   }
 
-  /** Clicks Submit or Submit remaining files; callers must assert the outcome. */
-  async submit() {
+  /** Opens the required upload review after clicking Submit or Submit remaining files. */
+  async openReview() {
     await this.submitButton.click();
+  }
+
+  /** Dismisses an open upload review without changing the selected files. */
+  async dismissReview() {
+    await this.reviewDialog.getByRole('button', { name: 'Back', exact: true }).click();
+  }
+
+  /** Confirms an open upload review and sends the selected pending files. */
+  async confirmReview() {
+    await this.reviewDialog.getByRole('button', { name: 'Submit', exact: true }).click();
+  }
+
+  /** Completes review for a valid selection; callers still assert the resulting upload state. */
+  async submit() {
+    await this.openReview();
+    await this.confirmReview();
   }
 
   /** Creates and verifies one successful upload and one mock-induced pending failure. */

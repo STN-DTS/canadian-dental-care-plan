@@ -73,6 +73,12 @@ const ns = {
     submit: "Submit",
     submitRemaining: "Submit remaining files",
     viewSubmissionConfirmation: "View submission confirmation",
+    review: {
+      title: "Confirm submission",
+      description: "You are about to submit the following files:",
+      back: "Back",
+      submit: "Submit",
+    },
     unsavedChanges: {
       title: "Leave this page?",
       description: "Files that have not finished uploading may be lost if you leave this page. Files already uploaded will remain submitted.",
