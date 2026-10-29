@@ -85,8 +85,8 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
         evidentiaryDocumentTypeId: documentType,
         fileName: file.name,
         binary: arrayBufferToBase64(fileBuffer),
-        uploadDate: new Date(),
-        lastModifiedDate: new Date(file.lastModified),
+        uploadDate: Temporal.Now.instant(),
+        lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(file.lastModified),
         userId: user.id,
       });
 

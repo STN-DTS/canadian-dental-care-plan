@@ -102,6 +102,25 @@ Install the Playwright browser when needed:
 pnpm --filter @cdcp-rcsd/frontend run test:e2e:install
 ```
 
+## Dates and clocks
+
+Initialize `temporal-polyfill/global` only in the client entrypoint, not in
+consumers. Node.js 26 provides native Temporal for SSR, Express, OpenTelemetry,
+and Playwright.
+Use the global `Temporal` namespace so Vitest can replace its clock with
+`vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') })`.
+The shared test setup restores real timers after each test. Named Temporal
+imports retain their original clock when Vitest replaces the global namespace.
+
+Use `Temporal.PlainDate` for birthdates and calendar calculations, and
+`Temporal.Instant` for timestamps. Business-date calculations use UTC.
+Apply explicit display timezones only to instants, never to birthdates.
+Keep API, session, and loader values as strings or numbers. Serialize timestamps
+with `instant.toString()` using Temporal's default precision.
+Use `overflow: 'reject'` when constructing calendar dates from form fields.
+The date validators return `{ valid: true, date }` or `{ valid: false, error }`.
+Check `valid` and reuse `date` instead of validating and parsing separately.
+
 ## Localization
 
 User-facing content must exist in both English and French. Keep translation

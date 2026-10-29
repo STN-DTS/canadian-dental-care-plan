@@ -25,7 +25,6 @@
     "test:e2e:smoke": "playwright test --grep @smoke"
   },
   "dependencies": {
-    "@date-fns/utc": "catalog:",
     "@dts-stn/health-checks": "catalog:",
     "@dts-stn/invariant": "catalog:",
     "@epic-web/client-hints": "catalog:",
@@ -66,7 +65,6 @@
     "connect-redis": "catalog:",
     "content-disposition": "catalog:",
     "cross-env": "catalog:",
-    "date-fns": "catalog:",
     "express": "catalog:",
     "express-session": "catalog:",
     "fast-xml-parser": "catalog:",
@@ -99,6 +97,7 @@
     "remix-utils": "catalog:",
     "source-map-support": "catalog:",
     "tailwind-merge": "catalog:",
+    "temporal-polyfill": "catalog:",
     "triple-beam": "catalog:",
     "undici": "catalog:",
     "usehooks-ts": "catalog:",

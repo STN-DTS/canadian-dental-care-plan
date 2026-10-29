@@ -53,7 +53,7 @@ export type CreateEvidentiaryDocumentMetadataDto = ReadonlyDeep<{
   evidentiaryDocumentTypeId: string;
   documentUploadReasonId: string;
   recordSource: number; // Online = 775170001, MSCA = 775170004
-  uploadDate: Date;
+  uploadDate: Temporal.Instant;
   healthCanadaTransferDate?: string; // ISO 8601 date string
 }>;
 

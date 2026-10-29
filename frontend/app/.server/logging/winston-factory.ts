@@ -63,7 +63,7 @@ export function createWinstonInstance(config: LoggingConfig): w.Logger {
     level: config.LOG_LEVEL,
     levels: levelsConfig.levels,
     format: format.combine(
-      format.timestamp(),
+      format.timestamp({ format: () => Temporal.Now.instant().toString() }),
       format.splat(), // Enables string interpolation with %s, %d, etc.
       formatSensitiveData(), // Masks SIN values after splat interpolation
       fullFormat(), // Enhanced error formatting from winston-error-format

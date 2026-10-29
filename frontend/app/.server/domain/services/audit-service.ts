@@ -1,4 +1,3 @@
-import { UTCDate } from '@date-fns/utc';
 import { injectable } from 'inversify';
 
 import type { AuditDetails } from '~/.server/domain/dtos';
@@ -31,6 +30,6 @@ export class DefaultAuditService implements AuditService {
   createAudit(eventId: string, auditDetails?: AuditDetails): void {
     const { userId, ...otherDetails } = auditDetails ?? {};
     const details = Object.keys(otherDetails).length === 0 ? undefined : otherDetails;
-    this.log.audit('%j', { eventId, userId, details, timestamp: new UTCDate().toISOString() });
+    this.log.audit('%j', { eventId, userId, details, timestamp: Temporal.Now.instant().toString() });
   }
 }

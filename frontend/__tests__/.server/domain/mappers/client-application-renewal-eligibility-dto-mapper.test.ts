@@ -126,7 +126,7 @@ describe('DefaultClientApplicationRenewalEligibilityDtoMapper', () => {
     // Pin the clock to a fixed date so that age-category calculations in isChildOrYouth
     // (and any other time-sensitive logic) produce deterministic results regardless of
     // when the test suite is actually run.
-    vi.useFakeTimers({ now: new Date('2026-04-15') });
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-04-15T00:00:00Z') });
 
     mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>({
       mapProgramApplicantDtoToClientApplicationDto: vi.fn(),

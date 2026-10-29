@@ -55,7 +55,7 @@ export class DefaultEvidentiaryDocumentDtoMapper implements EvidentiaryDocumentD
       documentTypeId: uploadDto.evidentiaryDocumentTypeId,
       documentUploadReasonId: uploadDto.documentUploadReasonId,
       recordSource: uploadDto.recordSource,
-      uploadDate: uploadDto.uploadDate.toISOString(),
+      uploadDate: uploadDto.uploadDate.toString(),
       healthCanadaTransferDate: uploadDto.healthCanadaTransferDate,
     };
   }

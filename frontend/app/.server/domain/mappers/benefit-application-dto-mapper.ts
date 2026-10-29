@@ -1,4 +1,3 @@
-import { formatISO } from 'date-fns';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -135,7 +134,7 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
 
   private toDate(date: string) {
     return {
-      date: formatISO(parseDateString(date), { representation: 'date' }),
+      date: parseDateString(date).toString(),
     };
   }
 

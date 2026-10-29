@@ -22,8 +22,7 @@
       "ES2022",
       // Array APIs introduced in ES2023, including `Array.prototype.toSorted()`.
       "ES2023.Array",
-      // Temporal type declarations. Runtime usage requires Node.js 26 or equivalent support.
-      // Use only in server-side code and tests; this setting does not enforce that boundary.
+      // Runtime Temporal users import temporal-polyfill/global for older browsers.
       "ESNext.Temporal"
     ],
     "jsx": "react-jsx",

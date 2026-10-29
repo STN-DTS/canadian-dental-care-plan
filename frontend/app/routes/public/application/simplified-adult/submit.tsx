@@ -1,6 +1,5 @@
 import { data, redirect, useFetcher } from 'react-router';
 
-import { UTCDate } from '@date-fns/utc';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -102,7 +101,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const benefitApplicationDto = appContainer.get(TYPES.BenefitRenewalStateMapper).mapBenefitRenewalAdultStateToBenefitRenewalDto(state);
   const confirmationCode = await appContainer.get(TYPES.BenefitRenewalService).createPublicBenefitRenewal(benefitApplicationDto);
-  const submissionInfo = { confirmationCode, submittedOn: new UTCDate().toISOString() };
+  const submissionInfo = { confirmationCode, submittedOn: Temporal.Now.instant().toString() };
   savePublicApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
 
   return redirect(getPathById('public/application/$id/simplified-adult/confirmation', params));

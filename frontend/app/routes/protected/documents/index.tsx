@@ -79,7 +79,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
         fileName: document.fileName,
         documentType: document.documentType,
         uploadMethod,
-        mscaUploadIsoTimestamp: mscaUploadDate.toISOString(),
+        mscaUploadIsoTimestamp: mscaUploadDate.toString(),
         mscaUploadDateDisplay: toLocaleDateString(mscaUploadDate, locale, { timeZone }),
         mscaUploadDateTooltip: toLocaleString(mscaUploadDate, locale, { timeZone }),
       };

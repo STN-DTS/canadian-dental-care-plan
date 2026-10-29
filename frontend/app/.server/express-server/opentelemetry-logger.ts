@@ -28,7 +28,7 @@ class OpenTelemetryLogger {
   }
 
   private _getTimestamp(): string {
-    return new Date().toISOString();
+    return Temporal.Now.instant().toString();
   }
 
   private _print(level: OpenTelemetryLogLevel, message: string, ...args: unknown[]): void {

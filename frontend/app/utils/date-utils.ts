@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
 
-import { UTCDate } from '@date-fns/utc';
 import { invariant } from '@dts-stn/invariant';
-import { differenceInYears, isExists, isPast } from 'date-fns';
-import * as z from 'zod';
 
 import { padWithZero } from '~/utils/string-utils';
 
@@ -13,30 +10,17 @@ import { padWithZero } from '~/utils/string-utils';
  * @returns An object containing the parsed components (year, month, day). Returns an empty object if parsing fails or if the date does not exist.
  */
 export function extractDateParts(date: string) {
-  const dateParts = date.split('-');
+  const normalized = date
+    .split('-')
+    .map((part, index) => (part.length > 0 ? part.padStart(index === 0 ? 4 : 2, '0') : part))
+    .join('-');
+  const result = isValidDateString(normalized);
 
-  if (dateParts.length !== 3) {
+  if (!result.valid) {
     return {};
   }
 
-  const [yearStr, monthStr, dayStr] = dateParts;
-
-  if (!yearStr || !monthStr || !dayStr) {
-    return {};
-  }
-
-  const year = Number.parseInt(yearStr);
-  const month = Number.parseInt(monthStr);
-  const day = Number.parseInt(dayStr);
-
-  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-    return {};
-  }
-
-  if (!isExists(year, month - 1, day)) {
-    return {};
-  }
-
+  const { year, month, day } = result.date;
   return {
     year: padWithZero(year, 4),
     month: padWithZero(month, 2),
@@ -54,14 +38,16 @@ export function extractDateParts(date: string) {
  * @throws Error if the provided `date` or `referenceDate` is invalid.
  */
 export function getAgeFromDateString(date: string, referenceDate?: string) {
-  invariant(isValidDateString(date), `date is invalid [${date}]`);
+  const result = isValidDateString(date);
+  invariant(result.valid, `date is invalid [${date}]`);
 
   if (!referenceDate) {
-    return getAgeFromDate(parseDateString(date));
+    return getAgeFromDate(result.date);
   }
 
-  invariant(isValidDateString(referenceDate), `referenceDate is invalid [${referenceDate}]`);
-  return getAgeFromDate(parseDateString(date), parseDateString(referenceDate));
+  const reference = isValidDateString(referenceDate);
+  invariant(reference.valid, `referenceDate is invalid [${referenceDate}]`);
+  return getAgeFromDate(result.date, reference.date);
 }
 
 /**
@@ -74,177 +60,102 @@ export function getAgeFromDateString(date: string, referenceDate?: string) {
  * @throws Error if the provided `dateTime` or `referenceDateTime` is invalid.
  */
 export function getAgeFromDateTimeString(dateTime: string, referenceDateTime?: string) {
-  invariant(isValidDateTimeString(dateTime), `dateTime is invalid [${dateTime}]`);
-
-  if (!referenceDateTime) {
-    return getAgeFromDate(parseDateTimeString(dateTime));
-  }
-
-  invariant(isValidDateTimeString(referenceDateTime), `referenceDateTime is invalid [${referenceDateTime}]`);
-  return getAgeFromDate(parseDateTimeString(dateTime), parseDateTimeString(referenceDateTime));
+  const date = parseDateTimeString(dateTime);
+  const reference = referenceDateTime ? parseDateTimeString(referenceDateTime) : Temporal.Now.instant();
+  invariant(Temporal.Instant.compare(date, Temporal.Now.instant()) < 0, `dateTime must be in past [${dateTime}]`);
+  invariant(Temporal.Instant.compare(reference, date) >= 0, `referenceDateTime [${reference}] must not be earlier than dateTime [${date}]`);
+  return date.toZonedDateTimeISO('UTC').until(reference.toZonedDateTimeISO('UTC'), { largestUnit: 'years' }).years;
 }
 
 /**
  * Calculates the difference in full years between two dates.
  * If no specific date is provided, it defaults to today's date.
  *
- * @param utcDate UTC date object (ex. new UTCDate(2024, 1, 1))
- * @param referenceDate Optional UTC date object to calculate the age as of that date. Defaults to today's date.
- * @returns Difference in full years between `referenceDate` (or today) and `utcDate`. This operation rounds the year down for fractional time differences.
- * @throws Error if `utcDate` is in the past or if `referenceDate` is earlier than `utcDate`.
+ * @param date Calendar date of birth.
+ * @param referenceDate Calendar reference date. Defaults to today's UTC date.
+ * @returns Difference in completed years.
+ * @throws Error if the birthdate is in the future or the reference date precedes it.
  */
-export function getAgeFromDate(utcDate: UTCDate, referenceDate: UTCDate = new UTCDate()) {
-  invariant(isPastDate(utcDate), `utcDate must be in past [${utcDate}]`);
-  invariant(referenceDate >= utcDate, `referenceDate [${referenceDate}] must not be earlier than utcDate [${utcDate}]`);
-  return differenceInYears(referenceDate, utcDate);
+export function getAgeFromDate(date: Temporal.PlainDate, referenceDate: Temporal.PlainDate = Temporal.Now.plainDateISO('UTC')) {
+  invariant(isPastDate(date), `date must be in past [${date}]`);
+  invariant(Temporal.PlainDate.compare(referenceDate, date) >= 0, `referenceDate [${referenceDate}] must not be earlier than date [${date}]`);
+  return date.until(referenceDate, { largestUnit: 'years' }).years;
 }
 
 export function isPastDateString(date: string) {
-  invariant(isValidDateString(date), `date is invalid [${date}]`);
   return isPastDate(parseDateString(date));
 }
 
 export function isPastDateTimeString(dateTime: string) {
-  invariant(isValidDateTimeString(dateTime), `dateTime is invalid [${dateTime}]`);
-  return isPastDate(parseDateTimeString(dateTime));
+  return Temporal.Instant.compare(parseDateTimeString(dateTime), Temporal.Now.instant()) < 0;
 }
 
-export function isPastDate(utcDate: UTCDate) {
-  return isPast(utcDate);
+export function isPastDate(date: Temporal.PlainDate) {
+  return Temporal.PlainDateTime.compare(date.toPlainDateTime(), Temporal.Now.plainDateTimeISO('UTC')) < 0;
 }
 
-/**
- * Validates whether a given string is in the format YYYY-MM-DD.
- *
- * This function uses `z.string().date()` from the Zod library to ensure the date string
- * conforms to the standard date format (YYYY-MM-DD).
- *
- * @param date - The date string to be validated.
- * @returns Returns `true` if the string is a valid date in the format YYYY-MM-DD, otherwise `false`.
- *
- * @example
- * ```javascript
- * const validDate = "2023-05-20";
- * const invalidDate = "20-05-2023";
- *
- * console.log(isValidDateString(validDate)); // true
- * console.log(isValidDateString(invalidDate)); // false
- * ```
- */
-export function isValidDateString(date: string) {
-  return z.iso.date().safeParse(date).success;
+/** Validates and parses a calendar date with Temporal. */
+export function isValidDateString(date: string): { valid: true; date: Temporal.PlainDate } | { valid: false; error: RangeError } {
+  try {
+    return { valid: true, date: Temporal.PlainDate.from(date, { overflow: 'reject' }) };
+  } catch (error) {
+    if (!(error instanceof RangeError)) {
+      throw error;
+    }
+
+    return { valid: false, error };
+  }
 }
 
-/**
- * Validates whether a given string is a valid ISO 8601 date-time string.
- *
- * This function uses z.string().datetime() from the Zod library to ensure the date-time string
- * conforms to the ISO 8601 standard, which includes the date and time format without timezone offsets
- * and allows arbitrary sub-second decimal precision.
- *
- * @param dateTime - The date-time string to be validated.
- * @returns Returns true if the string is a valid ISO 8601 date-time, otherwise false.
- *
- * @example
- * ```javascript
- * const validDateTime = "2020-01-01T00:00:00Z";
- * const invalidDateTime = "2020-01-01 00:00:00";
- *
- * console.log(isValidDateTimeString(validDateTime)); // true
- * console.log(isValidDateTimeString(invalidDateTime)); // false
- * ```
- */
-export function isValidDateTimeString(dateTime: string) {
-  return z.iso.datetime().safeParse(dateTime).success;
+/** Validates and parses a timestamp with Temporal. */
+export function isValidDateTimeString(dateTime: string): { valid: true; date: Temporal.Instant } | { valid: false; error: RangeError } {
+  try {
+    return { valid: true, date: Temporal.Instant.from(dateTime) };
+  } catch (error) {
+    if (!(error instanceof RangeError)) {
+      throw error;
+    }
+
+    return { valid: false, error };
+  }
 }
 
-/**
- * Parses a date string in the format YYYY-MM-DD and returns a UTCDate object representing the date.
- *
- * This function first validates the input date string using the `isValidDateString` function.
- * If the date string is invalid, an error is thrown. Otherwise, it constructs a new UTCDate
- * object with the date string set to the start of the day in UTC (00:00:00.000Z).
- *
- * @param date - The date string to be parsed in the format YYYY-MM-DD.
- * @throws Will throw an error if the date string is invalid.
- * @returns A UTCDate object representing the parsed date.
- *
- * @example
- * ```javascript
- * const dateString = "2023-05-20";
- * const utcDate = parseDateString(dateString);
- * console.log(utcDate); // UTCDate object representing 2023-05-20T00:00:00.000Z
- *
- * // Example with invalid date
- * const invalidDateString = "20-05-2023";
- * try {
- *   parseDateString(invalidDateString);
- * } catch (error) {
- *   console.error(error.message); // "date is invalid [20-05-2023]"
- * }
- * ```
- */
+/** Parses a validated YYYY-MM-DD calendar date without applying a timezone. */
 export function parseDateString(date: string) {
-  invariant(isValidDateString(date), `date is invalid [${date}]`);
-  return new UTCDate(`${date}T00:00:00.000Z`);
+  const result = isValidDateString(date);
+  invariant(result.valid, `date is invalid [${date}]`);
+  return result.date;
 }
 
-/**
- * Parses a date-time string in the ISO 8601 format and returns a UTCDate object representing the date-time.
- *
- * This function first validates the input date-time string using the `isValidDateTimeString` function.
- * If the date-time string is invalid, an error is thrown. Otherwise, it constructs a new UTCDate
- * object with the given date-time string.
- *
- * @param dateTime - The date-time string to be parsed in the ISO 8601 format.
- * @throws Will throw an error if the date-time string is invalid.
- * @returns A UTCDate object representing the parsed date-time.
- *
- * @example
- * ```javascript
- * const dateTimeString = "2023-05-20T15:30:00.000Z";
- * const utcDateTime = parseDateTimeString(dateTimeString);
- * console.log(utcDateTime); // UTCDate object representing 2023-05-20T15:30:00.000Z
- *
- * // Example with invalid date-time
- * const invalidDateTimeString = "20-05-2023 15:30:00";
- * try {
- *   parseDateTimeString(invalidDateTimeString);
- * } catch (error) {
- *   console.error(error.message); // "dateTime is invalid [20-05-2023 15:30:00]"
- * }
- * ```
- */
+/** Parses a validated timestamp without changing its precision. */
 export function parseDateTimeString(dateTime: string) {
-  invariant(isValidDateTimeString(dateTime), `dateTime is invalid [${dateTime}]`);
-  return new UTCDate(dateTime);
+  const result = isValidDateTimeString(dateTime);
+  invariant(result.valid, `dateTime is invalid [${dateTime}]`);
+  return result.date;
 }
 
 /**
- * Formats a UTC date as a long Canadian date for the requested language.
+ * Formats a calendar date or an instant as a long Canadian date.
  *
- * @param date UTC date to format.
+ * @param date Calendar date or instant to format. Calendar dates never shift timezones.
  * @param locale Language code. Supported values are `en` and `fr`.
  * @param options Optional Intl time zone option. Use an IANA time zone such as `UTC` or `America/Toronto`.
  * @returns Localized long date, such as `January 15, 2024` or `15 janvier 2024`.
  * @throws {Error} If `locale` is not `en` or `fr`.
  * @example
- * const date = new UTCDate('2024-01-15T00:00:00.000Z');
+ * const date = Temporal.PlainDate.from('2024-01-15');
  * const result = toLocaleDateString(date, 'en', { timeZone: 'UTC' }); // "January 15, 2024"
  */
-export function toLocaleDateString(date: UTCDate, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
+export function toLocaleDateString(date: Temporal.PlainDate | Temporal.Instant, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
   invariant(/^(en|fr)$/i.test(locale), `Canadian locale is invalid [${locale}]`);
-  return date.toLocaleDateString(`${locale}-CA`, {
-    timeZone: options?.timeZone,
-    dateStyle: 'long',
-  });
+  const calendarDate = date instanceof Temporal.Instant ? date.toZonedDateTimeISO(options?.timeZone ?? 'UTC').toPlainDate() : date;
+  return calendarDate.toLocaleString(`${locale}-CA`, { dateStyle: 'long' });
 }
 
-export function toLocaleString(date: UTCDate, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
+export function toLocaleString(date: Temporal.Instant, locale: string, options?: Pick<Intl.DateTimeFormatOptions, 'timeZone'>) {
   invariant(/^(en|fr)$/i.test(locale), `Canadian locale is invalid [${locale}]`);
 
-  return date.toLocaleString(`${locale}-CA`, {
-    timeZone: options?.timeZone,
+  return date.toZonedDateTimeISO(options?.timeZone ?? 'UTC').toLocaleString(`${locale}-CA`, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -262,13 +173,11 @@ export function toLocaleString(date: UTCDate, locale: string, options?: Pick<Int
  */
 export function useMonths(locale: string, format: 'numeric' | '2-digit' | 'long' | 'short' | 'narrow' | undefined = 'long') {
   return useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(`${locale}-CA`, { month: format, timeZone: 'UTC' });
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((monthIndex) => {
-      const mm = monthIndex < 10 ? `0${monthIndex}` : monthIndex;
-      const date = new UTCDate(`2017-${mm}-01T00:00:00Z`);
+      const date = Temporal.PlainDate.from({ year: 2017, month: monthIndex, day: 1 });
       return {
         index: monthIndex,
-        text: formatter.format(date),
+        text: date.toLocaleString(`${locale}-CA`, { month: format }),
       };
     });
   }, [format, locale]);
@@ -279,7 +188,7 @@ export function useMonths(locale: string, format: 'numeric' | '2-digit' | 'long'
  * @returns the current date as a string.
  */
 export function getCurrentDateString(locale: AppLocale = 'en'): string {
-  return new UTCDate().toLocaleDateString(`${locale}-CA`);
+  return Temporal.Now.plainDateISO('UTC').toLocaleString(`${locale}-CA`);
 }
 
 /**

@@ -61,7 +61,7 @@ function purgeExpiredSessions(memoryStore: MemoryStore): void {
 
         log.trace('Checking session %s (expires at %s)', sessionId, expiresAt);
 
-        if (expiresAt && expiresAt.getTime() < Date.now()) {
+        if (expiresAt && Number(expiresAt) < Temporal.Now.instant().epochMilliseconds) {
           log.trace('Purging expired session %s', sessionId);
           memoryStore.destroy(sessionId);
         }

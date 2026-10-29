@@ -1,12 +1,11 @@
 import { faCirclePlus, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
-import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
 import { appContext } from '~/.server/context';
 import { getTypeOfApplicationSectionCompletionResult, isNewOrReturningMemberSectionCompleted, isPersonalInformationSectionCompleted } from '~/.server/routes/helpers/public-application-entry-section-checks';
 import type { ApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getInitialApplicationFlowUrl, getPublicApplicationState, shouldSkipNewOrReturningMember } from '~/.server/routes/helpers/public-application-route-helpers';
-import { getFixedT } from '~/.server/utils/locale-utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '~/components/card';
@@ -17,6 +16,7 @@ import { StatusTag } from '~/components/status-tag';
 import { useSectionsStatus } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { formatClientNumber } from '~/utils/application-code-utils';
+import { parseDateString, toLocaleDateString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getTitleMetaTags } from '~/utils/seo-utils';
@@ -68,11 +68,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
       ...(shouldSkipNewOrReturningMemberStep ? {} : { newOrReturningMember: { completed: isNewOrReturningMemberSectionCompleted(state) } }),
     },
     meta,
+    locale: getLocale(url),
   };
 }
 
 export default function TypeOfApplication({ loaderData, params }: Route.ComponentProps) {
-  const { defaultState, isRenewalContext, nextRouteId, sections, showNewOrReturningMemberSection, typeOfApplicationSectionCompletionResult } = loaderData;
+  const { defaultState, isRenewalContext, nextRouteId, sections, showNewOrReturningMemberSection, typeOfApplicationSectionCompletionResult, locale } = loaderData;
   const { t } = useTranslation('application');
 
   function getTypeOfApplication(typeOfApplication: string) {
@@ -95,7 +96,7 @@ export default function TypeOfApplication({ loaderData, params }: Route.Componen
     }
   }
 
-  const formattedDate = defaultState.personalInformation ? format(parseISO(defaultState.personalInformation.dateOfBirth), 'MMMM d, yyyy') : undefined;
+  const formattedDate = defaultState.personalInformation ? toLocaleDateString(parseDateString(defaultState.personalInformation.dateOfBirth), locale) : undefined;
 
   const { completedSectionsLabel, allSectionsCompleted } = useSectionsStatus(sections);
   const isTypeOfApplicationTypeMismatched = typeOfApplicationSectionCompletionResult === 'TYPE-MISMATCHED';

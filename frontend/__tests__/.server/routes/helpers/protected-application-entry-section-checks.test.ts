@@ -26,7 +26,7 @@ describe('isTypeOfApplicationSectionCompleted', () => {
 
 describe('isPersonalInformationSectionCompleted', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
   });
 
   it('should return false when applicantInformation is undefined', () => {
@@ -203,7 +203,7 @@ describe('isTaxFilingSectionCompleted', () => {
 
 describe('isRenewalSelectionCompleted', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
   });
 
   it('should return false when applicantClientIdsToRenew is undefined', () => {

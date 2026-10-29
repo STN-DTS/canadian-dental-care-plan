@@ -1,6 +1,5 @@
 import { data, redirectDocument, useFetcher } from 'react-router';
 
-import { UTCDate } from '@date-fns/utc';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -102,7 +101,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const sid = parsedDataResult.data.sid;
   const sub = parsedDataResult.data.sub;
 
-  const currentDateInSeconds = Math.floor(UTCDate.now() / 1000);
+  const currentDateInSeconds = Math.floor(Temporal.Now.instant().epochMilliseconds / 1000);
 
   const idToken: IdToken = {
     iss: 'GC-ECAS',

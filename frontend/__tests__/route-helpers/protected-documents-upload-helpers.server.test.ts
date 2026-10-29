@@ -137,9 +137,8 @@ describe('protected-documents-upload-helpers.server', () => {
     });
 
     it('should upload documents with applicant and user context', async () => {
-      vi.useFakeTimers();
-      const uploadDate = new Date('2026-10-27T17:00:00Z');
-      vi.setSystemTime(uploadDate);
+      const uploadDate = Temporal.Instant.from('2026-10-27T17:00:00Z');
+      vi.useFakeTimers({ now: uploadDate });
       documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'success', documentFileName: 'document.txt' });
 
       await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true });
@@ -149,7 +148,7 @@ describe('protected-documents-upload-helpers.server', () => {
         fileName: 'document.txt',
         binary: 'base64-content',
         uploadDate,
-        lastModifiedDate: new Date(1_000),
+        lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(1_000),
         userId: 'user-123',
       });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledOnce();
