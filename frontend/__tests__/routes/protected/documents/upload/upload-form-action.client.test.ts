@@ -3,7 +3,6 @@ import { mock } from 'vitest-mock-extended';
 
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
-import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
 import { getLanguage } from '~/utils/locale-utils';
 
@@ -15,20 +14,6 @@ vi.mock(import('~/utils/locale-utils'));
 
 const submittedUrl = '/en/protected/documents/submitted?id=upload-id';
 const uploadId = '00000000-0000-0000-0000-000000000000';
-const uploadErrors: DocumentUploadSchemaErrorTree = {
-  errors: [],
-  properties: {
-    files: {
-      errors: [],
-      properties: {
-        'file-1': {
-          errors: [],
-          properties: { documentType: { errors: ['document type required'] } },
-        },
-      },
-    },
-  },
-};
 
 function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 0) {
   const formData = new FormData();
@@ -75,6 +60,11 @@ const parsedFiles: Awaited<ReturnType<typeof getFiles>> = new Map([['file-1', { 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn().mockReturnValue(uploadId) });
+  vi.stubGlobal('env', {
+    DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf'],
+    DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
+    DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
+  });
   vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
   vi.mocked(getFiles).mockResolvedValue(parsedFiles);
   vi.mocked(validateUploadedFiles).mockReturnValue({
@@ -165,7 +155,10 @@ describe('clientAction', () => {
   });
 
   it('returns tagged errors for invalid upload data without calling the server action', async () => {
-    vi.mocked(validateUploadedFiles).mockReturnValue({ success: false, errors: uploadErrors });
+    const { validateUploadedFiles: validateUploadedFilesActual } = await vi.importActual<{ validateUploadedFiles: typeof validateUploadedFiles }>('~/route-helpers/protected-documents-upload-helpers');
+    const filesWithoutDocumentType: Awaited<ReturnType<typeof getFiles>> = new Map([['file-1', { file: new File(['content'], 'document.pdf'), fileBuffer: new ArrayBuffer(7), fileHash: 'file-hash', documentType: '' }]]);
+    vi.mocked(getFiles).mockResolvedValue(filesWithoutDocumentType);
+    vi.mocked(validateUploadedFiles).mockImplementation(validateUploadedFilesActual);
     const serverAction = vi.fn();
     const formData = createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf') }]);
     const result = await clientAction(
@@ -189,7 +182,7 @@ describe('clientAction', () => {
                   errors: [],
                   properties: {
                     documentType: {
-                      errors: ['document type required'],
+                      errors: [expect.anything()],
                     },
                   },
                 },

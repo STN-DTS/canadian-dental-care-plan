@@ -178,7 +178,7 @@ test.describe('validation, scanning and uploading', () => {
   test('empty submission is blocked without a server POST', async ({ uploadPage }) => {
     const { page } = uploadPage;
     const requests = collectUploadRequests(uploadPage.page);
-    await uploadPage.submit();
+    await uploadPage.openReview();
     await expect(page.getByText('You must upload a file before clicking', { exact: false }).first()).toBeVisible();
     expect(requests).toHaveLength(0);
   });
@@ -186,7 +186,7 @@ test.describe('validation, scanning and uploading', () => {
   test('missing type produces a file-specific error without a server POST', async ({ uploadPage }) => {
     await uploadPage.addFile();
     const requests = collectUploadRequests(uploadPage.page);
-    await uploadPage.submit();
+    await uploadPage.openReview();
     await expect(uploadPage.item('evidence.txt')).toContainText('Select a document type for file');
     expect(requests).toHaveLength(0);
   });
@@ -209,10 +209,15 @@ test.describe('validation, scanning and uploading', () => {
 
     try {
       await uploadPage.submit();
-      await expect(uploadPage.uploadButton).toBeDisabled();
-      await expect(uploadPage.item('evidence.txt').getByRole('combobox')).toBeDisabled();
-      await expect(uploadPage.item('evidence.txt').getByRole('button', { name: 'Remove file', exact: true })).toBeDisabled();
-      await expect(uploadPage.submitButton).toBeDisabled();
+      // The modal hides background controls from the accessibility tree while uploading.
+      await expect(uploadPage.page.locator('#fileUploadTrigger')).toBeDisabled();
+      await expect(uploadPage.page.locator('select')).toBeDisabled();
+      await expect(uploadPage.page.locator('[data-slot="file-upload-item"] button')).toBeDisabled();
+      await expect(uploadPage.page.locator('#submit-button')).toBeDisabled();
+      await expect(uploadPage.reviewDialog).toHaveAttribute('aria-busy', 'true');
+      await expect(uploadPage.reviewDialog.getByRole('button', { name: 'Back', exact: true })).toBeDisabled();
+      await uploadPage.page.keyboard.press('Escape');
+      await expect(uploadPage.reviewDialog).toBeVisible();
     } finally {
       release();
     }
@@ -227,6 +232,22 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.chooseType('second.txt');
     await uploadPage.submit();
     await submittedPage.confirmation(['first.txt', 'second.txt']);
+  });
+
+  test('cancelling review preserves the selection and allows a confirmed retry', async ({ uploadPage, submittedPage }) => {
+    const requests = collectUploadRequests(uploadPage.page);
+    await uploadPage.addFile();
+    await uploadPage.chooseType('evidence.txt');
+    await uploadPage.openReview();
+    await expect(uploadPage.reviewDialog).toBeVisible();
+    await uploadPage.dismissReview();
+    await expect(uploadPage.reviewDialog).not.toBeVisible();
+    await expect(uploadPage.item('evidence.txt')).toBeVisible();
+    expect(requests).toHaveLength(0);
+
+    await uploadPage.submit();
+    await submittedPage.confirmation(['evidence.txt']);
+    expect(requests).toHaveLength(1);
   });
 
   test('scan rejection preserves successful uploads from the same batch', async ({ uploadPage, submittedPage }) => {

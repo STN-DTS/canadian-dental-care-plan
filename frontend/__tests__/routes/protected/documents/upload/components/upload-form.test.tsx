@@ -1,4 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
+
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { Link, createRoutesStub, redirect } from 'react-router';
@@ -28,9 +30,34 @@ beforeEach(() => {
 });
 
 function setDocuments(documents: ReadonlyArray<UploadDocument>) {
-  const form = mock<UploadForm>({ documentUploadFormState: { documents } });
+  const form = mock<UploadForm>({ documentUploadFormState: { documents }, isValidating: false, reviewState: 'closed' });
   vi.mocked(useDocumentUploadForm).mockReturnValue(form);
   return form;
+}
+
+function setReviewableDocuments(documents: ReadonlyArray<UploadDocument>, options?: { onConfirmSubmit?: (form: HTMLFormElement) => void; onReviewSubmit?: () => void }) {
+  const confirmSubmit = vi.fn<(form: HTMLFormElement) => void>();
+  vi.mocked(useDocumentUploadForm).mockImplementation(() => {
+    const [reviewState, setReviewState] = useState<UploadForm['reviewState']>('closed');
+    return mock<UploadForm>({
+      confirmSubmit: async (form) => {
+        confirmSubmit(form);
+        options?.onConfirmSubmit?.(form);
+        setReviewState('submitting');
+        await Promise.resolve();
+      },
+      dismissReview: () => setReviewState('closed'),
+      documentUploadFormState: { documents },
+      isValidating: false,
+      reviewState,
+      submitForm: async () => {
+        options?.onReviewSubmit?.();
+        setReviewState('reviewing');
+        await Promise.resolve();
+      },
+    });
+  });
+  return confirmSubmit;
 }
 
 function createDocument(id: string, status: UploadDocument['status']): UploadDocument {
@@ -57,6 +84,121 @@ function renderForm(language = 'en') {
 }
 
 describe('DocumentUploadForm', () => {
+  it.each(['back', 'close', 'escape'] as const)('opens review after prevalidation and restores focus without uploading when dismissed with %s', async (action) => {
+    const user = userEvent.setup();
+    const confirmSubmit = setReviewableDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+    const submitButton = screen.getByRole('button', { name: 'upload.submit' });
+
+    await user.click(submitButton);
+
+    const dialog = await screen.findByRole('dialog', { name: 'upload.review.title' });
+    const backButton = within(dialog).getByRole('button', { name: 'upload.review.back' });
+    await waitFor(() => expect(backButton).toHaveFocus());
+
+    if (action === 'back') {
+      await user.click(backButton);
+    } else if (action === 'close') {
+      await user.click(within(dialog).getByRole('button', { name: 'dialog.close' }));
+    } else {
+      await user.keyboard('{Escape}');
+    }
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(confirmSubmit).not.toHaveBeenCalled();
+    expect(screen.getByRole('listitem', { name: 'pending.txt' })).toBeInTheDocument();
+    await waitFor(() => expect(submitButton).toHaveFocus());
+  });
+
+  it('reviews only pending documents with localized document types and ordered small footer actions', async () => {
+    const user = userEvent.setup();
+    setReviewableDocuments([createDocument('uploaded', 'uploaded'), createDocument('receipt', 'pending'), { ...createDocument('proof', 'pending'), documentType: 'proof' }]);
+    const RoutesStub = createRoutesStub([
+      {
+        path: '/:lang/protected/documents/upload/:id',
+        Component: () => (
+          <DocumentUploadForm
+            documentTypes={[
+              { id: 'receipt', name: 'Receipt' },
+              { id: 'proof', name: 'Proof of coverage' },
+            ]}
+          />
+        ),
+      },
+    ]);
+    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
+
+    await user.click(screen.getByRole('button', { name: 'upload.submitRemaining' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'upload.review.title' });
+    expect(dialog).toHaveTextContent('receipt.txt, Receipt');
+    expect(dialog).toHaveTextContent('proof.txt, Proof of coverage');
+    expect(dialog).not.toHaveTextContent('uploaded.txt');
+    const backButton = within(dialog).getByRole('button', { name: 'upload.review.back' });
+    const reviewSubmitButton = within(dialog).getByRole('button', { name: 'upload.review.submit' });
+    expect(backButton.parentElement).toHaveClass('flex-wrap-reverse', 'justify-end', 'gap-2');
+    expect(backButton).toHaveClass(buttonVariantStyles.secondary, buttonSizeStyles.sm);
+    expect(reviewSubmitButton).toHaveClass(buttonVariantStyles.primary, buttonSizeStyles.sm);
+    expect(backButton.compareDocumentPosition(reviewSubmitButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps review open and prevents duplicate uploads while confirmation is busy', async () => {
+    const user = userEvent.setup();
+    const confirmSubmit = setReviewableDocuments([createDocument('pending', 'pending')]);
+    renderForm();
+
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'upload.review.title' });
+    const reviewSubmitButton = within(dialog).getByRole('button', { name: 'upload.review.submit' });
+    await user.click(reviewSubmitButton);
+
+    await waitFor(() => expect(dialog).toHaveAttribute('aria-busy', 'true'));
+    const backButton = within(dialog).getByRole('button', { name: 'upload.review.back' });
+    expect(reviewSubmitButton).toBeDisabled();
+    expect(backButton).toBeDisabled();
+    expect(within(dialog).queryByRole('button', { name: 'dialog.close' })).not.toBeInTheDocument();
+    expect(confirmSubmit).toHaveBeenCalledExactlyOnceWith(expect.any(HTMLFormElement));
+
+    await user.click(reviewSubmitButton);
+    await user.keyboard('{Escape}');
+    fireEvent.pointerDown(document.body);
+
+    expect(confirmSubmit).toHaveBeenCalledOnce();
+    expect(screen.getByRole('dialog', { name: 'upload.review.title' })).toBeInTheDocument();
+  });
+
+  it('closes review after a failed confirmed submission without restoring focus to the submit trigger', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useDocumentUploadForm).mockImplementation(() => {
+      const [reviewState, setReviewState] = useState<UploadForm['reviewState']>('closed');
+      return mock<UploadForm>({
+        confirmSubmit: async () => {
+          setReviewState('submitting');
+          window.setTimeout(() => {
+            setReviewState('closed');
+          });
+          await Promise.resolve();
+        },
+        dismissReview: () => setReviewState('closed'),
+        documentUploadFormState: { documents: [createDocument('pending', 'pending')] },
+        isValidating: false,
+        reviewState,
+        submitForm: async () => {
+          setReviewState('reviewing');
+          await Promise.resolve();
+        },
+      });
+    });
+    renderForm();
+    const submitButton = screen.getByRole('button', { name: 'upload.submit' });
+
+    await user.click(submitButton);
+    await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(submitButton).not.toHaveFocus();
+  });
+
   it.each(['keep', 'escape', 'close'])('keeps a pending file when removal is cancelled with %s', async (action) => {
     const user = userEvent.setup();
     const form = setDocuments([createDocument('pending', 'pending')]);
@@ -190,11 +332,20 @@ describe('DocumentUploadForm', () => {
         path: '/:lang/protected/documents/upload/:id',
         Component: function UploadRoute() {
           const fetcher = useDocumentUploadFetcher();
+          const [reviewState, setReviewState] = useState<UploadForm['reviewState']>('closed');
           vi.mocked(useDocumentUploadForm).mockReturnValue(
             mock<UploadForm>({
+              confirmSubmit: async (form) => {
+                setReviewState('submitting');
+                await fetcher.submit(form, { method: 'post' });
+              },
+              dismissReview: () => setReviewState('closed'),
               documentUploadFormState: { documents },
-              submitForm: (form) => {
-                void fetcher.submit(form, { method: 'post' });
+              isValidating: false,
+              reviewState,
+              submitForm: async () => {
+                setReviewState('reviewing');
+                await Promise.resolve();
               },
             }),
           );
@@ -207,6 +358,7 @@ describe('DocumentUploadForm', () => {
     render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
 
     await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
 
     expect(await screen.findByRole('heading', { name: 'Destination' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -229,6 +381,7 @@ describe('DocumentUploadForm', () => {
     expect(confirmationButton).toHaveAttribute('value', 'finish');
     await user.click(confirmationButton);
     expect(form.submitForm).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'upload.review.title' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'upload.submitRemaining' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'upload.addFile' })).toBeEnabled();
     expect(screen.getAllByRole('listitem', { name: /\.txt$/ }).map((item) => item.getAttribute('aria-labelledby'))).toEqual(['file-upload-item-first-name', 'file-upload-item-last-name']);

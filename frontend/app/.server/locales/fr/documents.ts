@@ -73,6 +73,12 @@ const ns = {
     submit: "Soumettre",
     submitRemaining: "Soumettre les fichiers restants",
     viewSubmissionConfirmation: "Consulter la confirmation de soumission",
+    review: {
+      title: "Confirmer la soumission",
+      description: "Vous êtes sur le point d'envoyer les fichiers suivants\u00A0:",
+      back: "Retour",
+      submit: "Soumettre",
+    },
     unsavedChanges: {
       title: "Quitter cette page?",
       description: "Les fichiers dont le téléversement n'est pas terminé pourraient être perdus si vous quittez cette page. Les fichiers déjà téléversés resteront soumis.",
