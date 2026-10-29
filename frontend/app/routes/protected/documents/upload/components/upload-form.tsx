@@ -197,7 +197,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
               </DialogTrigger>
             </div>
             <DialogContent
-              className="sm:max-w-2xl"
+              className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl"
               showCloseButton={!isReviewSubmitting}
               onOpenAutoFocus={() => {
                 reviewConfirmedRef.current = false;

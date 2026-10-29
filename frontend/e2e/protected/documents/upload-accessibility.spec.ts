@@ -26,7 +26,7 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
   });
 
   test('required-file validation error', async ({ uploadPage, page, checkAccessibility }) => {
-    await uploadPage.submit();
+    await uploadPage.openReview();
     await expect(page.getByText('You must upload a file before clicking', { exact: false }).first()).toBeVisible();
     await checkAccessibility('required-file-error');
     await uploadPage.uploadButton.hover();
@@ -37,7 +37,7 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
 
   test('file-specific document-type validation error', async ({ uploadPage, checkAccessibility }) => {
     await uploadPage.addFile();
-    await uploadPage.submit();
+    await uploadPage.openReview();
     await expect(uploadPage.item('evidence.txt')).toContainText('Select a document type for file');
     await checkAccessibility('document-type-error');
   });
