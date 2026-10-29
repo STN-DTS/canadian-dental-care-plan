@@ -149,7 +149,7 @@ export function isChildInformationSectionCompleted(state: Pick<PublicApplication
   // TODO: Check with age category and live independently status
   return (
     child.information?.isParent === true &&
-    isValidDateString(child.information.dateOfBirth) &&
+    isValidDateString(child.information.dateOfBirth).valid &&
     isChildOrYouth(child.information.dateOfBirth, state.applicationYear) &&
     isChildClientNumberValid(state.context, state.clientApplication, child.information.memberId)
   );

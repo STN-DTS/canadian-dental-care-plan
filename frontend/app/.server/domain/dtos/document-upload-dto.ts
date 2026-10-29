@@ -15,10 +15,10 @@ export type DocumentUploadRequestDto = Readonly<{
   evidentiaryDocumentTypeId: string;
 
   /** Upload date */
-  uploadDate: Date;
+  uploadDate: Temporal.Instant;
 
   /** Original last-modified date of the selected file */
-  lastModifiedDate: Date;
+  lastModifiedDate: Temporal.Instant;
 
   /** A unique identifier for the user making the request - used for auditing and as transactionEntryUserID */
   userId: string;

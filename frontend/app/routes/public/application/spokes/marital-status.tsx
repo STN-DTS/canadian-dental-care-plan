@@ -94,7 +94,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       ),
   });
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = Temporal.Now.plainDateISO('UTC').year;
   const partnerInformationSchema = z.object({
     consentToSharePersonalInformation: z.literal(
       true,

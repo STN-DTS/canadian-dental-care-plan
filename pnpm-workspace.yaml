@@ -23,7 +23,6 @@ blockExoticSubdeps: true
 # https://pnpm.io/catalogs
 catalog:
   '@axe-core/playwright': 4.14.0
-  '@date-fns/utc': 2.1.1
   '@dts-stn/health-checks': 2.0.0
   '@dts-stn/invariant': 1.0.0
   '@epic-web/client-hints': 1.3.9
@@ -86,7 +85,6 @@ catalog:
   connect-redis: 10.0.0
   content-disposition: 3.0.0
   cross-env: 10.1.0
-  date-fns: 4.4.0
   express: 5.3.0
   express-session: 1.19.0
   fast-xml-parser: 5.11.2
@@ -127,6 +125,7 @@ catalog:
   tailwind-merge: 3.7.0
   tailwindcss: 4.3.3
   tailwindcss-animate: 1.0.7
+  temporal-polyfill: 1.0.6
   triple-beam: 1.4.1
   tsx: 4.23.15
   type-fest: 5.10.0

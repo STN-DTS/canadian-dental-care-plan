@@ -122,7 +122,10 @@ export function isMaritalStatusSectionCompleted(state: Pick<ProtectedApplication
 export function isChildInformationSectionCompleted(state: Pick<ProtectedApplicationState, 'applicationYear' | 'clientApplication'>, child: Pick<ProtectedApplicationChildState, 'information'>): boolean {
   // TODO: Check with age category and live independently status
   return (
-    child.information?.isParent === true && isValidDateString(child.information.dateOfBirth) && isChildOrYouth(child.information.dateOfBirth, state.applicationYear) && isChildClientNumberValid('renewal', state.clientApplication, child.information.memberId)
+    child.information?.isParent === true &&
+    isValidDateString(child.information.dateOfBirth).valid &&
+    isChildOrYouth(child.information.dateOfBirth, state.applicationYear) &&
+    isChildClientNumberValid('renewal', state.clientApplication, child.information.memberId)
   );
 }
 

@@ -55,7 +55,7 @@ describe('base-application-route-helpers', () => {
 
   describe('getAgeCategoryFromDateString', () => {
     beforeEach(() => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
     });
 
     it('maps date of birth to category using an explicit reference date', () => {
@@ -73,19 +73,19 @@ describe('base-application-route-helpers', () => {
 
   describe('getAgeCategoryReferenceDate', () => {
     it('returns the day before coverageStartDate when today is before coverageStartDate', () => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) }); // today is 2026-03-04
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') }); // today is 2026-03-04
       expect(getAgeCategoryReferenceDate({ taxYear: '2025' }).toString()).toBe('2026-06-30');
     });
 
     it('returns today when today is exactly on coverageStartDate', () => {
       // taxYear '2025' → coverageStartDate 2026-07-01; today equals coverage start
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-07-01', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') });
       expect(getAgeCategoryReferenceDate({ taxYear: '2025' }).toString()).toBe('2026-07-01');
     });
 
     it('returns today when today is after coverageStartDate', () => {
       // taxYear '2025' → coverageStartDate 2026-07-01; today 2026-08-01 is after it
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-08-01', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-08-01T00:00:00Z') });
       expect(getAgeCategoryReferenceDate({ taxYear: '2025' }).toString()).toBe('2026-08-01');
     });
   });
@@ -93,29 +93,29 @@ describe('base-application-route-helpers', () => {
   describe('isChildOrYouth', () => {
     // taxYear '2025' → coverageStartDate 2026-07-01; today 2026-03-04 < coverageStartDate → referenceDate 2026-06-30
     it('returns true for a child (age < 16 at referenceDate)', () => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
       expect(isChildOrYouth('2012-03-04', { taxYear: '2025' })).toBe(true);
     });
 
     it('returns true for a youth (age 16-17 at referenceDate)', () => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
       expect(isChildOrYouth('2009-03-04', { taxYear: '2025' })).toBe(true);
     });
 
     it('returns false for an adult (age 18-64 at referenceDate)', () => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
       expect(isChildOrYouth('2008-03-04', { taxYear: '2025' })).toBe(false);
     });
 
     it('returns false for a senior (age >= 65 at referenceDate)', () => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
       expect(isChildOrYouth('1960-03-04', { taxYear: '2025' })).toBe(false);
     });
 
     it('uses today as referenceDate when today is on or after coverageStartDate', () => {
       // taxYear '2025' → coverageStartDate 2026-07-01; today 2026-08-01 → referenceDate 2026-08-01
       // born 2009-08-01 → turns 17 on 2026-08-01 → youth → true
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-08-01', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-08-01T00:00:00Z') });
       expect(isChildOrYouth('2009-08-01', { taxYear: '2025' })).toBe(true);
       // born 2008-07-31 → 18 years old by 2026-08-01 → adults → false
       expect(isChildOrYouth('2008-07-31', { taxYear: '2025' })).toBe(false);

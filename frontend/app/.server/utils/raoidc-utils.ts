@@ -1,7 +1,6 @@
 /**
  * Utility functions to help with RAOIDC requests.
  */
-import { UTCDate } from '@date-fns/utc';
 import { invariant } from '@dts-stn/invariant';
 import type { JWK, JWTPayload, JWTVerifyResult } from 'jose';
 import { SignJWT, compactDecrypt, decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
@@ -334,7 +333,7 @@ async function createClientAssertion(issuer: string, client: ClientMetadata) {
   const log = createLogger('raoidc-utils/createClientAssertion');
   log.debug(`Creating client [%s] assertion for issuer [%s]`, client.clientId, issuer);
 
-  const now = Math.floor(UTCDate.now() / 1000); // current time, rounded down to the nearest second
+  const now = Math.floor(Temporal.Now.instant().epochMilliseconds / 1000); // current time, rounded down to the nearest second
   const expiry = now + 60; // valid for 1 minute
   const jwtId = generateRandomString(32); // mitigate replay attacks
 

@@ -1,9 +1,7 @@
 import { data, redirectDocument } from 'react-router';
 import type { Params } from 'react-router';
 
-import { UTCDate } from '@date-fns/utc';
 import { invariant } from '@dts-stn/invariant';
-import { differenceInMinutes } from 'date-fns';
 import type { ArrayElement, PickDeep, ReadonlyDeep } from 'type-fest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -31,7 +29,7 @@ import { getEnv } from '~/.server/utils/env-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';
 import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url-utils';
 import type { Session } from '~/.server/web/session';
-import { getAgeFromDateString, parseDateString } from '~/utils/date-utils';
+import { getAgeFromDateString, parseDateString, parseDateTimeString } from '~/utils/date-utils';
 import { generateId } from '~/utils/id-utils';
 import { getPathById } from '~/utils/route-utils';
 
@@ -132,10 +130,10 @@ export function getProtectedApplicationState({ params, session }: LoadStateArgs)
 
   // Checks if the elapsed time since the last update exceeds 20 minutes,
   // and performs necessary actions if it does.
-  const lastUpdatedOn = new UTCDate(state.lastUpdatedOn);
-  const now = new UTCDate();
+  const lastUpdatedOn = parseDateTimeString(state.lastUpdatedOn);
+  const now = Temporal.Now.instant();
 
-  if (differenceInMinutes(now, lastUpdatedOn) >= 20) {
+  if (Temporal.Instant.compare(now, lastUpdatedOn.add({ minutes: 20 })) >= 0) {
     session.unset(sessionKey);
     log.warn('Application session state has expired; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', cdcpWebsiteApplicationUrl, sessionKey, session.id);
     throw redirectDocument(cdcpWebsiteApplicationUrl);
@@ -173,7 +171,7 @@ export function saveProtectedApplicationState({ params, session, state }: SavePr
   const newState = {
     ...currentState,
     ...state,
-    lastUpdatedOn: new UTCDate().toISOString(),
+    lastUpdatedOn: Temporal.Now.instant().toString(),
     channelCode: 'protected', // Ensure channelCode remains 'protected' regardless of input to maintain state integrity
   } satisfies ProtectedApplicationState;
 
@@ -243,7 +241,7 @@ export function startProtectedApplicationState({ applicationYear, clientApplicat
     id,
     channelCode: 'protected',
     context,
-    lastUpdatedOn: new UTCDate().toISOString(),
+    lastUpdatedOn: Temporal.Now.instant().toString(),
     applicationYear,
     clientApplication,
     children: [],
@@ -466,11 +464,12 @@ export function removeChildState({ params, session, childId }: RemoveChildStateA
  * @param date - The date to check. Defaults to the current date and time.
  * @returns `true` if the date is within the renewal period (inclusive); otherwise, `false`.
  */
-export function isWithinRenewalPeriod(date: Date = new Date()): boolean {
+export function isWithinRenewalPeriod(date: Temporal.Instant = Temporal.Now.instant()): boolean {
   const { RENEWAL_PERIOD_START_DATE, RENEWAL_PERIOD_END_DATE } = getEnv();
-  const startDate = new Date(RENEWAL_PERIOD_START_DATE);
-  const endDate = new Date(RENEWAL_PERIOD_END_DATE);
-  return date >= startDate && date <= endDate;
+  const startDate = parseDateTimeString(RENEWAL_PERIOD_START_DATE);
+  const endDate = parseDateTimeString(RENEWAL_PERIOD_END_DATE);
+  const timestamp = date.round({ smallestUnit: 'millisecond', roundingMode: 'floor' });
+  return Temporal.Instant.compare(timestamp, startDate) >= 0 && Temporal.Instant.compare(timestamp, endDate) <= 0;
 }
 
 /**
@@ -586,7 +585,7 @@ export function isNewOrReturningMember(state: PickDeep<ProtectedApplicationState
     return false;
   }
 
-  const yearOfBirth = parseDateString(state.applicantInformation.dateOfBirth).getFullYear();
+  const yearOfBirth = parseDateString(state.applicantInformation.dateOfBirth).year;
   return yearOfBirth >= 2007;
 }
 

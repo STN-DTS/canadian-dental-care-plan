@@ -21,8 +21,8 @@ const uploadRequest: DocumentUploadRequestDto = {
   ...scanRequest,
   clientNumber: 'client-123',
   evidentiaryDocumentTypeId: 'receipt',
-  uploadDate: new Date('2026-10-27T12:00:00Z'),
-  lastModifiedDate: new Date('2026-10-26T12:00:00Z'),
+  uploadDate: Temporal.Instant.from('2026-10-27T12:00:00Z'),
+  lastModifiedDate: Temporal.Instant.from('2026-10-26T12:00:00Z'),
 };
 
 const scanEntity: DocumentScanRequestEntity = { filename: scanRequest.fileName, binary: scanRequest.binary };
@@ -30,8 +30,8 @@ const uploadEntity: DocumentUploadRequestEntity = {
   ...scanEntity,
   subjectPersonIdentificationID: uploadRequest.clientNumber,
   documentCategoryText: 'RECEIPT',
-  originalDocumentCreationDate: uploadRequest.uploadDate.toISOString(),
-  originalDocumentLastModifiedDate: uploadRequest.lastModifiedDate.toISOString(),
+  originalDocumentCreationDate: uploadRequest.uploadDate.toString(),
+  originalDocumentLastModifiedDate: uploadRequest.lastModifiedDate.toString(),
   transactionEntryUserID: uploadRequest.userId,
   persist: true,
   commit: true,

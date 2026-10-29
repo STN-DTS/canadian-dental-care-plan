@@ -1,4 +1,3 @@
-import { UTCDate } from '@date-fns/utc';
 import type express from 'express';
 
 import { appContainer } from '~/.server/app-container';
@@ -21,7 +20,7 @@ export function getAppContext(req: express.Request): AppContext {
   const session = req.session !== undefined ? new ExpressSession(req) : new NoopSession();
 
   if (session instanceof ExpressSession) {
-    const lastAccessTime = new UTCDate().toISOString();
+    const lastAccessTime = Temporal.Now.instant().toString();
     log.debug('Setting session.lastAccessTime to [%s]', lastAccessTime);
     session.set('lastAccessTime', lastAccessTime);
   }

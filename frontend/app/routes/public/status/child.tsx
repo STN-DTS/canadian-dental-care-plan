@@ -28,7 +28,7 @@ import { LoadingButton } from '~/components/loading-button';
 import { useHCaptchaFetcherSubmit } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { applicationCodeInputPatternFormat, isValidCodeOrNumber } from '~/utils/application-code-utils';
-import { extractDateParts, getAgeFromDateString, isPastDateString, isValidDateString } from '~/utils/date-utils';
+import { extractDateParts, getAgeFromDate, isPastDate, isValidDateString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -151,19 +151,21 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       const dateOfBirthParts = extractDateParts(`${val.dateOfBirthYear}-${val.dateOfBirthMonth}-${val.dateOfBirthDay}`);
       const dateOfBirth = `${dateOfBirthParts.year}-${dateOfBirthParts.month}-${dateOfBirthParts.day}`;
 
-      if (!isValidDateString(dateOfBirth)) {
+      const parsedDateOfBirth = isValidDateString(dateOfBirth);
+
+      if (!parsedDateOfBirth.valid) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.child.form.errorMessage.dateOfBirthValid),
           path: ['dateOfBirth'],
         });
-      } else if (!isPastDateString(dateOfBirth)) {
+      } else if (!isPastDate(parsedDateOfBirth.date)) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.child.form.errorMessage.dateOfBirthIsPast),
           path: ['dateOfBirth'],
         });
-      } else if (getAgeFromDateString(dateOfBirth) > 150) {
+      } else if (getAgeFromDate(parsedDateOfBirth.date) > 150) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.child.form.errorMessage.dateOfBirthIsPastValid),

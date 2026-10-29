@@ -171,9 +171,6 @@ catalogs:
     '@axe-core/playwright':
       specifier: 4.14.0
       version: 4.14.0
-    '@date-fns/utc':
-      specifier: 2.1.1
-      version: 2.1.1
     '@dts-stn/health-checks':
       specifier: 2.0.0
       version: 2.0.0
@@ -360,9 +357,6 @@ catalogs:
     cross-env:
       specifier: 10.1.0
       version: 10.1.0
-    date-fns:
-      specifier: 4.4.0
-      version: 4.4.0
     express:
       specifier: 5.3.0
       version: 5.3.0
@@ -483,6 +477,9 @@ catalogs:
     tailwindcss-animate:
       specifier: 1.0.7
       version: 1.0.7
+    temporal-polyfill:
+      specifier: 1.0.6
+      version: 1.0.6
     triple-beam:
       specifier: 1.4.1
       version: 1.4.1
@@ -563,9 +560,6 @@ importers:
 
   frontend:
     dependencies:
-      '@date-fns/utc':
-        specifier: 'catalog:'
-        version: 2.1.1
       '@dts-stn/health-checks':
         specifier: 'catalog:'
         version: 2.0.0
@@ -686,9 +680,6 @@ importers:
       cross-env:
         specifier: 'catalog:'
         version: 10.1.0
-      date-fns:
-        specifier: 'catalog:'
-        version: 4.4.0
       express:
         specifier: 'catalog:'
         version: 5.3.0
@@ -785,6 +776,9 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.7.0
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.6
       triple-beam:
         specifier: 'catalog:'
         version: 1.4.1
@@ -1051,9 +1045,6 @@ packages:
 
   '@dabh/diagnostics@2.0.9':
     resolution: {integrity: sha512-R6siwR65Hm+3yfgP7o8DKhNvputQAwfoz9zTc3kyDudnomj2/BcLmD+uGQQPICjuFUp8ounPBU+jmKsocwVVAg==}
-
-  '@date-fns/utc@2.1.1':
-    resolution: {integrity: sha512-SlJDfG6RPeEX8wEVv6ZB3kak4MmbtyiI2qX/5zuKdordbrhB/iaJ58GVMZgJ6P1sJaM1gMgENFYYeg1JWrCFrA==}
 
   '@dts-stn/health-checks@2.0.0':
     resolution: {integrity: sha512-z6n8HJnPHw4zIIfgj4sra1suTkLnO4iVriYbAGk0aiduelbZkFVLcHl1DBxesMd3Yj44U0+nSGIPcsY1zmNmuw==}
@@ -3652,9 +3643,6 @@ packages:
     resolution: {integrity: sha512-JQUCCK+/CAGbGGx618PlFZMXH81Jtj7t73CHv9dd/zVWvxgGT2zLFRjnKb+Ng46GIwcy+f7f88qd4duqllK+WQ==}
     engines: {node: ^22.14.0 || >=24.0.0}
 
-  date-fns@4.4.0:
-    resolution: {integrity: sha512-+1UMbeh68lH1SegH83CGWwpb6OHHbpSgr3+s5Eww5M4CAgswBpoWS0AjTOfEJ33HiYKz1hdj/KTFprzXHmq/6w==}
-
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -5237,6 +5225,15 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
+  temporal-polyfill@1.0.6:
+    resolution: {integrity: sha512-tYyEry1HLGUDbm2356W3iYD0OZdo7rlP7h98Zr/EnjqLZQwTAfcBDUvJnJbfA15v/vQad57hJZScG5O0W2oKEA==}
+
+  temporal-spec@1.0.1:
+    resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
+
+  temporal-utils@1.0.3:
+    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+
   text-hex@1.0.0:
     resolution: {integrity: sha512-uuVGNWzgJ4yhRaNSiubPY7OjISw4sw4E5Uv0wbjp+OzcbmVU/rsT8ujgcXJhn9ypzsgr5vlzpPqP+MBBKcGvbg==}
 
@@ -5809,8 +5806,6 @@ snapshots:
       '@so-ric/colorspace': 1.1.6
       enabled: 2.0.0
       kuler: 2.0.0
-
-  '@date-fns/utc@2.1.1': {}
 
   '@dts-stn/health-checks@2.0.0': {}
 
@@ -8148,8 +8143,6 @@ snapshots:
     transitivePeerDependencies:
       - '@noble/hashes'
 
-  date-fns@4.4.0: {}
-
   debug@2.6.9:
     dependencies:
       ms: 2.0.0
@@ -9715,6 +9708,15 @@ snapshots:
   tailwindcss@4.3.3: {}
 
   tapable@2.3.3: {}
+
+  temporal-polyfill@1.0.6:
+    dependencies:
+      temporal-spec: 1.0.1
+      temporal-utils: 1.0.3
+
+  temporal-spec@1.0.1: {}
+
+  temporal-utils@1.0.3: {}
 
   text-hex@1.0.0: {}
 

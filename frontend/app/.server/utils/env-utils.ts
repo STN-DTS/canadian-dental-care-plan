@@ -4,6 +4,7 @@ import * as z from 'zod';
 
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import { singleton } from '~/.server/utils/instance-registry';
+import { isValidDateTimeString } from '~/utils/date-utils';
 import type { ClientEnv } from '~/utils/env-utils';
 import { clientEnvSchema } from '~/utils/env-utils';
 
@@ -241,7 +242,14 @@ const serverEnv = clientEnvSchema.extend({
    * Refiner to ensure that RENEWAL_PERIOD_END_DATE is greater than or equal to RENEWAL_PERIOD_START_DATE
    */
   .refine(({ RENEWAL_PERIOD_END_DATE, RENEWAL_PERIOD_START_DATE }) => {
-    return new Date(RENEWAL_PERIOD_START_DATE) <= new Date(RENEWAL_PERIOD_END_DATE);
+    const start = isValidDateTimeString(RENEWAL_PERIOD_START_DATE);
+    const end = isValidDateTimeString(RENEWAL_PERIOD_END_DATE);
+
+    if (!start.valid || !end.valid) {
+      return false;
+    }
+
+    return Temporal.Instant.compare(start.date, end.date) <= 0;
   }, {
     path: ['RENEWAL_PERIOD_END_DATE'],
     message: 'RENEWAL_PERIOD_END_DATE must be greater than or equal to RENEWAL_PERIOD_START_DATE',

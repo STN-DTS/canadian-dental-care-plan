@@ -239,7 +239,7 @@ describe('protected-application-full-section-checks', () => {
 
   describe('isChildInformationSectionCompleted', () => {
     beforeEach(() => {
-      vi.useFakeTimers({ now: Temporal.PlainDateTime.from('2026-03-04', { overflow: 'reject' }).toZonedDateTime(Temporal.Now.timeZoneId()) });
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-03-04T00:00:00Z') });
     });
 
     it('should return true when child information has date of birth', () => {

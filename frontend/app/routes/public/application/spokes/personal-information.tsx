@@ -1,7 +1,6 @@
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import { addHours, startOfHour } from 'date-fns';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -28,7 +27,7 @@ import { LoadingButton } from '~/components/loading-button';
 import { useFetcherSubmissionState } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { isValidClientNumberRenewal, renewalCodeInputPatternFormat } from '~/utils/application-code-utils';
-import { extractDateParts, getAgeFromDateString, isPastDateString, isValidDateString, parseDateTimeString, toLocaleDateString, toLocaleString } from '~/utils/date-utils';
+import { extractDateParts, getAgeFromDate, isPastDate, isValidDateString, parseDateTimeString, toLocaleDateString, toLocaleString } from '~/utils/date-utils';
 import { mergeMeta } from '~/utils/meta-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -148,19 +147,21 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       const dateOfBirthParts = extractDateParts(`${val.dateOfBirthYear}-${val.dateOfBirthMonth}-${val.dateOfBirthDay}`);
       const dateOfBirth = `${dateOfBirthParts.year}-${dateOfBirthParts.month}-${dateOfBirthParts.day}`;
 
-      if (!isValidDateString(dateOfBirth)) {
+      const parsedDateOfBirth = isValidDateString(dateOfBirth);
+
+      if (!parsedDateOfBirth.valid) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.personalInformation.errorMessage.dateOfBirthValid),
           path: ['dateOfBirth'],
         });
-      } else if (!isPastDateString(dateOfBirth)) {
+      } else if (!isPastDate(parsedDateOfBirth.date)) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.personalInformation.errorMessage.dateOfBirthIsPast),
           path: ['dateOfBirth'],
         });
-      } else if (getAgeFromDateString(dateOfBirth) > 150) {
+      } else if (getAgeFromDate(parsedDateOfBirth.date) > 150) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.personalInformation.errorMessage.dateOfBirthIsPastValid),
@@ -218,11 +219,11 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     if (clientApplicationRenewalEligibilityResult.result !== 'ELIGIBLE') {
       const renewalPeriodEndDate = parseDateTimeString(RENEWAL_PERIOD_END_DATE);
       // Move one hour past the renewal period end, then normalize the timestamp to the start of that hour.
-      const intakeStartDate = startOfHour(addHours<typeof renewalPeriodEndDate>(renewalPeriodEndDate, 1));
+      const intakeStartDate = renewalPeriodEndDate.toZonedDateTimeISO('UTC').add({ hours: 1 }).round({ smallestUnit: 'hour', roundingMode: 'floor' }).toInstant();
 
       return {
         status: 'client-not-found',
-        intakeStartIsoTimestamp: intakeStartDate.toISOString(),
+        intakeStartIsoTimestamp: intakeStartDate.toString(),
         intakeStartDisplay: toLocaleDateString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
         intakeStartTooltip: toLocaleString(intakeStartDate, locale, { timeZone: TIME_ZONE }),
       } as const;

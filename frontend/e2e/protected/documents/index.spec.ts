@@ -41,9 +41,9 @@ test.describe('documents index', () => {
     const benefitDate = table.getByRole('row').filter({ hasText: 'Benefit Provider Letter.pdf' }).getByRole('cell').nth(3);
     const employerDate = table.getByRole('row').filter({ hasText: 'Employer Letter.pdf' }).getByRole('cell').nth(3);
     await expect(benefitDate).toContainText('2025');
-    await expect(benefitDate.locator('time')).toHaveAttribute('datetime', '2025-10-21T16:33:31.000Z');
+    await expect(benefitDate.locator('time')).toHaveAttribute('datetime', '2025-10-21T16:33:31Z');
     await expect(employerDate).toContainText('2025');
-    await expect(employerDate.locator('time')).toHaveAttribute('datetime', '2025-10-21T15:53:11.000Z');
+    await expect(employerDate.locator('time')).toHaveAttribute('datetime', '2025-10-21T15:53:11Z');
   });
 
   test('retains the submitted list after refreshing', async ({ page }) => {

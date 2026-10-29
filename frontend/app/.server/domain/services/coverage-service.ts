@@ -14,7 +14,7 @@ export interface CoverageService {
    * @param date - The date for which to retrieve coverage information
    * @returns Coverage details for the specified date
    */
-  getCoverage(date: Date): CoverageDto;
+  getCoverage(date: Temporal.PlainDate): CoverageDto;
 
   /**
    * Retrieves the current coverage information.
@@ -31,10 +31,10 @@ export class DefaultCoverageService implements CoverageService {
     this.log = createLogger('DefaultCoverageService');
   }
 
-  getCoverage(date: Date): CoverageDto {
-    this.log.trace('Finding coverage with date: [%s]', date.toISOString());
-    // Substract one year if month is less than July
-    const startYear = date.getFullYear() - (date.getMonth() < 6 ? 1 : 0);
+  getCoverage(date: Temporal.PlainDate): CoverageDto {
+    this.log.trace('Finding coverage with date: [%s]', date.toString());
+    // Subtract one year if month is less than July
+    const startYear = date.year - (date.month < 7 ? 1 : 0);
     const endYear = startYear + 1;
     return {
       endDate: `${endYear}-06-30T23:59:59.999Z`,
@@ -47,6 +47,6 @@ export class DefaultCoverageService implements CoverageService {
 
   getCurrentCoverage(): CoverageDto {
     this.log.trace('Finding current coverage');
-    return this.getCoverage(new Date());
+    return this.getCoverage(Temporal.Now.plainDateISO('UTC'));
   }
 }
