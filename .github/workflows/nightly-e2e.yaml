@@ -38,8 +38,6 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
-        with:
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build frontend
         run: pnpm --filter @cdcp-rcsd/frontend run build
       - name: Install Playwright dependencies

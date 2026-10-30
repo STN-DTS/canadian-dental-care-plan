@@ -56,8 +56,6 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
-        with:
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check repository formatting
         run: pnpm run format:check
       - name: Check root TypeScript types
@@ -128,8 +126,6 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
-        with:
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check TypeScript types
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint

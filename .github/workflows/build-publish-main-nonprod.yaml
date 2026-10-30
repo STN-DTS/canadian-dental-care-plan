@@ -108,8 +108,6 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
-        with:
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check formatting
         run: pnpm exec oxfmt --check frontend
       - name: Run typecheck
