@@ -93,6 +93,9 @@ jobs:
           echo "frontend=${{ github.event_name != 'push' || (github.event.created == true && startsWith(github.ref, 'refs/heads/release/v')) || steps.filter.outputs.frontend == 'true' }}" | tee -a "$GITHUB_OUTPUT"
 
   test-frontend:
+    permissions:
+      contents: read
+      packages: read
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
     needs:
       - check-repository

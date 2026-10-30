@@ -47,8 +47,10 @@ Workflows that require pnpm use the local
 It wraps the SHA-pinned `pnpm/setup` action, which reads Node.js and pnpm versions
 from the root `devEngines.runtime` and `packageManager` fields, respectively.
 The composite action installs workspace dependencies with the required lockfile
-and caches the pnpm store by lockfile. It has no inputs; setup policy and the
-upstream action pin are maintained in one place.
+and caches the pnpm store by lockfile. The optional `install` input defaults to
+`'true'`. Set `install: false` to set up the toolchain without installing workspace
+dependencies. Existing callers omit this input and continue to install dependencies.
+Setup policy and the upstream action pin are maintained in one place.
 Changes to the composite action also enable frontend validation in PR checks
 and trigger the nonprod branch workflow.
 The SharePoint report-upload job needs only Node.js and uses `actions/setup-node`
