@@ -308,9 +308,8 @@ uses GitHub App credentials from Vault and
 [repository policy](../renovate.json) for dependency update PRs.
 The hosted Renovate workflow has been removed. Follow the CronJob runbook for
 deployment, validation, activation, and pausing.
-[Dependabot configuration](../dependabot.yml) is retained for rollback, with
-`open-pull-requests-limit: 0` in every ecosystem entry to pause new version-update
-PRs. Existing Dependabot PRs are not automatically closed by this setting.
+Dependabot version-update configuration has been removed in favor of Renovate.
+Existing Dependabot PRs are not automatically closed by this removal.
 Dependabot security-update PRs and GitHub alerts remain independently enabled
 until Renovate security-fix readiness is verified. Routine Renovate writes are
 controlled by the CronJob's suspension and dry-run settings.
@@ -558,8 +557,8 @@ App-authored PR checks rather than relying on Job success alone.
 
 Keep Dependabot security updates, Dependency graph, and Dependabot alerts enabled
 until Renovate security-fix readiness is independently verified. Do not bulk-close
-security PRs. The retained Dependabot configuration pauses version updates with
-`open-pull-requests-limit: 0`.
+security PRs. These repository security settings are independent of the removed
+version-update configuration.
 
 The CronJob polls every 15 minutes, every day, in UTC; no webhook receiver is
 required. `rebaseWhen: "auto"` and `updateNotScheduled: true` retain their defaults.
@@ -586,13 +585,9 @@ Some transitive fixes or ecosystems may not be supported; unresolved alerts and
 artifact failures require maintainer review.
 
 If authentication, security-fix processing, or CI triggering fails after cutover,
-suspend the CronJob, wait for active Jobs to finish, and remove
-`open-pull-requests-limit: 0` from each
-retained Dependabot entry (or set a positive limit) through a reviewed change.
-This resumes version-update PRs without reconstructing the original schedules
-and groups. Keep Dependabot security updates enabled during the transition;
-re-enable them if they were disabled in a later security cutover. Keep GitHub
-alerts enabled throughout recovery.
+suspend the CronJob and wait for active Jobs to finish before deploying a fix.
+If returning to Dependabot version updates, restore its configuration from Git
+history through a reviewed change. Keep GitHub alerts enabled throughout recovery.
 
 ### Shared action responsibilities
 
