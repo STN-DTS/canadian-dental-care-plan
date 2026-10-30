@@ -409,8 +409,8 @@ catalogs:
       specifier: 5.2.1
       version: 5.2.1
     mime:
-      specifier: 4.1.1
-      version: 4.1.1
+      specifier: 4.1.2
+      version: 4.1.2
     minimatch:
       specifier: 10.2.6
       version: 10.2.6
@@ -727,7 +727,7 @@ importers:
         version: 5.2.1
       mime:
         specifier: 'catalog:'
-        version: 4.1.1
+        version: 4.1.2
       minimatch:
         specifier: 'catalog:'
         version: 10.2.6
@@ -4515,8 +4515,8 @@ packages:
     resolution: {integrity: sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==}
     engines: {node: '>=18'}
 
-  mime@4.1.1:
-    resolution: {integrity: sha512-YAApRsTpM2+gnUFHhRNGfkX8NK0V5xj1nyQLufGlwEI+eX4xRsTcel2IXDuMEGSGjBvzykNW4VuoEACgwYe7BQ==}
+  mime@4.1.2:
+    resolution: {integrity: sha512-ikRzZ2RwbUVDyL9SsU0f2Phcmav4yq5r8faH5ZZKHtOZrMBLnrQOrj0uvqZ5R1uQnj+RO7Wcklw/lAf81mP9LQ==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -9002,7 +9002,7 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  mime@4.1.1: {}
+  mime@4.1.2: {}
 
   mimic-function@5.0.1: {}
 
