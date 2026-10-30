@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import { TYPES } from '~/.server/constants';
 import type { ApplicantDto, FindApplicantByBasicInfoDto, FindApplicantBySinRequestDto } from '~/.server/domain/dtos';
@@ -21,7 +20,7 @@ export interface ApplicantService {
    * @param request Applicant identity details and audit user identifier.
    * @returns Applicant when found; otherwise, `None`.
    */
-  findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option<ApplicantDto>>;
+  findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>>;
 
   /**
    * Finds an applicant by SIN.
@@ -29,7 +28,7 @@ export interface ApplicantService {
    * @param request Applicant SIN and audit user identifier.
    * @returns Applicant when found; otherwise, `None`.
    */
-  findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option<ApplicantDto>>;
+  findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>>;
 }
 
 /** Default applicant lookup service. */
@@ -48,24 +47,24 @@ export class DefaultApplicantService implements ApplicantService {
     this.log.debug('DefaultApplicantService initiated.');
   }
 
-  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option<ApplicantDto>> {
+  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>> {
     this.log.trace('Find applicant by basic info: [%j]', request);
     this.auditService.createAudit('applicant.basic-info.get', { userId: request.userId });
 
     const applicantBasicInfoRequestEntity = this.applicantDtoMapper.mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntity = await this.applicantRepository.findApplicantByBasicInfo(applicantBasicInfoRequestEntity);
 
-    if (applicantEntity.isNone()) {
+    if (Option.isNone(applicantEntity)) {
       this.log.trace('No applicant found with basic info: [%j]', request);
-      return None;
+      return Option.none();
     }
 
-    const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(applicantEntity.unwrap());
+    const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(Option.getOrThrow(applicantEntity));
     this.log.trace('Returning applicant: [%j]', applicantDto);
-    return Some(applicantDto);
+    return Option.some(applicantDto);
   }
 
-  async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option<ApplicantDto>> {
+  async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>> {
     const { sin, userId } = request;
     this.log.trace('Finding applicant with sin [%s] and userId [%s]', sin, userId);
     this.auditService.createAudit('applicant.personal-information.get', { userId });
@@ -73,13 +72,13 @@ export class DefaultApplicantService implements ApplicantService {
     const applicantRequestEntity = this.applicantDtoMapper.mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantResponseEntity = await this.applicantRepository.findApplicantBySin(applicantRequestEntity);
 
-    if (applicantResponseEntity.isNone()) {
+    if (Option.isNone(applicantResponseEntity)) {
       this.log.trace('No applicant found for sin [%s]; Returning null', sin);
-      return None;
+      return Option.none();
     }
 
-    const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(applicantResponseEntity.unwrap());
+    const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(Option.getOrThrow(applicantResponseEntity));
     this.log.trace('Returning applicant DTO for sin [%s]', sin);
-    return Some(applicantDto);
+    return Option.some(applicantDto);
   }
 }

@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -94,12 +95,12 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
 
     const clientFriendlyStatusEntity = await this.clientFriendlyStatusRepository.findClientFriendlyStatusById(id);
 
-    if (clientFriendlyStatusEntity.isNone()) {
+    if (Option.isNone(clientFriendlyStatusEntity)) {
       this.log.error('Client friendly status with id: [%s] not found', id);
       throw new ClientFriendlyStatusNotFoundException(`Client friendly status with id: [${id}] not found`);
     }
 
-    const clientFriendlyStatusDto = this.clientFriendlyStatusDtoMapper.mapClientFriendlyStatusEntityToClientFriendlyStatusDto(clientFriendlyStatusEntity.unwrap());
+    const clientFriendlyStatusDto = this.clientFriendlyStatusDtoMapper.mapClientFriendlyStatusEntityToClientFriendlyStatusDto(Option.getOrThrow(clientFriendlyStatusEntity));
     this.log.trace('Returning client friendly status: [%j]', clientFriendlyStatusDto);
     return clientFriendlyStatusDto;
   }

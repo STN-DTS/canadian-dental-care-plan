@@ -357,6 +357,9 @@ catalogs:
     cross-env:
       specifier: 10.1.0
       version: 10.1.0
+    effect:
+      specifier: 4.0.6
+      version: 4.0.6
     express:
       specifier: 5.3.0
       version: 5.3.0
@@ -426,9 +429,6 @@ catalogs:
     oxfmt:
       specifier: 0.74.0
       version: 0.74.0
-    oxide.ts:
-      specifier: 1.1.0
-      version: 1.1.0
     oxlint:
       specifier: 1.89.0
       version: 1.89.0
@@ -680,6 +680,9 @@ importers:
       cross-env:
         specifier: 'catalog:'
         version: 10.1.0
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.6
       express:
         specifier: 'catalog:'
         version: 5.3.0
@@ -737,9 +740,6 @@ importers:
       nprogress:
         specifier: 'catalog:'
         version: 0.2.0
-      oxide.ts:
-        specifier: 'catalog:'
-        version: 1.1.0
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -3709,6 +3709,9 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
+  effect@4.0.6:
+    resolution: {integrity: sha512-Tc3mkzuLR6t6P9dhLt0D2GrxYtmU5td4XEJEiXCmILz53IRIfJyHsKZWjTA3xEjiwpNTtXBgI4iqYPxMztBDrw==}
+
   electron-to-chromium@1.5.464:
     resolution: {integrity: sha512-nRa65aFge40viPAKxMKULIY8tcXKwKboJWNn4RoKwyWXJ6SP7BnrDGKUTzc64818jIciH0PK7LSF8QzZes19GA==}
 
@@ -4671,9 +4674,6 @@ packages:
         optional: true
       vite-plus:
         optional: true
-
-  oxide.ts@1.1.0:
-    resolution: {integrity: sha512-+MkqFRQVHEe/x4/cJ6KuYz2m2VpnoBi7aKLbttGYTxmpNZalQ2RbKH2HxyfsTqXJhjh9DYxulPWfQV/hWMmzCg==}
 
   oxlint-tsgolint@7.0.2005:
     resolution: {integrity: sha512-6ccPGu4u4J9bwYPHXBFPee3RZrX3BboRdU7k14zRDDB1lvN3O7J/vPRFdaEfa1+CWx4xnQQOp4ctoaF66oO0uw==}
@@ -8181,6 +8181,8 @@ snapshots:
 
   ee-first@1.1.1: {}
 
+  effect@4.0.6: {}
+
   electron-to-chromium@1.5.464: {}
 
   emoji-regex@8.0.0: {}
@@ -9159,8 +9161,6 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.74.0
       '@oxfmt/binding-win32-ia32-msvc': 0.74.0
       '@oxfmt/binding-win32-x64-msvc': 0.74.0
-
-  oxide.ts@1.1.0: {}
 
   oxlint-tsgolint@7.0.2005:
     optionalDependencies:

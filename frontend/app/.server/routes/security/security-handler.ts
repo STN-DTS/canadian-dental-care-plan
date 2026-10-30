@@ -1,6 +1,7 @@
 import { data, redirect, redirectDocument } from 'react-router';
 import type { Params } from 'react-router';
 
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -299,7 +300,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
   async requireClientApplication({ applicationYearId, params, requestUrl, session, options }: RequireClientApplicationParams): Promise<ClientApplicationDto> {
     this.log.debug('Requiring client application for session [%s]', session.id);
-    const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
+    const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
       this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
@@ -314,20 +315,20 @@ export class DefaultSecurityHandler implements SecurityHandler {
       userId: userInfoToken.sub,
     });
 
-    if (clientApplicationOption.isNone()) {
+    if (Option.isNone(clientApplicationOption)) {
       const redirectUrl = options?.redirectUrl ?? getPathById('protected/data-unavailable', params);
       this.log.debug('No client application found for SIN [***-***-%s]; session [%s]; redirecting to [%s]', userInfoToken.sin.slice(-3), session.id, redirectUrl);
       throw redirect(redirectUrl);
     }
 
     this.log.debug('Client application found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
-    return clientApplicationOption.unwrap();
+    return Option.getOrThrow(clientApplicationOption);
   }
 
   async requireApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ApplicantDto> {
     this.log.debug('Requiring applicant for session [%s]', session.id);
 
-    const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
+    const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
       this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
@@ -347,12 +348,12 @@ export class DefaultSecurityHandler implements SecurityHandler {
       userId: userInfoToken.sub,
     });
 
-    if (applicantOption.isNone()) {
+    if (Option.isNone(applicantOption)) {
       this.log.debug('No applicant found for SIN [***-***-%s]; session [%s]; redirecting to data unavailable', userInfoToken.sin.slice(-3), session.id);
       throw redirect(getPathById('protected/data-unavailable', params));
     }
 
-    const applicant = applicantOption.unwrap();
+    const applicant = Option.getOrThrow(applicantOption);
 
     session.set('applicant', applicant);
 
@@ -363,7 +364,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
   async requireProgramApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ProgramApplicantDto> {
     this.log.debug('Requiring program applicant for session [%s]', session.id);
 
-    const userInfoToken = session.find('userInfoToken').unwrapUnchecked();
+    const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
       this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
@@ -383,12 +384,12 @@ export class DefaultSecurityHandler implements SecurityHandler {
       userId: userInfoToken.sub,
     });
 
-    if (programApplicantOption.isNone()) {
+    if (Option.isNone(programApplicantOption)) {
       this.log.debug('No program applicant found for SIN [***-***-%s]; session [%s]; redirecting to data unavailable', userInfoToken.sin.slice(-3), session.id);
       throw redirect(getPathById('protected/data-unavailable', params));
     }
 
-    const programApplicant = programApplicantOption.unwrap();
+    const programApplicant = Option.getOrThrow(programApplicantOption);
 
     session.set('programApplicant', programApplicant);
 

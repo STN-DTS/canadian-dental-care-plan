@@ -1,5 +1,7 @@
 import { redirectDocument } from 'react-router';
 
+import { Option } from 'effect';
+
 import { TYPES } from '~/.server/constants';
 /**
  * Handler for /auth/logout{?locale=(en|fr)} requests
@@ -162,18 +164,18 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
 
   const raoidcService = appContainer.get(TYPES.RaoidcService);
   const codeVerifier = session.find('authCodeVerifier');
-  const rawReturnUrl = session.find('authReturnUrl').unwrapOr(defaultReturnUrl);
+  const rawReturnUrl = Option.getOrElse(session.find('authReturnUrl'), () => defaultReturnUrl);
   const returnUrl = isSafeReturnUrl(rawReturnUrl) ? rawReturnUrl : defaultReturnUrl;
   const state = session.find('authState');
 
-  if (codeVerifier.isNone() || state.isNone()) {
+  if (Option.isNone(codeVerifier) || Option.isNone(state)) {
     const missingSessionKeys: string[] = [];
 
-    if (codeVerifier.isNone()) {
+    if (Option.isNone(codeVerifier)) {
       missingSessionKeys.push('authCodeVerifier');
     }
 
-    if (state.isNone()) {
+    if (Option.isNone(state)) {
       missingSessionKeys.push('authState');
     }
 
@@ -187,7 +189,7 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
   const redirectUri = generateCallbackUri(url.origin, 'raoidc');
 
   log.debug('Storing auth tokens and userinfo in session');
-  const { idToken, userInfoToken } = await raoidcService.handleCallback({ requestUrl: url, codeVerifier: codeVerifier.unwrap(), expectedState: state.unwrap(), redirectUri });
+  const { idToken, userInfoToken } = await raoidcService.handleCallback({ requestUrl: url, codeVerifier: Option.getOrThrow(codeVerifier), expectedState: Option.getOrThrow(state), redirectUri });
   session.set('idToken', idToken);
   session.set('userInfoToken', userInfoToken);
 

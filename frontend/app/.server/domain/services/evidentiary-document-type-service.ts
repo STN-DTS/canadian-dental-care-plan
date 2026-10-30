@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -135,12 +136,12 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
 
     const evidentiaryDocumentTypeEntityOption = await this.evidentiaryDocumentTypeRepository.findEvidentiaryDocumentTypeById(id);
 
-    if (evidentiaryDocumentTypeEntityOption.isNone()) {
+    if (Option.isNone(evidentiaryDocumentTypeEntityOption)) {
       this.log.error('Evidentiary document type with id: [%s] not found', id);
       throw new EvidentiaryDocumentTypeNotFoundException(`Evidentiary document type with id: [${id}] not found`);
     }
 
-    const evidentiaryDocumentTypeDto = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeEntityToEvidentiaryDocumentTypeDto(evidentiaryDocumentTypeEntityOption.unwrap());
+    const evidentiaryDocumentTypeDto = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeEntityToEvidentiaryDocumentTypeDto(Option.getOrThrow(evidentiaryDocumentTypeEntityOption));
     this.log.trace('Returning evidentiary document type: [%j]', evidentiaryDocumentTypeDto);
     return evidentiaryDocumentTypeDto;
   }

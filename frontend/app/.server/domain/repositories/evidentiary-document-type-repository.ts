@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface EvidentiaryDocumentTypeRepository {
    * @param id The id of the evidentiary document type entity.
    * @returns The evidentiary document type entity or null if not found.
    */
-  findEvidentiaryDocumentTypeById(id: string): Promise<Option<EvidentiaryDocumentTypeEntity>>;
+  findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>>;
 
   /**
    * Retrieves metadata associated with the evidentiary document type repository.
@@ -98,7 +97,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     return documentTypeEntities;
   }
 
-  async findEvidentiaryDocumentTypeById(id: string): Promise<Option<EvidentiaryDocumentTypeEntity>> {
+  async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type with id: [%s]', id);
 
     const documentTypeEntities = await this.listAllEvidentiaryDocumentTypes();
@@ -106,11 +105,11 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
 
     if (!documentEntity) {
       this.log.warn('Document type not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning document: [%j]', documentEntity);
-    return Some(documentEntity);
+    return Option.some(documentEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -145,7 +144,7 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     return await Promise.resolve(documentTypeEntities);
   }
 
-  async findEvidentiaryDocumentTypeById(id: string): Promise<Option<EvidentiaryDocumentTypeEntity>> {
+  async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type with id: [%s]', id);
 
     const documentTypeEntities = evidentiaryDocumentTypeJsonDataSource.value;
@@ -153,10 +152,10 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
 
     if (!documentEntity) {
       this.log.warn('Document type not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(documentEntity));
+    return await Promise.resolve(Option.some(documentEntity));
   }
 
   getMetadata(): Record<string, string> {

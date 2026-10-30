@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -139,12 +140,12 @@ export class DefaultCountryService implements CountryService {
     this.log.debug('Get country with id: [%s]', id);
     const countryEntity = await this.countryRepository.findCountryById(id);
 
-    if (countryEntity.isNone()) {
+    if (Option.isNone(countryEntity)) {
       this.log.error('Country with id: [%s] not found', id);
       throw new CountryNotFoundException(`Country with id: [${id}] not found`);
     }
 
-    const countryDto = this.countryDtoMapper.mapCountryEntityToCountryDto(countryEntity.unwrap());
+    const countryDto = this.countryDtoMapper.mapCountryEntityToCountryDto(Option.getOrThrow(countryEntity));
     this.log.trace('Returning country: [%j]', countryDto);
     return countryDto;
   }

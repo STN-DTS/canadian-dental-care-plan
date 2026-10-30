@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
 import { arrayBufferToBase64, base64ToArrayBuffer, detectEicarContent, findDuplicateFile, findMimeType, getFileExtension, getMimeType, hashFile, hashFileBuffer, hashFiles, isFileContentTypeAllowed, isValidExtension } from '~/utils/file-utils';
@@ -152,29 +153,29 @@ describe('file-utils', () => {
   describe('findMimeType', () => {
     it('should return Some with MIME type for valid extension', () => {
       const result = findMimeType('.pdf');
-      expect(result.isSome()).toBe(true);
-      expect(result.unwrap()).toBe('application/pdf');
+      expect(Option.isSome(result)).toBe(true);
+      expect(Option.getOrThrow(result)).toBe('application/pdf');
     });
 
     it('should return Some with MIME type for .json extension', () => {
       const result = findMimeType('.json');
-      expect(result.isSome()).toBe(true);
-      expect(result.unwrap()).toBe('application/json');
+      expect(Option.isSome(result)).toBe(true);
+      expect(Option.getOrThrow(result)).toBe('application/json');
     });
 
     it('should return None for extension without leading dot', () => {
       const result = findMimeType('pdf');
-      expect(result.isNone()).toBe(true);
+      expect(Option.isNone(result)).toBe(true);
     });
 
     it('should return None for unknown extension', () => {
       const result = findMimeType('.asdf');
-      expect(result.isNone()).toBe(true);
+      expect(Option.isNone(result)).toBe(true);
     });
 
     it('should return None for empty string', () => {
       const result = findMimeType('');
-      expect(result.isNone()).toBe(true);
+      expect(Option.isNone(result)).toBe(true);
     });
   });
 

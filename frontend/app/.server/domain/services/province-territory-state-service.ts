@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -143,11 +144,11 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     this.log.debug('Get province territory state with id: [%s]', id);
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateById(id);
 
-    if (provinceTerritoryStateEntity.isNone()) {
+    if (Option.isNone(provinceTerritoryStateEntity)) {
       throw new ProvinceTerritoryStateNotFoundException(`Province territory state: [${id}] not found`);
     }
 
-    const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(provinceTerritoryStateEntity.unwrap());
+    const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(Option.getOrThrow(provinceTerritoryStateEntity));
     this.log.trace('Returning province territory state: [%j]', provinceTerritoryStateDto);
     return provinceTerritoryStateDto;
   }
@@ -156,11 +157,11 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     this.log.debug('Get province territory state with code: [%s]', code);
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateByCode(code);
 
-    if (provinceTerritoryStateEntity.isNone()) {
+    if (Option.isNone(provinceTerritoryStateEntity)) {
       throw new ProvinceTerritoryStateNotFoundException(`Province territory state with code [${code}] not found`);
     }
 
-    const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(provinceTerritoryStateEntity.unwrap());
+    const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(Option.getOrThrow(provinceTerritoryStateEntity));
     this.log.trace('Returning province territory state: [%j]', provinceTerritoryStateDto);
     return provinceTerritoryStateDto;
   }

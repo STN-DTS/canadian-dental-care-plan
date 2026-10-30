@@ -1,7 +1,6 @@
 import { invariant } from '@dts-stn/invariant';
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface ApplicantRepository {
    * @param request The basic info request entity.
    * @returns A Promise that resolves to the applicant entity if found, or `None` otherwise.
    */
-  findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option<ApplicantResponseEntity>>;
+  findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>>;
 
   /**
    * Finds an applicant by SIN.
@@ -31,7 +30,7 @@ export interface ApplicantRepository {
    * @param request The SIN request entity.
    * @returns A Promise that resolves to the applicant entity if found, or `None` otherwise.
    */
-  findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option<ApplicantResponseEntity>>;
+  findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>>;
 
   /**
    * Retrieves metadata associated with the applicant repository.
@@ -73,7 +72,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     this.baseUrl = `${this.serverConfig.INTEROP_APPLICANT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1`;
   }
 
-  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option<ApplicantResponseEntity>> {
+  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by basic info [%j]', request);
 
     const url = `${this.baseUrl}/applicant`;
@@ -97,12 +96,12 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     if (response.status === 200) {
       const applicantResponseEntity = (await response.json()) as ApplicantResponseEntity;
       this.log.trace('Returning applicant [%j]', applicantResponseEntity);
-      return Some(applicantResponseEntity);
+      return Option.some(applicantResponseEntity);
     }
 
     if (response.status === 204) {
       this.log.trace('No applicant found; Returning None');
-      return None;
+      return Option.none();
     }
 
     this.log.error('%j', {
@@ -121,7 +120,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     throw new Error(`Failed to 'POST' for applicant. Status:  ${response.status}, Status Text: ${response.statusText}`);
   }
 
-  async findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option<ApplicantResponseEntity>> {
+  async findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by SIN [%j]', request);
 
     const url = `${this.baseUrl}/applicant`;
@@ -145,12 +144,12 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     if (response.status === 200) {
       const applicantResponseEntity = (await response.json()) as ApplicantResponseEntity;
       this.log.trace('Returning applicant [%j]', applicantResponseEntity);
-      return Some(applicantResponseEntity);
+      return Option.some(applicantResponseEntity);
     }
 
     if (response.status === 204) {
       this.log.trace('No applicant found; Returning None');
-      return None;
+      return Option.none();
     }
 
     this.log.error('%j', {
@@ -296,7 +295,7 @@ export class MockApplicantRepository implements ApplicantRepository {
     this.log = createLogger('MockApplicantRepository');
   }
 
-  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option<ApplicantResponseEntity>> {
+  async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.debug('Fetching applicant by basic info [%j]', request);
 
     const reqClientNumber = request.Applicant.ClientIdentification[0]?.IdentificationID;
@@ -316,15 +315,15 @@ export class MockApplicantRepository implements ApplicantRepository {
 
     if (!applicantEntity) {
       this.log.debug('No applicant found; Returning None');
-      return await Promise.resolve(None);
+      return await Promise.resolve(Option.none());
     }
 
     const applicantResponseEntity = this.mapToApplicantResponseEntity(applicantEntity);
     this.log.debug('Returning applicant [%j]', applicantResponseEntity);
-    return await Promise.resolve(Some(applicantResponseEntity));
+    return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 
-  async findApplicantBySin(applicantRequestEntity: FindApplicantBySinRequestEntity): Promise<Option<ApplicantResponseEntity>> {
+  async findApplicantBySin(applicantRequestEntity: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.debug('Fetching applicant by SIN [%j]', applicantRequestEntity);
 
     const sin = applicantRequestEntity.Applicant.PersonSINIdentification.IdentificationID;
@@ -332,12 +331,12 @@ export class MockApplicantRepository implements ApplicantRepository {
 
     if (!applicantEntity) {
       this.log.debug('No applicant found; Returning None');
-      return await Promise.resolve(None);
+      return await Promise.resolve(Option.none());
     }
 
     const applicantResponseEntity = this.mapToApplicantResponseEntity(applicantEntity);
     this.log.debug('Returning applicant [%j]', applicantResponseEntity);
-    return await Promise.resolve(Some(applicantResponseEntity));
+    return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 
   mapToApplicantResponseEntity(applicantEntity: (typeof this.mockApplicantDb)[number]): ApplicantResponseEntity {

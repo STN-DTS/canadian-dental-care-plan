@@ -1,6 +1,6 @@
+import { Option } from 'effect';
 import { fileTypeFromBuffer } from 'file-type';
 import mime from 'mime';
-import { None, Option } from 'oxide.ts';
 
 interface FileContentTypeInput {
   readonly file: File;
@@ -258,12 +258,12 @@ export function base64ToArrayBuffer(base64Content: string): ArrayBuffer | undefi
  * findMimeType('pdf')  // None
  * ```
  */
-export function findMimeType(extension: string): Option<string> {
+export function findMimeType(extension: string): Option.Option<string> {
   if (!extension.startsWith('.')) {
-    return None;
+    return Option.none();
   }
 
-  return Option.from(mime.getType(extension));
+  return Option.fromNullishOr(mime.getType(extension));
 }
 
 /**
@@ -280,7 +280,7 @@ export function findMimeType(extension: string): Option<string> {
  * ```
  */
 export function getMimeType(extension: string): string {
-  return findMimeType(extension).unwrapOrElse(() => {
+  return Option.getOrElse(findMimeType(extension), () => {
     throw new Error(`MIME type not found for extension: ${extension}`);
   });
 }
@@ -299,7 +299,7 @@ export function getMimeType(extension: string): string {
  * ```
  */
 export function isValidExtension(extension: string): boolean {
-  return findMimeType(extension).isSome();
+  return Option.isSome(findMimeType(extension));
 }
 
 /**

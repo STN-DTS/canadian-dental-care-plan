@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface LetterTypeRepository {
    * @param id The id of the letter type entity.
    * @returns The letter type entity or null if not found.
    */
-  findLetterTypeById(id: string): Promise<Option<LetterTypeEntity>>;
+  findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>>;
 
   /**
    * Retrieves metadata associated with the country repository.
@@ -97,7 +96,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     return letterTypeEntities;
   }
 
-  async findLetterTypeById(id: string): Promise<Option<LetterTypeEntity>> {
+  async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type with id: [%s]', id);
 
     const letterTypeEntities = await this.listAllLetterTypes();
@@ -105,11 +104,11 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
 
     if (!letterTypeEntity) {
       this.log.warn('Letter type not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning letter type: [%j]', letterTypeEntity);
-    return Some(letterTypeEntity);
+    return Option.some(letterTypeEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -139,7 +138,7 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     return await Promise.resolve(letterTypeEntities);
   }
 
-  async findLetterTypeById(id: string): Promise<Option<LetterTypeEntity>> {
+  async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type with id: [%s]', id);
 
     const letterTypeEntities = letterTypeJsonDataSource.value;
@@ -147,10 +146,10 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
 
     if (!letterTypeEntity) {
       this.log.warn('Letter type not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(letterTypeEntity));
+    return await Promise.resolve(Option.some(letterTypeEntity));
   }
 
   getMetadata(): Record<string, string> {

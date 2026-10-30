@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { None, Some } from 'oxide.ts';
-import type { Option } from 'oxide.ts';
 
 import { TYPES } from '~/.server/constants';
 import type { AppealUploadEligibilityDto } from '~/.server/domain/dtos';
@@ -19,7 +18,7 @@ export interface AppealUploadEligibilityService {
    * @param clientNumber - The client number to check eligibility for.
    * @returns `Some` containing the eligibility DTO, or `None` if no matching client was found.
    */
-  findAppealUploadEligibility(clientNumber: string): Promise<Option<AppealUploadEligibilityDto>>;
+  findAppealUploadEligibility(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityDto>>;
 }
 
 @injectable()
@@ -34,19 +33,19 @@ export class DefaultAppealUploadEligibilityService implements AppealUploadEligib
     this.appealUploadEligibilityRepository = appealUploadEligibilityRepository;
   }
 
-  async findAppealUploadEligibility(clientNumber: string): Promise<Option<AppealUploadEligibilityDto>> {
+  async findAppealUploadEligibility(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityDto>> {
     this.log.trace('Getting appeal upload eligibility for client number: [%s]', clientNumber);
 
     const appealUploadEligibilityResponseEntityOption = await this.appealUploadEligibilityRepository.findAppealUploadEligibilityByClientNumber(clientNumber);
 
-    if (appealUploadEligibilityResponseEntityOption.isNone()) {
+    if (Option.isNone(appealUploadEligibilityResponseEntityOption)) {
       this.log.debug('No client record found; treating as ineligible; clientNumber: [%s]', clientNumber);
-      return None;
+      return Option.none();
     }
 
-    const appealUploadEligibilityDto = this.appealUploadEligibilityDtoMapper.mapAppealUploadEligibilityResponseEntityToAppealUploadEligibilityDto(appealUploadEligibilityResponseEntityOption.unwrap());
+    const appealUploadEligibilityDto = this.appealUploadEligibilityDtoMapper.mapAppealUploadEligibilityResponseEntityToAppealUploadEligibilityDto(Option.getOrThrow(appealUploadEligibilityResponseEntityOption));
 
     this.log.trace('Returning appeal upload eligibility: [%j]', appealUploadEligibilityDto);
-    return Some(appealUploadEligibilityDto);
+    return Option.some(appealUploadEligibilityDto);
   }
 }

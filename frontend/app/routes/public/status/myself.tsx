@@ -2,6 +2,7 @@ import { data, redirect, useFetcher } from 'react-router';
 
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { Option } from 'effect';
 import { randomUUID } from 'node:crypto';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -109,7 +110,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     session,
     state: {
       statusCheckResult: {
-        statusId: statusId.unwrapUnchecked(),
+        statusId: Option.getOrUndefined(statusId),
       },
     },
   });

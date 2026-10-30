@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
 import { mock } from 'vitest-mock-extended';
@@ -39,7 +39,7 @@ describe('DefaultRaoidcSessionValidator', () => {
 
   describe('validateRaoidcSession', () => {
     it('should return isValid: false if idToken is not found in session', async () => {
-      mockSession.find.calledWith('idToken').mockReturnValueOnce(None);
+      mockSession.find.calledWith('idToken').mockReturnValueOnce(Option.none());
 
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
@@ -48,8 +48,8 @@ describe('DefaultRaoidcSessionValidator', () => {
     });
 
     it('should return isValid: false if userInfoToken is not found in session', async () => {
-      mockSession.find.calledWith('idToken').mockReturnValueOnce(Some({ sid: 'session-id' } as IdToken));
-      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(None);
+      mockSession.find.calledWith('idToken').mockReturnValueOnce(Option.some({ sid: 'session-id' } as IdToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Option.none());
 
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
@@ -58,8 +58,8 @@ describe('DefaultRaoidcSessionValidator', () => {
     });
 
     it('should return isValid: true if session is mocked', async () => {
-      mockSession.find.calledWith('idToken').mockReturnValueOnce(Some({ sid: 'session-id' } as IdToken));
-      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Some({ mocked: true } as UserinfoToken));
+      mockSession.find.calledWith('idToken').mockReturnValueOnce(Option.some({ sid: 'session-id' } as IdToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Option.some({ mocked: true } as UserinfoToken));
 
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
@@ -68,8 +68,8 @@ describe('DefaultRaoidcSessionValidator', () => {
     });
 
     it('should return isValid: false if session is expired', async () => {
-      mockSession.find.calledWith('idToken').mockReturnValueOnce(Some({ sid: 'session-id' } as IdToken));
-      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Some({ mocked: false } as UserinfoToken));
+      mockSession.find.calledWith('idToken').mockReturnValueOnce(Option.some({ sid: 'session-id' } as IdToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Option.some({ mocked: false } as UserinfoToken));
       vi.mocked(validateSession).mockResolvedValueOnce(false);
 
       const result = await validator.validateRaoidcSession({ session: mockSession });
@@ -79,8 +79,8 @@ describe('DefaultRaoidcSessionValidator', () => {
     });
 
     it('should return isValid: true if session is valid', async () => {
-      mockSession.find.calledWith('idToken').mockReturnValueOnce(Some({ sid: 'session-id' } as IdToken));
-      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Some({ mocked: false } as UserinfoToken));
+      mockSession.find.calledWith('idToken').mockReturnValueOnce(Option.some({ sid: 'session-id' } as IdToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValueOnce(Option.some({ mocked: false } as UserinfoToken));
       vi.mocked(validateSession).mockResolvedValueOnce(true);
 
       const result = await validator.validateRaoidcSession({ session: mockSession });

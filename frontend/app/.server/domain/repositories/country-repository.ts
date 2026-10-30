@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface CountryRepository {
    * @param id The id of the country entity.
    * @returns The country entity or null if not found.
    */
-  findCountryById(id: string): Promise<Option<CountryEntity>>;
+  findCountryById(id: string): Promise<Option.Option<CountryEntity>>;
 
   /**
    * Retrieves metadata associated with the country repository.
@@ -96,7 +95,7 @@ export class DefaultCountryRepository implements CountryRepository {
     return countryEntities;
   }
 
-  async findCountryById(id: string): Promise<Option<CountryEntity>> {
+  async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country with id: [%s]', id);
 
     const countryEntities = await this.listAllCountries();
@@ -104,11 +103,11 @@ export class DefaultCountryRepository implements CountryRepository {
 
     if (!countryEntity) {
       this.log.warn('Country not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning country: [%j]', countryEntity);
-    return Some(countryEntity);
+    return Option.some(countryEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -143,7 +142,7 @@ export class MockCountryRepository implements CountryRepository {
     return await Promise.resolve(countryEntities);
   }
 
-  async findCountryById(id: string): Promise<Option<CountryEntity>> {
+  async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country with id: [%s]', id);
 
     const countryEntities = countryJsonDataSource.value;
@@ -151,10 +150,10 @@ export class MockCountryRepository implements CountryRepository {
 
     if (!countryEntity) {
       this.log.warn('Country not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(countryEntity));
+    return await Promise.resolve(Option.some(countryEntity));
   }
 
   getMetadata(): Record<string, string> {

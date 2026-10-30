@@ -1,4 +1,4 @@
-import { None } from 'oxide.ts';
+import { Option } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -79,7 +79,7 @@ describe('DefaultClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationByBasicInfo(requestEntity);
 
-      expect(result.unwrap()).toEqual(responseDataMock);
+      expect(Option.getOrThrow(result)).toEqual(responseDataMock);
       expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
         'http.client.interop-api.retrieve-benefit-application_by-basic-info.posts',
         new URL('https://api.example.com/dental-care/applicant-information/dts/v1/retrieve-benefit-application'),
@@ -113,7 +113,7 @@ describe('DefaultClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationByBasicInfo(requestEntity);
 
-      expect(result).toBe(None);
+      expect(Option.isNone(result)).toBe(true);
     });
 
     it('should throw Error for other non-200/204 responses', async () => {
@@ -158,7 +158,7 @@ describe('DefaultClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationBySin(requestEntity);
 
-      expect(result.unwrap()).toEqual(responseDataMock);
+      expect(Option.getOrThrow(result)).toEqual(responseDataMock);
       expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.interop-api.retrieve-benefit-application_by-sin.posts', new URL('https://api.example.com/dental-care/applicant-information/dts/v1/retrieve-benefit-application'), {
         proxyUrl: serverConfigMock.HTTP_PROXY_URL,
         method: 'POST',
@@ -186,7 +186,7 @@ describe('DefaultClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationBySin(requestEntity);
 
-      expect(result).toBe(None);
+      expect(Option.isNone(result)).toBe(true);
     });
 
     it('should throw Error for other non-200/204 responses', async () => {
@@ -229,7 +229,7 @@ describe('MockClientApplicationRepository', () => {
       };
 
       const resultOption = await repository.findClientApplicationByBasicInfo(requestEntity);
-      const result = resultOption.unwrap();
+      const result = Option.getOrThrow(resultOption);
 
       expect(result.BenefitApplication.Applicant.ApplicantDetail.InvitationToApplyIndicator).toBe(true);
       expect(result.BenefitApplication.Applicant.ApplicantDetail.PreviousTaxesFiledIndicator).toBe(false);
@@ -252,7 +252,7 @@ describe('MockClientApplicationRepository', () => {
       };
 
       const resultOption = await repository.findClientApplicationByBasicInfo(requestEntity);
-      const result = resultOption.unwrap();
+      const result = Option.getOrThrow(resultOption);
 
       expect(result.BenefitApplication.Applicant.ApplicantDetail.InvitationToApplyIndicator).toBe(false);
       expect(result.BenefitApplication.Applicant.ApplicantDetail.PreviousTaxesFiledIndicator).toBe(false);
@@ -276,7 +276,7 @@ describe('MockClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationByBasicInfo(requestEntity);
 
-      expect(result).toBe(None);
+      expect(Option.isNone(result)).toBe(true);
     });
   });
 
@@ -293,7 +293,7 @@ describe('MockClientApplicationRepository', () => {
       };
 
       const resultOption = await repository.findClientApplicationBySin(requestEntity);
-      const result = resultOption.unwrap();
+      const result = Option.getOrThrow(resultOption);
 
       expect(result.BenefitApplication.Applicant.ApplicantDetail.InvitationToApplyIndicator).toBe(true);
       expect(result.BenefitApplication.Applicant.ApplicantDetail.PreviousTaxesFiledIndicator).toBe(true);
@@ -312,7 +312,7 @@ describe('MockClientApplicationRepository', () => {
       };
 
       const resultOption = await repository.findClientApplicationBySin(requestEntity);
-      const result = resultOption.unwrap();
+      const result = Option.getOrThrow(resultOption);
 
       expect(result.BenefitApplication.Applicant.ApplicantDetail.InvitationToApplyIndicator).toBe(false);
       expect(result.BenefitApplication.Applicant.ApplicantDetail.PreviousTaxesFiledIndicator).toBe(false);
@@ -332,7 +332,7 @@ describe('MockClientApplicationRepository', () => {
 
       const result = await repository.findClientApplicationBySin(requestEntity);
 
-      expect(result).toBe(None);
+      expect(Option.isNone(result)).toBe(true);
     });
   });
 });

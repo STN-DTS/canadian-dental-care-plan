@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface DocumentUploadReasonRepository {
    * @param id The id of the document upload reason entity.
    * @returns The document upload reason entity or null if not found.
    */
-  findDocumentUploadReasonById(id: string): Promise<Option<DocumentUploadReasonEntity>>;
+  findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>>;
 
   /**
    * Retrieves metadata associated with the document upload reason repository.
@@ -99,7 +98,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     return documentUploadReasonEntities;
   }
 
-  async findDocumentUploadReasonById(id: string): Promise<Option<DocumentUploadReasonEntity>> {
+  async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
     this.log.debug('Fetching document upload reason with id: [%s]', id);
 
     const documentUploadReasonEntities = await this.listAllDocumentUploadReasons();
@@ -107,11 +106,11 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
 
     if (!documentEntity) {
       this.log.warn('Document upload reason not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning document upload reason: [%j]', documentEntity);
-    return Some(documentEntity);
+    return Option.some(documentEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -146,7 +145,7 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
     return await Promise.resolve(documentUploadReasonEntities);
   }
 
-  async findDocumentUploadReasonById(id: string): Promise<Option<DocumentUploadReasonEntity>> {
+  async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
     this.log.debug('Fetching document upload reason with id: [%s]', id);
 
     const documentUploadReasonEntities = documentUploadReasonJsonDataSource.value;
@@ -154,10 +153,10 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
 
     if (!documentEntity) {
       this.log.warn('Document upload reason not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(documentEntity));
+    return await Promise.resolve(Option.some(documentEntity));
   }
 
   getMetadata(): Record<string, string> {
