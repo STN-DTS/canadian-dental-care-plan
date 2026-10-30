@@ -1,5 +1,7 @@
 import { Outlet, redirect } from 'react-router';
 
+import { Option } from 'effect';
+
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
@@ -19,7 +21,10 @@ const appealUploadEligibilityMiddleware: Route.MiddlewareFunction = async ({ con
 
   const appealUploadEligibilityService = appContainer.get(TYPES.AppealUploadEligibilityService);
   const appealUploadEligibility = await appealUploadEligibilityService.findAppealUploadEligibility(applicant.clientNumber);
-  const canUploadAppealDocuments = appealUploadEligibility.isSome() && appealUploadEligibility.unwrap().canUploadAppealDocuments;
+  const canUploadAppealDocuments = Option.match(appealUploadEligibility, {
+    onNone: () => false,
+    onSome: (eligibility) => eligibility.canUploadAppealDocuments,
+  });
 
   if (!canUploadAppealDocuments) {
     throw redirect(getPathById('protected/documents/not-required', params));

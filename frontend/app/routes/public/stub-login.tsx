@@ -1,5 +1,6 @@
 import { data, redirectDocument, useFetcher } from 'react-router';
 
+import { Option } from 'effect';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -46,9 +47,18 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const userInfoTokenOption = session.find('userInfoToken');
 
   const defaultValues = {
-    sin: userInfoTokenOption.mapOr<string>('', (userInfoToken) => userInfoToken.sin ?? ''),
-    sid: idTokenOption.mapOr<string>('00000000-0000-0000-0000-000000000000', (idToken) => idToken.sid),
-    sub: idTokenOption.mapOr<string>('00000000-0000-0000-0000-000000000000', (idToken) => idToken.sub),
+    sin: Option.match(userInfoTokenOption, {
+      onNone: () => '',
+      onSome: (userInfoToken) => userInfoToken.sin ?? '',
+    }),
+    sid: Option.match(idTokenOption, {
+      onNone: () => '00000000-0000-0000-0000-000000000000',
+      onSome: (idToken) => idToken.sid,
+    }),
+    sub: Option.match(idTokenOption, {
+      onNone: () => '00000000-0000-0000-0000-000000000000',
+      onSome: (idToken) => idToken.sub,
+    }),
   };
 
   return { meta, defaultValues };

@@ -5,6 +5,7 @@ import { data, redirect, useFetcher } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 import { faCircleCheck, faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 import { faCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { Option } from 'effect';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -82,24 +83,24 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
         const federalProgram = await federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(id, locale);
 
-        if (federalProgram.isSome()) {
+        if (Option.isSome(federalProgram)) {
           return {
             ...benefits,
             federalBenefit: {
               access: true,
-              benefit: federalProgram.unwrap().name,
+              benefit: Option.getOrThrow(federalProgram).name,
             },
           };
         }
 
         const provincialProgram = await provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(id, locale);
 
-        if (provincialProgram.isSome()) {
+        if (Option.isSome(provincialProgram)) {
           return {
             ...benefits,
             provTerrBenefit: {
               access: true,
-              benefit: provincialProgram.unwrap().name,
+              benefit: Option.getOrThrow(provincialProgram).name,
             },
           };
         }

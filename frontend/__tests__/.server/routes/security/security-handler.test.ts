@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
 import { anyArray, anyObject, mock } from 'vitest-mock-extended';
@@ -241,7 +241,7 @@ describe('DefaultSecurityHandler', () => {
     it('should throw redirect to auth/login if the session does not contain a userInfoToken or sin', async () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
-      mockSession.find.calledWith('userInfoToken').mockReturnValue(None);
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.none());
 
       const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
@@ -257,12 +257,12 @@ describe('DefaultSecurityHandler', () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
       const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
 
-      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(None);
+      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(Option.none());
 
       const error = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession }).catch((error_) => error_);
 
@@ -276,13 +276,13 @@ describe('DefaultSecurityHandler', () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
       const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
       const customRedirectUrl = '/en/custom-data-unavailable';
 
-      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(None);
+      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValueOnce(Option.none());
 
       const error = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession, options: { redirectUrl: customRedirectUrl } }).catch((error_) => error_);
 
@@ -295,7 +295,7 @@ describe('DefaultSecurityHandler', () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
       const mockRequestUrl = new URL('https://localhost:3000/en/protected-page');
       const params = { lang: 'en' };
@@ -311,7 +311,7 @@ describe('DefaultSecurityHandler', () => {
         },
       });
 
-      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValue(Some(mockClientApplication));
+      mockClientApplicationService.findClientApplicationBySin.calledWith(anyObject({ sin: '123456789', applicationYearId: '', sub: 'user-id' })).mockResolvedValue(Option.some(mockClientApplication));
 
       const clientApplication = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession });
       expect(clientApplication).toBe(mockClientApplication);
@@ -324,10 +324,10 @@ describe('DefaultSecurityHandler', () => {
       mockSession.id = 'session-id';
       mockSession.has.calledWith('applicant').mockReturnValue(false);
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      mockSession.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
       const applicant = mock<ApplicantDto>({ applicantType: undefined, clientNumber: 'client-number' });
-      mockApplicantService.findApplicantBySin.mockResolvedValue(Some(applicant));
+      mockApplicantService.findApplicantBySin.mockResolvedValue(Option.some(applicant));
 
       const result = await securityHandler.requireApplicant({
         requestUrl: new URL('https://localhost:3000/en/protected/documents'),
@@ -348,9 +348,9 @@ describe('DefaultSecurityHandler', () => {
       session.id = 'session-id';
       session.has.calledWith('programApplicant').mockReturnValue(false);
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
-      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(Some(programApplicant));
+      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(Option.some(programApplicant));
 
       const result = await securityHandler.requireProgramApplicant({
         requestUrl: new URL('https://localhost:3000/en/protected/application'),
@@ -368,7 +368,7 @@ describe('DefaultSecurityHandler', () => {
       session.id = 'session-id';
       session.has.calledWith('programApplicant').mockReturnValue(true);
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
+      session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
       session.get.calledWith('programApplicant').mockReturnValue(programApplicant);
 
@@ -386,8 +386,8 @@ describe('DefaultSecurityHandler', () => {
       const session = mock<Session>();
       session.id = 'session-id';
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
-      session.find.calledWith('userInfoToken').mockReturnValue(Some(userInfoToken));
-      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(None);
+      session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
+      mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(Option.none());
 
       const error = await securityHandler
         .requireProgramApplicant({

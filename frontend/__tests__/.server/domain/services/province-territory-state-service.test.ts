@@ -1,5 +1,5 @@
+import { Option } from 'effect';
 import type { Memoized, Options } from 'micro-memoize';
-import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -73,7 +73,7 @@ describe('DefaultProvinceTerritoryStateService', () => {
       const id = '1';
       const mockProvinceTerritoryStateRepository = mock<ProvinceTerritoryStateRepository>();
       mockProvinceTerritoryStateRepository.findProvinceTerritoryStateById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_provinceterritorystateid: '1',
           _esdc_countryid_value: '1',
           esdc_nameenglish: 'English',
@@ -99,7 +99,7 @@ describe('DefaultProvinceTerritoryStateService', () => {
     it('fetches province territory state by id and throws exception if not found', async () => {
       const id = '1033';
       const mockProvinceTerritoryStateRepository = mock<ProvinceTerritoryStateRepository>();
-      mockProvinceTerritoryStateRepository.findProvinceTerritoryStateById.mockResolvedValueOnce(None);
+      mockProvinceTerritoryStateRepository.findProvinceTerritoryStateById.mockResolvedValueOnce(Option.none());
 
       const mockProvinceTerritoryStateDtoMapper = mock<ProvinceTerritoryStateDtoMapper>();
 
@@ -218,7 +218,7 @@ describe('DefaultProvinceTerritoryStateService', () => {
       const locale = 'en';
       const mockProvinceTerritoryStateRepository = mock<ProvinceTerritoryStateRepository>();
       mockProvinceTerritoryStateRepository.findProvinceTerritoryStateById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_provinceterritorystateid: '1',
           _esdc_countryid_value: '1',
           esdc_nameenglish: 'English',

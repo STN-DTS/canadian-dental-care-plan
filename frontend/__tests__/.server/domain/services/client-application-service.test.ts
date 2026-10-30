@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -227,7 +227,7 @@ describe('DefaultClientApplicationService', () => {
       };
 
       const mockClientApplicationRepository = mock<ClientApplicationRepository>();
-      mockClientApplicationRepository.findClientApplicationBySin.mockResolvedValue(Some(mockClientApplicationEntity));
+      mockClientApplicationRepository.findClientApplicationBySin.mockResolvedValue(Option.some(mockClientApplicationEntity));
 
       const mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>();
       mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto.mockReturnValue(mockClientApplicationDto);
@@ -239,7 +239,7 @@ describe('DefaultClientApplicationService', () => {
       const result = await service.findClientApplicationBySin(mockClientApplicationSinRequestDto);
 
       // Assert
-      expect(result.unwrap()).toEqual(mockClientApplicationDto);
+      expect(Option.getOrThrow(result)).toEqual(mockClientApplicationDto);
       expect(mockClientApplicationDtoMapper.mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity).toHaveBeenCalledWith(mockClientApplicationSinRequestDto);
       expect(mockClientApplicationRepository.findClientApplicationBySin).toHaveBeenCalledWith(mockClientApplicationSinRequestEntity);
       expect(mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto).toHaveBeenCalledWith(mockClientApplicationEntity);
@@ -253,7 +253,7 @@ describe('DefaultClientApplicationService', () => {
       };
 
       const mockClientApplicationRepository = mock<ClientApplicationRepository>();
-      mockClientApplicationRepository.findClientApplicationBySin.mockResolvedValue(None);
+      mockClientApplicationRepository.findClientApplicationBySin.mockResolvedValue(Option.none());
 
       const mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>();
       mockClientApplicationDtoMapper.mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity.mockReturnValue(mockClientApplicationSinRequestEntity);
@@ -264,7 +264,7 @@ describe('DefaultClientApplicationService', () => {
       const result = await service.findClientApplicationBySin(mockClientApplicationSinRequestDto);
 
       // Assert
-      expect(result.isNone()).toBe(true);
+      expect(Option.isNone(result)).toBe(true);
       expect(mockClientApplicationDtoMapper.mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity).toHaveBeenCalledWith(mockClientApplicationSinRequestDto);
       expect(mockClientApplicationRepository.findClientApplicationBySin).toHaveBeenCalledWith(mockClientApplicationSinRequestEntity);
       expect(mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto).not.toBeCalled();
@@ -292,7 +292,7 @@ describe('DefaultClientApplicationService', () => {
       };
 
       const mockClientApplicationRepository = mock<ClientApplicationRepository>();
-      mockClientApplicationRepository.findClientApplicationByBasicInfo.mockResolvedValue(Some(mockClientApplicationEntity));
+      mockClientApplicationRepository.findClientApplicationByBasicInfo.mockResolvedValue(Option.some(mockClientApplicationEntity));
 
       const mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>();
       mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto.mockReturnValue(mockClientApplicationDto);
@@ -304,7 +304,7 @@ describe('DefaultClientApplicationService', () => {
       const result = await service.findClientApplicationByBasicInfo(mockClientApplicationBasicInfoRequestDto);
 
       // Assert
-      expect(result.unwrap()).toEqual(mockClientApplicationDto);
+      expect(Option.getOrThrow(result)).toEqual(mockClientApplicationDto);
       expect(mockClientApplicationDtoMapper.mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity).toHaveBeenCalledWith(mockClientApplicationBasicInfoRequestDto);
       expect(mockClientApplicationRepository.findClientApplicationByBasicInfo).toHaveBeenCalledWith(mockClientApplicationBasicInfoRequestEntity);
       expect(mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto).toHaveBeenCalledWith(mockClientApplicationEntity);
@@ -330,7 +330,7 @@ describe('DefaultClientApplicationService', () => {
       };
 
       const mockClientApplicationRepository = mock<ClientApplicationRepository>();
-      mockClientApplicationRepository.findClientApplicationByBasicInfo.mockResolvedValue(None);
+      mockClientApplicationRepository.findClientApplicationByBasicInfo.mockResolvedValue(Option.none());
 
       const mockClientApplicationDtoMapper = mock<ClientApplicationDtoMapper>();
       mockClientApplicationDtoMapper.mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity.mockReturnValue(mockClientApplicationBasicInfoRequestEntity);
@@ -341,7 +341,7 @@ describe('DefaultClientApplicationService', () => {
       const result = await service.findClientApplicationByBasicInfo(mockClientApplicationBasicInfoRequestDto);
 
       // Assert
-      expect(result.isNone()).toBe(true);
+      expect(Option.isNone(result)).toBe(true);
       expect(mockClientApplicationDtoMapper.mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity).toHaveBeenCalledWith(mockClientApplicationBasicInfoRequestDto);
       expect(mockClientApplicationRepository.findClientApplicationByBasicInfo).toHaveBeenCalledWith(mockClientApplicationBasicInfoRequestEntity);
       expect(mockClientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto).not.toBeCalled();

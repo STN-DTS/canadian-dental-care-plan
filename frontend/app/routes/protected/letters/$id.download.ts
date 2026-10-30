@@ -1,6 +1,7 @@
 import { data } from 'react-router';
 
 import { create } from 'content-disposition';
+import { Option } from 'effect';
 import { Buffer } from 'node:buffer';
 
 import { TYPES } from '~/.server/constants';
@@ -20,11 +21,11 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const lettersOption = session.find('letters');
 
   // Optional TODO: add a check to see if the letter belongs to the user. (Done with LetterService call)
-  if (lettersOption.isNone()) {
+  if (Option.isNone(lettersOption)) {
     throw data(null, { status: 404 });
   }
 
-  const letter = lettersOption.unwrap().find((letter) => letter.id === params.id);
+  const letter = Option.getOrThrow(lettersOption).find((letter) => letter.id === params.id);
 
   if (!letter) {
     throw data(null, { status: 404 });

@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import type { Request } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -64,18 +65,27 @@ describe('Session', () => {
       it('should return the value if key exists', () => {
         mockRequest.session.key = 'value';
         const session = new ExpressSession(mockRequest);
-        expect(session.find('key' as SessionKey).unwrap()).toBe('value');
+        expect(Option.getOrThrow(session.find('key' as SessionKey))).toBe('value');
+      });
+
+      it.each([null, undefined])('should preserve a present key with a nullish value [%s]', (value) => {
+        mockRequest.session['authReturnUrl'] = value;
+        const session = new ExpressSession(mockRequest);
+        const result = session.find('authReturnUrl');
+
+        expect(Option.isSome(result)).toBe(true);
+        expect(Option.getOrThrow(result)).toBe(value);
       });
 
       it('should return undefined if key does not exist', () => {
         const session = new ExpressSession(mockRequest);
-        expect(session.find('key' as SessionKey).isNone()).toBe(true);
+        expect(Option.isNone(session.find('key' as SessionKey))).toBe(true);
       });
 
       it('should sanitize the key', () => {
         mockRequest.session['_sanitized_key___$__'] = 'value';
         const session = new ExpressSession(mockRequest);
-        expect(session.find(' sanitized key!@#$%^' as SessionKey).unwrap()).toBe('value');
+        expect(Option.getOrThrow(session.find(' sanitized key!@#$%^' as SessionKey))).toBe('value');
       });
     });
 
@@ -197,7 +207,7 @@ describe('Session', () => {
     });
 
     it('should always return undefined for find', () => {
-      expect(session.find('anyKey' as SessionKey).isNone()).toBe(true);
+      expect(Option.isNone(session.find('anyKey' as SessionKey))).toBe(true);
     });
 
     it('should throw error on get', () => {

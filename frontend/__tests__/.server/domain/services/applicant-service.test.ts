@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -55,8 +55,8 @@ describe('DefaultApplicantService', () => {
 
     applicantDtoMapper.mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity.mockReturnValue(basicInfoRequestEntity);
     applicantDtoMapper.mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity.mockReturnValue(sinRequestEntity);
-    applicantRepository.findApplicantByBasicInfo.mockResolvedValue(Some(applicantResponseEntity));
-    applicantRepository.findApplicantBySin.mockResolvedValue(Some(applicantResponseEntity));
+    applicantRepository.findApplicantByBasicInfo.mockResolvedValue(Option.some(applicantResponseEntity));
+    applicantRepository.findApplicantBySin.mockResolvedValue(Option.some(applicantResponseEntity));
   });
 
   it('returns an unclassified applicant from the applicant basic-info lookup', async () => {
@@ -64,7 +64,7 @@ describe('DefaultApplicantService', () => {
 
     const result = await service.findApplicantByBasicInfo(basicInfoRequest);
 
-    expect(result.unwrap().applicantType).toBeUndefined();
+    expect(Option.getOrThrow(result).applicantType).toBeUndefined();
   });
 
   it('returns an unclassified applicant from the applicant SIN lookup', async () => {
@@ -72,16 +72,16 @@ describe('DefaultApplicantService', () => {
 
     const result = await service.findApplicantBySin(sinRequest);
 
-    expect(result.unwrap().applicantType).toBeUndefined();
+    expect(Option.getOrThrow(result).applicantType).toBeUndefined();
     expect(auditService.createAudit).toHaveBeenCalledWith('applicant.personal-information.get', { userId: 'user-id' });
   });
 
   it('preserves a missing repository result for a SIN lookup', async () => {
-    applicantRepository.findApplicantBySin.mockResolvedValue(None);
+    applicantRepository.findApplicantBySin.mockResolvedValue(Option.none());
 
     const result = await service.findApplicantBySin(sinRequest);
 
-    expect(result.isNone()).toBe(true);
+    expect(Option.isNone(result)).toBe(true);
     expect(applicantDtoMapper.mapApplicantResponseEntityToApplicantDto).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -145,7 +146,7 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
     const repository = new DefaultGovernmentInsurancePlanRepository(serverConfigMock, httpClientMock);
     const actual = await repository.findGovernmentInsurancePlanById('0');
 
-    expect(actual.unwrap()).toEqual(responseDataMock.value[0]);
+    expect(Option.getOrThrow(actual)).toEqual(responseDataMock.value[0]);
 
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
       'http.client.interop-api.government-insurance-plans.gets',
@@ -230,7 +231,7 @@ describe('MockGovernmentInsurancePlanRepository', () => {
 
     const governmentInsurancePlan = await repository.findGovernmentInsurancePlanById('3');
 
-    expect(governmentInsurancePlan.unwrap()).toEqual({
+    expect(Option.getOrThrow(governmentInsurancePlan)).toEqual({
       '@odata.etag': 'W/"00000003"',
       esdc_code: '03',
       esdc_governmentinsuranceplanid: '3',
@@ -245,6 +246,6 @@ describe('MockGovernmentInsurancePlanRepository', () => {
 
     const governmentInsurancePlan = await repository.findGovernmentInsurancePlanById('non-existent-id');
 
-    expect(governmentInsurancePlan.isNone()).toBe(true);
+    expect(Option.isNone(governmentInsurancePlan)).toBe(true);
   });
 });

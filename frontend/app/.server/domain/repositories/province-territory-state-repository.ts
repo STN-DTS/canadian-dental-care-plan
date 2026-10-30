@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,14 +22,14 @@ export interface ProvinceTerritoryStateRepository {
    * @param id The id of the province territory state entity.
    * @returns The province territory state entity or null if not found.
    */
-  findProvinceTerritoryStateById(id: string): Promise<Option<ProvinceTerritoryStateEntity>>;
+  findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>>;
 
   /**
    * Fetch a province territory state entity by its id.
    * @param id The id of the province territory state entity.
    * @returns The province territory state entity or null if not found.
    */
-  findProvinceTerritoryStateByCode(code: string): Promise<Option<ProvinceTerritoryStateEntity>>;
+  findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>>;
 
   /**
    * Retrieves metadata associated with the province territory state repository.
@@ -104,7 +103,7 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
     return provinceTerritoryStateEntities;
   }
 
-  async findProvinceTerritoryStateById(id: string): Promise<Option<ProvinceTerritoryStateEntity>> {
+  async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching provinces, territories, and states with id: [%s]', id);
 
     const provinceTerritoryStateEntities = await this.listAllProvinceTerritoryStates();
@@ -112,14 +111,14 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
 
     if (!provinceTerritoryEntity) {
       this.log.warn('ProvinceTerritoryState not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning province, territory, and state : [%j]', provinceTerritoryEntity);
-    return Some(provinceTerritoryEntity);
+    return Option.some(provinceTerritoryEntity);
   }
 
-  async findProvinceTerritoryStateByCode(code: string): Promise<Option<ProvinceTerritoryStateEntity>> {
+  async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching provinces, territories, and states with id: [%s]', code);
 
     const provinceTerritoryStateEntities = await this.listAllProvinceTerritoryStates();
@@ -127,11 +126,11 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
 
     if (!provinceTerritoryEntity) {
       this.log.warn('ProvinceTerritoryState not found; code: [%s]', code);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning province, territory, and state : [%j]', provinceTerritoryEntity);
-    return Some(provinceTerritoryEntity);
+    return Option.some(provinceTerritoryEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -166,7 +165,7 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     return await Promise.resolve(provinceTerritoryStateEntities);
   }
 
-  async findProvinceTerritoryStateById(id: string): Promise<Option<ProvinceTerritoryStateEntity>> {
+  async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching province territory state with id: [%s]', id);
 
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
@@ -174,13 +173,13 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
 
     if (!provinceTerritoryStateEntity) {
       this.log.warn('ProvinceTerritoryState not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(provinceTerritoryStateEntity));
+    return await Promise.resolve(Option.some(provinceTerritoryStateEntity));
   }
 
-  async findProvinceTerritoryStateByCode(code: string): Promise<Option<ProvinceTerritoryStateEntity>> {
+  async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching province territory state with code: [%s]', code);
 
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
@@ -188,10 +187,10 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
 
     if (!provinceTerritoryStateEntity) {
       this.log.warn('ProvinceTerritoryState not found; code: [%s]', code);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(provinceTerritoryStateEntity));
+    return await Promise.resolve(Option.some(provinceTerritoryStateEntity));
   }
 
   getMetadata(): Record<string, string> {

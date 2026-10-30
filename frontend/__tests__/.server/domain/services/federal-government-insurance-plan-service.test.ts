@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -120,7 +121,7 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       const dto = await service.findFederalGovernmentInsurancePlanById(id);
 
-      expect(dto.unwrap()).toEqual({
+      expect(Option.getOrThrow(dto)).toEqual({
         id: '1',
         nameEn: 'First Insurance Plan',
         nameFr: "Premier plan d'assurance",
@@ -141,7 +142,7 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       const dto = await service.findFederalGovernmentInsurancePlanById(id);
 
-      expect(dto.isNone()).toBe(true);
+      expect(Option.isNone(dto)).toBe(true);
       expect(mockGovernmentInsurancePlanRepository.listAllGovernmentInsurancePlans).toHaveBeenCalledOnce();
       expect(mockFederalGovernmentInsurancePlanDtoMapper.mapGovernmentInsurancePlanEntitiesToFederalGovernmentInsurancePlanDtos).toHaveBeenCalledOnce();
     });
@@ -302,7 +303,7 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       const dto = await service.findLocalizedFederalGovernmentInsurancePlanById(id, 'en');
 
-      expect(dto.unwrap()).toEqual(mockLocalizedDto);
+      expect(Option.getOrThrow(dto)).toEqual(mockLocalizedDto);
       expect(mockGovernmentInsurancePlanRepository.listAllGovernmentInsurancePlans).toHaveBeenCalledOnce();
       expect(mockFederalGovernmentInsurancePlanDtoMapper.mapGovernmentInsurancePlanEntitiesToFederalGovernmentInsurancePlanDtos).toHaveBeenCalledOnce();
       expect(mockFederalGovernmentInsurancePlanDtoMapper.mapFederalGovernmentInsurancePlanDtoToFederalGovernmentInsurancePlanLocalizedDto).toHaveBeenCalledOnce();
@@ -320,7 +321,7 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       const dto = await service.findLocalizedFederalGovernmentInsurancePlanById(id, 'en');
 
-      expect(dto.isNone()).toBe(true);
+      expect(Option.isNone(dto)).toBe(true);
       expect(mockGovernmentInsurancePlanRepository.listAllGovernmentInsurancePlans).toHaveBeenCalledOnce();
       expect(mockFederalGovernmentInsurancePlanDtoMapper.mapGovernmentInsurancePlanEntitiesToFederalGovernmentInsurancePlanDtos).toHaveBeenCalledOnce();
       expect(mockFederalGovernmentInsurancePlanDtoMapper.mapFederalGovernmentInsurancePlanDtoToFederalGovernmentInsurancePlanLocalizedDto).not.toHaveBeenCalled();

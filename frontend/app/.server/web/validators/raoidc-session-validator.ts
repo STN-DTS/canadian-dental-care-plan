@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -54,20 +55,20 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
 
     const idTokenOption = session.find('idToken');
 
-    if (idTokenOption.isNone()) {
+    if (Option.isNone(idTokenOption)) {
       this.log.debug('idToken not found in session [%s]', session.id);
       return { isValid: false, errorMessage: `RAOIDC session validation failed; idToken not found in session [${session.id}]` };
     }
 
     const userInfoTokenOption = session.find('userInfoToken');
 
-    if (userInfoTokenOption.isNone()) {
+    if (Option.isNone(userInfoTokenOption)) {
       this.log.debug('userInfoToken not found in session [%s]', session.id);
       return { isValid: false, errorMessage: `RAOIDC session validation failed; userInfoToken not found in session [${session.id}]` };
     }
 
-    const idToken = idTokenOption.unwrap();
-    const userInfoToken = userInfoTokenOption.unwrap();
+    const idToken = Option.getOrThrow(idTokenOption);
+    const userInfoToken = Option.getOrThrow(userInfoTokenOption);
 
     if (userInfoToken.mocked) {
       this.log.debug('Mocked user; skipping RAOIDC session [%s] validation', session.id);

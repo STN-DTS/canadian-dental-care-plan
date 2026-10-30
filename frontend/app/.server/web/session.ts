@@ -1,7 +1,6 @@
+import { Option } from 'effect';
 import type { Request } from 'express';
 import assert from 'node:assert';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
@@ -99,7 +98,7 @@ export interface Session {
    * @param key The session key to look up.
    * @returns An Option containing the value if present, or None if not found.
    */
-  find<K extends SessionKey>(key: K): Option<SessionTypeMap[K]>;
+  find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]>;
 
   /**
    * Retrieves a value from the session by its key.
@@ -206,27 +205,27 @@ export class ExpressSession implements Session {
     return exists;
   }
 
-  find<K extends SessionKey>(key: K): Option<SessionTypeMap[K]> {
+  find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     if (!this.has(key)) {
       this.log.trace('Session [%s]: Key "%s" not found', this.id, key);
-      return None;
+      return Option.none();
     }
 
     const sanitizedKey = this.sanitizeKey(key);
     const value = this.session[sanitizedKey] as SessionTypeMap[K];
     this.log.trace('Session [%s]: Found key "%s"', this.id, key);
-    return Some(value);
+    return Option.some(value);
   }
 
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     const value = this.find(key);
 
-    if (value.isNone()) {
+    if (Option.isNone(value)) {
       this.log.error('Session [%s]: Attempted to get non-existent key "%s"', this.id, key);
       throw new Error(`Key '${key}' not found in session [${this.id}]`);
     }
 
-    const unwrappedValue = value.unwrap();
+    const unwrappedValue = Option.getOrThrow(value);
     this.log.trace('Session [%s]: Retrieved value for key "%s": %j', this.id, key, unwrappedValue);
     return unwrappedValue;
   }
@@ -336,9 +335,9 @@ export class NoopSession implements Session {
     return false;
   }
 
-  find<K extends SessionKey>(key: K): Option<SessionTypeMap[K]> {
+  find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     this.log.warn('Called "find" on NoopSession for key "%s". Returning None.', key);
-    return None;
+    return Option.none();
   }
 
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {

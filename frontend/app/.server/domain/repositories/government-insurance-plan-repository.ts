@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface GovernmentInsurancePlanRepository {
    * @param id The id of the government insurance plan entity.
    * @returns The government insurance plan entity or null if not found.
    */
-  findGovernmentInsurancePlanById(id: string): Promise<Option<GovernmentInsurancePlanEntity>>;
+  findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>>;
 
   /**
    * Retrieves metadata associated with the government insurance repository.
@@ -96,7 +95,7 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
     return governmentInsurancePlanEntities;
   }
 
-  async findGovernmentInsurancePlanById(id: string): Promise<Option<GovernmentInsurancePlanEntity>> {
+  async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
     this.log.debug('Fetching government insurance plan with id: [%s]', id);
 
     const governmentInsurancePlanEntities = await this.listAllGovernmentInsurancePlans();
@@ -104,11 +103,11 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
 
     if (!governmentInsurancePlanEntity) {
       this.log.warn('Government insurance plan not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning government insurance plan: [%j]', governmentInsurancePlanEntity);
-    return Some(governmentInsurancePlanEntity);
+    return Option.some(governmentInsurancePlanEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -143,7 +142,7 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
     return await Promise.resolve(governmentInsurancePlanEntities);
   }
 
-  async findGovernmentInsurancePlanById(id: string): Promise<Option<GovernmentInsurancePlanEntity>> {
+  async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
     this.log.debug('Fetching government insurance plan with id: [%s]', id);
 
     const governmentInsurancePlanEntities = governmentInsurancePlanJsonDataSource.value;
@@ -151,10 +150,10 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
 
     if (!governmentInsurancePlanEntity) {
       this.log.info('Government insurance plan not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(governmentInsurancePlanEntity));
+    return await Promise.resolve(Option.some(governmentInsurancePlanEntity));
   }
 
   getMetadata(): Record<string, string> {

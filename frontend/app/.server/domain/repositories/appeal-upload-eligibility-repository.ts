@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -21,7 +20,7 @@ export interface AppealUploadEligibilityRepository {
    * @param clientNumber The client number to look up.
    * @returns The eligibility response entity, or `None` if no matching client was found.
    */
-  findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option<AppealUploadEligibilityResponseEntity>>;
+  findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>>;
 
   /**
    * Retrieves metadata associated with the appeal upload eligibility repository.
@@ -74,7 +73,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     return this.applicationPendingStatuses.map(({ id }) => `_esdc_pendingstatusid_value eq '${id}'`).join(' or ');
   }
 
-  async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option<AppealUploadEligibilityResponseEntity>> {
+  async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching appeal upload eligibility for client number: [%s]', clientNumber);
 
     const url = new URL(`${this.baseUrl}/esdc_clients(esdc_clientnumber='${encodeURIComponent(clientNumber)}')`);
@@ -101,7 +100,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
 
     if (response.status === HttpStatusCodes.NOT_FOUND) {
       this.log.debug('No client found for appeal upload eligibility; clientNumber: [%s]', clientNumber);
-      return None;
+      return Option.none();
     }
 
     if (!response.ok) {
@@ -118,7 +117,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     const appealUploadEligibilityResponseEntity = (await response.json()) as AppealUploadEligibilityResponseEntity;
 
     this.log.trace('Appeal upload eligibility: [%j]', appealUploadEligibilityResponseEntity);
-    return Some(appealUploadEligibilityResponseEntity);
+    return Option.some(appealUploadEligibilityResponseEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -136,17 +135,17 @@ export class MockAppealUploadEligibilityRepository implements AppealUploadEligib
     this.log = createLogger('MockAppealUploadEligibilityRepository');
   }
 
-  async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option<AppealUploadEligibilityResponseEntity>> {
+  async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching mock appeal upload eligibility for client number: [%s]', clientNumber);
 
     const appealUploadEligibilityResponseEntity = appealUploadEligibilityJsonDataSource as AppealUploadEligibilityResponseEntity;
 
     if (appealUploadEligibilityResponseEntity.esdc_clientnumber !== clientNumber) {
       this.log.warn('No mock client found for appeal upload eligibility; clientNumber: [%s]', clientNumber);
-      return await Promise.resolve(None);
+      return await Promise.resolve(Option.none());
     }
 
-    return await Promise.resolve(Some(appealUploadEligibilityResponseEntity));
+    return await Promise.resolve(Option.some(appealUploadEligibilityResponseEntity));
   }
 
   getMetadata(): Record<string, string> {

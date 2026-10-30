@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -42,35 +42,35 @@ describe('DefaultProgramApplicantService', () => {
   });
 
   it('returns a categorized program applicant found by basic info', async () => {
-    repository.findApplicantByBasicInfo.mockResolvedValue(Some(categorizedEntity));
+    repository.findApplicantByBasicInfo.mockResolvedValue(Option.some(categorizedEntity));
 
     const result = await service.findProgramApplicantByBasicInfo(basicInfoRequest);
 
-    expect(result.unwrap()).toBe(programApplicant);
+    expect(Option.getOrThrow(result)).toBe(programApplicant);
     expect(repository.findApplicantByBasicInfo).toHaveBeenCalledWith(basicInfoRequestEntity);
     expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.basic-info.get', { userId: 'user-id' });
   });
 
   it('returns none when the applicant has no category', async () => {
-    repository.findApplicantBySin.mockResolvedValue(Some(uncategorizedEntity));
+    repository.findApplicantBySin.mockResolvedValue(Option.some(uncategorizedEntity));
 
     const result = await service.findProgramApplicantBySin(sinRequest);
 
-    expect(result.isNone()).toBe(true);
+    expect(Option.isNone(result)).toBe(true);
     expect(mapper.mapApplicantResponseEntityToProgramApplicantDto).not.toHaveBeenCalled();
   });
 
   it('preserves a missing repository result', async () => {
-    repository.findApplicantBySin.mockResolvedValue(None);
+    repository.findApplicantBySin.mockResolvedValue(Option.none());
 
     const result = await service.findProgramApplicantBySin(sinRequest);
 
-    expect(result.isNone()).toBe(true);
+    expect(Option.isNone(result)).toBe(true);
     expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.personal-information.get', { userId: 'user-id' });
   });
 
   it('propagates strict mapper failures for categorized applicants', async () => {
-    repository.findApplicantBySin.mockResolvedValue(Some(categorizedEntity));
+    repository.findApplicantBySin.mockResolvedValue(Option.some(categorizedEntity));
     mapper.mapApplicantResponseEntityToProgramApplicantDto.mockImplementation(() => {
       throw new Error('Invalid program applicant');
     });

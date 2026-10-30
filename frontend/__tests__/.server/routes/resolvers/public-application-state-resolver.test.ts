@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Option } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -422,8 +422,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Some(mockFederalPlan));
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(None);
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockFederalPlan));
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.none());
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveDentalBenefitsValue(state, 'en');
@@ -439,8 +439,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Some(mockProvincialPlan));
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockProvincialPlan));
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveDentalBenefitsValue(state, 'en');
@@ -456,8 +456,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(None);
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.none());
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveDentalBenefitsValue(state, 'en');
@@ -473,8 +473,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValueOnce(Some(mockFederalPlan)).mockResolvedValueOnce(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Some(mockProvincialPlan));
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValueOnce(Option.some(mockFederalPlan)).mockResolvedValueOnce(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockProvincialPlan));
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveDentalBenefitsValue(state, 'en');
@@ -533,8 +533,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Some(mockFederalPlan));
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(None);
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockFederalPlan));
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.none());
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveChildDentalBenefitsValue(childState, childClientApplication, 'en');
@@ -548,8 +548,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Some(mockProvincialPlan));
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockProvincialPlan));
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveChildDentalBenefitsValue(childState, childClientApplication, 'en');
@@ -563,8 +563,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(None);
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValue(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.none());
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveChildDentalBenefitsValue(childState, childClientApplication, 'en');
@@ -578,8 +578,8 @@ describe('DefaultPublicApplicationStateResolver', () => {
 
       const federalGovernmentInsurancePlanService = mock<FederalGovernmentInsurancePlanService>();
       const provincialGovernmentInsurancePlanService = mock<ProvincialGovernmentInsurancePlanService>();
-      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValueOnce(Some(mockFederalPlan)).mockResolvedValueOnce(None);
-      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Some(mockProvincialPlan));
+      federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById.mockResolvedValueOnce(Option.some(mockFederalPlan)).mockResolvedValueOnce(Option.none());
+      provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById.mockResolvedValue(Option.some(mockProvincialPlan));
 
       const resolver = buildResolver({ federalGovernmentInsurancePlanService, provincialGovernmentInsurancePlanService });
       const result = await resolver.resolveChildDentalBenefitsValue(childState, childClientApplication, 'en');

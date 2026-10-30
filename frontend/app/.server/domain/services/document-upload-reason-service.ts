@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -109,12 +110,12 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
 
     const documentUploadReasonEntityOption = await this.documentUploadReasonRepository.findDocumentUploadReasonById(id);
 
-    if (documentUploadReasonEntityOption.isNone()) {
+    if (Option.isNone(documentUploadReasonEntityOption)) {
       this.log.error('Document upload reason with id: [%s] not found', id);
       throw new DocumentUploadReasonNotFoundException(`Document upload reason with id: [${id}] not found`);
     }
 
-    const documentUploadReasonDto = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonEntityToDocumentUploadReasonDto(documentUploadReasonEntityOption.unwrap());
+    const documentUploadReasonDto = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonEntityToDocumentUploadReasonDto(Option.getOrThrow(documentUploadReasonEntityOption));
     this.log.trace('Returning document upload reason: [%j]', documentUploadReasonDto);
     return documentUploadReasonDto;
   }

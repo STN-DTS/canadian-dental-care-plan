@@ -1,5 +1,5 @@
+import { Option } from 'effect';
 import type { Memoized, Options } from 'micro-memoize';
-import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -33,7 +33,7 @@ describe('DefaultClientFriendlyStatusService', () => {
       const id = '1';
       const mockClientFriendlyStatusRepository = mock<ClientFriendlyStatusRepository>();
       mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_clientfriendlystatusid: '1',
           esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
           esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',
@@ -61,7 +61,7 @@ describe('DefaultClientFriendlyStatusService', () => {
     it('fetches client friendly status by id throws not found exception', async () => {
       const id = '1033';
       const mockClientFriendlyStatusRepository = mock<ClientFriendlyStatusRepository>();
-      mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(None);
+      mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(Option.none());
 
       const mockClientFriendlyStatusDtoMapper = mock<ClientFriendlyStatusDtoMapper>();
 
@@ -78,7 +78,7 @@ describe('DefaultClientFriendlyStatusService', () => {
       const id = '1';
       const mockClientFriendlyStatusRepository = mock<ClientFriendlyStatusRepository>();
       mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_clientfriendlystatusid: '1',
           esdc_descriptionenglish: 'You have qualified for the Canadian Dental Care Plan.',
           esdc_descriptionfrench: 'Vous êtes admissible au Régime canadien de soins dentaires.',
@@ -102,7 +102,7 @@ describe('DefaultClientFriendlyStatusService', () => {
     it('fetches localized client friendly status by id throws not found exception', async () => {
       const id = '1033';
       const mockClientFriendlyStatusRepository = mock<ClientFriendlyStatusRepository>();
-      mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(None);
+      mockClientFriendlyStatusRepository.findClientFriendlyStatusById.mockResolvedValueOnce(Option.none());
 
       const mockClientFriendlyStatusDtoMapper = mock<ClientFriendlyStatusDtoMapper>();
 

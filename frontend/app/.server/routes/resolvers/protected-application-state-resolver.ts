@@ -1,4 +1,5 @@
 import { invariant } from '@dts-stn/invariant';
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 import type { PickDeep, SetRequired } from 'type-fest';
 
@@ -412,16 +413,26 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
       state.clientApplication.dentalBenefits.map(async (benefitId) => {
         const federalProgram = await this.federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(benefitId, locale);
 
-        if (federalProgram.isSome()) {
-          federalGovernmentInsurancePlan = federalProgram.unwrap();
+        const isFederalProgram = Option.match(federalProgram, {
+          onNone: () => false,
+          onSome: (program) => {
+            federalGovernmentInsurancePlan = program;
+            return true;
+          },
+        });
+
+        if (isFederalProgram) {
           return;
         }
 
         const provincialProgram = await this.provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(benefitId, locale);
 
-        if (provincialProgram.isSome()) {
-          provincialGovernmentInsurancePlan = provincialProgram.unwrap();
-        }
+        Option.match(provincialProgram, {
+          onNone: () => {},
+          onSome: (program) => {
+            provincialGovernmentInsurancePlan = program;
+          },
+        });
       }),
     );
 
@@ -467,16 +478,26 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
       childClientApplication.dentalBenefits.map(async (benefitId) => {
         const federalProgram = await this.federalGovernmentInsurancePlanService.findLocalizedFederalGovernmentInsurancePlanById(benefitId, locale);
 
-        if (federalProgram.isSome()) {
-          federalGovernmentInsurancePlan = federalProgram.unwrap();
+        const isFederalProgram = Option.match(federalProgram, {
+          onNone: () => false,
+          onSome: (program) => {
+            federalGovernmentInsurancePlan = program;
+            return true;
+          },
+        });
+
+        if (isFederalProgram) {
           return;
         }
 
         const provincialProgram = await this.provincialGovernmentInsurancePlanService.findLocalizedProvincialGovernmentInsurancePlanById(benefitId, locale);
 
-        if (provincialProgram.isSome()) {
-          provincialGovernmentInsurancePlan = provincialProgram.unwrap();
-        }
+        Option.match(provincialProgram, {
+          onNone: () => {},
+          onSome: (program) => {
+            provincialGovernmentInsurancePlan = program;
+          },
+        });
       }),
     );
 

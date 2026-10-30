@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -146,7 +147,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
     const repository = new DefaultProvinceTerritoryStateRepository(serverConfigMock, httpClientMock);
     const actual = await repository.findProvinceTerritoryStateById('1');
 
-    expect(actual.unwrap()).toEqual(responseDataMock.value[0]?.esdc_ProvinceTerritoryState_Countryid_esd[0]);
+    expect(Option.getOrThrow(actual)).toEqual(responseDataMock.value[0]?.esdc_ProvinceTerritoryState_Countryid_esd[0]);
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
       'http.client.interop-api.province-territory-states.gets',
       new URL(
@@ -216,7 +217,7 @@ describe('MockProvinceTerritoryStateRepository', () => {
 
     const provinceTerritoryState = await repository.findProvinceTerritoryStateById('1');
 
-    expect(provinceTerritoryState.unwrap()).toEqual({
+    expect(Option.getOrThrow(provinceTerritoryState)).toEqual({
       '@odata.etag': 'W/"00000001"',
       esdc_provinceterritorystateid: '1',
       _esdc_countryid_value: '10',
@@ -231,6 +232,6 @@ describe('MockProvinceTerritoryStateRepository', () => {
 
     const provinceTerritoryState = await repository.findProvinceTerritoryStateById('non-existent-id');
 
-    expect(provinceTerritoryState.isNone()).toBe(true);
+    expect(Option.isNone(provinceTerritoryState)).toBe(true);
   });
 });

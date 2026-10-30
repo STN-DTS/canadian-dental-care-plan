@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
@@ -66,9 +67,12 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
 
     this.auditService.createAudit('client-application-renewal-eligibility.basic-info-and-sin.get', { userId: request.userId });
 
-    if (clientApplicationDto.isSome()) {
-      const clientApplicationRenewalEligibilityDto = await this.clientApplicationRenewalEligibilityDtoMapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(clientApplicationDto.unwrap(), request.applicationYear);
+    const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
+      onNone: () => {},
+      onSome: async (application) => await this.clientApplicationRenewalEligibilityDtoMapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(application, request.applicationYear),
+    });
 
+    if (clientApplicationRenewalEligibilityDto !== undefined) {
       this.log.trace('Returning client application renewal eligibility: [%j]', clientApplicationRenewalEligibilityDto);
       return clientApplicationRenewalEligibilityDto;
     }
@@ -83,12 +87,16 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       userId: request.userId,
     });
 
-    if (programApplicantOption.isNone()) {
-      this.log.debug('Program applicant is None for provided basic info, returning not found result');
+    const programApplicant = Option.match(programApplicantOption, {
+      onNone: () => {
+        this.log.debug('Program applicant is None for provided basic info, returning not found result');
+      },
+      onSome: (applicant) => applicant,
+    });
+
+    if (programApplicant === undefined) {
       return { result: 'INELIGIBLE-APPLICANT-NOT-FOUND' };
     }
-
-    const programApplicant = programApplicantOption.unwrap();
 
     if (!programApplicant.socialInsuranceNumber) {
       this.log.trace('Program applicant found with basic info, but no SIN on file to compare against, skipping SIN check. Basic info: [%j]', request);
@@ -114,9 +122,12 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
 
     this.auditService.createAudit('client-application-renewal-eligibility.sin.get', { userId: request.userId });
 
-    if (clientApplicationDto.isSome()) {
-      const clientApplicationRenewalEligibilityDto = await this.clientApplicationRenewalEligibilityDtoMapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(clientApplicationDto.unwrap(), request.applicationYear);
+    const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
+      onNone: () => {},
+      onSome: async (application) => await this.clientApplicationRenewalEligibilityDtoMapper.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(application, request.applicationYear),
+    });
 
+    if (clientApplicationRenewalEligibilityDto !== undefined) {
       this.log.trace('Returning client application renewal eligibility: [%j]', clientApplicationRenewalEligibilityDto);
       return clientApplicationRenewalEligibilityDto;
     }
@@ -127,13 +138,18 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       userId: request.userId,
     });
 
-    if (programApplicantOption.isNone()) {
-      this.log.debug('Program applicant is None for provided SIN, returning not found result');
+    const programApplicant = Option.match(programApplicantOption, {
+      onNone: () => {
+        this.log.debug('Program applicant is None for provided SIN, returning not found result');
+      },
+      onSome: (applicant) => applicant,
+    });
+
+    if (programApplicant === undefined) {
       return { result: 'INELIGIBLE-APPLICANT-NOT-FOUND' };
     }
 
     const applicationYear = request.applicationYear;
-    const programApplicant = programApplicantOption.unwrap();
     this.log.debug('Program applicant found for provided SIN, returning eligibility result based on program applicant');
     this.log.trace('Program applicant found for provided SIN: [%j], applicationYear: [%j]', programApplicant, applicationYear);
     return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);

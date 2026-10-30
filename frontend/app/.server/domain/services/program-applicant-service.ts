@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import { TYPES } from '~/.server/constants';
 import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinRequestDto, ProgramApplicantDto } from '~/.server/domain/dtos';
@@ -20,7 +19,7 @@ export interface ProgramApplicantService {
    * @returns Program applicant when found and categorized; otherwise, `None`.
    * @throws When a categorized applicant is missing fields required by `ProgramApplicantDto`.
    */
-  findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option<ProgramApplicantDto>>;
+  findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option.Option<ProgramApplicantDto>>;
 
   /**
    * Finds a program applicant by SIN.
@@ -29,7 +28,7 @@ export interface ProgramApplicantService {
    * @returns Program applicant when found and categorized; otherwise, `None`.
    * @throws When a categorized applicant is missing fields required by `ProgramApplicantDto`.
    */
-  findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option<ProgramApplicantDto>>;
+  findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option.Option<ProgramApplicantDto>>;
 }
 
 /** Default program applicant lookup service. */
@@ -47,48 +46,48 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
     this.auditService = auditService;
   }
 
-  async findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option<ProgramApplicantDto>> {
+  async findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option.Option<ProgramApplicantDto>> {
     this.auditService.createAudit('program-applicant.basic-info.get', { userId: request.userId });
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantByBasicInfo(requestEntity);
 
-    if (applicantEntityOption.isNone()) {
+    if (Option.isNone(applicantEntityOption)) {
       this.log.trace('No program applicant found for basic info: [%j]', request);
-      return None;
+      return Option.none();
     }
 
-    const applicantEntity = applicantEntityOption.unwrap();
+    const applicantEntity = Option.getOrThrow(applicantEntityOption);
     this.log.trace('Applicant entity retrieved for basic info: [%j]', request);
 
     if (!this.isProgramApplicant(applicantEntity)) {
       this.log.trace('Applicant entity for basic info: [%j] is not a program applicant', request);
-      return None;
+      return Option.none();
     }
 
-    return Some(this.programApplicantDtoMapper.mapApplicantResponseEntityToProgramApplicantDto(applicantEntity));
+    return Option.some(this.programApplicantDtoMapper.mapApplicantResponseEntityToProgramApplicantDto(applicantEntity));
   }
 
-  async findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option<ProgramApplicantDto>> {
+  async findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option.Option<ProgramApplicantDto>> {
     this.auditService.createAudit('program-applicant.personal-information.get', { userId: request.userId });
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantBySin(requestEntity);
 
-    if (applicantEntityOption.isNone()) {
+    if (Option.isNone(applicantEntityOption)) {
       this.log.trace('No program applicant found for sin [%s]', request.sin);
-      return None;
+      return Option.none();
     }
 
-    const applicantEntity = applicantEntityOption.unwrap();
+    const applicantEntity = Option.getOrThrow(applicantEntityOption);
     this.log.trace('Applicant entity retrieved for sin [%s]', request.sin);
 
     if (!this.isProgramApplicant(applicantEntity)) {
       this.log.trace('Applicant entity for sin [%s] is not a program applicant', request.sin);
-      return None;
+      return Option.none();
     }
 
-    return Some(this.programApplicantDtoMapper.mapApplicantResponseEntityToProgramApplicantDto(applicantEntity));
+    return Option.some(this.programApplicantDtoMapper.mapApplicantResponseEntityToProgramApplicantDto(applicantEntity));
   }
 
   /**

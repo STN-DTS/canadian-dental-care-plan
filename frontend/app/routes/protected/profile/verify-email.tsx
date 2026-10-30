@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { data, redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
+import { Option } from 'effect';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
@@ -44,7 +45,7 @@ const FORM_ACTION = {
 } as const;
 
 function requireProfileEmailAddressFlowState({ session, params }: { session: Session; params: Route.LoaderArgs['params'] }) {
-  const profileEmailAddressFlowState = session.find('profileEmailAddressFlowState').unwrapOrElse(() => {
+  const profileEmailAddressFlowState = Option.getOrElse(session.find('profileEmailAddressFlowState'), () => {
     throw redirect(getPathById('protected/profile/contact-information', params));
   });
   return profileEmailAddressFlowState;

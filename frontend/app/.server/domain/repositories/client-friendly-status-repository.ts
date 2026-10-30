@@ -1,6 +1,5 @@
+import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import type { Option } from 'oxide.ts';
-import { None, Some } from 'oxide.ts';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -23,7 +22,7 @@ export interface ClientFriendlyStatusRepository {
    * @param id The id of the client-friendly status entity.
    * @returns The client-friendly status entity or null if not found.
    */
-  findClientFriendlyStatusById(id: string): Promise<Option<ClientFriendlyStatusEntity>>;
+  findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>>;
 
   /**
    * Retrieves metadata associated with the country repository.
@@ -95,7 +94,7 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     return clientFriendlyStatusEntities;
   }
 
-  async findClientFriendlyStatusById(id: string): Promise<Option<ClientFriendlyStatusEntity>> {
+  async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status with id: [%s]', id);
 
     const clientFriendlyStatusEntities = await this.listAllClientFriendlyStatuses();
@@ -103,11 +102,11 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
 
     if (!clientFriendlyStatusEntity) {
       this.log.warn('Client friendly status not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
     this.log.trace('Returning client friendly status: [%j]', clientFriendlyStatusEntity);
-    return Some(clientFriendlyStatusEntity);
+    return Option.some(clientFriendlyStatusEntity);
   }
 
   getMetadata(): Record<string, string> {
@@ -142,7 +141,7 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     return await Promise.resolve(clientFriendlyStatusEntities);
   }
 
-  async findClientFriendlyStatusById(id: string): Promise<Option<ClientFriendlyStatusEntity>> {
+  async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status with id: [%s]', id);
 
     const clientFriendlyStatusEntities = clientFriendlyStatusJsonDataSource.value;
@@ -150,10 +149,10 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
 
     if (!clientFriendlyStatusEntity) {
       this.log.warn('Client friendly status not found; id: [%s]', id);
-      return None;
+      return Option.none();
     }
 
-    return await Promise.resolve(Some(clientFriendlyStatusEntity));
+    return await Promise.resolve(Option.some(clientFriendlyStatusEntity));
   }
 
   getMetadata(): Record<string, string> {

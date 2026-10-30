@@ -1,5 +1,5 @@
+import { Option } from 'effect';
 import type { Memoized, Options } from 'micro-memoize';
-import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -72,7 +72,7 @@ describe('DefaultCountryService', () => {
       const id = '1';
       const mockCountryRepository = mock<CountryRepository>();
       mockCountryRepository.findCountryById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_countryid: '1',
           esdc_nameenglish: 'Canada English',
           esdc_namefrench: 'Canada Français',
@@ -97,7 +97,7 @@ describe('DefaultCountryService', () => {
     it('fetches country by id throws not found exception', async () => {
       const id = '1033';
       const mockCountryRepository = mock<CountryRepository>();
-      mockCountryRepository.findCountryById.mockResolvedValueOnce(None);
+      mockCountryRepository.findCountryById.mockResolvedValueOnce(Option.none());
 
       const mockCountryDtoMapper = mock<CountryDtoMapper>();
 
@@ -163,7 +163,7 @@ describe('DefaultCountryService', () => {
       const id = '1';
       const mockCountryRepository = mock<CountryRepository>();
       mockCountryRepository.findCountryById.mockResolvedValueOnce(
-        Some({
+        Option.some({
           esdc_countryid: '1',
           esdc_nameenglish: 'Canada English',
           esdc_namefrench: 'Canada Français',
@@ -188,7 +188,7 @@ describe('DefaultCountryService', () => {
     it('fetches localized country by id throws not found exception', async () => {
       const id = '1033';
       const mockCountryRepository = mock<CountryRepository>();
-      mockCountryRepository.findCountryById.mockResolvedValueOnce(None);
+      mockCountryRepository.findCountryById.mockResolvedValueOnce(Option.none());
 
       const mockCountryDtoMapper = mock<CountryDtoMapper>();
 
