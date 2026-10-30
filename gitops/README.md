@@ -54,6 +54,11 @@ The [migration plan](../.github/plans/gitops-nonprod-prod-split.md) describes th
 
 ## Configuration
 
+The shared nonproduction overlay includes a
+[self-hosted Renovate CronJob](nonprod/overlays/shared/renovate/README.md)
+for dependency maintenance. It defaults to suspended, full dry-run mode for safe
+deployment and activation. It is not deployed to production.
+
 `ExternalSecret` resources fetch application secrets from HashiCorp Vault through
 `vault-backend` every hour. External Secrets Operator creates the Kubernetes Secrets.
 Nonproduction name-reference configuration adds the environment suffix to Secret

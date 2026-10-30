@@ -72,9 +72,7 @@
     },
     {
       // Limit frequent runtime releases and existing PR refreshes to the weekly window.
-      "matchManagers": ["custom.regex"],
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["renovatebot/renovate"],
+      "matchPackageNames": ["renovatebot/renovate", "ghcr.io/renovatebot/renovate"],
       "extends": ["schedule:weekly"],
       "updateNotScheduled": false
     },

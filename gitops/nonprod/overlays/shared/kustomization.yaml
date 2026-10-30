@@ -17,6 +17,7 @@ labels:
       app.kubernetes.io/environment: shared
       app.kubernetes.io/tier: nonprod
 resources:
+  - ./renovate/
   - ../../base/maintenance/
   - ../../base/reloader/
   - ../../base/squid-proxy/

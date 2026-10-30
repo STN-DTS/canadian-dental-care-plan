@@ -10,11 +10,12 @@ Shared services deployed once for all non-production environments.
 | Tier        | nonprod                      |
 | Name suffix | `-shared`                    |
 
-## Base Components
+## Components
 
 - Maintenance
 - Reloader
 - Squid Proxy
+- [Self-hosted Renovate](renovate/README.md) for dependency maintenance.
 
 ## Notes
 

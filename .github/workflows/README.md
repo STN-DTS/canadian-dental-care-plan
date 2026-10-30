@@ -304,6 +304,12 @@ Successful image publication or signing does not establish Aqua compliance.
 
 ### Dependency updates with Renovate
 
+The [self-hosted Renovate CronJob](../../gitops/nonprod/overlays/shared/renovate/README.md)
+is the replacement runtime, using the same GitHub App with Vault-backed
+credentials. It defaults to suspended, full dry-run mode. Follow its runbook for
+activation; never run both writers concurrently. The workflow below is retained
+for rollback.
+
 [Renovate](renovate.yaml) uses
 [`renovatebot/github-action`](https://github.com/renovatebot/github-action) and
 [repository policy](../renovate.json) for dependency update PRs.
@@ -399,6 +405,8 @@ can be discovered without updating this configuration.
   the Renovate runtime is annotated. Its version lookup uses GitHub releases,
   which provide publication timestamps for the three-day release-age check;
   the action still downloads that version's container image from GHCR.
+  The weekly runtime rule also covers the CronJob's
+  `ghcr.io/renovatebot/renovate` image tag and digest.
   Runtime upgrades are limited to the weekly Monday 00:00-03:59 UTC window.
   `updateNotScheduled: false` also prevents refreshing existing runtime PRs outside
   that window, avoiding hourly version churn. This restriction applies only to

@@ -1,0 +1,117 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate
+  labels:
+    app.kubernetes.io/name: renovate
+spec:
+  schedule: '*/15 * * * *'
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3000
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: renovate
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 60
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 12021
+            runAsGroup: 0
+            fsGroup: 12021
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: renovate
+              image: ghcr.io/renovatebot/renovate:44.175.2@sha256:00eaca87a98032a352556dfc466389c191546b47b57ea056bd4ab276965eb2a3
+              args: [renovate]
+              env:
+                - name: RENOVATE_CONFIG_FILE
+                  value: /etc/renovate-runner/config.mjs
+                - name: RENOVATE_APP_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: renovate-app
+                      key: client-id
+                - name: RENOVATE_APP_PRIVATE_KEY_FILE
+                  value: /etc/renovate-app/private-key.pem
+                - name: RENOVATE_PLATFORM
+                  value: github
+                - name: RENOVATE_ONBOARDING
+                  value: 'false'
+                - name: RENOVATE_REQUIRE_CONFIG
+                  value: required
+                - name: RENOVATE_PLATFORM_COMMIT
+                  value: enabled
+                - name: RENOVATE_IGNORE_SCRIPTS
+                  value: 'true'
+                - name: RENOVATE_ALLOW_SCRIPTS
+                  value: 'false'
+                - name: RENOVATE_ALLOWED_COMMANDS
+                  value: '["^pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts$","^pnpm format:write$"]'
+                - name: RENOVATE_DOCKER_MAX_PAGES
+                  value: '10'
+                - name: RENOVATE_BINARY_SOURCE
+                  value: install
+                - name: RENOVATE_BASE_DIR
+                  value: /tmp/renovate
+                - name: RENOVATE_CACHE_DIR
+                  value: /var/cache/renovate/data
+                - name: RENOVATE_CONTAINERBASE_DIR
+                  value: /var/cache/renovate/containerbase
+                - name: RENOVATE_DRY_RUN
+                  value: full
+                - name: LOG_LEVEL
+                  value: info
+                - name: LOG_FORMAT
+                  value: json
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: '2'
+                  memory: 4Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: runner
+                  mountPath: /etc/renovate-runner
+                  readOnly: true
+                - name: app
+                  mountPath: /etc/renovate-app
+                  readOnly: true
+                - name: cache
+                  mountPath: /var/cache/renovate
+                - name: work
+                  mountPath: /tmp
+          volumes:
+            - name: runner
+              configMap:
+                name: renovate-runner
+            - name: app
+              secret:
+                secretName: renovate-app
+                defaultMode: 0440
+                items:
+                  - key: private-key.pem
+                    path: private-key.pem
+            - name: cache
+              persistentVolumeClaim:
+                claimName: renovate-cache
+            - name: work
+              emptyDir:
+                sizeLimit: 10Gi
