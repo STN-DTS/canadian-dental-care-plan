@@ -38,6 +38,16 @@ Do not expose server environment variables or service credentials to browser
 code. Use the existing client environment configuration for values that must be
 available in the browser.
 
+## Component animations
+
+The Tailwind stylesheet imports `tw-animate-css` for enter and exit animations.
+Use `animation-duration-*` for animation timing and Tailwind's `duration-*` for
+transition timing. The package's animation fallback to `duration-*` is deprecated.
+
+Dialog and dropdown animations follow the shadcn New York v4 Radix components,
+with the dialog's measured 150ms timing preserved. Tooltips retain delayed-open
+fade and zoom without adding instant-open or exit animations.
+
 ## Naming and API methods
 
 Use clear, domain-specific names. Keep method names consistent across services

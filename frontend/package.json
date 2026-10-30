@@ -130,8 +130,8 @@
     "i18next-cli": "catalog:",
     "jsdom": "catalog:",
     "tailwindcss": "catalog:",
-    "tailwindcss-animate": "catalog:",
     "tsx": "catalog:",
+    "tw-animate-css": "catalog:",
     "type-fest": "catalog:",
     "vite": "catalog:",
     "vitest-mock-extended": "catalog:"
