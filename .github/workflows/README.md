@@ -4,17 +4,16 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 
 ## Workflow summary
 
-| Workflow                                                                             | Triggers                                                                                                    | Purpose                                                                                                                                                  |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                                                      | Check formatting, root types, root lint, and root unit tests for every PR. Run frontend tests and build an unpublished image when relevant files change. |
-| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                                                          | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases.             |
-| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                                         |
-| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`                                         | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
-| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
-| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                                                 | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                                                  | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
-| [renovate.yaml](renovate.yaml)                                                       | Every 15 minutes, weekdays 08:00-16:59 Toronto; Mondays 00:17-03:17 UTC hourly; manual, default branch only | Maintain dependency PRs using a repository-scoped App token; write runs require explicit activation.                                                     |
-| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                                                     | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
+| Workflow                                                                             | Triggers                                                            | Purpose                                                                                                                                                  |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable              | Check formatting, root types, root lint, and root unit tests for every PR. Run frontend tests and build an unpublished image when relevant files change. |
+| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                  | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases.             |
+| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main` | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                                         |
+| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main` | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
+| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                         | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
+| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                         | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                          | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
+| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                             | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
 must select a release-tag ref; branch refs are rejected. Pushing a matching tag
@@ -305,20 +304,16 @@ Successful image publication or signing does not establish Aqua compliance.
 ### Dependency updates with Renovate
 
 The [self-hosted Renovate CronJob](../../gitops/nonprod/overlays/shared/renovate/README.md)
-is the replacement runtime, using the same GitHub App with Vault-backed
-credentials. It defaults to suspended, full dry-run mode. Follow its runbook for
-activation; never run both writers concurrently. The workflow below is retained
-for rollback.
-
-[Renovate](renovate.yaml) uses
-[`renovatebot/github-action`](https://github.com/renovatebot/github-action) and
+uses GitHub App credentials from Vault and
 [repository policy](../renovate.json) for dependency update PRs.
+The hosted Renovate workflow has been removed. Follow the CronJob runbook for
+deployment, validation, activation, and pausing.
 [Dependabot configuration](../dependabot.yml) is retained for rollback, with
 `open-pull-requests-limit: 0` in every ecosystem entry to pause new version-update
 PRs. Existing Dependabot PRs are not automatically closed by this setting.
 Dependabot security-update PRs and GitHub alerts remain independently enabled
 until Renovate security-fix readiness is verified. Routine Renovate writes are
-controlled by the repository variable `RENOVATE_ENABLED`.
+controlled by the CronJob's suspension and dry-run settings.
 
 #### Scope and update policy
 
@@ -347,8 +342,8 @@ ignore-file discovery. It formats the whole repository, so the dependency
 commit may include unrelated formatting corrections. The formatter ignores
 the generated pnpm lockfile.
 
-The workflow reads the root minimum Node.js version and exact pnpm version into
-`RENOVATE_CONSTRAINTS`; Renovate's `postUpgradeTasks.installTools` provisions
+The mounted Renovate config reads the root minimum Node.js version and exact pnpm
+version from the default branch; Renovate's `postUpgradeTasks.installTools` provisions
 those tools using Containerbase. Before formatting, it
 installs all workspace packages and the root with
 `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts` so the
@@ -361,7 +356,7 @@ dependencies. A root-only install is insufficient; do not replace the recursive
 install with `pnpm install --workspace-root`. Oxfmt can emit plugin-resolution
 warnings without a failing exit code, so check dry-run logs for those warnings too.
 
-The workflow allows only the exact `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts`
+The CronJob allows only the exact `pnpm install --recursive --include-workspace-root --frozen-lockfile --ignore-scripts`
 and `pnpm format:write` commands through `RENOVATE_ALLOWED_COMMANDS`; arbitrary
 post-upgrade commands and shell execution are not enabled. These commands run
 the repository's root format script and formatter configuration, so protect
@@ -399,20 +394,13 @@ can be discovered without updating this configuration.
   Keep full commit-SHA pins with release-version comments. Action major updates
   remain eligible. Supported runner and language-runtime inputs follow the
   GitHub Actions manager's default behavior.
-- The pinned Renovate runtime itself, through the custom-manager preset. It
-  recognizes explicitly annotated `_VERSION` variables in supported workflow
-  and composite-action files, not arbitrary environment variables. Currently only
-  the Renovate runtime is annotated. Its version lookup uses GitHub releases,
-  which provide publication timestamps for the three-day release-age check;
-  the action still downloads that version's container image from GHCR.
-  The weekly runtime rule also covers the CronJob's
+- The pinned Renovate runtime itself, discovered as the CronJob's
   `ghcr.io/renovatebot/renovate` image tag and digest.
   Runtime upgrades are limited to the weekly Monday 00:00-03:59 UTC window.
   `updateNotScheduled: false` also prevents refreshing existing runtime PRs outside
-  that window, avoiding hourly version churn. This restriction applies only to
-  the custom runtime dependency, not the action wrapper or the workflow cadence.
-  The action wrapper and runtime are updated
-  separately. Kubernetes and Kustomize can discover nonprod GitOps images;
+  that window, avoiding frequent version churn. This restriction applies only to
+  the runtime dependency, not the CronJob cadence.
+  Kubernetes and Kustomize can discover nonprod GitOps images;
   production remains excluded.
 
 Production promotion is a separate human-controlled PR after validation in
@@ -440,13 +428,6 @@ All Docker images under the private nonprod registry
 Application builds and reviewed environment promotion own those tags; Renovate
 does not need ACR credentials to inspect or update them. Images from other
 registries remain eligible under the existing policies.
-
-The annotation must be immediately above the version variable:
-
-```yaml
-# renovate: datasource=github-releases depName=renovatebot/renovate versioning=semver
-RENOVATE_VERSION: 44.175.2
-```
 
 Ordinary updates have a three-day minimum release age. Release timestamps are
 required by default, so updates without timestamps can remain blocked. Digest
@@ -482,12 +463,9 @@ rollout limits have been removed; the pinned Renovate runtime's defaults allow
 10 concurrent normal update PRs and two new normal update PRs per hour.
 Security-fix PRs have independent limits and can bypass the normal PR budget.
 Weekly lockfile maintenance uses the preset's default
-Monday 00:00-03:59 UTC window. Additional hourly workflow runs at minute 17
-during that window cover both lockfile maintenance and Renovate runtime updates
-without a configuration override. These runs use UTC explicitly so Toronto
-daylight-saving changes do not shift them outside the window.
-GitHub may delay or skip scheduled runs; manual dispatch
-is available when processing is urgent.
+Monday 00:00-03:59 UTC window. The CronJob runs every 15 minutes in UTC,
+including this window. A manual Job can process urgent updates while respecting
+the configured update policy.
 pnpm still enforces its release-age and trust policies during lockfile refreshes.
 
 Weekly maintenance uses separate branches and PRs:
@@ -560,79 +538,33 @@ read/write, Pull requests read/write, and Workflows read/write. Grant organizati
 Members read. Merge-queue permission is not needed for this setup. Do not grant
 branch-protection bypass.
 
-| Setting                    | Location                                                  | Purpose                                                                      |
-| -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `RENOVATE_APP_CLIENT_ID`   | Organization Actions variable, selected repositories only | App Client ID, not its numeric App ID                                        |
-| `RENOVATE_APP_PRIVATE_KEY` | Organization Actions secret, selected repositories only   | Complete generated PEM private key                                           |
-| `RENOVATE_ENABLED`         | Repository Actions variable                               | Set to `false` during validation; `true` enables scheduled/manual write runs |
+The [CronJob runbook](../../gitops/nonprod/overlays/shared/renovate/README.md)
+documents the Vault properties and mounted credentials. Each run requests a
+CDCP-scoped installation token. App-created PRs can trigger normal CI.
+Package installation scripts are disabled; API-based App commits are enabled.
 
-Each workflow requests an installation token for its own repository, not the
-entire organization. App-created PRs can trigger normal CI, unlike PRs created
-using the default workflow token. Checkout does not persist credentials. Package
-installation scripts are disabled. API-based App commits are enabled.
-
-The reusable App shares a private-key trust boundary: anyone able to extract
-that key can mint tokens for other repositories in its installation. Grant the
-organization secret only to trusted repositories. New repositories must be
-added separately to the App installation and both credential access lists;
-their activation variable remains independent. Use separate Apps when stronger
-credential isolation is required.
-
-For key rotation, generate a replacement key, update the organization secret,
-verify authentication in the consuming repositories, and revoke the previous
-key. Never put keys or installation tokens in Git or logs.
+Anyone able to extract the private key can mint tokens for other installations.
+Use separate Apps when stronger credential isolation is required.
+For key rotation, update the key in Vault, wait for External Secrets synchronization,
+verify a new Job authenticates, then revoke the previous key.
+Never put keys or installation tokens in Git or logs.
 
 #### Validation and cutover
 
-Logging defaults to `info` for scheduled and manual runs. For detailed
-troubleshooting logs, check **debug** under **Actions > Renovate > Run workflow**
-or pass `-F debug=true` to `gh workflow run`. Scheduled runs always use `info`.
+Follow the CronJob runbook for full dry runs and controlled write validation.
+Set `LOG_LEVEL=debug` for detailed troubleshooting; logging defaults to `info`.
+Verify catalog extraction, lockfile generation, formatting, alert access, and
+App-authored PR checks rather than relying on Job success alone.
 
-1. Merge the configuration and workflow into the default branch while
-   `RENOVATE_ENABLED` remains `false`. Non-default branch runs are skipped.
-   No push or PR event starts this privileged workflow.
-2. Run **Actions > Renovate > Run workflow** on the default branch, keeping
-   **dry_run** checked (the default) and checking **debug** for validation.
-   CLI equivalent:
-   `gh workflow run renovate.yaml --ref main -F dry_run=true -F debug=true`.
-   This full dry run must not create branches, PRs, or dashboard issues.
-3. Inspect debug logs for root/frontend catalog extraction and the root lockfile,
-   both Docker stages, Compose service images, Terraform declarations, workflow
-   and composite actions, and the Renovate runtime. Confirm related-package grouping,
-   age eligibility, default Docker update eligibility (including majors),
-   alert access, tool compatibility, and absence of artifact-update
-   errors. Do not treat extraction alone or a green job as proof that every
-   dependency can be updated.
-4. Verify direct and transitive pnpm security-fix proposals against available
-   GitHub alerts. If no suitable live alert exists, record the gap and test
-   fixtures without introducing vulnerable dependencies into the repository.
-   Keep Dependabot security updates active until security-fix readiness is proven.
-5. For version-update cutover, keep Dependabot's configuration with
-   `open-pull-requests-limit: 0` in every ecosystem entry. Set
-   `RENOVATE_ENABLED=true` and run the workflow with **dry_run** unchecked.
-   Keep **Dependabot security updates**, **Dependency graph**, and **Dependabot
-   alerts** enabled. Disable Dependabot security-update PRs only in a separately
-   coordinated change after Renovate security-fix readiness is verified.
-6. Verify an App-authored PR triggers existing PR checks and that npm updates
-   include a working root lockfile (`pnpm install --frozen-lockfile`). Inspect
-   the first scheduled run. Close existing Dependabot PRs only after confirming they
-   duplicate Renovate replacements; do not bulk-close security PRs. Confirm signed
-   commits and App-requested squash auto-merge obey required CI and reviews before
-   removing temporary rollout limits. The committed policy now uses default limits.
+Keep Dependabot security updates, Dependency graph, and Dependabot alerts enabled
+until Renovate security-fix readiness is independently verified. Do not bulk-close
+security PRs. The retained Dependabot configuration pauses version updates with
+`open-pull-requests-limit: 0`.
 
-Runs are serialized without cancelling an in-progress run. Forks skip the
-prerequisite gate and dependent job. Missing credentials fail explicitly.
-The workflow polls GitHub every 15 minutes on weekdays from 08:00 through 16:59
-in `America/Toronto`, plus hourly on Mondays from 00:17 through 03:17 UTC,
-for existing PRs, conflicts, checks, and new
-dependency versions; no persistent Renovate service or webhook receiver is
-required. `rebaseWhen: "auto"` and `updateNotScheduled: true` retain their defaults
-for maintaining existing PRs. New branch pushes rerun relevant PR checks and can
-dismiss stale approvals under the repository rules. A scheduled check without a
-branch update does not itself rerun application CI. GitHub platform auto-merge can
-complete an approved, passing PR between Renovate runs.
-The job has a 50-minute timeout because installation tokens expire after one
-hour.
+The CronJob polls every 15 minutes, every day, in UTC; no webhook receiver is
+required. `rebaseWhen: "auto"` and `updateNotScheduled: true` retain their defaults.
+Branch updates rerun relevant PR checks and can dismiss stale approvals.
+GitHub platform auto-merge can complete an approved, passing PR between runs.
 
 #### Security fixes and recovery
 
@@ -642,7 +574,7 @@ checks and approvals, and use the lowest fixed version.
 The configuration enables alerts and relies on Renovate's built-in security
 defaults for immediate PR creation, no grouping, and no release-age gate; global
 automerge follows the global PR-based squash policy. Processing still happens only
-when the workflow runs; dispatch a manual write run for urgent fixes once
+when the CronJob runs; create a manual write Job for urgent fixes once
 Renovate is enabled.
 
 pnpm's independent release-age, trust, build, and override policies remain in
@@ -654,7 +586,8 @@ Some transitive fixes or ecosystems may not be supported; unresolved alerts and
 artifact failures require maintainer review.
 
 If authentication, security-fix processing, or CI triggering fails after cutover,
-set `RENOVATE_ENABLED=false` and remove `open-pull-requests-limit: 0` from each
+suspend the CronJob, wait for active Jobs to finish, and remove
+`open-pull-requests-limit: 0` from each
 retained Dependabot entry (or set a positive limit) through a reviewed change.
 This resumes version-update PRs without reconstructing the original schedules
 and groups. Keep Dependabot security updates enabled during the transition;

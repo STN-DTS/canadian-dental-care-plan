@@ -49,8 +49,8 @@ kubectl -n canada-dental-care-plan logs --pod-running-timeout=5m -f "job/$job" -
 kubectl -n canada-dental-care-plan get job "$job"
 ```
 
-`concurrencyPolicy: Forbid` does not prevent overlapping manual Jobs or workflow
-runs. Do not share the cache between concurrent Jobs.
+`concurrencyPolicy: Forbid` does not prevent overlapping manual Jobs.
+Do not share the cache between concurrent Jobs.
 
 Check logs for real authentication and dependency extraction, not just Job success.
 A full dry run must not create branches, PRs, or dashboard issues. If no eligible
@@ -58,9 +58,7 @@ update exercises lockfile generation and formatting, that verification remains o
 
 ## Enable writes only after validation
 
-1. Disable the old workflow and wait for queued/in-progress runs to finish:
-   `gh workflow disable renovate.yaml --repo STN-DTS/canadian-dental-care-plan`.
-   The workflow is retained for rollback; `RENOVATE_ENABLED` does not control this CronJob.
+1. Confirm no other Renovate writer or previous Job is running.
 2. Change `RENOVATE_DRY_RUN` to the string `'null'` in [cronjobs.yaml](cronjobs.yaml),
    keeping `suspend: true`. Deploy and run one manual Job.
 3. Verify an App-authored PR, lockfile generation, formatting, required checks,
@@ -74,10 +72,9 @@ To pause immediately:
 kubectl -n canada-dental-care-plan patch cronjob renovate-shared --type=merge -p '{"spec":{"suspend":true}}'
 ```
 
-Persist suspension in Git. It does not stop active Jobs. For rollback, wait for
-Jobs to finish before enabling the Actions workflow and restoring its
-`RENOVATE_ENABLED=true` variable. Never enable both writers. Keep the existing
-cache and App credentials when updating this setup.
+Persist suspension in Git. It does not stop active Jobs. Wait for Jobs to finish
+before deploying a previous configuration. Keep the existing cache and App
+credentials when updating this setup.
 
 ## Local checks
 
