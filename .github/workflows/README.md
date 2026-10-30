@@ -47,8 +47,16 @@ Workflows that require pnpm use the local
 It wraps the SHA-pinned `pnpm/setup` action, which reads Node.js and pnpm versions
 from the root `devEngines.runtime` and `packageManager` fields, respectively.
 The composite action installs workspace dependencies with the required lockfile
-and caches the pnpm store by lockfile. It has no inputs; setup policy and the
-upstream action pin are maintained in one place.
+and caches the pnpm store by lockfile. Its required `auth-token` input receives
+`${{ secrets.GITHUB_TOKEN }}` from each caller. Jobs using the action grant
+`contents: read` and `packages: read`.
+Before installation, the action exports `NODE_AUTH_TOKEN` and `pnpm_config__auth`
+through `$GITHUB_ENV` to authenticate `@stn-dts` packages at
+`https://npm.pkg.github.com` without changing the default registry.
+The token must be non-empty and contain no carriage returns or newlines.
+Subsequent steps in the job can access these variables. Do not log them or upload
+the runner environment file. The token must have access to the requested package.
+Setup policy and the upstream action pin are maintained in one place.
 Changes to the composite action also enable frontend validation in PR checks
 and trigger the nonprod branch workflow.
 The SharePoint report-upload job needs only Node.js and uses `actions/setup-node`

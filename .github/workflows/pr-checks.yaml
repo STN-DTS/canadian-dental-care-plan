@@ -46,6 +46,9 @@ jobs:
   check-workspace:
     runs-on: ubuntu-latest
     needs: check-repository
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,6 +56,8 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
+        with:
+          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check repository formatting
         run: pnpm run format:check
       - name: Check root TypeScript types
@@ -109,6 +114,9 @@ jobs:
 
   test-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     needs:
       - check-repository
       - detect-changes
@@ -120,6 +128,8 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
+        with:
+          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check TypeScript types
         run: pnpm --filter @cdcp-rcsd/frontend run typecheck
       - name: Run lint

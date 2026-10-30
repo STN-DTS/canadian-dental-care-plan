@@ -33,6 +33,9 @@ jobs:
 
   test-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     needs: check-repository
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -69,6 +72,8 @@ jobs:
           persist-credentials: false
       - name: Setup pnpm, Node.js, and dependencies
         uses: ./.github/actions/setup-pnpm
+        with:
+          auth-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check repository formatting
         run: pnpm run format:check
       - name: Run typecheck

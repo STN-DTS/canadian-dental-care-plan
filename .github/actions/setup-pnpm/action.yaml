@@ -4,9 +4,27 @@ name: Setup pnpm, Node.js, and dependencies
 
 description: Install the workspace toolchain and dependencies with lockfile-based pnpm caching
 
+inputs:
+  auth-token:
+    description: GitHub Packages token exported for subsequent steps in the job
+    required: true
+
 runs:
   using: composite
   steps:
+    - name: Configure GitHub Packages authentication
+      shell: bash
+      env:
+        AUTH_TOKEN: ${{ inputs.auth-token }}
+      run: |
+        set -euo pipefail
+        if [[ -z "$AUTH_TOKEN" || "$AUTH_TOKEN" == *$'\n'* || "$AUTH_TOKEN" == *$'\r'* ]]; then
+          echo "::error::The auth-token input must be a non-empty, single-line GitHub Packages token."
+          exit 1
+        fi
+        printf 'NODE_AUTH_TOKEN=%s\n' "$AUTH_TOKEN" >> "$GITHUB_ENV"
+        printf '%s\n' 'pnpm_config__auth={"https://npm.pkg.github.com":{"@stn-dts":{"authToken":"${NODE_AUTH_TOKEN}"}}}' >> "$GITHUB_ENV"
+
     - name: Setup pnpm, Node.js, and dependencies
       uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
       with:
