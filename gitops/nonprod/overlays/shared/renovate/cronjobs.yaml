@@ -7,7 +7,7 @@ metadata:
 spec:
   schedule: '*/15 * * * *'
   timeZone: Etc/UTC
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 300
   successfulJobsHistoryLimit: 1
@@ -71,7 +71,7 @@ spec:
                 - name: RENOVATE_CONTAINERBASE_DIR
                   value: /var/cache/renovate/containerbase
                 - name: RENOVATE_DRY_RUN
-                  value: full
+                  value: 'null'
                 - name: LOG_LEVEL
                   value: info
                 - name: LOG_FORMAT

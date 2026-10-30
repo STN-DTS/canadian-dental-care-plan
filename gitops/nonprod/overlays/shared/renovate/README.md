@@ -1,7 +1,7 @@
 # Self-hosted Renovate
 
 The official Renovate image runs every 15 minutes in the shared nonproduction
-namespace. It ships **suspended**, with `RENOVATE_DRY_RUN=full`, and targets only
+namespace. Scheduled writes are enabled (`suspend: false`, `RENOVATE_DRY_RUN='null'`), targeting only
 `STN-DTS/canadian-dental-care-plan`. No custom image, PAT, extra controller, or
 additional CRD is needed.
 
@@ -40,7 +40,8 @@ kubectl -n canada-dental-care-plan wait --for=condition=Ready externalsecret/ren
 kubectl -n canada-dental-care-plan get cronjob renovate-shared
 ```
 
-Keep the CronJob suspended. Ensure no previous Job is active, then run:
+For a manual run, suspend scheduling first and ensure no previous Job is active.
+The following Job inherits the template's write mode:
 
 ```sh
 job="renovate-manual-$(date -u +%Y%m%d%H%M%S)"
@@ -56,15 +57,16 @@ Check logs for real authentication and dependency extraction, not just Job succe
 A full dry run must not create branches, PRs, or dashboard issues. If no eligible
 update exercises lockfile generation and formatting, that verification remains open.
 
-## Enable writes only after validation
+## Validate configuration changes safely
 
-1. Confirm no other Renovate writer or previous Job is running.
-2. Change `RENOVATE_DRY_RUN` to the string `'null'` in [cronjobs.yaml](cronjobs.yaml),
-   keeping `suspend: true`. Deploy and run one manual Job.
+1. Suspend scheduling and wait for active Jobs to finish. For a full dry run,
+   set `RENOVATE_DRY_RUN=full` in [cronjobs.yaml](cronjobs.yaml) and deploy.
+2. Run a manual Job and inspect its logs. Restore `RENOVATE_DRY_RUN` to the string
+   `'null'` for a controlled write run while keeping scheduling suspended.
 3. Verify an App-authored PR, lockfile generation, formatting, required checks,
    signed commits, and merge policy. Job success alone does not prove artifact updates.
-4. Arrange Job-failure/log monitoring before unattended use. Change `suspend` to
-   `false` in Git only after validation. The schedule runs every day, including weekends.
+4. Restore `suspend: false` in Git after validation. The schedule runs every day,
+   including weekends. Monitor Job failures, artifact errors, and the Dependency Dashboard.
 
 To pause immediately:
 
