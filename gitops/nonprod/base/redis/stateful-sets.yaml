@@ -51,6 +51,10 @@ spec:
           ports:
             - name: redis
               containerPort: 6379
+          lifecycle:
+            preStop:
+              exec:
+                command: [bash, /etc/prestop-redis.sh]
           livenessProbe:
             exec:
               command: [/usr/local/bin/redis-cli, --pass, $(REDIS_PASSWORD), ping]
@@ -73,15 +77,25 @@ spec:
             - name: config
               mountPath: /etc/start-redis.sh
               subPath: start-redis.sh
+            - name: config
+              mountPath: /etc/prestop-redis.sh
+              subPath: prestop-redis.sh
             - name: data
               mountPath: /data
         - name: redis-sentinel
           image: docker.io/redis:8.10.3-trixie@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
           args: [/data/sentinel.conf, --sentinel]
+          lifecycle:
+            preStop:
+              exec:
+                command: [bash, /etc/prestop-sentinel.sh]
           ports:
             - name: sentinel
               containerPort: 26379
           volumeMounts:
+            - name: config
+              mountPath: /etc/prestop-sentinel.sh
+              subPath: prestop-sentinel.sh
             - name: data
               mountPath: /data
       volumes:

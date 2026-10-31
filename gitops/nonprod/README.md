@@ -21,8 +21,8 @@ the saved directives before calling the entrypoint.
 
 The startup script preserves authentication, replication, file ownership, and
 permissions. It rejects bundled module directives with custom arguments rather
-than discard them. Sentinel startup, image tags, storage, and initialization
-remain unchanged. Production does not use this base.
+than discard them. Sentinel startup, image tags, and storage remain unchanged.
+Production does not use this base.
 
 Render int1 without deploying it:
 
@@ -89,8 +89,115 @@ Do not recreate the pod. Pod recreation reruns init and does not test the same
 failure path.
 
 The base defines one Redis replica. The local test does not verify Sentinel
-failover or fix init's ordinal-based role assignment. Test both in an environment
-with multiple replicas before promoting the workaround to production.
+failover. See the next section for init's role assignment.
+
+## Redis role assignment on pod start
+
+`base/redis/configs/init.sh` runs before Redis and Sentinel in every pod start.
+Redis and Sentinel announce pod DNS names, such as `redis-0.redis-headless`,
+instead of pod IP addresses. Saved Sentinel state therefore still names the
+right pods after they are recreated with new IP addresses. The headless service
+sets `publishNotReadyAddresses: true`, so these names resolve while pods are
+still starting, such as when every pod restarts at once.
+
+Init chooses the role in this order:
+
+1. **Running Sentinels.** Init asks the Sentinels of the other ready pods, found
+   through the headless service, which pod is the current primary. When every
+   answering Sentinel agrees, the pod starts as replica of that primary. The
+   primary must answer `ROLE` as `master`, or match the primary saved in this
+   pod's `sentinel.conf`. If Sentinel reports this pod, it starts as primary
+   unless Sentinel is already failing over away from it. When the Sentinels
+   disagree or the reported primary is not ready, init waits for up to 90 seconds.
+2. **Saved primary.** When no Sentinel answers, such as when every pod restarts,
+   or the wait times out, init uses the primary saved in this pod's
+   `sentinel.conf`. Sentinel updates that file after every failover. Init ignores
+   saved IP addresses written before this change.
+3. **StatefulSet ordinal.** On a new volume or with no saved DNS name, `redis-0`
+   is primary and the others replicate from it.
+
+Init rebuilds `sentinel.conf` from the template on every start. It seeds the
+monitor with the chosen primary and keeps the existing `sentinel myid`.
+Without that identifier, the other Sentinels keep a stale entry for every pod
+recreation. Stale entries raise the number of votes needed for a failover.
+Init makes `sentinel.conf` owned by `redis` because Sentinel rewrites it.
+
+Every node uses the append-only file settings from `primary.conf`, so a
+replica that Sentinel promotes keeps its data across restarts. The `replicaof`
+line in each overlay's `replica.conf` only seeds the template; init replaces it.
+
+Init does not trace commands, so it does not print the Redis password.
+
+## Redis primary handover on pod stop
+
+When Kubernetes stops the primary pod, such as during a rollout or a node drain,
+`base/redis/configs/prestop-redis.sh` hands the primary role to a replica
+before Redis stops. If the pod is primary with at least one connected replica,
+the hook waits until the Sentinel in the same pod lists a healthy replica, pauses
+writes with `CLIENT PAUSE WRITE`, and sends `SENTINEL FAILOVER` to that Sentinel,
+retrying until Sentinel accepts it. It then waits for Sentinel to report another
+primary. The whole hook stops after 20 seconds. Writes stay paused until Redis
+stops, so the former primary accepts no write after the replica is promoted. On
+a replica, or a primary without replicas, the hook exits at once.
+
+The replica check comes first because paused writes also block the `PUBLISH`
+that Sentinel sends on its link to the primary. Sentinel then stops refreshing
+the primary's `INFO`, which is where it discovers replicas. Init rebuilds
+`sentinel.conf` without the replica list, so for several seconds after a pod
+restarts, Sentinel knows no replica and answers `NOGOODSLAVE`.
+
+Kubernetes runs every container's preStop hook at the same time.
+`base/redis/configs/prestop-sentinel.sh` keeps the Sentinel container running
+while Sentinel still reports this pod as primary and its Redis still listens, up
+to 25 seconds. The Sentinel that receives `SENTINEL FAILOVER` runs the failover,
+so it must outlive it. Both hooks fit within the default 30-second termination
+grace period.
+
+Without the hooks, clients wait for Sentinel to notice the stopped primary after
+`down-after-milliseconds` (5 seconds) before a failover starts. In the Podman
+check, the planned handover takes 2 to 3 seconds, or up to about 8 seconds right
+after every pod restarted.
+
+### Run the Sentinel rejoin check
+
+`base/redis/tests/redis-sentinel-rejoin.sh` starts three Redis and Sentinel
+containers on an internal Podman network with synthetic data. It removes the
+primary, waits for Sentinel to promote a replica, and recreates pods with new IP
+addresses. It checks that recreated pods replicate from the current primary,
+that Sentinel reports pod DNS names, that each Sentinel lists exactly two peers,
+and that every node uses the append-only file. It then kills every pod and
+starts them again in ordinal order, and checks that the same primary keeps the
+last write. It runs both preStop hooks on a replica, which must leave the
+primary in place, and on the primary, which must promote a replica in under 5
+seconds without losing the last write, and the stopped primary must rejoin as a
+replica. Finally, it checks that init logs omit the password.
+Podman removes the containers, volumes, and network when the test exits.
+
+From the repository root, run:
+
+```sh
+bash gitops/nonprod/base/redis/tests/redis-sentinel-rejoin.sh
+```
+
+Success prints `PASS:` messages and exits with status `0` in about two minutes.
+Set `REDIS_TEST_IMAGE` to test another image, or `REDIS_CONFIG_DIRECTORY` to
+test another copy of `base/redis/configs`.
+
+### Roll out the change
+
+A change to `init.sh` or the preStop hooks changes the Redis ConfigMap name, so
+every overlay that uses this base rolls its Redis pods. With three replicas, the
+rollout recreates `redis-2`, `redis-1`, then `redis-0`. Recreated pods join the
+current primary. When the primary is recreated, Sentinel fails over once and the
+former primary rejoins as a replica. Pods keep the preStop hooks of the spec they
+were created with, so the first rollout that adds the hooks still uses the
+unplanned failover; later rollouts use the planned handover. Existing replicas
+switch on the append-only file and rebuild it from the primary during their
+first sync.
+
+After deployment, check in perf and staging that `SENTINEL MASTER myprimary`
+reports `num-slaves` 2 and `num-other-sentinels` 2, and that
+`SENTINEL GET-MASTER-ADDR-BY-NAME myprimary` returns a pod DNS name.
 
 ## Container images
 

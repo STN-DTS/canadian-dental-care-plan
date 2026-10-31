@@ -17,7 +17,8 @@ spec:
 
 ---
 #
-# The headless service is used by sentinel to target individual pods
+# The headless service is used by sentinel to target individual pods.
+# Pods announce their DNS names, so the names must resolve while pods are still starting.
 #
 apiVersion: v1
 kind: Service
@@ -27,6 +28,7 @@ metadata:
     app.kubernetes.io/name: redis-headless
 spec:
   clusterIP: None
+  publishNotReadyAddresses: true
   ports:
     - name: redis
       port: 6379

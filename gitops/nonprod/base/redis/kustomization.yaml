@@ -8,6 +8,8 @@ configMapGenerator:
   - name: redis
     files:
       - ./configs/init.sh
+      - ./configs/prestop-redis.sh
+      - ./configs/prestop-sentinel.sh
       - ./configs/primary.conf
       - ./configs/replica.conf
       - ./configs/sentinel.conf
