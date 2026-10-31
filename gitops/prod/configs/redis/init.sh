@@ -3,7 +3,7 @@
 # each respective redis pod. The primary
 #
 
-set -eux
+set -eu
 
 #
 # extract the statefulset ordinal from the pod hostname
