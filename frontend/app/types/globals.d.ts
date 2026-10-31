@@ -5,6 +5,8 @@
  * declarations to be exposed globally through `declare global`.
  */
 
+import type { UNSAFE_RouteModules } from 'react-router';
+
 import type { ClientEnv } from '~/.server/utils/env-utils';
 import type { InstanceName } from '~/.server/utils/instance-registry';
 import type { APP_LOCALES } from '~/utils/locale-utils';
@@ -13,6 +15,14 @@ import type { APP_LOCALES } from '~/utils/locale-utils';
  * Application-scoped global types.
  */
 declare global {
+  /**
+   * React Router 8.5.1 stopped exposing this global in its published types
+   * (while retaining it at runtime); keep the declaration for the client entry.
+   *
+   * @see https://github.com/remix-run/react-router/pull/15680
+   */
+  var __reactRouterRouteModules: UNSAFE_RouteModules | undefined;
+
   /**
    * A holder for any application-scoped singletons.
    */
@@ -62,3 +72,5 @@ declare global {
     readonly [brand]: Name;
   };
 }
+
+export {};
