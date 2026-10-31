@@ -13,6 +13,11 @@ spec:
     spec:
       containers:
         - name: canada-dental-care-plan-frontend
+          volumeMounts:
+            - mountPath: /app/logs
+              $patch: delete
+            - name: audit-logs
+              mountPath: /home/node/logs
           image: dtsrhpdevscedacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.3.3
           envFrom:
             - configMapRef:

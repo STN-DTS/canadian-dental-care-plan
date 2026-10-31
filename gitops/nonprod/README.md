@@ -7,6 +7,11 @@ or overlays. Do not synchronize changes into production.
 From the repository root, render an environment with
 `kubectl kustomize gitops/nonprod/overlays/{environment}`.
 
+The frontend base defines the shared `audit-logs` volume and mounts it at
+`/app/logs`. UAT1, dev, and int1 inherit this mount. Dev and int1 also inherit
+the `:latest` image. Older version-pinned frontend overlays replace the base
+mount with `/home/node/logs`.
+
 The old `gitops/base/` and `gitops/overlays/` directories no longer exist.
 TeamCity already uses `gitops/nonprod/overlays/{environment}`, so the move
 to GitHub deployment does not change the manifest paths.
