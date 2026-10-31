@@ -403,8 +403,8 @@ catalogs:
       specifier: 2.7.0
       version: 2.7.0
     markdown-to-jsx:
-      specifier: 9.10.3
-      version: 9.10.3
+      specifier: 9.10.4
+      version: 9.10.4
     micro-memoize:
       specifier: 5.2.1
       version: 5.2.1
@@ -721,7 +721,7 @@ importers:
         version: 2.7.0
       markdown-to-jsx:
         specifier: 'catalog:'
-        version: 9.10.3(react@19.3.1)
+        version: 9.10.4(react@19.3.1)
       micro-memoize:
         specifier: 'catalog:'
         version: 5.2.1
@@ -4466,8 +4466,8 @@ packages:
   magicast@0.5.5:
     resolution: {integrity: sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==}
 
-  markdown-to-jsx@9.10.3:
-    resolution: {integrity: sha512-J5/NCmNYQ0ExsnThzvF3F1fSzNYLgROcW2diUqRqoIoiyhoy8DSI06jLuMYk0c86SQd/FiVYJrV6tIgci9S2tQ==}
+  markdown-to-jsx@9.10.4:
+    resolution: {integrity: sha512-l0jxHMVbWzE2AWzBpNrxZAMcjZfpUOMjzK/AWTzvto2Oc+eki3WNEMMwTYHeM/ZogjbHbg1A518ytYMsHcMjVQ==}
     engines: {node: '>= 18'}
     peerDependencies:
       react: '>= 16.0.0'
@@ -8984,7 +8984,7 @@ snapshots:
       '@babel/types': 7.29.11
       source-map-js: 1.2.2
 
-  markdown-to-jsx@9.10.3(react@19.3.1):
+  markdown-to-jsx@9.10.4(react@19.3.1):
     optionalDependencies:
       react: 19.3.1
 
