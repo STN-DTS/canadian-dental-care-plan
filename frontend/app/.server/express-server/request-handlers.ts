@@ -20,7 +20,7 @@ export function createGlobalErrorHandler(): ErrorRequestHandler {
 
     const errorFilePath = path.join(import.meta.dirname, errorFile);
 
-    response.status(response.statusCode).sendFile(errorFilePath, (dispatchError: unknown) => {
+    response.status(response.statusCode < 400 ? 500 : response.statusCode).sendFile(errorFilePath, (dispatchError: unknown) => {
       if (dispatchError) {
         log.error(dispatchError);
         response.status(500).send('Internal Server Error');
