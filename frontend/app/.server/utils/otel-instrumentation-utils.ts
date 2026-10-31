@@ -273,15 +273,17 @@ export async function otelSpan(
     name,
     options,
     async function spanFn(span) {
-      const result = await handler();
+      try {
+        const result = await handler();
 
-      if (onResult) {
-        onResult(span, result);
-      } else {
-        recordError(span, result.error);
+        if (onResult) {
+          onResult(span, result);
+        } else {
+          recordError(span, result.error);
+        }
+      } finally {
+        span.end();
       }
-
-      span.end();
     },
     INSTRUMENTATION_SCOPE,
   );
