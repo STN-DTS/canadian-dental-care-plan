@@ -27,7 +27,7 @@ services:
   # Start a password-protected Redis instance on the default port.
   # @see https://redis.io/docs/management/security/#authentication
   redis:
-    image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
+    image: docker.io/redis:8.10.3-trixie@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
     command: >
       --requirepass password
     ports:
