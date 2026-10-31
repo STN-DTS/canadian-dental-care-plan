@@ -20,7 +20,7 @@ spec:
     spec:
       initContainers:
         - name: init
-          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
+          image: docker.io/redis:8.10.3-trixie@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
           command: [bash, /etc/init.sh]
           envFrom:
             - secretRef:
@@ -42,7 +42,7 @@ spec:
               subPath: sentinel.conf
       containers:
         - name: redis
-          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
+          image: docker.io/redis:8.10.3-trixie@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
           command: [bash, /etc/start-redis.sh]
           args: [/data/redis.conf, --requirepass, $(REDIS_PASSWORD), --masterauth, $(REDIS_PASSWORD)]
           envFrom:
@@ -76,7 +76,7 @@ spec:
             - name: data
               mountPath: /data
         - name: redis-sentinel
-          image: docker.io/redis:8.10.3-trixie@sha256:0c257ce8b2f31f9f7595f587edf8ac259a248ba3ced82badc8c7aa826a85224f
+          image: docker.io/redis:8.10.3-trixie@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
           args: [/data/sentinel.conf, --sentinel]
           ports:
             - name: sentinel
