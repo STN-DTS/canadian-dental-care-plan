@@ -1,4 +1,5 @@
 import { inject, injectable } from 'inversify';
+import { Request } from 'undici';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -36,11 +37,11 @@ export interface HCaptchaRepository {
 @injectable()
 export class DefaultHCaptchaRepository implements HCaptchaRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'HCAPTCHA_SECRET_KEY' | 'HCAPTCHA_VERIFY_URL' | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'>;
+  private readonly serverConfig: Pick<ServerConfig, 'HCAPTCHA_SECRET_KEY' | 'HCAPTCHA_SITE_KEY' | 'HCAPTCHA_VERIFY_URL' | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'>;
   private readonly httpClient: HttpClient;
   private readonly baseUrl: string;
 
-  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'HCAPTCHA_SECRET_KEY' | 'HCAPTCHA_VERIFY_URL' | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'HCAPTCHA_SECRET_KEY' | 'HCAPTCHA_SITE_KEY' | 'HCAPTCHA_VERIFY_URL' | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultHCaptchaRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
@@ -48,25 +49,26 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
   }
 
   async verifyHCaptchaResponse({ hCaptchaResponse, ipAddress }: HCaptchaVerifyRequestEntity): Promise<HCaptchaVerifyResponseEntity> {
-    this.log.trace('Verifying hCaptchaResponse [%s] with ipAddress [%s]', hCaptchaResponse, ipAddress);
+    this.log.trace('Verifying hCaptcha response');
 
-    const url = new URL(this.baseUrl);
-    url.searchParams.set('response', hCaptchaResponse);
-    url.searchParams.set('secret', this.serverConfig.HCAPTCHA_SECRET_KEY);
+    const body = new URLSearchParams({
+      sitekey: this.serverConfig.HCAPTCHA_SITE_KEY,
+      response: hCaptchaResponse,
+      secret: this.serverConfig.HCAPTCHA_SECRET_KEY,
+    });
 
     if (ipAddress) {
-      url.searchParams.set('remoteip', ipAddress);
+      body.set('remoteip', ipAddress);
     }
 
-    const response = await this.httpClient.instrumentedFetch('http.client.hcaptcha.posts', url, { method: 'POST' });
+    const request = new Request(this.baseUrl, { method: 'POST', body });
+    const response = await this.httpClient.instrumentedFetch('http.client.hcaptcha.posts', request);
 
     if (!response.ok) {
       this.log.error('%j', {
         message: 'Failed to verify hCaptcha',
         status: response.status,
         statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
       });
 
       throw new Error(`Failed to verify hCaptcha: ${response.status}, Status Text: ${response.statusText}`);
@@ -75,9 +77,9 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     const hCaptchaVerifyResponseEntity = (await response.json()) as HCaptchaVerifyResponseEntity;
 
     if (hCaptchaVerifyResponseEntity.success) {
-      this.log.trace('hCaptcha verification successful with site verify response: [%j]', hCaptchaVerifyResponseEntity);
+      this.log.trace('hCaptcha verification successful');
     } else {
-      this.log.warn('hCaptcha verification unsuccessful with site verify response: [%j]', hCaptchaVerifyResponseEntity);
+      this.log.warn('hCaptcha verification unsuccessful');
     }
 
     return hCaptchaVerifyResponseEntity;
