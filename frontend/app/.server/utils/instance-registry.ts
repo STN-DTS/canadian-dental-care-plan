@@ -36,7 +36,7 @@ interface InstanceTypeMap {
  * Represents the valid keys of InstanceTypeMap.
  * Used to constrain the allowed instance names for singleton retrieval and registration.
  */
-type InstanceName = keyof InstanceTypeMap;
+export type InstanceName = keyof InstanceTypeMap;
 
 function instanceRegistry(): Map<InstanceName, unknown> {
   /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */

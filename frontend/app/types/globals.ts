@@ -7,8 +7,8 @@
 
 import type { UNSAFE_RouteModules } from 'react-router';
 
-import type { ClientEnv } from '~/.server/utils/env-utils';
 import type { InstanceName } from '~/.server/utils/instance-registry';
+import type { ClientEnv } from '~/utils/env-utils';
 import type { APP_LOCALES } from '~/utils/locale-utils';
 
 /**
@@ -72,5 +72,3 @@ declare global {
     readonly [brand]: Name;
   };
 }
-
-export {};
