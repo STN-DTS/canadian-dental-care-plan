@@ -1,3 +1,5 @@
+import type { UNSAFE_RouteModules } from 'react-router';
+
 import type { Namespace } from 'i18next';
 
 declare module 'react-router' {
@@ -9,9 +11,10 @@ declare module 'react-router' {
   }
 
   /**
-   * A route module exports an optional RouteHandle.
+   * React Router's client route module, with `handle` typed as the app's RouteHandle. React Router keeps its own
+   * `RouteModule` internal (with `handle: unknown`), so derive it from the exported `UNSAFE_RouteModules`.
    */
-  interface RouteModule {
+  interface RouteModule extends Omit<NonNullable<UNSAFE_RouteModules[string]>, 'handle'> {
     handle?: RouteHandle;
   }
 }
