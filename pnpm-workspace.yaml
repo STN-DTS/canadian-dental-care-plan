@@ -85,7 +85,7 @@ catalog:
   connect-redis: 10.0.0
   content-disposition: 3.0.0
   cross-env: 10.1.0
-  effect: 4.0.7
+  effect: 4.1.0
   express: 5.3.0
   express-session: 1.19.0
   fast-xml-parser: 5.11.2
