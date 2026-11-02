@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
 import { getLanguage } from '~/utils/locale-utils';
 
@@ -14,19 +14,6 @@ vi.mock(import('~/utils/locale-utils'));
 
 const submittedUrl = '/en/protected/documents/submitted?id=upload-id';
 const uploadId = '00000000-0000-0000-0000-000000000000';
-
-function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 0) {
-  const formData = new FormData();
-  formData.set('_action', 'add-files');
-  formData.set('_validation_id', 'validation-1');
-  formData.set('current_file_count', String(currentFileCount));
-
-  for (const file of files) {
-    formData.append('file_object', file, file.name);
-  }
-
-  return formData;
-}
 
 function createUploadFormData(entries: ReadonlyArray<{ id: string; file: File; documentType?: string }>) {
   const formData = new FormData();
@@ -65,7 +52,6 @@ beforeEach(() => {
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
     DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
   });
-  vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
   vi.mocked(getFiles).mockResolvedValue(parsedFiles);
   vi.mocked(validateUploadedFiles).mockReturnValue({
     success: true,
@@ -81,67 +67,6 @@ afterEach(() => {
 });
 
 describe('clientAction', () => {
-  it('returns tagged errors for invalid file selection without calling the server action', async () => {
-    vi.mocked(validateFileSelection).mockResolvedValue({
-      success: false,
-      validationId: 'validation-1',
-      errors: { errors: [], properties: { files: { errors: ['invalid file type'] } } },
-    });
-    const serverAction = vi.fn();
-    const result = await clientAction(
-      mock<ClientActionArgs>({
-        request: createRequest(createSelectionFormData([new File(['content'], 'document.exe')])),
-        url: new URL('http://localhost/en/protected/documents/upload/session-1'),
-        serverAction,
-      }),
-    );
-
-    expect(serverAction).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      data: {
-        errors: {
-          errors: [],
-          properties: {
-            files: {
-              errors: ['invalid file type'],
-            },
-          },
-        },
-        formAction: 'add-files',
-        responseType: 'validation-errors',
-        source: 'client',
-        validationId: 'validation-1',
-      },
-      init: {
-        status: 400,
-      },
-      type: 'DataWithResponseInit',
-    });
-  });
-
-  it('returns a tagged selection success without calling the server action', async () => {
-    const serverAction = vi.fn();
-    const formData = createSelectionFormData([new File(['content'], 'document.pdf')]);
-    vi.mocked(getLanguage).mockReturnValue('fr');
-    const result = await clientAction(
-      mock<ClientActionArgs>({
-        request: createRequest(formData),
-        url: new URL('http://localhost/fr/protected/documents/upload/session-1'),
-        serverAction,
-      }),
-    );
-
-    expect(validateFileSelection).toHaveBeenCalledExactlyOnceWith({ formData, locale: 'fr', t: expect.any(Function) });
-    expect(result).toEqual({
-      formAction: 'add-files',
-      responseType: 'success',
-      source: 'client',
-      validationId: 'validation-1',
-      errors: undefined,
-    });
-    expect(serverAction).not.toHaveBeenCalled();
-  });
-
   it('delegates finish directly to the server without parsing or validating files', async () => {
     const formData = new FormData();
     formData.set('_action', 'finish');
@@ -151,7 +76,6 @@ describe('clientAction', () => {
     expect(serverAction).toHaveBeenCalledOnce();
     expect(getFiles).not.toHaveBeenCalled();
     expect(validateUploadedFiles).not.toHaveBeenCalled();
-    expect(validateFileSelection).not.toHaveBeenCalled();
   });
 
   it('returns tagged errors for invalid upload data without calling the server action', async () => {

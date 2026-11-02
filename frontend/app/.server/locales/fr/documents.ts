@@ -87,6 +87,7 @@ const ns = {
     returnDashboard: "Retour au tableau de bord",
     errorMessage: {
       duplicateFile: "Le fichier «\u00A0{{filename}}\u00A0» est déjà sélectionné ou téléversé. Vous devez choisir un autre fichier.",
+      fileSelectionFailed: "Une erreur s'est produite lors de la vérification des fichiers sélectionnés. Essayez de les sélectionner à nouveau.",
       fileRequired: "Vous devez ajouter un fichier avant de cliquer sur «\u00A0Soumettre\u00A0».",
       documentTypeRequired: "Sélectionnez un type de document pour le fichier «\u00A0{{filename}}\u00A0».",
       invalidFileType: "Vous ne pouvez pas téléverser ce format de fichier pour “{{filename}}”. Choisissez un fichier dans l'un des formats suivants : {{extensions}}",

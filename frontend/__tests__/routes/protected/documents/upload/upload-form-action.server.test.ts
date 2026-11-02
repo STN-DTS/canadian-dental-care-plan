@@ -8,7 +8,7 @@ import type { AppContext } from '~/.server/context';
 import { finishDocumentUploadState, getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
-import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
 import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { action } from '~/routes/protected/documents/upload/upload-form-action.server';
@@ -23,19 +23,6 @@ vi.mock(import('~/utils/locale-utils'));
 
 const submittedUrl = '/en/protected/documents/submitted?id=upload-id';
 const uploadId = '00000000-0000-0000-0000-000000000000';
-
-function createSelectionFormData(files: ReadonlyArray<File>, currentFileCount = 0) {
-  const formData = new FormData();
-  formData.set('_action', 'add-files');
-  formData.set('_validation_id', 'validation-1');
-  formData.set('current_file_count', String(currentFileCount));
-
-  for (const file of files) {
-    formData.append('file_object', file, file.name);
-  }
-
-  return formData;
-}
 
 function createUploadFormData(entries: ReadonlyArray<{ id: string; file: File; documentType?: string }>) {
   const formData = new FormData();
@@ -87,7 +74,6 @@ beforeEach(() => {
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
     DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
   });
-  vi.mocked(validateFileSelection).mockResolvedValue({ success: true, validationId: 'validation-1', errors: undefined });
   vi.mocked(getFiles).mockResolvedValue(parsedFiles);
   vi.mocked(validateUploadedFiles).mockReturnValue({
     success: true,
@@ -166,12 +152,6 @@ describe('action', () => {
     expect(validateUploadedFiles).not.toHaveBeenCalled();
     expect(updateDocumentUploadState).not.toHaveBeenCalled();
     expect(uploadDocuments).not.toHaveBeenCalled();
-  });
-
-  it('rejects the client-only file validation action', async () => {
-    const args = createActionArgs(createSelectionFormData([]));
-
-    await expect(action(args)).rejects.toThrow('Invalid formAction: add-files');
   });
 
   it.each(['empty batch', 'missing file', 'missing ID', 'text instead of a file'])('rejects an upload with $0 before changing state', async (caseName) => {

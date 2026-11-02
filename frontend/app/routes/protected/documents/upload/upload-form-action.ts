@@ -1,7 +1,6 @@
 /** Action values shared by upload form submissions and their client/server handlers. */
 export const FORM_ACTION = {
   upload: 'upload',
-  addFiles: 'add-files',
   finish: 'finish',
 } as const;
 

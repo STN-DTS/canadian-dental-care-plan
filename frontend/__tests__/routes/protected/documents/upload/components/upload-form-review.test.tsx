@@ -67,7 +67,7 @@ async function addFile(user: ReturnType<typeof userEvent.setup>, name = 'receipt
     throw new Error('Expected the upload input');
   }
 
-  // The dialog can close on response data before the fetcher finishes and re-enables selection.
+  // Wait until any upload or local file validation finishes before using the input.
   await waitFor(() => expect(input).toBeEnabled());
   await user.upload(input, file);
   await screen.findByRole('listitem', { name });
@@ -89,19 +89,6 @@ function getErrorSummary() {
   return summary;
 }
 
-function addFilesSuccessAction() {
-  return async ({ request }: { request: Request }) => {
-    const formData = await request.formData();
-    const formAction = formData.get('_action');
-
-    if (formAction === FORM_ACTION.addFiles) {
-      return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
-    }
-
-    throw new Error(`Unexpected action: ${String(formAction)}`);
-  };
-}
-
 function expectSelectedCount(count: number) {
   const status = screen.getByRole('status');
   expect(Array.from(status.querySelectorAll('p'), (paragraph) => paragraph.textContent)).toEqual([JSON.stringify({ key: 'upload.uploadFiles.filesSelected', options: { count } })]);
@@ -117,9 +104,28 @@ function expectResultCounts(uploaded: number, pending: number, includeHidden = f
 }
 
 describe('DocumentUploadForm review integration', () => {
+  it('rejects invalid file selections without submitting the form', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    const action = vi.fn();
+    renderForm(action);
+
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+
+    if (!input) {
+      throw new Error('Expected the upload input');
+    }
+
+    await waitFor(() => expect(input).toBeEnabled());
+    await user.upload(input, new File(['contents'], 'invalid.exe', { type: 'application/octet-stream' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('upload.errorMessage.invalidFileType'));
+    expect(screen.queryByRole('listitem', { name: 'invalid.exe' })).not.toBeInTheDocument();
+    expect(action).not.toHaveBeenCalled();
+  });
+
   it('shows missing document type errors inline and in the summary without uploading', async () => {
     const user = userEvent.setup();
-    const action = vi.fn(addFilesSuccessAction());
+    const action = vi.fn();
     renderForm(action);
 
     await addFile(user);
@@ -128,7 +134,7 @@ describe('DocumentUploadForm review integration', () => {
     await waitFor(() => expect(getErrorSummary()).toHaveTextContent('upload.errorMessage.documentTypeRequired'));
     expect(screen.getByRole('alert')).toHaveTextContent('upload.errorMessage.documentTypeRequired');
     expect(screen.queryByRole('dialog', { name: 'upload.review.title' })).not.toBeInTheDocument();
-    expect(action).toHaveBeenCalledOnce();
+    expect(action).not.toHaveBeenCalled();
     expect(getFiles).toHaveBeenCalledOnce();
     expectSelectedCount(1);
   });
@@ -138,7 +144,7 @@ describe('DocumentUploadForm review integration', () => {
     ['fr', 'Reçu'],
   ])('cancels review without upload, retains selections, and restores trigger focus in %s', async (language, documentTypeName) => {
     const user = userEvent.setup();
-    const action = vi.fn(addFilesSuccessAction());
+    const action = vi.fn();
     renderForm(action, language);
 
     await addFile(user);
@@ -154,7 +160,7 @@ describe('DocumentUploadForm review integration', () => {
     expect(screen.getByRole('listitem', { name: 'receipt.txt' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'upload.documentType' })).toHaveValue('receipt');
     await waitFor(() => expect(submitButton).toHaveFocus());
-    expect(action).toHaveBeenCalledOnce();
+    expect(action).not.toHaveBeenCalled();
     expectSelectedCount(1);
   });
 
@@ -167,13 +173,7 @@ describe('DocumentUploadForm review integration', () => {
       resolveUpload = resolve;
     });
     const action = vi.fn(async ({ request }: { request: Request }) => {
-      const formData = await request.formData();
-      const formAction = formData.get('_action');
-
-      if (formAction === FORM_ACTION.addFiles) {
-        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
-      }
-
+      await request.formData();
       return await uploadResponse;
     });
     renderForm(action);
@@ -201,12 +201,6 @@ describe('DocumentUploadForm review integration', () => {
     let uploadCount = 0;
     const action = vi.fn(async ({ request }: { request: Request }) => {
       const formData = await request.formData();
-      const formAction = formData.get('_action');
-
-      if (formAction === FORM_ACTION.addFiles) {
-        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
-      }
-
       uploadCount++;
       const ids = formData.getAll('file_id') as string[];
       const files = formData.getAll('file_object') as File[];
@@ -254,12 +248,6 @@ describe('DocumentUploadForm review integration', () => {
     const user = userEvent.setup();
     const action = vi.fn(async ({ request }: { request: Request }) => {
       const formData = await request.formData();
-      const formAction = formData.get('_action');
-
-      if (formAction === FORM_ACTION.addFiles) {
-        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
-      }
-
       const ids = formData.getAll('file_id') as string[];
       const files = formData.getAll('file_object') as File[];
       return {
@@ -281,7 +269,7 @@ describe('DocumentUploadForm review integration', () => {
     await user.click(within(firstReview).getByRole('button', { name: 'upload.review.back' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expectSelectedCount(1);
-    expect(action).toHaveBeenCalledOnce();
+    expect(action).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'upload.submit' }));
     await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
@@ -290,7 +278,7 @@ describe('DocumentUploadForm review integration', () => {
     expect(screen.getByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' })).toHaveAttribute('id', 'pending-files-list');
     expect(screen.queryByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' })).not.toBeInTheDocument();
     expect(within(screen.getByRole('listitem', { name: 'failed.txt' })).getByRole('alert')).toHaveTextContent('Try this file again');
-    expect(action).toHaveBeenCalledTimes(2);
+    expect(action).toHaveBeenCalledOnce();
 
     await addFile(user, 'added.txt');
     expectResultCounts(0, 2);
@@ -299,7 +287,7 @@ describe('DocumentUploadForm review integration', () => {
     await waitFor(() => expect(getErrorSummary()).toHaveTextContent('upload.errorMessage.documentTypeRequired'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expectResultCounts(0, 2);
-    expect(action).toHaveBeenCalledTimes(3);
+    expect(action).toHaveBeenCalledOnce();
 
     await user.selectOptions(within(screen.getByRole('listitem', { name: 'added.txt' })).getByRole('combobox'), 'receipt');
     await user.click(screen.getByRole('button', { name: 'upload.submit' }));
@@ -312,7 +300,7 @@ describe('DocumentUploadForm review integration', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expectResultCounts(0, 2);
-    expect(action).toHaveBeenCalledTimes(3);
+    expect(action).toHaveBeenCalledOnce();
   });
 
   it('focuses uploaded-only confirmation after removing the last pending file and finishes without uploading again', async () => {
@@ -322,10 +310,6 @@ describe('DocumentUploadForm review integration', () => {
       const formData = await request.formData();
       submissions.push(formData);
       const formAction = formData.get('_action');
-
-      if (formAction === FORM_ACTION.addFiles) {
-        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
-      }
 
       if (formAction === FORM_ACTION.finish) {
         return redirect('/confirmation');
@@ -370,7 +354,7 @@ describe('DocumentUploadForm review integration', () => {
 
     await user.click(within(region).getByRole('button', { name: 'upload.viewSubmissionConfirmation' }));
     expect(await screen.findByRole('heading', { name: 'Submission confirmation' })).toBeInTheDocument();
-    expect(submissions.map((formData) => formData.get('_action'))).toEqual([FORM_ACTION.addFiles, FORM_ACTION.addFiles, FORM_ACTION.upload, FORM_ACTION.finish]);
+    expect(submissions.map((formData) => formData.get('_action'))).toEqual([FORM_ACTION.upload, FORM_ACTION.finish]);
     const finish = submissions.at(-1)!;
     expect(finish.get('_csrf')).toBe('test-token');
     expect(finish.getAll('file_id')).toEqual([]);

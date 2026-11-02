@@ -87,6 +87,7 @@ const ns = {
     returnDashboard: "Return to dashboard",
     errorMessage: {
       duplicateFile: "The file “{{filename}}” is already selected or uploaded. You must choose a different file.",
+      fileSelectionFailed: "An error occurred while checking the selected files. Try selecting them again.",
       fileRequired: "You must upload a file before clicking “Submit”.",
       documentTypeRequired: "Select a document type for file “{{filename}}”.",
       invalidFileType: "You can't upload this file format for “{{filename}}”. Choose a file in one of these formats: {{extensions}}",

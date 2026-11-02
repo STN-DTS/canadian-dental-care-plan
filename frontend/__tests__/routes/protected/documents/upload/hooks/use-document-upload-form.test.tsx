@@ -1,9 +1,9 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { getFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
@@ -21,6 +21,7 @@ vi.mock(import('~/route-helpers/protected-documents-upload-helpers'), async (imp
 
   return {
     ...actual,
+    validateFileSelection: vi.fn(async () => await Promise.resolve({ success: true as const, errors: undefined })),
     getFiles: vi.fn(async (formData: FormData) => {
       const fileIds = formData.getAll('file_id') as string[];
       const fileObjects = formData.getAll('file_object') as File[];
@@ -31,6 +32,7 @@ vi.mock(import('~/route-helpers/protected-documents-upload-helpers'), async (imp
 });
 
 const getFilesMock = vi.mocked(getFiles);
+const validateFileSelectionMock = vi.mocked(validateFileSelection);
 const getClientEnvMock = vi.mocked(getClientEnv, { partial: true });
 
 function createForm() {
@@ -39,6 +41,7 @@ function createForm() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  validateFileSelectionMock.mockResolvedValue({ success: true, errors: undefined });
   getClientEnvMock.mockReturnValue({
     DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf'],
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
@@ -52,81 +55,65 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
 
 describe('useDocumentUploadForm', () => {
-  it('validates new files before adding them and clears the pending validation after an error', () => {
+  it('rejects an invalid selection and exposes its validation errors', async () => {
+    const file = new File(['contents'], 'evidence.exe', { type: 'application/octet-stream' });
+    const errors = { errors: [], properties: { files: { errors: ['unsupported file'] } } };
+    const submit = vi.fn<DocumentUploadFetcher['submit']>();
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    validateFileSelectionMock.mockResolvedValueOnce({ success: false, errors });
+    const { result } = renderHook(() => useDocumentUploadForm());
+
+    await act(async () => {
+      expect(await result.current.handleBeforeFilesAdd([file])).toBe(false);
+    });
+
+    expect(result.current.actionData?.errors).toEqual(errors);
+    expect(result.current.documentUploadFormState.documents).toEqual([]);
+    expect(result.current.isValidating).toBe(false);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('accepts a valid selection, clears earlier errors, and leaves adding files to the file widget', async () => {
     const file = new File(['contents'], 'evidence.pdf', { type: 'application/pdf' });
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
-    const { result, rerender } = renderHook(() => useDocumentUploadForm());
+    validateFileSelectionMock.mockResolvedValueOnce({ success: false, errors: { errors: [], properties: { files: { errors: ['unsupported file'] } } } });
+    const { result } = renderHook(() => useDocumentUploadForm());
 
-    act(() => {
-      result.current.handleBeforeFilesAdd([file]);
+    await act(async () => {
+      await result.current.handleBeforeFilesAdd([file]);
+    });
+    await act(async () => {
+      expect(await result.current.handleBeforeFilesAdd([file])).toBe(true);
     });
 
-    const selectionFormData = submit.mock.calls[0]?.[0];
-    expect(selectionFormData).toBeInstanceOf(FormData);
-
-    if (!(selectionFormData instanceof FormData)) {
-      throw new Error('Expected file selection to submit multipart form data');
-    }
-
-    expect(selectionFormData.get('_action')).toBe(FORM_ACTION.addFiles);
-    expect(selectionFormData.getAll('file_object')).toEqual([file]);
-
-    const validationId = selectionFormData.get('_validation_id');
-    vi.mocked(useDocumentUploadFetcher).mockReturnValue(
-      createFetcher(
-        {
-          formAction: FORM_ACTION.addFiles,
-          source: 'client',
-          validationId: String(validationId),
-          responseType: 'validation-errors',
-          errors: {
-            errors: [],
-            properties: { files: { errors: ['unsupported file'] } },
-          },
-        },
-        submit,
-      ),
-    );
-    rerender();
-
+    expect(result.current.actionData).toBeUndefined();
     expect(result.current.documentUploadFormState.documents).toEqual([]);
+    expect(result.current.isValidating).toBe(false);
+    expect(submit).not.toHaveBeenCalled();
+  });
 
-    act(() => {
-      result.current.handleBeforeFilesAdd([file]);
+  it('reports an unexpected local file-selection validation failure', async () => {
+    const error = new Error('File hashing failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    validateFileSelectionMock.mockRejectedValueOnce(error);
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined));
+    const { result } = renderHook(() => useDocumentUploadForm());
+
+    await act(async () => {
+      expect(await result.current.handleBeforeFilesAdd([new File(['contents'], 'evidence.pdf', { type: 'application/pdf' })])).toBe(false);
     });
-    expect(submit).toHaveBeenCalledTimes(2);
 
-    const retrySelectionFormData = submit.mock.calls[1]?.[0];
-
-    if (!(retrySelectionFormData instanceof FormData)) {
-      throw new Error('Expected file selection to submit multipart form data');
-    }
-
-    vi.mocked(useDocumentUploadFetcher).mockReturnValue(
-      createFetcher(
-        {
-          formAction: FORM_ACTION.addFiles,
-          source: 'client',
-          validationId: String(retrySelectionFormData.get('_validation_id')),
-          responseType: 'success',
-          errors: undefined,
-        },
-        submit,
-      ),
-    );
-    rerender();
-
-    expect(result.current.documentUploadFormState.documents).toEqual([{ id: expect.any(String), file, documentType: '', status: 'pending' }]);
-    expect(result.current.documentUploadFormState.documents[0]?.file).toBe(file);
-
-    rerender();
-    expect(result.current.documentUploadFormState.documents).toHaveLength(1);
+    await waitFor(() => expect(result.current.actionData?.errors.properties?.files?.errors).toHaveLength(1));
+    expect(result.current.documentUploadFormState.documents).toEqual([]);
+    expect(result.current.isValidating).toBe(false);
+    expect(consoleError).toHaveBeenCalledWith('Failed to validate the selected upload files.', error);
   });
 
   it('preserves selected files, document types, and other form data when a reviewed submission is confirmed', async () => {
@@ -152,7 +139,7 @@ describe('useDocumentUploadForm', () => {
       { id: 'file-2', file: proof, documentType: 'proof-of-coverage', status: 'pending' },
     ]);
 
-    const form = document.createElement('form');
+    const form = createForm();
     const csrfToken = document.createElement('input');
     csrfToken.name = '_csrf';
     csrfToken.value = 'csrf-token';
@@ -188,17 +175,10 @@ describe('useDocumentUploadForm', () => {
     const extra = new File(['extra'], 'extra.pdf', { type: 'application/pdf' });
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
-    const { result, rerender } = renderHook(() => useDocumentUploadForm());
+    const { result } = renderHook(() => useDocumentUploadForm());
     const form = createForm();
 
     expect(result.current.hasUploadAttempted).toBe(false);
-
-    act(() => {
-      result.current.handleBeforeFilesAdd([extra]);
-      void result.current.confirmSubmit(form);
-    });
-    expect(result.current.hasUploadAttempted).toBe(false);
-    expect(submit).toHaveBeenCalledOnce();
 
     act(() => {
       result.current.handleFileChange([{ id: 'file-1', file: receipt }]);
@@ -223,32 +203,16 @@ describe('useDocumentUploadForm', () => {
     });
     expect(result.current.hasUploadAttempted).toBe(true);
 
-    act(() => {
-      result.current.handleBeforeFilesAdd([extra]);
+    await act(async () => {
+      expect(await result.current.handleBeforeFilesAdd([extra])).toBe(true);
     });
-    const selectionFormData = submit.mock.lastCall?.[0];
-    expect(selectionFormData).toBeInstanceOf(FormData);
-
-    if (!(selectionFormData instanceof FormData)) {
-      throw new Error('Expected file selection validation to submit multipart form data');
-    }
-
-    vi.mocked(useDocumentUploadFetcher).mockReturnValue(
-      createFetcher(
-        {
-          formAction: FORM_ACTION.addFiles,
-          source: 'client',
-          validationId: String(selectionFormData.get('_validation_id')),
-          responseType: 'success',
-          errors: undefined,
-        },
-        submit,
-      ),
-    );
-    rerender();
+    act(() => {
+      result.current.handleFileChange([...result.current.documentUploadFormState.documents.map(({ id, file }) => ({ id, file })), { id: 'file-2', file: extra }]);
+    });
+    expect(result.current.documentUploadFormState.documents.map(({ file }) => file)).toEqual([receipt, extra]);
 
     expect(result.current.hasUploadAttempted).toBe(true);
-    expect(result.current.documentUploadFormState.documents.map(({ file }) => file)).toEqual([receipt, extra]);
+    expect(submit).toHaveBeenCalledOnce();
   });
 
   it('applies each upload-error response once without discarding files selected afterward', async () => {
@@ -326,26 +290,20 @@ describe('useDocumentUploadForm', () => {
     expect(retryFormData.getAll('file_object')).toEqual([proof, coverage]);
     expect(retryFormData.getAll('file_document_type')).toEqual(['proof-of-coverage', 'proof-of-coverage']);
 
+    await act(async () => {
+      expect(await result.current.handleBeforeFilesAdd([extra])).toBe(true);
+    });
     act(() => {
-      result.current.handleBeforeFilesAdd([extra]);
+      result.current.handleFileChange([...result.current.documentUploadFormState.documents.map(({ id, file }) => ({ id, file })), { id: 'file-5', file: extra }]);
     });
 
-    const selectionFormData = submit.mock.calls[1]?.[0];
-    expect(selectionFormData).toBeInstanceOf(FormData);
-
-    if (!(selectionFormData instanceof FormData)) {
-      throw new Error('Expected file selection to submit multipart form data');
-    }
-
-    expect.soft(selectionFormData.get('current_file_count')).toBe('4');
-    expect.soft(selectionFormData.getAll('existing_file_object')).toEqual([receipt, proof, invoice, coverage]);
-
-    act(() => {
-      result.current.handleFileChange([...result.current.documentUploadFormState.documents, { id: 'file-5', file: extra }]);
-    });
+    expect(result.current.documentUploadFormState.documents.map(({ file }) => file)).toEqual([receipt, proof, invoice, coverage, extra]);
+    const addedFileId = result.current.documentUploadFormState.documents.at(-1)?.id;
+    expect(addedFileId).toBeDefined();
     rerender();
 
-    expect(result.current.documentUploadFormState.documents.filter(({ status }) => status === 'pending').map(({ id }) => id)).toEqual(['file-2', 'file-4', 'file-5']);
+    expect(result.current.documentUploadFormState.documents.filter(({ status }) => status === 'pending').map(({ id }) => id)).toEqual(['file-2', 'file-4', addedFileId]);
+    expect(submit).toHaveBeenCalledOnce();
 
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(
       createFetcher(
@@ -353,7 +311,7 @@ describe('useDocumentUploadForm', () => {
           ...uploadErrorResponse,
           documents: [
             ...uploadErrorResponse.documents.map((document) => (document.id === 'file-2' ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
-            { id: 'file-5', fileName: extra.name, fileSize: extra.size, documentType: '', status: 'pending' as const },
+            { id: addedFileId!, fileName: extra.name, fileSize: extra.size, documentType: '', status: 'pending' as const },
           ],
         },
         submit,
@@ -366,11 +324,11 @@ describe('useDocumentUploadForm', () => {
       { id: 'file-2', file: proof, documentType: 'proof-of-coverage', status: 'uploaded' },
       { id: 'file-3', file: invoice, documentType: 'receipt', status: 'uploaded' },
       { id: 'file-4', file: coverage, documentType: 'proof-of-coverage', status: 'pending' },
-      { id: 'file-5', file: extra, documentType: '', status: 'pending' },
+      { id: addedFileId, file: extra, documentType: '', status: 'pending' },
     ]);
 
     act(() => {
-      result.current.handleDocumentTypeChange('file-5', 'receipt');
+      result.current.handleDocumentTypeChange(addedFileId!, 'receipt');
     });
     await act(async () => {
       await result.current.submitForm(retryForm);
@@ -386,10 +344,10 @@ describe('useDocumentUploadForm', () => {
       throw new Error('Expected the later retry to submit multipart form data');
     }
 
-    expect(laterRetryFormData.getAll('file_id')).toEqual(['file-4', 'file-5']);
+    expect(laterRetryFormData.getAll('file_id')).toEqual(['file-4', addedFileId]);
     expect(laterRetryFormData.getAll('file_object')).toEqual([coverage, extra]);
     expect(laterRetryFormData.getAll('file_document_type')).toEqual(['proof-of-coverage', 'receipt']);
-    expect(result.current.documentUploadFormState.documents.map(({ id }) => id)).toEqual(['file-1', 'file-2', 'file-3', 'file-4', 'file-5']);
+    expect(result.current.documentUploadFormState.documents.map(({ id }) => id)).toEqual(['file-1', 'file-2', 'file-3', 'file-4', addedFileId]);
 
     const uploadedDocuments = result.current.documentUploadFormState.documents.filter(({ status }) => status === 'uploaded');
     const uploadButton = document.createElement('button');
@@ -407,7 +365,7 @@ describe('useDocumentUploadForm', () => {
     expect(result.current.documentUploadFormState.documents).toEqual(uploadedDocuments);
     expect(uploadStatusRegion).toHaveFocus();
 
-    const form = document.createElement('form');
+    const form = createForm();
 
     for (const [name, value] of [
       ['_csrf', 'csrf-token'],
@@ -666,7 +624,7 @@ describe('useDocumentUploadForm', () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it('moves focus to the next remaining file or the upload button after removal', () => {
+  it('focuses the first added file, then the next remaining file or upload button after removal', () => {
     const submit = vi.fn<DocumentUploadFetcher['submit']>();
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
     const { result } = renderHook(() => useDocumentUploadForm());

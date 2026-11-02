@@ -89,13 +89,16 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     expect(unsafeMessage).not.toBe(t(($) => $.upload.errorMessage.uploadError, { filename: 'document.txt' }));
   });
 
+  it('provides localized wording when file selection validation fails unexpectedly', async () => {
+    const t = await getTranslator();
+    const expected = locale === 'en' ? 'An error occurred while checking the selected files. Try selecting them again.' : "Une erreur s'est produite lors de la vérification des fichiers sélectionnés. Essayez de les sélectionner à nouveau.";
+
+    expect(t(($) => $.upload.errorMessage.fileSelectionFailed)).toBe(expected);
+  });
+
   it('validates oversized files both during selection and during submission', async () => {
     const t = await getTranslator();
     const file = new File([new Uint8Array(1024 * 1024 + 1)], 'oversized.txt');
-    const selection = new FormData();
-    selection.set('_validation_id', 'validation-id');
-    selection.set('current_file_count', '0');
-    selection.append('file_object', file);
 
     const submission = new FormData();
     submission.append('file_id', 'first');
@@ -105,7 +108,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     const filesize = bytesToFilesize(1024 * 1024, `${locale}-CA`);
     const expected = locale === 'en' ? `The file is too large to upload. Make sure the file size is less than ${filesize}.` : `La taille du fichier est trop grande. Assurez-vous que la taille du fichier est de moins de ${filesize}.`;
 
-    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({
+    await expect(validateFileSelection({ currentFileCount: 0, existingFiles: [], files: [file], locale, t })).resolves.toMatchObject({
       success: false,
       errors: { properties: { files: { errors: [expected] } } },
     });
@@ -118,10 +121,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   it.each([1, 3])('rejects selection and submission above the maximum file count of %i', async (count) => {
     getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
     const t = await getTranslator();
-    const selection = new FormData();
-    selection.set('_validation_id', 'validation-id');
-    selection.set('current_file_count', String(count));
-    selection.append('file_object', new File(['content'], 'extra.txt'));
+    const selection = { currentFileCount: count, existingFiles: [], files: [new File(['content'], 'extra.txt')], locale, t };
 
     const submission = new FormData();
 
@@ -135,7 +135,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     const expected =
       locale === 'en' ? `You can upload up to ${count} ${count === 1 ? 'file' : 'files'} at a time. Submit before uploading more.` : `Vous pouvez téléverser jusqu'à ${count} fichiers à la fois. Vous devez les soumettre avant d'en téleverser d'autres.`;
 
-    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({
+    await expect(validateFileSelection(selection)).resolves.toMatchObject({
       success: false,
       errors: { properties: { files: { errors: [expected] } } },
     });
@@ -148,10 +148,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   it.each([1, 3])('accepts selection and submission at the maximum file count of %i', async (count) => {
     getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
     const t = await getTranslator();
-    const selection = new FormData();
-    selection.set('_validation_id', 'validation-id');
-    selection.set('current_file_count', String(count - 1));
-    selection.append('file_object', new File(['extra content'], 'extra.txt'));
+    const selection = { currentFileCount: count - 1, existingFiles: [], files: [new File(['extra content'], 'extra.txt')], locale, t };
 
     const submission = new FormData();
 
@@ -161,7 +158,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
       submission.append('file_document_type', 'receipt');
     }
 
-    await expect(validateFileSelection({ formData: selection, locale, t })).resolves.toMatchObject({ success: true });
+    await expect(validateFileSelection(selection)).resolves.toMatchObject({ success: true });
     const files = await getFiles(submission);
     expect(validateUploadedFiles({ files, locale, t })).toMatchObject({ success: true });
   });
