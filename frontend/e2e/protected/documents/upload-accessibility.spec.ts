@@ -14,7 +14,7 @@ const test = mergeTests(documentUploadTest, accessibilityTest);
 
 test.describe('upload form accessibility', { tag: '@a11y' }, () => {
   test('empty upload form', async ({ uploadPage, checkAccessibility }) => {
-    await expect(uploadPage.status).toHaveText('0 of 10 files selected');
+    await expect(uploadPage.status).toHaveText('Files selected: 0');
     await checkAccessibility('empty-form');
   });
 
@@ -83,7 +83,26 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
 
   test('partial upload success and file-specific failure', async ({ uploadPage, checkAccessibility }) => {
     await uploadPage.partialUpload();
-    await expect(uploadPage.status).toContainText('1 file uploaded successfully. 1 file remaining to upload');
+    const uploadedItem = uploadPage.item('evidence.txt');
+    await expect(uploadedItem).toHaveAccessibleName('');
+    await expect(uploadedItem).toHaveAccessibleDescription('');
+    await expect(uploadedItem).not.toHaveAttribute('aria-labelledby');
+    await expect(uploadedItem).not.toHaveAttribute('aria-describedby');
+    const documentType = await uploadPage.item(uploadFailureName).locator('option:checked').innerText();
+    await expect(uploadedItem).toMatchAriaSnapshot(`
+      - listitem:
+        - term: File name
+        - definition: evidence.txt
+        - term: "Document Type:"
+        - definition: ${JSON.stringify(documentType)}
+        - term: Status
+        - definition: Uploaded successfully
+    `);
+    await expect(uploadedItem.getByRole('definition').nth(1)).toHaveText(documentType);
+    await expect(uploadPage.item(uploadFailureName)).toHaveAccessibleName(uploadFailureName);
+    await expect(uploadPage.uploadedFiles).toHaveAttribute('id', 'uploaded-files-list');
+    await expect(uploadPage.pendingFiles).toHaveAttribute('id', 'pending-files-list');
+    await Promise.all([uploadPage.uploadedFiles, uploadPage.pendingFiles].flatMap((list) => [expect(list.getByRole('listitem')).toHaveAttribute('aria-posinset', '1'), expect(list.getByRole('listitem')).toHaveAttribute('aria-setsize', '1')]));
     await checkAccessibility('partial-upload');
   });
 
@@ -91,7 +110,7 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
     await uploadPage.partialUpload();
     await uploadPage.removeFile(uploadFailureName);
     await expect(uploadPage.finishButton).toBeVisible();
-    await expect(uploadPage.page.getByRole('region', { name: '1 file uploaded successfully' })).toBeFocused();
+    await expect(uploadPage.page.getByRole('region', { name: 'Files uploaded: 1', exact: true })).toBeFocused();
     await checkAccessibility('uploaded-only');
   });
 });

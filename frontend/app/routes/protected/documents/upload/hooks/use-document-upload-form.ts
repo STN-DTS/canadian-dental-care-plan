@@ -27,6 +27,7 @@ export function useDocumentUploadForm() {
   const [documentUploadFormState, setDocumentUploadFormState] = useState<DocumentUploadFormState>({ documents: [] });
   const [reviewState, setReviewState] = useState<'closed' | 'reviewing' | 'submitting'>('closed');
   const [isValidating, setIsValidating] = useState(false);
+  const [hasUploadAttempted, setHasUploadAttempted] = useState(false);
   const [validationResponse, setValidationResponse] = useState<{ errors: DocumentUploadSchemaErrorTree }>();
   const reviewStateRef = useRef(reviewState);
   const validationInProgressRef = useRef(false);
@@ -280,6 +281,7 @@ export function useDocumentUploadForm() {
       setReviewState('submitting');
       setSubmittedResponse(fetcher.data);
       setValidationResponse(undefined);
+      setHasUploadAttempted(true);
 
       try {
         await fetcher.submit(createSubmission(form), { method: 'post', encType: 'multipart/form-data', action: form.getAttribute('action') ?? undefined });
@@ -299,6 +301,7 @@ export function useDocumentUploadForm() {
     handleBeforeFilesAdd,
     handleDocumentTypeChange,
     handleFileChange,
+    hasUploadAttempted,
     isValidating,
     reviewState,
     submitForm,

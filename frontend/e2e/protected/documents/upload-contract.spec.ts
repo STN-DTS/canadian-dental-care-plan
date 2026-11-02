@@ -68,7 +68,7 @@ for (const scenario of [
     const response = await uploadApi.post(scenario.fields);
     expect(response.status()).toBe(400);
     await test.info().attach('server-response', { body: await response.text(), contentType: 'text/html' });
-    await expect(uploadPage.page.getByRole('status')).toHaveText('0 of 10 files selected');
+    await expect(uploadPage.page.getByRole('status')).toHaveText('Files selected: 0');
   });
 }
 

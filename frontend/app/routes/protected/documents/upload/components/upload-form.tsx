@@ -34,17 +34,21 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
 
   const fetcher = useDocumentUploadFetcher();
   const { isSubmitting: isFetcherSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
-  const { actionData, confirmSubmit, dismissReview, documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, isValidating, reviewState, submitForm } = useDocumentUploadForm();
+  const { actionData, confirmSubmit, dismissReview, documentUploadFormState, handleBeforeFilesAdd, handleDocumentTypeChange, handleFileChange, hasUploadAttempted, isValidating, reviewState, submitForm } = useDocumentUploadForm();
   const formRef = useRef<HTMLFormElement>(null);
   const reviewConfirmedRef = useRef(false);
   const isReviewSubmitting = reviewState === 'submitting';
   const isSubmitting = isFetcherSubmitting || isValidating || isReviewSubmitting;
 
   const filesWithTypes = useMemo(() => [...documentUploadFormState.documents], [documentUploadFormState.documents]);
-  const uploadedFileCount = filesWithTypes.filter(({ status }) => status === 'uploaded').length;
-  const pendingFileCount = filesWithTypes.length - uploadedFileCount;
+  // Partition only the display; canonical selection order still governs retries and confirmation.
+  const uploadedFiles = filesWithTypes.filter(({ status }) => status === 'uploaded');
+  const pendingFiles = filesWithTypes.filter(({ status }) => status === 'pending');
+  const uploadedFileCount = uploadedFiles.length;
+  const pendingFileCount = pendingFiles.length;
   const hasUploadedDocuments = uploadedFileCount > 0;
   const hasUploadedOnly = hasUploadedDocuments && pendingFileCount === 0;
+  const showUploadResults = hasUploadAttempted || hasUploadedDocuments;
 
   const errors = actionData?.errors;
   const filesError = errors?.properties?.files?.errors[0];
@@ -112,7 +116,17 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                   </Button>
                 </FileUploadTrigger>
               </div>
-              {hasUploadedOnly ? (
+              <div role="status" aria-atomic="true">
+                {showUploadResults ? (
+                  <>
+                    <p>{t(($) => $.upload.uploadFiles.uploadedFiles, { count: uploadedFileCount })}</p>
+                    <p>{t(($) => $.upload.uploadFiles.pendingFiles, { count: pendingFileCount })}</p>
+                  </>
+                ) : (
+                  <p>{t(($) => $.upload.uploadFiles.filesSelected, { count: filesWithTypes.length })}</p>
+                )}
+              </div>
+              {hasUploadedOnly && (
                 <ContextualAlert id="document-upload-status" role="region" tabIndex={-1} type="success" aria-labelledby="document-upload-status-heading" aria-describedby="document-upload-sent document-upload-pending">
                   <div className="space-y-4">
                     <h3 id="document-upload-status-heading" className="font-lato text-xl font-semibold">
@@ -125,45 +139,57 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     </LoadingButton>
                   </div>
                 </ContextualAlert>
-              ) : (
-                <p role="status" aria-atomic="true">
-                  {hasUploadedDocuments
-                    ? t(($) => $.upload.uploadFiles.uploadProgress, {
-                        maximum: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-                        selected: filesWithTypes.length,
-                        uploaded: uploadedFileCount,
-                        pending: pendingFileCount,
-                      })
-                    : t(($) => $.upload.uploadFiles.filesSelected, {
-                        count: DOCUMENT_UPLOAD_MAX_FILE_COUNT,
-                        selected: filesWithTypes.length,
-                      })}
-                </p>
               )}
-              <FileUploadList className="gap-4 sm:gap-6">
-                {filesWithTypes.map(({ id, file, documentType, status }) => {
-                  if (status === 'uploaded') {
-                    return <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />;
-                  }
+              {hasUploadedDocuments && (
+                <section className="space-y-4 sm:space-y-6">
+                  <h3 id="uploaded-files-heading" className="font-lato text-2xl font-bold">
+                    {t(($) => $.upload.uploadFiles.uploadedFilesHeading)}
+                  </h3>
+                  <FileUploadList id="uploaded-files-list" aria-labelledby="uploaded-files-heading" className="gap-4 sm:gap-6">
+                    {uploadedFiles.map(({ id, file, documentType }, index) => (
+                      <UploadedDocumentUploadItem
+                        key={id}
+                        id={id}
+                        positionInSet={index + 1}
+                        setSize={uploadedFileCount}
+                        fileName={file.name}
+                        documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)}
+                      />
+                    ))}
+                  </FileUploadList>
+                </section>
+              )}
+              {pendingFileCount > 0 && (
+                <section className="space-y-4 sm:space-y-6">
+                  {showUploadResults && (
+                    <h3 id="pending-files-heading" className="font-lato text-2xl font-bold">
+                      {t(($) => $.upload.uploadFiles.pendingFilesHeading)}
+                    </h3>
+                  )}
+                  <FileUploadList id="pending-files-list" aria-labelledby={showUploadResults ? 'pending-files-heading' : undefined} className="gap-4 sm:gap-6">
+                    {pendingFiles.map(({ id, file, documentType }, index) => {
+                      const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
+                      const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
 
-                  const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
-                  const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
-
-                  return (
-                    <PendingDocumentUploadItem
-                      key={id}
-                      id={id}
-                      fileName={file.name}
-                      documentType={documentType}
-                      documentTypeOptions={docTypeOptions}
-                      disabled={isSubmitting}
-                      fileError={fileError}
-                      documentTypeError={documentTypeError}
-                      onDocumentTypeChange={handleDocumentTypeChange}
-                    />
-                  );
-                })}
-              </FileUploadList>
+                      return (
+                        <PendingDocumentUploadItem
+                          key={id}
+                          id={id}
+                          positionInSet={index + 1}
+                          setSize={pendingFileCount}
+                          fileName={file.name}
+                          documentType={documentType}
+                          documentTypeOptions={docTypeOptions}
+                          disabled={isSubmitting}
+                          fileError={fileError}
+                          documentTypeError={documentTypeError}
+                          onDocumentTypeChange={handleDocumentTypeChange}
+                        />
+                      );
+                    })}
+                  </FileUploadList>
+                </section>
+              )}
             </FileUpload>
           </fieldset>
         </div>

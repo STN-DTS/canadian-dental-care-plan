@@ -59,7 +59,7 @@ test.describe('documents index', () => {
     await expect(uploadLink).toHaveAttribute('href', uploadEntryUrl);
     await uploadLink.click();
     await new BasePage(page).isLoaded(uploadFlowUrl, 'Submit documents');
-    await expect(page.getByRole('status')).toHaveText('0 of 10 files selected');
+    await expect(page.getByRole('status')).toHaveText('Files selected: 0');
   });
 
   test('offers a return link without testing the external dashboard', async ({ page }) => {
