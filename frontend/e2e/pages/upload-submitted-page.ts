@@ -39,7 +39,10 @@ export class UploadSubmittedPage extends BasePage {
    */
   async confirmation(names: string[]) {
     await this.waitForConfirmation();
-    await expect(this.submittedFiles).toHaveText(names);
+    // Match filename identity at the start of each pair, in journey order.
+    // Exact localized document-type checks live in the receipt suite.
+    await expect(this.submittedFiles).toHaveCount(names.length);
+    await expect(this.submittedFiles).toHaveText(names.map((name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}, \\(.+\\)$`)));
     await expect(this.delayNotice).toBeVisible();
     await expect(this.nextStepsHeading).toBeVisible();
   }

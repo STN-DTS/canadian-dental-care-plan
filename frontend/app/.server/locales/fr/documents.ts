@@ -120,6 +120,7 @@ const ns = {
     pageTitle: "Vos documents sont soumis",
     alertHeading: "Nous avons reçu vos documents",
     youSubmitted: "Vous avez soumis :",
+    document: "{{filename}}, ({{documentType}})",
     delayNote: "Il pourrait y avoir un court délai avant que vos documents n'apparaissent dans votre compte.",
     nextStepsHeading: "Prochaines étapes",
     nextSteps: {
