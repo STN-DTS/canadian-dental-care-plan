@@ -67,6 +67,8 @@ async function addFile(user: ReturnType<typeof userEvent.setup>, name = 'receipt
     throw new Error('Expected the upload input');
   }
 
+  // The dialog can close on response data before the fetcher finishes and re-enables selection.
+  await waitFor(() => expect(input).toBeEnabled());
   await user.upload(input, file);
   await screen.findByRole('listitem', { name });
   return file;
@@ -237,7 +239,9 @@ describe('DocumentUploadForm review integration', () => {
     expect(uploadCount).toBe(1);
     expectResultCounts(1, 1);
 
-    await user.click(screen.getByRole('button', { name: 'upload.submitRemaining' }));
+    const retryButton = screen.getByRole('button', { name: 'upload.submitRemaining' });
+    await waitFor(() => expect(retryButton).toBeEnabled());
+    await user.click(retryButton);
     const retryDialog = await screen.findByRole('dialog', { name: 'upload.review.title' });
     expect(retryDialog).toHaveTextContent('second.txt, Receipt');
     expect(retryDialog).not.toHaveTextContent('first.txt, Receipt');
@@ -346,7 +350,9 @@ describe('DocumentUploadForm review integration', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expectResultCounts(1, 1);
 
-    await user.click(within(screen.getByRole('listitem', { name: 'pending-first.txt' })).getByRole('button', { name: 'upload.remove' }));
+    const removeButton = within(screen.getByRole('listitem', { name: 'pending-first.txt' })).getByRole('button', { name: 'upload.remove' });
+    await waitFor(() => expect(removeButton).toBeEnabled());
+    await user.click(removeButton);
     await user.click(await screen.findByRole('button', { name: 'upload.removeFileConfirmation.confirm' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const region = screen.getByRole('region', { name: JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 1 } }) });
