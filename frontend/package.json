@@ -127,7 +127,6 @@
     "@types/triple-beam": "catalog:",
     "@types/validator": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "i18next-cli": "catalog:",
     "jsdom": "catalog:",
     "tailwindcss": "catalog:",
     "tsx": "catalog:",
