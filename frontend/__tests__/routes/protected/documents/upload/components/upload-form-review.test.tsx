@@ -234,7 +234,9 @@ describe('DocumentUploadForm review integration', () => {
     const summary = getErrorSummary();
     await waitFor(() => expect(summary).toHaveFocus());
     expect(screen.queryByRole('dialog', { name: 'upload.review.title' })).not.toBeInTheDocument();
-    expect(screen.getByRole('listitem', { name: 'first.txt' })).toBeInTheDocument();
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const uploadedItem = within(uploadedList).getByRole('listitem');
+    expect(within(uploadedItem).getByText('first.txt', { exact: true })).toHaveRole('definition');
     expect(screen.getByRole('listitem', { name: 'second.txt' })).toBeInTheDocument();
     expect(uploadCount).toBe(1);
     expectResultCounts(1, 1);
@@ -360,7 +362,9 @@ describe('DocumentUploadForm review integration', () => {
     expectResultCounts(1, 0);
     expect(region).toHaveAccessibleDescription('upload.uploadFiles.documentsSent upload.uploadFiles.noPendingFiles');
     expect(screen.queryByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' })).not.toBeInTheDocument();
-    const uploadedItem = screen.getByRole('listitem', { name: 'successful-last.txt' });
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const uploadedItem = within(uploadedList).getByRole('listitem');
+    expect(within(uploadedItem).getByText('successful-last.txt', { exact: true })).toHaveRole('definition');
     expect(uploadedItem).toHaveAttribute('aria-posinset', '1');
     expect(uploadedItem).toHaveAttribute('aria-setsize', '1');
 

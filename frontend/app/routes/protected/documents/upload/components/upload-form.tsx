@@ -141,7 +141,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 </ContextualAlert>
               )}
               {hasUploadedDocuments && (
-                <section aria-labelledby="uploaded-files-heading" className="space-y-4 sm:space-y-6">
+                <section className="space-y-4 sm:space-y-6">
                   <h3 id="uploaded-files-heading" className="font-lato text-2xl font-bold">
                     {t(($) => $.upload.uploadFiles.uploadedFilesHeading)}
                   </h3>
@@ -160,7 +160,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 </section>
               )}
               {pendingFileCount > 0 && (
-                <section aria-labelledby={showUploadResults ? 'pending-files-heading' : undefined} className="space-y-4 sm:space-y-6">
+                <section className="space-y-4 sm:space-y-6">
                   {showUploadResults && (
                     <h3 id="pending-files-heading" className="font-lato text-2xl font-bold">
                       {t(($) => $.upload.uploadFiles.pendingFilesHeading)}

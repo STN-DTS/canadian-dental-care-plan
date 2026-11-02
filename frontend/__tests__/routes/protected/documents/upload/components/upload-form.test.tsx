@@ -82,7 +82,7 @@ function renderForm(language = 'en') {
       path: '/:lang/protected/documents/upload/:id',
       Component: () => (
         <>
-          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />
+          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} />
           <Link to="/destination">Leave upload</Link>
         </>
       ),
@@ -253,7 +253,10 @@ describe('DocumentUploadForm', () => {
 
     expect(form.handleFileChange).toHaveBeenCalledExactlyOnceWith([expect.objectContaining({ id: 'uploaded' }), expect.objectContaining({ id: 'remaining' })]);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(within(screen.getByRole('listitem', { name: 'uploaded.txt' })).queryByRole('button', { name: 'upload.remove' })).not.toBeInTheDocument();
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const uploadedItem = within(uploadedList).getByRole('listitem');
+    expect(within(uploadedItem).getByText('uploaded.txt', { exact: true })).toHaveRole('definition');
+    expect(within(uploadedItem).queryByRole('button', { name: 'upload.remove' })).not.toBeInTheDocument();
   });
 
   it('keeps pending files when the user cancels navigation and restores focus', async () => {
@@ -398,7 +401,57 @@ describe('DocumentUploadForm', () => {
     expect(screen.queryByRole('dialog', { name: 'upload.review.title' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'upload.submitRemaining' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'upload.addFile' })).toBeEnabled();
-    expect(screen.getAllByRole('listitem', { name: /\.txt$/ }).map((item) => item.getAttribute('aria-labelledby'))).toEqual(['file-upload-item-first-name', 'file-upload-item-last-name']);
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const uploadedItems = within(uploadedList).getAllByRole('listitem');
+    expect(uploadedItems).toHaveLength(2);
+    uploadedItems.forEach((item, index) => {
+      const id = index === 0 ? 'first' : 'last';
+      expect(item).toHaveAttribute('id', `file-upload-item-${id}`);
+      expect(item).toHaveAccessibleName('');
+      expect(within(item).getByText(`${id}.txt`, { exact: true })).toHaveRole('definition');
+      expect(within(item).getByText(`${id}.txt`, { exact: true })).toHaveAttribute('id', `file-upload-item-${id}-name`);
+    });
+  });
+
+  it.each([
+    ['en', 'Receipt'],
+    ['fr', 'Reçu'],
+  ])('exposes uploaded file details in an ordered definition list without primitive labels or read-only controls in %s', (language, documentTypeName) => {
+    setDocuments([createDocument('receipt', 'uploaded'), { ...createDocument('unavailable', 'uploaded'), documentType: 'unavailable' }]);
+    renderForm(language);
+
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const items = within(uploadedList).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    items.forEach((item, index) => {
+      const id = index === 0 ? 'receipt' : 'unavailable';
+      const typeName = index === 0 ? documentTypeName : 'upload.documentTypeUnavailable';
+      expect(item).toHaveAttribute('id', `file-upload-item-${id}`);
+      expect(item).not.toHaveAttribute('aria-label');
+      expect(item).not.toHaveAttribute('aria-labelledby');
+      expect(item).not.toHaveAttribute('aria-describedby');
+      expect(item).toHaveAccessibleName('');
+      expect(item).toHaveAccessibleDescription('');
+
+      const details = item.querySelector('dl');
+      expect(details).toBeInTheDocument();
+      const terms = within(details!).getAllByRole('term');
+      const definitions = within(details!).getAllByRole('definition');
+      expect(terms.map((term) => term.textContent)).toEqual(['upload.fileName', 'upload.documentType: ', 'upload.status']);
+      expect(definitions.map((definition) => definition.textContent)).toEqual([`${id}.txt`, typeName, 'upload.uploadedSuccessfully']);
+      expect(Array.from(details!.querySelectorAll('dt, dd'))).toEqual([terms[0], definitions[0], terms[1], definitions[1], terms[2], definitions[2]]);
+      expect(terms[0]).toHaveClass('sr-only');
+      expect(definitions[0]).toHaveAttribute('id', `file-upload-item-${id}-name`);
+      expect(terms[1]).toBeVisible();
+      expect(terms[1]).not.toHaveClass('sr-only');
+      expect(definitions[1]).toBeVisible();
+      expect(definitions[1]).not.toHaveClass('sr-only');
+      expect(definitions[2]!.parentElement).toHaveClass('sr-only');
+      expect(definitions[2]).not.toHaveAttribute('id');
+      expect(within(item).queryByRole('combobox')).not.toBeInTheDocument();
+      expect(within(item).queryByRole('button')).not.toBeInTheDocument();
+      expect(item.querySelector('input, select, textarea')).not.toBeInTheDocument();
+    });
   });
 
   it('shows independent uploaded and remaining counts and restores submission when a pending file is added', () => {
@@ -488,6 +541,10 @@ describe('DocumentUploadForm', () => {
     const pendingList = screen.getByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' });
     expect(uploadedList).toHaveAttribute('id', 'uploaded-files-list');
     expect(pendingList).toHaveAttribute('id', 'pending-files-list');
+    expect(screen.getByRole('heading', { name: 'upload.uploadFiles.uploadedFilesHeading' })).toHaveAttribute('id', 'uploaded-files-heading');
+    expect(screen.getByRole('heading', { name: 'upload.uploadFiles.pendingFilesHeading' })).toHaveAttribute('id', 'pending-files-heading');
+    expect(uploadedList).toHaveAttribute('aria-labelledby', 'uploaded-files-heading');
+    expect(pendingList).toHaveAttribute('aria-labelledby', 'pending-files-heading');
     expect(uploadedList.compareDocumentPosition(pendingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     for (const [list, names] of [
@@ -497,14 +554,15 @@ describe('DocumentUploadForm', () => {
       const items = within(list).getAllByRole('listitem');
       expect(items).toHaveLength(2);
       items.forEach((item, index) => {
-        expect(item).toHaveAccessibleName(names[index]);
+        expect(item).toHaveAccessibleName(list === pendingList ? names[index] : '');
+        expect(within(item).getByText(names[index]!, { exact: true })).toHaveRole('definition');
         expect(item).toHaveAttribute('aria-posinset', String(index + 1));
         expect(item).toHaveAttribute('aria-setsize', '2');
       });
     }
 
     for (const item of within(uploadedList).getAllByRole('listitem')) {
-      expect(item).toHaveAccessibleDescription('upload.uploadedSuccessfully');
+      expect(item).toHaveAccessibleDescription('');
       expect(item).toHaveClass('border-green-700', 'p-4');
       expect(within(item).getByText('upload.uploadedSuccessfully').parentElement).toHaveClass('sr-only');
       expect(within(item).getByText('Receipt')).toBeInTheDocument();

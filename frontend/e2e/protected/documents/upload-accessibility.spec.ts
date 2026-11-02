@@ -83,6 +83,23 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
 
   test('partial upload success and file-specific failure', async ({ uploadPage, checkAccessibility }) => {
     await uploadPage.partialUpload();
+    const uploadedItem = uploadPage.item('evidence.txt');
+    await expect(uploadedItem).toHaveAccessibleName('');
+    await expect(uploadedItem).toHaveAccessibleDescription('');
+    await expect(uploadedItem).not.toHaveAttribute('aria-labelledby');
+    await expect(uploadedItem).not.toHaveAttribute('aria-describedby');
+    const documentType = await uploadPage.item(uploadFailureName).locator('option:checked').innerText();
+    await expect(uploadedItem).toMatchAriaSnapshot(`
+      - listitem:
+        - term: File name
+        - definition: evidence.txt
+        - term: "Document Type:"
+        - definition: ${JSON.stringify(documentType)}
+        - term: Status
+        - definition: Uploaded successfully
+    `);
+    await expect(uploadedItem.getByRole('definition').nth(1)).toHaveText(documentType);
+    await expect(uploadPage.item(uploadFailureName)).toHaveAccessibleName(uploadFailureName);
     await expect(uploadPage.uploadedFiles).toHaveAttribute('id', 'uploaded-files-list');
     await expect(uploadPage.pendingFiles).toHaveAttribute('id', 'pending-files-list');
     await Promise.all([uploadPage.uploadedFiles, uploadPage.pendingFiles].flatMap((list) => [expect(list.getByRole('listitem')).toHaveAttribute('aria-posinset', '1'), expect(list.getByRole('listitem')).toHaveAttribute('aria-setsize', '1')]));

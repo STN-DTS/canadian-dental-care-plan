@@ -43,12 +43,12 @@ export class UploadPage extends BasePage {
   }
 
   /**
-   * Locates a pending or uploaded item by its exact accessible filename.
+   * Locates a pending or uploaded item by its exact descendant filename text.
    * @param name - Filename identifying the item; duplicate names can match multiple items.
    * @returns A locator scoped to matching upload list items.
    */
   item(name: string) {
-    return this.page.getByRole('listitem', { name, exact: true });
+    return this.page.getByRole('listitem').filter({ has: this.page.getByText(name, { exact: true }) });
   }
 
   /**

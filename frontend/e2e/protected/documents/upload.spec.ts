@@ -341,11 +341,11 @@ test.describe('partial recovery and explicit completion', () => {
     await expect(uploadPage.item('scan-test.txt')).toContainText('does not pass our security checks');
 
     const groups = [
-      { list: uploadPage.uploadedFiles, id: 'uploaded-files-list', heading: 'Files uploaded successfully', names: ['first-success.txt', 'second-success.txt'] },
-      { list: uploadPage.pendingFiles, id: 'pending-files-list', heading: 'Files not uploaded', names: [failureName, 'scan-test.txt'] },
+      { list: uploadPage.uploadedFiles, id: 'uploaded-files-list', heading: 'Files uploaded successfully', names: ['first-success.txt', 'second-success.txt'], uploaded: true },
+      { list: uploadPage.pendingFiles, id: 'pending-files-list', heading: 'Files not uploaded', names: [failureName, 'scan-test.txt'], uploaded: false },
     ];
     await Promise.all(
-      groups.map(async ({ list, id, heading, names }) => {
+      groups.map(async ({ list, id, heading, names, uploaded }) => {
         const label = page.getByRole('heading', { name: heading, exact: true });
         await Promise.all([
           expect(label).toBeVisible(),
@@ -354,7 +354,12 @@ test.describe('partial recovery and explicit completion', () => {
           expect(list.getByRole('listitem')).toHaveCount(names.length),
           ...names.flatMap((name, index) => {
             const item = list.getByRole('listitem').nth(index);
-            return [expect(item).toHaveAccessibleName(name), expect(item).toHaveAttribute('aria-posinset', String(index + 1)), expect(item).toHaveAttribute('aria-setsize', String(names.length))];
+            return [
+              expect(item.getByText(name, { exact: true })).toBeVisible(),
+              expect(item).toHaveAccessibleName(uploaded ? '' : name),
+              expect(item).toHaveAttribute('aria-posinset', String(index + 1)),
+              expect(item).toHaveAttribute('aria-setsize', String(names.length)),
+            ];
           }),
         ]);
         await expect(list).toHaveAttribute('aria-labelledby', (await label.getAttribute('id')) ?? '');
@@ -365,7 +370,7 @@ test.describe('partial recovery and explicit completion', () => {
     const items = page.locator('[data-slot="file-upload-item"]');
     const expectedOrder = ['first-success.txt', 'second-success.txt', failureName, 'scan-test.txt'];
     await expect(items).toHaveCount(expectedOrder.length);
-    await Promise.all(expectedOrder.map(async (name, index) => await expect(items.nth(index)).toHaveAccessibleName(name)));
+    await Promise.all(expectedOrder.flatMap((name, index) => [expect(items.nth(index).getByText(name, { exact: true })).toBeVisible(), expect(items.nth(index)).toHaveAccessibleName(index < 2 ? '' : name)]));
     await Promise.all(['first-success.txt', 'second-success.txt'].flatMap((name) => [expect(uploadPage.item(name)).toContainText('Uploaded successfully'), expect(uploadPage.item(name)).toContainText(documentType)]));
     await expect(uploadPage.uploadedFiles.getByRole('combobox')).toHaveCount(0);
     await expect(uploadPage.uploadedFiles.getByRole('button')).toHaveCount(0);
@@ -379,16 +384,15 @@ test.describe('partial recovery and explicit completion', () => {
     await expect(uploadPage.reviewDialog).not.toBeVisible();
     await uploadPage.expectUploadCounts(2, 2);
     expect((await readUploadSubmissions(page)).map(({ fileNames }) => fileNames)).toEqual([selectedFiles.map(({ name }) => name), [failureName, 'scan-test.txt']]);
-    await Promise.all(expectedOrder.map(async (name, index) => await expect(items.nth(index)).toHaveAccessibleName(name)));
+    await Promise.all(expectedOrder.flatMap((name, index) => [expect(items.nth(index).getByText(name, { exact: true })).toBeVisible(), expect(items.nth(index)).toHaveAccessibleName(index < 2 ? '' : name)]));
   });
 
   test('preserves successful files without editing or removal controls', async ({ uploadPage }) => {
-    const { page } = uploadPage;
     await uploadPage.partialUpload();
     await expect(uploadPage.item('evidence.txt').getByRole('combobox')).toHaveCount(0);
     await expect(uploadPage.item('evidence.txt').getByRole('button')).toHaveCount(0);
     await uploadPage.expectUploadCounts(1, 1);
-    await expect(page.getByRole('listitem', { name: /^(evidence.txt|mock-upload-failure.txt)$/ })).toHaveCount(2);
+    await expect(uploadPage.item('evidence.txt').or(uploadPage.item(failureName))).toHaveCount(2);
   });
 
   test('retry submits pending files only and retains earlier success', async ({ uploadPage }) => {
