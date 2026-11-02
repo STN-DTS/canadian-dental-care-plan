@@ -146,15 +146,8 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     {t(($) => $.upload.uploadFiles.uploadedFilesHeading)}
                   </h3>
                   <FileUploadList id="uploaded-files-list" aria-labelledby="uploaded-files-heading" className="gap-4 sm:gap-6">
-                    {uploadedFiles.map(({ id, file, documentType }, index) => (
-                      <UploadedDocumentUploadItem
-                        key={id}
-                        id={id}
-                        positionInSet={index + 1}
-                        setSize={uploadedFileCount}
-                        fileName={file.name}
-                        documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)}
-                      />
+                    {uploadedFiles.map(({ id, file, documentType }) => (
+                      <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />
                     ))}
                   </FileUploadList>
                 </section>
@@ -167,7 +160,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     </h3>
                   )}
                   <FileUploadList id="pending-files-list" aria-labelledby={showUploadResults ? 'pending-files-heading' : undefined} className="gap-4 sm:gap-6">
-                    {pendingFiles.map(({ id, file, documentType }, index) => {
+                    {pendingFiles.map(({ id, file, documentType }) => {
                       const fileError = errors?.properties?.files?.properties?.[id]?.properties?.file?.errors[0];
                       const documentTypeError = errors?.properties?.files?.properties?.[id]?.properties?.documentType?.errors[0];
 
@@ -175,8 +168,6 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                         <PendingDocumentUploadItem
                           key={id}
                           id={id}
-                          positionInSet={index + 1}
-                          setSize={pendingFileCount}
                           fileName={file.name}
                           documentType={documentType}
                           documentTypeOptions={docTypeOptions}

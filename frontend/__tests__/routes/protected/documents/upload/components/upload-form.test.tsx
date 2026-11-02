@@ -556,8 +556,8 @@ describe('DocumentUploadForm', () => {
       items.forEach((item, index) => {
         expect(item).toHaveAccessibleName(list === pendingList ? names[index] : '');
         expect(within(item).getByText(names[index]!, { exact: true })).toHaveRole('definition');
-        expect(item).toHaveAttribute('aria-posinset', String(index + 1));
-        expect(item).toHaveAttribute('aria-setsize', '2');
+        expect(item).not.toHaveAttribute('aria-posinset');
+        expect(item).not.toHaveAttribute('aria-setsize');
       });
     }
 

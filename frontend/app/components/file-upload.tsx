@@ -558,7 +558,7 @@ function FileUploadTrigger(props: FileUploadTriggerProps) {
   return <TriggerPrimitive type="button" aria-controls={context.inputId} data-disabled={disabled ? '' : undefined} data-slot="file-upload-trigger" {...triggerProps} disabled={disabled} onClick={onClick} />;
 }
 
-interface FileUploadListProps extends ComponentProps<'div'> {
+interface FileUploadListProps extends ComponentProps<'ul'> {
   orientation?: 'horizontal' | 'vertical';
   asChild?: boolean;
   forceMount?: boolean;
@@ -575,10 +575,11 @@ function FileUploadList(props: FileUploadListProps) {
     return null;
   }
 
-  const ListPrimitive = asChild ? Slot : 'div';
+  const ListPrimitive = asChild ? Slot : 'ul';
 
   return (
     <ListPrimitive
+      // Preflight sets list-style: none, which makes WebKit drop the implicit list role.
       role="list"
       id={context.listId}
       data-orientation={orientation}
@@ -615,7 +616,7 @@ function useFileUploadItemContext(consumerName: string) {
   return context;
 }
 
-interface FileUploadItemProps extends ComponentProps<'div'> {
+interface FileUploadItemProps extends ComponentProps<'li'> {
   value: string;
   asChild?: boolean;
 }
@@ -633,12 +634,6 @@ function FileUploadItem(props: FileUploadItemProps) {
     const f = state.files.get(value);
     return f ? { id: value, file: f } : undefined;
   });
-  const fileCount = useStore((state) => state.files.size);
-  const fileIndex = useStore((state) => {
-    const files = [...state.files.keys()];
-    return files.indexOf(value) + 1;
-  });
-
   const itemContext = useMemo(
     () => ({
       id,
@@ -653,22 +648,11 @@ function FileUploadItem(props: FileUploadItemProps) {
     return null;
   }
 
-  const ItemPrimitive = asChild ? Slot : 'div';
+  const ItemPrimitive = asChild ? Slot : 'li';
 
   return (
     <FileUploadItemContext value={itemContext}>
-      <ItemPrimitive
-        role="listitem"
-        id={id}
-        aria-setsize={fileCount}
-        aria-posinset={fileIndex}
-        aria-describedby={`${nameId} ${sizeId}`}
-        aria-labelledby={nameId}
-        data-slot="file-upload-item"
-        dir={context.dir}
-        {...itemProps}
-        className={cn('relative flex items-center gap-2.5 rounded-md border p-3', className)}
-      >
+      <ItemPrimitive id={id} aria-describedby={`${nameId} ${sizeId}`} aria-labelledby={nameId} data-slot="file-upload-item" dir={context.dir} {...itemProps} className={cn('relative flex items-center gap-2.5 rounded-md border p-3', className)}>
         {props.children}
       </ItemPrimitive>
     </FileUploadItemContext>

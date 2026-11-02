@@ -102,7 +102,7 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
     await expect(uploadPage.item(uploadFailureName)).toHaveAccessibleName(uploadFailureName);
     await expect(uploadPage.uploadedFiles).toHaveAttribute('id', 'uploaded-files-list');
     await expect(uploadPage.pendingFiles).toHaveAttribute('id', 'pending-files-list');
-    await Promise.all([uploadPage.uploadedFiles, uploadPage.pendingFiles].flatMap((list) => [expect(list.getByRole('listitem')).toHaveAttribute('aria-posinset', '1'), expect(list.getByRole('listitem')).toHaveAttribute('aria-setsize', '1')]));
+    await Promise.all([uploadPage.uploadedFiles, uploadPage.pendingFiles].map(async (list) => await expect(list.getByRole('listitem')).toHaveCount(1)));
     await checkAccessibility('partial-upload');
   });
 

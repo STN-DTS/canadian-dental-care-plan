@@ -6,13 +6,11 @@ import { FileUploadItem } from '~/components/file-upload';
 
 interface UploadedDocumentUploadItemProps {
   id: string;
-  positionInSet: number;
-  setSize: number;
   fileName: string;
   documentTypeName: string;
 }
 
-export function UploadedDocumentUploadItem({ id, positionInSet, setSize, fileName, documentTypeName }: UploadedDocumentUploadItemProps) {
+export function UploadedDocumentUploadItem({ id, fileName, documentTypeName }: UploadedDocumentUploadItemProps) {
   const { t } = useTranslation('documents');
   const fileNameId = `file-upload-item-${id}-name`;
 
@@ -22,8 +20,6 @@ export function UploadedDocumentUploadItem({ id, positionInSet, setSize, fileNam
       // Explicit undefined values suppress FileUploadItem's default labels, leaving the definition list exposed.
       aria-labelledby={undefined}
       aria-describedby={undefined}
-      aria-posinset={positionInSet}
-      aria-setsize={setSize}
       value={id}
       className="min-w-0 items-start rounded-none border-green-700 p-4"
     >

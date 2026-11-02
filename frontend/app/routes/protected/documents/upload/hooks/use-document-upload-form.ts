@@ -132,25 +132,24 @@ export function useDocumentUploadForm() {
     [documentUploadFormState, scheduleFocus],
   );
 
-  useEffect(
-    function applyFileSelectionValidationResponse() {
-      const pendingValidation = pendingFileSelectionValidationRef.current;
-      const data = fetcher.data;
-      const isPendingValidationResponse = pendingValidation && data?.source === 'client' && data.formAction === FORM_ACTION.addFiles && data.validationId === pendingValidation.validationId;
+  // Runs after every commit. React Router reads fetcher.data from a mutable map during render, so dependency
+  // checks can miss a new response after an interrupted render. The pending ref makes each response apply once.
+  useEffect(function applyFileSelectionValidationResponse() {
+    const pendingValidation = pendingFileSelectionValidationRef.current;
+    const data = fetcher.data;
+    const isPendingValidationResponse = pendingValidation && data?.source === 'client' && data.formAction === FORM_ACTION.addFiles && data.validationId === pendingValidation.validationId;
 
-      if (!isPendingValidationResponse) {
-        return;
-      }
+    if (!isPendingValidationResponse) {
+      return;
+    }
 
-      pendingFileSelectionValidationRef.current = undefined;
+    pendingFileSelectionValidationRef.current = undefined;
 
-      if (!data.errors) {
-        const files = pendingValidation.files.map((file) => ({ id: generateId(), file }));
-        handleFileChange([...documentUploadFormState.documents.filter(({ status }) => status === 'pending'), ...files]);
-      }
-    },
-    [fetcher.data, documentUploadFormState, handleFileChange],
-  );
+    if (!data.errors) {
+      const files = pendingValidation.files.map((file) => ({ id: generateId(), file }));
+      handleFileChange([...documentUploadFormState.documents.filter(({ status }) => status === 'pending'), ...files]);
+    }
+  });
 
   const uploadResponse = fetcher.data;
 
