@@ -9,6 +9,8 @@ import { cn } from '~/utils/tw-utils';
 
 interface PendingDocumentUploadItemProps {
   id: string;
+  positionInSet: number;
+  setSize: number;
   fileName: string;
   documentType: string;
   documentTypeOptions: InputOptionProps[];
@@ -18,7 +20,7 @@ interface PendingDocumentUploadItemProps {
   onDocumentTypeChange: (id: string, documentType: string) => void;
 }
 
-export function PendingDocumentUploadItem({ id, fileName, documentType, documentTypeOptions, disabled, fileError, documentTypeError, onDocumentTypeChange }: PendingDocumentUploadItemProps) {
+export function PendingDocumentUploadItem({ id, positionInSet, setSize, fileName, documentType, documentTypeOptions, disabled, fileError, documentTypeError, onDocumentTypeChange }: PendingDocumentUploadItemProps) {
   const { t } = useTranslation('documents');
   const fileNameId = `file-upload-item-${id}-name`;
 
@@ -27,6 +29,8 @@ export function PendingDocumentUploadItem({ id, fileName, documentType, document
       id={`file-upload-item-${id}`}
       aria-labelledby={fileNameId}
       aria-describedby={undefined}
+      aria-posinset={positionInSet}
+      aria-setsize={setSize}
       value={id}
       className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
       tabIndex={-1}

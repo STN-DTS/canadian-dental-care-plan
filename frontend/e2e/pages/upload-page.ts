@@ -10,6 +10,8 @@ export class UploadPage extends BasePage {
   readonly uploadButton;
   /** Announces selection counts while pending files remain or the form is empty. */
   readonly status;
+  readonly uploadedFiles;
+  readonly pendingFiles;
   readonly submitButton;
   readonly reviewDialog;
   readonly removeDialog;
@@ -24,6 +26,8 @@ export class UploadPage extends BasePage {
     super(page);
     this.uploadButton = page.getByRole('button', { name: 'Upload file', exact: true });
     this.status = page.getByRole('status');
+    this.uploadedFiles = page.getByRole('list', { name: 'Files uploaded successfully', exact: true });
+    this.pendingFiles = page.getByRole('list', { name: 'Files not uploaded', exact: true });
     this.submitButton = page.getByRole('button', { name: /^(Submit|Submit remaining files)$/ });
     this.reviewDialog = page.getByRole('dialog', { name: 'Confirm submission', exact: true });
     this.removeDialog = page.getByRole('dialog', { name: 'Remove this file?' });
@@ -113,6 +117,14 @@ export class UploadPage extends BasePage {
     await this.confirmReview();
   }
 
+  /** Verifies the two visible outcome counters after a confirmed upload attempt. */
+  async expectUploadCounts(uploaded: number, pending: number) {
+    const counters = this.status.locator('p');
+    await expect(counters).toHaveText([`Files uploaded: ${uploaded}`, `Files not uploaded: ${pending}`]);
+    await expect(counters.nth(0)).toBeVisible();
+    await expect(counters.nth(1)).toBeVisible();
+  }
+
   /** Creates and verifies one successful upload and one mock-induced pending failure. */
   async partialUpload() {
     await this.addFile();
@@ -122,6 +134,7 @@ export class UploadPage extends BasePage {
     await this.submit();
     await expect(this.item('evidence.txt')).toContainText('Uploaded successfully');
     await expect(this.item(uploadFailureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
+    await this.expectUploadCounts(1, 1);
     await expect(this.submitButton).toHaveText('Submit remaining files');
     await expect(this.submitButton).toBeEnabled();
   }

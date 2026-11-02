@@ -28,34 +28,43 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   }
 
   it.each([
-    {
-      maximum: 10,
-      selected: 3,
-      uploaded: 1,
-      pending: 2,
-      en: '3 of 10 files selected. 1 file uploaded successfully. 2 files remaining to upload.',
-      fr: 'Fichiers sélectionnés : 3 sur 10 fichiers. 1 fichier téléversé avec succès. 2 fichiers restants à téléverser.',
-    },
-    {
-      maximum: 10,
-      selected: 3,
-      uploaded: 2,
-      pending: 1,
-      en: '3 of 10 files selected. 2 files uploaded successfully. 1 file remaining to upload.',
-      fr: 'Fichiers sélectionnés : 3 sur 10 fichiers. 2 fichiers téléversés avec succès. 1 fichier restant à téléverser.',
-    },
-    {
-      maximum: 1,
-      selected: 1,
-      uploaded: 1,
-      pending: 0,
-      en: '1 of 1 file selected. 1 file uploaded successfully. 0 files remaining to upload.',
-      fr: 'Fichiers sélectionnés : 1 sur 1 fichier. 1 fichier téléversé avec succès. 0 fichier restant à téléverser.',
-    },
-  ])('pluralizes each nested progress count independently ($uploaded uploaded, $pending pending, $maximum maximum)', async ({ maximum, selected, uploaded, pending, ...expected }) => {
+    { count: 0, en: 'Files selected: 0', fr: 'Fichiers sélectionnés : 0' },
+    { count: 1, en: 'Files selected: 1', fr: 'Fichiers sélectionnés : 1' },
+    { count: 3, en: 'Files selected: 3', fr: 'Fichiers sélectionnés : 3' },
+  ])('uses the selected-files counter for $count files', async ({ count, ...expected }) => {
     const t = await getTranslator();
 
-    expect(t(($) => $.upload.uploadFiles.uploadProgress, { maximum, selected, uploaded, pending })).toBe(expected[locale]);
+    expect(t(($) => $.upload.uploadFiles.filesSelected, { count })).toBe(expected[locale]);
+  });
+
+  it.each([
+    { count: 0, en: 'Files uploaded: 0', fr: 'Fichiers téléversés : 0' },
+    { count: 1, en: 'Files uploaded: 1', fr: 'Fichiers téléversés : 1' },
+    { count: 3, en: 'Files uploaded: 3', fr: 'Fichiers téléversés : 3' },
+  ])('uses the uploaded-files counter for $count files', async ({ count, ...expected }) => {
+    const t = await getTranslator();
+
+    expect(t(($) => $.upload.uploadFiles.uploadedFiles, { count })).toBe(expected[locale]);
+  });
+
+  it.each([
+    { count: 0, en: 'Files not uploaded: 0', fr: 'Fichiers non téléversés : 0' },
+    { count: 1, en: 'Files not uploaded: 1', fr: 'Fichiers non téléversés : 1' },
+    { count: 3, en: 'Files not uploaded: 3', fr: 'Fichiers non téléversés : 3' },
+  ])('uses the pending-files counter for $count files', async ({ count, ...expected }) => {
+    const t = await getTranslator();
+
+    expect(t(($) => $.upload.uploadFiles.pendingFiles, { count })).toBe(expected[locale]);
+  });
+
+  it('uses the current upload-status headings and omits the obsolete progress key', async () => {
+    const t = await getTranslator();
+    const expected = locale === 'en' ? { uploaded: 'Files uploaded successfully', pending: 'Files not uploaded' } : { uploaded: 'Fichiers téléversés avec succès', pending: 'Fichiers non téléversés' };
+
+    expect(t(($) => $.upload.uploadFiles.uploadedFilesHeading)).toBe(expected.uploaded);
+    expect(t(($) => $.upload.uploadFiles.pendingFilesHeading)).toBe(expected.pending);
+    expect('uploadProgress' in enDocuments.upload.uploadFiles).toBe(false);
+    expect('uploadProgress' in frDocuments.upload.uploadFiles).toBe(false);
   });
 
   it('uses the same approved wording for non-security rejections and technical failures', async () => {

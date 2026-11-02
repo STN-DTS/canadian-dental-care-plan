@@ -14,7 +14,7 @@ const test = mergeTests(documentUploadTest, accessibilityTest);
 
 test.describe('upload form accessibility', { tag: '@a11y' }, () => {
   test('empty upload form', async ({ uploadPage, checkAccessibility }) => {
-    await expect(uploadPage.status).toHaveText('0 of 10 files selected');
+    await expect(uploadPage.status).toHaveText('Files selected: 0');
     await checkAccessibility('empty-form');
   });
 
@@ -83,7 +83,9 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
 
   test('partial upload success and file-specific failure', async ({ uploadPage, checkAccessibility }) => {
     await uploadPage.partialUpload();
-    await expect(uploadPage.status).toContainText('1 file uploaded successfully. 1 file remaining to upload');
+    await expect(uploadPage.uploadedFiles).toHaveAttribute('id', 'uploaded-files-list');
+    await expect(uploadPage.pendingFiles).toHaveAttribute('id', 'pending-files-list');
+    await Promise.all([uploadPage.uploadedFiles, uploadPage.pendingFiles].flatMap((list) => [expect(list.getByRole('listitem')).toHaveAttribute('aria-posinset', '1'), expect(list.getByRole('listitem')).toHaveAttribute('aria-setsize', '1')]));
     await checkAccessibility('partial-upload');
   });
 
@@ -91,7 +93,7 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
     await uploadPage.partialUpload();
     await uploadPage.removeFile(uploadFailureName);
     await expect(uploadPage.finishButton).toBeVisible();
-    await expect(uploadPage.page.getByRole('region', { name: '1 file uploaded successfully' })).toBeFocused();
+    await expect(uploadPage.page.getByRole('region', { name: 'Files uploaded: 1', exact: true })).toBeFocused();
     await checkAccessibility('uploaded-only');
   });
 });

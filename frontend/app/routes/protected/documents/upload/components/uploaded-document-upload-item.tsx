@@ -6,34 +6,34 @@ import { FileUploadItem } from '~/components/file-upload';
 
 interface UploadedDocumentUploadItemProps {
   id: string;
+  positionInSet: number;
+  setSize: number;
   fileName: string;
   documentTypeName: string;
 }
 
-export function UploadedDocumentUploadItem({ id, fileName, documentTypeName }: UploadedDocumentUploadItemProps) {
+export function UploadedDocumentUploadItem({ id, positionInSet, setSize, fileName, documentTypeName }: UploadedDocumentUploadItemProps) {
   const { t } = useTranslation('documents');
   const fileNameId = `file-upload-item-${id}-name`;
   const statusId = `file-upload-item-${id}-status`;
 
   return (
-    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} aria-describedby={statusId} value={id} className="min-w-0 flex-col items-stretch gap-3 sm:gap-4">
-      <dl className="space-y-3 sm:space-y-4">
-        <div className="space-y-2">
-          <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-          <dd id={fileNameId} className="wrap-break-word">
+    <FileUploadItem id={`file-upload-item-${id}`} aria-labelledby={fileNameId} aria-describedby={statusId} aria-posinset={positionInSet} aria-setsize={setSize} value={id} className="min-w-0 items-start rounded-none border-green-700 p-4">
+      <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" className="mt-1 shrink-0 text-green-700" />
+      <dl className="min-w-0 space-y-1">
+        <div>
+          <dt className="sr-only">{t(($) => $.upload.fileName)}</dt>
+          <dd id={fileNameId} className="font-semibold wrap-break-word">
             {fileName}
           </dd>
         </div>
-        <div className="space-y-2">
-          <dt className="font-semibold">{t(($) => $.upload.documentType)}</dt>
-          <dd>{documentTypeName}</dd>
+        <div className="wrap-break-word">
+          <dt className="inline">{t(($) => $.upload.documentType)}: </dt>
+          <dd className="inline">{documentTypeName}</dd>
         </div>
-        <div className="space-y-2">
-          <dt className="font-semibold">{t(($) => $.upload.status)}</dt>
-          <dd id={statusId} className="flex items-baseline gap-2">
-            <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" className="shrink-0 text-green-700" />
-            <span>{t(($) => $.upload.uploadedSuccessfully)}</span>
-          </dd>
+        <div className="sr-only">
+          <dt>{t(($) => $.upload.status)}</dt>
+          <dd id={statusId}>{t(($) => $.upload.uploadedSuccessfully)}</dd>
         </div>
       </dl>
     </FileUploadItem>

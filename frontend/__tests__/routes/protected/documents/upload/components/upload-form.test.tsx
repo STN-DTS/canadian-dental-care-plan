@@ -13,12 +13,21 @@ import { useClientEnv } from '~/hooks/use-client-env';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
+import { getClientEnv } from '~/utils/env-utils';
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
+const clientEnv = {
+  ADOBE_ANALYTICS_JQUERY_SRC: 'https://code.jquery.com/jquery-3.7.1.min.js',
+  ADOBE_ANALYTICS_SRC: undefined,
+  DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
+  DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
+  DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
+};
 type UploadForm = ReturnType<typeof useDocumentUploadForm>;
 type UploadDocument = UploadForm['documentUploadFormState']['documents'][number];
 
 vi.mock(import('~/hooks/use-client-env'));
+vi.mock(import('~/utils/env-utils'));
 vi.mock(import('remix-utils/csrf/react'), () => ({
   AuthenticityTokenInput: () => <input type="hidden" name="_csrf" value="test-token" />,
 }));
@@ -26,11 +35,13 @@ vi.mock(import('~/routes/protected/documents/upload/hooks/use-document-upload-fo
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useClientEnv, { partial: true }).mockReturnValue({ DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'], DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5 });
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
+  vi.mocked(useClientEnv, { partial: true }).mockReturnValue(clientEnv);
+  vi.mocked(getClientEnv, { partial: true }).mockReturnValue(clientEnv);
 });
 
-function setDocuments(documents: ReadonlyArray<UploadDocument>) {
-  const form = mock<UploadForm>({ documentUploadFormState: { documents }, isValidating: false, reviewState: 'closed' });
+function setDocuments(documents: ReadonlyArray<UploadDocument>, overrides: Partial<UploadForm> = {}) {
+  const form = mock<UploadForm>({ documentUploadFormState: { documents }, hasUploadAttempted: false, isValidating: false, reviewState: 'closed', ...overrides });
   vi.mocked(useDocumentUploadForm).mockReturnValue(form);
   return form;
 }
@@ -48,6 +59,7 @@ function setReviewableDocuments(documents: ReadonlyArray<UploadDocument>, option
       },
       dismissReview: () => setReviewState('closed'),
       documentUploadFormState: { documents },
+      hasUploadAttempted: false,
       isValidating: false,
       reviewState,
       submitForm: async () => {
@@ -181,6 +193,7 @@ describe('DocumentUploadForm', () => {
         },
         dismissReview: () => setReviewState('closed'),
         documentUploadFormState: { documents: [createDocument('pending', 'pending')] },
+        hasUploadAttempted: false,
         isValidating: false,
         reviewState,
         submitForm: async () => {
@@ -341,6 +354,7 @@ describe('DocumentUploadForm', () => {
               },
               dismissReview: () => setReviewState('closed'),
               documentUploadFormState: { documents },
+              hasUploadAttempted: false,
               isValidating: false,
               reviewState,
               submitForm: async () => {
@@ -372,7 +386,7 @@ describe('DocumentUploadForm', () => {
     const form = setDocuments([createDocument('first', 'uploaded'), createDocument('last', 'uploaded')]);
     renderForm();
 
-    const region = screen.getByRole('region', { name: /upload.uploadFiles.uploadedFiles/ });
+    const region = screen.getByRole('region', { name: JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 2 } }) });
     expect(region).toHaveAccessibleDescription('upload.uploadFiles.documentsSent upload.uploadFiles.noPendingFiles');
     expect(region).toHaveAttribute('tabindex', '-1');
     const confirmationButton = within(region).getByRole('button', { name: 'upload.viewSubmissionConfirmation' });
@@ -396,17 +410,122 @@ describe('DocumentUploadForm', () => {
     setDocuments([...uploaded, createDocument('replacement', 'pending')]);
     rerender(<RoutesStub key="pending" initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
 
-    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadProgress', options: { maximum: 10, selected: 3, uploaded: 2, pending: 1 } }));
+    expect(screen.getByRole('status').querySelectorAll('p')).toHaveLength(2);
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 2 } }));
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.pendingFiles', options: { count: 1 } }));
     expect(screen.getByRole('status')).toHaveAttribute('aria-atomic', 'true');
     expect(screen.getByRole('button', { name: 'upload.submitRemaining' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'upload.viewSubmissionConfirmation' })).not.toBeInTheDocument();
   });
 
-  it('localizes mixed-upload counts and the retry action in French', () => {
+  it('renders independent mixed-upload count keys and the retry action on the French route', () => {
     setDocuments([createDocument('first', 'uploaded'), createDocument('second', 'pending'), createDocument('third', 'pending')]);
     renderForm('fr');
 
-    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadProgress', options: { maximum: 10, selected: 3, uploaded: 1, pending: 2 } }));
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 1 } }));
+    expect(screen.getByRole('status')).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.pendingFiles', options: { count: 2 } }));
     expect(screen.getByRole('button', { name: 'upload.submitRemaining' })).toBeInTheDocument();
+  });
+
+  it.each([0, 1, 3])('announces only the selected count before any upload attempt with %i files', (count) => {
+    setDocuments(Array.from({ length: count }, (_, index) => createDocument(`selected-${index}`, 'pending')));
+    renderForm();
+
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-atomic', 'true');
+    expect(status.querySelectorAll('p')).toHaveLength(1);
+    expect(status).toHaveTextContent(JSON.stringify({ key: 'upload.uploadFiles.filesSelected', options: { count } }));
+    expect(screen.queryByRole('heading', { name: 'upload.uploadFiles.uploadedFilesHeading' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'upload.uploadFiles.pendingFilesHeading' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem', { name: /selected-\d\.txt/ })).toHaveLength(count);
+  });
+
+  it('announces zero uploaded and every pending file after an all-failed attempt', () => {
+    setDocuments([createDocument('first', 'pending'), createDocument('second', 'pending')], { hasUploadAttempted: true });
+    renderForm();
+
+    const status = screen.getByRole('status');
+    expect(Array.from(status.querySelectorAll('p'), (paragraph) => paragraph.textContent)).toEqual([
+      JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 0 } }),
+      JSON.stringify({ key: 'upload.uploadFiles.pendingFiles', options: { count: 2 } }),
+    ]);
+    const pendingList = screen.getByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' });
+    expect(pendingList).toHaveAttribute('id', 'pending-files-list');
+    expect(within(pendingList).getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('heading', { name: 'upload.uploadFiles.uploadedFilesHeading' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'upload.viewSubmissionConfirmation' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'upload.submit' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'upload.addFile' })).toBeEnabled();
+  });
+
+  it('groups interleaved successes first with stable group order, group-relative ARIA, errors, and editable pending controls', async () => {
+    const user = userEvent.setup();
+    const documents = [createDocument('pending-first', 'pending'), createDocument('uploaded-first', 'uploaded'), createDocument('pending-last', 'pending'), createDocument('uploaded-last', 'uploaded')];
+    const form = setDocuments(documents, {
+      actionData: {
+        formAction: 'upload',
+        source: 'server',
+        responseType: 'upload-errors',
+        documents: documents.map(({ id, file, documentType, status }) => ({ id, fileName: file.name, fileSize: file.size, documentType, status })),
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['Some files were not uploaded'],
+              properties: {
+                'pending-first': { errors: [], properties: { file: { errors: ['Security check failed'] }, documentType: { errors: [] } } },
+                'pending-last': { errors: [], properties: { file: { errors: [] }, documentType: { errors: ['Choose a different document type'] } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    renderForm();
+
+    const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
+    const pendingList = screen.getByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' });
+    expect(uploadedList).toHaveAttribute('id', 'uploaded-files-list');
+    expect(pendingList).toHaveAttribute('id', 'pending-files-list');
+    expect(uploadedList.compareDocumentPosition(pendingList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    for (const [list, names] of [
+      [uploadedList, ['uploaded-first.txt', 'uploaded-last.txt']],
+      [pendingList, ['pending-first.txt', 'pending-last.txt']],
+    ] as const) {
+      const items = within(list).getAllByRole('listitem');
+      expect(items).toHaveLength(2);
+      items.forEach((item, index) => {
+        expect(item).toHaveAccessibleName(names[index]);
+        expect(item).toHaveAttribute('aria-posinset', String(index + 1));
+        expect(item).toHaveAttribute('aria-setsize', '2');
+      });
+    }
+
+    for (const item of within(uploadedList).getAllByRole('listitem')) {
+      expect(item).toHaveAccessibleDescription('upload.uploadedSuccessfully');
+      expect(item).toHaveClass('border-green-700', 'p-4');
+      expect(within(item).getByText('upload.uploadedSuccessfully').parentElement).toHaveClass('sr-only');
+      expect(within(item).getByText('Receipt')).toBeInTheDocument();
+      expect(within(item).queryByRole('combobox')).not.toBeInTheDocument();
+      expect(within(item).queryByRole('button')).not.toBeInTheDocument();
+      expect(item.querySelector('time')).not.toBeInTheDocument();
+    }
+
+    const firstPending = within(pendingList).getByRole('listitem', { name: 'pending-first.txt' });
+    expect(within(firstPending).getByText('Security check failed')).toHaveAttribute('role', 'alert');
+    expect(firstPending).toHaveClass('border-red-500');
+    const lastPending = within(pendingList).getByRole('listitem', { name: 'pending-last.txt' });
+    const select = within(lastPending).getByRole('combobox', { name: 'upload.documentType' });
+    expect(select).toHaveValue('receipt');
+    expect(select).toHaveAttribute('aria-errormessage', 'input-document-type-pending-last-error');
+    expect(select).toHaveAttribute('aria-invalid', 'true');
+    expect(within(lastPending).getByText('Choose a different document type')).toHaveAttribute('role', 'alert');
+    expect(within(lastPending).getByRole('button', { name: 'upload.remove' })).toBeEnabled();
+    await user.selectOptions(select, 'receipt');
+    expect(form.handleDocumentTypeChange).toHaveBeenCalledExactlyOnceWith('pending-last', 'receipt');
+    expect(screen.getByRole('button', { name: 'upload.addFile' })).toHaveAccessibleDescription(/Some files were not uploaded/);
+    expect(form.documentUploadFormState.documents).toEqual(documents);
   });
 });

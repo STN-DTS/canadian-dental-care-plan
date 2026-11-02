@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { createRoutesStub } from 'react-router';
+import { createRoutesStub, redirect } from 'react-router';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,6 +53,7 @@ function renderForm(action: (args: { request: Request }) => Promise<unknown> | u
       Component: () => <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} />,
       action,
     },
+    { path: '/confirmation', Component: () => <h1>Submission confirmation</h1> },
   ]);
 
   return render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />);
@@ -99,6 +100,20 @@ function addFilesSuccessAction() {
   };
 }
 
+function expectSelectedCount(count: number) {
+  const status = screen.getByRole('status');
+  expect(Array.from(status.querySelectorAll('p'), (paragraph) => paragraph.textContent)).toEqual([JSON.stringify({ key: 'upload.uploadFiles.filesSelected', options: { count } })]);
+  expect(screen.queryByRole('heading', { name: 'upload.uploadFiles.pendingFilesHeading' })).not.toBeInTheDocument();
+}
+
+function expectResultCounts(uploaded: number, pending: number, includeHidden = false) {
+  const status = screen.getByRole('status', { hidden: includeHidden });
+  expect(Array.from(status.querySelectorAll('p'), (paragraph) => paragraph.textContent)).toEqual([
+    JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: uploaded } }),
+    JSON.stringify({ key: 'upload.uploadFiles.pendingFiles', options: { count: pending } }),
+  ]);
+}
+
 describe('DocumentUploadForm review integration', () => {
   it('shows missing document type errors inline and in the summary without uploading', async () => {
     const user = userEvent.setup();
@@ -113,6 +128,7 @@ describe('DocumentUploadForm review integration', () => {
     expect(screen.queryByRole('dialog', { name: 'upload.review.title' })).not.toBeInTheDocument();
     expect(action).toHaveBeenCalledOnce();
     expect(getFiles).toHaveBeenCalledOnce();
+    expectSelectedCount(1);
   });
 
   it.each([
@@ -137,6 +153,7 @@ describe('DocumentUploadForm review integration', () => {
     expect(screen.getByRole('combobox', { name: 'upload.documentType' })).toHaveValue('receipt');
     await waitFor(() => expect(submitButton).toHaveFocus());
     expect(action).toHaveBeenCalledOnce();
+    expectSelectedCount(1);
   });
 
   it('keeps the review busy and blocks escape until the real route action resolves', async () => {
@@ -167,6 +184,7 @@ describe('DocumentUploadForm review integration', () => {
     await user.click(confirmButton);
 
     await waitFor(() => expect(dialog).toHaveAttribute('aria-busy', 'true'));
+    expectResultCounts(0, 1, true);
     expect(confirmButton).toBeDisabled();
     expect(within(dialog).getByRole('button', { name: 'upload.review.back' })).toBeDisabled();
     await user.keyboard('{Escape}');
@@ -217,11 +235,136 @@ describe('DocumentUploadForm review integration', () => {
     expect(screen.getByRole('listitem', { name: 'first.txt' })).toBeInTheDocument();
     expect(screen.getByRole('listitem', { name: 'second.txt' })).toBeInTheDocument();
     expect(uploadCount).toBe(1);
+    expectResultCounts(1, 1);
 
     await user.click(screen.getByRole('button', { name: 'upload.submitRemaining' }));
     const retryDialog = await screen.findByRole('dialog', { name: 'upload.review.title' });
     expect(retryDialog).toHaveTextContent('second.txt, Receipt');
     expect(retryDialog).not.toHaveTextContent('first.txt, Receipt');
     expect(uploadCount).toBe(1);
+  });
+
+  it('keeps all-failed result counts after adding a file, failed prevalidation, and cancelling a later review', async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(async ({ request }: { request: Request }) => {
+      const formData = await request.formData();
+      const formAction = formData.get('_action');
+
+      if (formAction === FORM_ACTION.addFiles) {
+        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
+      }
+
+      const ids = formData.getAll('file_id') as string[];
+      const files = formData.getAll('file_object') as File[];
+      return {
+        formAction: FORM_ACTION.upload,
+        source: 'server',
+        responseType: 'upload-errors',
+        errors: { errors: [], properties: { files: { errors: ['Upload failed'], properties: { [ids[0]!]: { errors: [], properties: { file: { errors: ['Try this file again'] } } } } } } },
+        documents: ids.map((id, index) => ({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: 'receipt', status: 'pending' })),
+      };
+    });
+    renderForm(action);
+    expectSelectedCount(0);
+
+    await addFile(user, 'failed.txt');
+    await selectReceiptType(user);
+    expectSelectedCount(1);
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    const firstReview = await screen.findByRole('dialog', { name: 'upload.review.title' });
+    await user.click(within(firstReview).getByRole('button', { name: 'upload.review.back' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expectSelectedCount(1);
+    expect(action).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expectResultCounts(0, 1);
+    expect(screen.getByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' })).toHaveAttribute('id', 'pending-files-list');
+    expect(screen.queryByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'failed.txt' })).getByRole('alert')).toHaveTextContent('Try this file again');
+    expect(action).toHaveBeenCalledTimes(2);
+
+    await addFile(user, 'added.txt');
+    expectResultCounts(0, 2);
+    expect(screen.getAllByRole('combobox', { name: 'upload.documentType' }).map((select) => (select as HTMLSelectElement).value)).toEqual(['receipt', '']);
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    await waitFor(() => expect(getErrorSummary()).toHaveTextContent('upload.errorMessage.documentTypeRequired'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expectResultCounts(0, 2);
+    expect(action).toHaveBeenCalledTimes(3);
+
+    await user.selectOptions(within(screen.getByRole('listitem', { name: 'added.txt' })).getByRole('combobox'), 'receipt');
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    const laterReview = await screen.findByRole('dialog', { name: 'upload.review.title' });
+    expect(
+      within(laterReview)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['failed.txt, Receipt', 'added.txt, Receipt']);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expectResultCounts(0, 2);
+    expect(action).toHaveBeenCalledTimes(3);
+  });
+
+  it('focuses uploaded-only confirmation after removing the last pending file and finishes without uploading again', async () => {
+    const user = userEvent.setup();
+    const submissions: FormData[] = [];
+    const action = vi.fn(async ({ request }: { request: Request }) => {
+      const formData = await request.formData();
+      submissions.push(formData);
+      const formAction = formData.get('_action');
+
+      if (formAction === FORM_ACTION.addFiles) {
+        return { formAction, source: 'client', responseType: 'success', validationId: String(formData.get('_validation_id')), errors: undefined };
+      }
+
+      if (formAction === FORM_ACTION.finish) {
+        return redirect('/confirmation');
+      }
+
+      const ids = formData.getAll('file_id') as string[];
+      const files = formData.getAll('file_object') as File[];
+      return {
+        formAction: FORM_ACTION.upload,
+        source: 'server',
+        responseType: 'upload-errors',
+        errors: { errors: [] },
+        documents: ids.map((id, index) => ({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: 'receipt', status: index === 0 ? 'pending' : 'uploaded' })),
+      };
+    });
+    renderForm(action);
+    await addFile(user, 'pending-first.txt');
+    await addFile(user, 'successful-last.txt');
+
+    await Promise.all(screen.getAllByRole('combobox', { name: 'upload.documentType' }).map(async (select) => await user.selectOptions(select, 'receipt')));
+
+    await user.click(screen.getByRole('button', { name: 'upload.submit' }));
+    await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expectResultCounts(1, 1);
+
+    await user.click(within(screen.getByRole('listitem', { name: 'pending-first.txt' })).getByRole('button', { name: 'upload.remove' }));
+    await user.click(await screen.findByRole('button', { name: 'upload.removeFileConfirmation.confirm' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const region = screen.getByRole('region', { name: JSON.stringify({ key: 'upload.uploadFiles.uploadedFiles', options: { count: 1 } }) });
+    await waitFor(() => expect(region).toHaveFocus());
+    expectResultCounts(1, 0);
+    expect(region).toHaveAccessibleDescription('upload.uploadFiles.documentsSent upload.uploadFiles.noPendingFiles');
+    expect(screen.queryByRole('list', { name: 'upload.uploadFiles.pendingFilesHeading' })).not.toBeInTheDocument();
+    const uploadedItem = screen.getByRole('listitem', { name: 'successful-last.txt' });
+    expect(uploadedItem).toHaveAttribute('aria-posinset', '1');
+    expect(uploadedItem).toHaveAttribute('aria-setsize', '1');
+
+    await user.click(within(region).getByRole('button', { name: 'upload.viewSubmissionConfirmation' }));
+    expect(await screen.findByRole('heading', { name: 'Submission confirmation' })).toBeInTheDocument();
+    expect(submissions.map((formData) => formData.get('_action'))).toEqual([FORM_ACTION.addFiles, FORM_ACTION.addFiles, FORM_ACTION.upload, FORM_ACTION.finish]);
+    const finish = submissions.at(-1)!;
+    expect(finish.get('_csrf')).toBe('test-token');
+    expect(finish.getAll('file_id')).toEqual([]);
+    expect(finish.getAll('file_object')).toEqual([]);
+    expect(finish.getAll('file_document_type')).toEqual([]);
   });
 });
