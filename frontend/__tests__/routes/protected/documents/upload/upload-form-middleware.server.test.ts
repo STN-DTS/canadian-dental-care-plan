@@ -63,7 +63,7 @@ describe('upload form lifecycle middleware', () => {
 });
 
 describe('upload form revalidation', () => {
-  it.each(['add-files', 'upload', 'finish'])('preserves the active flow after a same-page %s POST', (formAction) => {
+  it.each(['upload', 'finish'])('preserves the active flow after a same-page %s POST', (formAction) => {
     const currentUrl = new URL(`http://localhost/en/protected/documents/upload/${uploadId}`);
     const formData = new FormData();
     formData.set('_action', formAction);

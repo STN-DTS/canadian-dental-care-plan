@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -23,7 +23,14 @@ function allowFileAssignment(input: HTMLElement) {
   Object.defineProperty(input, 'files', { configurable: true, writable: true, value: [] });
 }
 
-function renderFileUpload(onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boolean) {
+async function dispatchAndSettle(dispatch: () => void) {
+  await act(async () => {
+    dispatch();
+    await Promise.resolve();
+  });
+}
+
+function renderFileUpload(onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boolean | void | Promise<boolean | void>) {
   const onValueChange = vi.fn();
 
   render(
@@ -41,6 +48,7 @@ function renderFileUpload(onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boo
 
 describe('FileUpload', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -148,54 +156,86 @@ describe('FileUpload', () => {
     expect(onValueChange).toHaveBeenCalledWith([]);
   });
 
-  it('rejects files before changing the value', () => {
+  it.each([
+    { name: 'false', onBeforeFilesAdd: () => false },
+    { name: 'a promise of false', onBeforeFilesAdd: async () => await Promise.resolve(false) },
+  ])('rejects files when pre-add validation returns $name', async ({ onBeforeFilesAdd }) => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
-    const onBeforeFilesAdd = vi.fn(() => false);
-    const { input, onValueChange } = renderFileUpload(onBeforeFilesAdd);
+    const onBeforeFilesAddMock = vi.fn(onBeforeFilesAdd);
+    const { input, onValueChange } = renderFileUpload(onBeforeFilesAddMock);
 
-    fireEvent.change(input, { target: { files: [file] } });
+    await dispatchAndSettle(() => fireEvent.change(input, { target: { files: [file] } }));
 
-    expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
+    expect(onBeforeFilesAddMock).toHaveBeenCalledWith([file]);
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  it('adds files once when pre-add validation succeeds', () => {
+  it.each([
+    { name: 'true', onBeforeFilesAdd: () => true },
+    { name: 'a promise of true', onBeforeFilesAdd: async () => await Promise.resolve(true) },
+    { name: 'nothing', onBeforeFilesAdd: () => {} },
+  ])('adds files once when pre-add validation returns $name', async ({ onBeforeFilesAdd }) => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
-    const onBeforeFilesAdd = vi.fn(() => true);
-    const { input, onValueChange } = renderFileUpload(onBeforeFilesAdd);
+    const onBeforeFilesAddMock = vi.fn(onBeforeFilesAdd);
+    const { input, onValueChange } = renderFileUpload(onBeforeFilesAddMock);
 
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
-    expect(onValueChange).toHaveBeenCalledWith([expect.objectContaining({ file })]);
-    expect(onValueChange).toHaveBeenCalledTimes(1);
+    expect(onBeforeFilesAddMock).toHaveBeenCalledWith([file]);
+    await waitFor(() => expect(onValueChange).toHaveBeenCalledWith([expect.objectContaining({ file })]));
+    expect(onValueChange).toHaveBeenCalledOnce();
   });
 
-  it('validates dropped files before adding them', () => {
+  it('does not add files until asynchronous pre-add validation resolves', async () => {
     const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
-    stubDataTransfer();
-    const onBeforeFilesAdd = vi.fn(() => false);
-    const { input, dropzone, onValueChange } = renderFileUpload(onBeforeFilesAdd);
-    allowFileAssignment(input);
 
-    fireEvent.drop(dropzone, { dataTransfer: { files: [file] } });
+    let resolveValidation: (accepted: boolean) => void = () => {};
 
-    expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
-    expect(onValueChange).not.toHaveBeenCalled();
-  });
-
-  it('validates pasted files before adding them', () => {
-    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
-    stubDataTransfer();
-    const onBeforeFilesAdd = vi.fn(() => false);
-    const { input, dropzone, onValueChange } = renderFileUpload(onBeforeFilesAdd);
-    allowFileAssignment(input);
-
-    fireEvent.paste(dropzone, {
-      clipboardData: {
-        items: [{ kind: 'file', getAsFile: () => file }],
-      },
+    const validation = new Promise<boolean>((resolve) => {
+      resolveValidation = resolve;
     });
+    const { input, onValueChange } = renderFileUpload(async () => await validation);
+
+    await dispatchAndSettle(() => fireEvent.change(input, { target: { files: [file] } }));
+    expect(onValueChange).not.toHaveBeenCalled();
+
+    await dispatchAndSettle(() => resolveValidation(true));
+    expect(onValueChange).toHaveBeenCalledWith([expect.objectContaining({ file })]);
+  });
+
+  it('logs a rejected pre-add validation and does not add files', async () => {
+    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
+    const error = new Error('Validation failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { input, onValueChange } = renderFileUpload(async () => await Promise.reject(error));
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith('File upload pre-add validation failed.', error));
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('validates dropped files before adding them', async () => {
+    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
+    stubDataTransfer();
+    const onBeforeFilesAdd = vi.fn(() => false);
+    const { input, dropzone, onValueChange } = renderFileUpload(onBeforeFilesAdd);
+    allowFileAssignment(input);
+
+    await dispatchAndSettle(() => fireEvent.drop(dropzone, { dataTransfer: { files: [file] } }));
+
+    expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('validates pasted files before adding them', async () => {
+    const file = new File(['contents'], 'document.pdf', { type: 'application/pdf' });
+    stubDataTransfer();
+    const onBeforeFilesAdd = vi.fn(() => false);
+    const { input, dropzone, onValueChange } = renderFileUpload(onBeforeFilesAdd);
+    allowFileAssignment(input);
+
+    await dispatchAndSettle(() => fireEvent.paste(dropzone, { clipboardData: { items: [{ kind: 'file', getAsFile: () => file }] } }));
 
     expect(onBeforeFilesAdd).toHaveBeenCalledWith([file]);
     expect(onValueChange).not.toHaveBeenCalled();

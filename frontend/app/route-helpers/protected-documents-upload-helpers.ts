@@ -11,36 +11,35 @@ export type DocumentUploadSchemaOutput = z.output<DocumentUploadSchema>;
 export type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOutput>;
 
 type ValidateFileSelectionArgs = {
-  formData: FormData;
+  currentFileCount: number;
+  existingFiles: ReadonlyArray<File>;
+  files: ReadonlyArray<File>;
   locale: string;
   t: TFunction<'documents', undefined>;
 };
 
-type ValidateFileSelectionSuccess = { success: true; validationId: string; errors: undefined };
-type ValidateFileSelectionFailure = { success: false; validationId: string; errors: DocumentUploadSchemaErrorTree };
+type ValidateFileSelectionSuccess = { success: true; errors: undefined };
+type ValidateFileSelectionFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
 type ValidateFileSelectionResult = ValidateFileSelectionSuccess | ValidateFileSelectionFailure;
 
 /**
  * Validates newly selected files against upload count, extension, and size limits.
  *
- * @param args - Form data, locale, and translator used for validation.
- * @returns Validation ID and file selection errors, when present.
+ * @param args - Current file count, already listed files, proposed files, locale, and translator.
+ * @returns Whether the selection is valid and any file selection errors.
  */
-export async function validateFileSelection({ formData, locale, t }: ValidateFileSelectionArgs): Promise<ValidateFileSelectionResult> {
-  const validationId = z.string().parse(formData.get('_validation_id'));
-  const incomingFiles = formData.getAll('file_object') as File[];
+export async function validateFileSelection({ currentFileCount, existingFiles, files, locale, t }: ValidateFileSelectionArgs): Promise<ValidateFileSelectionResult> {
   const fileSelectionSchema = createFileSelectionSchema({ locale, t });
 
   const validationResult = fileSelectionSchema.safeParse({
-    currentFileCount: formData.get('current_file_count'),
-    files: incomingFiles,
+    currentFileCount,
+    files,
   });
 
   let errorMessage: string | undefined;
 
   if (validationResult.success) {
-    const existingFiles = formData.getAll('existing_file_object') as File[];
-    const duplicateFile = await findDuplicateFile([...existingFiles, ...incomingFiles]);
+    const duplicateFile = await findDuplicateFile([...existingFiles, ...files]);
 
     if (duplicateFile) {
       errorMessage = t(($) => $.upload.errorMessage.duplicateFile, { filename: duplicateFile.name });
@@ -52,7 +51,6 @@ export async function validateFileSelection({ formData, locale, t }: ValidateFil
   if (errorMessage !== undefined) {
     return {
       success: false,
-      validationId,
       errors: {
         errors: [],
         properties: {
@@ -66,7 +64,6 @@ export async function validateFileSelection({ formData, locale, t }: ValidateFil
 
   return {
     success: true,
-    validationId,
     errors: undefined,
   };
 }

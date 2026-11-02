@@ -3,13 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { FileState } from '~/components/file-upload';
-import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
-import { generateId } from '~/utils/id-utils';
 
 type DocumentUploadFileState = FileState & { readonly documentType: string; readonly status: 'pending' | 'uploaded' };
 type DocumentUploadFormState = {
@@ -28,63 +27,41 @@ export function useDocumentUploadForm() {
   const [reviewState, setReviewState] = useState<'closed' | 'reviewing' | 'submitting'>('closed');
   const [isValidating, setIsValidating] = useState(false);
   const [hasUploadAttempted, setHasUploadAttempted] = useState(false);
-  const [validationResponse, setValidationResponse] = useState<{ errors: DocumentUploadSchemaErrorTree }>();
+  const [validationResponse, setValidationResponse] = useState<{ errors: DocumentUploadSchemaErrorTree } | undefined>(undefined);
   const reviewStateRef = useRef(reviewState);
   const validationInProgressRef = useRef(false);
   const selectionVersionRef = useRef(0);
   const [submittedResponse, setSubmittedResponse] = useState(fetcher.data);
   const [appliedUploadErrorResponse, setAppliedUploadErrorResponse] = useState<DocumentUploadFetcherData>();
-  const pendingFileSelectionValidationRef = useRef<{ validationId: string; files: ReadonlyArray<File> } | undefined>(undefined);
-  const cancelPendingFocusRef = useRef<(() => void) | undefined>(undefined);
+  const pendingFocusTargetIdRef = useRef<string | undefined>(undefined);
+  const cancelScheduledFocusRef = useRef<(() => void) | undefined>(undefined);
   const currentFileCount = documentUploadFormState.documents.length;
 
   useEffect(() => {
     reviewStateRef.current = reviewState;
   }, [reviewState]);
 
-  /** Schedules focus on the next frame, cancelling any previously scheduled focus. */
-  const scheduleFocus = useCallback((getElement: () => HTMLElement | null | undefined) => {
-    cancelPendingFocusRef.current?.();
-    cancelPendingFocusRef.current = focusOnNextFrame(getElement);
-  }, []);
-
   useEffect(() => {
     return function cancelScheduledFocusOnUnmount() {
-      cancelPendingFocusRef.current?.();
+      cancelScheduledFocusRef.current?.();
     };
   }, []);
 
-  /**
-   * Validates new files against all listed files before adding them to the pending selection.
-   * @param files - The files proposed for selection.
-   * @returns False to defer selection until the matching validation response arrives.
-   */
-  const handleBeforeFilesAdd = useCallback(
-    (files: ReadonlyArray<File>) => {
-      setValidationResponse(undefined);
-      const validationId = crypto.randomUUID();
-      const formData = new FormData();
-      formData.set('_action', FORM_ACTION.addFiles);
-      formData.set('_validation_id', validationId);
-      formData.set('current_file_count', currentFileCount.toString());
+  // Wait for FileUploadRoot to sync its controlled value before focusing the item.
+  useEffect(() => {
+    const focusTargetId = pendingFocusTargetIdRef.current;
 
-      for (const { file } of documentUploadFormState.documents) {
-        formData.append('existing_file_object', file);
-      }
+    if (!focusTargetId) {
+      return;
+    }
 
-      for (const file of files) {
-        formData.append('file_object', file);
-      }
-
-      pendingFileSelectionValidationRef.current = { validationId, files };
-      void fetcher.submit(formData, { method: 'post', encType: 'multipart/form-data' });
-      return false;
-    },
-    [fetcher, currentFileCount, documentUploadFormState],
-  );
+    pendingFocusTargetIdRef.current = undefined;
+    cancelScheduledFocusRef.current?.();
+    cancelScheduledFocusRef.current = focusOnNextFrame(() => document.getElementById(focusTargetId));
+  }, [documentUploadFormState]);
 
   /**
-   * Reconciles pending selection changes, retaining uploaded files and scheduling focus.
+   * Synchronizes the file widget selection while retaining uploaded files.
    * @param files - The file widget's updated selection.
    */
   const handleFileChange = useCallback(
@@ -104,19 +81,16 @@ export function useDocumentUploadForm() {
       selectionVersionRef.current++;
 
       if (firstAddedFile) {
-        scheduleFocus(() => document.querySelector<HTMLElement>(`#file-upload-item-${CSS.escape(firstAddedFile.id)}`));
+        pendingFocusTargetIdRef.current = `file-upload-item-${firstAddedFile.id}`;
       }
 
       if (firstRemovedFile) {
         const removedIndex = previousPendingDocuments.findIndex(({ id }) => id === firstRemovedFile.id);
-        scheduleFocus(() => {
-          const fileNowAtRemovedIndex = pendingFiles[removedIndex];
-          const precedingFile = pendingFiles[removedIndex - 1];
-          const fileToFocus = fileNowAtRemovedIndex ?? precedingFile;
-          const fallbackFocusId = uploadedFileIds.size > 0 ? 'document-upload-status' : 'fileUploadTrigger';
-          const focusTargetId = fileToFocus ? `file-upload-item-${fileToFocus.id}` : fallbackFocusId;
-          return document.getElementById(focusTargetId);
-        });
+        const fileNowAtRemovedIndex = pendingFiles[removedIndex];
+        const precedingFile = pendingFiles[removedIndex - 1];
+        const fileToFocus = fileNowAtRemovedIndex ?? precedingFile;
+        const fallbackFocusId = uploadedFileIds.size > 0 ? 'document-upload-status' : 'fileUploadTrigger';
+        pendingFocusTargetIdRef.current = fileToFocus ? `file-upload-item-${fileToFocus.id}` : fallbackFocusId;
       }
 
       setDocumentUploadFormState((previousState) => {
@@ -129,27 +103,63 @@ export function useDocumentUploadForm() {
         };
       });
     },
-    [documentUploadFormState, scheduleFocus],
+    [documentUploadFormState],
   );
 
-  // Runs after every commit. React Router reads fetcher.data from a mutable map during render, so dependency
-  // checks can miss a new response after an interrupted render. The pending ref makes each response apply once.
-  useEffect(function applyFileSelectionValidationResponse() {
-    const pendingValidation = pendingFileSelectionValidationRef.current;
-    const data = fetcher.data;
-    const isPendingValidationResponse = pendingValidation && data?.source === 'client' && data.formAction === FORM_ACTION.addFiles && data.validationId === pendingValidation.validationId;
+  /**
+   * Validates new files against all listed files before adding them to the pending selection.
+   * @param files - The files proposed for selection.
+   * @returns Whether the file upload component should add the selected files.
+   */
+  const handleBeforeFilesAdd = useCallback(
+    async (files: ReadonlyArray<File>) => {
+      if (validationInProgressRef.current) {
+        return false;
+      }
 
-    if (!isPendingValidationResponse) {
-      return;
-    }
+      setValidationResponse(undefined);
+      validationInProgressRef.current = true;
+      setIsValidating(true);
+      const selectionVersion = selectionVersionRef.current;
+      const existingFiles = documentUploadFormState.documents.map(({ file }) => file);
 
-    pendingFileSelectionValidationRef.current = undefined;
+      try {
+        const result = await validateFileSelection({ currentFileCount, existingFiles, files, locale: i18n.language, t });
 
-    if (!data.errors) {
-      const files = pendingValidation.files.map((file) => ({ id: generateId(), file }));
-      handleFileChange([...documentUploadFormState.documents.filter(({ status }) => status === 'pending'), ...files]);
-    }
-  });
+        if (selectionVersion !== selectionVersionRef.current) {
+          return false;
+        }
+
+        if (!result.success) {
+          setValidationResponse({ errors: result.errors });
+          return false;
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Failed to validate the selected upload files.', error);
+
+        if (selectionVersion === selectionVersionRef.current) {
+          setValidationResponse({
+            errors: {
+              errors: [],
+              properties: {
+                files: {
+                  errors: [t(($) => $.upload.errorMessage.fileSelectionFailed)],
+                },
+              },
+            },
+          });
+        }
+
+        return false;
+      } finally {
+        validationInProgressRef.current = false;
+        setIsValidating(false);
+      }
+    },
+    [currentFileCount, documentUploadFormState.documents, i18n.language, t],
+  );
 
   const uploadResponse = fetcher.data;
 
@@ -167,20 +177,6 @@ export function useDocumentUploadForm() {
       documents: previousState.documents.map((document) => (document.status === 'pending' && uploadedFileIds.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
     }));
   }
-
-  useEffect(
-    function clearPendingFileSelectionAfterUploadError() {
-      const data = fetcher.data;
-      const isUnsuccessfulUploadResponse = data?.source === 'server' && data.responseType === 'upload-errors';
-
-      if (!isUnsuccessfulUploadResponse) {
-        return;
-      }
-
-      pendingFileSelectionValidationRef.current = undefined;
-    },
-    [fetcher.data],
-  );
 
   /**
    * Updates the document type of a pending file without changing uploaded files.

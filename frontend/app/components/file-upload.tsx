@@ -201,10 +201,10 @@ interface FileUploadRootProps extends Omit<ComponentProps<'div'>, 'defaultValue'
   value: FileState[];
   onValueChange: (files: ReadonlyArray<FileState>) => void;
   /**
-   * Event callback invoked before files are added.
+   * Event callback invoked before files are added. Promise results are awaited.
    * @returns `false` to reject the entire batch; `true` or `undefined` to accept it.
    */
-  onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boolean | undefined;
+  onBeforeFilesAdd?: (files: ReadonlyArray<File>) => boolean | void | Promise<boolean | void>;
   accept?: string;
   dir?: Direction;
   label?: string;
@@ -262,12 +262,17 @@ function FileUploadRoot(props: FileUploadRootProps) {
   }, [value, store]);
 
   const onFilesChange = useCallback(
-    (files: ReadonlyArray<File>) => {
+    async (files: ReadonlyArray<File>) => {
       if (disabled || files.length === 0) {
         return;
       }
 
-      if (onBeforeFilesAdd?.(files) === false) {
+      try {
+        if ((await onBeforeFilesAdd?.(files)) === false) {
+          return;
+        }
+      } catch (error) {
+        console.error('File upload pre-add validation failed.', error);
         return;
       }
 
@@ -279,7 +284,7 @@ function FileUploadRoot(props: FileUploadRootProps) {
   const onInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const files = [...(event.target.files ?? [])];
-      onFilesChange(files);
+      void onFilesChange(files);
       event.target.value = '';
     },
     [onFilesChange],

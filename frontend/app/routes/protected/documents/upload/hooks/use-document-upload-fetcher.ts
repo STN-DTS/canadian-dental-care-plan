@@ -4,7 +4,7 @@ import type { clientAction } from '~/routes/protected/documents/upload/upload-fo
 import type { action } from '~/routes/protected/documents/upload/upload-form-action.server';
 
 /**
- * Gets the shared fetcher for client selection validation and server upload actions.
+ * Gets the shared fetcher for client upload validation and server upload actions.
  * @returns The fetcher keyed by `document-upload`, typed with both action handlers.
  */
 export function useDocumentUploadFetcher() {
