@@ -354,12 +354,7 @@ test.describe('partial recovery and explicit completion', () => {
           expect(list.getByRole('listitem')).toHaveCount(names.length),
           ...names.flatMap((name, index) => {
             const item = list.getByRole('listitem').nth(index);
-            return [
-              expect(item.getByText(name, { exact: true })).toBeVisible(),
-              expect(item).toHaveAccessibleName(uploaded ? '' : name),
-              expect(item).toHaveAttribute('aria-posinset', String(index + 1)),
-              expect(item).toHaveAttribute('aria-setsize', String(names.length)),
-            ];
+            return [expect(item.getByText(name, { exact: true })).toBeVisible(), expect(item).toHaveAccessibleName(uploaded ? '' : name)];
           }),
         ]);
         await expect(list).toHaveAttribute('aria-labelledby', (await label.getAttribute('id')) ?? '');
@@ -437,12 +432,10 @@ test.describe('partial recovery and explicit completion', () => {
     await expect(pending).toHaveCount(2);
     await expect(pending.nth(0)).toHaveAccessibleName(failureName);
     await expect(pending.nth(1)).toHaveAccessibleName('additional.txt');
-    await expect(pending.nth(1)).toHaveAttribute('aria-posinset', '2');
-    await expect(pending.nth(1)).toHaveAttribute('aria-setsize', '2');
     await uploadPage.removeFile(failureName);
     await uploadPage.expectUploadCounts(1, 1);
-    await expect(uploadPage.item('additional.txt')).toHaveAttribute('aria-posinset', '1');
-    await expect(uploadPage.item('additional.txt')).toHaveAttribute('aria-setsize', '1');
+    await expect(pending).toHaveCount(1);
+    await expect(pending.nth(0)).toHaveAccessibleName('additional.txt');
   });
 
   test('removing failures requires explicit metadata-only completion', async ({ uploadPage, submittedPage }) => {

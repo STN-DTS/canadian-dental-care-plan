@@ -122,6 +122,8 @@ describe('FileUpload', () => {
     );
 
     expect(screen.getByRole('list')).not.toHaveAttribute('aria-orientation');
+    expect(screen.getByRole('list').tagName).toBe('UL');
+    expect(screen.getByRole('listitem', { name: 'document.pdf' }).tagName).toBe('LI');
     expect(screen.getByRole('button', { name: 'Remove file' })).toHaveAttribute('aria-controls', 'file-upload-item-document');
     expect(screen.getByRole('listitem', { name: 'document.pdf' })).not.toHaveAttribute('aria-describedby');
     expect(screen.getByRole('button', { name: 'Remove file' })).toHaveAccessibleDescription('document.pdf');

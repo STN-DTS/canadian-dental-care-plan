@@ -365,8 +365,8 @@ describe('DocumentUploadForm review integration', () => {
     const uploadedList = screen.getByRole('list', { name: 'upload.uploadFiles.uploadedFilesHeading' });
     const uploadedItem = within(uploadedList).getByRole('listitem');
     expect(within(uploadedItem).getByText('successful-last.txt', { exact: true })).toHaveRole('definition');
-    expect(uploadedItem).toHaveAttribute('aria-posinset', '1');
-    expect(uploadedItem).toHaveAttribute('aria-setsize', '1');
+    expect(uploadedItem).not.toHaveAttribute('aria-posinset');
+    expect(uploadedItem).not.toHaveAttribute('aria-setsize');
 
     await user.click(within(region).getByRole('button', { name: 'upload.viewSubmissionConfirmation' }));
     expect(await screen.findByRole('heading', { name: 'Submission confirmation' })).toBeInTheDocument();
