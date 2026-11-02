@@ -358,8 +358,8 @@ catalogs:
       specifier: 10.1.0
       version: 10.1.0
     effect:
-      specifier: 4.1.0
-      version: 4.1.0
+      specifier: 4.1.1
+      version: 4.1.1
     express:
       specifier: 5.3.0
       version: 5.3.0
@@ -679,7 +679,7 @@ importers:
         version: 10.1.0
       effect:
         specifier: 'catalog:'
-        version: 4.1.0
+        version: 4.1.1
       express:
         specifier: 'catalog:'
         version: 5.3.0
@@ -3437,8 +3437,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@4.1.0:
-    resolution: {integrity: sha512-lGx2MJJyrXA8RZb2UpQ/0Nkb5Utaimby7oD92+18noBxLPE85IFOvptdzau8dvcxAOwfwHo9iqapbKeFzqQM/Q==}
+  effect@4.1.1:
+    resolution: {integrity: sha512-XYu65BrcmNqu5i7PPvP4dqL+R5ma37zIsfuSPjcn78mog+6e5PkilNg7Xo+pBpjXJYlWEIpH4j91tMrfW05CMw==}
 
   electron-to-chromium@1.5.467:
     resolution: {integrity: sha512-Nw9X371rtZmYcBSnEijnCDONILjs93biCZO34juC7MBOmK8E+GFnyD4T/WvyrlJkppul7oxg6TwvtKst9SODTw==}
@@ -7560,7 +7560,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@4.1.0: {}
+  effect@4.1.1: {}
 
   electron-to-chromium@1.5.467: {}
 
