@@ -100,6 +100,8 @@ collapsed. Type IDs remain in the session and are resolved to labels in the
 current page language on every receipt load, including after a language switch.
 The lookup includes inactive types; unavailable IDs use the existing localized
 document-type fallback. Long filenames and type labels wrap without truncation.
+Localized, visually hidden filename and document-type labels provide context for
+screen-reader users without changing the visible receipt format.
 
 ### File selection and editing
 

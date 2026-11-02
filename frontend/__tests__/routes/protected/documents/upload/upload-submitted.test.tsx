@@ -86,8 +86,8 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
     expect(documentTypeService.listLocalizedEvidentiaryDocumentTypes).toHaveBeenCalledExactlyOnceWith(locale);
     expect(documentTypeService.listLocalizedEvidentiaryDocumentTypesByStatus).not.toHaveBeenCalled();
     expect(result.uploadedDocuments).toEqual([
-      { ...uploadedDocument, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
-      { ...retiredDocument, documentTypeName: locale === 'en' ? 'Retired type' : 'Ancien type' },
+      { id: uploadedDocument.id, fileName: uploadedDocument.fileName, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
+      { id: retiredDocument.id, fileName: retiredDocument.fileName, documentTypeName: locale === 'en' ? 'Retired type' : 'Ancien type' },
     ]);
   });
 
@@ -99,8 +99,8 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
     const result = await loader(createArgs(locale));
 
     expect(result.uploadedDocuments).toEqual([
-      { ...earlierSuccess, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
-      { ...laterSuccess, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
+      { id: earlierSuccess.id, fileName: earlierSuccess.fileName, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
+      { id: laterSuccess.id, fileName: laterSuccess.fileName, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
     ]);
   });
 
@@ -112,8 +112,8 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
     const result = await loader(createArgs(locale));
 
     expect(result.uploadedDocuments).toEqual([
-      { ...replacement, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
-      { ...secondDocument, documentTypeName: locale === 'en' ? 'Retired type' : 'Ancien type' },
+      { id: replacement.id, fileName: replacement.fileName, documentTypeName: locale === 'en' ? 'Receipt' : 'Reçu' },
+      { id: secondDocument.id, fileName: secondDocument.fileName, documentTypeName: locale === 'en' ? 'Retired type' : 'Ancien type' },
     ]);
   });
 
@@ -123,7 +123,7 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
 
     const result = await loader(createArgs(locale));
 
-    expect(result.uploadedDocuments).toEqual([{ ...unknownDocument, documentTypeName: locale === 'en' ? 'Document type unavailable' : 'Type de document non disponible' }]);
+    expect(result.uploadedDocuments).toEqual([{ id: unknownDocument.id, fileName: unknownDocument.fileName, documentTypeName: locale === 'en' ? 'Document type unavailable' : 'Type de document non disponible' }]);
   });
 
   it('preserves the client URI, page-view audit, localized title and inherited metadata', async () => {
@@ -178,7 +178,7 @@ describe('submitted documents reloads', () => {
 
     expect(loadDocumentUploadState).toHaveBeenCalledExactlyOnceWith({ id: otherId, params: args.params, session });
     expect(session.get).toHaveBeenCalledExactlyOnceWith(`document-upload-flow-${otherId}`);
-    expect(result.uploadedDocuments).toEqual([{ ...otherDocument, documentTypeName: 'Receipt' }]);
+    expect(result.uploadedDocuments).toEqual([{ id: otherDocument.id, fileName: otherDocument.fileName, documentTypeName: 'Receipt' }]);
   });
 
   it('re-resolves type names on reload and language changes without decorating or mutating session metadata', async () => {
@@ -214,7 +214,7 @@ describe('submitted documents reloads', () => {
 });
 
 describe.each(['en', 'fr'] as const)('submitted documents page (%s)', (locale) => {
-  it('renders each filename and localized type together as one plain unnumbered list item', async () => {
+  it('adds localized screen-reader labels without changing visible filename/type pairs', async () => {
     storeDocuments([uploadedDocument, { ...uploadedDocument, id: 'second', documentType: 'retired' }]);
     const loaderData = await loader(createArgs(locale));
     const i18n = await initI18n(locale, ['documents', 'gcweb']);
@@ -231,13 +231,30 @@ describe.each(['en', 'fr'] as const)('submitted documents page (%s)', (locale) =
     const receiptList = screen.getAllByRole('list').find((list) => list.tagName === 'OL');
     expect(receiptList).toBeDefined();
     expect(receiptList).toHaveAttribute('role', 'list');
-    expect(receiptList).toHaveClass('list-none', 'space-y-1');
+    expect(receiptList).toHaveClass('space-y-1');
     const items = within(receiptList!).getAllByRole('listitem');
-    expect(items.map((item) => item.textContent)).toEqual(locale === 'en' ? ['evidence.pdf, (Receipt)', 'evidence.pdf, (Retired type)'] : ['evidence.pdf, (Reçu)', 'evidence.pdf, (Ancien type)']);
+    expect(items.map((item) => item.textContent)).toEqual(
+      locale === 'en' ? ['Filename evidence.pdf, (document type Receipt)', 'Filename evidence.pdf, (document type Retired type)'] : ['Nom du fichier evidence.pdf, (type de document Reçu)', 'Nom du fichier evidence.pdf, (type de document Ancien type)'],
+    );
+    expect(
+      items.map((item) => {
+        const visibleContent = item.cloneNode(true) as HTMLElement;
+        visibleContent.querySelectorAll('.sr-only').forEach((label) => label.remove());
+        return visibleContent.textContent;
+      }),
+    ).toEqual(locale === 'en' ? ['evidence.pdf, (Receipt)', 'evidence.pdf, (Retired type)'] : ['evidence.pdf, (Reçu)', 'evidence.pdf, (Ancien type)']);
 
     for (const item of items) {
       expect(item).toHaveClass('min-w-0', 'wrap-anywhere');
-      expect(item.children).toHaveLength(0);
+      expect(item).not.toHaveAttribute('aria-label');
+      expect(item).not.toHaveAttribute('aria-labelledby');
+      expect(item.children).toHaveLength(2);
+      expect(Array.from(item.children, (label) => label.textContent)).toEqual(locale === 'en' ? ['Filename ', 'document type '] : ['Nom du fichier ', 'type de document ']);
+
+      for (const label of item.children) {
+        expect(label).toHaveClass('sr-only');
+        expect(label).not.toHaveAttribute('aria-hidden');
+      }
     }
 
     expect(screen.getByRole('heading', { level: 1, name: documents.submitted.pageTitle })).toBeInTheDocument();
@@ -256,13 +273,10 @@ describe.each(['en', 'fr'] as const)('submitted documents page (%s)', (locale) =
     const fileName = '<img src=x onerror=alert(1)> & "evidence".pdf';
     const documentTypeName = '<script>alert("type")</script> & <b>type</b>';
     const i18n = await initI18n(locale, ['documents', 'gcweb']);
-    const t = i18n.getFixedT(locale, 'documents');
     const loaderData = await loader(createArgs(locale));
-    loaderData.uploadedDocuments = [{ ...uploadedDocument, fileName, documentTypeName }];
-    const expected = `${fileName}, (${documentTypeName})`;
+    loaderData.uploadedDocuments = [{ id: uploadedDocument.id, fileName, documentTypeName }];
+    const expected = locale === 'en' ? `Filename ${fileName}, (document type ${documentTypeName})` : `Nom du fichier ${fileName}, (type de document ${documentTypeName})`;
 
-    expect((locale === 'en' ? enDocuments : frDocuments).submitted.document).toBe('{{filename}}, ({{documentType}})');
-    expect(t(($) => $.submitted.document, { filename: fileName, documentType: documentTypeName })).toBe(expected);
     render(
       <MemoryRouter>
         <I18nextProvider i18n={i18n}>
@@ -271,10 +285,11 @@ describe.each(['en', 'fr'] as const)('submitted documents page (%s)', (locale) =
       </MemoryRouter>,
     );
 
-    const item = screen.getByText(expected);
+    const item = screen.getByText((_, element) => element?.tagName === 'LI' && element.textContent === expected);
     expect(item.tagName).toBe('LI');
     expect(item.textContent).toBe(expected);
-    expect(item.children).toHaveLength(0);
+    expect(item.children).toHaveLength(2);
+    expect(item.querySelector('img, script, b')).toBeNull();
     expect(item.innerHTML).toContain('&lt;img');
     expect(item.innerHTML).toContain('&lt;script&gt;');
     expect(item.innerHTML).toContain('&amp;');

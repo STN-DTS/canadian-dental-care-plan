@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
@@ -42,7 +42,8 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypes(locale);
   const uploadedDocumentsById = new Map(documents.filter((document) => document.status === 'uploaded').map((document) => [document.id, document]));
   const uploadedDocuments = Array.from(uploadedDocumentsById.values(), (document) => ({
-    ...document,
+    id: document.id,
+    fileName: document.fileName,
     documentTypeName: documentTypes.find((type) => type.id === document.documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable),
   }));
   const meta = {
@@ -69,10 +70,10 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
           <div className="space-y-2">
             <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
             <p>{t(($) => $.submitted.youSubmitted)}</p>
-            <ol role="list" className="list-none space-y-1">
+            <ol role="list" className="space-y-1">
               {uploadedDocuments.map((document) => (
                 <li key={document.id} className="min-w-0 wrap-anywhere">
-                  {t(($) => $.submitted.document, { filename: document.fileName, documentType: document.documentTypeName })}
+                  <Trans ns="documents" i18nKey={($) => $.submitted.document} values={{ filename: document.fileName, documentType: document.documentTypeName }} components={{ srOnly: <span className="sr-only" /> }} />
                 </li>
               ))}
             </ol>

@@ -18,6 +18,8 @@ const submittedNames = ['eligibility-review.txt', 'employer-letter.txt'];
 const receiptCopy = {
   en: {
     types: ['Canadian Dental Care Plan Eligibility Review Form', 'Employer Letter'],
+    filenameLabel: 'Filename',
+    documentTypeLabel: 'document type',
     heading: 'We received your documents',
     paragraph: 'You submitted:',
     nextSteps: 'Next steps',
@@ -28,6 +30,8 @@ const receiptCopy = {
   },
   fr: {
     types: ['Formulaire d’examen de l’admissibilité des membres du Régime canadien de soins dentaires', 'Lettre – employeur'],
+    filenameLabel: 'Nom du fichier',
+    documentTypeLabel: 'type de document',
     heading: 'Nous avons reçu vos documents',
     paragraph: 'Vous avez soumis :',
     nextSteps: 'Prochaines étapes',
@@ -40,7 +44,53 @@ const receiptCopy = {
 
 /** Exact punctuation, filename identity, localized type, count, and journey order. */
 function pairs(names: string[], locale: keyof typeof receiptCopy = 'en') {
-  return names.map((name, index) => `${name}, (${receiptCopy[locale].types[index]})`);
+  const copy = receiptCopy[locale];
+  return names.map((name, index) => `${copy.filenameLabel} ${name}, (${copy.documentTypeLabel} ${copy.types[index]})`);
+}
+
+/** Hidden labels remain in the accessibility tree without changing visible copy. */
+async function expectAccessiblePairs(items: Locator, names: string[], locale: keyof typeof receiptCopy = 'en') {
+  const copy = receiptCopy[locale];
+  const expectedPairs = pairs(names, locale);
+  await expect(items).toHaveText(expectedPairs);
+
+  await Promise.all(
+    names.map(async (name, index) => {
+      const item = items.nth(index);
+      const labels = item.locator(':scope > span.sr-only');
+      await expect(item.locator(':scope > *')).toHaveCount(2);
+      await expect(labels).toHaveCount(2);
+      await expect(labels).toHaveText([copy.filenameLabel, copy.documentTypeLabel]);
+      await expect(item).not.toHaveAttribute('aria-label');
+      // Chromium separates the absolutely positioned label from the preceding text.
+      const accessiblePair = `${copy.filenameLabel} ${name}, ( ${copy.documentTypeLabel} ${copy.types[index]})`;
+      await expect(item).toMatchAriaSnapshot(`- listitem: ${JSON.stringify(accessiblePair)}`);
+
+      await Promise.all(
+        (await labels.all()).map(async (label) => {
+          await expect(label).toHaveCSS('position', 'absolute');
+          await expect(label).toHaveCSS('width', '1px');
+          await expect(label).toHaveCSS('height', '1px');
+          await expect(label).toHaveCSS('overflow', 'hidden');
+          expect(
+            await label.evaluate((element) => {
+              const style = getComputedStyle(element);
+              return style.clip === 'rect(0px, 0px, 0px, 0px)' || style.clipPath === 'inset(50%)';
+            }),
+          ).toBe(true);
+        }),
+      );
+    }),
+  );
+
+  const visiblePairs = await items.evaluateAll((elements) =>
+    elements.map((element) => {
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('.sr-only').forEach((label) => label.remove());
+      return clone.textContent;
+    }),
+  );
+  expect(visiblePairs).toEqual(names.map((name, index) => `${name}, (${copy.types[index]})`));
 }
 
 /** Uses actual localized form controls rather than the English-only page object. */
@@ -71,14 +121,42 @@ async function submitLocalizedFiles(page: Page, locale: keyof typeof receiptCopy
   await expect(page.getByRole('heading', { name: copy.heading, exact: true })).toBeVisible();
 }
 
-/** Measures plain text directly; no filename/type spans are required by the UI. */
+/** Measures visible text only, merging Trans fragments on the same visual row. */
 async function expectUnclippedPairs(items: Locator, width: number) {
   const measurements = await items.evaluateAll((elements) =>
     elements.map((element) => {
       const bounds = element.getBoundingClientRect();
       const range = document.createRange();
-      range.selectNodeContents(element);
-      const lines = [...range.getClientRects()].map((rect) => ({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom }));
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const fragments = [];
+      let node = walker.nextNode();
+
+      while (node) {
+        const parent = node.parentElement;
+
+        if (parent && !parent.closest('.sr-only') && getComputedStyle(parent).visibility === 'visible') {
+          range.selectNodeContents(node);
+          fragments.push(...[...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0).map((rect) => ({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom })));
+        }
+
+        node = walker.nextNode();
+      }
+
+      const lines: { left: number; right: number; top: number; bottom: number }[] = [];
+
+      for (const fragment of fragments.sort((a, b) => a.top - b.top || a.left - b.left)) {
+        const previous = lines.at(-1);
+
+        if (previous && Math.abs(fragment.top - previous.top) < 1 && Math.abs(fragment.bottom - previous.bottom) < 1) {
+          previous.left = Math.min(previous.left, fragment.left);
+          previous.right = Math.max(previous.right, fragment.right);
+          previous.top = Math.min(previous.top, fragment.top);
+          previous.bottom = Math.max(previous.bottom, fragment.bottom);
+        } else {
+          lines.push({ ...fragment });
+        }
+      }
+
       return {
         left: bounds.left,
         right: bounds.right,
@@ -130,10 +208,9 @@ test.describe('finished upload confirmation', () => {
     const { main } = uploadSubmittedPage;
     await expect(uploadSubmittedPage.receiptHeading).toBeVisible();
     await expect(main.getByText('You submitted:', { exact: true })).toBeVisible();
-    await expect(uploadSubmittedPage.submittedFiles).toHaveText(pairs(submittedNames));
+    await expectAccessiblePairs(uploadSubmittedPage.submittedFiles, submittedNames);
     const list = main.locator('ol');
     await expect(list).toHaveAttribute('role', 'list');
-    await expect(list.locator('li > *')).toHaveCount(0);
     await expect(list).toHaveCSS('list-style-type', 'none');
     expect(await list.evaluate((element) => element.previousElementSibling?.textContent)).toBe('You submitted:');
     const headingBounds = await uploadSubmittedPage.receiptHeading.boundingBox();
@@ -185,14 +262,14 @@ test.describe('finished upload confirmation', () => {
     await expect(page).toHaveURL(new RegExp(`/fr/protege/documents/televerser/${flowId}/soumis$`));
     await expect(page.getByRole('heading', { name: receiptCopy.fr.heading, exact: true })).toBeVisible();
     await expect(uploadSubmittedPage.main.getByText(receiptCopy.fr.paragraph, { exact: true })).toBeVisible();
-    await expect(uploadSubmittedPage.submittedFiles).toHaveText(pairs(submittedNames, 'fr'));
+    await expectAccessiblePairs(uploadSubmittedPage.submittedFiles, submittedNames, 'fr');
     await expect(page).toHaveTitle(/^Vos documents sont soumis/);
     await page.reload();
     await expect(uploadSubmittedPage.submittedFiles).toHaveText(pairs(submittedNames, 'fr'));
     await page.getByRole('link', { name: 'English', exact: true }).click();
     await uploadSubmittedPage.waitForConfirmation();
     await expect(page).toHaveURL(confirmationUrl);
-    await expect(uploadSubmittedPage.submittedFiles).toHaveText(pairs(submittedNames));
+    await expectAccessiblePairs(uploadSubmittedPage.submittedFiles, submittedNames);
     expect(requests).toHaveLength(0);
   });
 });
@@ -214,7 +291,7 @@ test.describe('confirmation access and partial completion', () => {
     await uploadPage.removeFile(uploadFailureName);
     await uploadPage.finishButton.click();
     await submittedPage.waitForConfirmation();
-    await expect(submittedPage.submittedFiles).toHaveText([`evidence.txt, (${receiptCopy.en.types[0]})`]);
+    await expect(submittedPage.submittedFiles).toHaveText(pairs(['evidence.txt']));
     await expect(submittedPage.main.getByText(uploadFailureName, { exact: true })).toHaveCount(0);
   });
 
@@ -286,9 +363,8 @@ test.describe('localized receipt layout', () => {
         const main = page.getByRole('main');
         const list = main.locator('ol');
         const items = list.getByRole('listitem');
-        await expect(items).toHaveText(pairs(names, locale));
+        await expectAccessiblePairs(items, names, locale);
         await expect(list).toHaveAttribute('role', 'list');
-        await expect(list.locator('li > *')).toHaveCount(0);
         await expectUnclippedPairs(items, width);
         const geometry = await list.evaluate((element) => ({
           clientWidth: element.clientWidth,
