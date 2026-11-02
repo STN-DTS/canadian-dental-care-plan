@@ -68,10 +68,12 @@ export class UploadPage extends BasePage {
   /**
    * Changes the document type for a pending file.
    * @param name - Filename uniquely identifying the pending item.
-   * @param index - Zero-based option index; the first active type is index 1.
+   * @param type - Exact localized option label or zero-based index (first active type is 1).
    */
-  async chooseType(name: string, index = 1) {
-    await this.item(name).getByRole('combobox', { name: 'Document Type' }).selectOption({ index });
+  async chooseType(name: string, type: string | number = 1) {
+    await this.item(name)
+      .getByRole('combobox', { name: 'Document Type' })
+      .selectOption(typeof type === 'string' ? { label: type } : { index: type });
   }
 
   /**

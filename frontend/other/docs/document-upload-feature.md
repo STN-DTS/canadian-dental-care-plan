@@ -90,7 +90,18 @@ A flow has status `initialized`, `partial-upload`, or `finished`. Each listed fi
 | Flow ID is invalid or the session record is unavailable    | Replaces the URL with the localized documents listing.                                                        |
 | User revisits a finished form, including a POST            | Middleware redirects to that flow's confirmation before its loader or action runs.                            |
 | User opens confirmation for an initialized or partial flow | Redirects to the documents listing; partial success alone does not permit confirmation.                       |
-| User opens or refreshes a finished confirmation            | Shows successful filenames from the session, next steps, and a notice that account visibility may be delayed. |
+| User opens or refreshes a finished confirmation            | Shows successful filename/type pairs, next steps, and the notice that account visibility may be delayed.      |
+
+Confirmation lists each successful document in the current flow once, in journey
+order, as `filename, (document type)`. Successful documents from earlier attempts
+remain included; failed and pending documents are excluded. Documents are
+identified by their stored IDs, so distinct files sharing a filename are not
+collapsed. Type IDs remain in the session and are resolved to labels in the
+current page language on every receipt load, including after a language switch.
+The lookup includes inactive types; unavailable IDs use the existing localized
+document-type fallback. Long filenames and type labels wrap without truncation.
+Localized, visually hidden filename and document-type labels provide context for
+screen-reader users without changing the visible receipt format.
 
 ### File selection and editing
 

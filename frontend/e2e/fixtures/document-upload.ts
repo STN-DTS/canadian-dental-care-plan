@@ -31,7 +31,7 @@ export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadS
       window.fetch = async (input, init) => {
         const request = new Request(input instanceof Request ? input.clone() : input, init);
 
-        if (request.method === 'POST' && new URL(request.url).pathname.includes('/documents/upload/')) {
+        if (request.method === 'POST' && /^\/(en\/protected\/documents\/upload|fr\/protege\/documents\/televerser)(\/|$)/.test(new URL(request.url).pathname)) {
           // Inspect a clone so reading FormData does not consume the real request.
           const form = await request.clone().formData();
           captureWindow.uploadSubmissions.push({
@@ -61,9 +61,9 @@ export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadS
   },
   uploadSubmittedPage: async ({ uploadPage, submittedPage }, use) => {
     await uploadPage.addFile(documentFile('eligibility-review.txt'));
-    await uploadPage.chooseType('eligibility-review.txt');
+    await uploadPage.chooseType('eligibility-review.txt', 'Canadian Dental Care Plan Eligibility Review Form');
     await uploadPage.addFile(documentFile('employer-letter.txt'));
-    await uploadPage.chooseType('employer-letter.txt', 2);
+    await uploadPage.chooseType('employer-letter.txt', 'Employer Letter');
     await uploadPage.submit();
     await submittedPage.waitForConfirmation();
     await use(submittedPage);

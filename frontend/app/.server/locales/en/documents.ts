@@ -121,6 +121,7 @@ const ns = {
     pageTitle: "Documents submitted",
     alertHeading: "We received your documents",
     youSubmitted: "You submitted:",
+    document: "<srOnly>Filename </srOnly>{{filename}}, (<srOnly>document type </srOnly>{{documentType}})",
     delayNote: "There could be a short delay with your documents appearing in your account.",
     nextStepsHeading: "Next steps",
     nextSteps: {

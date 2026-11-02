@@ -1,12 +1,12 @@
 import type { JSX } from 'react';
 
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { getUser } from '~/.server/context/user-context';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import { getFixedT } from '~/.server/utils/locale-utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
@@ -36,9 +36,16 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
   const { documents } = loadDocumentUploadState({ id: params.id, params, session });
-  const uploadedDocuments = documents.filter((document) => document.status === 'uploaded');
-
+  const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
+  // Receipts describe stored submissions, including types no longer available for new selections.
+  const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypes(locale);
+  const uploadedDocumentsById = new Map(documents.filter((document) => document.status === 'uploaded').map((document) => [document.id, document]));
+  const uploadedDocuments = Array.from(uploadedDocumentsById.values(), (document) => ({
+    id: document.id,
+    fileName: document.fileName,
+    documentTypeName: documentTypes.find((type) => type.id === document.documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable),
+  }));
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.submitted.pageTitle) }),
   };
@@ -63,9 +70,11 @@ export default function DocumentsSubmitted({ loaderData }: Route.ComponentProps)
           <div className="space-y-2">
             <h2 className="mb-2 font-lato text-xl font-semibold">{t(($) => $.submitted.alertHeading)}</h2>
             <p>{t(($) => $.submitted.youSubmitted)}</p>
-            <ol className="list-decimal space-y-1 pl-7">
+            <ol role="list" className="space-y-1">
               {uploadedDocuments.map((document) => (
-                <li key={document.id}>{document.fileName}</li>
+                <li key={document.id} className="min-w-0 wrap-anywhere">
+                  <Trans ns="documents" i18nKey={($) => $.submitted.document} values={{ filename: document.fileName, documentType: document.documentTypeName }} components={{ srOnly: <span className="sr-only" /> }} />
+                </li>
               ))}
             </ol>
             <p>{t(($) => $.submitted.delayNote)}</p>

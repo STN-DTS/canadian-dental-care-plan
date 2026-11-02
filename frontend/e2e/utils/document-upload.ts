@@ -67,14 +67,14 @@ export class DocumentUploadApi {
 }
 
 /**
- * Starts collecting subsequent browser POSTs targeting English upload routes.
+ * Starts collecting subsequent browser POSTs targeting either localized upload route.
  * @param page - Isolated page to observe.
  * @returns A live array populated by request events until the page closes.
  */
 export function collectUploadRequests(page: Page) {
   const requests: Request[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith(uploadEntryUrl)) {
+    if (request.method() === 'POST' && /^\/(en\/protected\/documents\/upload|fr\/protege\/documents\/televerser)(\/|$)/.test(new URL(request.url()).pathname)) {
       requests.push(request);
     }
   });
