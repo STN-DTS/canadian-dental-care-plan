@@ -175,9 +175,7 @@ export default function PhoneNumber({ loaderData, params }: Route.ComponentProps
                 <section className="space-y-4">
                   <p>{t(($) => $.phoneNumber.needPhoneNumber)}</p>
                   <ul className="list-disc space-y-1 pl-7">
-                    <li>
-                      <Trans ns="applicationSpokes" i18nKey={($) => $.phoneNumber.serviceCanada} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
-                    </li>
+                    <li>{t(($) => $.phoneNumber.serviceCanada)}</li>
                     <li>
                       <Trans ns="applicationSpokes" i18nKey={($) => $.phoneNumber.inPerson} components={{ findOffice }} />
                     </li>

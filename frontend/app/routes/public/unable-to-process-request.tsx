@@ -30,7 +30,6 @@ export async function loader({ request, url }: Route.LoaderArgs) {
 export default function UnableToProcessRequest({ loaderData, params }: Route.ComponentProps) {
   const { t } = useTranslation('unableToProcessRequest');
 
-  const noWrap = <span className="whitespace-nowrap" />;
   const eServiceCanadaLink = <InlineLink to={t(($) => $.eServiceCanadaLink)} className="external-link" newTabIndicator target="_blank" />;
   const cdcpLink = <InlineLink to={t(($) => $.cdcpLink)} className="external-link" newTabIndicator target="_blank" />;
 
@@ -47,9 +46,7 @@ export default function UnableToProcessRequest({ loaderData, params }: Route.Com
           </ul>
           <p>{t(($) => $.difficulties)}</p>
           <ul className="list-disc space-y-1 pl-7">
-            <li>
-              <Trans ns="unableToProcessRequest" i18nKey={($) => $.callCentre} components={{ noWrap }} />
-            </li>
+            <li>{t(($) => $.callCentre)}</li>
             <li>{t(($) => $.visitCentre)}</li>
             <li>
               <Trans ns="unableToProcessRequest" i18nKey={($) => $.submitRequest} components={{ eServiceCanadaLink }} />

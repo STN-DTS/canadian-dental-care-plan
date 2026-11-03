@@ -1,7 +1,7 @@
 import { redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { appContext } from '~/.server/context';
 import { getAgeCategoryFromDateString } from '~/.server/routes/helpers/base-application-route-helpers';
@@ -62,8 +62,6 @@ export default function ApplyForYourself({ loaderData, params }: Route.Component
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
-  const noWrap = <span className="whitespace-nowrap" />;
-
   return (
     <>
       <AppPageTitle>{t(($) => $.children.cannotApplyChild.pageTitle)}</AppPageTitle>
@@ -74,9 +72,7 @@ export default function ApplyForYourself({ loaderData, params }: Route.Component
               ? t(($) => $.children.cannotApplyChild.ineligibleToApply.cutoffApplication)
               : t(($) => $.children.cannotApplyChild.ineligibleToApply.adultApplication)}
           </p>
-          <p>
-            <Trans ns="applicationSpokes" i18nKey={($) => $.children.cannotApplyChild.eligibilityInfo} components={{ noWrap }} />
-          </p>
+          <p>{t(($) => $.children.cannotApplyChild.eligibilityInfo)}</p>
         </div>
         <fetcher.Form method="post" noValidate className="flex flex-wrap items-center gap-3">
           <CsrfTokenInput />

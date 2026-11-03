@@ -53,7 +53,6 @@ export default function RenewalApplicationSubmitted({ loaderData, params }: Rout
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
-  const noWrap = <span className="whitespace-nowrap" />;
   const statusCheckerLink = <InlineLink routeId="public/status/index" className="external-link" newTabIndicator target="_blank" params={params} />;
   const mscaLinkAccount = <InlineLink to={t(($) => $.renewalSubmitted.mscaLinkAccount)} className="external-link" newTabIndicator target="_blank" />;
 
@@ -67,7 +66,7 @@ export default function RenewalApplicationSubmitted({ loaderData, params }: Rout
             <Trans ns="applicationSpokes" i18nKey={($) => $.renewalSubmitted.statusCheckerInfo} components={{ statusCheckerLink }} />
           </p>
           <p>
-            <Trans ns="applicationSpokes" i18nKey={($) => $.renewalSubmitted.updateProfileInfo} components={{ mscaLinkAccount, noWrap }} />
+            <Trans ns="applicationSpokes" i18nKey={($) => $.renewalSubmitted.updateProfileInfo} components={{ mscaLinkAccount }} />
           </p>
         </div>
         <fetcher.Form method="post" noValidate className="flex flex-wrap items-center gap-3">

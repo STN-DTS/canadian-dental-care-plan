@@ -1,7 +1,7 @@
 import { redirect, useFetcher } from 'react-router';
 
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
@@ -119,16 +119,13 @@ export default function StatusCheckerResult({ loaderData, params }: Route.Compon
 
 function StatusNotFound() {
   const { t } = useTranslation('status');
-  const noWrap = <span className="whitespace-nowrap" />;
   return (
     <div className="mb-4">
       <ContextualAlert type="danger">
         <h2 className="mb-2 font-bold">{t(($) => $.result.statusNotFound.heading)}</h2>
         <p className="mb-2">{t(($) => $.result.statusNotFound.pleaseReview)}</p>
         <p className="mb-2">{t(($) => $.result.statusNotFound.ifSubmitted)}</p>
-        <p>
-          <Trans ns="status" i18nKey={($) => $.result.statusNotFound.contactServiceCanada} components={{ noWrap }} />
-        </p>
+        <p>{t(($) => $.result.statusNotFound.contactServiceCanada)}</p>
       </ContextualAlert>
     </div>
   );

@@ -260,7 +260,7 @@ const ns = {
       dateOfBirthYearRequired: "La date de naissance doit inclure une année",
       alert: {
         heading: "Nous n'avons pas trouvé votre compte du Régime canadien de soins dentaires (RCSD) avec les renseignements que vous avez saisis.",
-        detail: "Vérifiez que les renseignements saisis sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1\u2011833\u2011537\u20114342</noWrap> pour mettre à jour vos renseignements.",
+        detail: "Vérifiez que les renseignements saisis sont corrects et réessayez. Si le problème persiste, appelez-nous au 1\u2011833\u2011537\u20114342 pour mettre à jour vos renseignements.",
         applyDate:
           "<strong>Remarque\u00A0:</strong> Seuls les participants actuels du RCSD peuvent renouveler leur adhésion dès maintenant. Si vous ne participez pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du <startDate />.",
       },
@@ -318,7 +318,7 @@ const ns = {
     pageTitle: "Le parent ou le tuteur légal doit présenter la demande",
     unableToApply: "Vous avez moins de 18 ans. Un parent ou tuteur légal doit présenter la demande pour vous.",
     applyForYourself:
-      "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+      "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le 1\u2011833\u2011537\u20114342.",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",
@@ -331,7 +331,7 @@ const ns = {
     saveBtn: "Sauvegarder",
     dontHaveNumber: "Je n'ai pas de numéro de téléphone",
     needPhoneNumber: "Vous devez avoir un numéro de téléphone pour présenter une demande en ligne. Si vous ne pouvez pas être joint(e) par téléphone, vous pouvez tout de même présenter une demande d'adhésion au Régime canadien de soins dentaires\u00A0:",
-    serviceCanada: "Par téléphone\u00A0: contactez Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    serviceCanada: "Par téléphone\u00A0: contactez Service Canada en composant le 1\u2011833\u2011537\u20114342.",
     inPerson: "En personne\u00A0: <findOffice>trouvez un bureau de Service Canada</findOffice>.",
     officeLink: "https://bureaux.service.canada.ca/fr",
     helpMessage:
@@ -475,7 +475,7 @@ const ns = {
         lastNameNoDigits: "Le nom de famille doit contenir uniquement des lettres",
         alert: {
           heading: "Nous n'avons pas trouvé le compte du Régime canadien de soins dentaires (RCSD) de votre enfant avec les renseignements que vous avez saisis.",
-          detail: "Vérifiez que les renseignements concernant l'enfant sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1\u2011833\u2011537\u20114342</noWrap> pour mettre à jour vos renseignements.",
+          detail: "Vérifiez que les renseignements concernant l'enfant sont corrects et réessayez. Si le problème persiste, appelez-nous au 1\u2011833\u2011537\u20114342 pour mettre à jour vos renseignements.",
           detailAdultMustApply: "Si l'enfant a 18 ans, la demande doit être présentée en son nom.",
           applyDate:
             "Remarque \u00A0: seuls les participants actuels de RCSD peuvent renouveler leur adhésion dès maintenant. Si votre enfant ne participe pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du 2 juin 2026.",
@@ -497,7 +497,7 @@ const ns = {
         cutoffApplication: "Votre enfant aura 18 ans au plus tard le 1er juillet 2026. Une fois cet âge atteint, il ou elle devra présenter sa propre demande.",
       },
       eligibilityInfo:
-        "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+        "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le 1\u2011833\u2011537\u20114342.",
       backBtn: "Retour",
       exitBtn: "Quitter la demande",
       exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html",
@@ -600,7 +600,7 @@ const ns = {
     recordsShowApplicationSubmitted: "Nos dossiers indiquent qu'une demande a déjà été soumise. Nous vous informerons si d'autres renseignements sont requis.",
     statusCheckerInfo: "Vous pouvez consulter l'état de votre demande au moyen du <statusCheckerLink>Vérificateur de l'état</statusCheckerLink>.",
     updateProfileInfo:
-      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le 1\u2011833\u2011537\u20114342.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",

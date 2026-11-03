@@ -1,6 +1,6 @@
 import { redirect, useFetcher } from 'react-router';
 
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { appContext } from '~/.server/context';
 import { clearProtectedApplicationState, getSingleChildState } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -52,17 +52,13 @@ export default function CannotApplyChild({ loaderData, params }: Route.Component
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
-  const noWrap = <span className="whitespace-nowrap" />;
-
   return (
     <>
       <AppPageTitle>{t(($) => $.children.cannotApplyChild.pageTitle)}</AppPageTitle>
       <div className="max-w-prose">
         <div className="mb-6 space-y-4">
           <p>{t(($) => $.children.cannotApplyChild.ineligibleToApply)}</p>
-          <p>
-            <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.cannotApplyChild.eligibilityInfo} components={{ noWrap }} />
-          </p>
+          <p>{t(($) => $.children.cannotApplyChild.eligibilityInfo)}</p>
         </div>
         <fetcher.Form method="post" noValidate className="flex flex-wrap items-center gap-3">
           <CsrfTokenInput />

@@ -188,7 +188,7 @@ export default function NewChildrenConfirmation({ loaderData, params }: Route.Co
         <section>
           <h2 className="font-lato text-3xl font-bold">{t(($) => $.confirm.checkStatus)}</h2>
           <p className="mt-4">
-            <Trans ns="applicationFullChild" i18nKey={($) => $.confirm.cdcpChecker} components={{ cdcpLink, noWrap: <span className="whitespace-nowrap" /> }} />
+            <Trans ns="applicationFullChild" i18nKey={($) => $.confirm.cdcpChecker} components={{ cdcpLink }} />
           </p>
           <p className="mt-4">{t(($) => $.confirm.useCode)}</p>
         </section>

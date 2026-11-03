@@ -304,7 +304,7 @@ const ns = {
   parentOrGuardian: {
     pageTitle: "Parent or legal guardian needs to apply",
     unableToApply: "You are under 18. A parent or legal guardian must apply on your behalf.",
-    applyForYourself: "If you have previously applied for a child, and now want to apply for yourself, you must speak to a Service Canada representative. Contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    applyForYourself: "If you have previously applied for a child, and now want to apply for yourself, you must speak to a Service Canada representative. Contact Service Canada by calling 1\u2011833\u2011537\u20114342.",
     backBtn: "Back",
     exitBtn: "Exit application",
     exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
@@ -317,7 +317,7 @@ const ns = {
     saveBtn: "Save",
     dontHaveNumber: "I don't have a phone number",
     needPhoneNumber: "You need a phone number to apply online. If you cannot be reached by phone, you can still apply for the Canadian Dental Care Plan:",
-    serviceCanada: "By phone: call Service Canada at <noWrap>1\u2011833\u2011537\u20114342</noWrap>",
+    serviceCanada: "By phone: call Service Canada at 1\u2011833\u2011537\u20114342",
     inPerson: "In-person: <findOffice>find a Service Canada office</findOffice>",
     officeLink: "https://offices.service.canada.ca/en",
     helpMessage: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
@@ -462,7 +462,7 @@ const ns = {
         lastNameNoDigits: "Last name must contain letters only",
         alert: {
           heading: "We couldn't find your child's Canadian Dental Care Plan (CDCP) account with the information you entered",
-          detail: "Check that the child's information is correct and try again. If the problem continues, call us at <noWrap>1\u2011833\u2011537\u20114342</noWrap> to update your information.",
+          detail: "Check that the child's information is correct and try again. If the problem continues, call us at 1\u2011833\u2011537\u20114342 to update your information.",
           detailAdultMustApply: "If the child is 18, they must submit their own application.",
           applyDate: "Note: only current CDCP members can renew benefits now. If your child is not enrolled, you can apply for the upcoming benefit year starting June 2, 2026.",
         },
@@ -479,7 +479,7 @@ const ns = {
       pageTitle: "Your child must apply",
       ineligibleToApply: "Your child is 18 years or older. Your child must submit their own application to the Canadian Dental Care Plan.",
       eligibilityInfo:
-        "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+        "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling 1\u2011833\u2011537\u20114342.",
       backBtn: "Back",
       exitBtn: "Exit application",
       exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",

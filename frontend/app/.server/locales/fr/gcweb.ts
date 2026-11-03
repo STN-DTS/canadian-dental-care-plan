@@ -152,7 +152,7 @@ const ns = {
   browserCompatibilityBanner: {
     content:
       "Vous utilisez un navigateur plus ancien qui n'est pas compatible avec ce site Web. Certaines fonctions importantes pourraient ne pas fonctionner correctement et il se peut que vous ayez de la difficulté à remplir le formulaire. Pour améliorer votre expérience, nous vous recommandons de mettre à jour votre navigateur vers une version plus récente. Il est possible que vous deviez mettre à jour votre appareil ou en utiliser un autre.",
-    contact: "Si le problème persiste, contactez Service Canada en appelant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    contact: "Si le problème persiste, contactez Service Canada en appelant le 1\u2011833\u2011537\u20114342.",
     dismiss: "Fermer",
     title: "Mettez à niveau votre navigateur",
   },

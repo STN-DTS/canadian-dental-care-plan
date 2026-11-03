@@ -139,7 +139,7 @@ const ns = {
       heading: "Nous n'avons pas pu trouver l'état de votre demande avec les informations que vous nous avez fournies.",
       pleaseReview: "Veuillez vous assurer que les informations que vous avez saisies sont correctes. Si vous avez postulé récemment, réessayez dans 48 heures.",
       ifSubmitted: "Si vous avez soumis plus d'une demande pour vous-même, vos enfants ou les deux, utilisez le dernier code de demande que vous avez reçu.",
-      contactServiceCanada: "Contactez Service Canada si ce problème persiste en appelant au <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+      contactServiceCanada: "Contactez Service Canada si ce problème persiste en appelant au 1\u2011833\u2011537\u20114342.",
     },
   },
 } as const;

@@ -232,7 +232,7 @@ export default function ProtectedRenewalFamilyConfirmation({ loaderData, params 
             <section>
               <h2 className="font-lato text-3xl font-bold">{t(($) => $.confirm.checkStatus)}</h2>
               <p className="mt-4">
-                <Trans ns="protectedApplicationRenewalFamily" i18nKey={($) => $.confirm.cdcpChecker} components={{ cdcpLink, noWrap: <span className="whitespace-nowrap" /> }} />
+                <Trans ns="protectedApplicationRenewalFamily" i18nKey={($) => $.confirm.cdcpChecker} components={{ cdcpLink }} />
               </p>
               <p className="mt-4">{t(($) => $.confirm.useCode)}</p>
             </section>

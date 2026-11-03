@@ -19,7 +19,7 @@ const ns = {
   },
   applicantInformation: {
     pageTitle: "Applicant(s) information",
-    formInstructions: "If you notice an error or need to update the name, date of birth or Social Insurance Number (SIN), contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    formInstructions: "If you notice an error or need to update the name, date of birth or Social Insurance Number (SIN), contact Service Canada by calling 1\u2011833\u2011537\u20114342.",
     memberId: "Member ID",
     dob: "Date of birth",
     sin: "Social Insurance Number (SIN)",

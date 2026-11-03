@@ -1,4 +1,4 @@
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
@@ -67,9 +67,7 @@ export default function ProtectedApplicantInformation({ loaderData, params }: Ro
     <>
       <AppPageTitle>{t(($) => $.applicantInformation.pageTitle)}</AppPageTitle>
       <div className="max-w-prose space-y-10">
-        <p>
-          <Trans ns="protectedProfile" i18nKey={($) => $.applicantInformation.formInstructions} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
-        </p>
+        <p>{t(($) => $.applicantInformation.formInstructions)}</p>
         <section className="space-y-6">
           <h2 className="font-lato text-2xl font-bold">{`${primaryApplicant.firstName} ${primaryApplicant.lastName}`}</h2>
           <DefinitionList border>

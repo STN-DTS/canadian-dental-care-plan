@@ -279,9 +279,7 @@ export default function ApplicationPersonalInformation({ loaderData, params }: R
       <div className="max-w-prose">
         <ErrorAlert>
           <h2 className="mb-2 font-bold">{t(($) => $.personalInformation.errorMessage.alert.heading)}</h2>
-          <p className="mb-2">
-            <Trans ns="applicationSpokes" i18nKey={($) => $.personalInformation.errorMessage.alert.detail} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
-          </p>
+          <p className="mb-2">{t(($) => $.personalInformation.errorMessage.alert.detail)}</p>
           {fetcherDataWithStatus?.intakeStartIsoTimestamp !== undefined && (
             <p className="mb-2">
               <Trans

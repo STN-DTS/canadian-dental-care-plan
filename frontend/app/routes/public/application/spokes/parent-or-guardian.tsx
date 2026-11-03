@@ -1,7 +1,7 @@
 import { redirect, useFetcher } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { appContext } from '~/.server/context';
 import { clearPublicApplicationState, getContextualAgeCategoryFromDate, getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -61,8 +61,6 @@ export default function ApplyFlowParentOrGuardian({ loaderData, params }: Route.
   const fetcher = useFetcher<typeof action>();
   const { isSubmitting } = useFetcherSubmissionState(fetcher);
 
-  const noWrap = <span className="whitespace-nowrap" />;
-
   function getBackButtonRouteId() {
     if (ageCategory === 'youth') {
       return 'public/application/$id/living-independently';
@@ -82,9 +80,7 @@ export default function ApplyFlowParentOrGuardian({ loaderData, params }: Route.
       <AppPageTitle>{t(($) => $.parentOrGuardian.pageTitle)}</AppPageTitle>
       <div className="mb-8 max-w-prose space-y-4">
         <p className="mb-4">{t(($) => $.parentOrGuardian.unableToApply)}</p>
-        <p>
-          <Trans ns="applicationSpokes" i18nKey={($) => $.parentOrGuardian.applyForYourself} components={{ noWrap }} />
-        </p>
+        <p>{t(($) => $.parentOrGuardian.applyForYourself)}</p>
       </div>
       <fetcher.Form method="post" onSubmit={handleSubmit} noValidate className="flex flex-wrap items-center gap-3">
         <CsrfTokenInput />

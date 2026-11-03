@@ -152,7 +152,7 @@ const ns = {
   browserCompatibilityBanner: {
     content:
       "You are using an older browser that is incompatible with this website. Some important features might not work, and you could have trouble completing the form. Try updating your browser to a newer version for a better experience. You may need to update your device or use a different one.",
-    contact: "If the issue continues, contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    contact: "If the issue continues, contact Service Canada by calling 1\u2011833\u2011537\u20114342.",
     dismiss: "Dismiss",
     title: "Update your browser",
   },

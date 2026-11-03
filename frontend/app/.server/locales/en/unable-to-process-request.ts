@@ -5,7 +5,7 @@ const ns = {
   disableVpn: "disable your virtual private network (VPN), or browser or proxy server, if you use one; or",
   anotherDevice: "try making the request on another device.",
   difficulties: "If you're still experiencing difficulties:",
-  callCentre: "call the CDCP Specialized Call Center for assistance at <noWrap>1\u2011833\u2011537\u20114342</noWrap>;",
+  callCentre: "call the CDCP Specialized Call Center for assistance at 1\u2011833\u2011537\u20114342;",
   visitCentre: "visit the nearest Service Canada Centre and bring 2 pieces of identification (one with photo); or",
   submitRequest:
     'submit an <eServiceCanadaLink>eServiceCanada request</eServiceCanadaLink> by selecting "Canadian Dental Care Plan" and "Help with the Canadian Dental Care Plan application or attestation", and we\'ll call you back within 2 business days.',

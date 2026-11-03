@@ -139,7 +139,7 @@ const ns = {
       heading: "We could not find your application status with the information you gave us.",
       pleaseReview: "Please make sure the information you entered is correct. If you applied recently, try again in 48 hours.",
       ifSubmitted: "If you have submitted more than one application for yourself, your children, or both, use the last application code you received.",
-      contactServiceCanada: "Contact Service Canada if this issue continues by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+      contactServiceCanada: "Contact Service Canada if this issue continues by calling 1\u2011833\u2011537\u20114342.",
     },
   },
 } as const;

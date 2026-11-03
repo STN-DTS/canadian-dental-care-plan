@@ -111,7 +111,7 @@ const ns = {
     pageTitle: "Renewal application submitted",
     recordsShowApplicationSubmitted: "Our records show that an application has already been submitted. We'll let you know if anything else is needed.",
     statusCheckerInfo: "You can use the <statusCheckerLink>Status Checker</statusCheckerLink> to view the status of your application.",
-    updateProfileInfo: "To update your contact information or communication preferences, log into your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>. For other updates, please call <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
+    updateProfileInfo: "To update your contact information or communication preferences, log into your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>. For other updates, please call 1\u2011833\u2011537\u20114342.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     exitBtn: "Exit application",
     exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",

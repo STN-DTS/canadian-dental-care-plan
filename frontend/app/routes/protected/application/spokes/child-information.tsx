@@ -332,9 +332,7 @@ export default function ChildInformation({ loaderData, params }: Route.Component
       <div className="max-w-prose">
         <ErrorAlert>
           <h2 className="mb-2 font-bold">{t(($) => $.children.information.errorMessage.alert.heading)}</h2>
-          <p className="mb-2">
-            <Trans ns="protectedApplicationSpokes" i18nKey={($) => $.children.information.errorMessage.alert.detail} components={{ noWrap: <span className="whitespace-nowrap" /> }} />
-          </p>
+          <p className="mb-2">{t(($) => $.children.information.errorMessage.alert.detail)}</p>
           <p className="mb-2">{t(($) => $.children.information.errorMessage.alert.detailAdultMustApply)}</p>
           <p className="mb-2">{t(($) => $.children.information.errorMessage.alert.applyDate)}</p>
         </ErrorAlert>
