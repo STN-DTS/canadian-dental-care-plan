@@ -93,7 +93,7 @@ const ns = {
         serviceCanadaInformationCollection:
           "Service Canada recueillera et utilisera les renseignements personnels que vous avez fournis dans votre demande du RCSD, ainsi que des renseignements personnels limités recueillis dans votre déclaration d'impôts par l'intermédiaire de l'Agence du revenu du Canada («\u00A0ARC\u00A0») dans le cadre des processus d'inscription des membres mentionnés ci-dessus.",
         participation:
-          "La participation au RCSD est volontaire. Toutefois, si vous ne fournissez pas les renseignements personnels nécessaires, vous ne pourrez pas participer au RCSD. Si vous êtes un membre actuel du RCSD et que vous souhaitez vous retirer du programme, <contactServiceCanada>communiquez avec Service Canada</contactServiceCanada> en composant le 1-833-537-4342; pour le service de téléscripteur (ATS), composez le 1-833-6262. Vous pouvez aussi vous rendre dans un Centre Service Canada.",
+          "La participation au RCSD est volontaire. Toutefois, si vous ne fournissez pas les renseignements personnels nécessaires, vous ne pourrez pas participer au RCSD. Si vous êtes un membre actuel du RCSD et que vous souhaitez vous retirer du programme, <contactServiceCanada>communiquez avec Service Canada</contactServiceCanada> en composant le 1\u2011833\u2011537\u20114342; pour le service de téléscripteur (ATS), composez le 1\u2011833\u20116262. Vous pouvez aussi vous rendre dans un Centre Service Canada.",
         policyAnalysis:
           "EDSC peut utiliser ou communiquer les renseignements que vous fournissez pour les activités d'analyse des politiques, de recherche, de surveillance et d'évaluation au sein d'EDSC, de SC et de Statistique Canada. Ces utilisations ou activités n'auront aucune incidence sur les décisions administratives prises à votre sujet ou au sujet d'autres personnes pour qui vous faites la demande.",
         digitalCommunications: "Si vous choisissez de recevoir des communications numériques, votre adresse de courriel sera utilisée pour vous envoyer des avis au sujet du RCSD.",
@@ -112,7 +112,7 @@ const ns = {
         },
         infoSourceAccess:
           "Vous pouvez apprendre comment accéder à cette information dans la publication du gouvernement intitulée <infosource>Info Source</infosource>. Vous pouvez également accéder à Info Source en ligne dans n'importe quel Centre Service Canada.",
-        privacyContact: "Pour toute question relative à la protection des renseignements personnels concernant une demande, <contactServiceCanada>contactez Service Canada</contactServiceCanada> en composant le 1-833-537-4342.",
+        privacyContact: "Pour toute question relative à la protection des renseignements personnels concernant une demande, <contactServiceCanada>contactez Service Canada</contactServiceCanada> en composant le 1\u2011833\u2011537\u20114342.",
         personalInformationHandlingComplaintProcess:
           "Si vous n'êtes pas en mesure de régler un problème relatif à la protection de la vie privée, ou si vous n'êtes pas satisfait de la façon dont vos renseignements personnels ont été traités par EDSC, vous pouvez communiquer avec le Commissariat à la protection de la vie privée du Canada (CPVP) pour <fileacomplaint>déposer une plainte</fileacomplaint>.",
         privacyProtection: "Pour plus de renseignements sur la protection de la vie privée dans le RCSD, consultez la <cdcpPrivacyPolicy>page sur la protection de la vie privée</cdcpPrivacyPolicy> du RCSD.",
@@ -260,7 +260,7 @@ const ns = {
       dateOfBirthYearRequired: "La date de naissance doit inclure une année",
       alert: {
         heading: "Nous n'avons pas trouvé votre compte du Régime canadien de soins dentaires (RCSD) avec les renseignements que vous avez saisis.",
-        detail: "Vérifiez que les renseignements saisis sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1-833-537-4342</noWrap> pour mettre à jour vos renseignements.",
+        detail: "Vérifiez que les renseignements saisis sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1\u2011833\u2011537\u20114342</noWrap> pour mettre à jour vos renseignements.",
         applyDate:
           "<strong>Remarque\u00A0:</strong> Seuls les participants actuels du RCSD peuvent renouveler leur adhésion dès maintenant. Si vous ne participez pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du <startDate />.",
       },
@@ -318,7 +318,7 @@ const ns = {
     pageTitle: "Le parent ou le tuteur légal doit présenter la demande",
     unableToApply: "Vous avez moins de 18 ans. Un parent ou tuteur légal doit présenter la demande pour vous.",
     applyForYourself:
-      "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
+      "Si vous avez déjà présenté une demande pour un enfant et que vous souhaitez maintenant faire une demande pour vous-même, vous devez vous adresser à un représentant de Service Canada. Vous pouvez communiquer avec Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",
@@ -331,7 +331,7 @@ const ns = {
     saveBtn: "Sauvegarder",
     dontHaveNumber: "Je n'ai pas de numéro de téléphone",
     needPhoneNumber: "Vous devez avoir un numéro de téléphone pour présenter une demande en ligne. Si vous ne pouvez pas être joint(e) par téléphone, vous pouvez tout de même présenter une demande d'adhésion au Régime canadien de soins dentaires\u00A0:",
-    serviceCanada: "Par téléphone\u00A0: contactez Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
+    serviceCanada: "Par téléphone\u00A0: contactez Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     inPerson: "En personne\u00A0: <findOffice>trouvez un bureau de Service Canada</findOffice>.",
     officeLink: "https://bureaux.service.canada.ca/fr",
     helpMessage:
@@ -475,7 +475,7 @@ const ns = {
         lastNameNoDigits: "Le nom de famille doit contenir uniquement des lettres",
         alert: {
           heading: "Nous n'avons pas trouvé le compte du Régime canadien de soins dentaires (RCSD) de votre enfant avec les renseignements que vous avez saisis.",
-          detail: "Vérifiez que les renseignements concernant l'enfant sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1-833-537-4342</noWrap> pour mettre à jour vos renseignements.",
+          detail: "Vérifiez que les renseignements concernant l'enfant sont corrects et réessayez. Si le problème persiste, appelez-nous au <noWrap>1\u2011833\u2011537\u20114342</noWrap> pour mettre à jour vos renseignements.",
           detailAdultMustApply: "Si l'enfant a 18 ans, la demande doit être présentée en son nom.",
           applyDate:
             "Remarque \u00A0: seuls les participants actuels de RCSD peuvent renouveler leur adhésion dès maintenant. Si votre enfant ne participe pas déjà au RCSD, vous pourrez présenter une demande d'adhésion pour la prochaine année de couverture à compter du 2 juin 2026.",
@@ -497,7 +497,7 @@ const ns = {
         cutoffApplication: "Votre enfant aura 18 ans au plus tard le 1er juillet 2026. Une fois cet âge atteint, il ou elle devra présenter sa propre demande.",
       },
       eligibilityInfo:
-        "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le <noWrap>1-833-537-4342</noWrap>.",
+        "Si votre enfant est un adulte à charge et que vous êtes son représentant légal ou son mandataire, vous devez vous adresser à un représentant de Service Canada pour présenter une demande en son nom. Vous pouvez contacter Service Canada en composant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
       backBtn: "Retour",
       exitBtn: "Quitter la demande",
       exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html",
@@ -600,7 +600,7 @@ const ns = {
     recordsShowApplicationSubmitted: "Nos dossiers indiquent qu'une demande a déjà été soumise. Nous vous informerons si d'autres renseignements sont requis.",
     statusCheckerInfo: "Vous pouvez consulter l'état de votre demande au moyen du <statusCheckerLink>Vérificateur de l'état</statusCheckerLink>.",
     updateProfileInfo:
-      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1-833-537-4342</noWrap>.",
+      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     backBtn: "Retour",
     exitBtn: "Quitter la demande",

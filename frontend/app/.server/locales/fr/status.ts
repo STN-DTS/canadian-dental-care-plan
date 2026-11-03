@@ -125,7 +125,7 @@ const ns = {
         dateOfBirthValid: "Le jour doit être valide pour le mois et l'année choisis",
         dateOfBirthYearNumber: "L'année doit être un nombre, par exemple 1950",
         dateOfBirthYearRequired: "La date de naissance doit inclure une année",
-        charactersValid: "Seuls les lettres, les chiffres et les caractères suivants sont acceptés : apostrophe ('), virgule (,), point (.), trait d'union (-) et parenthèse ()",
+        charactersValid: "Seuls les lettres, les chiffres et les caractères suivants sont acceptés\u00A0: apostrophe ('), virgule (,), point (.), trait d'union (-) et parenthèse ()",
       },
     },
   },
@@ -139,7 +139,7 @@ const ns = {
       heading: "Nous n'avons pas pu trouver l'état de votre demande avec les informations que vous nous avez fournies.",
       pleaseReview: "Veuillez vous assurer que les informations que vous avez saisies sont correctes. Si vous avez postulé récemment, réessayez dans 48 heures.",
       ifSubmitted: "Si vous avez soumis plus d'une demande pour vous-même, vos enfants ou les deux, utilisez le dernier code de demande que vous avez reçu.",
-      contactServiceCanada: "Contactez Service Canada si ce problème persiste en appelant au <noWrap>1-833-537-4342</noWrap>.",
+      contactServiceCanada: "Contactez Service Canada si ce problème persiste en appelant au <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     },
   },
 } as const;

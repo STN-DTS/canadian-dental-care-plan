@@ -20,7 +20,7 @@ const ns = {
   },
   applicantInformation: {
     pageTitle: "Renseignements sur les demandeurs",
-    formInstructions: "Si vous remarquez une erreur ou si vous devez mettre à jour le nom, la date de naissance ou le numéro d'assurance sociale (NAS), contactez Service Canada en appelant le <noWrap>1-833-537-4342</noWrap>.",
+    formInstructions: "Si vous remarquez une erreur ou si vous devez mettre à jour le nom, la date de naissance ou le numéro d'assurance sociale (NAS), contactez Service Canada en appelant le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     memberId: "Numéro d'identification du membre",
     dob: "Date de naissance",
     sin: "Numéro d'assurance sociale (NAS)",

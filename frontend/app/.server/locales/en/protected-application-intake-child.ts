@@ -87,7 +87,7 @@ const ns = {
     proofOfCoverage:
       "If any T4 or T4A tax slips show you have access to dental insurance or coverage for your child(ren), you'll be asked to provide proof that they're not covered. This applies to your tax slips, and if applicable, your spouse's or common-law partner's tax slips.",
     checkStatus: "Check the status of your application",
-    cdcpChecker: "You can use the <cdcpLink>Canadian Dental Care Plan Status Checker</cdcpLink> or call <noWrap>1-833-537-4342</noWrap> to track the progress of your application.",
+    cdcpChecker: "You can use the <cdcpLink>Canadian Dental Care Plan Status Checker</cdcpLink> or call <noWrap>1\u2011833\u2011537\u20114342</noWrap> to track the progress of your application.",
     useCode: "You will need your application code or member ID.",
     getUpdatesTitle: "Get updates quickly and securely",
     getUpdatesText: "<mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount> is the fastest way to receive important information about the Canadian Dental Care Plan.",

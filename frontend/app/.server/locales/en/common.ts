@@ -59,7 +59,7 @@ const ns = {
   killswitch: {
     title: "Please hold on",
     overloaded: "We're getting a lot of visitors right now, which is slowing things down. You will be able to continue when the timer reaches zero.",
-    dontWorryBeHappy: "Don't worry\u2014your information is saved. Do not close your browser, or you will have to start the application over again.",
+    dontWorryBeHappy: "Don't worry, your information is saved. Do not close your browser, or you will have to start the application over again.",
     remainingTime: "Continuing to application in: {{mins}} min {{secs}} sec",
   },
   status: {

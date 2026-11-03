@@ -59,7 +59,7 @@ const ns = {
   killswitch: {
     title: "Veuillez patienter",
     overloaded: "Nous recevons beaucoup de visiteurs en ce moment, ce qui ralentit le processus. Vous pourrez continuer lorsque le minuteur atteindra zéro.",
-    dontWorryBeHappy: "Ne vous inquiétez pas\u2014vos renseignements sont enregistrés. Ne fermez pas votre navigateur, sinon vous devrez recommencer l'application.",
+    dontWorryBeHappy: "Ne vous inquiétez pas, vos renseignements sont enregistrés. Ne fermez pas votre navigateur, sinon vous devrez recommencer l'application.",
     remainingTime: "Accéder à l'application dans\u00A0: {{mins}} min {{secs}} sec",
   },
   status: {

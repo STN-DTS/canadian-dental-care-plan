@@ -155,7 +155,7 @@ const ns = {
     simplifiedBeginProcess:
       "Always confirm your eligibility and coverage level prior to receiving care. You can confirm this information by using the <cdcpLink>Status Checker</cdcpLink> or signing in to your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>.",
     checkStatus: "Check the status of your application",
-    cdcpChecker: "You can use the <cdcpLink>Canadian Dental Care Plan Status Checker</cdcpLink> or call <noWrap>1-833-537-4342</noWrap> to track the progress of your application.",
+    cdcpChecker: "You can use the <cdcpLink>Canadian Dental Care Plan Status Checker</cdcpLink> or call <noWrap>1\u2011833\u2011537\u20114342</noWrap> to track the progress of your application.",
     useCode: "You will need your application code or member ID.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     mscaLinkChecker: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/apply.html#status",

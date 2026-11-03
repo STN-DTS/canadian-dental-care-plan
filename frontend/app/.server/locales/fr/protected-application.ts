@@ -113,7 +113,7 @@ const ns = {
     recordsShowApplicationSubmitted: "Nos dossiers indiquent qu'une demande a déjà été soumise. Nous vous informerons si d'autres renseignements sont requis.",
     statusCheckerInfo: "Vous pouvez consulter l'état de votre demande au moyen du <statusCheckerLink>Vérificateur de l'état</statusCheckerLink>.",
     updateProfileInfo:
-      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1-833-537-4342</noWrap>.",
+      "Pour mettre à jour vos coordonnées ou vos préférences de communication, ouvrez une session dans <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>. Pour toute autre mise à jour, veuillez composer le <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     exitBtn: "Quitter la demande",
     exitBtnLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",

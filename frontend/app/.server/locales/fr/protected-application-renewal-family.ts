@@ -155,7 +155,7 @@ const ns = {
     simplifiedBeginProcess:
       "Vérifiez toujours votre admissibilité et votre niveau de couverture avant de recevoir des soins. Vous pouvez confirmer ces renseignements en utilisant le <cdcpLink>Vérificateur de l'état</cdcpLink> ou en vous connectant à <mscaLinkAccount>Mon dossier Service Canada (MDSC)</mscaLinkAccount>.",
     checkStatus: "Consulter l'état de votre demande",
-    cdcpChecker: "Vous pouvez consulter le <cdcpLink>Vérificateur de l'état d'une demande du Régime canadien de soins dentaires</cdcpLink> ou composer le <noWrap>1-833-537-4342</noWrap> pour suivre l'état de votre demande.",
+    cdcpChecker: "Vous pouvez consulter le <cdcpLink>Vérificateur de l'état d'une demande du Régime canadien de soins dentaires</cdcpLink> ou composer le <noWrap>1\u2011833\u2011537\u20114342</noWrap> pour suivre l'état de votre demande.",
     useCode: "Vous aurez besoin de votre code de demande ou de votre numéro d'identification du membre.",
     mscaLinkAccount: "https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html",
     mscaLinkChecker: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/demande.html#etat",

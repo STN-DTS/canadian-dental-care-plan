@@ -19,7 +19,7 @@ const ns = {
   },
   applicantInformation: {
     pageTitle: "Applicant(s) information",
-    formInstructions: "If you notice an error or need to update the name, date of birth or Social Insurance Number (SIN), contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
+    formInstructions: "If you notice an error or need to update the name, date of birth or Social Insurance Number (SIN), contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     memberId: "Member ID",
     dob: "Date of birth",
     sin: "Social Insurance Number (SIN)",
@@ -193,7 +193,7 @@ const ns = {
     pageTitle: "Verify your email address",
     verificationCode: 'An email with a code has been sent to {{email}}. Please enter the 5-digit verification code and select "Continue".',
     requestNew: "It may take up to 60 seconds for the email to arrive. If you don't see it, check your junk or spam folder. If you still don't have the code, you can request a new one.",
-    unableToVerify: "If you are not able to confirm your email, select “Back” to change the email address  or <communicationLink>modify your communication preference</communicationLink>.",
+    unableToVerify: 'If you are not able to confirm your email, select "Back" to change the email address  or <communicationLink>modify your communication preference</communicationLink>.',
     verificationCodeLabel: "Verification code",
     requestNewCode: "Request new verification code",
     back: "Back",

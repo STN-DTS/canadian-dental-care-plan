@@ -63,7 +63,7 @@ const ns = {
     termsAndConditionsOfUse: {
       summary: "Terms and Conditions of Use",
       onlineApplicationLegalTerms:
-        "<strong>PLEASE READ CAREFULLY.</strong> These Terms and Conditions (“Terms”) for the Canadian Dental Care Plan (“CDCP”) Online Application (“the Application”) contain information about the legal rights and responsibilities and govern your use of the Application. These Terms should be read together with the <canadaTermsConditions>Canada.ca website Terms and Conditions</canadaTermsConditions>. If there are differences, these Terms override the Canada.ca Terms and Conditions.",
+        '<strong>PLEASE READ CAREFULLY.</strong> These Terms and Conditions ("Terms") for the Canadian Dental Care Plan ("CDCP") Online Application ("the Application") contain information about the legal rights and responsibilities and govern your use of the Application. These Terms should be read together with the <canadaTermsConditions>Canada.ca website Terms and Conditions</canadaTermsConditions>. If there are differences, these Terms override the Canada.ca Terms and Conditions.',
       esdcDefinitionClarification: "In these Terms, ESDC refers to the Minister of Employment and Social Development, representing His Majesty the King in Right of Canada.",
       onlineApplication: {
         heading: "Terms of Use for the Online Application:",
@@ -86,11 +86,11 @@ const ns = {
       personalInformation: {
         heading: "Personal Information",
         serviceCanadaApplicationAdministration:
-          "Service Canada, which is part of Employment and Social Development Canada (“ESDC”), processes Canadian Dental Care Plan (“CDCP”) member applications and renewals, answers questions from application, and provides member eligibility review-related services for the CDCP, under agreement with Health Canada (“HC”). Please note, renewals may occur either through an explicit process requiring client action, or in future years, automatically based on an eligibility reassessment.",
+          'Service Canada, which is part of Employment and Social Development Canada ("ESDC"), processes Canadian Dental Care Plan ("CDCP") member applications and renewals, answers questions from application, and provides member eligibility review-related services for the CDCP, under agreement with Health Canada ("HC"). Please note, renewals may occur either through an explicit process requiring client action, or in future years, automatically based on an eligibility reassessment.',
         serviceCanadaInformationCollection:
-          "Service Canada will collect and use the personal information you include in your CDCP application, and limited personal information collected through your tax return via the Canada Revenue Agency (“CRA”) as part of the member enrolment processes mentioned above.",
+          'Service Canada will collect and use the personal information you include in your CDCP application, and limited personal information collected through your tax return via the Canada Revenue Agency ("CRA") as part of the member enrolment processes mentioned above.',
         participation:
-          "Participation in the CDCP is voluntary. However, if you do not provide the necessary personal information, you can not participate in the CDCP. If you are a current CDCP member and wish to withdraw from the program, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1-833-537-4342; for TTY (teletypewriter) service call 1-833-6262. You can also visit a Service Canada Centre.",
+          "Participation in the CDCP is voluntary. However, if you do not provide the necessary personal information, you can not participate in the CDCP. If you are a current CDCP member and wish to withdraw from the program, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1\u2011833\u2011537\u20114342; for TTY (teletypewriter) service call 1\u2011833\u20116262. You can also visit a Service Canada Centre.",
         policyAnalysis:
           "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
         digitalCommunications: "If you opt to receive digital communications, your email address will be used to send you notifications regarding the CDCP.",
@@ -107,7 +107,7 @@ const ns = {
           hcPpu440: "<hcPib>HC's CDCP PIB</hcPib> (HC PPU 440)",
         },
         infoSourceAccess: "You can learn how to access this information in the government publication called <infosource>Info Source</infosource>. You can also access Info Source online at any Service Canada Centre.",
-        privacyContact: "For privacy related questions related to an application, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1-833-537-4342.",
+        privacyContact: "For privacy related questions related to an application, <contactServiceCanada>contact Service Canada</contactServiceCanada> by calling 1\u2011833\u2011537\u20114342.",
         personalInformationHandlingComplaintProcess:
           "If you are unable to resolve a privacy issue, or do not agree with the way your personal information was handled by ESDC, you can contact the Office of the Privacy Commissioner of Canada (OPC) to <fileacomplaint>file a complaint</fileacomplaint>.",
         privacyProtection: "For more information about privacy protection in the CDCP, visit the CDCP <cdcpPrivacyPolicy>privacy page</cdcpPrivacyPolicy>.",
@@ -118,7 +118,7 @@ const ns = {
       governmentOfCanadaAndSunLife: {
         heading: "Government of Canada and Sun Life",
         shareInfo:
-          "Employment and Social Development Canada (“ESDC”) may share the personal information you provide with Health Canada (“HC”), and the Canada Revenue Agency (“CRA”) to validate eligibility and register individuals for the Canadian Dental Care Plan (“CDCP”).",
+          'Employment and Social Development Canada ("ESDC") may share the personal information you provide with Health Canada ("HC"), and the Canada Revenue Agency ("CRA") to validate eligibility and register individuals for the Canadian Dental Care Plan ("CDCP").',
         policyAnalysis:
           "ESDC may use or share the information you provide for policy analysis, research, monitoring and/or evaluation activities within ESDC, HC and Statistics Canada. These uses or activities will not result in any administrative decisions made about you or others who you are applying for.",
         sendLetters: "ESDC or HC may share your personal information with Public Service and Procurement Canada for the purpose of sending CDCP letters to you.",
@@ -253,7 +253,7 @@ const ns = {
       dateOfBirthYearRequired: "Date of birth must include a year",
       alert: {
         heading: "We couldn't find your Canadian Dental Care Plan (CDCP) account with the information you entered.",
-        detail: "Check that your information is correct and try again. If the problem continues, call us at <noWrap>1-833-537-4342</noWrap> to update your information.",
+        detail: "Check that your information is correct and try again. If the problem continues, call us at <noWrap>1\u2011833\u2011537\u20114342</noWrap> to update your information.",
         applyDate: "<strong>Note:</strong> Only current CDCP members can renew benefits now. If you are not enrolled, you can apply for the upcoming benefit year starting <startDate />.",
       },
     },
@@ -309,7 +309,7 @@ const ns = {
   parentOrGuardian: {
     pageTitle: "Parent or legal guardian needs to apply",
     unableToApply: "You are under 18. A parent or legal guardian must apply on your behalf.",
-    applyForYourself: "If you have previously applied for a child, and now want to apply for yourself, you must speak to a Service Canada representative. Contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
+    applyForYourself: "If you have previously applied for a child, and now want to apply for yourself, you must speak to a Service Canada representative. Contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     backBtn: "Back",
     exitBtn: "Exit application",
     exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
@@ -322,7 +322,7 @@ const ns = {
     saveBtn: "Save",
     dontHaveNumber: "I don't have a phone number",
     needPhoneNumber: "You need a phone number to apply online. If you cannot be reached by phone, you can still apply for the Canadian Dental Care Plan:",
-    serviceCanada: "By phone: call Service Canada at <noWrap>1-833-537-4342</noWrap>",
+    serviceCanada: "By phone: call Service Canada at <noWrap>1\u2011833\u2011537\u20114342</noWrap>",
     inPerson: "In-person: <findOffice>find a Service Canada office</findOffice>",
     officeLink: "https://offices.service.canada.ca/en",
     helpMessage: "Canadian phone numbers must have 10 digits (for example: 800\u2011622\u20116232). If it's a number from another country, add a + sign and then the country code (for example: +44\u00A020\u00A07946\u00A00958).",
@@ -396,16 +396,16 @@ const ns = {
   },
   verifyEmail: {
     pageTitle: "Verification code",
-    verificationCode: "An email with a code has been sent to {{email}}. Please enter the 5-digit verification code and select “Continue”.",
+    verificationCode: 'An email with a code has been sent to {{email}}. Please enter the 5-digit verification code and select "Continue".',
     requestNew: "It may take up to 60 seconds for the email to arrive. If you do not see it, check your junk or spam folder. If you still do not have the code, you can request a new one.",
-    unableToVerify: "If you are not able to confirm your email, select “Back” to change the email address or <communicationLink>modify your communication preference</communicationLink>.",
+    unableToVerify: 'If you are not able to confirm your email, select "Back" to change the email address or <communicationLink>modify your communication preference</communicationLink>.',
     verificationCodeLabel: "Verification code",
     requestNewCode: "Request new code",
     back: "Back",
     continue: "Continue",
     errorMessage: {
       verificationCodeRequired: "Enter 5-digit verification code",
-      verificationCodeMaxAttempts: "You have entered an incorrect verification code more than 5 times. You must request a new code using the “Request new verification code” link below.",
+      verificationCodeMaxAttempts: 'You have entered an incorrect verification code more than 5 times. You must request a new code using the "Request new verification code" link below.',
     },
     verificationCodeAlert: {
       heading: "The code entered does not match the code that was sent to the email address provided, or the code has expired.",
@@ -465,7 +465,7 @@ const ns = {
         lastNameNoDigits: "Last name must contain letters only",
         alert: {
           heading: "We couldn't find your child's Canadian Dental Care Plan (CDCP) account with the information you entered",
-          detail: "Check that the child's information is correct and try again. If the problem continues, call us at <noWrap>1-833-537-4342</noWrap> to update your information.",
+          detail: "Check that the child's information is correct and try again. If the problem continues, call us at <noWrap>1\u2011833\u2011537\u20114342</noWrap> to update your information.",
           detailAdultMustApply: "If the child is 18, they must submit their own application.",
           applyDate: "Note: only current CDCP members can renew benefits now. If your child is not enrolled, you can apply for the upcoming benefit year starting June 2, 2026.",
         },
@@ -486,7 +486,7 @@ const ns = {
         cutoffApplication: "Your child will turn 18 by July 1, 2026. Once they turn 18, they must submit their own application.",
       },
       eligibilityInfo:
-        "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling <noWrap>1-833-537-4342</noWrap>.",
+        "If your child is a dependant adult and you are their legal delegate or Power of Attorney, you must speak to a Service Canada representative to apply on their behalf. You can contact Service Canada by calling <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
       backBtn: "Back",
       exitBtn: "Exit application",
       exitBtnLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
@@ -579,7 +579,7 @@ const ns = {
   dentalInsuranceExitApplication: {
     pageTitle: "We may ask you for additional information",
     areYouSure: "You may be asked to provide proof that you do not have access to other dental insurance. Check the box to show you understand what's needed.",
-    clickBack: "If you want to end the session and stop your application, click “Close application”. Any information entered will not be saved.",
+    clickBack: 'If you want to end the session and stop your application, click "Close application". Any information entered will not be saved.',
     backBtn: "Back",
     exitBtn: "Close application",
     exitLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
@@ -588,7 +588,7 @@ const ns = {
     pageTitle: "Renewal application submitted",
     recordsShowApplicationSubmitted: "Our records show that an application has already been submitted. We'll let you know if anything else is needed.",
     statusCheckerInfo: "You can use the <statusCheckerLink>Status Checker</statusCheckerLink> to view the status of your application.",
-    updateProfileInfo: "To update your contact information or communication preferences, log into your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>. For other updates, please call <noWrap>1-833-537-4342</noWrap>.",
+    updateProfileInfo: "To update your contact information or communication preferences, log into your <mscaLinkAccount>My Service Canada Account (MSCA)</mscaLinkAccount>. For other updates, please call <noWrap>1\u2011833\u2011537\u20114342</noWrap>.",
     mscaLinkAccount: "https://www.canada.ca/en/employment-social-development/services/my-account.html",
     backBtn: "Back",
     exitBtn: "Exit application",
