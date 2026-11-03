@@ -386,6 +386,17 @@ for (const locale of ['en', 'fr'] as const) {
     test.describe(`localized submission review ${locale} at ${width}px`, () => {
       test.use({ uploadLocale: locale, viewport: { width, height: 900 } });
 
+      test('wraps validation errors for long pending filenames without viewport overflow', async ({ uploadPage }) => {
+        const { page } = uploadPage;
+        const name = `employer-${'a'.repeat(180)}.txt`;
+        await uploadPage.addFile(file(name, 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'));
+        await uploadPage.chooseType(name);
+        await uploadPage.submit();
+        await expect(uploadPage.item(name).getByRole('alert')).toContainText(name);
+        await expect(uploadPage.pendingFiles.getByRole('listitem')).toHaveCount(1);
+        await expect.poll(async () => await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      });
+
       test('validates before review, preserves edits on cancellation, and focuses returned file errors', async ({ uploadPage }) => {
         const { page, copy } = uploadPage;
         const requests = collectUploadRequests(page);

@@ -28,7 +28,7 @@ export function PendingDocumentUploadItem({ id, fileName, documentType, document
       aria-labelledby={fileNameId}
       aria-describedby={undefined}
       value={id}
-      className={cn('min-w-0 flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
+      className={cn('min-w-0 flex-col items-stretch gap-3 wrap-anywhere sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
       tabIndex={-1}
     >
       {fileError && <InputError id={`file-error-${id}`} fieldId={`file-upload-item-${id}`} message={fileError} />}

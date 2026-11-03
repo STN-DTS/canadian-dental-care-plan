@@ -68,7 +68,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
 
   return (
     <ErrorSummaryProvider actionData={actionData}>
-      <ErrorSummary />
+      <ErrorSummary className="wrap-anywhere" />
       <fetcher.Form
         ref={formRef}
         method="post"
