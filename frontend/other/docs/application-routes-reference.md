@@ -351,12 +351,15 @@ Section for authenticated users to manage required documentation. Users can uplo
 
 These routes require the document-upload feature and a resolved applicant. Applicants without an applicant category can still access the document flow.
 
-| English URL                            | English Title          | French URL                         | French Title         |
-| -------------------------------------- | ---------------------- | ---------------------------------- | -------------------- |
-| `/en/protected/documents`              | Documents              | `/fr/protege/documents`            | Documents            |
-| `/en/protected/documents/upload`       | Upload                 | `/fr/protege/documents/televerser` | Téléverser           |
-| `/en/protected/documents/not-required` | Documents not required | `/fr/protege/documents/non-requis` | Documents non requis |
-| `/en/protected/documents/submitted`    | Documents submitted    | `/fr/protege/documents/soumis`     | Documents soumis     |
+| English URL                                    | English Title          | French URL                                    | French Title         |
+| ---------------------------------------------- | ---------------------- | --------------------------------------------- | -------------------- |
+| `/en/protected/documents`                      | Documents              | `/fr/protege/documents`                       | Documents            |
+| `/en/protected/documents/upload`               | Upload                 | `/fr/protege/documents/televerser`            | Téléverser           |
+| `/en/protected/documents/not-required`         | Documents not required | `/fr/protege/documents/non-requis`            | Documents non requis |
+| `/en/protected/documents/upload/:id/submitted` | Documents submitted    | `/fr/protege/documents/televerser/:id/soumis` | Documents soumis     |
+
+The receipt's `:id` is the UUID of the finished upload flow; it is not a
+standalone confirmation URL.
 
 For upload flow implementation details, see [Document Upload Feature](./document-upload-feature.md).
 
