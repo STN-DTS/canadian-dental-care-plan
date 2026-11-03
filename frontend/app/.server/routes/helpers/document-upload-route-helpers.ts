@@ -14,6 +14,7 @@ export interface SubmittedDocument {
   readonly documentType: string;
   readonly fileSize: number;
   readonly status: 'pending' | 'uploaded';
+  readonly uploadDate?: string;
 }
 
 export interface DocumentUploadState {

@@ -73,7 +73,7 @@ function setReviewableDocuments(documents: ReadonlyArray<UploadDocument>, option
 }
 
 function createDocument(id: string, status: UploadDocument['status']): UploadDocument {
-  return { id, file: new File([id], `${id}.txt`, { type: 'text/plain' }), documentType: 'receipt', status };
+  return { id, file: new File([id], `${id}.txt`, { type: 'text/plain' }), documentType: 'receipt', status, uploadDate: undefined };
 }
 
 function renderForm(language = 'en') {
@@ -82,7 +82,7 @@ function renderForm(language = 'en') {
       path: '/:lang/protected/documents/upload/:id',
       Component: () => (
         <>
-          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} />
+          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} timeZone="America/Toronto" />
           <Link to="/destination">Leave upload</Link>
         </>
       ),
@@ -130,6 +130,7 @@ describe('DocumentUploadForm', () => {
         path: '/:lang/protected/documents/upload/:id',
         Component: () => (
           <DocumentUploadForm
+            timeZone="America/Toronto"
             documentTypes={[
               { id: 'receipt', name: 'Receipt' },
               { id: 'proof', name: 'Proof of coverage' },
@@ -366,7 +367,7 @@ describe('DocumentUploadForm', () => {
               },
             }),
           );
-          return <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />;
+          return <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} timeZone="America/Toronto" />;
         },
         action: () => redirect('/destination'),
       },

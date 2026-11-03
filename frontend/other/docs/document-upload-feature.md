@@ -105,22 +105,30 @@ screen-reader users without changing the visible receipt format.
 
 ### File selection and editing
 
-| Scenario                                                                                     | Outcome                                                                                                                                             |
-| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| User selects a valid file                                                                    | Client-side selection validation adds it as pending with an empty document type; focus moves to the new item.                                       |
-| User adds more files                                                                         | Appends them without discarding existing files or document types. The native picker selects one file at a time; this form renders no drop zone.     |
-| User cancels the picker                                                                      | Leaves the selection unchanged.                                                                                                                     |
-| Incoming selection exceeds the maximum                                                       | Rejects the entire proposed selection. Pending and uploaded files both count toward the limit.                                                      |
-| Incoming selection contains an unsupported extension or oversized file                       | Rejects the entire proposed selection and displays the first selection error. A file exactly at the size limit passes size validation.              |
-| Incoming selection contains a duplicate, or duplicates any listed file                       | Rejects the entire proposed selection, including duplicates of already-uploaded files.                                                              |
-| Files have identical contents but different names, or identical names but different contents | The form allows them. A duplicate must match the filename, size, and SHA-256 hash.                                                                  |
-| User changes a pending file's document type                                                  | Updates that file only. The selector offers active, localized types.                                                                                |
-| User cancels or dismisses the removal dialog                                                 | Keeps the pending file.                                                                                                                             |
-| User explicitly confirms removal                                                             | Removes that pending file; focus moves to the next or preceding pending item, the uploaded-only status region, or the upload trigger.               |
-| File has already uploaded successfully                                                       | Shows its filename, document type, and success status without type-editing or removal controls. An unavailable type label has a localized fallback. |
-| Selection validation response is stale                                                       | Only the response matching the current validation ID can add files.                                                                                 |
+| Scenario                                                                                     | Outcome                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User selects a valid file                                                                    | Client-side selection validation adds it as pending with an empty document type; focus moves to the new item.                                                                       |
+| User adds more files                                                                         | Appends them without discarding existing files or document types. The native picker selects one file at a time; this form renders no drop zone.                                     |
+| User cancels the picker                                                                      | Leaves the selection unchanged.                                                                                                                                                     |
+| Incoming selection exceeds the maximum                                                       | Rejects the entire proposed selection. Pending and uploaded files both count toward the limit.                                                                                      |
+| Incoming selection contains an unsupported extension or oversized file                       | Rejects the entire proposed selection and displays the first selection error. A file exactly at the size limit passes size validation.                                              |
+| Incoming selection contains a duplicate, or duplicates any listed file                       | Rejects the entire proposed selection, including duplicates of already-uploaded files.                                                                                              |
+| Files have identical contents but different names, or identical names but different contents | The form allows them. A duplicate must match the filename, size, and SHA-256 hash.                                                                                                  |
+| User changes a pending file's document type                                                  | Updates that file only. The selector offers active, localized types.                                                                                                                |
+| User cancels or dismisses the removal dialog                                                 | Keeps the pending file.                                                                                                                                                             |
+| User explicitly confirms removal                                                             | Removes that pending file; focus moves to the next or preceding pending item, the uploaded-only status region, or the upload trigger.                                               |
+| File has already uploaded successfully                                                       | Shows its filename, localized document type, upload date and time, and success status without type-editing or removal controls. An unavailable type label has a localized fallback. |
+| Selection validation response is stale                                                       | Only the response matching the current validation ID can add files.                                                                                                                 |
 
 ### Validation, scanning, and uploading
+
+Successful rows retain the per-file upload timestamp created by the server before
+calling EWDU. ISO strings carry that timestamp through upload results, session
+storage, and client state. Earlier successes keep their original timestamps;
+files succeeding on a retry use that retry's timestamp. Failed files have no
+success timestamp. The full date and time use the active Canadian locale and
+resolved client-hint timezone, with identical inline and tooltip text. Older
+session records without timestamps do not receive an invented date.
 
 | Scenario                                                                                                       | Outcome                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

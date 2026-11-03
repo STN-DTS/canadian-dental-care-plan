@@ -246,9 +246,9 @@ describe('useDocumentUploadForm', () => {
       responseType: 'upload-errors' as const,
       errors: { errors: [] },
       documents: [
-        { id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded' as const },
+        { id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:00Z' },
         { id: 'file-2', fileName: proof.name, fileSize: proof.size, documentType: 'proof-of-coverage', status: 'pending' as const },
-        { id: 'file-3', fileName: invoice.name, fileSize: invoice.size, documentType: 'receipt', status: 'uploaded' as const },
+        { id: 'file-3', fileName: invoice.name, fileSize: invoice.size, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:01Z' },
         { id: 'file-4', fileName: coverage.name, fileSize: coverage.size, documentType: 'proof-of-coverage', status: 'pending' as const },
       ],
     };
@@ -256,9 +256,9 @@ describe('useDocumentUploadForm', () => {
     rerender();
 
     expect(result.current.documentUploadFormState.documents).toEqual([
-      { id: 'file-1', file: receipt, documentType: 'receipt', status: 'uploaded' },
+      { id: 'file-1', file: receipt, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T05:30:00Z' },
       { id: 'file-2', file: proof, documentType: 'proof-of-coverage', status: 'pending' },
-      { id: 'file-3', file: invoice, documentType: 'receipt', status: 'uploaded' },
+      { id: 'file-3', file: invoice, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T05:30:01Z' },
       { id: 'file-4', file: coverage, documentType: 'proof-of-coverage', status: 'pending' },
     ]);
 
@@ -310,7 +310,7 @@ describe('useDocumentUploadForm', () => {
         {
           ...uploadErrorResponse,
           documents: [
-            ...uploadErrorResponse.documents.map((document) => (document.id === 'file-2' ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
+            ...uploadErrorResponse.documents.map((document) => (document.id === 'file-2' ? Object.assign({}, document, { status: 'uploaded' as const, uploadDate: '2026-11-01T06:30:00Z' }) : document)),
             { id: addedFileId!, fileName: extra.name, fileSize: extra.size, documentType: '', status: 'pending' as const },
           ],
         },
@@ -320,9 +320,9 @@ describe('useDocumentUploadForm', () => {
     rerender();
 
     expect(result.current.documentUploadFormState.documents).toEqual([
-      { id: 'file-1', file: receipt, documentType: 'receipt', status: 'uploaded' },
-      { id: 'file-2', file: proof, documentType: 'proof-of-coverage', status: 'uploaded' },
-      { id: 'file-3', file: invoice, documentType: 'receipt', status: 'uploaded' },
+      { id: 'file-1', file: receipt, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T05:30:00Z' },
+      { id: 'file-2', file: proof, documentType: 'proof-of-coverage', status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' },
+      { id: 'file-3', file: invoice, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T05:30:01Z' },
       { id: 'file-4', file: coverage, documentType: 'proof-of-coverage', status: 'pending' },
       { id: addedFileId, file: extra, documentType: '', status: 'pending' },
     ]);

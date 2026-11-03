@@ -10,7 +10,7 @@ import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upl
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 
-type DocumentUploadFileState = FileState & { readonly documentType: string; readonly status: 'pending' | 'uploaded' };
+type DocumentUploadFileState = FileState & { readonly documentType: string; readonly status: 'pending' | 'uploaded'; readonly uploadDate?: string };
 type DocumentUploadFormState = {
   readonly documents: ReadonlyArray<DocumentUploadFileState>;
 };
@@ -172,9 +172,11 @@ export function useDocumentUploadForm() {
 
   if (isNewUploadErrorResponse) {
     setAppliedUploadErrorResponse(uploadResponse);
-    const uploadedFileIds = new Set(uploadResponse.documents.filter(({ status }) => status === 'uploaded').map(({ id }) => id));
+    const uploadedDocumentsById = new Map(uploadResponse.documents.filter(({ status }) => status === 'uploaded').map((document) => [document.id, document]));
     setDocumentUploadFormState((previousState) => ({
-      documents: previousState.documents.map((document) => (document.status === 'pending' && uploadedFileIds.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const }) : document)),
+      documents: previousState.documents.map((document) =>
+        document.status === 'pending' && uploadedDocumentsById.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const, uploadDate: uploadedDocumentsById.get(document.id)?.uploadDate }) : document,
+      ),
     }));
   }
 

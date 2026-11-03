@@ -101,4 +101,18 @@ describe('document upload lifecycle', () => {
 
     expect(loadDocumentUploadState({ id: uploadId, session, params }).status).toBe('partial-upload');
   });
+
+  it('preserves successful ISO timestamps through session serialization and completion', () => {
+    const documents = [
+      { ...uploadedDocument, uploadDate: '2026-11-01T05:30:00Z' },
+      { ...uploadedDocument, id: 'retry', uploadDate: '2026-11-01T06:30:00Z' },
+    ];
+    vi.mocked(session.get).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [] });
+    const updatedState = updateDocumentUploadState({ id: uploadId, session, params, state: { documents } });
+    const serializedState = JSON.parse(JSON.stringify(updatedState)) as DocumentUploadState;
+    vi.mocked(session.get).mockReturnValue(serializedState);
+
+    expect(loadDocumentUploadState({ id: uploadId, session, params }).documents).toEqual(documents);
+    expect(finishDocumentUploadState({ id: uploadId, session, params }).documents).toEqual(documents);
+  });
 });

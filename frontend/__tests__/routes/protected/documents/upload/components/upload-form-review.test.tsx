@@ -50,7 +50,7 @@ function renderForm(action: (args: { request: Request }) => Promise<unknown> | u
   const RoutesStub = createRoutesStub([
     {
       path: '/:lang/protected/documents/upload/:id',
-      Component: () => <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} />,
+      Component: () => <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} timeZone="America/Toronto" />,
       action,
     },
     { path: '/confirmation', Component: () => <h1>Submission confirmation</h1> },

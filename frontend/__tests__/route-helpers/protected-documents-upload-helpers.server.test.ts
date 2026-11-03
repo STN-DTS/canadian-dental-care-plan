@@ -141,7 +141,7 @@ describe('protected-documents-upload-helpers.server', () => {
       vi.useFakeTimers({ now: uploadDate });
       documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'success', documentFileName: 'document.txt' });
 
-      await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true });
+      await expect(uploadDocuments(createFiles())).resolves.toEqual({ success: true, uploadDates: { first: uploadDate.toString() } });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledWith({
         clientNumber: 'client-123',
         evidentiaryDocumentTypeId: 'receipt',
@@ -213,6 +213,7 @@ describe('protected-documents-upload-helpers.server', () => {
     });
 
     it('should keep successful files out of the error tree for mixed outcomes', async () => {
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-11-01T06:30:00Z') });
       documentUploadServiceMock.uploadDocument
         .mockResolvedValueOnce({ status: 'success', documentFileName: 'document.txt' })
         .mockResolvedValueOnce({ status: 'rejected', error: { errorCode: 'REJECTED', errorMessage: 'Rejected' } })
@@ -222,6 +223,7 @@ describe('protected-documents-upload-helpers.server', () => {
       const files = createFiles();
       await expect(uploadDocuments({ ...files, second: files.first, third: files.first, fourth: files.first })).resolves.toEqual({
         success: false,
+        uploadDates: { first: '2026-11-01T06:30:00Z' },
         errors: {
           errors: [],
           properties: {

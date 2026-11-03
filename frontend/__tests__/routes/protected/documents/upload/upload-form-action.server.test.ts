@@ -85,7 +85,7 @@ beforeEach(() => {
   vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(validateDocumentContents).mockResolvedValue({ success: true });
   vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
-  vi.mocked(uploadDocuments).mockResolvedValue({ success: true });
+  vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadDates: { 'file-1': '2026-11-01T06:30:00Z', 'file-2': '2026-11-01T06:30:01Z' } });
 });
 
 afterEach(() => {
@@ -277,7 +277,7 @@ describe('action', () => {
     const args = createActionArgs(validUploadFormData());
     const { session } = args.context.get(appContext);
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: [], properties: { file: { errors: ['upload failed'] } } } } } } } satisfies DocumentUploadSchemaErrorTree;
-    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors, uploadDates: {} });
 
     const result = await action(args);
 
@@ -326,7 +326,7 @@ describe('action', () => {
     const retryFile = new File(['retry'], 'retry.pdf');
     const newFile = new File(['new'], 'new.pdf');
     const retryDocument = { id: 'file-1', fileName: retryFile.name, fileSize: retryFile.size, documentType: 'receipt', status: 'pending' as const };
-    const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const };
+    const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:00Z' };
     const newDocument = { id: 'file-3', fileName: newFile.name, fileSize: newFile.size, documentType: 'receipt', status: 'pending' as const };
     vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [retryDocument, uploadedDocument, { ...retryDocument, id: 'removed' }] });
     const files = {
@@ -336,7 +336,7 @@ describe('action', () => {
     vi.mocked(getFiles).mockResolvedValue(new Map(Object.entries(files)));
     vi.mocked(validateUploadedFiles).mockReturnValue({ success: true, data: { files } });
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-3': { errors: [], properties: { file: { errors: ['upload failed'] } } } } } } } satisfies DocumentUploadSchemaErrorTree;
-    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors });
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors, uploadDates: { 'file-1': '2026-11-01T06:30:00Z' } });
     const args = createActionArgs(
       createUploadFormData([
         { id: 'file-1', file: retryFile, documentType: 'receipt' },
@@ -348,9 +348,11 @@ describe('action', () => {
     const result = await action(args);
 
     expect(updateDocumentUploadState).toHaveBeenNthCalledWith(1, { id: uploadId, session, params: args.params, state: { documents: [retryDocument, uploadedDocument, newDocument] } });
-    const documents = [{ ...retryDocument, status: 'uploaded' }, uploadedDocument, newDocument];
+    const documents = [{ ...retryDocument, status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' }, uploadedDocument, newDocument];
     expect(updateDocumentUploadState).toHaveBeenNthCalledWith(2, { id: uploadId, session, params: args.params, state: { documents } });
     expect(result).toEqual({ data: { formAction: 'upload', source: 'server', responseType: 'upload-errors', errors, documents }, init: { status: 400 }, type: 'DataWithResponseInit' });
+    expect(JSON.parse(JSON.stringify(documents))).toEqual(documents);
+    expect(documents[2]).not.toHaveProperty('uploadDate');
     expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
     expect(finishDocumentUploadState).not.toHaveBeenCalled();
   });
@@ -387,8 +389,8 @@ describe('action', () => {
       params: args.params,
       state: {
         documents: [
-          { documentType: 'receipt', fileName: 'document.pdf', fileSize: 7, id: 'file-1', status: 'uploaded' },
-          { documentType: 'identity-document', fileName: 'document.pdf', fileSize: 16, id: 'file-2', status: 'uploaded' },
+          { documentType: 'receipt', fileName: 'document.pdf', fileSize: 7, id: 'file-1', status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' },
+          { documentType: 'identity-document', fileName: 'document.pdf', fileSize: 16, id: 'file-2', status: 'uploaded', uploadDate: '2026-11-01T06:30:01Z' },
         ],
       },
     });

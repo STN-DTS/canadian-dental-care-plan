@@ -5,7 +5,7 @@ import * as z from 'zod';
 
 import { appContext } from '~/.server/context';
 import { finishDocumentUploadState, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import type { DocumentUploadState, SubmittedDocument } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
@@ -123,7 +123,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
   }
 
   // Extract the submitted documents from the validated form data.
-  const submittedDocuments = Object.entries(validationResult.data.files).map(([fileId, { file, documentType }]) => {
+  const submittedDocuments: SubmittedDocument[] = Object.entries(validationResult.data.files).map(([fileId, { file, documentType }]) => {
     return { id: fileId, fileName: file.name, documentType, fileSize: file.size, status: 'pending' as const };
   });
 
@@ -148,7 +148,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
       return document;
     }
 
-    return Object.assign({}, document, { status: 'uploaded' as const });
+    return Object.assign({}, document, { status: 'uploaded' as const, uploadDate: uploadResult.uploadDates[document.id] });
   });
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });

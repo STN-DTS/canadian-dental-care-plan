@@ -26,9 +26,10 @@ import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 interface DocumentUploadFormProps {
   documentTypes: ReadonlyArray<{ id: string; name: string }>;
+  timeZone: string;
 }
 
-export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
+export function DocumentUploadForm({ documentTypes, timeZone }: DocumentUploadFormProps) {
   const { t, i18n } = useTranslation('documents');
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
 
@@ -146,8 +147,15 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     {t(($) => $.upload.uploadFiles.uploadedFilesHeading)}
                   </h3>
                   <FileUploadList id="uploaded-files-list" aria-labelledby="uploaded-files-heading" className="gap-4 sm:gap-6">
-                    {uploadedFiles.map(({ id, file, documentType }) => (
-                      <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />
+                    {uploadedFiles.map(({ id, file, documentType, uploadDate }) => (
+                      <UploadedDocumentUploadItem
+                        key={id}
+                        id={id}
+                        fileName={file.name}
+                        documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)}
+                        uploadDate={uploadDate}
+                        timeZone={timeZone}
+                      />
                     ))}
                   </FileUploadList>
                 </section>
