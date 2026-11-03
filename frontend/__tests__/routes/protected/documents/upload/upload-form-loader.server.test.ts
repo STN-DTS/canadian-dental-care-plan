@@ -14,12 +14,10 @@ import type { DocumentUploadState } from '~/.server/routes/helpers/document-uplo
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/documents/upload/upload-form-loader.server';
-import { getClientEnv } from '~/utils/env-utils';
 
 vi.mock(import('~/.server/context/user-context'));
 vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'));
 vi.mock(import('~/.server/utils/locale-utils'));
-vi.mock(import('~/utils/env-utils'));
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
 const session = mock<Session>();
@@ -36,7 +34,6 @@ const emptyState: DocumentUploadState = { id: uploadId, status: 'initialized', d
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getClientEnv, { partial: true }).mockReturnValue({ TIME_ZONE: 'America/Regina' });
   vi.mocked(loadDocumentUploadState).mockReturnValue(state);
   vi.mocked(updateDocumentUploadState).mockReturnValue(emptyState);
   vi.mocked(resetDocumentUploadState).mockReturnValue(emptyState);
@@ -56,13 +53,6 @@ function createArgs(destination: string): Parameters<typeof loader>[0] {
 }
 
 describe('upload form loader reset handling', () => {
-  it.each(['America/Toronto', 'America/Vancouver', 'America/Regina'])('resolves %s from the request hint rather than the configured fallback', async (timeZone) => {
-    const args = createArgs('document');
-    args.request.headers.set('Cookie', `CH-time-zone=${encodeURIComponent(timeZone)}`);
-
-    expect((await loader(args)).timeZone).toBe(timeZone);
-  });
-
   it('clears pending and uploaded metadata when the document is refreshed', async () => {
     const args = createArgs('document');
 
@@ -71,7 +61,6 @@ describe('upload form loader reset handling', () => {
     expect(resetDocumentUploadState).toHaveBeenCalledWith({ id: uploadId, session, params: args.params });
     expect(updateDocumentUploadState).not.toHaveBeenCalled();
     expect(result.documentUploadState).toEqual(emptyState);
-    expect(result.timeZone).toBe('America/Regina');
   });
 
   it('also clears flow metadata on data requests and returns initialized state', async () => {

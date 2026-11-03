@@ -533,7 +533,7 @@ describe('useDocumentUploadForm', () => {
           responseType: 'upload-errors',
           errors: { errors: [] },
           documents: [
-            { id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded' },
+            { id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' },
             { id: 'file-2', fileName: proof.name, fileSize: proof.size, documentType: 'proof-of-coverage', status: 'pending' },
           ],
         },
@@ -580,7 +580,7 @@ describe('useDocumentUploadForm', () => {
           source: 'server',
           responseType: 'upload-errors',
           errors: { errors: [] },
-          documents: [{ id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded' }],
+          documents: [{ id: 'file-1', fileName: receipt.name, fileSize: receipt.size, documentType: 'receipt', status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' }],
         },
         submit,
       ),

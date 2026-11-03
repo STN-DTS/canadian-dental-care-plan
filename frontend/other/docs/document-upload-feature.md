@@ -127,8 +127,8 @@ calling EWDU. ISO strings carry that timestamp through upload results, session
 storage, and client state. Earlier successes keep their original timestamps;
 files succeeding on a retry use that retry's timestamp. Failed files have no
 success timestamp. The full date and time use the active Canadian locale and
-resolved client-hint timezone, with identical inline and tooltip text. Older
-session records without timestamps do not receive an invented date.
+resolved client-hint timezone, with identical inline and tooltip text. Uploaded
+rows require the retained timestamp; no display-time fallback date is generated.
 
 | Scenario                                                                                                       | Outcome                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

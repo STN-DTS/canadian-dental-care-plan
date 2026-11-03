@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
 import type { FileState } from '~/components/file-upload';
@@ -10,7 +11,20 @@ import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upl
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import { focusOnNextFrame } from '~/utils/dom-utils';
 
-type DocumentUploadFileState = FileState & { readonly documentType: string; readonly status: 'pending' | 'uploaded'; readonly uploadDate?: string };
+type PendingDocumentUploadFileState = FileState & {
+  readonly documentType: string;
+  readonly status: 'pending';
+  readonly uploadDate?: never;
+};
+
+type UploadedDocumentUploadFileState = FileState & {
+  readonly documentType: string;
+  readonly status: 'uploaded';
+  readonly uploadDate: string;
+};
+
+type DocumentUploadFileState = PendingDocumentUploadFileState | UploadedDocumentUploadFileState;
+
 type DocumentUploadFormState = {
   readonly documents: ReadonlyArray<DocumentUploadFileState>;
 };
@@ -174,9 +188,16 @@ export function useDocumentUploadForm() {
     setAppliedUploadErrorResponse(uploadResponse);
     const uploadedDocumentsById = new Map(uploadResponse.documents.filter(({ status }) => status === 'uploaded').map((document) => [document.id, document]));
     setDocumentUploadFormState((previousState) => ({
-      documents: previousState.documents.map((document) =>
-        document.status === 'pending' && uploadedDocumentsById.has(document.id) ? Object.assign({}, document, { status: 'uploaded' as const, uploadDate: uploadedDocumentsById.get(document.id)?.uploadDate }) : document,
-      ),
+      documents: previousState.documents.map((document) => {
+        const uploadedDocument = uploadedDocumentsById.get(document.id);
+
+        if (document.status === 'uploaded' || !uploadedDocument) {
+          return document;
+        }
+
+        invariant(uploadedDocument.uploadDate, 'Uploaded documents must include an upload date');
+        return Object.assign({}, document, { status: 'uploaded' as const, uploadDate: uploadedDocument.uploadDate });
+      }),
     }));
   }
 

@@ -68,7 +68,7 @@ const ns = {
     documentTypeUnavailable: "Document type unavailable",
     status: "Status",
     uploadedSuccessfully: "Uploaded successfully",
-    uploadedOn: "Uploaded on",
+    uploadedOn: "Uploaded on:",
     submit: "Submit",
     submitRemaining: "Submit remaining files",
     viewSubmissionConfirmation: "View submission confirmation",

@@ -51,7 +51,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({ currentUrl, nextUrl
 
 export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation(['documents', 'gcweb']);
-  const { documentTypes, timeZone, SCCH_BASE_URI } = loaderData;
+  const { documentTypes, SCCH_BASE_URI } = loaderData;
 
   return (
     <>
@@ -60,7 +60,7 @@ export default function DocumentsUpload({ loaderData }: Route.ComponentProps) {
         <DocumentUploadInstructions />
         <section className="space-y-4">
           <h2 className="font-lato text-2xl font-bold">{t(($) => $.upload.uploadFiles.title)}</h2>
-          <DocumentUploadForm documentTypes={documentTypes} timeZone={timeZone} />
+          <DocumentUploadForm documentTypes={documentTypes} />
         </section>
         <div>
           <ButtonLink

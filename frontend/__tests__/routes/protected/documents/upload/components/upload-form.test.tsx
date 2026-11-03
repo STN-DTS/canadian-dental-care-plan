@@ -9,7 +9,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { buttonSizeStyles, buttonVariantStyles } from '~/components/buttons';
+import { TooltipProvider } from '~/components/tooltip';
 import { useClientEnv } from '~/hooks/use-client-env';
+import { useHints } from '~/hooks/use-hints';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
@@ -27,6 +29,7 @@ type UploadForm = ReturnType<typeof useDocumentUploadForm>;
 type UploadDocument = UploadForm['documentUploadFormState']['documents'][number];
 
 vi.mock(import('~/hooks/use-client-env'));
+vi.mock(import('~/hooks/use-hints'));
 vi.mock(import('~/utils/env-utils'));
 vi.mock(import('remix-utils/csrf/react'), () => ({
   AuthenticityTokenInput: () => <input type="hidden" name="_csrf" value="test-token" />,
@@ -35,6 +38,7 @@ vi.mock(import('~/routes/protected/documents/upload/hooks/use-document-upload-fo
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(useHints).mockReturnValue({ timeZone: 'America/Toronto' });
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
   vi.mocked(useClientEnv, { partial: true }).mockReturnValue(clientEnv);
   vi.mocked(getClientEnv, { partial: true }).mockReturnValue(clientEnv);
@@ -73,7 +77,8 @@ function setReviewableDocuments(documents: ReadonlyArray<UploadDocument>, option
 }
 
 function createDocument(id: string, status: UploadDocument['status']): UploadDocument {
-  return { id, file: new File([id], `${id}.txt`, { type: 'text/plain' }), documentType: 'receipt', status, uploadDate: undefined };
+  const document = { id, file: new File([id], `${id}.txt`, { type: 'text/plain' }), documentType: 'receipt' };
+  return status === 'uploaded' ? { ...document, status, uploadDate: '2026-11-01T06:30:00Z' } : { ...document, status };
 }
 
 function renderForm(language = 'en') {
@@ -82,7 +87,7 @@ function renderForm(language = 'en') {
       path: '/:lang/protected/documents/upload/:id',
       Component: () => (
         <>
-          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} timeZone="America/Toronto" />
+          <DocumentUploadForm documentTypes={[{ id: 'receipt', name: language === 'fr' ? 'Reçu' : 'Receipt' }]} />
           <Link to="/destination">Leave upload</Link>
         </>
       ),
@@ -90,7 +95,7 @@ function renderForm(language = 'en') {
     { path: '/destination', Component: () => <h1>Destination</h1> },
   ]);
   return {
-    ...render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />),
+    ...render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />, { wrapper: TooltipProvider }),
     RoutesStub,
   };
 }
@@ -130,7 +135,6 @@ describe('DocumentUploadForm', () => {
         path: '/:lang/protected/documents/upload/:id',
         Component: () => (
           <DocumentUploadForm
-            timeZone="America/Toronto"
             documentTypes={[
               { id: 'receipt', name: 'Receipt' },
               { id: 'proof', name: 'Proof of coverage' },
@@ -139,7 +143,7 @@ describe('DocumentUploadForm', () => {
         ),
       },
     ]);
-    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
+    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />, { wrapper: TooltipProvider });
 
     await user.click(screen.getByRole('button', { name: 'upload.submitRemaining' }));
 
@@ -367,13 +371,13 @@ describe('DocumentUploadForm', () => {
               },
             }),
           );
-          return <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} timeZone="America/Toronto" />;
+          return <DocumentUploadForm documentTypes={[{ id: 'receipt', name: 'Receipt' }]} />;
         },
         action: () => redirect('/destination'),
       },
       { path: '/destination', Component: () => <h1>Destination</h1> },
     ]);
-    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />);
+    render(<RoutesStub initialEntries={[`/en/protected/documents/upload/${uploadId}`]} />, { wrapper: TooltipProvider });
 
     await user.click(screen.getByRole('button', { name: 'upload.submit' }));
     await user.click(await screen.findByRole('button', { name: 'upload.review.submit' }));
@@ -438,17 +442,19 @@ describe('DocumentUploadForm', () => {
       expect(details).toBeInTheDocument();
       const terms = within(details!).getAllByRole('term');
       const definitions = within(details!).getAllByRole('definition');
-      expect(terms.map((term) => term.textContent)).toEqual(['upload.fileName', 'upload.documentType: ', 'upload.status']);
-      expect(definitions.map((definition) => definition.textContent)).toEqual([`${id}.txt`, typeName, 'upload.uploadedSuccessfully']);
-      expect(Array.from(details!.querySelectorAll('dt, dd'))).toEqual([terms[0], definitions[0], terms[1], definitions[1], terms[2], definitions[2]]);
+      expect(terms.map((term) => term.textContent)).toEqual(['upload.fileName', 'upload.documentType: ', 'upload.uploadedOn ', 'upload.status']);
+      expect(definitions.map((definition) => definition.textContent)).toEqual([`${id}.txt`, typeName, 'November 1, 2026 at 1:30 a.m. EST', 'upload.uploadedSuccessfully']);
+      expect(Array.from(details!.querySelectorAll('dt, dd'))).toEqual([terms[0], definitions[0], terms[1], definitions[1], terms[2], definitions[2], terms[3], definitions[3]]);
       expect(terms[0]).toHaveClass('sr-only');
       expect(definitions[0]).toHaveAttribute('id', `file-upload-item-${id}-name`);
       expect(terms[1]).toBeVisible();
       expect(terms[1]).not.toHaveClass('sr-only');
       expect(definitions[1]).toBeVisible();
       expect(definitions[1]).not.toHaveClass('sr-only');
-      expect(definitions[2]!.parentElement).toHaveClass('sr-only');
-      expect(definitions[2]).not.toHaveAttribute('id');
+      expect(definitions[2]).toBeVisible();
+      expect(definitions[2]!.querySelector('time')).toHaveAttribute('datetime', '2026-11-01T06:30:00Z');
+      expect(definitions[3]!.parentElement).toHaveClass('sr-only');
+      expect(definitions[3]).not.toHaveAttribute('id');
       expect(within(item).queryByRole('combobox')).not.toBeInTheDocument();
       expect(within(item).queryByRole('button')).not.toBeInTheDocument();
       expect(item.querySelector('input, select, textarea')).not.toBeInTheDocument();
@@ -569,7 +575,7 @@ describe('DocumentUploadForm', () => {
       expect(within(item).getByText('Receipt')).toBeInTheDocument();
       expect(within(item).queryByRole('combobox')).not.toBeInTheDocument();
       expect(within(item).queryByRole('button')).not.toBeInTheDocument();
-      expect(item.querySelector('time')).not.toBeInTheDocument();
+      expect(item.querySelector('time')).toHaveAttribute('datetime', '2026-11-01T06:30:00Z');
     }
 
     const firstPending = within(pendingList).getByRole('listitem', { name: 'pending-first.txt' });

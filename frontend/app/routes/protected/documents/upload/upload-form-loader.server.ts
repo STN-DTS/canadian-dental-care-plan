@@ -4,7 +4,6 @@ import { getUser } from '~/.server/context/user-context';
 import { resetDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
-import { getHints } from '~/utils/client-hints';
 
 import type { Route } from './+types/upload-form';
 
@@ -15,7 +14,7 @@ import type { Route } from './+types/upload-form';
  * @returns The reset flow, document types, page metadata, and dashboard base URI.
  * @throws If the upload flow is missing, invalid, or already finished.
  */
-export async function loader({ context, params, request, url }: Route.LoaderArgs) {
+export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
   const documentUploadState = resetDocumentUploadState({ id: params.id, params, session });
@@ -31,7 +30,6 @@ export async function loader({ context, params, request, url }: Route.LoaderArgs
     meta: { title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }) },
     documentUploadState,
     documentTypes,
-    timeZone: getHints(request).timeZone,
     SCCH_BASE_URI,
   };
 }

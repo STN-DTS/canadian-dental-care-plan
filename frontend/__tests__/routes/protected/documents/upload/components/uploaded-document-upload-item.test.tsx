@@ -9,10 +9,12 @@ import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
 import { FileUpload, FileUploadList } from '~/components/file-upload';
 import { TooltipProvider } from '~/components/tooltip';
+import { useHints } from '~/hooks/use-hints';
 import { UploadedDocumentUploadItem } from '~/routes/protected/documents/upload/components/uploaded-document-upload-item';
 import { toLocaleString } from '~/utils/date-utils';
 
 vi.unmock(import('react-i18next'));
+vi.mock(import('~/hooks/use-hints'));
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -39,7 +41,8 @@ const dateCases = [
   { uploadDate: '2026-11-01T06:30:00Z', timeZone: 'America/Regina', en: 'November 1, 2026 at 12:30 a.m. CST', fr: '1 novembre 2026 \u00e0 00 h 30 HNC' },
 ];
 
-async function renderItem(locale: 'en' | 'fr', uploadDate: string | undefined, timeZone: string) {
+async function renderItem(locale: 'en' | 'fr', uploadDate: string, timeZone: string) {
+  vi.mocked(useHints).mockReturnValue({ timeZone });
   const i18n = createInstance();
   await i18n.init({ lng: locale, fallbackLng: false, resources: { en: { documents: enDocuments }, fr: { documents: frDocuments } } });
   const file = new File(['evidence'], 'EmploymentLetter.pdf', { type: 'application/pdf' });
@@ -49,7 +52,7 @@ async function renderItem(locale: 'en' | 'fr', uploadDate: string | undefined, t
       <TooltipProvider>
         <FileUpload value={[{ id: 'uploaded', file }]} onValueChange={vi.fn()}>
           <FileUploadList>
-            <UploadedDocumentUploadItem id="uploaded" fileName={file.name} documentTypeName={locale === 'en' ? 'Employment Letter' : "Lettre de l'employeur"} uploadDate={uploadDate} timeZone={timeZone} />
+            <UploadedDocumentUploadItem id="uploaded" fileName={file.name} documentTypeName={locale === 'en' ? 'Employment Letter' : "Lettre de l'employeur"} uploadDate={uploadDate} />
           </FileUploadList>
         </FileUpload>
       </TooltipProvider>
@@ -69,7 +72,8 @@ describe.each(['en', 'fr'] as const)('uploaded document date (%s)', (locale) => 
     expect(time).toHaveTextContent(dateText);
     expect(dateText).toBe(toLocaleString(Temporal.Instant.from(uploadDate), locale, { timeZone }));
     expect(time?.parentElement).toHaveAccessibleName(dateText);
-    expect(within(item).getByText(locale === 'en' ? 'Uploaded on:' : 'T\u00e9l\u00e9vers\u00e9 le:')).toHaveRole('term');
+    const uploadedOnLabel = within(item).getAllByRole('term')[2];
+    expect(uploadedOnLabel?.textContent).toBe(locale === 'en' ? 'Uploaded on: ' : 'T\u00e9l\u00e9vers\u00e9 le\u00A0: ');
     expect(within(item).getByText('EmploymentLetter.pdf')).toHaveRole('definition');
     expect(within(item).getByText(locale === 'en' ? 'Employment Letter' : "Lettre de l'employeur")).toHaveRole('definition');
     expect(item).toHaveClass('rounded-none', 'border-green-700', 'p-4');
@@ -77,11 +81,5 @@ describe.each(['en', 'fr'] as const)('uploaded document date (%s)', (locale) => 
 
     await user.hover(time!.parentElement!);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(dateText);
-  });
-
-  it('does not invent a date for an older uploaded session record', async () => {
-    const { container } = await renderItem(locale, undefined, 'America/Toronto');
-    expect(container.querySelector('time')).toBeNull();
-    expect(screen.getByText('EmploymentLetter.pdf')).toBeVisible();
   });
 });
