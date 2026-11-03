@@ -12,6 +12,8 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
 - Preserve authentication, CSRF protection, session handling, accessibility,
   and English/French journeys. Update both route paths and translations when
   changing localized behavior.
+- Follow the [localization typography skill](../.github/skills/localization-typography/SKILL.md)
+  when editing locale strings. Keep punctuation inside translations, not in JSX.
 - Follow the [path-scoped Express instructions](../.github/instructions/frontend-express.instructions.md)
   for Express server files, especially stable middleware names used by telemetry.
 - Keep unit tests in `__tests__/` and browser tests in `e2e/`. Use existing
