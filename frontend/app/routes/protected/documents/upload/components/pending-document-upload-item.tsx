@@ -28,14 +28,16 @@ export function PendingDocumentUploadItem({ id, fileName, documentType, document
       aria-labelledby={fileNameId}
       aria-describedby={undefined}
       value={id}
-      className={cn('flex-col items-stretch gap-3 sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
+      className={cn('min-w-0 flex-col items-stretch gap-3 wrap-anywhere sm:gap-4', fileError && 'border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500 focus:outline-hidden')}
       tabIndex={-1}
     >
       {fileError && <InputError id={`file-error-${id}`} fieldId={`file-upload-item-${id}`} message={fileError} />}
       <dl className="space-y-3 sm:space-y-4">
         <div className="space-y-2">
           <dt className="font-semibold">{t(($) => $.upload.fileName)}</dt>
-          <dd id={fileNameId}>{fileName}</dd>
+          <dd id={fileNameId} className="wrap-anywhere">
+            {fileName}
+          </dd>
         </div>
       </dl>
       <InputSelect
@@ -43,7 +45,7 @@ export function PendingDocumentUploadItem({ id, fileName, documentType, document
         name={`document-type-${id}`}
         label={t(($) => $.upload.documentType)}
         required
-        className="w-full"
+        className="w-full min-w-0"
         options={documentTypeOptions}
         value={documentType}
         onChange={(event) => onDocumentTypeChange(id, event.currentTarget.value)}

@@ -44,13 +44,15 @@ pnpm exec playwright show-report
 ## Suites
 
 - [upload.spec.ts](./upload.spec.ts): form validation, selection, scanning,
-  partial recovery, focus, confirmation, and navigation.
+  submission review and cancellation, busy-state guards, grouped partial recovery,
+  localized date-time display, focus, confirmation, and navigation.
 - [upload-contract.spec.ts](./upload-contract.spec.ts): crafted HTTP requests to
   the real server action, bypassing client checks but retaining session cookies
   and CSRF protection. Assertions check statuses, bodies, and redirects.
   Optional screenshots show browser state, not HTTP responses.
 - [upload-submitted.spec.ts](./upload-submitted.spec.ts): receipt content,
-  ordered filenames, next steps, delayed visibility, refresh, and access guards.
+  ordered localized filename/type pairs, retained dates across attempts,
+  metadata-only completion, next steps, delayed visibility, refresh, and access guards.
 - [index.spec.ts](./index.spec.ts): populated table, metadata, refresh, and
   navigation to upload.
 - Accessibility scans follow the same route names:
@@ -82,6 +84,9 @@ Each test has a fresh browser context. [The fixture](../../fixtures/document-upl
 provides `uploadPage` with a new UUID-keyed flow. [UploadPage](../../pages/upload-page.ts)
 extends `BasePage`, checks URL and H1 with `isLoaded()`, and waits for router
 initialization. Tests use accessible locators, web-first assertions, and no sleeps.
+`uploadLocale` selects English or French, and `timezoneId` supplies the matching
+browser timezone and request hint for date-display tests. File-selection readiness
+includes the scheduled focus transition before the next interaction.
 Page mutations run sequentially. Form locators belong to `UploadPage`;
 confirmation locators and assertions belong to `UploadSubmittedPage`.
 
@@ -93,6 +98,9 @@ confirmation locators; it does not submit files. No fixture adds another browser
 `uploadApi` depends on `uploadPage` and provides `DocumentUploadApi` for direct
 HTTP contracts. [Shared helpers](../../utils/document-upload.ts) own test files,
 route constants, request collection, and `readUploadSubmissions()`.
+`postData()` checks serialized action errors without depending on HTML escaping;
+`post()` retains document-response and redirect coverage, including missing or
+invalid CSRF tokens.
 
 The fixture captures action names, filenames, and multipart field names from
 browser fetches, not file contents or CSRF values. This verifies retry and finish
@@ -106,12 +114,53 @@ navigation hooks are isolated in the shared helpers, not page objects.
 These hooks depend on React Router internals; native unload tests use real
 reloads and document navigation.
 
+## Verification (2026-11-03)
+
+The revised upload journey was verified from the repository root with the
+configured application mocks:
+
+```sh
+pnpm --filter @cdcp-rcsd/frontend run build
+CI=true E2E_SCREENSHOTS=true PORT=3002 pnpm --filter @cdcp-rcsd/frontend run test:e2e e2e/protected/documents/upload.spec.ts e2e/protected/documents/upload-contract.spec.ts e2e/protected/documents/upload-accessibility.spec.ts e2e/protected/documents/upload-submitted.spec.ts --workers=2 --retries=0
+pnpm --filter @cdcp-rcsd/frontend run check
+pnpm run test:unit:coverage
+```
+
+- Production build and mock-backed server startup passed.
+- All four requested browser specs passed: **130 tests**, zero failures and no retries.
+- Frontend typechecking and linting passed.
+- Unit coverage passed: **1,995 tests** across **206 files**.
+- Changed-file formatting and patch whitespace checks passed.
+- The repository-wide `pnpm run check` was attempted but remains blocked by
+  unrelated lint errors in `.github/evals/logging/fixtures/`; those files were
+  not changed by this task.
+- Design/content-team confirmation of final wording and manual screen-reader
+  assessment remain release checks, not outcomes established by browser automation.
+
+The long-filename browser checks and screenshots exposed overflow in pending and
+successful rows, the upload fieldset, and submission review. Local
+wrapping/shrinking constraints were corrected without changing the
+shared dialog, upload limits, validation, or security checks.
+
 ## Limits
 
 EWDU and Power Platform use application mocks. The required `evidentiary-document`
 mock supplies eligibility and document-list data. These tests do not verify live
 scanning, delivery, ingestion, or downstream retries. Mock submission success
-does not mean Power Platform ingestion completed; HTTP responses are not fabricated.
+does not mean Power Platform ingestion completed. HTTP statuses and upload
+success/failure outcomes come from the running application.
+
+Fixed daylight-saving display cases use `useUploadDateFixture()` to replace the
+single successful ISO timestamp in the router's serialized response value graph.
+Other response values remain unchanged. These cases verify full English/French
+Canadian inline text, exact date-label punctuation, and matching tooltips across
+Toronto, Vancouver, and Regina around spring and fall transitions. Separate
+receipt history cases leave server responses untouched and verify original dates,
+later-attempt dates, pending-only retries, and direct completion without a new upload.
+
+Final control and error wording still requires design/content-team confirmation
+before release. Axe scans and browser assertions do not replace manual
+screen-reader assessment.
 
 The fixed applicant and document types leave these E2E gaps:
 

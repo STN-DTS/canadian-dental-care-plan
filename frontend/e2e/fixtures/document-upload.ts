@@ -20,8 +20,13 @@ import type { UploadSubmission } from '../utils/document-upload';
  * binds confirmation locators without completing a flow. uploadApi depends on
  * uploadPage and supplies direct HTTP requests without adding browser contexts.
  */
-export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadSubmittedPage; uploadSubmittedPage: UploadSubmittedPage; uploadApi: DocumentUploadApi }>({
-  uploadPage: async ({ page }, use) => {
+export const test = base.extend<{ uploadLocale: 'en' | 'fr'; uploadPage: UploadPage; submittedPage: UploadSubmittedPage; uploadSubmittedPage: UploadSubmittedPage; uploadApi: DocumentUploadApi }>({
+  uploadLocale: ['en', { option: true }],
+  uploadPage: async ({ page, uploadLocale, timezoneId, baseURL }, use) => {
+    if (timezoneId && baseURL) {
+      await page.context().addCookies([{ name: 'CH-time-zone', value: timezoneId, url: baseURL }]);
+    }
+
     // Install before navigation and reset the capture for each new document.
     await page.addInitScript(() => {
       const captureWindow = window as typeof window & { uploadSubmissions: UploadSubmission[] };
@@ -48,7 +53,7 @@ export const test = base.extend<{ uploadPage: UploadPage; submittedPage: UploadS
         return await originalFetch(input, init);
       };
     });
-    const uploadPage = new UploadPage(page);
+    const uploadPage = new UploadPage(page, uploadLocale);
     await uploadPage.goto();
     // Yield the initialized page object to the test; Playwright handles teardown.
     await use(uploadPage);

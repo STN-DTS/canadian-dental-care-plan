@@ -295,41 +295,66 @@ test.describe('confirmation access and partial completion', () => {
     await expect(submittedPage.main.getByText(uploadFailureName, { exact: true })).toHaveCount(0);
   });
 
-  test('repeated retries retain earlier successes exactly once and finish excludes removed failures', async ({ uploadPage, submittedPage }) => {
-    const { page } = uploadPage;
-    await uploadPage.addFile(documentFile(uploadFailureName));
-    await uploadPage.chooseType(uploadFailureName, 'Other');
-    await uploadPage.addFile(documentFile('earlier-success.txt'));
-    await uploadPage.chooseType('earlier-success.txt', receiptCopy.en.types[0]);
-    await uploadPage.submit();
-    await uploadPage.expectUploadCounts(1, 1);
+  for (const locale of ['en', 'fr'] as const) {
+    test.describe(`retained receipt ${locale}`, () => {
+      test.use({ uploadLocale: locale });
+      test('repeated retries retain earlier successes exactly once and finish excludes removed failures', async ({ uploadPage }) => {
+        const { page } = uploadPage;
+        await uploadPage.addFile(documentFile(uploadFailureName));
+        await uploadPage.chooseType(uploadFailureName);
+        await uploadPage.addFile(documentFile('earlier-success.txt'));
+        await uploadPage.chooseType('earlier-success.txt', receiptCopy[locale].types[0]);
+        await uploadPage.submit();
+        await uploadPage.expectUploadCounts(1, 1);
+        const earlierTime = uploadPage.item('earlier-success.txt').locator('time');
+        const earlierDate = await earlierTime.getAttribute('datetime');
+        const earlierText = await earlierTime.innerText();
+        expect(earlierDate).toBeTruthy();
 
-    // Await each response before opening another review of the same failed file.
-    await [1, 2].reduce(async (previous) => {
-      await previous;
-      await expect(uploadPage.submitButton).toBeEnabled();
-      const response = page.waitForResponse((value) => value.request().method() === 'POST' && value.url().includes('/documents/upload/'));
-      await uploadPage.submit();
-      expect((await response).status()).toBe(400);
-      await expect(uploadPage.reviewDialog).not.toBeVisible();
-      await uploadPage.expectUploadCounts(1, 1);
-    }, Promise.resolve());
+        // Await each response before opening another review of the same failed file.
+        await [1, 2].reduce(async (previous) => {
+          await previous;
+          await expect(uploadPage.submitButton).toBeEnabled();
+          const response = page.waitForResponse((value) => value.request().method() === 'POST' && /\/documents\/(upload|televerser)\//.test(value.url()));
+          await uploadPage.openReview();
+          await expect(uploadPage.reviewDialog.getByRole('listitem')).toHaveCount(1);
+          await expect(uploadPage.reviewDialog).not.toContainText('earlier-success.txt');
+          await uploadPage.confirmReview();
+          expect((await response).status()).toBe(400);
+          await expect(uploadPage.reviewDialog).not.toBeVisible();
+          await uploadPage.expectUploadCounts(1, 1);
+          await expect(earlierTime).toHaveAttribute('datetime', earlierDate!);
+          await expect(earlierTime).toHaveText(earlierText);
+        }, Promise.resolve());
 
-    await uploadPage.addFile(documentFile('later-success.txt'));
-    await uploadPage.chooseType('later-success.txt', receiptCopy.en.types[1]);
-    await uploadPage.submit();
-    await uploadPage.expectUploadCounts(2, 1);
-    await expect(uploadPage.submitButton).toBeEnabled();
-    expect((await readUploadSubmissions(page)).map(({ fileNames }) => fileNames)).toEqual([[uploadFailureName, 'earlier-success.txt'], [uploadFailureName], [uploadFailureName], [uploadFailureName, 'later-success.txt']]);
-    await uploadPage.removeFile(uploadFailureName);
-    await uploadPage.finishButton.click();
-    await submittedPage.waitForConfirmation();
-    const expectedPairs = pairs(['earlier-success.txt', 'later-success.txt']);
-    await expect(submittedPage.submittedFiles).toHaveText(expectedPairs);
-    await expect(submittedPage.main).not.toContainText(uploadFailureName);
-    await page.reload();
-    await expect(submittedPage.submittedFiles).toHaveText(expectedPairs);
-  });
+        await uploadPage.addFile(documentFile('later-success.txt'));
+        await uploadPage.chooseType('later-success.txt', receiptCopy[locale].types[1]);
+        await uploadPage.submit();
+        await uploadPage.expectUploadCounts(2, 1);
+        await expect(uploadPage.submitButton).toBeEnabled();
+        await expect(earlierTime).toHaveAttribute('datetime', earlierDate!);
+        const laterDate = await uploadPage.item('later-success.txt').locator('time').getAttribute('datetime');
+        expect(laterDate).toBeTruthy();
+        expect(Temporal.Instant.compare(Temporal.Instant.from(laterDate!), Temporal.Instant.from(earlierDate!))).toBeGreaterThan(0);
+        expect((await readUploadSubmissions(page)).map(({ fileNames }) => fileNames)).toEqual([[uploadFailureName, 'earlier-success.txt'], [uploadFailureName], [uploadFailureName], [uploadFailureName, 'later-success.txt']]);
+        await uploadPage.removeFile(uploadFailureName);
+        await expect(uploadPage.reviewDialog).not.toBeVisible();
+        await uploadPage.finishButton.click();
+        await expect(page.getByRole('heading', { name: receiptCopy[locale].heading, exact: true })).toBeVisible();
+        const main = page.getByRole('main');
+        const submittedFiles = main.locator('ol').getByRole('listitem');
+        const expectedPairs = pairs(['earlier-success.txt', 'later-success.txt'], locale);
+        await expectAccessiblePairs(submittedFiles, ['earlier-success.txt', 'later-success.txt'], locale);
+        await expect(main).not.toContainText(uploadFailureName);
+        const finish = (await readUploadSubmissions(page)).at(-1);
+        expect(finish?.action).toBe('finish');
+        expect(finish?.fileNames).toEqual([]);
+        expect(finish?.fieldNames).not.toContain('file_object');
+        await page.reload();
+        await expect(submittedFiles).toHaveText(expectedPairs);
+      });
+    });
+  }
 
   test('keeps distinct document IDs with the same filename and different contents/types', async ({ uploadPage, submittedPage }) => {
     const name = 'same-name.txt';

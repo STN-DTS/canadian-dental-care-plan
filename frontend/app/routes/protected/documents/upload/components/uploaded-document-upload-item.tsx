@@ -26,7 +26,7 @@ export function UploadedDocumentUploadItem({ id, fileName, documentTypeName, upl
       <dl className="min-w-0 space-y-1">
         <div>
           <dt className="sr-only">{t(($) => $.upload.fileName)}</dt>
-          <dd id={fileNameId} className="font-semibold wrap-break-word">
+          <dd id={fileNameId} className="font-semibold wrap-anywhere">
             {fileName}
           </dd>
         </div>
