@@ -6,10 +6,6 @@ type RequestContext = {
   headers: Record<string, string>;
 };
 
-declare const logger: {
-  emit(event: Record<string, unknown>): void;
-};
-
 export async function handle(ctx: RequestContext): Promise<number> {
   const startedAt = Date.now();
   await Promise.resolve();

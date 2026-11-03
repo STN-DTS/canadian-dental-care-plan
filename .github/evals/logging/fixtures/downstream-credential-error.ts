@@ -11,10 +11,12 @@ export async function submitEligibility(apiKey: string, applicantId: string): Pr
   const url = `https://eligibility.example/api/check?applicant=${applicantId}`;
   const headers = { 'Ocp-Apim-Subscription-Key': apiKey };
   const response = await post(url, headers, { applicantId });
+
   if (response.status === 401 || response.status === 403) {
     logger.warn('Eligibility API rejected request', { url, headers, response });
     return false;
   }
+
   logger.info('Eligibility checked', { url, status: response.status });
   return response.status === 200;
 }

@@ -15,6 +15,7 @@ export function createUser(requestId: string, body: unknown): number {
     });
     return 400;
   }
+
   return 201;
 }
 
