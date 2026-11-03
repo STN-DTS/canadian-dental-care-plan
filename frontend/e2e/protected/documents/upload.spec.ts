@@ -369,7 +369,9 @@ test.describe('partial recovery and explicit completion', () => {
     await Promise.all(['first-success.txt', 'second-success.txt'].flatMap((name) => [expect(uploadPage.item(name)).toContainText('Uploaded successfully'), expect(uploadPage.item(name)).toContainText(documentType)]));
     await expect(uploadPage.uploadedFiles.getByRole('combobox')).toHaveCount(0);
     await expect(uploadPage.uploadedFiles.getByRole('button')).toHaveCount(0);
-    await expect(uploadPage.uploadedFiles.locator('time')).toHaveCount(0);
+    await expect(uploadPage.uploadedFiles.locator('time')).toHaveCount(2);
+    const originalUploadDates = await uploadPage.uploadedFiles.locator('time').evaluateAll((times) => times.map((time) => time.getAttribute('datetime')));
+    await expect(uploadPage.pendingFiles.locator('time')).toHaveCount(0);
     await expect(uploadPage.pendingFiles.getByRole('combobox')).toHaveCount(2);
     await expect(uploadPage.pendingFiles.getByRole('button', { name: 'Remove file', exact: true })).toHaveCount(2);
 
@@ -378,17 +380,46 @@ test.describe('partial recovery and explicit completion', () => {
     expect((await response).status()).toBe(400);
     await expect(uploadPage.reviewDialog).not.toBeVisible();
     await uploadPage.expectUploadCounts(2, 2);
+    expect(await uploadPage.uploadedFiles.locator('time').evaluateAll((times) => times.map((time) => time.getAttribute('datetime')))).toEqual(originalUploadDates);
     expect((await readUploadSubmissions(page)).map(({ fileNames }) => fileNames)).toEqual([selectedFiles.map(({ name }) => name), [failureName, 'scan-test.txt']]);
     await Promise.all(expectedOrder.flatMap((name, index) => [expect(items.nth(index).getByText(name, { exact: true })).toBeVisible(), expect(items.nth(index)).toHaveAccessibleName(index < 2 ? '' : name)]));
   });
 
-  test('preserves successful files without editing or removal controls', async ({ uploadPage }) => {
-    await uploadPage.partialUpload();
-    await expect(uploadPage.item('evidence.txt').getByRole('combobox')).toHaveCount(0);
-    await expect(uploadPage.item('evidence.txt').getByRole('button')).toHaveCount(0);
-    await uploadPage.expectUploadCounts(1, 1);
-    await expect(uploadPage.item('evidence.txt').or(uploadPage.item(failureName))).toHaveCount(2);
-  });
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 375, height: 812 },
+  ]) {
+    test(`preserves successful files without editing or removal controls at ${viewport.width}px`, async ({ uploadPage }, testInfo) => {
+      const { page } = uploadPage;
+      await page.setViewportSize(viewport);
+      await uploadPage.partialUpload();
+      const item = uploadPage.item('evidence.txt');
+      const time = item.locator('time');
+      await expect(item.getByRole('combobox')).toHaveCount(0);
+      await expect(item.getByRole('button')).toHaveCount(0);
+      await expect(item).toContainText('Uploaded on:');
+      await expect(time).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T.+Z$/);
+      const dateText = await time.innerText();
+      await expect(time.locator('..')).toHaveAttribute('aria-label', dateText);
+      await time.hover();
+      await expect(page.getByRole('tooltip')).toHaveText(dateText);
+      await page.mouse.move(0, 0);
+      const overflowingText = await item.evaluate((row) => {
+        const bounds = row.getBoundingClientRect();
+        return [...row.querySelectorAll('dd')]
+          .filter((definition) => getComputedStyle(definition.parentElement!).position !== 'absolute')
+          .some((definition) => {
+            const range = document.createRange();
+            range.selectNodeContents(definition);
+            return [...range.getClientRects()].some((rect) => rect.left < bounds.left || rect.right > bounds.right);
+          });
+      });
+      expect(overflowingText).toBe(false);
+      await page.screenshot({ path: testInfo.outputPath('uploaded-document-row.png'), fullPage: true });
+      await uploadPage.expectUploadCounts(1, 1);
+      await expect(item.or(uploadPage.item(failureName))).toHaveCount(2);
+    });
+  }
 
   test('retry submits pending files only and retains earlier success', async ({ uploadPage }) => {
     const { page } = uploadPage;

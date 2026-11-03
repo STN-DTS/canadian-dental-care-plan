@@ -5,7 +5,9 @@ import { createRoutesStub, redirect } from 'react-router';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TooltipProvider } from '~/components/tooltip';
 import { useClientEnv } from '~/hooks/use-client-env';
+import { useHints } from '~/hooks/use-hints';
 import { getFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { DocumentUploadForm } from '~/routes/protected/documents/upload/components/upload-form';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
@@ -21,6 +23,7 @@ const clientEnv = {
 };
 
 vi.mock(import('~/hooks/use-client-env'));
+vi.mock(import('~/hooks/use-hints'));
 vi.mock(import('~/utils/env-utils'));
 vi.mock(import('remix-utils/csrf/react'), () => ({
   AuthenticityTokenInput: () => <input type="hidden" name="_csrf" value="test-token" />,
@@ -41,6 +44,7 @@ vi.mock(import('~/route-helpers/protected-documents-upload-helpers'), async (imp
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(useHints).mockReturnValue({ timeZone: 'America/Toronto' });
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
   vi.mocked(useClientEnv, { partial: true }).mockReturnValue(clientEnv);
   vi.mocked(getClientEnv, { partial: true }).mockReturnValue(clientEnv);
@@ -56,7 +60,7 @@ function renderForm(action: (args: { request: Request }) => Promise<unknown> | u
     { path: '/confirmation', Component: () => <h1>Submission confirmation</h1> },
   ]);
 
-  return render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />);
+  return render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />, { wrapper: TooltipProvider });
 }
 
 async function addFile(user: ReturnType<typeof userEvent.setup>, name = 'receipt.txt') {
@@ -210,7 +214,7 @@ describe('DocumentUploadForm review integration', () => {
         source: 'server',
         responseType: 'upload-errors',
         errors: { errors: [], properties: { files: { errors: ['upload failed'] } } },
-        documents: ids.map((id, index) => ({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: types[index]!, status: index === 0 ? 'uploaded' : 'pending' })),
+        documents: ids.map((id, index) => Object.assign({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: types[index]! }, index === 0 ? { status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' } : { status: 'pending' })),
       };
     });
     renderForm(action);
@@ -322,7 +326,7 @@ describe('DocumentUploadForm review integration', () => {
         source: 'server',
         responseType: 'upload-errors',
         errors: { errors: [] },
-        documents: ids.map((id, index) => ({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: 'receipt', status: index === 0 ? 'pending' : 'uploaded' })),
+        documents: ids.map((id, index) => Object.assign({ id, fileName: files[index]!.name, fileSize: files[index]!.size, documentType: 'receipt' }, index === 0 ? { status: 'pending' } : { status: 'uploaded', uploadDate: '2026-11-01T06:30:00Z' })),
       };
     });
     renderForm(action);

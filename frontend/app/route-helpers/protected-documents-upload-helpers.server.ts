@@ -57,8 +57,8 @@ export async function validateDocumentContents(files: DocumentUploadSchemaOutput
   return processBatchResults(results);
 }
 
-export type UploadDocumentsResponseSuccess = { success: true; errors?: undefined };
-export type UploadDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree };
+export type UploadDocumentsResponseSuccess = { success: true; errors?: undefined; uploadDates: Readonly<Record<string, string>> };
+export type UploadDocumentsResponseFailure = { success: false; errors: DocumentUploadSchemaErrorTree; uploadDates: Readonly<Record<string, string>> };
 export type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDocumentsResponseFailure;
 
 /**
@@ -80,12 +80,13 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
 
   const results = await Promise.all(
     Object.entries(files).map(async ([id, { file, fileBuffer, documentType }]) => {
+      const uploadDate = Temporal.Now.instant();
       const response = await service.uploadDocument({
         clientNumber: applicant.clientNumber,
         evidentiaryDocumentTypeId: documentType,
         fileName: file.name,
         binary: arrayBufferToBase64(fileBuffer),
-        uploadDate: Temporal.Now.instant(),
+        uploadDate,
         lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(file.lastModified),
         userId: user.id,
       });
@@ -99,12 +100,15 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
           return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
         case 'success':
           log.trace('Document uploaded successfully: [%s]', id);
-          return { id, success: true };
+          return { id, success: true, uploadDate: uploadDate.toString() };
       }
     }),
   );
 
-  return processBatchResults(results);
+  return {
+    ...processBatchResults(results),
+    uploadDates: Object.fromEntries(results.flatMap(({ id, uploadDate }) => (uploadDate === undefined ? [] : [[id, uploadDate]]))),
+  };
 }
 
 /**
@@ -113,7 +117,7 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
  * @param results - Per-file operation results identified by file ID.
  * @returns Success when no result contains an error; otherwise, an error tree keyed by file ID.
  */
-function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): UploadDocumentsResponse {
+function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): ValidateDocumentContentsResponse {
   const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
 
   if (failures.length === 0) {

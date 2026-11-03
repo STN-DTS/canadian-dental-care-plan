@@ -68,6 +68,7 @@ const ns = {
     documentTypeUnavailable: "Type de document non disponible",
     status: "Statut",
     uploadedSuccessfully: "Téléversé avec succès",
+    uploadedOn: "Téléversé le\u00A0:",
     submit: "Soumettre",
     submitRemaining: "Soumettre les fichiers restants",
     viewSubmissionConfirmation: "Consulter la confirmation de soumission",

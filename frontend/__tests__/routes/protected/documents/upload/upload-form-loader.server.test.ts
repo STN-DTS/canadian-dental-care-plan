@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { RouterContextProvider } from 'react-router';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

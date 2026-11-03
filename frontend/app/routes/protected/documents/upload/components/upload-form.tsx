@@ -42,7 +42,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
 
   const filesWithTypes = useMemo(() => [...documentUploadFormState.documents], [documentUploadFormState.documents]);
   // Partition only the display; canonical selection order still governs retries and confirmation.
-  const uploadedFiles = filesWithTypes.filter(({ status }) => status === 'uploaded');
+  const uploadedFiles = filesWithTypes.filter((document) => document.status === 'uploaded');
   const pendingFiles = filesWithTypes.filter(({ status }) => status === 'pending');
   const uploadedFileCount = uploadedFiles.length;
   const pendingFileCount = pendingFiles.length;
@@ -146,8 +146,8 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                     {t(($) => $.upload.uploadFiles.uploadedFilesHeading)}
                   </h3>
                   <FileUploadList id="uploaded-files-list" aria-labelledby="uploaded-files-heading" className="gap-4 sm:gap-6">
-                    {uploadedFiles.map(({ id, file, documentType }) => (
-                      <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} />
+                    {uploadedFiles.map(({ id, file, documentType, uploadDate }) => (
+                      <UploadedDocumentUploadItem key={id} id={id} fileName={file.name} documentTypeName={documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)} uploadDate={uploadDate} />
                     ))}
                   </FileUploadList>
                 </section>
