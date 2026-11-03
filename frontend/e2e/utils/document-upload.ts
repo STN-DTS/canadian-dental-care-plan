@@ -7,6 +7,47 @@ export const uploadFlowUrl = /\/en\/protected\/documents\/upload\/[0-9a-f-]+$/;
 /** Filename recognized by the upload repository mock to force an upload failure. */
 export const uploadFailureName = 'mock-upload-failure.txt';
 
+export async function useUploadDateFixture(page: Page, timestamp: string) {
+  const uploadDate = Temporal.Instant.from(timestamp).toString();
+  await page.route(/\/(en\/protected\/documents\/upload|fr\/protege\/documents\/televerser)\/.*\.data/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      return await route.continue();
+    }
+
+    const cookies = await page.context().cookies();
+    const response = await route.fetch({
+      headers: {
+        ...(await route.request().allHeaders()),
+        Origin: new URL(route.request().url()).origin,
+        'Sec-Fetch-Site': 'same-origin',
+        Cookie: cookies.map(({ name, value }) => `${name}=${value}`).join('; '),
+      },
+    });
+    const [graph, ...remaining] = (await response.text()).split('\n');
+    const values: unknown = JSON.parse(graph!);
+
+    if (!Array.isArray(values)) {
+      throw new Error('Expected the router response to contain a serialized value graph');
+    }
+
+    let replaced = 0;
+    const result = values.map((value: unknown) => {
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T.+Z$/.test(value)) {
+        replaced++;
+        return uploadDate;
+      }
+
+      return value;
+    });
+
+    if (replaced !== 1) {
+      throw new Error(`Expected one successful upload timestamp, received ${replaced}`);
+    }
+
+    await route.fulfill({ response, body: [JSON.stringify(result), ...remaining].join('\n') });
+  });
+}
+
 /**
  * Creates an in-memory file payload for Playwright's file chooser and HTTP tests.
  * @param name - Filename, including the extension used for upload validation.
@@ -32,6 +73,19 @@ export class DocumentUploadApi {
     this.page = page;
   }
 
+  async postData(fields: UploadField[]) {
+    const url = new URL(this.page.url());
+    url.pathname += '.data';
+    const response = await this.post(fields, url.toString());
+    const graph: unknown = JSON.parse((await response.text()).split('\n')[0]!);
+
+    if (!Array.isArray(graph)) {
+      throw new Error('Expected a serialized action response graph');
+    }
+
+    return { response, values: graph as unknown[] };
+  }
+
   /**
    * Sends a multipart request directly to the server, bypassing client validation.
    * Preserves repeated fields and supplies the current CSRF token, session cookies,
@@ -41,9 +95,12 @@ export class DocumentUploadApi {
    * @param csrfToken - Saved token for requests made after leaving the form.
    * @returns The HTTP response without following redirects or navigating the page.
    */
-  async post(fields: UploadField[], url = this.page.url(), csrfToken?: string) {
+  async post(fields: UploadField[], url = this.page.url(), csrfToken?: string | null) {
     const form = new FormData();
-    form.set('_csrf', csrfToken ?? (await this.page.locator('input[name="_csrf"]').inputValue()));
+
+    if (csrfToken !== null) {
+      form.set('_csrf', csrfToken ?? (await this.page.locator('input[name="_csrf"]').inputValue()));
+    }
 
     for (const [name, value] of fields) {
       if (typeof value === 'string') {

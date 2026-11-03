@@ -80,9 +80,9 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
       >
         <CsrfTokenInput />
         <div className="space-y-6">
-          <fieldset className="space-y-2">
+          <fieldset className="min-w-0 space-y-2">
             <InputLegend>{t(($) => $.upload.uploadFiles.chooseFile)}</InputLegend>
-            <ul id="file-upload-instructions" className="list-disc space-y-1 pl-7">
+            <ul id="file-upload-instructions" className="list-disc space-y-1 pl-7 wrap-anywhere">
               <li>{t(($) => $.upload.uploadFiles.maxFiles, { count: DOCUMENT_UPLOAD_MAX_FILE_COUNT })}</li>
               <li>
                 {t(($) => $.upload.uploadFiles.maxSize, {
@@ -241,11 +241,11 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
                 <DialogTitle>{t(($) => $.upload.review.title)}</DialogTitle>
               </DialogHeader>
               <DialogDescription className="text-base text-inherit">{t(($) => $.upload.review.description)}</DialogDescription>
-              <ul className="space-y-2">
+              <ul className="min-w-0 space-y-2">
                 {filesWithTypes
                   .filter(({ status }) => status === 'pending')
                   .map(({ id, file, documentType }) => (
-                    <li key={id} className="wrap-break-word">
+                    <li key={id} className="wrap-anywhere">
                       {file.name}, {documentTypes.find((type) => type.id === documentType)?.name ?? t(($) => $.upload.documentTypeUnavailable)}
                     </li>
                   ))}

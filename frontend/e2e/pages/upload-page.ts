@@ -1,11 +1,59 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { documentFile, uploadEntryUrl, uploadFailureName, uploadFlowUrl, waitForUploadRouter } from '../utils/document-upload';
+import { documentFile, uploadFailureName, uploadFlowUrl, waitForUploadRouter } from '../utils/document-upload';
 import { BasePage } from './base-page';
 
-/** Page object for the English document upload form. */
+export const uploadCopy = {
+  en: {
+    entry: '/en/protected/documents/upload',
+    title: 'Submit documents',
+    picker: 'Upload file',
+    type: 'Document Type',
+    submit: 'Submit',
+    retry: 'Submit remaining files',
+    review: 'Confirm submission',
+    back: 'Back',
+    remove: 'Remove file',
+    removeTitle: 'Remove this file?',
+    leaveTitle: 'Leave this page?',
+    finish: 'View submission confirmation',
+    uploaded: 'Files uploaded successfully',
+    pending: 'Files not uploaded',
+    success: 'Uploaded successfully',
+    uploadedOn: 'Uploaded on:',
+    selected: 'Files selected:',
+    uploadedCount: 'Files uploaded:',
+    pendingCount: 'Files not uploaded:',
+    failure: 'An unexpected error occurred while uploading file "mock-upload-failure.txt". Try to upload your file again.',
+  },
+  fr: {
+    entry: '/fr/protege/documents/televerser',
+    title: 'Soumettre des documents',
+    picker: 'Ajouter un fichier',
+    type: 'Type de document',
+    submit: 'Soumettre',
+    retry: 'Soumettre les fichiers restants',
+    review: 'Confirmer la soumission',
+    back: 'Retour',
+    remove: 'Supprimer le fichier',
+    removeTitle: 'Supprimer ce fichier?',
+    leaveTitle: 'Quitter cette page?',
+    finish: 'Consulter la confirmation de soumission',
+    uploaded: 'Fichiers téléversés avec succès',
+    pending: 'Fichiers non téléversés',
+    success: 'Téléversé avec succès',
+    uploadedOn: 'Téléversé le\u00A0:',
+    selected: 'Fichiers sélectionnés\u00A0:',
+    uploadedCount: 'Fichiers téléversés\u00A0:',
+    pendingCount: 'Fichiers non téléversés\u00A0:',
+    failure: "Une erreur s'est produite lors du téléversement du fichier «\u00A0mock-upload-failure.txt\u00A0». Essayez de téléverser le fichier à nouveau.",
+  },
+} as const;
+
 export class UploadPage extends BasePage {
+  readonly locale;
+  readonly copy;
   /** Opens the single-file native picker. */
   readonly uploadButton;
   /** Announces selection counts while pending files remain or the form is empty. */
@@ -22,23 +70,25 @@ export class UploadPage extends BasePage {
    * Binds upload locators to the isolated page supplied by the test fixture.
    * @param page - Playwright page owned and cleaned up by the built-in fixture.
    */
-  constructor(page: Page) {
+  constructor(page: Page, locale: keyof typeof uploadCopy = 'en') {
     super(page);
-    this.uploadButton = page.getByRole('button', { name: 'Upload file', exact: true });
+    this.locale = locale;
+    this.copy = uploadCopy[locale];
+    this.uploadButton = page.getByRole('button', { name: this.copy.picker, exact: true });
     this.status = page.getByRole('status');
-    this.uploadedFiles = page.getByRole('list', { name: 'Files uploaded successfully', exact: true });
-    this.pendingFiles = page.getByRole('list', { name: 'Files not uploaded', exact: true });
-    this.submitButton = page.getByRole('button', { name: /^(Submit|Submit remaining files)$/ });
-    this.reviewDialog = page.getByRole('dialog', { name: 'Confirm submission', exact: true });
-    this.removeDialog = page.getByRole('dialog', { name: 'Remove this file?' });
-    this.unsavedChangesDialog = page.getByRole('dialog', { name: 'Leave this page?' });
-    this.finishButton = page.getByRole('button', { name: 'View submission confirmation', exact: true });
+    this.uploadedFiles = page.getByRole('list', { name: this.copy.uploaded, exact: true });
+    this.pendingFiles = page.getByRole('list', { name: this.copy.pending, exact: true });
+    this.submitButton = page.locator('#submit-button');
+    this.reviewDialog = page.getByRole('dialog', { name: this.copy.review, exact: true });
+    this.removeDialog = page.getByRole('dialog', { name: this.copy.removeTitle });
+    this.unsavedChangesDialog = page.getByRole('dialog', { name: this.copy.leaveTitle });
+    this.finishButton = page.getByRole('button', { name: this.copy.finish, exact: true });
   }
 
   /** Opens a fresh flow and waits for its URL, H1, and router initialization. */
   async goto() {
-    await this.page.goto(uploadEntryUrl);
-    await this.isLoaded(uploadFlowUrl, 'Submit documents');
+    await this.page.goto(this.copy.entry);
+    await this.isLoaded(this.locale === 'en' ? uploadFlowUrl : /\/fr\/protege\/documents\/televerser\/[0-9a-f-]+$/, this.copy.title);
     await waitForUploadRouter(this.page);
   }
 
@@ -62,6 +112,7 @@ export class UploadPage extends BasePage {
     expect(chooser.isMultiple()).toBe(false);
     await chooser.setFiles(payload);
     await expect(this.item(payload.name)).toBeVisible();
+    await expect(this.item(payload.name)).toBeFocused();
     await expect(this.uploadButton).toBeEnabled();
   }
 
@@ -72,7 +123,7 @@ export class UploadPage extends BasePage {
    */
   async chooseType(name: string, type: string | number = 1) {
     await this.item(name)
-      .getByRole('combobox', { name: 'Document Type' })
+      .getByRole('combobox', { name: this.copy.type })
       .selectOption(typeof type === 'string' ? { label: type } : { index: type });
   }
 
@@ -92,9 +143,9 @@ export class UploadPage extends BasePage {
    * @param name - Filename uniquely identifying the pending item to remove.
    */
   async removeFile(name: string) {
-    await this.item(name).getByRole('button', { name: 'Remove file', exact: true }).click();
+    await this.item(name).getByRole('button', { name: this.copy.remove, exact: true }).click();
     await expect(this.removeDialog).toContainText(name);
-    await this.removeDialog.getByRole('button', { name: 'Remove file', exact: true }).click();
+    await this.removeDialog.getByRole('button', { name: this.copy.remove, exact: true }).click();
     await expect(this.item(name)).toHaveCount(0);
   }
 
@@ -105,12 +156,12 @@ export class UploadPage extends BasePage {
 
   /** Dismisses an open upload review without changing the selected files. */
   async dismissReview() {
-    await this.reviewDialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await this.reviewDialog.getByRole('button', { name: this.copy.back, exact: true }).click();
   }
 
   /** Confirms an open upload review and sends the selected pending files. */
   async confirmReview() {
-    await this.reviewDialog.getByRole('button', { name: 'Submit', exact: true }).click();
+    await this.reviewDialog.getByRole('button', { name: this.copy.submit, exact: true }).click();
   }
 
   /** Completes review for a valid selection; callers still assert the resulting upload state. */
@@ -122,7 +173,7 @@ export class UploadPage extends BasePage {
   /** Verifies the two visible outcome counters after a confirmed upload attempt. */
   async expectUploadCounts(uploaded: number, pending: number) {
     const counters = this.status.locator('p');
-    await expect(counters).toHaveText([`Files uploaded: ${uploaded}`, `Files not uploaded: ${pending}`]);
+    await expect(counters).toHaveText([`${this.copy.uploadedCount} ${uploaded}`, `${this.copy.pendingCount} ${pending}`]);
     await expect(counters.nth(0)).toBeVisible();
     await expect(counters.nth(1)).toBeVisible();
   }
@@ -134,10 +185,10 @@ export class UploadPage extends BasePage {
     await this.addFile(documentFile(uploadFailureName));
     await this.chooseType(uploadFailureName);
     await this.submit();
-    await expect(this.item('evidence.txt')).toContainText('Uploaded successfully');
-    await expect(this.item(uploadFailureName)).toContainText('An unexpected error occurred while uploading file “mock-upload-failure.txt”. Try to upload your file again.');
+    await expect(this.item('evidence.txt')).toContainText(this.copy.success);
+    await expect(this.item(uploadFailureName)).toContainText(this.copy.failure);
     await this.expectUploadCounts(1, 1);
-    await expect(this.submitButton).toHaveText('Submit remaining files');
+    await expect(this.submitButton).toHaveText(this.copy.retry);
     await expect(this.submitButton).toBeEnabled();
   }
 }

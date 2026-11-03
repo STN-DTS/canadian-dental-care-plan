@@ -8,9 +8,74 @@ import { expect, mergeTests } from '@playwright/test';
 
 import { test as accessibilityTest } from '../../fixtures/accessibility';
 import { test as documentUploadTest } from '../../fixtures/document-upload';
-import { navigateUploadRouter, uploadFailureName } from '../../utils/document-upload';
+import { collectUploadRequests, documentFile, navigateUploadRouter, uploadFailureName } from '../../utils/document-upload';
 
 const test = mergeTests(documentUploadTest, accessibilityTest);
+
+for (const locale of ['en', 'fr'] as const) {
+  for (const width of [375, 1280]) {
+    test.describe(`review accessibility ${locale} ${width}px`, { tag: '@a11y' }, () => {
+      test.use({ uploadLocale: locale, viewport: { width, height: 900 } });
+      test('traps keyboard focus, restores it on Escape, and announces busy results', async ({ uploadPage, checkAccessibility }) => {
+        test.setTimeout(30_000);
+        const { page, copy } = uploadPage;
+        const requests = collectUploadRequests(page);
+        await uploadPage.addFile();
+        await uploadPage.chooseType('evidence.txt');
+        await uploadPage.submitButton.focus();
+        await uploadPage.submitButton.press('Enter');
+        const back = uploadPage.reviewDialog.getByRole('button', { name: copy.back, exact: true });
+        const close = uploadPage.reviewDialog.getByRole('button', { name: locale === 'en' ? 'Close' : 'Fermer', exact: true });
+        await expect(back).toBeFocused();
+        await checkAccessibility('submission-review');
+        await back.press('Shift+Tab');
+        await expect(close).toBeFocused();
+        await close.press('Tab');
+        await expect(back).toBeFocused();
+        await back.press('Escape');
+        await expect(uploadPage.reviewDialog).not.toBeVisible();
+        await expect(uploadPage.submitButton).toBeFocused();
+        expect(requests).toHaveLength(0);
+        await uploadPage.addFile(documentFile(uploadFailureName));
+        await uploadPage.chooseType(uploadFailureName);
+        let release!: () => void;
+        const pending = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        await page.route(/\/(documents\/upload|documents\/televerser)\//, async (route) => {
+          if (route.request().method() === 'POST') {
+            await pending;
+          }
+
+          await route.continue();
+        });
+
+        try {
+          await uploadPage.submit();
+          await expect(uploadPage.reviewDialog).toHaveAttribute('aria-busy', 'true');
+          const confirm = uploadPage.reviewDialog.getByRole('button', { name: copy.submit, exact: true });
+          await expect(confirm).toBeDisabled();
+          await expect(back).toBeDisabled();
+          await expect(confirm.locator('[data-icon="spinner"]')).toBeVisible();
+          await expect(close).toHaveCount(0);
+          await page.keyboard.press('Escape');
+          await page.mouse.click(0, 0);
+          await expect(uploadPage.reviewDialog).toBeVisible();
+          await checkAccessibility('submission-review-busy');
+          expect(requests).toHaveLength(1);
+        } finally {
+          release();
+        }
+
+        await uploadPage.expectUploadCounts(1, 1);
+        await expect(uploadPage.reviewDialog).not.toBeVisible();
+        await expect(page.locator('[data-error-summary-id]')).toBeFocused();
+        await expect(page.locator('[data-error-summary-id]').getByRole('heading')).toContainText(locale === 'fr' ? /erreur/i : /error/i);
+        await checkAccessibility('localized-upload-errors');
+      });
+    });
+  }
+}
 
 test.describe('upload form accessibility', { tag: '@a11y' }, () => {
   test('empty upload form', async ({ uploadPage, checkAccessibility }) => {
@@ -89,15 +154,12 @@ test.describe('upload form accessibility', { tag: '@a11y' }, () => {
     await expect(uploadedItem).not.toHaveAttribute('aria-labelledby');
     await expect(uploadedItem).not.toHaveAttribute('aria-describedby');
     const documentType = await uploadPage.item(uploadFailureName).locator('option:checked').innerText();
-    await expect(uploadedItem).toMatchAriaSnapshot(`
-      - listitem:
-        - term: File name
-        - definition: evidence.txt
-        - term: "Document Type:"
-        - definition: ${JSON.stringify(documentType)}
-        - term: Status
-        - definition: Uploaded successfully
-    `);
+    const time = uploadedItem.locator('time');
+    const uploadDateText = await time.innerText();
+    await expect(uploadedItem.getByRole('term')).toHaveText(['File name', 'Document Type:', 'Uploaded on:', 'Status']);
+    await expect(uploadedItem.getByRole('definition')).toHaveText(['evidence.txt', documentType, uploadDateText, 'Uploaded successfully']);
+    await expect(time).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T.+Z$/);
+    await expect(time.locator('..')).toHaveAttribute('aria-label', uploadDateText);
     await expect(uploadedItem.getByRole('definition').nth(1)).toHaveText(documentType);
     await expect(uploadPage.item(uploadFailureName)).toHaveAccessibleName(uploadFailureName);
     await expect(uploadPage.uploadedFiles).toHaveAttribute('id', 'uploaded-files-list');

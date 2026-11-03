@@ -22,6 +22,35 @@ const validFields: UploadField[] = [
   ['file_document_type', 'invalid-type-id'],
 ];
 
+test('server requires the document-type field even after a valid review opens', async ({ uploadPage, uploadApi }) => {
+  await uploadPage.addFile();
+  await uploadPage.chooseType('evidence.txt');
+  await uploadPage.openReview();
+  await expect(uploadPage.reviewDialog).toBeVisible();
+  expect(await readUploadSubmissions(uploadPage.page)).toHaveLength(0);
+  const response = await uploadApi.post([
+    ['_action', 'upload'],
+    ['file_id', 'first'],
+    ['file_object', validFile],
+  ]);
+  expect(response.status()).toBe(400);
+  expect(await response.text()).toContain('Select a document type for file');
+  await uploadPage.dismissReview();
+  await expect(uploadPage.item('evidence.txt').getByRole('combobox')).not.toHaveValue('');
+});
+
+for (const token of [null, 'invalid-csrf-token']) {
+  test(`server rejects ${token === null ? 'omitted' : 'invalid'} CSRF after review`, async ({ uploadPage, uploadApi }) => {
+    await uploadPage.addFile();
+    await uploadPage.chooseType('evidence.txt');
+    await uploadPage.openReview();
+    const response = await uploadApi.post(validFields, undefined, token);
+    expect(response.status()).toBe(403);
+    await expect(uploadPage.reviewDialog).toBeVisible();
+    expect(await readUploadSubmissions(uploadPage.page)).toHaveLength(0);
+  });
+}
+
 for (const scenario of [
   {
     name: 'no file IDs',
@@ -74,25 +103,25 @@ for (const scenario of [
 
 for (const scenario of [
   { name: 'missing document type', file: validFile, type: '', error: 'Select a document type for file' },
-  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: "You can't upload this file format for “evidence.exe”. Choose a file in one of these formats:" },
+  { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'You can\'t upload this file format for "evidence.exe". Choose a file in one of these formats:' },
   { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'The file is too large to upload. Make sure the file size is less than 5\u00A0MB.' },
 ]) {
   test(`server repeats ${scenario.name} validation when client checks are bypassed`, async ({ uploadPage, uploadApi }) => {
-    const response = await uploadApi.post([
+    const { response, values } = await uploadApi.postData([
       ['_action', 'upload'],
       ['file_id', 'first'],
       ['file_object', scenario.file],
       ['file_document_type', scenario.type],
     ]);
     expect(response.status()).toBe(400);
-    expect(await response.text()).toContain(scenario.error);
+    expect(values.some((value) => typeof value === 'string' && value.includes(scenario.error))).toBe(true);
   });
 }
 
 test('server rejects duplicate file contents with distinct IDs', async ({ uploadApi }) => {
-  const response = await uploadApi.post([...validFields, ['file_id', 'second'], ['file_object', validFile], ['file_document_type', 'invalid-type-id']]);
+  const { response, values } = await uploadApi.postData([...validFields, ['file_id', 'second'], ['file_object', validFile], ['file_document_type', 'invalid-type-id']]);
   expect(response.status()).toBe(400);
-  expect(await response.text()).toContain('The file “evidence.txt” is already selected or uploaded. You must choose a different file.');
+  expect(values).toContain('The file "evidence.txt" is already selected or uploaded. You must choose a different file.');
 });
 
 test('server rejects an excessive pending batch', async ({ uploadApi }) => {
@@ -111,9 +140,9 @@ test('server rejects an excessive pending batch', async ({ uploadApi }) => {
 });
 
 test('returned EWDU rejection uses the generic upload error', async ({ uploadApi }) => {
-  const response = await uploadApi.post(validFields);
+  const { response, values } = await uploadApi.postData(validFields);
   expect(response.status()).toBe(400);
-  expect(await response.text()).toContain('An unexpected error occurred while uploading file “evidence.txt”. Try to upload your file again.');
+  expect(values).toContain('An unexpected error occurred while uploading file "evidence.txt". Try to upload your file again.');
 });
 
 for (const fields of [[['file_id', 'first']], [['file_object', validFile]], [['unexpected', validFile]]] satisfies UploadField[][]) {
