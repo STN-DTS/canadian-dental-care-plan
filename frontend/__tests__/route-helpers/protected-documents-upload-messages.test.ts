@@ -28,9 +28,9 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   }
 
   it.each([
-    { count: 0, en: 'Files selected: 0', fr: 'Fichiers sélectionnés : 0' },
-    { count: 1, en: 'Files selected: 1', fr: 'Fichiers sélectionnés : 1' },
-    { count: 3, en: 'Files selected: 3', fr: 'Fichiers sélectionnés : 3' },
+    { count: 0, en: 'Files selected: 0', fr: 'Fichiers sélectionnés\u00A0: 0' },
+    { count: 1, en: 'Files selected: 1', fr: 'Fichiers sélectionnés\u00A0: 1' },
+    { count: 3, en: 'Files selected: 3', fr: 'Fichiers sélectionnés\u00A0: 3' },
   ])('uses the selected-files counter for $count files', async ({ count, ...expected }) => {
     const t = await getTranslator();
 
@@ -38,9 +38,9 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   });
 
   it.each([
-    { count: 0, en: 'Files uploaded: 0', fr: 'Fichiers téléversés : 0' },
-    { count: 1, en: 'Files uploaded: 1', fr: 'Fichiers téléversés : 1' },
-    { count: 3, en: 'Files uploaded: 3', fr: 'Fichiers téléversés : 3' },
+    { count: 0, en: 'Files uploaded: 0', fr: 'Fichiers téléversés\u00A0: 0' },
+    { count: 1, en: 'Files uploaded: 1', fr: 'Fichiers téléversés\u00A0: 1' },
+    { count: 3, en: 'Files uploaded: 3', fr: 'Fichiers téléversés\u00A0: 3' },
   ])('uses the uploaded-files counter for $count files', async ({ count, ...expected }) => {
     const t = await getTranslator();
 
@@ -48,9 +48,9 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   });
 
   it.each([
-    { count: 0, en: 'Files not uploaded: 0', fr: 'Fichiers non téléversés : 0' },
-    { count: 1, en: 'Files not uploaded: 1', fr: 'Fichiers non téléversés : 1' },
-    { count: 3, en: 'Files not uploaded: 3', fr: 'Fichiers non téléversés : 3' },
+    { count: 0, en: 'Files not uploaded: 0', fr: 'Fichiers non téléversés\u00A0: 0' },
+    { count: 1, en: 'Files not uploaded: 1', fr: 'Fichiers non téléversés\u00A0: 1' },
+    { count: 3, en: 'Files not uploaded: 3', fr: 'Fichiers non téléversés\u00A0: 3' },
   ])('uses the pending-files counter for $count files', async ({ count, ...expected }) => {
     const t = await getTranslator();
 
@@ -71,7 +71,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     const t = await getTranslator();
     const expected =
       locale === 'en'
-        ? 'An unexpected error occurred while uploading file “document.txt”. Try to upload your file again.'
+        ? `An unexpected error occurred while uploading file "document.txt". Try to upload your file again.`
         : "Une erreur s'est produite lors du téléversement du fichier «\u00A0document.txt\u00A0». Essayez de téléverser le fichier à nouveau.";
 
     expect(t(($) => $.upload.errorMessage.uploadFailed, { filename: 'document.txt' })).toBe(expected);
@@ -81,7 +81,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   it('uses distinct security-check wording for unsafe files', async () => {
     const t = await getTranslator();
     const expected =
-      locale === 'en' ? 'The file “document.txt” does not pass our security checks. You must choose a different file.' : 'Le fichier «\u00A0document.txt\u00A0» ne passe pas notre vérification de sécurité. Vous devez choisir un autre fichier.';
+      locale === 'en' ? `The file "document.txt" does not pass our security checks. You must choose a different file.` : 'Le fichier «\u00A0document.txt\u00A0» ne passe pas notre vérification de sécurité. Vous devez choisir un autre fichier.';
     const unsafeMessage = t(($) => $.upload.errorMessage.scanFailed, { filename: 'document.txt' });
 
     expect(unsafeMessage).toBe(expected);

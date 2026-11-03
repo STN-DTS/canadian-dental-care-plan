@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 
 import { MemoryRouter, RouterContextProvider } from 'react-router';
 
@@ -259,7 +259,7 @@ describe.each(['en', 'fr'] as const)('submitted documents page (%s)', (locale) =
 
     expect(screen.getByRole('heading', { level: 1, name: documents.submitted.pageTitle })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: documents.submitted.alertHeading })).toBeInTheDocument();
-    expect(screen.getByText(documents.submitted.youSubmitted)).toBeInTheDocument();
+    expect(screen.getByText(documents.submitted.youSubmitted, { normalizer: getDefaultNormalizer({ collapseWhitespace: false }) })).toBeInTheDocument();
     expect(screen.getByText(documents.submitted.delayNote)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: documents.submitted.nextStepsHeading })).toBeInTheDocument();
     expect(screen.getByText(documents.submitted.nextSteps.review)).toBeInTheDocument();
