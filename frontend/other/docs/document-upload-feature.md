@@ -30,7 +30,8 @@
 
 This reference describes protected document uploads in the Canadian Dental Care Plan application for business, support, and technical teams.
 
-Reviewed 2026-10-27.
+Reviewed 2026-11-03 against the implemented submission journey and the supplied
+acceptance criteria for Azure Boards story AB#8827.
 
 For plain-language DEV test steps and an accessibility assessment aid, see the
 [DEV testing and accessibility assessment guide](./document-upload-dev-testing-guide.md).
@@ -126,9 +127,15 @@ Successful rows retain the per-file upload timestamp created by the server befor
 calling EWDU. ISO strings carry that timestamp through upload results, session
 storage, and client state. Earlier successes keep their original timestamps;
 files succeeding on a retry use that retry's timestamp. Failed files have no
-success timestamp. The full date and time use the active Canadian locale and
-resolved client-hint timezone, with identical inline and tooltip text. Uploaded
-rows require the retained timestamp; no display-time fallback date is generated.
+success timestamp. Each successful row shows the full localized date and time
+inline after the translated **Uploaded on** label. `useHints()` reads the root
+loader's `getHints(request)` result, and `toLocaleString` formats the retained
+instant using that resolved timezone and the active English or French Canadian
+locale. `DateTimeDisplay` retains the ISO timestamp and uses the same full text
+inline and in its localized tooltip, rather than the listing's date-only inline
+presentation. Do not expect a fixed Eastern timezone or punctuation copied from
+the mockup. Uploaded rows require the retained timestamp; no display-time date or
+backend timestamp API is used.
 
 | Scenario                                                                                                       | Outcome                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -158,10 +165,10 @@ counts, including zero successful uploads. Counts remain outcome-based when file
 are added or removed after an attempt; opening or cancelling review does not
 change the initial counter.
 
-Uploaded files appear first as read-only cards under **Files uploaded successfully**.
+Uploaded files appear first as compact read-only rows under **Files uploaded successfully**.
 Remaining files appear below under **Files not uploaded**, retaining their selected
 types, errors, and removal controls. Each group preserves original selection order
-and has independently numbered accessible list positions. Grouping changes only
+and is exposed as a separately labelled accessible list. Grouping changes only
 the display: retries and submission confirmation retain canonical selection order.
 
 | Scenario                                                                                            | Outcome                                                                                                                                                                                  |
@@ -171,7 +178,7 @@ the display: retries and submission confirmation retain canonical selection orde
 | User adds files after partial success                                                               | Retains successful uploads and appends new pending files, subject to selection limits and duplicate checks.                                                                              |
 | User changes types or removes failed files before retrying                                          | Uses the current pending selection; the next validated submission replaces obsolete pending session metadata while retaining successful uploads.                                         |
 | User removes every failed file after partial success                                                | Shows an uploaded-only success region with no files awaiting upload and a View submission confirmation action. Removing files does not itself finish the flow.                           |
-| User finishes an uploaded-only selection                                                            | Sends a metadata-only `finish` request; the server removes stale pending metadata and redirects to confirmation without scanning or uploading files.                                     |
+| User finishes an uploaded-only selection                                                            | Sends a metadata-only `finish` request without submission review; the server removes stale pending metadata and redirects to confirmation without scanning or uploading files.           |
 | User finishes without any successful uploads, or an already-finished flow reaches the finish action | Returns HTTP 409. Normal finished-route access is redirected by middleware first.                                                                                                        |
 | Finish payload contains file IDs, file objects, or any non-string value                             | Returns HTTP 400.                                                                                                                                                                        |
 | User removes all files with no successful uploads                                                   | Returns to an empty form; submission still requires a file.                                                                                                                              |
@@ -199,7 +206,13 @@ sequenceDiagram
     participant PP as Power Platform
 
     Applicant->>Browser: Select files and document types
-    Browser->>App: Submit selections and files with CSRF token
+    Browser->>Browser: Validate the pending selection before review
+    Note over Applicant,Browser: Invalid input shows page errors without review or an upload request
+    Browser-->>Applicant: Review pending filenames and localized document types
+    Note over Applicant,Browser: Back, close, or Escape cancels without uploading and preserves selections
+    Applicant->>Browser: Confirm submission
+    Browser->>App: Validate again and submit pending files once with CSRF token
+    Note over Applicant,Browser: Review stays busy and cannot be dismissed until the response
     App->>App: Validate session, feature flag, CSRF, applicant
     App->>App: Validate fields, limits, types, and size
     App->>App: Validate detected content types for the entire batch
@@ -210,8 +223,9 @@ sequenceDiagram
     end
     alt Any upload is rejected or fails
       App->>App: Record successful files as uploaded and failures as pending
-      App-->>Browser: Return file-specific errors
-      Applicant->>Browser: Retry pending files or remove them and finish
+      App-->>Browser: Return file-specific errors and retained success timestamps
+      Browser-->>Applicant: Close review; show page errors and successful rows before pending rows
+      Applicant->>Browser: Review and retry pending files, or remove them and finish without review
     else All uploads pass
       App->>App: Mark documents uploaded and flow finished in session
       App-->>Browser: Show upload confirmation
@@ -226,7 +240,14 @@ sequenceDiagram
 
 ### 1. Submission and validation
 
-The user selects files and a document type for each pending file. The application submits only pending files in a multipart request with a CSRF token. The server gets the applicant from the authenticated context, not from the submitted form. The browser validates files for immediate feedback. The server repeats validation before it accepts the submission.
+The user selects files and a document type for each pending file. The browser
+validates the nonempty pending selection before opening submission review.
+Invalid selections show the existing page errors without opening review or
+sending an upload request. Review lists only the filenames and localized types
+in the next request, including on retries. Confirming review repeats client
+validation and submits only pending files once in a multipart request with a
+CSRF token. The server gets the applicant from the authenticated context, not
+from the submitted form, and repeats validation before accepting the submission.
 
 The browser and server use these validation defaults:
 
@@ -354,7 +375,8 @@ The implementation uses these files:
 - [`document-upload-route-helpers.ts`](../../app/.server/routes/helpers/document-upload-route-helpers.ts): session lifecycle and per-file metadata.
 - [`upload-form-middleware.server.ts`](../../app/routes/protected/documents/upload/upload-form-middleware.server.ts), [`upload-submitted-middleware.server.ts`](../../app/routes/protected/documents/upload/upload-submitted-middleware.server.ts), and [`upload-submitted.tsx`](../../app/routes/protected/documents/upload/upload-submitted.tsx): lifecycle guards and session-based confirmation.
 - [`upload-instructions.tsx`](../../app/routes/protected/documents/upload/components/upload-instructions.tsx): localized document guidance.
-- [`upload-form.tsx`](../../app/routes/protected/documents/upload/components/upload-form.tsx) and [`use-document-upload-form.ts`](../../app/routes/protected/documents/upload/hooks/use-document-upload-form.ts): accessible upload controls, selection state, partial success, focus management, and multipart submission.
+- [`upload-form.tsx`](../../app/routes/protected/documents/upload/components/upload-form.tsx) and [`use-document-upload-form.ts`](../../app/routes/protected/documents/upload/hooks/use-document-upload-form.ts): accessible upload controls, validated submission review, grouped results, pending-only retries, focus management, and multipart submission.
+- [`uploaded-document-upload-item.tsx`](../../app/routes/protected/documents/upload/components/uploaded-document-upload-item.tsx), [`use-hints.ts`](../../app/hooks/use-hints.ts), [`date-utils.ts`](../../app/utils/date-utils.ts), and [`date-time-display.tsx`](../../app/components/date-time-display.tsx): read-only successful rows with retained ISO timestamps and full localized inline date-time and tooltip text in the resolved timezone.
 - [`remove-file-dialog.tsx`](../../app/routes/protected/documents/upload/components/remove-file-dialog.tsx) and [`unsaved-changes-dialog.tsx`](../../app/routes/protected/documents/upload/components/unsaved-changes-dialog.tsx): removal and navigation confirmation.
 - [`document-upload-service.ts`](../../app/.server/domain/services/document-upload-service.ts): centralizes EWDU upload and scan outcome classification and technical failure logging.
 - [`document-upload-repository.ts`](../../app/.server/domain/repositories/document-upload-repository.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.

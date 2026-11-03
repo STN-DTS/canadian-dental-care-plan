@@ -78,6 +78,8 @@ Use these labels to find the controls in either language:
 | Upload file                  | Ajouter un fichier                      |
 | Document Type                | Type de document                        |
 | Submit                       | Soumettre                               |
+| Confirm submission           | Confirmer la soumission                 |
+| Back                         | Retour                                  |
 | Submit remaining files       | Soumettre les fichiers restants         |
 | View submission confirmation | Consulter la confirmation de soumission |
 | Remove file                  | Supprimer le fichier                    |
@@ -93,13 +95,17 @@ DEV mock responses, not real service processing.
 2. Select a valid PDF.
 3. Choose a document type for that file.
 4. Select **Submit**.
-5. Repeat with several distinct valid files. Choose a type for each file before
+5. Check that **Confirm submission** lists the selected filename and localized
+   document type, then select **Submit** in the dialog to upload.
+6. Repeat with several distinct valid files. Choose a type for each file before
    submitting.
 
-Before submission, check that each file shows its filename and type.
-After a successful mock response, the confirmation should list the uploaded filenames
-and explains the next steps. Refreshing the finished confirmation shows it
-again while the session remains valid.
+Before the first upload attempt, check that the localized counter reads
+**Files selected: N** and each file shows its filename and type. Opening or
+dismissing review should not change the counter or selection. After a successful
+mock response, the confirmation should list each successful filename once with
+its localized document type and explain the next steps. Refreshing the finished
+confirmation shows it again while the session remains valid.
 
 ### F-02. Add, edit, and remove files
 
@@ -134,17 +140,21 @@ an error does not discard other work:
 | Same name, different contents | Try different contents with the same name.                       | Matching names alone do not make it a duplicate.             |
 
 A duplicate requires the same filename, size, and contents. Correct the reported
-problem and check that you can continue without redoing unrelated work.
+problem and check that you can continue without redoing unrelated work. Empty
+selections and missing document types must show the existing page and file errors
+without opening submission review or sending an upload request.
 
 ### F-04. Repeat the mock upload failure
 
 1. Select the exact file `mock-upload-failure.txt`.
-2. Choose its document type and submit.
-3. Submit again without changing the file.
+2. Choose its document type, select **Submit**, then confirm with **Submit** in
+   the review dialog.
+3. Retry without changing the file. A new review must open; confirm it again.
 
 The file should show an upload error and stay pending. The form should not show
 confirmation. Retrying should fail again because this filename always triggers
-the mock failure.
+the mock failure. The response closes review and shows the error in the existing
+page error summary and beside the pending file.
 
 To recover, remove the failed file, select a valid file with a different
 filename, choose its type, and submit.
@@ -153,10 +163,28 @@ filename, choose its type, and submit.
 
 1. Start a new form.
 2. Select a valid PDF and `mock-upload-failure.txt`.
-3. Choose a type for each file and submit.
-4. Select **Submit remaining files** to retry.
+3. Choose a type for each file, select **Submit**, review both filenames and
+   localized types, then confirm the upload in the dialog.
+4. Select **Submit remaining files**. Review must list only the failed text file
+   and its current localized type. Confirm the retry in the dialog.
 
-The form should mark the PDF as uploaded, with no edit or remove controls.
+Successful files appear first under **Files uploaded successfully** as compact
+read-only rows, with no edit or remove controls. Pending files appear below under
+**Files not uploaded**, keeping their types, errors, and removal controls. With
+interleaved successes and failures, each group must preserve its original order.
+Check the localized **Files uploaded: N** and **Files not uploaded: N** counters,
+including zero successes when every upload fails.
+
+Each successful row must show its filename, localized document type, and full
+localized upload date and time after **Uploaded on** (**Téléversé le** in French).
+The inline value and tooltip must match and use the resolved browser timezone,
+or the configured fallback when no valid timezone hint is available, not a fixed
+Eastern timezone. Record the original PDF's timestamp and displayed value before
+retrying. After the retry, both must remain unchanged. A file that succeeds on a
+later attempt must use that attempt's timestamp; failed files have no success
+date. Ask QA to arrange additional resolved timezones and fixed timestamps around
+daylight-saving transitions when checking the displayed time and timezone name.
+
 The text file should stay pending with an error. The form should not show
 confirmation while a file is pending. Retrying should submit only the pending
 file. The failure should repeat, and the PDF should stay uploaded.
@@ -164,11 +192,15 @@ file. The failure should repeat, and the PDF should stay uploaded.
 Now remove the failed file and confirm removal. When only the successful PDF
 remains, select **View submission confirmation**.
 
-The confirmation should list the PDF, not the removed failed file.
+This action must open confirmation without submission review or another upload.
+The confirmation should list the PDF exactly once with its localized type, not
+the removed failed file. The delay notice, next steps, and dashboard navigation
+must remain available.
 
 To test replacement instead, repeat the partial-success steps, remove the
 failed file, add a valid file with a different filename, choose its type, and
-submit. The confirmation should list the original PDF and the replacement.
+review and confirm the next upload. The confirmation should list the original PDF
+and the replacement exactly once each, with localized types and in journey order.
 The form does not support renaming files.
 
 Uploaded files remain in the selection and count toward the displayed file
@@ -201,6 +233,30 @@ The list should show the same fixed sample records after the upload. The mock
 does not add uploaded files to the list, so their absence does not mean the
 upload failed. Some French sample document-type labels include `[FR]`. Record
 these separately from untranslated application text.
+
+### F-08. Review cancellation, processing, and errors
+
+1. Select valid files and choose their types, then select **Submit** to open
+   **Confirm submission**. Only pending filenames and localized types should
+   appear, with **Back** as the secondary action and **Submit** as the primary
+   action in the existing dialog layout.
+2. Test **Back**, the close control, and Escape separately. Each must dismiss
+   review without uploading, preserve files and types, and return keyboard focus
+   to the control that opened it. Repeat after a partial success using
+   **Submit remaining files**.
+3. Reopen review and confirm. With a coordinated delay if needed, check the
+   loading state, disabled actions, and focus trap. Close, Escape, outside clicks,
+   and repeated Submit activation must not dismiss the busy dialog or send a
+   second upload request.
+4. Arrange a validation or upload failure. Review must close when the response
+   arrives, and the existing page error summary and inline errors must appear.
+   Successful files and pending selections remain available; the next upload
+   attempt must open a fresh review.
+
+Repeat in English and French, on desktop and mobile, and with long filenames and
+document-type labels. The review list and successful rows must remain readable
+without overlap or horizontal overflow. **Remove file** remains a small secondary
+button on pending rows; submission review does not change its confirmation flow.
 
 ### Tests that need coordination
 
@@ -247,16 +303,16 @@ Record what happened in each scenario and compare it with the expected
 accessible behaviour. These expectations are assessment criteria, not verified
 results. Use the office's chosen criteria and standard.
 
-| ID and journey                               | Repeatable steps                                                                                                       | Expected accessible behaviour                                                                                                                                                                                              | Actual result, evidence, and findings |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| A-01. Keyboard journey. F-01, F-02, F-05     | Use only the keyboard. Select files, choose types, submit, recover from an error, and reach confirmation.              | Users can reach every action in a sensible order. Focus stays visible. After a file is added or removed, focus moves to a control or status that helps the user continue.                                                  |                                       |
-| A-02. Names and instructions. F-01, F-02     | Inspect the file picker button, each file, each type selector, and its instructions with a screen reader.              | Controls have accessible names that describe their actions. Each type selector identifies its file. Users can find the required fields, accepted formats, size limit, and count limit.                                     |                                       |
-| A-03. Errors and recovery. F-03, F-04        | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error.                 | Each error identifies the relevant field or file. The screen reader announces it, and the message explains how to correct it. Users can fix errors without losing other work.                                              |                                       |
-| A-04. Dialogs. F-02, F-06                    | Open file removal and the leave-page warning. Test initial focus, keyboard movement, Escape, cancel, and confirm.      | Each dialog has an accessible name that describes its purpose. Focus starts on a relevant control and stays inside the open dialog. Escape and cancel dismiss it and restore focus. Confirming performs the stated action. |                                       |
-| A-05. Status and partial success. F-04, F-05 | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. | The screen reader announces processing, success, and failure as distinct states. Updates do not move focus unnecessarily. The form separates uploaded and pending files and explains how to retry, remove, or finish.      |                                       |
-| A-06. Confirmation. F-01, F-05               | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology. | The confirmation identifies submitted filenames, explains next steps, and provides navigation with descriptive labels. Its heading describes the page.                                                                     |                                       |
-| A-07. Visual and responsive use. F-01, F-03  | Check contrast and colour use. Try a long filename, narrow viewport, browser zoom, and increased text spacing.         | Users can read text and operate controls. Meaning does not depend on colour alone. Content reflows without loss, overlap, or unnecessary horizontal scrolling. Long filenames do not hide controls.                        |                                       |
-| A-08. English and French. F-01, F-03, F-05   | Repeat key checks in both languages with the chosen assistive technology.                                              | Page language, control names, instructions, errors, and statuses match the selected language. The screen reader uses that language. Record `[FR]` mock sample labels separately from application translation issues.       |                                       |
+| ID and journey                                          | Repeatable steps                                                                                                                                              | Expected accessible behaviour                                                                                                                                                                                                                                                                                 | Actual result, evidence, and findings |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| A-01. Keyboard journey. F-01, F-02, F-05, F-08          | Use only the keyboard. Select files, choose types, review, cancel or confirm, recover from an error, and reach confirmation.                                  | Users can reach every action in a sensible order. Focus stays visible. After a file is added or removed, focus moves to a control or status that helps the user continue.                                                                                                                                     |                                       |
+| A-02. Names and instructions. F-01, F-02                | Inspect the file picker button, each file, each type selector, and its instructions with a screen reader.                                                     | Controls have accessible names that describe their actions. Each type selector identifies its file. Users can find the required fields, accepted formats, size limit, and count limit.                                                                                                                        |                                       |
+| A-03. Errors and recovery. F-03, F-04                   | Try an empty submission, omit a type, and select an unsupported or oversized file. Correct each error.                                                        | Each error identifies the relevant field or file. The screen reader announces it, and the message explains how to correct it. Users can fix errors without losing other work.                                                                                                                                 |                                       |
+| A-04. Dialogs. F-02, F-06, F-08                         | Open submission review, file removal, and the leave-page warning. Test initial focus, keyboard movement, Escape, cancellation, confirmation, and busy review. | Each dialog has an accessible name and traps focus. Before submission, Back, close, and Escape dismiss review, preserve selections, and restore focus. Busy submission review stays open with disabled actions until the response. Removal and navigation dialogs keep their existing cancellation behaviour. |                                       |
+| A-05. Status and partial success. F-04, F-05            | Submit a valid file with the failure file. Listen during processing, success, failure, retry, removal, and completion. Inspect successful date labels.        | The initial selected-file counter and later uploaded/not-uploaded counters match the selection and outcomes. Successful rows precede pending rows in group order, expose localized filename/type/date details, and retain dates across retries. Page errors become available when review closes.              |                                       |
+| A-06. Confirmation. F-01, F-05                          | Complete a single-file and a partial-success journey. Inspect the confirmation with keyboard and assistive technology.                                        | The receipt identifies each successful filename and localized type exactly once, including earlier attempts and excluding failed files. Its heading, delay notice, next steps, and descriptive dashboard navigation remain available. Uploaded-only completion needs no review or new upload.                 |                                       |
+| A-07. Visual and responsive use. F-01, F-03, F-05, F-08 | Check contrast and colour use. Try long filenames and type labels, desktop and mobile viewports, browser zoom, and increased text spacing.                    | Users can read text and operate controls. Meaning does not depend on colour alone. Review, successful rows with full date-time text, pending controls, and receipt contents reflow without loss, overlap, or unnecessary horizontal scrolling.                                                                |                                       |
+| A-08. English and French. F-01, F-03, F-05, F-08        | Repeat key checks in both languages with the chosen assistive technology and multiple resolved timezones.                                                     | Page language, review content, control names, errors, statuses, receipt types, and full inline date-time and tooltip text match the selected locale. The date uses the resolved timezone. Record `[FR]` mock sample labels separately from application translation issues.                                    |                                       |
 
 If mock responses finish before you can assess processing announcements or
 disabled controls, ask development or QA to add a delay. Ask them to arrange
