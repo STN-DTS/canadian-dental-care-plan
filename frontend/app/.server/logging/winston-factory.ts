@@ -28,16 +28,14 @@ const levelsConfig = {
     error: 1, // Application errors requiring immediate attention
     warn: 2, // Warning conditions
     info: 3, // Informational messages highlighting application progress
-    http: 4, // HTTP request/response logs
-    debug: 5, // Detailed debug information
-    trace: 6, // Fine-grained debug information
+    debug: 4, // Detailed debug information
+    trace: 5, // Fine-grained debug information
   },
   colors: {
     audit: 'grey',
     error: 'red',
     warn: 'yellow',
     info: 'green',
-    http: 'green',
     debug: 'blue',
     trace: 'magenta',
   },

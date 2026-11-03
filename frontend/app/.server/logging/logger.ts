@@ -14,7 +14,6 @@ export interface Logger {
   audit: LeveledLogMethod;
   debug: LeveledLogMethod;
   error: LeveledLogMethod;
-  http: LeveledLogMethod;
   info: LeveledLogMethod;
   trace: LeveledLogMethod;
   warn: LeveledLogMethod;

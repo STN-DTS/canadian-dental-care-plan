@@ -8,7 +8,6 @@ export const createLogger = vi.fn(() => {
     debug: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
-    http: vi.fn(),
     trace: vi.fn(),
     warn: vi.fn(),
   } satisfies Logger;

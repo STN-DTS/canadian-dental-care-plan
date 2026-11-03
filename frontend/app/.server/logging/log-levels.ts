@@ -1,14 +1,11 @@
 /**
- * Available log levels ordered from most severe to most verbose.
- * A configured level includes messages at that level and all more severe levels
- * earlier in this list. For example, 'info' includes 'audit', 'error', 'warn',
- * 'http', and 'info'.
+ * Available log level names. Winston's numeric configuration defines severity
+ * and filtering. For example, 'info' includes 'audit', 'error', 'warn', and 'info'.
  */
 export const logLevels = [
   'audit', // Critical system events requiring persistence
   'debug', // Detailed information useful during development and debugging
   'error', // Runtime errors that may require immediate attention
-  'http', // Morgan HTTP request/response logs written through logger.http()
   'info', // General operational information about system status
   'trace', // Highly detailed tracing information, potentially performance-impacting
   'warn', // Warnings, potential issues that don't stop execution

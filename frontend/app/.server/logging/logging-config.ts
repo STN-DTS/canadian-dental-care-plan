@@ -10,7 +10,7 @@ import { singleton } from '~/.server/utils/instance-registry';
  */
 export type LoggingConfig = {
   /**
-   * The minimum log level to output (from most to least severe: audit, error, warn, http, info, debug, trace).
+   * The minimum log level to output (from most to least severe: audit, error, warn, info, debug, trace).
    * Messages below this level will be filtered out.
    */
   LOG_LEVEL: LogLevel;
@@ -36,14 +36,14 @@ export type LoggingConfig = {
 
 /**
  * Default configuration values used when specific settings are not provided in the environment.
- * These values serve as fallbacks if environment variables are missing or invalid.
+ * These values apply when environment variables are missing. Invalid values fail validation.
  *
  * The LOG_LEVEL defaults are environment-aware:
- * - 'http' in production (less verbose, better performance)
+ * - 'info' in production (operational and request logs)
  * - 'debug' in development (more verbose for troubleshooting)
  */
 export const defaultsConfig = {
-  LOG_LEVEL: process.env.NODE_ENV === 'production' ? 'http' : 'debug',
+  LOG_LEVEL: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   AUDIT_LOG_ENABLED: true,
   AUDIT_LOG_DIRNAME: 'logs',
   AUDIT_LOG_FILENAME: 'audit-%DATE%',

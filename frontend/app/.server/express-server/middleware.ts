@@ -81,7 +81,7 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
 type MorganFormat = 'combined' | 'common' | 'dev' | 'short' | 'tiny' | string;
 
 /**
- * Creates named request-logger middleware with production-aware Morgan format.
+ * Creates named request-logger middleware with production-aware Morgan format at info level.
  *
  * Health readiness requests are excluded from request logging.
  */
@@ -90,7 +90,7 @@ export function createRequestLoggerMiddleware(isProduction: boolean): RequestHan
   const logFormat: MorganFormat = isProduction ? 'tiny' : 'dev';
 
   const morganLoggerMiddleware = morgan(logFormat, {
-    stream: { write: (msg) => log.http(msg.trim()) },
+    stream: { write: (msg) => log.info(msg.trim()) },
   });
 
   // List of paths to ignore for request logging. These are typically health check endpoints that
