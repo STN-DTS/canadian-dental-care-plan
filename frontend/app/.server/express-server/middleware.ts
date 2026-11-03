@@ -78,20 +78,14 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
   };
 }
 
-type MorganFormat = 'combined' | 'common' | 'dev' | 'short' | 'tiny' | string;
-
 /**
- * Creates named request-logger middleware with production-aware Morgan format at info level.
+ * Creates named request-logger middleware with production-aware Morgan format and status-based severity.
  *
  * Health readiness requests are excluded from request logging.
  */
 export function createRequestLoggerMiddleware(isProduction: boolean): RequestHandler {
   const log = createLogger('express/middleware/requestLoggerMiddleware');
-  const logFormat: MorganFormat = isProduction ? 'tiny' : 'dev';
-
-  const morganLoggerMiddleware = morgan(logFormat, {
-    stream: { write: (msg) => log.info(msg.trim()) },
-  });
+  const logFormat = isProduction ? 'tiny' : 'dev';
 
   // List of paths to ignore for request logging. These are typically health check endpoints that
   // are called frequently and can clutter the logs.
@@ -102,7 +96,19 @@ export function createRequestLoggerMiddleware(isProduction: boolean): RequestHan
       return next();
     }
 
-    return morganLoggerMiddleware(request, response, next);
+    return morgan(logFormat, {
+      stream: {
+        write: (message) => {
+          if (response.statusCode >= 500) {
+            log.error(message.trim());
+          } else if (response.statusCode >= 400) {
+            log.warn(message.trim());
+          } else {
+            log.info(message.trim());
+          }
+        },
+      },
+    })(request, response, next);
   };
 }
 
