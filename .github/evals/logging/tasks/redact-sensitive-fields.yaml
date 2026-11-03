@@ -1,0 +1,16 @@
+id: redact-sensitive-fields
+description: 'Redact sensitive data by emitting only allowlisted fields.'
+name: Redact Sensitive Fields
+inputs:
+  prompt: |
+    Make the logging in redact-sensitive-fields.ts production ready.
+  files:
+    - path: redact-sensitive-fields.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

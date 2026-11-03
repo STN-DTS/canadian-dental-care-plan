@@ -1,0 +1,16 @@
+id: add-canonical-success-log
+description: 'Successful final HTTP event is one canonical INFO2 10 access event.'
+name: Add Canonical Success Log
+inputs:
+  prompt: |
+    Add logging to the handle function in add-canonical-success-log.ts so operators can see each completed request.
+  files:
+    - path: add-canonical-success-log.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

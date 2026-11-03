@@ -1,0 +1,15 @@
+id: trace-checkout
+description: 'Negative case for span design: the logging skill must not run.'
+name: Trace Checkout
+tags: [negative, tracing]
+inputs:
+  prompt: |
+    Add spans around the stock reservation and card charge in trace-checkout.ts so we can see where checkout time goes.
+  files:
+    - path: trace-checkout.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_not_invoked
+    config:
+      forbidden_skills:
+        - logging

@@ -1,0 +1,16 @@
+id: fix-http-log-levels
+description: 'Final inbound 5xx is ERROR 17 and success is INFO2 10.'
+name: Fix HTTP Log Levels
+inputs:
+  prompt: |
+    Check the log levels in fix-http-log-levels.ts and fix them if they are wrong.
+  files:
+    - path: fix-http-log-levels.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

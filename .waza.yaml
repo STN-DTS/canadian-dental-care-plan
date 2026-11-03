@@ -1,0 +1,8 @@
+paths:
+  skills: .github/skills/
+  evals: .github/evals/
+tokens:
+  limits:
+    defaults:
+      'SKILL.md': 1000
+      'references/*.md': 2000

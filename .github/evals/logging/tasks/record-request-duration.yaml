@@ -1,0 +1,15 @@
+id: record-request-duration
+description: 'Negative case for metrics: the logging skill must not run.'
+name: Record Request Duration
+tags: [negative, metrics]
+inputs:
+  prompt: |
+    In record-request-duration.ts, record each request's duration in a histogram using the meter.
+  files:
+    - path: record-request-duration.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_not_invoked
+    config:
+      forbidden_skills:
+        - logging

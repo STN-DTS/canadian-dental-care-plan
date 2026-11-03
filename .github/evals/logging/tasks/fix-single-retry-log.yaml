@@ -1,0 +1,16 @@
+id: fix-single-retry-log
+description: 'Each retry attempt is DEBUG 5.'
+name: Fix Single Retry Log
+inputs:
+  prompt: |
+    fix-single-retry-log.ts runs on every retry attempt. Review its log level and fix it if needed.
+  files:
+    - path: fix-single-retry-log.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

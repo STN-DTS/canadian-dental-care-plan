@@ -1,0 +1,17 @@
+id: layered-rethrow
+description: 'Log a failure once where it is handled; lower layers rethrow without logging.'
+name: Layered Rethrow
+tags: [positive, exceptions]
+inputs:
+  prompt: |
+    Our logs show three errors for every failed submission in layered-rethrow.ts. Clean that up.
+  files:
+    - path: layered-rethrow.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

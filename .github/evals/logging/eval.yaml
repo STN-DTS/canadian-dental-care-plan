@@ -1,0 +1,67 @@
+name: logging-skill-eval
+description: Evaluates privacy-first logging, OpenTelemetry severity selection, canonical events, and logging workflow activation.
+skill: logging
+version: '1.0'
+config:
+  trials_per_task: 1
+  timeout_seconds: 300
+  parallel: false
+  executor: copilot-sdk
+  model: gpt-5.6-sol
+  inject_skill_body: false
+  skill_directories:
+    - ../../skills
+graders:
+  - type: prompt
+    name: logging_change_quality
+    config:
+      model: gpt-6-sol
+      reasoning_effort: medium
+      continue_session: true
+      prompt: |
+        Inspect the task prompt, the agent's response, and all workspace changes.
+
+        If the task does not ask for logging changes (metrics, spans, alert rules, incident write-ups, log analysis),
+        grade only that work: pass if it is done correctly and the agent added no log statements.
+        Do not apply the logging rules below to metrics, spans, alerts, or documents.
+
+        Fixture contract: values the fixture names requestId or request_id, method, routeTemplate,
+        operation, reasonCode, status, attempt, delayMs, actorId, targetId, and applicantId are already
+        validated by the caller. Treat requestId as a random ingress correlation ID, routeTemplate as the
+        matched template, operation and reasonCode as enum codes, and actor, target, and applicant IDs as
+        opaque internal IDs. A shared logger adapter handles emission failures and severity export, so do
+        not require try/catch around each log call. The workspace has no runnable sink; do not fail for
+        missing sink validation when the agent names that gap.
+
+        Otherwise, pass only if the requested logging work is complete and follows every applicable rule:
+        - Sensitive or uncontrolled data is not logged: personal data, SINs in any form, credentials, API keys,
+          tokens, headers, raw session IDs, raw URLs or query strings, whole objects, environment dumps,
+          exception messages, and stacks.
+        - Only necessary allowlisted structured fields are emitted.
+        - Every emitted event carries a category and a severity as separate values. A logger method's
+          level (for example `logger.error`) counts as the severity.
+        - `error.type` or equivalent is a fixed low-cardinality code, never copied from an error name or message.
+        - Every outcome branch of the unit of work the task covers gets the correct event, or the response
+          names the completion hook or follow-up that owns a branch it leaves unlogged. Steps inside a
+          request (such as a lookup helper) are not units of work: they may add fields to the request's
+          canonical event or log safe diagnostics at DEBUG.
+        - When the logger cannot express INFO2 or FATAL, an explicit severity 10 or 21 through the adapter
+          passes; so does the native level with the mapping gap stated in the response.
+        - OpenTelemetry severity follows the outcome: successful final HTTP events use INFO2/10, normal
+          non-HTTP events use INFO/9, final inbound 4xx uses WARN/13, final inbound 5xx uses ERROR/17,
+          retries use DEBUG/5, a downstream 4xx caused by our own request or credentials uses ERROR/17,
+          and a process-ending failure at the top level uses FATAL/21 (or ERROR/17 with outcome terminated
+          when the logger has no FATAL).
+        - Each unit of work has at most one canonical completion or failure event.
+        - A failure is logged once, by the layer that handles it; lower layers rethrow without logging.
+        - Audit and security events are not sampled or level-filtered.
+        - The change is focused, syntactically plausible, and preserves the fixture's language and style.
+
+        If every applicable requirement passes, call set_waza_grade_pass exactly once.
+        Otherwise, call set_waza_grade_fail exactly once and identify the unmet requirement.
+metrics:
+  - name: logging_compliance
+    weight: 1.0
+    threshold: 0.8
+tasks:
+  - 'tasks/*.yaml'

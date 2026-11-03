@@ -1,0 +1,10 @@
+groups:
+  - name: benefits-api
+    rules:
+      - alert: BenefitsApiDown
+        expr: up{job="benefits-api"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Benefits API is down

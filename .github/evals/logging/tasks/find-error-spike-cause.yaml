@@ -1,0 +1,15 @@
+id: find-error-spike-cause
+description: 'Negative case for analyzing runtime log output: the logging skill must not run.'
+name: Find Error Spike Cause
+tags: [negative, log-analysis]
+inputs:
+  prompt: |
+    Look at service.log and tell me what caused the spike of 500s and when it stopped.
+  files:
+    - path: service.log
+graders:
+  - type: skill_invocation
+    name: logging_skill_not_invoked
+    config:
+      forbidden_skills:
+        - logging

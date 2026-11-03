@@ -1,0 +1,17 @@
+id: session-lookup-logging
+description: 'Raw session IDs and whole session objects stay out of logs.'
+name: Session Lookup Logging
+tags: [positive, privacy]
+inputs:
+  prompt: |
+    Tidy up the logging in session-lookup.ts.
+  files:
+    - path: session-lookup.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

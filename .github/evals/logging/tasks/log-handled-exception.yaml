@@ -1,0 +1,16 @@
+id: log-handled-exception
+description: 'A handled exception is logged once, without its message or stack.'
+name: Log Handled Exception
+inputs:
+  prompt: |
+    Review the error logging in log-handled-exception.ts and fix any issues.
+  files:
+    - path: log-handled-exception.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

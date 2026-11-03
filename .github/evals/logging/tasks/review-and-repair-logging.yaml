@@ -1,0 +1,16 @@
+id: review-and-repair-logging
+description: 'Privacy-first logging with OpenTelemetry severity for any language or logger: repair a handled 400.'
+name: Review and Repair Logging
+inputs:
+  prompt: |
+    Fix the logging in review-and-repair-logging.ts.
+  files:
+    - path: review-and-repair-logging.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

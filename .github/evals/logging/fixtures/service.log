@@ -1,0 +1,7 @@
+{"time":"2026-10-28T14:08:58Z","severity":"INFO2","status":201,"route":"/applications","duration_ms":182}
+{"time":"2026-10-28T14:09:03Z","severity":"ERROR","status":500,"route":"/applications","error.type":"address_validation_failed","version":"4.12.0"}
+{"time":"2026-10-28T14:09:04Z","severity":"ERROR","status":500,"route":"/applications","error.type":"address_validation_failed","version":"4.12.0"}
+{"time":"2026-10-28T14:09:07Z","severity":"INFO2","status":200,"route":"/status","duration_ms":3}
+{"time":"2026-10-28T14:09:09Z","severity":"ERROR","status":500,"route":"/applications","error.type":"address_validation_failed","version":"4.12.0"}
+{"time":"2026-10-28T14:20:41Z","severity":"INFO","event":"deploy_rollback_started","version":"4.11.3"}
+{"time":"2026-10-28T14:26:12Z","severity":"INFO2","status":201,"route":"/applications","duration_ms":175,"version":"4.11.3"}

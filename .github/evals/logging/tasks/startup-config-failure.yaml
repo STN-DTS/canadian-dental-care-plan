@@ -1,0 +1,17 @@
+id: startup-config-failure
+description: 'Process-ending startup failure is FATAL 21 without exception text or environment values.'
+name: Startup Config Failure
+tags: [positive, severity, privacy]
+inputs:
+  prompt: |
+    When startup-config.ts fails to start, ops can't find it in the logs. Fix the logging.
+  files:
+    - path: startup-config.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

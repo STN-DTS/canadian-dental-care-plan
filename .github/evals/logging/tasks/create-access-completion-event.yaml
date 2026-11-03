@@ -1,0 +1,16 @@
+id: create-access-completion-event
+description: 'Final inbound 4xx emits one WARN 13 access completion event.'
+name: Create Access Completion Event
+inputs:
+  prompt: |
+    Clean up the logging in create-access-completion-event.ts.
+  files:
+    - path: create-access-completion-event.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

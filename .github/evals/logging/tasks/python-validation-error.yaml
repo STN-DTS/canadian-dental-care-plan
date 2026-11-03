@@ -1,0 +1,17 @@
+id: python-validation-error
+description: 'Exception messages carrying a SIN and email are not logged; works outside TypeScript.'
+name: Python Validation Error
+tags: [positive, privacy, python]
+inputs:
+  prompt: |
+    Review the logging in validation_error.py and fix any problems.
+  files:
+    - path: validation_error.py
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

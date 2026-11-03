@@ -1,0 +1,16 @@
+id: add-unsampled-audit-event
+description: 'Audit events bypass sampling and level filters.'
+name: Add Unsampled Audit Event
+inputs:
+  prompt: |
+    Review the logging in add-unsampled-audit-event.ts and fix any problems.
+  files:
+    - path: add-unsampled-audit-event.ts
+graders:
+  - type: skill_invocation
+    name: logging_skill_invoked
+    config:
+      required_skills:
+        - logging
+      mode: any_order
+      allow_extra: true

@@ -1,0 +1,15 @@
+id: write-incident-timeline
+description: 'Negative case for incident response: the logging skill must not run.'
+name: Write Incident Timeline
+tags: [negative, incident]
+inputs:
+  prompt: |
+    Rewrite outage-notes.md as a short incident timeline with impact, detection time, and time to recovery.
+  files:
+    - path: outage-notes.md
+graders:
+  - type: skill_invocation
+    name: logging_skill_not_invoked
+    config:
+      forbidden_skills:
+        - logging

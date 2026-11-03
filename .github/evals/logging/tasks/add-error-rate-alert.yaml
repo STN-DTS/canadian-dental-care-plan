@@ -1,0 +1,15 @@
+id: add-error-rate-alert
+description: 'Negative case for alert rules: the logging skill must not run.'
+name: Add Error Rate Alert
+tags: [negative, alerting]
+inputs:
+  prompt: |
+    Add an alert to alert-rules.yaml that pages when the benefits-api 5xx rate stays above 2% for 10 minutes.
+  files:
+    - path: alert-rules.yaml
+graders:
+  - type: skill_invocation
+    name: logging_skill_not_invoked
+    config:
+      forbidden_skills:
+        - logging
