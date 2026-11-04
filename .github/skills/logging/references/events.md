@@ -4,17 +4,17 @@
 
 This contract describes logical fields, not a logger call signature or an OTLP JSON encoding. Map native logger fields explicitly to the OpenTelemetry model.
 
-| Field                             | Contract                                                                                                                            |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `Timestamp`                       | Event occurrence time. Set it for first-party events. Let the SDK populate `ObservedTimestamp` separately.                          |
-| `EventName`                       | Stable, low-cardinality name for the event schema. No IDs or other dynamic values.                                                  |
-| `Body`                            | Stable human-readable message or message template. Approved variable values belong in attributes.                                   |
-| `SeverityNumber`                  | Normalized number from the severity reference.                                                                                      |
-| `SeverityText`                    | Actual source severity label. Do not confuse it with the normalized display name.                                                   |
-| `Resource`                        | Configure `service.name`, `service.version`, and `deployment.environment.name` once at the logging boundary.                        |
-| `InstrumentationScope`            | Stable emitting component or library scope. Never a user or request name.                                                           |
-| `TraceId`, `SpanId`, `TraceFlags` | Active trace context when available. Do not emit a span ID without its trace ID. The sampled flag does not authorize dropping logs. |
-| `Attributes`                      | Named fields from the event allowlist. Preserve numeric and boolean types.                                                          |
+| Field                             | Contract                                                                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Timestamp`                       | Event occurrence time. Set it for first-party events. Let the SDK populate `ObservedTimestamp` separately. If a consumer accepts one timestamp, use `Timestamp` when present, otherwise `ObservedTimestamp`. |
+| `EventName`                       | Stable, low-cardinality name for the event schema. No IDs or other dynamic values.                                                                                                                           |
+| `Body`                            | OpenTelemetry permits any value, including structured values. This policy uses a stable human-readable message or template; approved variable values belong in attributes.                                   |
+| `SeverityNumber`                  | Normalized number from the severity reference.                                                                                                                                                               |
+| `SeverityText`                    | Actual source severity label. Do not confuse it with the normalized display name.                                                                                                                            |
+| `Resource`                        | Configure `service.name`, `service.version`, and `deployment.environment.name` once at the logging boundary.                                                                                                 |
+| `InstrumentationScope`            | Stable emitting component or library scope. Never a user or request name.                                                                                                                                    |
+| `TraceId`, `SpanId`, `TraceFlags` | Active trace context when available. Do not emit a span ID without its trace ID. The sampled flag does not authorize dropping logs.                                                                          |
+| `Attributes`                      | Named fields from the event allowlist. Preserve numeric and boolean types.                                                                                                                                   |
 
 A JSON logger may use `event_name`, `message`, `trace_id`, and `span_id` only with an explicit mapping to native fields. Do not introduce the deprecated `event.name` attribute. Do not use deprecated `error.message` for new records.
 
@@ -50,9 +50,9 @@ Define bounds and permitted destinations for each admitted field. Add domain fie
 
 ## Canonical-event ownership
 
-Use one request-scoped or job-scoped accumulator and one terminal emitter. Never store mutable request fields in a global logger.
+Use one request-scoped or job-scoped accumulator and one terminal emitter. Never store mutable request fields in a global logger. Every return, rejection, and throw must end in its actual outcome and one terminal event, unless a named completion hook owns that branch. A catch-only failure event does not cover a successful return. Helpers add approved fields or DEBUG diagnostics; they do not emit standalone INFO completion events.
 
-The terminal event records the actual outcome, duration, and useful safe context. Streaming responses need finish, failure, and close handling after the handler returns. Deduplicate overlapping callbacks. A process crash can prevent emission. Completion logging is not a durability guarantee.
+Use the actual status and schema-approved operation and reason values. Do not invent statuses or replace validated values with generic codes. The terminal event records the outcome, duration, and useful safe context. Streaming responses need finish, failure, and close handling after the handler returns. Deduplicate overlapping callbacks. A process crash can prevent emission. Completion logging is not a durability guarantee.
 
 Use a completion event as an outcome checkpoint. Use spans for the operation duration and step timing. Copy only fields needed to understand or retain the log independently, not every span attribute.
 

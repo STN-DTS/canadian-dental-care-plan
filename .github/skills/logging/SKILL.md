@@ -16,8 +16,8 @@ Priority: privacy, severity, diagnostics, cost. Rules apply at every level, incl
 1. Detect the logger, the OpenTelemetry bridge, every sink, and the completion hook (the middleware or wrapper that sees each request or job finish). See [review.md](./references/review.md#detect-the-logging-path).
 2. Admit only allowlisted fields. The schema owner keeps the allowlist; add a field only with its purpose, bounds, and destinations. See [sensitive-data.md](./references/sensitive-data.md).
 3. Choose category and severity separately. See [severity.md](./references/severity.md).
-4. Emit one canonical event per unit of work (request, job, batch, or message) on every outcome branch, success included. Without a completion hook, the handler emits it. Steps inside the unit add fields to that event or log at DEBUG. In your answer, list each exit (success return, each failure return, each throw) with its event or the named hook that owns it. See [events.md](./references/events.md).
-5. Send canaries (synthetic values shaped like SINs, emails, and tokens) through every sink in a local or test environment and confirm none arrive. Evidence is the sink's output, not the call site. Use production or third-party sinks only with the owner's authorization. If no sink can run, report the gap. See [review.md](./references/review.md#minimum-gate-for-every-logging-change).
+4. Map every success return, rejection, failure return, and throw to its actual outcome and terminal owner. Emit one canonical event per unit of work on every outcome branch, success included. Without a completion hook, the handler emits it. Helpers add fields to that event or log at DEBUG, never emit standalone completion events. In your answer, name any hook that owns an exit. See [events.md](./references/events.md).
+5. Send synthetic canaries shaped like SINs, emails, and tokens through every sink in a local or test environment. Check sink output, not the call site. Use production or third-party sinks only with the owner's authorization. In your answer, report each sink's result or name each unavailable sink and the gap. See [review.md](./references/review.md#minimum-gate-for-every-logging-change).
 
 ## Rules
 
@@ -27,7 +27,7 @@ Priority: privacy, severity, diagnostics, cost. Rules apply at every level, incl
 - Audit and security events bypass sampling and level filters.
 - The layer that handles a failure logs it once. Lower layers add context and rethrow without logging. Never invent a status for an error you rethrow.
 - Fix logging without changing public signatures or business behavior.
-- If redaction fails, drop the field, not the event. The shared logger adapter, not each call site, keeps logging failures from failing the request.
+- Use the approved structured logger and shared adapter, never console directly. The adapter keeps logging failures from failing requests. If redaction fails, drop the field, not the event.
 
 | Outcome                                      | Severity   |
 | -------------------------------------------- | ---------- |
