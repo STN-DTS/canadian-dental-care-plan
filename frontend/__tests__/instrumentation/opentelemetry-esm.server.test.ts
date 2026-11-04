@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { expect, test } from 'vitest';
 
 const execFileAsync = promisify(execFile);
-const frontendDirectory = fileURLToPath(new URL('../../../', import.meta.url));
+const frontendDirectory = fileURLToPath(new URL('../../', import.meta.url));
 
 test('the official ESM hook instruments Express requests with the application SDK preload', async () => {
   const { stdout } = await execFileAsync(
@@ -15,7 +15,7 @@ test('the official ESM hook instruments Express requests with the application SD
       'development',
       '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
       '--import',
-      './app/.server/express-server/opentelemetry.ts',
+      './app/instrumentation/opentelemetry.server.ts',
       '--input-type=module',
       '--eval',
       `

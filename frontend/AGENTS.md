@@ -6,7 +6,9 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
 - Inspect application code and relevant root tooling together when needed.
   Do not inspect or change unrelated GitOps or infrastructure implementations.
 - Keep server-only services, sessions, integrations, and secrets in
-  `app/.server/`; do not expose server environment values to the browser.
+  `app/.server/`. The OpenTelemetry preload belongs in
+  `app/instrumentation/*.server.ts`; the `.server.ts` suffix keeps it
+  server-only. Do not expose server environment values to the browser.
 - Use React Router loaders for reads and actions for mutations. Follow
   existing route helpers, validation, and error-handling patterns.
 - Preserve authentication, CSRF protection, session handling, accessibility,

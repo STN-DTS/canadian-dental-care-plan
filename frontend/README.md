@@ -138,6 +138,7 @@ app/
   components/       Shared UI components
   routes/           Public, protected, and error routes
   .server/          Services, integrations, sessions, and translations
+  instrumentation/  OpenTelemetry preload modules (`.server.ts`)
   entry.client.tsx  Browser entry point
   entry.server.tsx  Server-rendering entry point
 __tests__/          Vitest tests
@@ -150,9 +151,11 @@ Routes use React Router loaders for reads and actions for mutations. Route
 definitions keep English and French paths together. Translations live under
 `app/.server/locales`.
 
-Keep server-only code under `app/.server`. Validate request data at route
-boundaries with Zod. Follow existing component, localization, accessibility,
-and error-handling patterns before adding new abstractions.
+Keep server-only services and application integrations under `app/.server`.
+The OpenTelemetry preload lives in `app/instrumentation/*.server.ts`; the
+`.server.ts` suffix keeps those modules server-only. Validate request data at
+route boundaries with Zod. Follow existing component, localization,
+accessibility, and error-handling patterns before adding new abstractions.
 
 ## Mock integrations
 

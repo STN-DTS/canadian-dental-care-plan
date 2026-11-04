@@ -1,11 +1,5 @@
-/**
- * Log levels supported by the OpenTelemetry bootstrap logger.
- */
 type OpenTelemetryLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
-/**
- * Options controlling logger output.
- */
 interface OpenTelemetryLoggerOptions {
   /**
    * Whether debug messages should be written. Defaults to non-production environments.
@@ -23,7 +17,6 @@ class OpenTelemetryLogger {
   constructor(label: string, options: OpenTelemetryLoggerOptions = {}) {
     this.label = label;
 
-    // Enable debug output outside production unless caller explicitly overrides it.
     this.showDebug = options.showDebug ?? process.env.NODE_ENV !== 'production';
   }
 
@@ -39,7 +32,6 @@ class OpenTelemetryLogger {
     const timestamp = this._getTimestamp();
     const plainMsg = `[${timestamp}] [${level}] [${this.label}] ${message}`;
 
-    // Use stdout for debug/info and stderr for warnings/errors so collectors can classify severity.
     if (level === 'ERROR') {
       console.error(plainMsg, ...args);
     } else if (level === 'WARN') {

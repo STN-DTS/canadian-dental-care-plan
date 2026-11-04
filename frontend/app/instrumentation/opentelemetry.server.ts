@@ -15,13 +15,10 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-import { createOpenTelemetryLogger } from '~/.server/express-server/opentelemetry-logger';
+import { createOpenTelemetryLogger } from '~/instrumentation/opentelemetry-logger.server';
 
 const log = createOpenTelemetryLogger('OpenTelemetry');
 
-/**
- * Gets the environment variable value, falling back to a default value if the environment variable is not set or is empty.
- */
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
 }
@@ -50,7 +47,6 @@ function getMetricExporter(): PushMetricExporter {
   log.info('Metrics exporting is disabled; set OTEL_METRICS_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
-    // a no-op PushMetricExporter implementation
     export: (metrics, resultCallback) => resultCallback({ code: ExportResultCode.SUCCESS }),
     forceFlush: async () => {},
     shutdown: async () => {},
@@ -80,40 +76,24 @@ function getTraceExporter(): SpanExporter {
   log.info('Traces exporting is disabled; set OTEL_TRACES_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
-    // a no-op SpanExporter implementation
     export: (spans, resultCallback) => resultCallback({ code: ExportResultCode.SUCCESS }),
     shutdown: async () => {},
   };
 }
 
-/**
- * Transforms a string into an integer.
- * Will return undefined if the string can't be transformed.
- */
 function toNumber(str?: string): number | undefined {
   const num = Number.parseInt(str ?? '');
   return Number.isNaN(num) ? undefined : num;
 }
 
-/**
- * Creates a log record processor that exports logs to an OTLP collector when
- * OTEL_LOGS_ENDPOINT is configured. Returns a no-op processor with `enabled: false`
- * when the endpoint is absent, so existing stdout/file transports continue operating.
- *
- * OTEL_API_KEY is required when OTEL_LOGS_ENDPOINT is configured and is sent as
- * an `Authorization: Api-Token ...` header to the collector.
- */
 function getLogRecordProcessor(): {
-  /** Whether the log record processor is enabled (i.e. OTEL_LOGS_ENDPOINT is configured). */
   enabled: boolean;
-  /** The log record processor instance. */
   processor: LogRecordProcessor;
 } {
   const otelLogsEndpoint = process.env.OTEL_LOGS_ENDPOINT;
 
   if (!otelLogsEndpoint) {
     log.debug('Log exporting is disabled; set OTEL_LOGS_ENDPOINT to enable.');
-    // Return no-op LogRecordProcessor implementation
     return {
       enabled: false,
       processor: {

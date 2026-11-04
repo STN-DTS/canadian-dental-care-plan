@@ -25,7 +25,10 @@ server starts because they preload the OpenTelemetry ESM modules.
 
 ## Code boundaries
 
-- Keep server-only services, integrations, sessions, and secrets under `app/.server`.
+- Keep server-only services, integrations, sessions, and secrets under
+  `app/.server`. The OpenTelemetry preload belongs in
+  `app/instrumentation/*.server.ts`, using the `.server.ts` suffix to keep it
+  server-only.
 - Keep route modules under `app/routes`.
 - Use React Router loaders for reads and actions for mutations.
 - Define English and French route paths together in the route configuration.
