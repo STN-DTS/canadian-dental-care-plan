@@ -72,6 +72,9 @@ export const clientEnvSchema = z.object({
   CDCP_SURVEY_LINK_EN: z.url().default('https://forms-formulaires.alpha.canada.ca/en/id/cmdsycga6008qx701dw5x5n9c'),
   CDCP_SURVEY_LINK_FR: z.url().default('https://forms-formulaires.alpha.canada.ca/fr/id/cmdsycga6008qx701dw5x5n9c'),
 
+  DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN: z.url().default('https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html#h2.3'),
+  DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR: z.url().default('https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html#h2.3'),
+
   // Document upload configs
   DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: z.string().trim().toLowerCase().default('.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff')
     .transform(csvToArray)

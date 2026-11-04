@@ -1,10 +1,13 @@
 import { Trans, useTranslation } from 'react-i18next';
 
 import { InlineLink } from '~/components/inline-link';
+import { useClientEnv } from '~/hooks/use-client-env';
 
 export function DocumentUploadInstructions() {
-  const { t } = useTranslation('documents');
-  const eligibilityFormLink = <InlineLink to={t(($) => $.upload.chooseDocuments.eligibilityFormHref)} className="external-link" newTabIndicator target="_blank" />;
+  const { t, i18n } = useTranslation('documents');
+  const { DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN, DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR } = useClientEnv();
+  const eligibilityFormHref = i18n.language.toLowerCase().startsWith('fr') ? DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR : DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN;
+  const eligibilityFormLink = <InlineLink to={eligibilityFormHref} className="external-link" newTabIndicator target="_blank" />;
 
   return (
     <>

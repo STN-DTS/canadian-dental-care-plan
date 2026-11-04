@@ -28,6 +28,8 @@ describe('<ClientEnv>', () => {
       COMMUNICATION_METHOD_GC_DIGITAL_ID: 'DIGITAL',
       COMMUNICATION_METHOD_GC_MAIL_ID: 'MAIL',
       DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf', '.jpg', '.png'],
+      DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN: 'https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html#h2.3',
+      DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR: 'https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html#h2.3',
       DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
       DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
       RECORD_SOURCE_API: '775170002',
