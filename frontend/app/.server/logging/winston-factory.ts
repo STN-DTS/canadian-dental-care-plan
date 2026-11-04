@@ -6,7 +6,6 @@ import { fullFormat } from 'winston-error-format';
 
 import type { LogLevel } from '~/.server/logging/log-levels';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
-import { formatSensitiveData } from '~/.server/logging/winston-format';
 import { createConsoleTransport, createDailyRotateFileTransport } from '~/.server/logging/winston-transport-factory';
 
 export type LevelsConfig = {
@@ -63,7 +62,6 @@ export function createWinstonInstance(config: LoggingConfig): w.Logger {
     format: format.combine(
       format.timestamp({ format: () => Temporal.Now.instant().toString() }),
       format.splat(), // Enables string interpolation with %s, %d, etc.
-      formatSensitiveData(), // Masks SIN values after splat interpolation
       fullFormat(), // Enhanced error formatting from winston-error-format
     ),
     transports: [createConsoleTransport(levelsConfig)],
