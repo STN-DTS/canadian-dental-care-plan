@@ -1,3 +1,4 @@
+import { SeverityNumber } from '@opentelemetry/api';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { ExportResultCode } from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
@@ -14,6 +15,9 @@ import type { SpanExporter } from '@opentelemetry/sdk-trace';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
+
+//
+import type { LogLevel } from '~/.server/logging';
 
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
@@ -72,21 +76,11 @@ function toNumber(str?: string): number | undefined {
   return Number.isNaN(num) ? undefined : num;
 }
 
-function getLogRecordProcessor(): {
-  enabled: boolean;
-  processor: LogRecordProcessor;
-} {
+function getLogRecordProcessor(): LogRecordProcessor | undefined {
   const otelLogsEndpoint = process.env.OTEL_LOGS_ENDPOINT;
 
   if (!otelLogsEndpoint) {
-    return {
-      enabled: false,
-      processor: {
-        forceFlush: async () => {},
-        onEmit: () => {},
-        shutdown: async () => {},
-      },
-    };
+    return;
   }
 
   if (!process.env.OTEL_API_KEY) {
@@ -99,24 +93,37 @@ function getLogRecordProcessor(): {
     url: otelLogsEndpoint,
   });
 
-  return {
-    enabled: true,
-    processor: new BatchLogRecordProcessor({
-      exporter,
-      exportTimeoutMillis: toNumber(process.env.OTEL_LOGS_EXPORT_TIMEOUT_MILLIS) ?? 5000,
-      maxExportBatchSize: toNumber(process.env.OTEL_LOGS_MAX_EXPORT_BATCH_SIZE) ?? 512,
-      maxQueueSize: toNumber(process.env.OTEL_LOGS_MAX_QUEUE_SIZE) ?? 2048,
-      scheduledDelayMillis: toNumber(process.env.OTEL_LOGS_EXPORT_INTERVAL_MILLIS) ?? 5000,
-    }),
-  };
+  return new BatchLogRecordProcessor({
+    exporter,
+    exportTimeoutMillis: toNumber(process.env.OTEL_LOGS_EXPORT_TIMEOUT_MILLIS) ?? 5000,
+    maxExportBatchSize: toNumber(process.env.OTEL_LOGS_MAX_EXPORT_BATCH_SIZE) ?? 512,
+    maxQueueSize: toNumber(process.env.OTEL_LOGS_MAX_QUEUE_SIZE) ?? 2048,
+    scheduledDelayMillis: toNumber(process.env.OTEL_LOGS_EXPORT_INTERVAL_MILLIS) ?? 5000,
+  });
 }
 
+// Mapping of Winston log levels to OpenTelemetry severity numbers.
+// In development, import-in-the-middle may warn that it cannot wrap .server/logging/index.ts
+// due to the LogLevel type import; this is harmless in production, where type imports are erased.
+const winstonSeverityMapping: Record<LogLevel, number> = {
+  trace: SeverityNumber.TRACE,
+  debug: SeverityNumber.DEBUG,
+  info: SeverityNumber.INFO,
+  audit: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+};
+
 const logRecordProcessor = getLogRecordProcessor();
+const disableLogSending = logRecordProcessor === undefined;
 
 const sdk = new NodeSDK({
   instrumentations: [
     getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-winston': { disableLogSending: !logRecordProcessor.enabled },
+      '@opentelemetry/instrumentation-winston': {
+        disableLogSending: disableLogSending,
+        severityMapping: winstonSeverityMapping,
+      },
     }),
   ],
 
@@ -133,7 +140,7 @@ const sdk = new NodeSDK({
       exportTimeoutMillis: toNumber(process.env.OTEL_METRICS_EXPORT_TIMEOUT_MILLIS),
     }),
   ],
-  logRecordProcessors: [logRecordProcessor.processor],
+  logRecordProcessors: logRecordProcessor ? [logRecordProcessor] : undefined,
   traceExporter: getTraceExporter(),
 });
 
