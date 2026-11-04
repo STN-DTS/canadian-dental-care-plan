@@ -27,7 +27,7 @@ export default defineConfig({
     rolldownOptions: {
       // Input keys determine emitted filenames used by the package scripts and Docker command.
       input: {
-        instrumentation: './app/instrumentation/opentelemetry.server.ts',
+        telemetry: './app/instrumentation/telemetry.server.ts',
         server: './app/.server/express-server/server.ts',
       },
     },

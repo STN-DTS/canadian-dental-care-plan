@@ -15,17 +15,12 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-import { createOpenTelemetryLogger } from '~/instrumentation/opentelemetry-logger.server';
-
-const log = createOpenTelemetryLogger('OpenTelemetry');
-
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
 }
 
 function getMetricExporter(): PushMetricExporter {
   if (process.env.OTEL_USE_CONSOLE_EXPORTERS === 'true') {
-    log.info('Exporting metrics to console');
     return new ConsoleMetricExporter();
   }
 
@@ -34,8 +29,6 @@ function getMetricExporter(): PushMetricExporter {
       throw new Error('OTEL_API_KEY must be configured when OTEL_METRICS_ENDPOINT is set');
     }
 
-    log.info(`Exporting metrics to %s`, process.env.OTEL_METRICS_ENDPOINT);
-
     return new OTLPMetricExporter({
       compression: CompressionAlgorithm.GZIP,
       headers: { Authorization: `Api-Token ${process.env.OTEL_API_KEY}` },
@@ -43,8 +36,6 @@ function getMetricExporter(): PushMetricExporter {
       url: process.env.OTEL_METRICS_ENDPOINT,
     });
   }
-
-  log.info('Metrics exporting is disabled; set OTEL_METRICS_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
     export: (metrics, resultCallback) => resultCallback({ code: ExportResultCode.SUCCESS }),
@@ -55,7 +46,6 @@ function getMetricExporter(): PushMetricExporter {
 
 function getTraceExporter(): SpanExporter {
   if (process.env.OTEL_USE_CONSOLE_EXPORTERS === 'true') {
-    log.info('Exporting traces to console');
     return new ConsoleSpanExporter();
   }
 
@@ -64,16 +54,12 @@ function getTraceExporter(): SpanExporter {
       throw new Error('OTEL_API_KEY must be configured when OTEL_TRACES_ENDPOINT is set');
     }
 
-    log.info('Exporting traces to %s', process.env.OTEL_TRACES_ENDPOINT);
-
     return new OTLPTraceExporter({
       compression: CompressionAlgorithm.GZIP,
       headers: { Authorization: `Api-Token ${process.env.OTEL_API_KEY}` },
       url: process.env.OTEL_TRACES_ENDPOINT,
     });
   }
-
-  log.info('Traces exporting is disabled; set OTEL_TRACES_ENDPOINT or OTEL_USE_CONSOLE_EXPORTERS to enable.');
 
   return {
     export: (spans, resultCallback) => resultCallback({ code: ExportResultCode.SUCCESS }),
@@ -93,7 +79,6 @@ function getLogRecordProcessor(): {
   const otelLogsEndpoint = process.env.OTEL_LOGS_ENDPOINT;
 
   if (!otelLogsEndpoint) {
-    log.debug('Log exporting is disabled; set OTEL_LOGS_ENDPOINT to enable.');
     return {
       enabled: false,
       processor: {
@@ -107,8 +92,6 @@ function getLogRecordProcessor(): {
   if (!process.env.OTEL_API_KEY) {
     throw new Error('OTEL_API_KEY must be configured when OTEL_LOGS_ENDPOINT is set');
   }
-
-  log.info('Exporting logs to %s', otelLogsEndpoint);
 
   const exporter = new OTLPLogExporter({
     compression: CompressionAlgorithm.GZIP,
@@ -127,8 +110,6 @@ function getLogRecordProcessor(): {
     }),
   };
 }
-
-log.info('Initializing instrumentation');
 
 const logRecordProcessor = getLogRecordProcessor();
 
@@ -156,10 +137,16 @@ const sdk = new NodeSDK({
   traceExporter: getTraceExporter(),
 });
 
-sdk.start();
+try {
+  sdk.start();
+  console.log('OpenTelemetry instrumentation initialized.');
+} catch (error) {
+  console.error('Failed to initialize OpenTelemetry instrumentation:', error);
+}
+
 process.once('beforeExit', async () => {
-  log.info('Shutting down instrumentation');
+  console.log('Shutting down OpenTelemetry instrumentation...');
   await sdk.shutdown().catch((error) => {
-    log.error('Error during instrumentation shutdown: %s', error);
+    console.error('Failed to shut down OpenTelemetry instrumentation:', error);
   });
 });

@@ -15,7 +15,7 @@ test('the official ESM hook instruments Express requests with the application SD
       'development',
       '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
       '--import',
-      './app/instrumentation/opentelemetry.server.ts',
+      './app/instrumentation/telemetry.server.ts',
       '--input-type=module',
       '--eval',
       `
@@ -71,5 +71,5 @@ test('the official ESM hook instruments Express requests with the application SD
   expect(stdout).toContain("name: '@opentelemetry/instrumentation-http'");
   expect(stdout).toContain("name: '@opentelemetry/instrumentation-express'");
   expect(stdout).toContain("name: 'GET /otel-smoke'");
-  expect(stdout).toContain('Shutting down instrumentation');
+  expect(stdout).toContain('Shutting down OpenTelemetry instrumentation');
 }, 30_000);

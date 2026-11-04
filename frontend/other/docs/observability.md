@@ -94,9 +94,9 @@ podman volume import <volume-name> <volume-name>.tar
 The `dev`, `dbg`, `preview`, and `start` scripts load the official OpenTelemetry
 ESM hook with
 `--experimental-loader=@opentelemetry/instrumentation/hook.mjs` and preload
-the SDK configuration in `app/instrumentation/opentelemetry.server.ts` with
+the SDK configuration in `app/instrumentation/telemetry.server.ts` with
 `--import`. The server build emits
-`build/server/instrumentation.js`, which the production container preloads
+`build/server/telemetry.js`, which the production container preloads
 with the same hook.
 Do not start the server entry point directly: ESM auto-instrumentation requires
 the hook, and the SDK must start before application dependencies are imported.
