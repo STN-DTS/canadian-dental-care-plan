@@ -1,10 +1,18 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import type { ComponentType, ReactNode } from 'react';
+
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { createRoutesStub, redirect } from 'react-router';
 
+import { createInstance } from 'i18next';
+import * as ReactI18next from 'react-i18next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import enDocuments from '~/.server/locales/en/documents';
+import enGcweb from '~/.server/locales/en/gcweb';
+import frDocuments from '~/.server/locales/fr/documents';
+import frGcweb from '~/.server/locales/fr/gcweb';
 import { TooltipProvider } from '~/components/tooltip';
 import { useClientEnv } from '~/hooks/use-client-env';
 import { useHints } from '~/hooks/use-hints';
@@ -50,7 +58,7 @@ beforeEach(() => {
   vi.mocked(getClientEnv, { partial: true }).mockReturnValue(clientEnv);
 });
 
-function renderForm(action: (args: { request: Request }) => Promise<unknown> | unknown, language = 'en') {
+function renderForm(action: (args: { request: Request }) => Promise<unknown> | unknown, language = 'en', wrapper: ComponentType<{ children: ReactNode }> = TooltipProvider) {
   const RoutesStub = createRoutesStub([
     {
       path: '/:lang/protected/documents/upload/:id',
@@ -60,7 +68,7 @@ function renderForm(action: (args: { request: Request }) => Promise<unknown> | u
     { path: '/confirmation', Component: () => <h1>Submission confirmation</h1> },
   ]);
 
-  return render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />, { wrapper: TooltipProvider });
+  return render(<RoutesStub initialEntries={[`/${language}/protected/documents/upload/${uploadId}`]} />, { wrapper });
 }
 
 async function addFile(user: ReturnType<typeof userEvent.setup>, name = 'receipt.txt') {
@@ -74,7 +82,8 @@ async function addFile(user: ReturnType<typeof userEvent.setup>, name = 'receipt
   // Wait until any upload or local file validation finishes before using the input.
   await waitFor(() => expect(input).toBeEnabled());
   await user.upload(input, file);
-  await screen.findByRole('listitem', { name });
+  const item = await screen.findByRole('listitem', { name });
+  await waitFor(() => expect(item).toHaveFocus());
   return file;
 }
 
@@ -108,6 +117,73 @@ function expectResultCounts(uploaded: number, pending: number, includeHidden = f
 }
 
 describe('DocumentUploadForm review integration', () => {
+  it.each(['en', 'fr'] as const)('validates, cancels, and guards busy review using real %s labels and error focus', async (locale) => {
+    const actual = await vi.importActual<typeof ReactI18next>('react-i18next');
+    const originalUseTranslation = vi.mocked(ReactI18next.useTranslation).getMockImplementation();
+    const i18n = createInstance();
+    await i18n.init({ lng: locale, fallbackLng: false, resources: { en: { documents: enDocuments, gcweb: enGcweb }, fr: { documents: frDocuments, gcweb: frGcweb } } });
+    vi.mocked(ReactI18next.useTranslation).mockImplementation(actual.useTranslation);
+    const user = userEvent.setup();
+    let resolveUpload!: (value: unknown) => void;
+    const uploadResponse = new Promise<unknown>((resolve) => {
+      resolveUpload = resolve;
+    });
+    const action = vi.fn(async () => await uploadResponse);
+    const copy = locale === 'en' ? enDocuments : frDocuments;
+
+    try {
+      renderForm(action, locale, ({ children }) => (
+        <actual.I18nextProvider i18n={i18n}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </actual.I18nextProvider>
+      ));
+      await addFile(user);
+      const submit = screen.getByRole('button', { name: copy.upload.submit });
+      await user.click(submit);
+      await waitFor(() => expect(getErrorSummary()).toHaveFocus());
+      const select = screen.getByRole('combobox', { name: copy.upload.documentType });
+      expect(select).toHaveAttribute('aria-invalid', 'true');
+      const errorId = select.getAttribute('aria-errormessage');
+      expect(errorId).toBeTruthy();
+      expect(document.getElementById(errorId!)).toHaveRole('alert');
+      expect(within(getErrorSummary()).getByRole('heading')).toHaveTextContent(locale === 'fr' ? /erreur/i : /error/i);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(action).not.toHaveBeenCalled();
+      await user.selectOptions(select, 'receipt');
+      await user.click(submit);
+      const dialog = await screen.findByRole('dialog', { name: copy.upload.review.title });
+      expect(dialog).toHaveTextContent(locale === 'fr' ? 'receipt.txt, Reçu' : 'receipt.txt, Receipt');
+      await waitFor(() => expect(within(dialog).getByRole('button', { name: copy.upload.review.back })).toHaveFocus());
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      await waitFor(() => expect(submit).toHaveFocus());
+      expect(select).toHaveValue('receipt');
+      expect(action).not.toHaveBeenCalled();
+      await user.click(submit);
+      const confirmedDialog = await screen.findByRole('dialog', { name: copy.upload.review.title });
+      const confirm = within(confirmedDialog).getByRole('button', { name: copy.upload.review.submit });
+      await user.click(confirm);
+      await waitFor(() => expect(confirmedDialog).toHaveAttribute('aria-busy', 'true'));
+      expect(confirm).toBeDisabled();
+      expect(confirm.querySelector('[data-icon="spinner"]')).toBeVisible();
+      expect(within(confirmedDialog).getByRole('button', { name: copy.upload.review.back })).toBeDisabled();
+      expect(within(confirmedDialog).queryByRole('button', { name: locale === 'en' ? 'Close' : 'Fermer' })).not.toBeInTheDocument();
+      await user.click(confirm);
+      await user.keyboard('{Escape}');
+      fireEvent.pointerDown(document.body);
+      expect(confirmedDialog).toBeInTheDocument();
+      expect(action).toHaveBeenCalledOnce();
+      resolveUpload({ formAction: FORM_ACTION.upload, source: 'server', responseType: 'validation-errors', errors: { errors: [], properties: { files: { errors: [copy.upload.errorMessage.fileSelectionFailed] } } } });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      await waitFor(() => expect(getErrorSummary()).toHaveFocus());
+      expect(getErrorSummary()).toHaveTextContent(copy.upload.errorMessage.fileSelectionFailed);
+      expect(select).toHaveValue('receipt');
+      expect(action).toHaveBeenCalledOnce();
+    } finally {
+      vi.mocked(ReactI18next.useTranslation).mockImplementation(originalUseTranslation!);
+    }
+  });
+
   it('rejects invalid file selections without submitting the form', async () => {
     const user = userEvent.setup({ applyAccept: false });
     const action = vi.fn();

@@ -78,17 +78,18 @@ describe('clientAction', () => {
     expect(validateUploadedFiles).not.toHaveBeenCalled();
   });
 
-  it('returns tagged errors for invalid upload data without calling the server action', async () => {
+  it.each(['en', 'fr'] as const)('revalidates missing document types in %s without calling the server action', async (locale) => {
     const { validateUploadedFiles: validateUploadedFilesActual } = await vi.importActual<{ validateUploadedFiles: typeof validateUploadedFiles }>('~/route-helpers/protected-documents-upload-helpers');
     const filesWithoutDocumentType: Awaited<ReturnType<typeof getFiles>> = new Map([['file-1', { file: new File(['content'], 'document.pdf'), fileBuffer: new ArrayBuffer(7), fileHash: 'file-hash', documentType: '' }]]);
     vi.mocked(getFiles).mockResolvedValue(filesWithoutDocumentType);
     vi.mocked(validateUploadedFiles).mockImplementation(validateUploadedFilesActual);
+    vi.mocked(getLanguage).mockReturnValue(locale);
     const serverAction = vi.fn();
     const formData = createUploadFormData([{ id: 'file-1', file: new File(['content'], 'document.pdf') }]);
     const result = await clientAction(
       mock<ClientActionArgs>({
         request: createRequest(formData),
-        url: new URL('http://localhost/en/protected/documents/upload/session-1'),
+        url: new URL(`http://localhost/${locale}/protected/documents/upload/session-1`),
         serverAction,
       }),
     );

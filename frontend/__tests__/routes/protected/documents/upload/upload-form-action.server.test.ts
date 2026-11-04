@@ -322,7 +322,7 @@ describe('action', () => {
     });
   });
 
-  it('preserves order across a partial retry, retaining uploaded documents and replacing pending metadata', async () => {
+  it.each(['en', 'fr'] as const)('preserves order and dates across a %s partial retry while replacing pending metadata', async (locale) => {
     const retryFile = new File(['retry'], 'retry.pdf');
     const newFile = new File(['new'], 'new.pdf');
     const retryDocument = { id: 'file-1', fileName: retryFile.name, fileSize: retryFile.size, documentType: 'receipt', status: 'pending' as const };
@@ -344,6 +344,8 @@ describe('action', () => {
       ]),
     );
     const { session } = args.context.get(appContext);
+    args.params = { ...args.params, lang: locale };
+    vi.mocked(getLocale).mockReturnValue(locale);
 
     const result = await action(args);
 
@@ -354,6 +356,7 @@ describe('action', () => {
     expect(JSON.parse(JSON.stringify(documents))).toEqual(documents);
     expect(documents[2]).not.toHaveProperty('uploadDate');
     expect(uploadDocuments).toHaveBeenCalledExactlyOnceWith(files);
+    expect(validateUploadedFiles).toHaveBeenCalledWith({ files: expect.any(Map), locale, t: expect.any(Function) });
     expect(finishDocumentUploadState).not.toHaveBeenCalled();
   });
 

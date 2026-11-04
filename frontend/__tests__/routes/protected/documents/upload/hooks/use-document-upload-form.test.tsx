@@ -310,7 +310,9 @@ describe('useDocumentUploadForm', () => {
         {
           ...uploadErrorResponse,
           documents: [
-            ...uploadErrorResponse.documents.map((document) => (document.id === 'file-2' ? Object.assign({}, document, { status: 'uploaded' as const, uploadDate: '2026-11-01T06:30:00Z' }) : document)),
+            ...uploadErrorResponse.documents.map((document) =>
+              document.status === 'uploaded' ? Object.assign({}, document, { uploadDate: '2026-11-01T06:30:00Z' }) : document.id === 'file-2' ? Object.assign({}, document, { status: 'uploaded' as const, uploadDate: '2026-11-01T06:30:00Z' }) : document,
+            ),
             { id: addedFileId!, fileName: extra.name, fileSize: extra.size, documentType: '', status: 'pending' as const },
           ],
         },
@@ -326,6 +328,7 @@ describe('useDocumentUploadForm', () => {
       { id: 'file-4', file: coverage, documentType: 'proof-of-coverage', status: 'pending' },
       { id: addedFileId, file: extra, documentType: '', status: 'pending' },
     ]);
+    expect(result.current.documentUploadFormState.documents[0]).toBe(uploadedDocument);
 
     act(() => {
       result.current.handleDocumentTypeChange(addedFileId!, 'receipt');
