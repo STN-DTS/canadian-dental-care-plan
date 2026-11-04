@@ -38,6 +38,8 @@ const dateCases = [
   { uploadDate: '2026-11-01T06:30:00Z', timeZone: 'America/Toronto', en: 'November 1, 2026 at 1:30 a.m. EST', fr: '1 novembre 2026 \u00e0 01 h 30 HNE' },
   { uploadDate: '2026-03-08T09:59:00Z', timeZone: 'America/Vancouver', en: 'March 8, 2026 at 1:59 a.m. PST', fr: '8 mars 2026 \u00e0 01 h 59 HNP' },
   { uploadDate: '2026-03-08T10:00:00Z', timeZone: 'America/Vancouver', en: 'March 8, 2026 at 3:00 a.m. PDT', fr: '8 mars 2026 \u00e0 03 h 00 HAP' },
+  { uploadDate: '2025-11-02T08:30:00Z', timeZone: 'America/Vancouver', en: 'November 2, 2025 at 1:30 a.m. PDT', fr: '2 novembre 2025 \u00e0 01 h 30 HAP' },
+  { uploadDate: '2025-11-02T09:30:00Z', timeZone: 'America/Vancouver', en: 'November 2, 2025 at 1:30 a.m. PST', fr: '2 novembre 2025 \u00e0 01 h 30 HNP' },
   { uploadDate: '2026-11-01T06:30:00Z', timeZone: 'America/Regina', en: 'November 1, 2026 at 12:30 a.m. CST', fr: '1 novembre 2026 \u00e0 00 h 30 HNC' },
 ];
 

@@ -155,6 +155,21 @@ describe('protected-documents-upload-helpers.server', () => {
       expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
     });
 
+    it('retains each file timestamp created before its upload call rather than the completion time', async () => {
+      vi.useFakeTimers({ now: Temporal.Instant.from('2026-11-01T05:59:59Z') });
+      documentUploadServiceMock.uploadDocument.mockImplementation(async () => {
+        vi.advanceTimersByTime(1_000);
+        return await Promise.resolve({ status: 'success', documentFileName: 'document.txt' });
+      });
+      const files = createFiles();
+
+      const result = await uploadDocuments({ ...files, second: files.first });
+
+      expect(result).toEqual({ success: true, uploadDates: { first: '2026-11-01T05:59:59Z', second: '2026-11-01T06:00:00Z' } });
+      expect(documentUploadServiceMock.uploadDocument.mock.calls.map(([document]) => document.uploadDate.toString())).toEqual(['2026-11-01T05:59:59Z', '2026-11-01T06:00:00Z']);
+      expect(Temporal.Now.instant().toString()).toBe('2026-11-01T06:00:01Z');
+    });
+
     it('should return service upload errors for affected files', async () => {
       documentUploadServiceMock.uploadDocument.mockResolvedValue({ status: 'rejected', error: { errorCode: 'UPLOAD-1', errorMessage: 'Upload rejected' } });
 
