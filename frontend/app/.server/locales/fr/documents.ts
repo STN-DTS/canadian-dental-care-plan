@@ -26,9 +26,8 @@ const ns = {
     chooseDocuments: {
       title: "Choisir vos documents",
       canUpload: "Vous pouvez téléverser les documents suivants\u00A0:",
-      eligibilityFormHref: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html#h2.3",
       list: {
-        eligibilityForm: "le <eligibilityFormLink>formulaire d'examen de l'admissibilité des membres du Régime canadien de soins dentaires (PDF)</eligibilityFormLink> complété (recommandé)",
+        eligibilityForm: "un <eligibilityFormLink>Formulaire de vérification de l'admissibilité du demandeur</eligibilityFormLink> complété (recommandé)",
         letter: "une lettre de votre employeur ou de votre régime de pension",
         proof: "un document démontrant que vous n'avez pas accès à une assurance ou à une couverture dentaire privée",
       },
@@ -42,9 +41,9 @@ const ns = {
     uploadFiles: {
       title: "Téléverser les fichiers",
       chooseFile: "Choisissez un fichier à téléverser.",
-      maxFiles_one: "Vous pouvez téléverser un fichier",
-      maxFiles_other: "Vous pouvez soumettre jusqu'à {{count}} fichiers à la fois",
-      maxSize: "La taille maximale du fichier est de {{filesize}}",
+      maxFiles_one: "Vous pouvez téléverser un fichier.",
+      maxFiles_other: "Vous pouvez soumettre jusqu'à {{count}} fichiers à la fois.",
+      maxSize: "La taille maximale du fichier est de {{filesize}}.",
       acceptedTypes: "Types de fichiers acceptés\u00A0: {{extensions}}",
       filesSelected: "Fichiers sélectionnés\u00A0: {{count}}",
       uploadedFiles: "Fichiers téléversés\u00A0: {{count}}",

@@ -26,16 +26,15 @@ const ns = {
     chooseDocuments: {
       title: "Choose your documents",
       canUpload: "You can upload any of the following:",
-      eligibilityFormHref: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html#h2.3",
       list: {
-        eligibilityForm: "a completed <eligibilityFormLink>Canadian Dental Care Plan Member Eligibility Review Form (PDF)</eligibilityFormLink> (recommended)",
+        eligibilityForm: "a completed <eligibilityFormLink>Applicant eligibility verification form</eligibilityFormLink> (recommended)",
         letter: "a letter or email from your work or pension plan",
         proof: "a document showing that you do not have access to private dental insurance or coverage",
       },
       mustInclude: "All documents must include:",
       mustIncludeList: {
         name: "the same first and last name as your application",
-        memberId: "Canadian Dental Care Plan Member ID",
+        memberId: "Canadian Dental Care Plan member ID",
         signature: "a signature from an authorized person. For example, an employer, Human Resources representative, or pension plan administrator",
       },
     },
