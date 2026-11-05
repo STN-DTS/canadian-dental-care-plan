@@ -20,6 +20,20 @@ describe('QueryParamsRedactor', () => {
     expect(new QueryParamsRedactor().redactAttributes({ 'url.full': `https://example.test/?${query}` })).toEqual({ redacted: false });
   });
 
+  test('keeps OData shape parameters and redacts $filter by default', () => {
+    const query = new URLSearchParams({
+      $select: 'esdc_filename,esdc_uploaddate',
+      $expand: 'esdc_Clientid($select=esdc_firstname;$filter=statecode eq 0)',
+      $orderby: 'esdc_uploaddate desc',
+      $filter: "_esdc_clientid_value eq '00000000-0000-0000-0000-000000000001'",
+    });
+
+    expect(new QueryParamsRedactor().redactAttributes({ 'url.query': query.toString() })).toEqual({
+      redacted: true,
+      attributes: { 'url.query': query.toString().replace(/%24filter=[^&]*/, '%24filter=%5BREDACTED%5D') },
+    });
+  });
+
   test('extends the default safe names with a custom predicate', () => {
     const configured = new QueryParamsRedactor({ parameterNames: [(name) => !SAFE_QUERY_PARAMETER_NAMES.has(name) && name !== 'page'] });
 

@@ -8,6 +8,11 @@ import type { QueryParamsRedactorAttributesOptions, QueryParamsRedactorReplaceme
  * Query parameter names known to carry no personal data or secrets, taken from the parameters this
  * app sends and receives. Every other parameter is redacted, so a new parameter stays hidden until
  * someone adds it here. Names are compared exactly.
+ *
+ * The OData `$select`, `$orderby`, and `$expand` values are constant field lists. Nested `$filter`
+ * clauses inside `$expand` compare only status codes and hard-coded status IDs. Keep them that way:
+ * if a query puts a client ID or other personal value in one of these parameters, remove the name
+ * from this set. `$filter` is not listed because repositories put client IDs in it.
  */
 export const SAFE_QUERY_PARAMETER_NAMES: ReadonlySet<string> = new Set(['$expand', '$orderby', '$select', 'client_id', 'code_challenge_method', 'engage', 'error', 'lang', 'locale', 'response_type', 'scenario', 'scope', 'sort']);
 

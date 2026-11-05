@@ -20,9 +20,6 @@ describe('AttributeRedactor', () => {
     'db.statement',
     'DB.STATEMENT',
     'db.query.text',
-    'client.address',
-    'http.client_ip',
-    'net.peer.ip',
     'http.request.body',
     'user.email',
     'user.password',
@@ -51,6 +48,10 @@ describe('AttributeRedactor', () => {
       redacted: true,
       attributes: { 'applicant.sin': '[REDACTED]', 'processing.status': 'running' },
     });
+  });
+
+  test('keeps client IP addresses by default', () => {
+    expect(redactor.redactAttributes({ 'client.address': '203.0.113.7', 'http.client_ip': '203.0.113.7', 'net.peer.ip': '203.0.113.7' })).toEqual({ redacted: false });
   });
 
   test('replaces every value type of listed keys', () => {

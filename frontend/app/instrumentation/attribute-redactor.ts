@@ -4,11 +4,11 @@ import type { AttributeRedactorAttributesOptions, AttributeRedactorReplacement, 
 import { BoundedCache, createNameMatcher } from '~/instrumentation/instrumentation-utils';
 
 /**
- * The default options match common credential and sensitive-data names, plus database,
- * request-body, email, and client-address attributes.
+ * The default options match common credential and sensitive-data names, plus database statement,
+ * request-body, and email attributes. Client IP addresses are kept for monitoring.
  */
 export const DEFAULT_REDACT_ATTRIBUTES_OPTIONS = {
-  attributeKeys: [/password|secret|token|api[-_]?key|authorization|credential|ssn|(?:^|[._-])sin(?:[._-]|$)|credit[-_]?card|cookie|db\.statement|db\.query\.text|http\.request\.body|user\.email|client\.address|http\.client_ip|net\.peer\.ip/i],
+  attributeKeys: [/password|secret|token|api[-_]?key|authorization|credential|ssn|(?:^|[._-])sin(?:[._-]|$)|credit[-_]?card|cookie|db\.statement|db\.query\.text|http\.request\.body|user\.email/i],
   replacement: '[REDACTED]',
 } as const satisfies AttributeRedactorAttributesOptions;
 

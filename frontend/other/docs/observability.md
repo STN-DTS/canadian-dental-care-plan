@@ -202,9 +202,12 @@ for both signals. Pass options to the redactor constructor.
   replaced. It defaults to a predicate that matches every name not in
   `SAFE_QUERY_PARAMETER_NAMES`. That set lists the names the app sends or
   receives that carry no personal data or secrets, such as `lang`, `locale`,
-  `scope`, and the OData `$select`, `$expand`, and `$orderby`. OIDC values such
-  as `code`, `state`, and `nonce`, `$filter`, identifiers, and address lookups
-  are redacted. Names are compared exactly, so `LANG` is redacted. To allow
+  `scope`, and the OData `$select`, `$expand`, and `$orderby`. The OData values
+  are constant field lists, and nested `$filter` clauses in `$expand` compare
+  only status codes and hard-coded IDs. If a query puts personal data in one of
+  these parameters, remove the name from the set. OIDC values such as `code`,
+  `state`, and `nonce`, `$filter`, identifiers, and address lookups are
+  redacted. Names are compared exactly, so `LANG` is redacted. To allow
   another name, pass
   `(name) => !SAFE_QUERY_PARAMETER_NAMES.has(name) && name !== 'page'`. An empty
   list redacts nothing.
@@ -246,12 +249,12 @@ generic keys such as `message`.
 
 - `attributeKeys` lists the attributes to redact, as strings or regular
   expressions matched as described above. The defaults match `db.statement`,
-  `db.query.text`, `http.request.body`, `user.email`, the client IP attributes
-  `client.address`, `http.client_ip`, and `net.peer.ip`, plus keys containing
+  `db.query.text`, `http.request.body`, and `user.email`, plus keys containing
   `password`, `secret`, `token`, `apikey`, `api_key`, `api-key`, `authorization`,
   `credential`, `ssn`, `credit_card`, `credit-card`, or `cookie`, ignoring case.
-  A `sin` key component is also matched. Pass an empty list to disable attribute
-  redaction.
+  A `sin` key component is also matched. Client IP attributes such as
+  `client.address` are kept for monitoring; add them to `attributeKeys` to
+  redact them. Pass an empty list to disable attribute redaction.
 - `replacement` replaces `[REDACTED]`. It can be a string, including an empty
   string, or a callback that receives `{ key, value }` with the original
   attribute value. Non-string values are passed without stringification.
