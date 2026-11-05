@@ -12,12 +12,26 @@ import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
 import { AggregationTemporality, ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import type { SpanExporter } from '@opentelemetry/sdk-trace';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-//
-import type { LogLevel } from '~/.server/logging';
+import { AttributeRedactor } from '~/instrumentation/attribute-redactor.server';
+import { QueryParamsRedactor } from '~/instrumentation/query-params-redactor.server';
+import { RedactAttributesLogRecordProcessor } from '~/instrumentation/redact-attributes-log-record-processor.server';
+import { RedactAttributesSpanProcessor } from '~/instrumentation/redact-attributes-span-processor.server';
+import { RedactQueryParamsLogRecordProcessor } from '~/instrumentation/redact-query-params-log-record-processor.server';
+import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-params-span-processor.server';
+
+/**
+ * Type representing a valid log level string for Winston.
+ * This type is a union of all possible log levels.
+ *
+ * Keep this union in sync with the `LogLevel` union in `app/.server/logging/log-levels.ts`.
+ * Every log level must have a matching entry in {@link winstonSeverityMapping} for correct
+ * OpenTelemetry severity mapping.
+ */
+type WinstonLogLevel = 'audit' | 'debug' | 'error' | 'info' | 'trace' | 'warn';
 
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
@@ -103,9 +117,7 @@ function getLogRecordProcessor(): LogRecordProcessor | undefined {
 }
 
 // Mapping of Winston log levels to OpenTelemetry severity numbers.
-// In development, import-in-the-middle may warn that it cannot wrap .server/logging/index.ts
-// due to the LogLevel type import; this is harmless in production, where type imports are erased.
-const winstonSeverityMapping: Record<LogLevel, number> = {
+const winstonSeverityMapping: Record<WinstonLogLevel, number> = {
   trace: SeverityNumber.TRACE,
   debug: SeverityNumber.DEBUG,
   info: SeverityNumber.INFO,
@@ -114,6 +126,8 @@ const winstonSeverityMapping: Record<LogLevel, number> = {
   error: SeverityNumber.ERROR,
 };
 
+const attributeRedactor = new AttributeRedactor();
+const queryParamsRedactor = new QueryParamsRedactor();
 const logRecordProcessor = getLogRecordProcessor();
 const disableLogSending = logRecordProcessor === undefined;
 
@@ -140,8 +154,18 @@ const sdk = new NodeSDK({
       exportTimeoutMillis: toNumber(process.env.OTEL_METRICS_EXPORT_TIMEOUT_MILLIS),
     }),
   ],
-  logRecordProcessors: logRecordProcessor ? [logRecordProcessor] : undefined,
-  traceExporter: getTraceExporter(),
+  logRecordProcessors: logRecordProcessor ? [new RedactQueryParamsLogRecordProcessor(queryParamsRedactor), new RedactAttributesLogRecordProcessor(attributeRedactor), logRecordProcessor] : undefined,
+  spanProcessors: [
+    new RedactQueryParamsSpanProcessor(
+      new RedactAttributesSpanProcessor(
+        new SimpleSpanProcessor({
+          exporter: getTraceExporter(),
+        }),
+        attributeRedactor,
+      ),
+      queryParamsRedactor,
+    ),
+  ],
 });
 
 try {

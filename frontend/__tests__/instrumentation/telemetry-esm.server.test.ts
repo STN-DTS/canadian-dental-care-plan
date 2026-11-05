@@ -28,6 +28,7 @@ test('the official ESM hook instruments Express requests with the application SD
         const traceId = '11111111111111111111111111111111';
 
         app.get('/otel-smoke', function smokeHandler(request, response) {
+          trace.getSpan(context.active())?.setAttribute('password', 'otel-attribute-secret');
           response.json({ traceId: trace.getSpan(context.active())?.spanContext().traceId });
         });
 
@@ -38,7 +39,7 @@ test('the official ESM hook instruments Express requests with the application SD
           const address = server.address();
           assert.ok(address && typeof address !== 'string');
 
-          const response = await fetch('http://127.0.0.1:' + address.port + '/otel-smoke', {
+          const response = await fetch('http://127.0.0.1:' + address.port + '/otel-smoke?token=otel-query-secret', {
             headers: {
               connection: 'close',
               traceparent: '00-' + traceId + '-2222222222222222-01',
@@ -71,5 +72,9 @@ test('the official ESM hook instruments Express requests with the application SD
   expect(stdout).toContain("name: '@opentelemetry/instrumentation-http'");
   expect(stdout).toContain("name: '@opentelemetry/instrumentation-express'");
   expect(stdout).toContain("name: 'GET /otel-smoke'");
+  expect(stdout).toContain('token=%5BREDACTED%5D');
+  expect(stdout).toContain("password: '[REDACTED]'");
+  expect(stdout).not.toContain('otel-query-secret');
+  expect(stdout).not.toContain('otel-attribute-secret');
   expect(stdout).toContain('Shutting down OpenTelemetry instrumentation');
 }, 30_000);
