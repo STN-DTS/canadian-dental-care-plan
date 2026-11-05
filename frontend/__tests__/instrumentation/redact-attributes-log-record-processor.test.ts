@@ -3,9 +3,9 @@ import { InMemoryLogRecordExporter, LoggerProvider, SimpleLogRecordProcessor } f
 import assert from 'node:assert/strict';
 import { afterEach, describe, expect, test } from 'vitest';
 
+import { AttributeRedactor } from '../../app/instrumentation/attribute-redactor';
 import type { AttributeRedactorAttributesOptions } from '../../app/instrumentation/attribute-redactor-types';
-import { AttributeRedactor } from '../../app/instrumentation/attribute-redactor.server';
-import { RedactAttributesLogRecordProcessor } from '../../app/instrumentation/redact-attributes-log-record-processor.server';
+import { RedactAttributesLogRecordProcessor } from '../../app/instrumentation/redact-attributes-log-record-processor';
 
 const providers: LoggerProvider[] = [];
 
@@ -29,7 +29,7 @@ async function exportLogRecord(record: { body?: AnyValue; attributes?: Attribute
 }
 
 describe('RedactAttributesLogRecordProcessor', () => {
-  test('redacts sensitive attributes and value patterns before later processors export the record', async () => {
+  test('redacts listed attributes before later processors export the record', async () => {
     const record = await exportLogRecord({
       body: 'login',
       attributes: {
@@ -45,21 +45,22 @@ describe('RedactAttributesLogRecordProcessor', () => {
       'user.password': '[REDACTED]',
       'user.email': '[REDACTED]',
       'http.request.header.authorization': '[REDACTED]',
-      message: 'contact [EMAIL]',
+      message: 'contact person@example.test',
       status: 200,
     });
   });
 
-  test('redacts value patterns in a string body', async () => {
-    const record = await exportLogRecord({ body: 'Authorization: Bearer abc.def for person@example.test card 4111 1111 1111 1111' });
+  test('leaves a string body unchanged', async () => {
+    const body = 'Authorization: Bearer abc for person@example.test';
+    const record = await exportLogRecord({ body });
 
-    expect(record.body).toBe('Authorization: [BEARER_TOKEN] for [EMAIL] card [CARD]');
+    expect(record.body).toBe(body);
   });
 
-  test('redacts sensitive keys and value patterns in a map body', async () => {
+  test('redacts listed keys in a map body', async () => {
     const record = await exportLogRecord({ body: { token: 'log-body-secret', note: 'from person@example.test', count: 2 } });
 
-    expect(record.body).toEqual({ token: '[REDACTED]', note: 'from [EMAIL]', count: 2 });
+    expect(record.body).toEqual({ token: '[REDACTED]', note: 'from person@example.test', count: 2 });
   });
 
   test('leaves records without sensitive data unchanged', async () => {
@@ -72,16 +73,10 @@ describe('RedactAttributesLogRecordProcessor', () => {
   test('applies option overrides', async () => {
     const record = await exportLogRecord(
       { body: 'person@example.test', attributes: { 'customer.id': 'C-1', 'payment.credit_card': 'log-card-canary', password: 'kept' } },
-      {
-        redactRules: [
-          { type: 'key', match: 'exact', value: 'customer.id' },
-          { type: 'key', match: 'pattern', value: /.*credit_card.*/g, replacement: ({ key }) => `[${key}]` },
-        ],
-        replacement: '***',
-      },
+      { attributeKeys: ['customer.id', /credit_card/], replacement: ({ key }) => `[${key}]` },
     );
 
     expect(record.body).toBe('person@example.test');
-    expect(record.attributes).toEqual({ 'customer.id': '***', 'payment.credit_card': '[payment.credit_card]', password: 'kept' });
+    expect(record.attributes).toEqual({ 'customer.id': '[customer.id]', 'payment.credit_card': '[payment.credit_card]', password: 'kept' });
   });
 });

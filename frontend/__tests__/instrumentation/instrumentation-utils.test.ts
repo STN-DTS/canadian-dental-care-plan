@@ -2,9 +2,9 @@ import { ROOT_CONTEXT, SpanKind, SpanStatusCode, trace } from '@opentelemetry/ap
 import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import assert from 'node:assert/strict';
-import { afterEach, describe, expect, it, test } from 'vitest';
+import { afterEach, describe, expect, it, test, vi } from 'vitest';
 
-import { fastCaseInsensitiveEqual, withSpanAttributes } from '../../app/instrumentation/instrumentation-utils.server';
+import { BoundedCache, createNameMatcher, fastCaseInsensitiveEqual, withSpanAttributes } from '../../app/instrumentation/instrumentation-utils';
 
 describe('fastCaseInsensitiveEqual', () => {
   it.each([
@@ -24,6 +24,43 @@ describe('fastCaseInsensitiveEqual', () => {
     ['', 'a'],
   ])('returns false for %s and %s', (a, b) => {
     expect(fastCaseInsensitiveEqual(a, b)).toBe(false);
+  });
+});
+
+describe('BoundedCache', () => {
+  test('computes a value once per key', () => {
+    const cache = new BoundedCache<string, string | null>(2);
+    const compute = vi.fn(() => null);
+
+    expect(cache.getOrSet('a', compute)).toBeNull();
+    expect(cache.getOrSet('a', compute)).toBeNull();
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
+
+  test('clears itself before adding an entry beyond maxSize', () => {
+    const cache = new BoundedCache<string, number>(2);
+
+    cache.getOrSet('a', () => 1);
+    cache.getOrSet('b', () => 2);
+    expect(cache.size).toBe(2);
+
+    cache.getOrSet('c', () => 3);
+    expect(cache.size).toBe(1);
+    expect(cache.getOrSet('a', () => 10)).toBe(10);
+  });
+
+  test('stores nothing when maxSize is 0', () => {
+    const cache = new BoundedCache<string, number>(0);
+    const compute = vi.fn(() => 1);
+
+    cache.getOrSet('a', compute);
+    cache.getOrSet('a', compute);
+    expect(cache.size).toBe(0);
+    expect(compute).toHaveBeenCalledTimes(2);
+  });
+
+  test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])('rejects maxSize %s', (maxSize) => {
+    expect(() => new BoundedCache(maxSize)).toThrow(RangeError);
   });
 });
 
@@ -91,5 +128,39 @@ describe('withSpanAttributes', () => {
     });
     expect(exported.events.map((event) => event.name)).toEqual(['latest event']);
     expect(exported.links).toHaveLength(1);
+  });
+});
+
+describe('createNameMatcher', () => {
+  test.each([
+    ['token', true],
+    ['TOKEN', true],
+    ['tokén', true],
+    ['id_token', true],
+    ['ID_TOKEN', false],
+    ['tokens', false],
+    ['lang', false],
+  ])('matches %s: %s', (name, expected) => {
+    expect(createNameMatcher(['token', /_token$/])(name)).toBe(expected);
+  });
+
+  test('ignores global and sticky regex state between calls', () => {
+    const pattern = /token/gy;
+    const matches = createNameMatcher([pattern]);
+
+    expect([matches('token'), matches('token'), matches('token')]).toEqual([true, true, true]);
+    expect(pattern.lastIndex).toBe(0);
+  });
+
+  test('matches nothing when empty', () => {
+    expect(createNameMatcher([])('token')).toBe(false);
+  });
+
+  test('passes unmatched names to predicates', () => {
+    const predicate = vi.fn((name: string) => name.startsWith('x-'));
+    const matches = createNameMatcher(['token', /^id_/, predicate]);
+
+    expect([matches('token'), matches('id_token'), matches('x-trace'), matches('lang')]).toEqual([true, true, true, false]);
+    expect(predicate.mock.calls).toEqual([['x-trace'], ['lang']]);
   });
 });

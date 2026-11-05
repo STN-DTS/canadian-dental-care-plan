@@ -5,9 +5,9 @@ import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import assert from 'node:assert/strict';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { QueryParamsRedactor } from '../../app/instrumentation/query-params-redactor';
 import type { QueryParamsRedactorAttributesOptions } from '../../app/instrumentation/query-params-redactor-types';
-import { QueryParamsRedactor } from '../../app/instrumentation/query-params-redactor.server';
-import { RedactQueryParamsSpanProcessor } from '../../app/instrumentation/redact-query-params-span-processor.server';
+import { RedactQueryParamsSpanProcessor } from '../../app/instrumentation/redact-query-params-span-processor';
 
 const providers: TracerProvider[] = [];
 
@@ -31,50 +31,34 @@ async function exportSpan(attributes: Attributes, options?: QueryParamsRedactorA
 }
 
 describe('RedactQueryParamsSpanProcessor', () => {
+  const tokenOptions = { parameterNames: ['token'] } satisfies QueryParamsRedactorAttributesOptions;
+
   test.each([
-    ['url.full', 'https://example.test/path?token=secret&lang=en#section', 'https://example.test/path?token=%5BREDACTED%5D&lang=%5BREDACTED%5D#section'],
+    ['url.full', 'https://example.test/path?token=secret&lang=en#section', 'https://example.test/path?token=%5BREDACTED%5D&lang=en#section'],
     ['http.url', 'https://example.test/?token=secret', 'https://example.test/?token=%5BREDACTED%5D'],
-    ['http.target', '/path?token=first&token=second&empty=&flag', '/path?token=%5BREDACTED%5D&token=%5BREDACTED%5D&empty=%5BREDACTED%5D&flag=%5BREDACTED%5D'],
-    ['url.query', 'token=secret&lang=en', 'token=%5BREDACTED%5D&lang=%5BREDACTED%5D'],
+    ['http.target', '/path?token=first&token=second&lang=en', '/path?token=%5BREDACTED%5D&token=%5BREDACTED%5D&lang=en'],
+    ['url.query', 'token=secret&lang=en', 'token=%5BREDACTED%5D&lang=en'],
     ['URL.QUERY', '?token=secret', '?token=%5BREDACTED%5D'],
-    ['url.full', 'not-an-absolute-url?token=secret', 'not-an-absolute-url?token=%5BREDACTED%5D'],
-    ['url.full', 'https://example.test/path', 'https://example.test/path'],
-    ['url.full', 'https://example.test/path?', 'https://example.test/path?'],
-    ['url.full', 'https://example.test/path#section?token=fragment', 'https://example.test/path#section?token=fragment'],
-    ['url.query', '', ''],
-    ['other.url.full', 'https://example.test/?token=secret', 'https://example.test/?token=%5BREDACTED%5D'],
+    ['route', '/path?token=secret', '/path?token=secret'],
   ])('redacts %s containing %s', async (key, value, expected) => {
-    const span = await exportSpan({ [key]: value });
+    const span = await exportSpan({ [key]: value }, tokenOptions);
     expect(span.attributes[key]).toBe(expected);
   });
 
-  test('matches decoded parameter names case-insensitively and preserves repeated parameters', async () => {
-    const span = await exportSpan({ 'url.full': 'https://example.test/?%74oken=first&TOKEN=second&lang=en' }, { redactRules: [{ type: 'key', match: 'exact', value: 'Token' }], replacement: 'hidden' });
-    expect(span.attributes['url.full']).toBe('https://example.test/?token=hidden&TOKEN=hidden&lang=en');
+  test('redacts unsafe parameters with the default options', async () => {
+    const span = await exportSpan({ 'url.full': 'https://example.test/?token=secret&lang=en' });
+    expect(span.attributes).toEqual({ 'url.full': 'https://example.test/?token=%5BREDACTED%5D&lang=en' });
   });
 
-  test('overrides attribute keys and can disable selective redaction with empty lists', async () => {
-    const attributes = {
-      'custom.url': '/path?secret=value',
-      'custom.query': 'secret=value',
-      'url.full': '/path?secret=unchanged',
-      'url.query': 'secret=unchanged',
-    };
-    const span = await exportSpan(attributes, {
-      urlAttributeKeys: ['CUSTOM.URL'],
-      queryAttributeKeys: ['custom.query'],
-      replacement: 'hidden',
-      scanOtherStringAttributes: false,
-    });
-    expect(span.attributes).toEqual({ ...attributes, 'custom.url': '/path?secret=hidden', 'custom.query': 'secret=hidden' });
-
-    const disabled = await exportSpan(attributes, { redactRules: [] });
-    expect(disabled.attributes).toEqual(attributes);
+  test('redacts nothing with an empty parameter name list', async () => {
+    const attributes = { 'url.full': 'https://example.test/?token=secret' };
+    const span = await exportSpan(attributes, { parameterNames: [] });
+    expect(span.attributes).toEqual(attributes);
   });
 
   test('redacts string arrays without coercing other attribute values', async () => {
     const attributes = { 'url.full': ['/first?token=one', '/second?token=two'], 'url.query': 123, count: 10, enabled: true };
-    const span = await exportSpan(attributes);
+    const span = await exportSpan(attributes, tokenOptions);
     expect(span.attributes).toEqual({
       ...attributes,
       'url.full': ['/first?token=%5BREDACTED%5D', '/second?token=%5BREDACTED%5D'],
@@ -97,7 +81,7 @@ describe('RedactQueryParamsSpanProcessor', () => {
     const onEnd = vi.fn<SpanProcessor['onEnd']>();
     const provider = new TracerProvider({
       spanLimits: { attributeCountLimit: 1, eventCountLimit: 1, linkCountLimit: 1 },
-      spanProcessors: [new RedactQueryParamsSpanProcessor({ onStart() {}, onEnd, async forceFlush() {}, async shutdown() {} }, new QueryParamsRedactor())],
+      spanProcessors: [new RedactQueryParamsSpanProcessor({ onStart() {}, onEnd, async forceFlush() {}, async shutdown() {} }, new QueryParamsRedactor(tokenOptions))],
     });
     providers.push(provider);
     const linkContext = { traceId: '11111111111111111111111111111111', spanId: '2222222222222222', traceFlags: 1 };
@@ -123,7 +107,7 @@ describe('RedactQueryParamsSpanProcessor', () => {
       forceFlush: vi.fn<SpanProcessor['forceFlush']>().mockResolvedValue(),
       shutdown: vi.fn<SpanProcessor['shutdown']>().mockResolvedValue(),
     };
-    const processor = new RedactQueryParamsSpanProcessor(downstream, new QueryParamsRedactor());
+    const processor = new RedactQueryParamsSpanProcessor(downstream, new QueryParamsRedactor(tokenOptions));
     const provider = new TracerProvider({ spanProcessors: [processor] });
     providers.push(provider);
     const attributes = { 'url.full': '/path?token=secret' };

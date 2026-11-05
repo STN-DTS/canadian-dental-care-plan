@@ -1,11 +1,12 @@
 import type { Attributes } from '@opentelemetry/api';
 import type { LogRecordProcessor, ReadWriteLogRecord } from '@opentelemetry/sdk-logs';
 
-import type { AttributeRedactor } from '~/instrumentation/attribute-redactor.server';
+import type { AttributeRedactor } from '~/instrumentation/attribute-redactor';
 
 /**
- * Redacts log record attributes and bodies in place. The logs SDK calls every processor with the
- * same mutable record before it becomes read-only, so list this processor before exporting ones.
+ * Redacts listed log record attributes and the matching keys of map bodies in place. String bodies
+ * are left unchanged. The logs SDK calls every processor with the same mutable record before it
+ * becomes read-only, so list this processor before exporting ones.
  */
 export class RedactAttributesLogRecordProcessor implements LogRecordProcessor {
   private readonly redactor: AttributeRedactor;
@@ -29,14 +30,6 @@ export class RedactAttributesLogRecordProcessor implements LogRecordProcessor {
       if (result.redacted) {
         logRecord.setBody(result.attributes);
       }
-
-      return;
-    }
-
-    const redactedBody = this.redactor.redactValue(body);
-
-    if (redactedBody !== body) {
-      logRecord.setBody(redactedBody);
     }
   }
 

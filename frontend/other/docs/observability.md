@@ -118,7 +118,7 @@ that directory. Use only OpenTelemetry packages, Node.js built-ins, and other
 modules in `app/instrumentation/`. Type-only imports (`import type`) are safe
 because TypeScript removes them. If an instrumentation module needs a general
 helper, such as a string comparison, copy it into
-[`instrumentation-utils.server.ts`](../../app/instrumentation/instrumentation-utils.server.ts).
+[`instrumentation-utils.ts`](../../app/instrumentation/instrumentation-utils.ts).
 Do not import it from `app/utils/` or another application module.
 
 OpenTelemetry auto-instrumentation hooks into target modules, such as `http`,
@@ -158,7 +158,7 @@ Import the instrumentation-local copy instead:
 
 ```typescript
 // GOOD: stays inside app/instrumentation/.
-import { fastCaseInsensitiveEqual } from '~/instrumentation/instrumentation-utils.server';
+import { fastCaseInsensitiveEqual } from '~/instrumentation/instrumentation-utils';
 ```
 
 The [ESM instrumentation test](../../__tests__/instrumentation/telemetry-esm.server.test.ts)
@@ -168,113 +168,113 @@ still emitted.
 ## Span attribute redaction
 
 The telemetry preload wraps its exporting span processor with
-[`RedactQueryParamsSpanProcessor`](../../app/instrumentation/redact-query-params-span-processor.server.ts)
+[`RedactQueryParamsSpanProcessor`](../../app/instrumentation/redact-query-params-span-processor.ts)
 and
-[`RedactAttributesSpanProcessor`](../../app/instrumentation/redact-attributes-span-processor.server.ts).
+[`RedactAttributesSpanProcessor`](../../app/instrumentation/redact-attributes-span-processor.ts).
 Both sanitize copies of span attributes before forwarding them downstream.
 They preserve span metadata and forward lifecycle calls, including flush and shutdown.
 
-Query redaction hides every parameter value by default in `url.full`, `http.url`,
-`http.target`, and the standalone `url.query` attribute. It preserves paths,
-parameter names, duplicate parameters, and URL fragments. Redaction uses
-`URLSearchParams`, so query strings use its encoding, including `%5BREDACTED%5D`
-for `[REDACTED]`. The redactor also scans other string attributes and string
-arrays for HTTP URLs and slash-prefixed paths with query parameters.
+Query redaction replaces parameter values in `url.full`, `http.url`,
+`http.target`, `url.query`, and `react_router.url`. By default it hides every
+parameter except the names in `SAFE_QUERY_PARAMETER_NAMES`, so a parameter added
+to the app stays hidden until someone reviews it and adds it to that list. It
+preserves paths, parameter names, safe parameters, duplicate parameters, and URL
+fragments.
+Redaction uses `URLSearchParams`, so a redacted query string uses its encoding,
+including `%5BREDACTED%5D` for `[REDACTED]`. Other attributes are not inspected.
 
 The rules live in two redactors that the span and log record processors share:
-[`QueryParamsRedactor`](../../app/instrumentation/query-params-redactor.server.ts)
+[`QueryParamsRedactor`](../../app/instrumentation/query-params-redactor.ts)
 and
-[`AttributeRedactor`](../../app/instrumentation/attribute-redactor.server.ts).
+[`AttributeRedactor`](../../app/instrumentation/attribute-redactor.ts).
 Each processor takes a redactor instance, and the preload creates one of each
 for both signals. Pass options to the redactor constructor.
 
-`QueryParamsRedactor` accepts these optional overrides:
+`QueryParamsRedactor` accepts these options:
 
-- `urlAttributeKeys` replaces the URL attribute list.
-- `queryAttributeKeys` replaces the standalone query attribute list.
-- `redactRules` selects which decoded query parameters to redact, using the
-  same rule shape as `AttributeRedactor` (described below). Key rules match the
-  parameter name and replace its whole value. Value rules replace matching text
-  inside the parameter value. The default rule redacts every parameter value.
-  Supplied rules replace it, and an empty list disables parameter redaction.
-- `scanOtherStringAttributes` controls the scan of string attributes outside the
-  configured URL and query attribute lists. It defaults to `true`.
-- `embeddedUrlPatterns` replaces the patterns that find URLs and paths in text.
-  Each pattern must match the complete URL or path, including its query string.
-  Add patterns without losing the defaults by spreading
-  `DEFAULT_REDACT_QUERY_PARAMS_OPTIONS.embeddedUrlPatterns`.
-- `replacement` replaces `[REDACTED]`. It can be a string or a callback, and
-  each rule can override it. Callbacks receive the decoded parameter name as
-  `key` and its decoded value as `value`. Replacements are encoded as parameter
-  values, so they cannot add parameters.
+- `attributeKeys` lists the attributes to inspect. It defaults to `url.full`,
+  `http.url`, `http.target`, `url.query`, and `react_router.url`, the full
+  request URL that the app's React Router spans record. Each value must be an absolute
+  URL, a slash-prefixed path, or a query string with an optional leading `?`.
+  Values that are none of these are parsed as a query string. Values without a
+  query are left unchanged.
+- `parameterNames` lists the decoded parameter names whose values are
+  replaced. It defaults to a predicate that matches every name not in
+  `SAFE_QUERY_PARAMETER_NAMES`. That set lists the names the app sends or
+  receives that carry no personal data or secrets, such as `lang`, `locale`,
+  `scope`, and the OData `$select`, `$expand`, and `$orderby`. OIDC values such
+  as `code`, `state`, and `nonce`, `$filter`, identifiers, and address lookups
+  are redacted. Names are compared exactly, so `LANG` is redacted. To allow
+  another name, pass
+  `(name) => !SAFE_QUERY_PARAMETER_NAMES.has(name) && name !== 'page'`. An empty
+  list redacts nothing.
+- `replacement` replaces `[REDACTED]`. It can be a string or a callback that
+  receives the decoded parameter name as `key` and its decoded value as `value`.
+  Replacements are encoded as parameter values, so they cannot add parameters.
 
-For example, this redactor hides authorization codes and states with a
-distinct marker, any parameter whose name contains `token`, and nine-digit
-numbers in other parameter values:
+Entries in both lists are strings, regular expressions, or predicates. Strings
+match ignoring case and accents. Regular expressions follow their own flags; the
+`g` and `y` flags are ignored. A predicate is a function that receives the
+attribute key or parameter name and returns `true` to redact it. Predicates see
+names only, never values.
+
+Strings are checked first, then regular expressions, then predicates. Each
+regular expression and predicate runs against every name that no earlier entry
+matched, so prefer anchored expressions such as `/^id_token$/i` and keep
+predicates cheap. Attribute-key results are cached, so a predicate in
+`attributeKeys` must return the same result for the same key. Parameter names
+are not cached, so a predicate in `parameterNames` runs for every parameter.
+
+For example, this redactor hides authorization codes, states, any parameter
+ending in `token`, and long parameters prefixed with `x-`, in the default
+attributes and in any attribute under `redirect.`:
 
 ```typescript
 const queryParamsRedactor = new QueryParamsRedactor({
-  redactRules: [
-    { type: 'key', match: 'pattern', value: /^(code|state)$/i, replacement: '[AUTH]' },
-    { type: 'key', match: 'substring', value: 'token' },
-    { type: 'value', pattern: /\b\d{3}[ -]?\d{3}[ -]?\d{3}\b/g },
-  ],
+  attributeKeys: [...DEFAULT_REDACT_QUERY_PARAMS_OPTIONS.attributeKeys, /^redirect\./],
+  parameterNames: ['code', 'state', /token$/i, (name) => name.startsWith('x-') && name.length > 32],
 });
 ```
 
-The default `embeddedUrlPatterns` match HTTP URLs and slash-prefixed paths with
-at least one `name=value` query parameter. To recognize another format, add a
-pattern to the defaults:
+`AttributeRedactor` replaces the whole value of each attribute whose key
+matches `attributeKeys`, whatever the value's type. It never reads attribute
+values, so it does not look for personal data in attributes it is not told
+about. Name sensitive attributes explicitly instead of recording them under
+generic keys such as `message`.
 
-```typescript
-const queryParamsRedactor = new QueryParamsRedactor({
-  embeddedUrlPatterns: [...DEFAULT_REDACT_QUERY_PARAMS_OPTIONS.embeddedUrlPatterns, /provider\?[^,\s]+/i],
-});
-```
+`AttributeRedactor` accepts these options:
 
-`AttributeRedactor` uses one `redactRules` list. A key rule can match the full
-attribute key, a substring within it, or a regular expression. A matching key rule
-replaces the whole attribute value. A value rule applies a regular expression to
-strings and string arrays, regardless of the attribute key. It replaces only the
-matching text.
-
-The default rules match `db.statement`, `http.request.body`, and `user.email`
-exactly. They also match keys containing `password`, `secret`, `token`, `apikey`,
-`api_key`, `authorization`, `credential`, `ssn`, `credit_card`, or `cookie`.
-Value rules redact email addresses, 16-digit card-like numbers, bearer tokens,
-and AWS access key IDs. These patterns are best-effort matches, not a complete
-detector of personal data.
-
-Exact key matches ignore case and accents. Substring matches ignore case.
-Key rules with `match: 'pattern'` take a `RegExp` in `value` and follow its flags;
-use `i` for case-insensitive matching. Stateful expressions are safe to reuse
-across attributes and redaction calls without changing the caller's `lastIndex`.
-`redactRules` replaces the default rule list when supplied. Pass an empty list to
-disable attribute redaction, or spread
-`DEFAULT_REDACT_ATTRIBUTES_OPTIONS.redactRules` to extend the defaults.
-
-Each rule can set its own optional `replacement`, as a string or callback,
-overriding the global `replacement` option. An empty string is also a valid
-override. Callbacks receive `{ key, value }`: the original attribute value for
-key rules, or the current string before that rule for value rules. Non-string
-attribute values are passed without stringification. Value callbacks run only
-for matching text, once per match, and their returned strings are inserted
-literally.
-
-The first matching key rule redacts the whole value before any value rules run.
-Put key-rule overrides before default rules when extending the list. If no key
-rule matches, value rules run in list order.
+- `attributeKeys` lists the attributes to redact, as strings or regular
+  expressions matched as described above. The defaults match `db.statement`,
+  `db.query.text`, `http.request.body`, `user.email`, the client IP attributes
+  `client.address`, `http.client_ip`, and `net.peer.ip`, plus keys containing
+  `password`, `secret`, `token`, `apikey`, `api_key`, `api-key`, `authorization`,
+  `credential`, `ssn`, `credit_card`, `credit-card`, or `cookie`, ignoring case.
+  A `sin` key component is also matched. Pass an empty list to disable attribute
+  redaction.
+- `replacement` replaces `[REDACTED]`. It can be a string, including an empty
+  string, or a callback that receives `{ key, value }` with the original
+  attribute value. Non-string values are passed without stringification.
 
 Both redactor modules export their `DEFAULT_REDACT_*_OPTIONS` objects for callers
 that want to extend a default list rather than replace it.
 
-For example, this pipeline redacts only the `token` query parameter, customizes
-the replacement for credit-card keys, and adds `customer.id` to the default keys:
+The redactors include these performance features:
+
+- `QueryParamsRedactor` caches whether each attribute key matches its
+  `attributeKeys`. It does not cache parameter names, which come from requests.
+- `AttributeRedactor` caches the same decision for its `attributeKeys`.
+- Both caches hold up to 1,000 keys and are cleared when full, so attacker-chosen
+  keys cannot grow them without bound. Replacement callbacks still run on every
+  redaction.
+
+For example, this pipeline redacts only the `token` query parameter and adds
+`customer.id` to the default attribute keys:
 
 ```typescript
-const queryParamsRedactor = new QueryParamsRedactor({ redactRules: [{ type: 'key', match: 'exact', value: 'token' }] });
+const queryParamsRedactor = new QueryParamsRedactor({ parameterNames: ['token'] });
 const attributeRedactor = new AttributeRedactor({
-  redactRules: [{ type: 'key', match: 'pattern', value: /.*credit_card.*/gi, replacement: '[CARD]' }, ...DEFAULT_REDACT_ATTRIBUTES_OPTIONS.redactRules, { type: 'key', match: 'exact', value: 'customer.id', replacement: ({ key }) => `[${key}]` }],
+  attributeKeys: [...DEFAULT_REDACT_ATTRIBUTES_OPTIONS.attributeKeys, 'customer.id'],
 });
 const processor = new RedactQueryParamsSpanProcessor(new RedactAttributesSpanProcessor(exportingProcessor, attributeRedactor), queryParamsRedactor);
 ```
@@ -286,24 +286,19 @@ outside their scope. Do not record sensitive data in those fields.
 ## Log record redaction
 
 When log export is enabled, the preload lists
-[`RedactQueryParamsLogRecordProcessor`](../../app/instrumentation/redact-query-params-log-record-processor.server.ts)
+[`RedactQueryParamsLogRecordProcessor`](../../app/instrumentation/redact-query-params-log-record-processor.ts)
 and
-[`RedactAttributesLogRecordProcessor`](../../app/instrumentation/redact-attributes-log-record-processor.server.ts)
+[`RedactAttributesLogRecordProcessor`](../../app/instrumentation/redact-attributes-log-record-processor.ts)
 before the batch exporting processor, using the same redactors as spans.
 
-Query redaction applies the URL and query attribute rules to log record
-attributes and map-body entries with matching keys. It also scans other string
-attributes and string arrays for URLs and paths with query parameters. For map
-bodies, it scans other top-level string values and string arrays the same way.
-For string bodies, it finds URLs and paths embedded in text, such as
-`request: [/en/apply?token=abc]`, and redacts their query parameters. The
-`scanOtherStringAttributes` option does not disable scans of string bodies.
-The `embeddedUrlPatterns` option controls the patterns used for string
-attributes, map-body entries, and string bodies.
+Query redaction applies to log record attributes and top-level map-body
+entries whose keys match `attributeKeys`. It does not scan string bodies or
+other attributes, so do not log URLs with sensitive query parameters in
+message text.
 
-Attribute redaction applies its rules to log record attributes and to the
-top-level keys of a map body. It applies the value patterns to a string body.
-Nested map values in a body are not inspected.
+Attribute redaction applies to log record attributes and to the top-level keys
+of a map body that match `attributeKeys`. String bodies and nested map values
+are not inspected, so do not put sensitive data in log message text.
 
 Log redaction uses flat list entries, unlike span redaction. The logs SDK passes
 the same mutable record to each processor in order and makes it read-only only

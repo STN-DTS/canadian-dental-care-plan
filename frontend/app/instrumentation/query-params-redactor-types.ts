@@ -1,5 +1,7 @@
 import type { AnyValue, Attributes } from '@opentelemetry/api';
 
+import type { NameMatch } from '~/instrumentation/instrumentation-utils';
+
 export type QueryParamsRedactorReplacementFunctionArgs = {
   /**
    * The decoded query parameter name being evaluated for redaction.
@@ -23,45 +25,26 @@ export type QueryParamsRedactorReplacementFunction = ({ key, value }: QueryParam
 export type QueryParamsRedactorReplacement = string | QueryParamsRedactorReplacementFunction;
 
 /**
- * A rule that defines how a query parameter should be redacted based on its decoded name or value.
- */
-export type QueryParamsRedactorRule =
-  | { type: 'key'; match: 'exact' | 'substring'; value: string; replacement?: QueryParamsRedactorReplacement }
-  | { type: 'key'; match: 'pattern'; value: RegExp; replacement?: QueryParamsRedactorReplacement }
-  | { type: 'value'; pattern: RegExp; replacement?: QueryParamsRedactorReplacement };
-
-/**
  * Options for configuring query parameter redaction.
  */
 export interface QueryParamsRedactorAttributesOptions {
   /**
-   * Attribute keys whose values are URLs or paths that may contain a query string.
+   * Attribute keys whose values are URLs, slash-prefixed paths, or query strings. Strings match
+   * ignoring case and accents; regular expressions follow their own flags; predicates receive the
+   * key and must be pure, because their results are cached. Other attributes are left unchanged.
    */
-  urlAttributeKeys?: readonly string[];
+  attributeKeys?: readonly NameMatch[];
 
   /**
-   * Attribute keys whose values are standalone query strings.
+   * Decoded query parameter names whose values are redacted. Strings match ignoring case and
+   * accents; regular expressions follow their own flags; predicates receive the name and run for
+   * every parameter. Defaults to every name not in `SAFE_QUERY_PARAMETER_NAMES`; an empty list
+   * redacts nothing.
    */
-  queryAttributeKeys?: readonly string[];
+  parameterNames?: readonly NameMatch[];
 
   /**
-   * Patterns that find complete URLs or paths, including their query strings, in free text.
-   */
-  embeddedUrlPatterns?: readonly RegExp[];
-
-  /**
-   * Whether to scan string attributes outside the URL and query attribute keys for embedded URLs.
-   */
-  scanOtherStringAttributes?: boolean;
-
-  /**
-   * The rules that define which query parameters should be redacted.
-   * Replaces the default rule, which redacts every parameter value. An empty list disables parameter redaction.
-   */
-  redactRules?: readonly QueryParamsRedactorRule[];
-
-  /**
-   * The default replacement for redacted query parameter values if not specified in individual rules.
+   * The replacement for redacted query parameter values.
    */
   replacement?: QueryParamsRedactorReplacement;
 }

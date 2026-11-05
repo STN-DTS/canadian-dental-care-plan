@@ -1,5 +1,7 @@
 import type { AnyValue, Attributes } from '@opentelemetry/api';
 
+import type { NameMatch } from '~/instrumentation/instrumentation-utils';
+
 export type AttributeRedactorReplacementFunctionArgs = {
   /**
    * The attribute key being evaluated for redaction.
@@ -23,24 +25,18 @@ export type AttributeRedactorReplacementFunction = ({ key, value }: AttributeRed
 export type AttributeRedactorReplacement = string | AttributeRedactorReplacementFunction;
 
 /**
- * A rule that defines how an attribute should be redacted based on its key or value.
- */
-export type AttributeRedactorRule =
-  | { type: 'key'; match: 'exact' | 'substring'; value: string; replacement?: AttributeRedactorReplacement }
-  | { type: 'key'; match: 'pattern'; value: RegExp; replacement?: AttributeRedactorReplacement }
-  | { type: 'value'; pattern: RegExp; replacement?: AttributeRedactorReplacement };
-
-/**
  * Options for configuring attribute redaction.
  */
 export interface AttributeRedactorAttributesOptions {
   /**
-   * The rules that define which attributes should be redacted.
+   * The attribute keys whose values are replaced. Strings match ignoring case and accents; regexes
+   * are tested as given, without the `g` and `y` flags; predicates receive the key and must be
+   * pure, because their results are cached. An empty list disables redaction.
    */
-  redactRules?: readonly AttributeRedactorRule[];
+  attributeKeys?: readonly NameMatch[];
 
   /**
-   * The default replacement for redacted attributes if not specified in individual rules.
+   * The replacement for redacted attribute values.
    */
   replacement?: AttributeRedactorReplacement;
 }

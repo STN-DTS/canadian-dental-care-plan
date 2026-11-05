@@ -16,12 +16,12 @@ import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-tra
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-import { AttributeRedactor } from '~/instrumentation/attribute-redactor.server';
-import { QueryParamsRedactor } from '~/instrumentation/query-params-redactor.server';
-import { RedactAttributesLogRecordProcessor } from '~/instrumentation/redact-attributes-log-record-processor.server';
-import { RedactAttributesSpanProcessor } from '~/instrumentation/redact-attributes-span-processor.server';
-import { RedactQueryParamsLogRecordProcessor } from '~/instrumentation/redact-query-params-log-record-processor.server';
-import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-params-span-processor.server';
+import { AttributeRedactor } from '~/instrumentation/attribute-redactor';
+import { QueryParamsRedactor } from '~/instrumentation/query-params-redactor';
+import { RedactAttributesLogRecordProcessor } from '~/instrumentation/redact-attributes-log-record-processor';
+import { RedactAttributesSpanProcessor } from '~/instrumentation/redact-attributes-span-processor';
+import { RedactQueryParamsLogRecordProcessor } from '~/instrumentation/redact-query-params-log-record-processor';
+import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-params-span-processor';
 
 /**
  * Type representing a valid log level string for Winston.

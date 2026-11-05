@@ -5,9 +5,9 @@ import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import assert from 'node:assert/strict';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { AttributeRedactor } from '../../app/instrumentation/attribute-redactor';
 import type { AttributeRedactorAttributesOptions } from '../../app/instrumentation/attribute-redactor-types';
-import { AttributeRedactor } from '../../app/instrumentation/attribute-redactor.server';
-import { RedactAttributesSpanProcessor } from '../../app/instrumentation/redact-attributes-span-processor.server';
+import { RedactAttributesSpanProcessor } from '../../app/instrumentation/redact-attributes-span-processor';
 
 const providers: TracerProvider[] = [];
 
@@ -62,43 +62,19 @@ describe('RedactAttributesSpanProcessor', () => {
     });
   });
 
-  test('applies default value patterns to strings and string arrays', async () => {
-    const span = await exportSpan({
-      message: 'person@example.test 4111-1111-1111-1111 Bearer abc.def.ghi AKIA1234567890ABCDEF',
-      contacts: ['one@example.test', 'two@example.test'],
-    });
-    expect(span.attributes).toEqual({
-      message: '[EMAIL] [CARD] [BEARER_TOKEN] [AWS_KEY]',
-      contacts: ['[EMAIL]', '[EMAIL]'],
-    });
+  test('leaves values of unlisted keys unchanged', async () => {
+    const attributes = { message: 'person@example.test 4111-1111-1111-1111', contacts: ['one@example.test'] };
+    const span = await exportSpan(attributes);
+    expect(span.attributes).toEqual(attributes);
   });
 
-  test('replaces defaults per option and allows empty lists', async () => {
-    const span = await exportSpan(
-      { custom: 1, 'internal.private': true, 'payment.credit_card': 'span-card-canary', password: 'kept', message: 'code=123 person@example.test' },
-      {
-        redactRules: [
-          { type: 'key', match: 'exact', value: 'CUSTOM' },
-          { type: 'key', match: 'substring', value: 'PRIVATE' },
-          { type: 'key', match: 'pattern', value: /.*credit_card.*/g, replacement: '[CARD]' },
-          { type: 'value', pattern: /code=\d+/g, replacement: 'code=hidden' },
-        ],
-        replacement: 'hidden',
-      },
-    );
-    expect(span.attributes).toEqual({ custom: 'hidden', 'internal.private': 'hidden', 'payment.credit_card': '[CARD]', password: 'kept', message: 'code=hidden person@example.test' });
+  test('replaces defaults per option and allows an empty list', async () => {
+    const span = await exportSpan({ custom: 1, 'internal.private': true, password: 'kept' }, { attributeKeys: ['CUSTOM', /private/i], replacement: 'hidden' });
+    expect(span.attributes).toEqual({ custom: 'hidden', 'internal.private': 'hidden', password: 'kept' });
 
-    const attributes = { password: 'kept', message: 'person@example.test' };
-    const disabled = await exportSpan(attributes, { redactRules: [] });
+    const attributes = { password: 'kept' };
+    const disabled = await exportSpan(attributes, { attributeKeys: [] });
     expect(disabled.attributes).toEqual(attributes);
-  });
-
-  test('does not share stateful regular expressions with the caller or between values', async () => {
-    const pattern = /secret/y;
-    pattern.lastIndex = 3;
-    const span = await exportSpan({ first: 'secret', second: 'secret', values: ['secret', 'secret'] }, { redactRules: [{ type: 'value', pattern, replacement: 'hidden' }] });
-    expect(span.attributes).toEqual({ first: 'hidden', second: 'hidden', values: ['hidden', 'hidden'] });
-    expect(pattern.lastIndex).toBe(3);
   });
 
   test('passes the original span downstream when nothing is redacted', () => {

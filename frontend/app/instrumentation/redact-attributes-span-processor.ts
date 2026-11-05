@@ -1,14 +1,14 @@
 import type { Context } from '@opentelemetry/api';
 import type { ReadableSpan, Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 
-import { withSpanAttributes } from '~/instrumentation/instrumentation-utils.server';
-import type { QueryParamsRedactor } from '~/instrumentation/query-params-redactor.server';
+import type { AttributeRedactor } from '~/instrumentation/attribute-redactor';
+import { withSpanAttributes } from '~/instrumentation/instrumentation-utils';
 
-export class RedactQueryParamsSpanProcessor implements SpanProcessor {
-  private readonly redactor: QueryParamsRedactor;
+export class RedactAttributesSpanProcessor implements SpanProcessor {
+  private readonly redactor: AttributeRedactor;
   private readonly downstream: SpanProcessor;
 
-  constructor(downstream: SpanProcessor, redactor: QueryParamsRedactor) {
+  constructor(downstream: SpanProcessor, redactor: AttributeRedactor) {
     this.redactor = redactor;
     this.downstream = downstream;
   }
