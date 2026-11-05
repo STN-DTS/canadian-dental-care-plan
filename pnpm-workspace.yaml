@@ -100,7 +100,7 @@ catalog:
   libphonenumber-js: 1.13.15
   logform: 2.7.0
   markdown-to-jsx: 9.10.4
-  micro-memoize: 5.2.1
+  micro-memoize: 5.2.2
   mime: 4.1.2
   minimatch: 11.0.3
   moderndash: 4.0.2
