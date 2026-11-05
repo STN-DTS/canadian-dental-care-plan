@@ -379,8 +379,8 @@ catalogs:
       specifier: 26.6.0
       version: 26.6.0
     i18next-http-backend:
-      specifier: 4.0.7
-      version: 4.0.7
+      specifier: 4.0.9
+      version: 4.0.9
     inversify:
       specifier: 8.2.3
       version: 8.2.3
@@ -700,7 +700,7 @@ importers:
         version: 26.6.0(typescript@7.0.2)
       i18next-http-backend:
         specifier: 'catalog:'
-        version: 4.0.7
+        version: 4.0.9
       inversify:
         specifier: 'catalog:'
         version: 8.2.3(reflect-metadata@0.2.2)
@@ -3765,8 +3765,8 @@ packages:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
     engines: {node: '>= 14'}
 
-  i18next-http-backend@4.0.7:
-    resolution: {integrity: sha512-SQy3OPy66YzumNJ43boHDBtzzMISnoPhQ0Zqjetk+luW74Tok8Ez9ujJJbJHKSHkG5sjDGldHznjuPtSxBwvuw==}
+  i18next-http-backend@4.0.9:
+    resolution: {integrity: sha512-OrdH7wL9zNcmUwH3PatOCIa/NdL6NOGtlwjGqSHSS6fsh9sqm5BtHj6FRt+6coWSxro1LbM61ay+Jc2bbppGkw==}
     engines: {node: '>=18'}
 
   i18next@26.6.0:
@@ -7969,7 +7969,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  i18next-http-backend@4.0.7: {}
+  i18next-http-backend@4.0.9: {}
 
   i18next@26.6.0(typescript@7.0.2):
     optionalDependencies:
