@@ -41,8 +41,8 @@ Number 0 means unspecified, not TRACE. Backend display and alert behavior requir
 | Shutdown failure                                                             | Classify actual impact. Failed required work can be ERROR. Normal exit is not FATAL.                                             |
 | Healthy probe                                                                | Omit routine completion logs under an explicit probe policy. Preserve probe metrics.                                             |
 | Health deteriorates                                                          | WARN for degradation, ERROR for inability to perform required work, once per transition. Retained 5xx probe events remain ERROR. |
-| Successful audit action or security decision                                 | INFO 9 with the corresponding category.                                                                                          |
-| Authentication refusal or authorization denial                               | WARN 13 with security category when required by the security event catalog. Backend faults remain ERROR.                         |
+| Successful audit action or security decision                                 | INFO 9 with the approved audit or security schema and protected delivery route.                                                  |
+| Authentication refusal or authorization denial                               | WARN 13 when required by the security event catalog, with its protected delivery route. Backend faults remain ERROR.             |
 
 A caught exception is not proof of recovery. A public caller can trigger a real server defect. Neither fact permits demoting a failed server operation.
 
@@ -54,8 +54,8 @@ HTTP span status follows its own conventions. Server-span 4xx normally leaves st
 
 1. Record each source method, source threshold, logical event severity, and exported `SeverityNumber`.
 2. Prefer an existing numeric-severity API or configure the shared adapter to preserve logical levels.
-3. If the logger lacks INFO2, use its informational transport method and a shared canonical-event adapter that exports logical severity 10. Match a defined event schema, category, and successful outcome, not arbitrary message text. Do not remap all INFO to 10.
-4. If that distinction cannot survive export, retain native INFO with access category and report an unresolved mapping gap. Do not claim compliance or invent INFO2 merely in a display label.
+3. If the logger lacks INFO2, use its informational transport method and a shared canonical-event adapter that exports logical severity 10. Match a defined HTTP completion schema and successful outcome, not arbitrary message text or a mandatory category field. Do not remap all INFO to 10.
+4. If that distinction cannot survive export, retain native INFO with approved HTTP completion fields and report an unresolved mapping gap. Do not claim compliance or invent INFO2 merely in a display label.
 5. If TRACE is absent, use scoped DEBUG and document the loss of granularity. If neither exists, omit optional diagnostics rather than promote them to INFO.
 6. If FATAL is absent, emit ERROR 17 with `org.operation.outcome` equal to `terminated`. Keep bounded flushing and abnormal exit at the top-level owner.
 7. If WARN or ERROR cannot be represented, add the shared normalized mapping before accepting the change. A category field alone cannot replace failure severity.

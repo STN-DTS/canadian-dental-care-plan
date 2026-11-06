@@ -9,25 +9,35 @@ description: |
 
 # Logging
 
-Priority: privacy, severity, diagnostics, cost. Rules apply at every level, including DEBUG. For a single log line, apply the Rules and table and skip the workflow.
+Priority: privacy, severity, diagnostics, cost. Rules apply to both log records and event records at every level, including DEBUG and TRACE. For a single log line, classify the record, apply the Rules and table, and skip the workflow.
+
+## Log records and event records
+
+OpenTelemetry uses one `LogRecord` model. A log record with a non-empty native `EventName` is an `EventRecord`, not a separate telemetry signal.
+
+- Ordinary diagnostics use log records without `EventName`. They may carry approved structured attributes and trace context.
+- Named checkpoints, state changes, audit facts, and completion outcomes use event records with a stable `EventName` and a documented event schema.
+
+Structured attributes, category, and severity do not make a log record an event record. Do not invent event names or terminal events for helper diagnostics. See [events.md](./references/events.md#log-records-and-event-records).
 
 ## Workflow
 
 1. Detect the logger, the OpenTelemetry bridge, every sink, and the completion hook (the middleware or wrapper that sees each request or job finish). See [review.md](./references/review.md#detect-the-logging-path).
 2. Admit only allowlisted fields. The schema owner keeps the allowlist; add a field only with its purpose, bounds, and destinations. See [sensitive-data.md](./references/sensitive-data.md).
-3. Choose category and severity separately. See [severity.md](./references/severity.md).
-4. Map every success return, rejection, failure return, and throw to its actual outcome and terminal owner. Emit one canonical event per unit of work on every outcome branch, success included. Without a completion hook, the handler emits it. Helpers add fields to that event or log at DEBUG, never emit standalone completion events. In your answer, name any hook that owns an exit. See [events.md](./references/events.md).
+3. Classify the record as an ordinary diagnostic or a named event. Choose severity from the outcome. Add a category only when an approved schema or routing policy needs it, independently of severity. See [events.md](./references/events.md#log-records-and-event-records) and [severity.md](./references/severity.md).
+4. For an owned request or job, map every success return, rejection, failure return, and throw to its actual outcome and terminal owner. Emit one canonical completion event per owned unit on every outcome branch, success included. Without a completion hook, the handler emits it. Helpers add fields to that event or emit ordinary diagnostic log records, normally at DEBUG or TRACE, never duplicate completion events. A diagnostic log edit does not require a new completion event. In your answer, name any hook that owns a relevant exit. See [events.md](./references/events.md#canonical-event-ownership).
 5. Send synthetic canaries shaped like SINs, emails, and tokens through every sink in a local or test environment. Check sink output, not the call site. Use production or third-party sinks only with the owner's authorization. In your answer, report each sink's result or name each unavailable sink and the gap. See [review.md](./references/review.md#minimum-gate-for-every-logging-change).
 
 ## Rules
 
 - Never log SINs or derived forms, personal data, credentials, API keys, tokens, headers, raw session IDs, raw URLs or query strings, environment dumps, or whole objects.
 - Log a safe exception type and a fixed reason code. Messages and stacks are sensitive; admit them only through the rules in [sensitive-data.md](./references/sensitive-data.md). Set `error.type` from a fixed code, never from an error's name or message.
-- Every event, DEBUG included, carries `org.event.category` (`application`, `access`, `security`, `audit`) and a severity. Neither replaces the other.
+- Every log record and event record carries a severity under this skill's policy. Category is optional unless an approved schema or routing policy requires it. Do not automatically add a category field. OpenTelemetry does not require one. A category does not replace severity or determine the record kind.
+- Ordinary diagnostic log records omit `EventName`. Event records use a non-empty native `EventName` that identifies their documented structure. Do not emit the deprecated `event.name` attribute.
 - Audit and security events bypass sampling and level filters.
 - The layer that handles a failure logs it once. Lower layers add context and rethrow without logging. Never invent a status for an error you rethrow.
 - Fix logging without changing public signatures or business behavior.
-- Use the approved structured logger and shared adapter, never console directly. The adapter keeps logging failures from failing requests. If redaction fails, drop the field, not the event.
+- Use the approved structured logger and shared adapter, never console directly. The adapter keeps logging failures from failing requests. If redaction fails, drop the field, not the record.
 
 | Outcome                                      | Severity   |
 | -------------------------------------------- | ---------- |

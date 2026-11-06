@@ -1,22 +1,40 @@
-# Event schema
+# Log records and event schemas
+
+## Log records and event records
+
+OpenTelemetry uses one `LogRecord` data model for diagnostics and named events. A record with a non-empty native `EventName` is an `EventRecord`. It travels through the same logs pipeline.
+
+Ordinary diagnostic log records omit `EventName`. They may include approved structured attributes, severity, timestamps, and trace context. Neither structured metadata nor a category attribute makes them event records.
+
+Use event records for named occurrences such as checkpoints, state changes, audit facts, and completion outcomes. Document when each event occurs, its stable name, its attribute schema, its occurrence timestamp, and its default severity number. The name identifies the structure, not an arbitrary message or request.
+
+Use spans for operations with duration and meaningful boundaries. Use span attributes for properties of the operation as a whole. A completion event is a point-in-time outcome checkpoint, not a replacement for a duration span.
+
+Privacy and field admission apply to both record kinds. Category is optional unless an approved schema or routing policy requires it. OpenTelemetry does not require a category. Ordinary diagnostics need approved fields, not a named-event schema or their own terminal owner.
 
 ## Logical record
 
 This contract describes logical fields, not a logger call signature or an OTLP JSON encoding. Map native logger fields explicitly to the OpenTelemetry model.
 
-| Field                             | Contract                                                                                                                                                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Timestamp`                       | Event occurrence time. Set it for first-party events. Let the SDK populate `ObservedTimestamp` separately. If a consumer accepts one timestamp, use `Timestamp` when present, otherwise `ObservedTimestamp`. |
-| `EventName`                       | Stable, low-cardinality name for the event schema. No IDs or other dynamic values.                                                                                                                           |
-| `Body`                            | OpenTelemetry permits any value, including structured values. This policy uses a stable human-readable message or template; approved variable values belong in attributes.                                   |
-| `SeverityNumber`                  | Normalized number from the severity reference.                                                                                                                                                               |
-| `SeverityText`                    | Actual source severity label. Do not confuse it with the normalized display name.                                                                                                                            |
-| `Resource`                        | Configure `service.name`, `service.version`, and `deployment.environment.name` once at the logging boundary.                                                                                                 |
-| `InstrumentationScope`            | Stable emitting component or library scope. Never a user or request name.                                                                                                                                    |
-| `TraceId`, `SpanId`, `TraceFlags` | Active trace context when available. Do not emit a span ID without its trace ID. The sampled flag does not authorize dropping logs.                                                                          |
-| `Attributes`                      | Named fields from the event allowlist. Preserve numeric and boolean types.                                                                                                                                   |
+| Field                             | Contract                                                                                                                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Timestamp`                       | Record occurrence time. Required for event records. Let the SDK populate `ObservedTimestamp` separately. If a consumer accepts one timestamp, use `Timestamp` when present, otherwise `ObservedTimestamp`. |
+| `EventName`                       | Omit for ordinary diagnostics. Required and non-empty for event records. Stable, low-cardinality name identifying the documented structure. No IDs or other dynamic values.                                |
+| `Body`                            | OpenTelemetry permits any value, including structured values. This policy uses a stable human-readable message or template; approved variable values belong in attributes.                                 |
+| `SeverityNumber`                  | Normalized number from the severity reference.                                                                                                                                                             |
+| `SeverityText`                    | Actual source severity label. Preserve it independently of the event's documented default severity number. Do not confuse it with the normalized display name.                                             |
+| `Resource`                        | Configure `service.name`, `service.version`, and `deployment.environment.name` once at the logging boundary.                                                                                               |
+| `InstrumentationScope`            | Stable emitting component or library scope. Never a user or request name.                                                                                                                                  |
+| `TraceId`, `SpanId`, `TraceFlags` | Active trace context when available. Do not emit a span ID without its trace ID. The sampled flag does not authorize dropping logs.                                                                        |
+| `Attributes`                      | Approved diagnostic fields or fields from the named-event schema. Preserve numeric and boolean types.                                                                                                      |
 
 A JSON logger may use `event_name`, `message`, `trace_id`, and `span_id` only with an explicit mapping to native fields. Do not introduce the deprecated `event.name` attribute. Do not use deprecated `error.message` for new records.
+
+A bridge-specific metadata key is not a native field by itself. Existing logging libraries may use `otel.event.name`, exposed as `ATTR_OTEL_EVENT_NAME` in the JavaScript semantic-conventions package, so an SDK or Collector can set native `EventName`. This is distinct from deprecated `event.name`. For OTLP export, test that the bridge populates `EventName` rather than leaving the name only in attributes.
+
+At the OpenTelemetry JavaScript API, `logger.emit({ eventName: ... })` sets the native field. In Winston metadata, the installed transport maps `[ATTR_OTEL_EVENT_NAME]` to that field. Plain `eventName` metadata becomes an attribute instead. Keep the existing logger wrapper unchanged for this distinction. Use the bridge key only for intentional event records, not every Winston call.
+
+Non-OTLP exporters should use `otel.event.name` as an attribute fallback when the destination has no `EventName` or equivalent field. Document that destination mapping and verify it separately. Keep event-name bridge keys out of ordinary diagnostics.
 
 Constant message templates are acceptable when the logger retains the template and typed properties separately. Rendered prose or JSON embedded in a message is not a substitute for structured attributes.
 
@@ -24,9 +42,10 @@ Constant message templates are acceptable when the logger retains the template a
 
 `org.*` denotes organization-defined extensions, not OpenTelemetry conventions. Keep this namespace or map it once to an organization-owned namespace. Do not invent new meanings inside standard namespaces.
 
+If categorization is useful, use the approved application or destination field and bounded vocabulary, such as a separately defined Dynatrace `event.category`. Do not assume that a category describes audit or security delivery requirements.
+
 | Attribute                      | Type and admission                                                                                                            |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `org.event.category`           | Required enum. `application`, `access`, `security`, or `audit`.                                                               |
 | `org.operation.name`           | Fixed operation name for canonical events.                                                                                    |
 | `org.operation.outcome`        | Canonical enum. `success`, `rejected`, `degraded`, `failure`, `cancelled`, or `terminated`.                                   |
 | `org.duration_ms`              | Nonnegative completion duration in milliseconds, measured with a monotonic clock.                                             |
@@ -50,7 +69,7 @@ Define bounds and permitted destinations for each admitted field. Add domain fie
 
 ## Canonical-event ownership
 
-Use one request-scoped or job-scoped accumulator and one terminal emitter. Never store mutable request fields in a global logger. Every return, rejection, and throw must end in its actual outcome and one terminal event, unless a named completion hook owns that branch. A catch-only failure event does not cover a successful return. Helpers add approved fields or DEBUG diagnostics; they do not emit standalone INFO completion events.
+For each owned request or job, use one scoped accumulator and one terminal emitter. Never store mutable request fields in a global logger. Every return, rejection, and throw must end in its actual outcome and one terminal event, unless a named completion hook owns that branch. A catch-only failure event does not cover a successful return. Helpers add approved fields or ordinary DEBUG or TRACE diagnostic log records. They do not duplicate completion events, and each diagnostic does not need a terminal owner.
 
 Use the actual status and schema-approved operation and reason values. Do not invent statuses or replace validated values with generic codes. The terminal event records the outcome, duration, and useful safe context. Streaming responses need finish, failure, and close handling after the handler returns. Deduplicate overlapping callbacks. A process crash can prevent emission. Completion logging is not a durability guarantee.
 
@@ -60,7 +79,7 @@ A separate security decision or audit commitment may precede completion. Preserv
 
 ## Audit and security schemas
 
-Route by `org.event.category`, not by severity or an event-name prefix. Apply no sampling or ordinary level threshold at the call site, logger, collector, or destination.
+Identify audit and security records through an explicit approved schema and delivery policy. Use a dedicated route or a tested schema-to-route mapping. A category field may select that route if the policy defines it, but no particular category key is required. Do not infer protected delivery from severity, an event-name prefix, or an unreviewed category value. Apply no sampling or ordinary level threshold at the call site, logger, collector, or destination.
 
 Define events for authentication results, authorization denials, security-control decisions, and high-risk administrative actions. Give each a fixed event name and approved fields for action, target type, result, and reason. Use `org.audit.action`, `org.audit.target_type`, `org.audit.result`, and `org.reason.code` for audit events. Use `org.security.control` and `org.reason.code` for security decisions.
 
@@ -86,10 +105,28 @@ These examples describe emitted records, not APIs for a particular language or l
 | A repository logs an error body and rethrows                            | Propagate safe dependency type and status. Let the final owner record the failure once.                       |
 | A formatter keeps the final digits of an identifier                     | Prevent admission. Replace the whole value in the backstop.                                                   |
 | An exception is passed directly to a native error slot                  | Use that slot only after every sink passes the safe serializer tests. Otherwise project safe type and reason. |
-| Audit is the highest logger level                                       | INFO audit successes and WARN denials use an independent protected category route.                            |
+| Audit is the highest logger level                                       | INFO audit successes and WARN denials use an independent protected delivery route.                            |
 | A handler emits completion in a finally block before streaming finishes | Move terminal emission to response lifecycle hooks and deduplicate callbacks.                                 |
 
-### Canonical failure
+### Ordinary diagnostic log record
+
+Logical projection with explicitly mapped field names, not OTLP wire JSON.
+
+```json
+{
+  "message": "Dependency retry scheduled",
+  "severity_number": 5,
+  "severity_text": "DEBUG",
+  "attributes": {
+    "org.dependency.name": "document_storage",
+    "org.retry.count": 1
+  }
+}
+```
+
+This diagnostic has approved structured fields but no `EventName`. It is not an event record or a completion event.
+
+### Canonical failure event record
 
 Logical projection onto native OpenTelemetry fields, not OTLP wire JSON.
 
@@ -100,7 +137,6 @@ Logical projection onto native OpenTelemetry fields, not OTLP wire JSON.
   "severity_number": 17,
   "severity_text": "ERROR",
   "attributes": {
-    "org.event.category": "access",
     "org.operation.name": "document.upload",
     "org.operation.outcome": "failure",
     "org.reason.code": "storage_unavailable",
@@ -114,4 +150,4 @@ Logical projection onto native OpenTelemetry fields, not OTLP wire JSON.
 }
 ```
 
-The logger supplies event time, resource metadata, and active trace context. No filename, document content, person identifier, or exception message enters this record.
+The logger maps `event_name` to native `EventName` and supplies the occurrence `Timestamp`, resource metadata, and active trace context. This named event describes a completion outcome. No filename, document content, person identifier, or exception message enters this record.

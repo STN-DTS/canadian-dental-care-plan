@@ -12,24 +12,25 @@
 
 1. Inventory call sites, completion owners, exception hooks, sinks, filters, dashboards, alerts, and audit consumers.
 2. Remove disclosure paths first. Do not dual-write unsafe legacy records for compatibility. Report historical exposure through incident handling.
-3. Declare the safe event schema and its terminal owner. Remove duplicate exception logs and redundant breadcrumbs in the same unit.
-4. Correct severity and category mapping centrally. Preserve distinct security and audit events.
+3. Classify the record. For ordinary diagnostics, declare approved fields without inventing an event name. For named events, declare the event schema and occurrence. For canonical completion events, identify the terminal owner. Remove duplicate exception logs and redundant breadcrumbs in the same unit.
+4. Correct severity and any approved destination-category mapping centrally. Do not introduce categories for ordinary diagnostics without a declared need. Preserve distinct security and audit events and their protected delivery routes.
 5. Update queries and consumers with incompatible schema changes. Version the contract when needed, not every record by default.
 6. Verify real emitted records before proceeding to the next unit. For a bulk migration, use a repeatable transformation and a check for forbidden patterns.
 
 ## Minimum gate for every logging change
 
 - Every field has an approved purpose, type, bounds, and destination. No whole objects or forbidden values enter the record.
-- Messages and event names are stable. Structured values remain typed at the destination.
+- Category is absent unless the approved schema or routing policy needs it. Where required, verify its field, bounded vocabulary, and destination mapping. Audit and security delivery remains protected even when ordinary diagnostics have no category.
+- Messages are stable. Ordinary diagnostics omit `EventName`, even when they have structured fields. Named events preserve a non-empty native `EventName`, occurrence `Timestamp`, and approved event structure at the destination. Do not export deprecated `event.name` or mistake a metadata property for a native field. Structured values remain typed at the destination.
 - The relevant canonical events map successful HTTP to 10, inbound 4xx to 13, and inbound 5xx to 17.
 - Dependency status does not overwrite local response status. Retries do not emit failure records at every layer.
-- One terminal event owns the result. Exception detail appears once. Audit and security facts retain independent delivery.
+- For an owned request or job, one terminal event owns the result. Ordinary helper diagnostics do not need their own completion events. Exception detail appears once. Audit and security facts retain independent delivery.
 - Trace context survives applicable asynchronous boundaries. Concurrent requests cannot exchange context.
 - The mandatory synthetic canary suite runs through every configured real sink, including bootstrap and OpenTelemetry export.
 - Backend mapping tests cover every logical level and the applicable success, rejection, failure, cancellation, and termination paths.
 - Raised ordinary thresholds and disabled trace sampling do not suppress audit or security records.
 
-A call-site change runs the existing pipeline canary and mapping suites plus focused event tests. If the suites do not exist, add them or report the gate as unmet.
+A call-site change runs the existing pipeline canary and mapping suites plus focused tests for its record kind. Privacy gates apply equally to log records and event records. Event-name and completion-ownership gates apply only where relevant. If the suites do not exist, add them or report the gate as unmet.
 
 ## Additional gate for pipeline changes
 
@@ -47,13 +48,13 @@ Retain failures by default. An approved repeated-failure aggregation policy must
 
 Bound record bytes, field lengths, collection sizes, stack depth, buffers, and flush time. Avoid per-item hot-loop logs. Use lazy attribute construction or a level-enabled check for expensive diagnostics.
 
-Set per-category access, retention, integrity, and deletion controls. Alert on user impact and actionable conditions. Missing telemetry is a monitoring failure, not proof of health.
+Set access, retention, integrity, and deletion controls for each approved record class and destination. Category may help select these controls but is not mandatory. Alert on user impact and actionable conditions. Missing telemetry is a monitoring failure, not proof of health.
 
 ## Sources
 
 OpenTelemetry pages were checked on 2026-11-03.
 
-Organization policy supplies the exact HTTP severity mapping, reserved sublevels, government-identifier prohibition, exception-message allowlist, category vocabulary, and unsampled security and audit routing. External sources support these decisions but do not mandate all of them.
+Organization policy supplies the exact HTTP severity mapping, reserved sublevels, government-identifier prohibition, exception-message allowlist, and unsampled security and audit routing. Category fields and vocabularies require a separate application or destination policy. External sources support these decisions but do not mandate all of them.
 
 ### Specifications
 
@@ -65,6 +66,7 @@ Organization policy supplies the exact HTTP severity mapping, reserved sublevels
 - [Exceptions in logs](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/). Supplies `exception.type`, `exception.message`, and `exception.stacktrace`, the sensitive-message warning, and best-effort fatal export. Attributes are stable. Severity, event-name, and some recording guidance remain Development. Native exception support does not prove serializer safety.
 - [Event conventions](https://opentelemetry.io/docs/specs/semconv/general/events/). Supplies stable event names, occurrence timestamps, typed attributes, and selective reuse of span attributes. This guidance is Development. Canonical completion events here are outcome checkpoints, not replacements for duration spans.
 - [Event attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/event/). Deprecates `event.name` in favor of native `EventName`.
+- [OTel event attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/otel/#otel-event-attributes). Defines `otel.event.name` for existing-library mapping to native `EventName` and non-OTLP destinations without an equivalent field.
 
 ### Privacy and security
 
