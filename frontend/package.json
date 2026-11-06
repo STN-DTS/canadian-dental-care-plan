@@ -48,6 +48,7 @@
     "@opentelemetry/sdk-node": "catalog:",
     "@opentelemetry/sdk-trace": "catalog:",
     "@opentelemetry/semantic-conventions": "catalog:",
+    "@opentelemetry/winston-transport": "catalog:",
     "@oslojs/crypto": "catalog:",
     "@oslojs/encoding": "catalog:",
     "@radix-ui/react-dialog": "catalog:",

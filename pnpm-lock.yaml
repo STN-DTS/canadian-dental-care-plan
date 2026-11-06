@@ -240,6 +240,9 @@ catalogs:
     '@opentelemetry/semantic-conventions':
       specifier: 1.44.0
       version: 1.44.0
+    '@opentelemetry/winston-transport':
+      specifier: 0.35.0
+      version: 0.35.0
     '@oslojs/crypto':
       specifier: 1.0.1
       version: 1.0.1
@@ -632,6 +635,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: 'catalog:'
         version: 1.44.0
+      '@opentelemetry/winston-transport':
+        specifier: 'catalog:'
+        version: 0.35.0(@opentelemetry/api@1.10.0)
       '@oslojs/crypto':
         specifier: 'catalog:'
         version: 1.0.1
@@ -2283,6 +2289,12 @@ packages:
   '@opentelemetry/winston-transport@0.31.0':
     resolution: {integrity: sha512-higyMoGHbDTNlCX5ue1dJjDQuYSWwC0L4k6x57RKLG0uXdCIdyIu/OQYnjciL+7Kv2XmPMy4VQloeh36NTJTuQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+
+  '@opentelemetry/winston-transport@0.35.0':
+    resolution: {integrity: sha512-TtewhWng6ACFXJZ3jWGp23wXn+JXUJlyeEanuqRYPkGvc8gCCoGTD5vfAm7F1ZTt2rb3+jZ/4s7NM7NrDNzY5Q==}
+    engines: {node: '>=22.15.0'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.10.0
 
   '@oslojs/asn1@1.0.0':
     resolution: {integrity: sha512-zw/wn0sj0j0QKbIXfIlnEcTviaCzYOY3V5rAyjR6YtOByFtJiT574+8p9Wlach0lZH9fddD4yb9laEAIl4vXQA==}
@@ -7926,6 +7938,12 @@ snapshots:
   '@opentelemetry/winston-transport@0.31.0':
     dependencies:
       '@opentelemetry/api-logs': 0.221.0
+      '@opentelemetry/semantic-conventions': 1.44.0
+      winston-transport: 4.9.0
+
+  '@opentelemetry/winston-transport@0.35.0(@opentelemetry/api@1.10.0)':
+    dependencies:
+      '@opentelemetry/api': 1.10.0
       '@opentelemetry/semantic-conventions': 1.44.0
       winston-transport: 4.9.0
 

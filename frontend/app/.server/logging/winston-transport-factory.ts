@@ -17,7 +17,6 @@ export function createConsoleTransport(config: LoggingConfig): w.transports.Cons
   // Dev format for non-production environments
   let consoleFormat = format.combine(
     // Development format: colorized output with timestamp, error stack, and meta information
-    format.splat(), // Enables string interpolation with %s, %d, etc.
     format.errors({ stack: true }),
     formatLevels(),
     formatLabels(),

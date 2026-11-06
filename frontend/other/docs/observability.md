@@ -165,6 +165,23 @@ The [ESM instrumentation test](../../__tests__/instrumentation/telemetry-esm.ser
 starts a real server with the preload. It checks that HTTP and Express spans are
 still emitted.
 
+## Winston log export
+
+The frontend runtime includes `@opentelemetry/winston-transport`. Winston
+auto-instrumentation needs this package to attach its OpenTelemetry transport
+when `OTEL_LOGS_ENDPOINT` enables log sending. Do not add a second transport
+manually, because the instrumentation attaches it when Winston is configured.
+
+The [Winston export test](../../__tests__/instrumentation/winston-export.server.test.ts)
+starts the application preload and captures OTLP protobuf output with a loopback
+collector. It verifies transport attachment and delivery of a fixed message with
+structured fields. It does not establish sink-wide privacy compliance.
+
+Enabling export also enables export of existing log calls. The current log
+redactors do not sanitize string bodies. Keep sensitive data out of messages
+and metadata, and complete the planned caller migration and sink canary tests
+before treating logging as privacy-safe.
+
 ## Span attribute redaction
 
 The telemetry preload wraps its exporting span processor with
