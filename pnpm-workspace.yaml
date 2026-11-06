@@ -92,7 +92,7 @@ catalog:
   file-type: 22.3.0
   filesize: 11.0.29
   i18next: 26.7.1
-  i18next-http-backend: 4.0.9
+  i18next-http-backend: 4.0.10
   inversify: 8.2.3
   isbot: 5.2.2
   jose: 6.2.15
