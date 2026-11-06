@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -7,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
 import type { DynatraceDtoMapper } from '~/.server/web/mappers';
 import type { DynatraceRepository } from '~/.server/web/repositories';
@@ -46,7 +48,7 @@ export class DefaultDynatraceService implements DynatraceService {
   private init(): void {
     const dynatraceRumScriptUriCacheTTL = 1000 * this.serverConfig.DYNATRACE_API_RUM_SCRIPT_URI_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL value: dynatraceRumScriptUriCacheTTL: %d ms', dynatraceRumScriptUriCacheTTL);
+    this.log.debug('Initializing Dynatrace RUM script cache', { [ATTR_CDCP_CACHE_TTL_MS]: dynatraceRumScriptUriCacheTTL });
 
     this.findDynatraceRumScript = memoize(this.findDynatraceRumScript, { async: true });
 
@@ -57,7 +59,7 @@ export class DefaultDynatraceService implements DynatraceService {
   }
 
   async findDynatraceRumScript(userId = 'anonymous'): Promise<DynatraceRumScriptDto | null> {
-    this.log.trace('Finding Dynatrace RUM script for user [%s]', userId);
+    this.log.trace('Finding Dynatrace RUM script', { [ATTR_CDCP_USER_ID]: userId });
 
     try {
       this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get', { userId });
@@ -70,10 +72,10 @@ export class DefaultDynatraceService implements DynatraceService {
       }
 
       const dynatraceRumScriptDto = this.dynatraceDtoMapper.mapDynatraceRumScriptToDynatraceRumScriptDto(dynatraceRumScript);
-      this.log.trace('Returning Dynatrace RUM script DTO: [%j]', dynatraceRumScriptDto);
+      this.log.trace('Dynatrace RUM script mapped');
       return dynatraceRumScriptDto;
-    } catch (error) {
-      this.log.warn('Unexpected server error while retrieving Dynatrace RUM Script; returning null; error: [%j]', error);
+    } catch {
+      this.log.warn('Could not retrieve Dynatrace RUM script; returning null', { [ATTR_ERROR_TYPE]: 'rum_script_retrieval_failed' });
       return null;
     }
   }

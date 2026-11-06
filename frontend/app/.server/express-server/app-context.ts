@@ -21,7 +21,7 @@ export function getAppContext(req: express.Request): AppContext {
 
   if (session instanceof ExpressSession) {
     const lastAccessTime = Temporal.Now.instant().toString();
-    log.debug('Setting session.lastAccessTime to [%s]', lastAccessTime);
+    log.debug('Updating session last access time');
     session.set('lastAccessTime', lastAccessTime);
   }
 

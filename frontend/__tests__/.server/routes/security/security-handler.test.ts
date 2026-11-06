@@ -1,3 +1,4 @@
+import { ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { Option } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
@@ -216,8 +217,8 @@ describe('DefaultSecurityHandler', () => {
 
       securityHandler.validateRequestMethod({ allowedMethods, request });
 
-      expect(mockLogger.debug).toHaveBeenCalledWith('Validating request method [%s] for path [%s] with allowed methods [%s]', 'GET', '/test', allowedMethods);
-      expect(mockLogger.debug).toHaveBeenCalledWith('Request method [%s] is allowed for path [%s] with allowed methods [%s]', 'GET', '/test', allowedMethods);
+      expect(mockLogger.debug).toHaveBeenCalledWith('Validating request method', { [ATTR_HTTP_REQUEST_METHOD]: 'GET', [ATTR_URL_PATH]: '/test', 'cdcp.http.allowed_methods': allowedMethods });
+      expect(mockLogger.debug).toHaveBeenCalledWith('Request method is allowed', { [ATTR_HTTP_REQUEST_METHOD]: 'GET', [ATTR_URL_PATH]: '/test', 'cdcp.http.allowed_methods': allowedMethods });
     });
 
     it('should throw 405 error for invalid request methods', () => {
@@ -232,8 +233,8 @@ describe('DefaultSecurityHandler', () => {
         }),
       );
 
-      expect(mockLogger.debug).toHaveBeenCalledWith('Validating request method [%s] for path [%s] with allowed methods [%s]', 'PUT', '/test', allowedMethods);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Request method [%s] is not allowed for path [%s] with allowed methods [%s]; returning 405 response', 'PUT', '/test', allowedMethods);
+      expect(mockLogger.debug).toHaveBeenCalledWith('Validating request method', { [ATTR_HTTP_REQUEST_METHOD]: 'PUT', [ATTR_URL_PATH]: '/test', 'cdcp.http.allowed_methods': allowedMethods });
+      expect(mockLogger.debug).toHaveBeenCalledWith('Request method not allowed; returning 405 response', { [ATTR_HTTP_REQUEST_METHOD]: 'PUT', [ATTR_URL_PATH]: '/test', 'cdcp.http.allowed_methods': allowedMethods });
     });
   });
 

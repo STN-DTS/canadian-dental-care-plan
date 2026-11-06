@@ -6,6 +6,7 @@ import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_BUILD_DATE, ATTR_CDCP_BUILD_ID, ATTR_CDCP_BUILD_REVISION, ATTR_CDCP_BUILD_VERSION } from '~/.server/logging/log-attributes';
 
 export interface BuildInfo {
   buildDate: string;
@@ -53,7 +54,12 @@ export class DefaultBuildInfoService implements BuildInfoService {
       buildVersion: this.clientConfig.BUILD_VERSION,
     };
 
-    this.log.debug('Application build info: [%j]', buildInfo);
+    this.log.debug('Application build info retrieved', {
+      [ATTR_CDCP_BUILD_DATE]: buildInfo.buildDate,
+      [ATTR_CDCP_BUILD_ID]: buildInfo.buildId,
+      [ATTR_CDCP_BUILD_REVISION]: buildInfo.buildRevision,
+      [ATTR_CDCP_BUILD_VERSION]: buildInfo.buildVersion,
+    });
     return buildInfo;
   }
 }

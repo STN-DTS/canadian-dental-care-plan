@@ -124,7 +124,7 @@ export class DefaultRaoidcService implements RaoidcService {
 
     type MemoizedFetchServerMetadata = Memoized<typeof this.fetchServerMetadata, Options<typeof this.fetchServerMetadata>>;
     (this.fetchServerMetadata as MemoizedFetchServerMetadata).cache.on('add', () => {
-      this.log.info('Creating new fetchServerMetadata memo');
+      this.log.debug('RAOIDC server metadata cache entry created');
     });
 
     this.log.debug('DefaultRaoidcService initiated.');

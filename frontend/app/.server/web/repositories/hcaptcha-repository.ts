@@ -65,12 +65,6 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     const response = await this.httpClient.instrumentedFetch('http.client.hcaptcha.posts', request);
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to verify hCaptcha',
-        status: response.status,
-        statusText: response.statusText,
-      });
-
       throw new Error(`Failed to verify hCaptcha: ${response.status}, Status Text: ${response.statusText}`);
     }
 
@@ -79,7 +73,7 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     if (hCaptchaVerifyResponseEntity.success) {
       this.log.trace('hCaptcha verification successful');
     } else {
-      this.log.warn('hCaptcha verification unsuccessful');
+      this.log.trace('hCaptcha verification unsuccessful');
     }
 
     return hCaptchaVerifyResponseEntity;

@@ -9,9 +9,9 @@ import type { AttributeRedactor } from '~/instrumentation/attribute-redactor';
  * becomes read-only, so list this processor before exporting ones.
  */
 export class RedactAttributesLogRecordProcessor implements LogRecordProcessor {
-  private readonly redactor: AttributeRedactor;
+  private readonly redactor: Pick<AttributeRedactor, 'redactAttributes'>;
 
-  constructor(redactor: AttributeRedactor) {
+  constructor(redactor: Pick<AttributeRedactor, 'redactAttributes'>) {
     this.redactor = redactor;
   }
 

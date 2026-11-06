@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { Get } from 'type-fest';
 
 import { TYPES } from '~/.server/constants';
@@ -5,6 +6,7 @@ import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
@@ -42,13 +44,13 @@ export async function validateDocumentContents(files: DocumentUploadSchemaOutput
         });
 
         if (!isContentTypeAllowed) {
-          log.warn('File rejected before upload for document [%s]', id);
+          log.debug('File content type rejected before upload', { [ATTR_ERROR_TYPE]: 'unsupported_file_content_type' });
           return { id, error: invalidTypeError };
         }
 
         return { id, success: true };
       } catch {
-        log.error('Unexpected content validation error for document [%s]', id);
+        log.error('Unexpected file content validation failure', { [ATTR_ERROR_TYPE]: 'file_content_validation_failed' });
         return { id, error: t(($) => $.upload.errorMessage.contentValidationError, { filename: file.name }) };
       }
     }),
@@ -99,7 +101,7 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
         case 'error':
           return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
         case 'success':
-          log.trace('Document uploaded successfully: [%s]', id);
+          log.trace('Document uploaded successfully', { [ATTR_CDCP_USER_ID]: user.id });
           return { id, success: true, uploadDate: uploadDate.toString() };
       }
     }),

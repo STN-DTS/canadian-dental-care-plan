@@ -7,6 +7,7 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 import type { HCaptchaRepository } from '~/.server/web/repositories';
 
 @injectable()
@@ -33,7 +34,7 @@ export class HCaptchaHealthCheck implements HealthCheck {
 
   private init(): void {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
-    this.log.debug('Initializing HCaptchaHealthCheck with cache TTL of %d ms.', healthCacheTTL);
+    this.log.debug('Initializing HCaptchaHealthCheck', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
     this.check = memoize(this.check, {
       async: true,

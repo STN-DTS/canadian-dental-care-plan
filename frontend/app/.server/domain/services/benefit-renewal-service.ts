@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable, optional } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -9,7 +10,8 @@ import type { BenefitRenewalRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
-import { createLogger } from '~/.server/logging';
+import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging';
+import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -66,17 +68,15 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
   }
 
   async createPublicBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
-    this.log.trace('Creating benefit renewal for request [%j]', benefitRenewalDto);
+    this.log.trace('Creating public benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      this.log.error('Request to renew benefit application is unavailable (killswitch engaged).');
       throw new AppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (benefitRenewalDto.applicationChannelCode !== 'public') {
-      this.log.error('Received request to create public benefit renewal with invalid application channel code: [%s]', benefitRenewalDto.applicationChannelCode);
       throw new AppError(`Invalid application channel code [${benefitRenewalDto.applicationChannelCode}]`, ErrorCodes.INVALID_REQUEST);
     }
 
@@ -87,11 +87,15 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 
-      this.log.trace('Returning application code: [%s]', applicationCode);
+      this.log.info('Benefit renewal confirmation received', {
+        [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
+        [ATTR_CDCP_APPLICATION_CHANNEL]: 'public',
+        [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId,
+      });
       return applicationCode;
     } catch (error) {
       if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
-        this.log.warn('Received XAPI_TOO_MANY_REQUESTS; killswitch engage!');
+        this.log.error('Upstream rate limit received; engaging renewal killswitch', { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }
 
@@ -100,17 +104,15 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
   }
 
   async createProtectedBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
-    this.log.trace('Creating protected benefit renewal for request [%j]', benefitRenewalDto);
+    this.log.trace('Creating protected benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      this.log.error('Request to renew protected benefit application is unavailable (killswitch engaged).');
       throw new AppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (benefitRenewalDto.applicationChannelCode !== 'protected') {
-      this.log.error('Received request to create protected benefit renewal with invalid application channel code: [%s]', benefitRenewalDto.applicationChannelCode);
       throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
@@ -121,11 +123,15 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 
-      this.log.trace('Returning application code: [%s]', applicationCode);
+      this.log.info('Benefit renewal confirmation received', {
+        [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
+        [ATTR_CDCP_APPLICATION_CHANNEL]: 'protected',
+        [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId,
+      });
       return applicationCode;
     } catch (error) {
       if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
-        this.log.warn('Received XAPI_TOO_MANY_REQUESTS; killswitch engage!');
+        this.log.error('Upstream rate limit received; engaging renewal killswitch', { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }
 

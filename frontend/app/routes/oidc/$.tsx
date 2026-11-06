@@ -1,5 +1,6 @@
 import { redirectDocument } from 'react-router';
 
+import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { CompactEncrypt, SignJWT } from 'jose';
 import { subtle } from 'node:crypto';
 import * as z from 'zod';
@@ -22,32 +23,32 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   switch (slug) {
     case '.well-known/openid-configuration': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return handleOpenidConfigurationRequest({ context });
     }
 
     case 'authorize': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return handleMockAuthorizeRequest({ context, url });
     }
 
     case 'jwks': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return await handleJwksRequest({ context });
     }
 
     case 'userinfo': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return await handleUserInfoRequest({ context });
     }
 
     case 'validatesession': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return handleValidateSessionRequest();
     }
 
     default: {
-      log.warn('Invalid oidc route requested: [%s]', slug);
+      log.debug('Unknown mock OIDC route requested', { [ATTR_URL_PATH]: url.pathname, [ATTR_ERROR_TYPE]: 'unknown_mock_oidc_route' });
       return Response.json(null, { status: 404 });
     }
   }
@@ -65,12 +66,12 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   switch (slug) {
     case 'token': {
-      log.debug('Handling request for [%s]', url);
+      log.debug('Handling mock OIDC request', { [ATTR_URL_PATH]: url.pathname });
       return await handleTokenRequest({ context });
     }
 
     default: {
-      log.warn('Invalid oidc route requested: [%s]', slug);
+      log.debug('Unknown mock OIDC route requested', { [ATTR_URL_PATH]: url.pathname, [ATTR_ERROR_TYPE]: 'unknown_mock_oidc_route' });
       return Response.json(null, { status: 404 });
     }
   }
@@ -83,7 +84,7 @@ function validateRaoidcMockEnabled({ context }: Pick<Route.LoaderArgs, 'context'
 
   if (!ENABLED_MOCKS.includes(mockName)) {
     const log = createLogger('routes/oidc/validateRaoidcMockEnabled');
-    log.warn('Mock [%s] is not enabled; returning 404 response', mockName);
+    log.debug('RAOIDC mock is disabled');
     throw Response.json(null, { status: 404 });
   }
 }
@@ -217,7 +218,7 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
   });
 
   if (!result.success) {
-    log.warn('Invalid authorize request [%j]', z.flattenError(result.error).fieldErrors);
+    log.debug('Invalid mock authorization request', { [ATTR_ERROR_TYPE]: 'invalid_mock_authorization_request' });
     instrumentationService.createCounter('auth.authorize.requests.invalid').add(1);
 
     return Response.json(JSON.stringify(z.flattenError(result.error).fieldErrors), { status: 400 });
@@ -227,7 +228,7 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
   redirectUri.searchParams.set('code', generateRandomString(16));
   redirectUri.searchParams.set('state', result.data.state);
 
-  log.debug('Mock login successful; redirecting to [%s]', redirectUri.href);
+  log.debug('Mock login successful; redirecting to callback', { [ATTR_URL_PATH]: redirectUri.pathname });
   return redirectDocument(redirectUri.href);
 }
 

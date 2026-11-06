@@ -34,18 +34,18 @@ export class DefaultAppealUploadEligibilityService implements AppealUploadEligib
   }
 
   async findAppealUploadEligibility(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityDto>> {
-    this.log.trace('Getting appeal upload eligibility for client number: [%s]', clientNumber);
+    this.log.trace('Getting appeal upload eligibility');
 
     const appealUploadEligibilityResponseEntityOption = await this.appealUploadEligibilityRepository.findAppealUploadEligibilityByClientNumber(clientNumber);
 
     if (Option.isNone(appealUploadEligibilityResponseEntityOption)) {
-      this.log.debug('No client record found; treating as ineligible; clientNumber: [%s]', clientNumber);
+      this.log.debug('No client record found for appeal upload eligibility');
       return Option.none();
     }
 
     const appealUploadEligibilityDto = this.appealUploadEligibilityDtoMapper.mapAppealUploadEligibilityResponseEntityToAppealUploadEligibilityDto(Option.getOrThrow(appealUploadEligibilityResponseEntityOption));
 
-    this.log.trace('Returning appeal upload eligibility: [%j]', appealUploadEligibilityDto);
+    this.log.trace('Returning appeal upload eligibility');
     return Option.some(appealUploadEligibilityDto);
   }
 }

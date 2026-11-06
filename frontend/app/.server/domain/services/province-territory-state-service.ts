@@ -11,6 +11,7 @@ import type { ProvinceTerritoryStateDtoMapper } from '~/.server/domain/mappers';
 import type { ProvinceTerritoryStateRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing province territory state data.
@@ -101,7 +102,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     const allProvinceTerritoryStatesCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS;
     const provinceTerritoryStateCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL values; allProvinceTerritoryStatesCacheTTL: %d ms, provinceTerritoryStateCacheTTL: %d ms', allProvinceTerritoryStatesCacheTTL, provinceTerritoryStateCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allProvinceTerritoryStatesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: provinceTerritoryStateCacheTTL });
 
     this.listProvinceTerritoryStates = memoize(this.listProvinceTerritoryStates, {
       async: true,
@@ -109,7 +110,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     });
 
     type MemoizedListProvinceTerritoryStates = Memoized<typeof this.listProvinceTerritoryStates, Options<typeof this.listProvinceTerritoryStates>>;
-    (this.listProvinceTerritoryStates as MemoizedListProvinceTerritoryStates).cache.on('add', () => this.log.info('Creating new listProvinceTerritoryStates memo'));
+    (this.listProvinceTerritoryStates as MemoizedListProvinceTerritoryStates).cache.on('add', () => this.log.debug('Creating new listProvinceTerritoryStates memo'));
 
     this.getProvinceTerritoryStateById = memoize(this.getProvinceTerritoryStateById, {
       async: true,
@@ -118,7 +119,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     });
 
     type MemoizedGetProvinceTerritoryStateById = Memoized<typeof this.getProvinceTerritoryStateById, Options<typeof this.getProvinceTerritoryStateById>>;
-    (this.getProvinceTerritoryStateById as MemoizedGetProvinceTerritoryStateById).cache.on('add', () => this.log.info('Creating new getProvinceTerritoryStateById memo'));
+    (this.getProvinceTerritoryStateById as MemoizedGetProvinceTerritoryStateById).cache.on('add', () => this.log.debug('Creating new getProvinceTerritoryStateById memo'));
 
     this.getProvinceTerritoryStateByCode = memoize(this.getProvinceTerritoryStateByCode, {
       async: true,
@@ -127,7 +128,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     });
 
     type MemoizedGetProvinceTerritoryStateByCode = Memoized<typeof this.getProvinceTerritoryStateByCode, Options<typeof this.getProvinceTerritoryStateByCode>>;
-    (this.getProvinceTerritoryStateByCode as MemoizedGetProvinceTerritoryStateByCode).cache.on('add', () => this.log.info('Creating new getProvinceTerritoryStateByCode memo'));
+    (this.getProvinceTerritoryStateByCode as MemoizedGetProvinceTerritoryStateByCode).cache.on('add', () => this.log.debug('Creating new getProvinceTerritoryStateByCode memo'));
 
     this.log.debug('DefaultProvinceTerritoryStateService initiated.');
   }
@@ -136,12 +137,12 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     this.log.debug('Get all province territory states');
     const provinceTerritoryStateEntities = await this.provinceTerritoryStateRepository.listAllProvinceTerritoryStates();
     const provinceTerritoryStateDtos = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntitiesToProvinceTerritoryStateDtos(provinceTerritoryStateEntities);
-    this.log.trace('Returning province territory states: [%j]', provinceTerritoryStateDtos);
+    this.log.trace('Returning province territory states', { [ATTR_CDCP_REFERENCE_COUNT]: provinceTerritoryStateDtos.length });
     return provinceTerritoryStateDtos;
   }
 
   async getProvinceTerritoryStateById(id: string): Promise<ProvinceTerritoryStateDto> {
-    this.log.debug('Get province territory state with id: [%s]', id);
+    this.log.debug('Get province territory state');
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateById(id);
 
     if (Option.isNone(provinceTerritoryStateEntity)) {
@@ -149,12 +150,12 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     }
 
     const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(Option.getOrThrow(provinceTerritoryStateEntity));
-    this.log.trace('Returning province territory state: [%j]', provinceTerritoryStateDto);
+    this.log.trace('Returning province territory state');
     return provinceTerritoryStateDto;
   }
 
   async getProvinceTerritoryStateByCode(code: string): Promise<ProvinceTerritoryStateDto> {
-    this.log.debug('Get province territory state with code: [%s]', code);
+    this.log.debug('Get province territory state');
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateByCode(code);
 
     if (Option.isNone(provinceTerritoryStateEntity)) {
@@ -162,43 +163,43 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     }
 
     const provinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(Option.getOrThrow(provinceTerritoryStateEntity));
-    this.log.trace('Returning province territory state: [%j]', provinceTerritoryStateDto);
+    this.log.trace('Returning province territory state');
     return provinceTerritoryStateDto;
   }
 
   async listAndSortLocalizedProvinceTerritoryStates(locale: AppLocale): Promise<ReadonlyArray<ProvinceTerritoryStateLocalizedDto>> {
-    this.log.debug('Get and sort all localized province territory states with locale: [%s]', locale);
+    this.log.debug('Get and sort all localized province territory states', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDtos = await this.listProvinceTerritoryStates();
     const localizedProvinceTerritoryStateDtos = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateDtosToProvinceTerritoryStateLocalizedDtos(provinceTerritoryStateDtos, locale);
     const sortedLocalizedProvinceTerritoryStateDtos = this.sortLocalizedProvinceTerritoryStateDtos(localizedProvinceTerritoryStateDtos, locale);
-    this.log.trace('Returning localized and sorted province territory states: [%j]', sortedLocalizedProvinceTerritoryStateDtos);
+    this.log.trace('Returning localized and sorted province territory states', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: sortedLocalizedProvinceTerritoryStateDtos.length });
     return sortedLocalizedProvinceTerritoryStateDtos;
   }
 
   async listAndSortLocalizedProvinceTerritoryStatesByCountryId(countryId: string, locale: AppLocale): Promise<ReadonlyArray<ProvinceTerritoryStateLocalizedDto>> {
-    this.log.debug('Get and sort all localized province territory states with countryId: [%s] and locale: [%s]', countryId, locale);
+    this.log.debug('Get and sort all localized province territory states', { [ATTR_CDCP_LOCALE]: locale });
     const filterByCountryIdPredicate = (dto: ProvinceTerritoryStateDto) => dto.countryId === countryId;
     const provincesTerritoriesStates = await this.listProvinceTerritoryStates();
     const provinceTerritoryStateDtos = provincesTerritoriesStates.filter(filterByCountryIdPredicate);
     const localizedProvinceTerritoryStateDtos = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateDtosToProvinceTerritoryStateLocalizedDtos(provinceTerritoryStateDtos, locale);
     const sortedLocalizedProvinceTerritoryStateDtos = this.sortLocalizedProvinceTerritoryStateDtos(localizedProvinceTerritoryStateDtos, locale);
-    this.log.trace('Returning localized and sorted province territory states: [%j]', sortedLocalizedProvinceTerritoryStateDtos);
+    this.log.trace('Returning localized and sorted province territory states', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: sortedLocalizedProvinceTerritoryStateDtos.length });
     return sortedLocalizedProvinceTerritoryStateDtos;
   }
 
   async getLocalizedProvinceTerritoryStateById(id: string, locale: AppLocale): Promise<ProvinceTerritoryStateLocalizedDto> {
-    this.log.debug('Get localized province territory state with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDto = await this.getProvinceTerritoryStateById(id);
     const localizedProvinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateDtoToProvinceTerritoryStateLocalizedDto(provinceTerritoryStateDto, locale);
-    this.log.trace('Returning localized province territory state: [%j]', localizedProvinceTerritoryStateDto);
+    this.log.trace('Returning localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     return localizedProvinceTerritoryStateDto;
   }
 
   async getLocalizedProvinceTerritoryStateByCode(code: string, locale: AppLocale): Promise<ProvinceTerritoryStateLocalizedDto> {
-    this.log.debug('Get localized province territory state with code: [%s] and locale: [%s]', code, locale);
+    this.log.debug('Get localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDto = await this.getProvinceTerritoryStateByCode(code);
     const localizedProvinceTerritoryStateDto = this.provinceTerritoryStateDtoMapper.mapProvinceTerritoryStateDtoToProvinceTerritoryStateLocalizedDto(provinceTerritoryStateDto, locale);
-    this.log.trace('Returning localized province territory state with code [%s]: [%j]', code, localizedProvinceTerritoryStateDto);
+    this.log.trace('Returning localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     return localizedProvinceTerritoryStateDto;
   }
   /**

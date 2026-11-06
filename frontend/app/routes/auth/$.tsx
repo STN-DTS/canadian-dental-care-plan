@@ -1,5 +1,8 @@
 import { redirectDocument } from 'react-router';
 
+import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+// Session attributes are currently incubating OpenTelemetry conventions.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 
 import { TYPES } from '~/.server/constants';
@@ -9,6 +12,7 @@ import { TYPES } from '~/.server/constants';
  */
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
 
@@ -60,7 +64,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }
 
     default: {
-      log.warn('Invalid authentication route requested: [%s]', slug);
+      log.debug('Unknown authentication route requested', { [ATTR_URL_PATH]: url.pathname, [ATTR_ERROR_TYPE]: 'unknown_authentication_route' });
 
       instrumentationService.createCounter('auth.unknown.requests').add(1);
       return Response.json(null, { status: 404 });
@@ -81,7 +85,7 @@ function handleLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' |
   const loginUrl = new URL(`/auth/login/${defaultProviderId}`, url);
   loginUrl.search = url.search;
 
-  log.debug('Redirecting to default provider handler: [%s]', loginUrl.href);
+  log.debug('Redirecting to default authentication provider', { [ATTR_URL_PATH]: loginUrl.pathname });
   return redirectDocument(loginUrl.href);
 }
 
@@ -107,7 +111,7 @@ async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'con
   const raoidcService = appContainer.get(TYPES.RaoidcService);
   const signoutUrl = raoidcService.generateSignoutRequest({ sessionId: idToken.sid, locale });
 
-  log.debug('Destroying CDCP application session session and redirecting to downstream logout handler: [%s]', signoutUrl);
+  log.debug('Destroying application session before provider logout', { [ATTR_SESSION_ID]: session.id });
   const auditService = appContainer.get(TYPES.AuditService);
   auditService.createAudit('auth.session-destroyed', { userId: idToken.sub });
 
@@ -129,7 +133,7 @@ async function handleRaoidcLoginRequest({ context, url }: Pick<Route.LoaderArgs,
   const returnUrl = searchParams.get('returnto');
 
   if (returnUrl && !isSafeReturnUrl(returnUrl)) {
-    log.warn('Invalid return URL [%s]', returnUrl);
+    log.warn('Invalid authentication return URL', { [ATTR_ERROR_TYPE]: 'invalid_authentication_return_url' });
     instrumentationService.createCounter('auth.login.raoidc.requests.invalid-return-url').add(1);
 
     return Response.json(null, { status: 400 });
@@ -148,7 +152,7 @@ async function handleRaoidcLoginRequest({ context, url }: Pick<Route.LoaderArgs,
   session.set('authReturnUrl', returnUrl ?? defaultReturnUrl);
   session.set('authState', state);
 
-  log.debug('Redirecting to RAOIDC signin URL [%s]', authUrl.href);
+  log.debug('Redirecting to RAOIDC sign-in');
   return redirectDocument(authUrl.href);
 }
 
@@ -179,9 +183,12 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
       missingSessionKeys.push('authState');
     }
 
-    const missingKeys = missingSessionKeys.join(' and ');
     const authLoginUrl = `/auth/login?${new URLSearchParams({ returnto: returnUrl })}`;
-    log.warn('Missing %s in session [%s]; possible stale or replayed callback -- redirecting to [%s]', missingKeys, session.id, authLoginUrl);
+    log.warn('Authentication callback session data is missing; restarting login', {
+      [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing',
+      [ATTR_SESSION_ID]: session.id,
+      [ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS]: missingSessionKeys,
+    });
     instrumentationService.createCounter('auth.callback.raoidc.requests.stale-session').add(1);
     throw redirectDocument(authLoginUrl);
   }
@@ -193,7 +200,7 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
   session.set('idToken', idToken);
   session.set('userInfoToken', userInfoToken);
 
-  log.debug('RAOIDC login successful; redirecting to [%s]', returnUrl);
+  log.debug('RAOIDC login successful; redirecting to application');
   const auditService = appContainer.get(TYPES.AuditService);
   auditService.createAudit('auth.session-created', { userId: idToken.sub });
 

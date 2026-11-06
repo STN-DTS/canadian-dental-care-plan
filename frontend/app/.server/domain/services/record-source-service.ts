@@ -6,6 +6,7 @@ import { RecordSourceNotFoundException } from '~/.server/domain/exceptions';
 import type { RecordSourceDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing record source data.
@@ -53,36 +54,35 @@ export class DefaultRecordSourceService implements RecordSourceService {
 
   listRecordSources(): ReadonlyArray<RecordSourceDto> {
     this.log.debug('Get all record sources');
-    this.log.trace('Returning record sources: [%j]', this.recordSourceDtos);
+    this.log.trace('Returning record sources', { [ATTR_CDCP_REFERENCE_COUNT]: this.recordSourceDtos.length });
     return this.recordSourceDtos;
   }
 
   getRecordSourceById(id: string): RecordSourceDto {
-    this.log.debug('Get record source with id: [%s]', id);
+    this.log.debug('Get record source');
     const recordSourceDto = this.recordSourceDtos.find((dto) => dto.id === id);
 
     if (!recordSourceDto) {
-      this.log.error('record source with id: [%s] not found', id);
       throw new RecordSourceNotFoundException(`record source with id: [${id}] not found`);
     }
 
-    this.log.trace('Returning record source: [%j]', recordSourceDto);
+    this.log.trace('Returning record source');
     return recordSourceDto;
   }
 
   listLocalizedRecordSources(locale: AppLocale): ReadonlyArray<RecordSourceLocalizedDto> {
-    this.log.debug('Get all localized record sources with locale: [%s]', locale);
+    this.log.debug('Get all localized record sources', { [ATTR_CDCP_LOCALE]: locale });
     const recordSourceDtos = this.listRecordSources();
     const localizedRecordSourceDtos = this.recordSourceDtoMapper.mapRecordSourceDtosToRecordSourceLocalizedDtos(recordSourceDtos, locale);
-    this.log.trace('Returning localized record sources: [%j]', localizedRecordSourceDtos);
+    this.log.trace('Returning localized record sources', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedRecordSourceDtos.length });
     return localizedRecordSourceDtos;
   }
 
   getLocalizedRecordSourceById(id: string, locale: AppLocale): RecordSourceLocalizedDto {
-    this.log.debug('Get localized record source with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized record source', { [ATTR_CDCP_LOCALE]: locale });
     const recordSourceDto = this.getRecordSourceById(id);
     const localizedRecordSourceDto = this.recordSourceDtoMapper.mapRecordSourceDtoToRecordSourceLocalizedDto(recordSourceDto, locale);
-    this.log.trace('Returning localized record source: [%j]', localizedRecordSourceDto);
+    this.log.trace('Returning localized record source', { [ATTR_CDCP_LOCALE]: locale });
     return localizedRecordSourceDto;
   }
 }

@@ -1,3 +1,12 @@
+import type { RouteObject, RouterContextProvider, ServerInstrumentation } from 'react-router';
+import { matchRoutes } from 'react-router';
+
+import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_HTTP_ROUTE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+
+import { TYPES } from '~/.server/constants';
+import { appContext } from '~/.server/context';
+import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 /**
  * Request counter instrumentation for React Router.
  *
@@ -10,13 +19,7 @@
  * because of dynamic path segments (ids, slugs, etc.). Requests without
  * handler metadata or a matching route, along with ignored routes, are skipped.
  */
-import type { RouteObject, RouterContextProvider, ServerInstrumentation } from 'react-router';
-import { matchRoutes } from 'react-router';
-
-import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
-import { createLogger } from '~/.server/logging';
-import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_ROUTE_ID } from '~/.server/logging/log-attributes';
 import { singleton } from '~/.server/utils/instance-registry';
 
 /**
@@ -46,7 +49,7 @@ export function createRequestCounterInstrumentation(): ServerInstrumentation {
           const { meta, statusCode } = await requestHandler();
 
           if (!meta) {
-            log.trace('No metadata found. Skipping request counting for request: [%s]', request.url);
+            log.trace('No handler metadata; skipping request counting', { [ATTR_URL_PATH]: new URL(request.url).pathname });
             return;
           }
 
@@ -110,9 +113,9 @@ function requestCounter(log: Logger, context: ReadonlyContext, request: Readonly
     // Reuse a previously resolved route id when available, otherwise match and cache it.
     if (pathCache.has(pattern)) {
       routeId = pathCache.get(pattern);
-      log.debug('Cache hit for path: %s, pattern: %s, routeId: %s', pathname, pattern, routeId);
+      log.debug('Request counter route cache hit', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern, [ATTR_CDCP_ROUTE_ID]: routeId });
     } else {
-      log.debug('Cache miss for path: %s, pattern: %s. Matching routes...', pathname, pattern);
+      log.debug('Request counter route cache miss; matching routes', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern });
 
       const serverBuild = singleton('serverBuild');
       const agnosticRoutes = singleton('agnosticRoutes');
@@ -125,16 +128,16 @@ function requestCounter(log: Logger, context: ReadonlyContext, request: Readonly
 
       // Cache the result, including negative (null) matches, so repeat lookups stay fast.
       pathCache.set(pattern, routeId);
-      log.debug('Cached routeId %s for path: %s, pattern: %s', routeId, pathname, pattern);
+      log.debug('Request counter route match cached', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern, [ATTR_CDCP_ROUTE_ID]: routeId });
     }
 
     if (!routeId) {
-      log.trace('No route id found for path: %s, pattern: %s. Skipping request counting.', pathname, pattern);
+      log.trace('No route ID found; skipping request counting', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern });
       return;
     }
 
     if (ignoredRouteIds.has(routeId)) {
-      log.trace('Ignoring request counting for routeId: %s, path: %s, pattern: %s', routeId, pathname, pattern);
+      log.trace('Route excluded from request counting', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern, [ATTR_CDCP_ROUTE_ID]: routeId });
       return;
     }
 
@@ -150,9 +153,16 @@ function requestCounter(log: Logger, context: ReadonlyContext, request: Readonly
     const instrumentationService = appContainer.get(TYPES.InstrumentationService);
     instrumentationService.countHttpStatus(metricPrefix, statusCode);
 
-    log.debug('Counted HTTP status %s for metric prefix: %s, routeId: %s, pathname: %s, method: %s, pattern: %s', statusCode, metricPrefix, routeId, pathname, request.method, pattern);
-  } catch (error) {
+    log.debug('HTTP response status counted', {
+      [ATTR_HTTP_RESPONSE_STATUS_CODE]: statusCode,
+      [ATTR_HTTP_REQUEST_METHOD]: request.method,
+      [ATTR_URL_PATH]: pathname,
+      [ATTR_HTTP_ROUTE]: pattern,
+      [ATTR_CDCP_ROUTE_ID]: routeId,
+      [ATTR_CDCP_OPERATION_NAME]: metricPrefix,
+    });
+  } catch {
     // Never let a metrics failure surface to the caller; log and move on.
-    log.error('Error during request counting:', error);
+    log.error('Error during request counting', { [ATTR_ERROR_TYPE]: 'request_counting_failed' });
   }
 }

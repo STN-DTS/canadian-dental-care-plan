@@ -33,7 +33,7 @@ export class DefaultApplicationYearRepository implements ApplicationYearReposito
   }
 
   getIntakeApplicationYear(date: string): ApplicationYearResultEntity {
-    this.log.trace('Retrieving intake application year entity for date: [%s]', date);
+    this.log.trace('Retrieving intake application year entity');
 
     const applicationYearResultEntity = {
       BenefitApplicationYear: {
@@ -49,12 +49,12 @@ export class DefaultApplicationYearRepository implements ApplicationYearReposito
       },
     };
 
-    this.log.trace('Returning intake application year entity: [%j]', applicationYearResultEntity);
+    this.log.trace('Returning intake application year entity');
     return applicationYearResultEntity;
   }
 
   getRenewalApplicationYear(date: string): ApplicationYearResultEntity {
-    this.log.trace('Retrieving renewal application year entity for date: [%s]', date);
+    this.log.trace('Retrieving renewal application year entity');
 
     const applicationYearResultEntity = {
       BenefitApplicationYear: {
@@ -70,7 +70,7 @@ export class DefaultApplicationYearRepository implements ApplicationYearReposito
       },
     };
 
-    this.log.trace('Returning renewal application year entity: [%j]', applicationYearResultEntity);
+    this.log.trace('Returning renewal application year entity');
     return applicationYearResultEntity;
   }
 }
@@ -84,7 +84,7 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
   }
 
   getIntakeApplicationYear(date: string): ApplicationYearResultEntity {
-    this.log.trace('Retrieving intake application year entity for date: [%s]', date);
+    this.log.trace('Retrieving intake application year entity');
 
     const applicationYearResultEntity = {
       BenefitApplicationYear: {
@@ -100,12 +100,12 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
       },
     };
 
-    this.log.trace('Returning intake application year entity: [%j]', applicationYearResultEntity);
+    this.log.trace('Returning intake application year entity');
     return applicationYearResultEntity;
   }
 
   getRenewalApplicationYear(date: string): ApplicationYearResultEntity {
-    this.log.trace('Retrieving renewal application year entity for date: [%s]', date);
+    this.log.trace('Retrieving renewal application year entity');
 
     const applicationYearResultEntity = {
       BenefitApplicationYear: {
@@ -121,7 +121,7 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
       },
     };
 
-    this.log.trace('Returning renewal application year entity: [%j]', applicationYearResultEntity);
+    this.log.trace('Returning renewal application year entity');
     return applicationYearResultEntity;
   }
 }

@@ -8,6 +8,7 @@ import type { ApplicantRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 /**
  * Provides applicant lookups that support records without program-assigned or
@@ -48,37 +49,37 @@ export class DefaultApplicantService implements ApplicantService {
   }
 
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>> {
-    this.log.trace('Find applicant by basic info: [%j]', request);
+    this.log.trace('Finding applicant by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
     this.auditService.createAudit('applicant.basic-info.get', { userId: request.userId });
 
     const applicantBasicInfoRequestEntity = this.applicantDtoMapper.mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntity = await this.applicantRepository.findApplicantByBasicInfo(applicantBasicInfoRequestEntity);
 
     if (Option.isNone(applicantEntity)) {
-      this.log.trace('No applicant found with basic info: [%j]', request);
+      this.log.trace('No applicant found by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
       return Option.none();
     }
 
     const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(Option.getOrThrow(applicantEntity));
-    this.log.trace('Returning applicant: [%j]', applicantDto);
+    this.log.trace('Returning applicant', { [ATTR_CDCP_USER_ID]: request.userId });
     return Option.some(applicantDto);
   }
 
   async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>> {
-    const { sin, userId } = request;
-    this.log.trace('Finding applicant with sin [%s] and userId [%s]', sin, userId);
+    const { userId } = request;
+    this.log.trace('Finding applicant by SIN', { [ATTR_CDCP_USER_ID]: userId });
     this.auditService.createAudit('applicant.personal-information.get', { userId });
 
     const applicantRequestEntity = this.applicantDtoMapper.mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantResponseEntity = await this.applicantRepository.findApplicantBySin(applicantRequestEntity);
 
     if (Option.isNone(applicantResponseEntity)) {
-      this.log.trace('No applicant found for sin [%s]; Returning null', sin);
+      this.log.trace('No applicant found by SIN', { [ATTR_CDCP_USER_ID]: userId });
       return Option.none();
     }
 
     const applicantDto = this.applicantDtoMapper.mapApplicantResponseEntityToApplicantDto(Option.getOrThrow(applicantResponseEntity));
-    this.log.trace('Returning applicant DTO for sin [%s]', sin);
+    this.log.trace('Returning applicant found by SIN', { [ATTR_CDCP_USER_ID]: userId });
     return Option.some(applicantDto);
   }
 }

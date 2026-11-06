@@ -1,3 +1,4 @@
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { inject } from 'inversify';
 import { retry } from 'moderndash';
 import { ProxyAgent, fetch } from 'undici';
@@ -6,6 +7,7 @@ import type { RequestInfo, RequestInit, Response } from 'undici';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_PROXY_TLS_TIMEOUT_MS, ATTR_CDCP_PROXY_URL, ATTR_CDCP_RETRY_COUNT, ATTR_CDCP_RETRY_LIMIT } from '~/.server/logging/log-attributes';
 import type { InstrumentationService } from '~/.server/observability';
 import { getEnv } from '~/.server/utils/env-utils';
 import { AppError, isAppError } from '~/errors/app-error';
@@ -113,14 +115,14 @@ export class DefaultHttpClient implements HttpClient {
   }
 
   getFetchFn(options: FetchOptions): FetchFn {
-    this.log.debug('Getting fetch function; options: [%j]', options);
+    this.log.debug('Getting fetch function');
     const { proxyUrl, timeout } = options;
 
     if (proxyUrl) {
       const { HTTP_PROXY_TLS_TIMEOUT } = getEnv();
       const proxyTlsTimeout = timeout ?? HTTP_PROXY_TLS_TIMEOUT;
       const dispatcher = new ProxyAgent({ uri: proxyUrl, proxyTls: { timeout: proxyTlsTimeout } });
-      this.log.debug('A proxy [%s] has been configured with timeout [%d] ms; using custom fetch', proxyUrl, proxyTlsTimeout);
+      this.log.debug('Using proxy fetch', { [ATTR_CDCP_PROXY_URL]: new URL(proxyUrl).origin, [ATTR_CDCP_PROXY_TLS_TIMEOUT_MS]: proxyTlsTimeout });
 
       return async (input, init) => {
         return await fetch(input, { ...init, dispatcher });
@@ -132,7 +134,7 @@ export class DefaultHttpClient implements HttpClient {
   }
 
   async instrumentedFetch(metricPrefix: string, input: RequestInfo | URL, options: InstrumentedFetchOptions = {}): Promise<Response> {
-    this.log.debug('Executing instumented fetch function; metricPrefix: [%s], input: [%s], options: [%j]', metricPrefix, input, options);
+    this.log.debug('Executing instrumented HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix });
     const { proxyUrl, timeout, retryOptions, ...init } = options;
 
     // Configure default retry options if not specified
@@ -144,12 +146,12 @@ export class DefaultHttpClient implements HttpClient {
       const response = await retry(async () => await this.fetchWithRetryConditions({ fetchFn, input, init, metricPrefix, retryConditions }), {
         maxRetries: retries,
         backoff: (retries) => retries * backoffMs,
-        onRetry: (error, attempt) => {
-          this.log.warn('HTTP request failed; metricPrefix: [%s]; attempt [%d] of [%d]; [%s]', metricPrefix, attempt, retries, error);
+        onRetry: (_error, attempt) => {
+          this.log.debug('Retrying HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_CDCP_RETRY_COUNT]: attempt, [ATTR_CDCP_RETRY_LIMIT]: retries });
         },
       });
 
-      this.log.trace('HTTP request completed; metricPrefix: [%s]; status: [%d]', metricPrefix, response.status);
+      this.log.trace('HTTP response received', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.status });
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
 
       return response;

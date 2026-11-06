@@ -182,6 +182,109 @@ redactors do not sanitize string bodies. Keep sensitive data out of messages
 and metadata, and complete the planned caller migration and sink canary tests
 before treating logging as privacy-safe.
 
+### Backend URL paths
+
+[`UrlPathRedactor`](../../app/instrumentation/url-path-redactor.ts) removes the
+key-bearing suffix of `esdc_clients(...)` paths under
+`/dental-care/appeal-upload-eligible/pp/v1` and
+`/dental-care/doc-metadata/pp/v1`. The suffix becomes `esdc_clients([REDACTED])`,
+including any navigation or action after the key. This avoids parsing
+untrusted OData key delimiters. Application pathnames and collection paths
+remain unchanged.
+
+The rule covers `url.full`, `url.path`, `http.url`, `http.target`, and
+`react_router.url`, including string arrays. It runs in Winston's shared
+format before transport output, and in the telemetry processors before log
+and span export. The approved `cdcp.application.confirmation_code` field is
+unaffected. String messages, arbitrary metadata keys, span names, and exception
+details are not inspected; callers must still omit sensitive values.
+
+The Winston export and ESM instrumentation tests exercise synthetic client
+numbers, email-shaped values, and token markers through console logs, local
+OTLP log export, and auto-instrumented HTTP/Undici spans through both console
+and local OTLP trace export. They do not
+verify live collectors or backends.
+
+### Custom log attribute conventions
+
+[`log-attributes.ts`](../../app/.server/logging/log-attributes.ts) is the
+canonical registry for application-owned `cdcp.*` log attributes. Each
+`ATTR_CDCP_*` export documents its wire name, value type, meaning, units or
+allowed source domain, and relevant privacy restrictions. These attributes
+reach the configured console and OpenTelemetry log sinks; they do not
+authorize new destinations or broader retention/access.
+
+Use the official `@opentelemetry/semantic-conventions` constants for standard
+attributes and named imports from the registry for custom keys:
+
+```typescript
+import { ATTR_CDCP_CLIENT_ID } from '~/.server/logging/log-attributes';
+
+log.warn('Home address is missing required fields; omitting home address from response', {
+  [ATTR_CDCP_CLIENT_ID]: clientId,
+});
+```
+
+Keep metadata objects fresh at each call. The registry names fields; it does
+not validate, truncate, mask or sanitize their values. Apply privacy controls
+before logging. Opaque identifiers and masked confirmation codes remain
+linkable protected data, not anonymous values.
+
+Before adding an attribute, check for an applicable standard convention,
+then document its purpose, source domain, type, units, privacy admission and
+destinations in the registry. Never add personal fields merely because the
+key has a constant. Treat wire-name or meaning changes as consumer-facing
+schema changes. Existing raw-string assertions intentionally verify exported
+wire names independently of the registry.
+
+`cdcp.http.request.completed` is an event-name **value**, not an attribute
+key, and stays separate. This registry does not change event ownership,
+OpenTelemetry severity mapping, or audit record schemas/delivery. It belongs
+to server application logging, not the self-contained telemetry preload.
+
+### Application confirmation codes
+
+The public and protected application and renewal services log confirmation
+receipt at INFO with the last four digits of
+`cdcp.application.confirmation_code` replaced by `*`. Codes with fewer than
+four digits have all their digits masked. The code returned to the applicant
+is unchanged.
+
+Search using the remaining visible prefix, for example `1234****` for the
+synthetic code `12345678`. Partial masking is not anonymization: prefixes
+remain linkable and may match multiple submissions. The masked digits cannot
+be recovered from this field. The Winston sink test verifies the masked value
+in console and local OTLP output and checks that the original code is absent.
+
+### Operational diagnostics
+
+Audit startup includes the configured file path/pattern in
+`cdcp.log.audit_file_path`; this is a startup diagnostic, not an audit record.
+Memory-session expiry checks include `cdcp.session.expires_at`, an ISO timestamp
+or null when no expiry is set.
+
+Redis and telemetry startup/shutdown failures use the shared
+`operationalErrorType` classifier. Verified `Error.isError` values report their
+prototype constructor's class name, including custom subclasses. Names must be
+identifier-shaped ASCII strings of at most 128 characters; unavailable or
+unsupported names fall back to `Error`. Instance overrides of `name` and
+`constructor` are ignored, and getters are not invoked. Proxied prototypes and
+constructors are rejected without invoking their traps.
+Non-errors use OpenTelemetry's `ERROR_TYPE_VALUE_OTHER` (`_OTHER`).
+Generic `Error` instances remain `Error`, even when they carry an OS error code;
+Redis protocol replies report their class rather than parsing message prefixes.
+`cdcp.error.code` separately preserves allowlisted system codes for connection,
+DNS, permission, missing-file and TLS-certificate failures. Unknown codes are
+omitted. Its constant is defined in the self-contained instrumentation registry
+and re-exported by the application registry.
+Constructor names are diagnostic hints, not trusted identity: build tools can
+rename them, and identifier-shaped names can still be application-controlled.
+Do not dynamically generate class names from personal data or secrets.
+Operation context stays in the fixed log message. Exception messages,
+stacks, arbitrary error codes and causes are never emitted by these diagnostics.
+Bootstrap output remains on console to avoid loading application dependencies
+before instrumentation; it is not routed through the application logger.
+
 ## Span attribute redaction
 
 The telemetry preload wraps its exporting span processor with
@@ -190,6 +293,8 @@ and
 [`RedactAttributesSpanProcessor`](../../app/instrumentation/redact-attributes-span-processor.ts).
 Both sanitize copies of span attributes before forwarding them downstream.
 They preserve span metadata and forward lifecycle calls, including flush and shutdown.
+An additional `RedactAttributesSpanProcessor` applies `UrlPathRedactor` before
+export, including when console trace export is enabled.
 
 Query redaction replaces parameter values in `url.full`, `http.url`,
 `http.target`, `url.query`, and `react_router.url`. By default it hides every

@@ -5,6 +5,23 @@ import { format } from 'winston';
 import type { Logform } from 'winston';
 
 import { maxLogLevelNameLength } from '~/.server/logging/log-levels';
+import { URL_PATH_ATTRIBUTE_KEYS, UrlPathRedactor } from '~/instrumentation/url-path-redactor';
+
+export function formatUrlPaths(): Logform.Format {
+  const redactor = new UrlPathRedactor();
+
+  return format((info) => {
+    for (const key of URL_PATH_ATTRIBUTE_KEYS) {
+      const value = info[key];
+
+      if (typeof value === 'string' || (Array.isArray(value) && value.every((item) => typeof item === 'string'))) {
+        info[key] = redactor.redactValue(value);
+      }
+    }
+
+    return info;
+  })();
+}
 
 type FormatLevelsOptions = {
   /**

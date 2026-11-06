@@ -1,9 +1,11 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_HCAPTCHA_MAX_SCORE, ATTR_CDCP_HCAPTCHA_SCORE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import type { HCaptchaVerifyRequestDto } from '~/.server/web/dtos';
 import type { HCaptchaService } from '~/.server/web/services';
 
@@ -58,31 +60,42 @@ export class DefaultHCaptchaValidator implements HCaptchaValidator {
   }
 
   async validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId = 'anonymous' }: ValidateHCaptchaResponseParams): Promise<ValidateHCaptchaResponseResult> {
-    this.log.debug('Starting hCaptcha response validation for user: %s, IP: %s', userId, ipAddress);
+    this.log.debug('Starting hCaptcha response validation', { [ATTR_CDCP_USER_ID]: userId });
 
     if (!hCaptchaResponse) {
-      this.log.warn('hCaptcha response not found for user: %s; gracefully passing validation', userId);
+      this.log.warn('hCaptcha response not found; gracefully passing validation', { [ATTR_CDCP_USER_ID]: userId });
       return { isValid: true };
     }
 
     try {
       const hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto = { hCaptchaResponse, ipAddress, userId };
       const { score } = await this.hCaptchaService.verifyHCaptchaResponse(hCaptchaVerifyRequestDto);
-      this.log.trace('hCaptcha verification score for user %s: %s', userId, score);
+      this.log.trace('hCaptcha verification score received', {
+        [ATTR_CDCP_USER_ID]: userId,
+        [ATTR_CDCP_HCAPTCHA_SCORE]: score,
+        [ATTR_CDCP_HCAPTCHA_MAX_SCORE]: this.serverConfig.HCAPTCHA_MAX_SCORE,
+      });
 
       if (score && score > this.serverConfig.HCAPTCHA_MAX_SCORE) {
-        this.log.warn('hCaptcha score exceeds max threshold for user: %s, score: %s', userId, score);
+        this.log.warn('hCaptcha score exceeds max threshold', {
+          [ATTR_CDCP_USER_ID]: userId,
+          [ATTR_CDCP_HCAPTCHA_SCORE]: score,
+          [ATTR_CDCP_HCAPTCHA_MAX_SCORE]: this.serverConfig.HCAPTCHA_MAX_SCORE,
+          [ATTR_ERROR_TYPE]: 'hcaptcha_score_exceeded',
+        });
         return {
           isValid: false,
           errorMessage: 'hCaptcha response validation failed; hCaptcha score exceeds threshold.',
         };
       }
 
-      this.log.debug('hCaptcha response validated successfully for user: %s', userId);
+      this.log.debug('hCaptcha response validated successfully', { [ATTR_CDCP_USER_ID]: userId });
       return { isValid: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : error;
-      this.log.warn('Error during hCaptcha response validation for user: %s; gracefully passing validation; error: %s', userId, errorMessage);
+    } catch {
+      this.log.warn('Error during hCaptcha response validation; gracefully passing validation', {
+        [ATTR_CDCP_USER_ID]: userId,
+        [ATTR_ERROR_TYPE]: 'hcaptcha_validation_failed',
+      });
       // Gracefully pass the validation if there's an issue with the external service
       return { isValid: true };
     }

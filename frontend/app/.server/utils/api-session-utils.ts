@@ -1,4 +1,5 @@
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_REDIRECT_TARGET } from '~/.server/logging/log-attributes';
 import { getCdcpWebsiteApplyUrl, getCdcpWebsiteRenewUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl } from '~/.server/utils/url-utils';
 import type { ApiSessionRedirectTo } from '~/routes/api/session';
 
@@ -36,7 +37,7 @@ export function getApiSessionRedirectToUrl(redirectTo: ApiSessionRedirectTo, loc
     }
 
     default: {
-      log.warn("Invalid 'redirectTo' argument; returning 'cdcp-website' URL as the default. Received value: [%s]", redirectTo);
+      log.warn('Invalid redirect target; using CDCP website fallback', { [ATTR_CDCP_REDIRECT_TARGET]: 'cdcp-website' });
       return getCdcpWebsiteUrl(locale);
     }
   }

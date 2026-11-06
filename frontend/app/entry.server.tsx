@@ -5,6 +5,7 @@ import { createReadableStreamFromReadable } from '@react-router/node';
 import type { ActionFunctionArgs, EntryContext, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
 import { ServerRouter } from 'react-router';
 
+import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { isbot } from 'isbot';
 import { PassThrough } from 'node:stream';
 import { I18nextProvider } from 'react-i18next';
@@ -12,6 +13,7 @@ import { I18nextProvider } from 'react-i18next';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_RENDER_HANDLER } from '~/.server/logging/log-attributes';
 import { createOtelInstrumentation } from '~/.server/observability/otel-instrumentation';
 import { createRequestCounterInstrumentation } from '~/.server/observability/request-counter-instrumentation';
 import { generateContentSecurityPolicy } from '~/.server/utils/csp-utils';
@@ -36,18 +38,18 @@ export function handleDataRequest(response: Response, { request, params, context
  * Logs React Router request errors using the application logger instead of
  * React Router's default console output.
  */
-export function handleError(error: unknown, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+export function handleError(_error: unknown, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
   const { appContainer } = context.get(appContext);
   // Avoid logging aborted requests because React Router cancellation and
   // race-condition handling can abort requests during normal operation.
   const log = createLogger('entry.server/handleError');
 
   if (!request.signal.aborted) {
-    if (error instanceof Error) {
-      log.error(error);
-    } else {
-      log.error('Unexpected server error: [%j]', error);
-    }
+    log.error('React Router request failed', {
+      [ATTR_ERROR_TYPE]: 'react_router_request_failed',
+      [ATTR_HTTP_REQUEST_METHOD]: request.method,
+      [ATTR_URL_PATH]: new URL(request.url).pathname,
+    });
 
     const instrumentationService = appContainer.get(TYPES.InstrumentationService);
     instrumentationService.createCounter('http.server.requests.failed').add(1);
@@ -58,7 +60,11 @@ export default async function handleRequest(request: Request, responseStatusCode
   const { appContainer } = context.get(appContext);
   const log = createLogger('entry.server/handleRequest');
   const handlerFnName = isbot(request.headers.get('user-agent')) ? 'onAllReady' : 'onShellReady';
-  log.debug(`Handling [${request.method}] request to [${request.url}] with handler function [${handlerFnName}]`);
+  log.debug('Handling document render request', {
+    [ATTR_HTTP_REQUEST_METHOD]: request.method,
+    [ATTR_URL_PATH]: new URL(request.url).pathname,
+    [ATTR_CDCP_RENDER_HANDLER]: handlerFnName,
+  });
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('http.server.requests').add(1);
 
@@ -106,7 +112,7 @@ export default async function handleRequest(request: Request, responseStatusCode
         onShellError(error) {
           reject(error);
         },
-        onError(error) {
+        onError(_error) {
           // eslint-disable-next-line no-param-reassign
           responseStatusCode = 500;
 
@@ -114,7 +120,7 @@ export default async function handleRequest(request: Request, responseStatusCode
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            log.error('Error while rendering react element', error);
+            log.error('Error while rendering React element', { [ATTR_ERROR_TYPE]: 'react_stream_render_failed' });
           }
         },
         nonce,

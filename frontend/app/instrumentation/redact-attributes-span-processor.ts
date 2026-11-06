@@ -5,10 +5,10 @@ import type { AttributeRedactor } from '~/instrumentation/attribute-redactor';
 import { withSpanAttributes } from '~/instrumentation/instrumentation-utils';
 
 export class RedactAttributesSpanProcessor implements SpanProcessor {
-  private readonly redactor: AttributeRedactor;
+  private readonly redactor: Pick<AttributeRedactor, 'redactAttributes'>;
   private readonly downstream: SpanProcessor;
 
-  constructor(downstream: SpanProcessor, redactor: AttributeRedactor) {
+  constructor(downstream: SpanProcessor, redactor: Pick<AttributeRedactor, 'redactAttributes'>) {
     this.redactor = redactor;
     this.downstream = downstream;
   }

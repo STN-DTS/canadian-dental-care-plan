@@ -13,6 +13,7 @@
  */
 import { createCookie } from 'react-router';
 
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { createCsrfTokenMiddleware } from 'remix-utils/middleware/csrf-token';
 
 import { createLogger } from '~/.server/logging/logger-factory';
@@ -35,8 +36,8 @@ const [csrfTokenMiddleware, getCsrfToken] = createCsrfTokenMiddleware({
   cookie: csrfCookie,
   formDataKey: CSRF_FORM_DATA_KEY,
   secret: CSRF_TOKEN_SECRET,
-  onInvalidToken(error) {
-    log.warn('Invalid CSRF token: %o', error);
+  onInvalidToken() {
+    log.warn('Invalid CSRF token', { [ATTR_ERROR_TYPE]: 'invalid_csrf_token' });
     return new Response('Invalid CSRF token', { status: 403 });
   },
 });

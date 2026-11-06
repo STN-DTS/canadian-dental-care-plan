@@ -37,23 +37,18 @@ export class DefaultDynatraceRepository implements DynatraceRepository {
     }
 
     const retrieveRumScriptUrl = new URL(expandTemplate(this.serverConfig.DYNATRACE_API_RUM_SCRIPT_URI, { token: this.serverConfig.DYNATRACE_API_RUM_SCRIPT_TOKEN ?? '' }));
-    this.log.debug('Retrieve RUM Script url is generated; url: [%s]', retrieveRumScriptUrl);
+    this.log.debug('Dynatrace RUM script request URL generated');
 
     const response = await this.httpClient.instrumentedFetch('http.client.dynatrace-api.retrieve-rum-script.gets', retrieveRumScriptUrl, { proxyUrl: this.serverConfig.HTTP_PROXY_URL });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: "Failed to 'GET' the Dynatrace RUM Script",
-        status: response.status,
-        statusText: response.statusText,
-        url: retrieveRumScriptUrl,
-        responseBody: await response.text(),
-      });
+      // Drain the response without exporting its body.
+      await response.text();
       throw new Error(`Failed to 'GET' the Dynatrace RUM Script. Status:  ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const script = await response.text();
-    this.log.trace('Returning Dynatrace RUM script [%s]', script);
+    this.log.trace('Dynatrace RUM script retrieved');
     return script;
   }
 }

@@ -13,15 +13,18 @@ import { AggregationTemporality, ConsoleMetricExporter, PeriodicExportingMetricR
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import type { SpanExporter } from '@opentelemetry/sdk-trace';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import { ATTR_ERROR_TYPE, ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
 import { AttributeRedactor } from '~/instrumentation/attribute-redactor';
+import { ATTR_CDCP_ERROR_CODE } from '~/instrumentation/log-attributes';
+import { operationalErrorCode, operationalErrorType } from '~/instrumentation/operational-error-type';
 import { QueryParamsRedactor } from '~/instrumentation/query-params-redactor';
 import { RedactAttributesLogRecordProcessor } from '~/instrumentation/redact-attributes-log-record-processor';
 import { RedactAttributesSpanProcessor } from '~/instrumentation/redact-attributes-span-processor';
 import { RedactQueryParamsLogRecordProcessor } from '~/instrumentation/redact-query-params-log-record-processor';
 import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-params-span-processor';
+import { UrlPathRedactor } from '~/instrumentation/url-path-redactor';
 
 /**
  * Type representing a valid log level string for Winston.
@@ -128,6 +131,7 @@ const winstonSeverityMapping: Record<WinstonLogLevel, number> = {
 
 const attributeRedactor = new AttributeRedactor();
 const queryParamsRedactor = new QueryParamsRedactor();
+const urlPathRedactor = new UrlPathRedactor();
 const logRecordProcessor = getLogRecordProcessor();
 const disableLogSending = logRecordProcessor === undefined;
 
@@ -154,14 +158,17 @@ const sdk = new NodeSDK({
       exportTimeoutMillis: toNumber(process.env.OTEL_METRICS_EXPORT_TIMEOUT_MILLIS),
     }),
   ],
-  logRecordProcessors: logRecordProcessor ? [new RedactQueryParamsLogRecordProcessor(queryParamsRedactor), new RedactAttributesLogRecordProcessor(attributeRedactor), logRecordProcessor] : undefined,
+  logRecordProcessors: logRecordProcessor ? [new RedactQueryParamsLogRecordProcessor(queryParamsRedactor), new RedactAttributesLogRecordProcessor(urlPathRedactor), new RedactAttributesLogRecordProcessor(attributeRedactor), logRecordProcessor] : undefined,
   spanProcessors: [
     new RedactQueryParamsSpanProcessor(
       new RedactAttributesSpanProcessor(
-        new SimpleSpanProcessor({
-          exporter: getTraceExporter(),
-        }),
-        attributeRedactor,
+        new RedactAttributesSpanProcessor(
+          new SimpleSpanProcessor({
+            exporter: getTraceExporter(),
+          }),
+          attributeRedactor,
+        ),
+        urlPathRedactor,
       ),
       queryParamsRedactor,
     ),
@@ -172,12 +179,14 @@ try {
   sdk.start();
   console.log('OpenTelemetry instrumentation initialized.');
 } catch (error) {
-  console.error('Failed to initialize OpenTelemetry instrumentation:', error);
+  const code = operationalErrorCode(error);
+  console.error('Failed to initialize OpenTelemetry instrumentation.', { [ATTR_ERROR_TYPE]: operationalErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }) });
 }
 
 process.once('beforeExit', async () => {
   console.log('Shutting down OpenTelemetry instrumentation...');
-  await sdk.shutdown().catch((error) => {
-    console.error('Failed to shut down OpenTelemetry instrumentation:', error);
+  await sdk.shutdown().catch((error: unknown) => {
+    const code = operationalErrorCode(error);
+    console.error('Failed to shut down OpenTelemetry instrumentation.', { [ATTR_ERROR_TYPE]: operationalErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }) });
   });
 });

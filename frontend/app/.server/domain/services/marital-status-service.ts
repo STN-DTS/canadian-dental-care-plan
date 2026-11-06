@@ -7,6 +7,7 @@ import { MaritalStatusNotFoundException } from '~/.server/domain/exceptions';
 import type { MaritalStatusDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing marital status data.
@@ -82,36 +83,35 @@ export class DefaultMaritalStatusService implements MaritalStatusService {
 
   listMaritalStatuses(): ReadonlyArray<MaritalStatusDto> {
     this.log.debug('Get all marital statuses');
-    this.log.trace('Returning marital statuses: [%j]', this.maritalStatusDtos);
+    this.log.trace('Returning marital statuses', { [ATTR_CDCP_REFERENCE_COUNT]: this.maritalStatusDtos.length });
     return this.maritalStatusDtos;
   }
 
   getMaritalStatusById(id: string): MaritalStatusDto {
-    this.log.debug('Get marital status with id: [%s]', id);
+    this.log.debug('Get marital status');
     const maritalStatusDto = this.maritalStatusDtos.find((dto) => dto.id === id);
 
     if (!maritalStatusDto) {
-      this.log.error('marital status with id: [%s] not found', id);
       throw new MaritalStatusNotFoundException(`marital status with id: [${id}] not found`);
     }
 
-    this.log.trace('Returning marital status: [%j]', maritalStatusDto);
+    this.log.trace('Returning marital status');
     return maritalStatusDto;
   }
 
   listLocalizedMaritalStatuses(locale: AppLocale): ReadonlyArray<MaritalStatusLocalizedDto> {
-    this.log.debug('Get all localized marital statuses with locale: [%s]', locale);
+    this.log.debug('Get all localized marital statuses', { [ATTR_CDCP_LOCALE]: locale });
     const maritalStatusDtos = this.listMaritalStatuses();
     const localizedMaritalStatusDtos = this.maritalStatusDtoMapper.mapMaritalStatusDtosToMaritalStatusLocalizedDtos(maritalStatusDtos, locale);
-    this.log.trace('Returning localized marital statuses: [%j]', localizedMaritalStatusDtos);
+    this.log.trace('Returning localized marital statuses', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedMaritalStatusDtos.length });
     return localizedMaritalStatusDtos;
   }
 
   getLocalizedMaritalStatusById(id: string, locale: AppLocale): MaritalStatusLocalizedDto {
-    this.log.debug('Get localized marital status with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized marital status', { [ATTR_CDCP_LOCALE]: locale });
     const maritalStatusDto = this.getMaritalStatusById(id);
     const localizedMaritalStatusDto = this.maritalStatusDtoMapper.mapMaritalStatusDtoToMaritalStatusLocalizedDto(maritalStatusDto, locale);
-    this.log.trace('Returning localized marital status: [%j]', localizedMaritalStatusDto);
+    this.log.trace('Returning localized marital status', { [ATTR_CDCP_LOCALE]: locale });
     return localizedMaritalStatusDto;
   }
 }

@@ -1,3 +1,6 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+// Session attributes are currently incubating OpenTelemetry conventions.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { RedisStore } from 'connect-redis';
 import { MemoryStore } from 'express-session';
 import { setInterval } from 'node:timers';
@@ -5,6 +8,7 @@ import { setInterval } from 'node:timers';
 import type { ServerConfig } from '~/.server/configs';
 import { getRedisClient } from '~/.server/data/redis-client';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_SESSION_COUNT, ATTR_CDCP_SESSION_EXPIRES_AT } from '~/.server/logging/log-attributes';
 
 /**
  * Creates a memory store for Express sessions.
@@ -50,19 +54,23 @@ function purgeExpiredSessions(memoryStore: MemoryStore): void {
   log.trace('Purging expired sessions');
 
   memoryStore.all((error, sessions) => {
+    if (error) {
+      log.error('Unable to read memory session store', { [ATTR_ERROR_TYPE]: 'session_store_read_failed' });
+    }
+
     if (sessions) {
       const sessionEntries = Object.entries(sessions);
-      log.trace('%s sessions in session store', Object.keys(sessions).length);
+      log.trace('Memory session store read', { [ATTR_CDCP_SESSION_COUNT]: sessionEntries.length });
 
       for (const [sessionId, sessionData] of sessionEntries) {
         // express-session adds the cookie data to the session
         // so we can use this to check when the session is due to expire
         const expiresAt = sessionData.cookie.expires;
 
-        log.trace('Checking session %s (expires at %s)', sessionId, expiresAt);
+        log.trace('Checking session expiry', { [ATTR_SESSION_ID]: sessionId, [ATTR_CDCP_SESSION_EXPIRES_AT]: typeof expiresAt === 'string' ? expiresAt : (expiresAt?.toISOString() ?? null) });
 
         if (expiresAt && Number(expiresAt) < Temporal.Now.instant().epochMilliseconds) {
-          log.trace('Purging expired session %s', sessionId);
+          log.trace('Purging expired session', { [ATTR_SESSION_ID]: sessionId });
           memoryStore.destroy(sessionId);
         }
       }

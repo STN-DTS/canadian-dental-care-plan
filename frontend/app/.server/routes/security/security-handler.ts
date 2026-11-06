@@ -1,6 +1,9 @@
 import { data, redirect, redirectDocument } from 'react-router';
 import type { Params } from 'react-router';
 
+import { ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
@@ -10,6 +13,7 @@ import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/
 import type { ApplicantService, ClientApplicationService, ClientEligibilityService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_FEATURE_NAME, ATTR_CDCP_HTTP_ALLOWED_METHODS } from '~/.server/logging/log-attributes';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
@@ -221,11 +225,11 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @returns {Promise<void>} Resolves if the session is valid.
    */
   async validateAuthSession({ requestUrl, session }: ValidateAuthSessionParams): Promise<void> {
-    this.log.debug('Validating RAOIDC session [%s]', session.id);
+    this.log.debug('Validating RAOIDC session', { [ATTR_SESSION_ID]: session.id });
     const result = await this.raoidcSessionValidator.validateRaoidcSession({ session });
 
     if (!result.isValid) {
-      this.log.debug('RAOIDC session [%s] is invalid; errorMessage: %s', session.id, result.errorMessage);
+      this.log.debug('RAOIDC session is invalid; redirecting to login', { [ATTR_SESSION_ID]: session.id });
       const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
@@ -242,14 +246,14 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @returns {void} Resolves if the feature is enabled.
    */
   validateFeatureEnabled(feature: FeatureName): void {
-    this.log.debug('Validating feature [%s]', feature);
+    this.log.debug('Validating feature', { [ATTR_CDCP_FEATURE_NAME]: feature });
 
     if (!this.serverConfig.ENABLED_FEATURES.includes(feature)) {
-      this.log.warn('Feature [%s] is not enabled; returning 404 response', feature);
+      this.log.debug('Feature is not enabled; returning 404 response', { [ATTR_CDCP_FEATURE_NAME]: feature });
       throw data(null, { status: 404 });
     }
 
-    this.log.debug('Feature [%s] is enabled', feature);
+    this.log.debug('Feature is enabled', { [ATTR_CDCP_FEATURE_NAME]: feature });
   }
 
   /**
@@ -275,7 +279,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     const result = await this.hCaptchaValidator.validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId });
 
     if (!result.isValid) {
-      this.log.debug('hCaptcha response is invalid; errorMessage: %s', result.errorMessage);
+      this.log.debug('hCaptcha response is invalid; invoking rejection callback');
       await invalidHCaptchaCallback();
       return;
     }
@@ -288,22 +292,22 @@ export class DefaultSecurityHandler implements SecurityHandler {
     const { pathname } = new URL(request.url);
     const { method } = request;
 
-    this.log.debug('Validating request method [%s] for path [%s] with allowed methods [%s]', method, pathname, allowedMethods);
+    this.log.debug('Validating request method', { [ATTR_HTTP_REQUEST_METHOD]: method, [ATTR_URL_PATH]: pathname, [ATTR_CDCP_HTTP_ALLOWED_METHODS]: [...allowedMethods] });
 
     if (!allowedMethods.includes(method as AllowedMethods)) {
-      this.log.warn('Request method [%s] is not allowed for path [%s] with allowed methods [%s]; returning 405 response', method, pathname, allowedMethods);
+      this.log.debug('Request method not allowed; returning 405 response', { [ATTR_HTTP_REQUEST_METHOD]: method, [ATTR_URL_PATH]: pathname, [ATTR_CDCP_HTTP_ALLOWED_METHODS]: [...allowedMethods] });
       throw data({ message: `Method ${method} not allowed` }, { status: 405 });
     }
 
-    this.log.debug('Request method [%s] is allowed for path [%s] with allowed methods [%s]', method, pathname, allowedMethods);
+    this.log.debug('Request method is allowed', { [ATTR_HTTP_REQUEST_METHOD]: method, [ATTR_URL_PATH]: pathname, [ATTR_CDCP_HTTP_ALLOWED_METHODS]: [...allowedMethods] });
   }
 
   async requireClientApplication({ applicationYearId, params, requestUrl, session, options }: RequireClientApplicationParams): Promise<ClientApplicationDto> {
-    this.log.debug('Requiring client application for session [%s]', session.id);
+    this.log.debug('Requiring client application', { [ATTR_SESSION_ID]: session.id });
     const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
-      this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
+      this.log.debug('Required identity claim missing; redirecting to login', { [ATTR_SESSION_ID]: session.id });
       const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
@@ -317,21 +321,21 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     if (Option.isNone(clientApplicationOption)) {
       const redirectUrl = options?.redirectUrl ?? getPathById('protected/data-unavailable', params);
-      this.log.debug('No client application found for SIN [***-***-%s]; session [%s]; redirecting to [%s]', userInfoToken.sin.slice(-3), session.id, redirectUrl);
+      this.log.debug('No client application found; redirecting', { [ATTR_SESSION_ID]: session.id });
       throw redirect(redirectUrl);
     }
 
-    this.log.debug('Client application found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
+    this.log.debug('Client application found', { [ATTR_SESSION_ID]: session.id });
     return Option.getOrThrow(clientApplicationOption);
   }
 
   async requireApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ApplicantDto> {
-    this.log.debug('Requiring applicant for session [%s]', session.id);
+    this.log.debug('Requiring applicant', { [ATTR_SESSION_ID]: session.id });
 
     const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
-      this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
+      this.log.debug('Required identity claim missing; redirecting to login', { [ATTR_SESSION_ID]: session.id });
       const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
@@ -339,7 +343,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     if (session.has('applicant')) {
       const applicant = session.get('applicant');
-      this.log.debug('Applicant found in session [%s]', session.id);
+      this.log.debug('Applicant found in session', { [ATTR_SESSION_ID]: session.id });
       return applicant;
     }
 
@@ -349,7 +353,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     });
 
     if (Option.isNone(applicantOption)) {
-      this.log.debug('No applicant found for SIN [***-***-%s]; session [%s]; redirecting to data unavailable', userInfoToken.sin.slice(-3), session.id);
+      this.log.debug('No applicant found; redirecting to data unavailable', { [ATTR_SESSION_ID]: session.id });
       throw redirect(getPathById('protected/data-unavailable', params));
     }
 
@@ -357,17 +361,17 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     session.set('applicant', applicant);
 
-    this.log.debug('Applicant found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
+    this.log.debug('Applicant found', { [ATTR_SESSION_ID]: session.id });
     return applicant;
   }
 
   async requireProgramApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ProgramApplicantDto> {
-    this.log.debug('Requiring program applicant for session [%s]', session.id);
+    this.log.debug('Requiring program applicant', { [ATTR_SESSION_ID]: session.id });
 
     const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
 
     if (!userInfoToken?.sin) {
-      this.log.debug("User's SIN is not available in session [%s]; redirecting to login", session.id);
+      this.log.debug('Required identity claim missing; redirecting to login', { [ATTR_SESSION_ID]: session.id });
       const { pathname, searchParams } = requestUrl;
       const returnTo = encodeURIComponent(`${pathname}?${searchParams}`);
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
@@ -375,7 +379,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     if (session.has('programApplicant')) {
       const programApplicant = session.get('programApplicant');
-      this.log.debug('Program applicant found in session [%s]', session.id);
+      this.log.debug('Program applicant found in session', { [ATTR_SESSION_ID]: session.id });
       return programApplicant;
     }
 
@@ -385,7 +389,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     });
 
     if (Option.isNone(programApplicantOption)) {
-      this.log.debug('No program applicant found for SIN [***-***-%s]; session [%s]; redirecting to data unavailable', userInfoToken.sin.slice(-3), session.id);
+      this.log.debug('No program applicant found; redirecting to data unavailable', { [ATTR_SESSION_ID]: session.id });
       throw redirect(getPathById('protected/data-unavailable', params));
     }
 
@@ -393,19 +397,19 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     session.set('programApplicant', programApplicant);
 
-    this.log.debug('Program applicant found for SIN [***-***-%s]; session [%s]', userInfoToken.sin.slice(-3), session.id);
+    this.log.debug('Program applicant found', { [ATTR_SESSION_ID]: session.id });
     return programApplicant;
   }
 
   async requireEnrolledApplicant({ clientNumber, params, options = {} }: RequireEnrolledApplicantArgs): Promise<void> {
-    this.log.debug('Requiring enrolled applicant with client number [%s]', clientNumber);
+    this.log.debug('Requiring enrolled applicant');
 
     const clientEligibilities = await this.clientEligibilityService.listClientEligibilitiesByClientNumbers([clientNumber]);
     const enrollmentStatusCode = clientEligibilities.get(clientNumber)?.enrollmentStatusCode;
 
     if (enrollmentStatusCode !== this.serverConfig.ENROLLMENT_STATUS_CODE_ENROLLED) {
       const redirectUrl = options.redirectUrl ?? getPathById('protected/data-unavailable', params);
-      this.log.debug('Applicant with client number [%s] is not enrolled; enrollmentStatusCode: [%s]; redirecting to [%s]', clientNumber, enrollmentStatusCode, redirectUrl);
+      this.log.debug('Applicant is not enrolled; redirecting');
       throw redirect(redirectUrl);
     }
   }

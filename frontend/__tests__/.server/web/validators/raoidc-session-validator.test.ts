@@ -1,3 +1,4 @@
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
@@ -44,7 +45,7 @@ describe('DefaultRaoidcSessionValidator', () => {
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
       expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; idToken not found in session [test-session-id]' });
-      expect(mockLogger.debug).toHaveBeenCalledWith('idToken not found in session [%s]', 'test-session-id');
+      expect(mockLogger.debug).toHaveBeenCalledWith('ID token not found in session', { [ATTR_SESSION_ID]: 'test-session-id' });
     });
 
     it('should return isValid: false if userInfoToken is not found in session', async () => {
@@ -54,7 +55,7 @@ describe('DefaultRaoidcSessionValidator', () => {
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
       expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; userInfoToken not found in session [test-session-id]' });
-      expect(mockLogger.debug).toHaveBeenCalledWith('userInfoToken not found in session [%s]', 'test-session-id');
+      expect(mockLogger.debug).toHaveBeenCalledWith('User information token not found in session', { [ATTR_SESSION_ID]: 'test-session-id' });
     });
 
     it('should return isValid: true if session is mocked', async () => {
@@ -64,7 +65,7 @@ describe('DefaultRaoidcSessionValidator', () => {
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
       expect(result).toEqual({ isValid: true });
-      expect(mockLogger.debug).toHaveBeenCalledWith('Mocked user; skipping RAOIDC session [%s] validation', 'test-session-id');
+      expect(mockLogger.debug).toHaveBeenCalledWith('Mocked user; skipping RAOIDC session validation', { [ATTR_SESSION_ID]: 'test-session-id' });
     });
 
     it('should return isValid: false if session is expired', async () => {
@@ -75,7 +76,7 @@ describe('DefaultRaoidcSessionValidator', () => {
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
       expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; session [test-session-id] has expired' });
-      expect(mockLogger.debug).toHaveBeenCalledWith('RAOIDC session [%s] has expired', 'test-session-id');
+      expect(mockLogger.debug).toHaveBeenCalledWith('RAOIDC session has expired', { [ATTR_SESSION_ID]: 'test-session-id' });
     });
 
     it('should return isValid: true if session is valid', async () => {
@@ -86,7 +87,7 @@ describe('DefaultRaoidcSessionValidator', () => {
       const result = await validator.validateRaoidcSession({ session: mockSession });
 
       expect(result).toEqual({ isValid: true });
-      expect(mockLogger.debug).toHaveBeenCalledWith('Authentication check passed for RAOIDC session [%s]', 'test-session-id');
+      expect(mockLogger.debug).toHaveBeenCalledWith('Authentication check passed for RAOIDC session', { [ATTR_SESSION_ID]: 'test-session-id' });
     });
   });
 });

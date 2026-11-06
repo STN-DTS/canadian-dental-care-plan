@@ -1,8 +1,11 @@
 import { data, replace } from 'react-router';
 
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as z from 'zod';
 
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
 
@@ -65,14 +68,18 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
   const parsedId = idSchema.safeParse(id);
 
   if (!parsedId.success) {
-    log.warn('Invalid document upload flow ID; redirecting to [%s]; id: [%s], sessionId: [%s]', documentsIndexUrl, id, session.id);
+    log.debug('Invalid document upload flow ID; redirecting to documents index', { [ATTR_CDCP_REDIRECT_TARGET]: documentsIndexUrl, [ATTR_SESSION_ID]: session.id });
     throw replace(documentsIndexUrl);
   }
 
   const sessionKey = getSessionKey(parsedId.data);
 
   if (!session.has(sessionKey)) {
-    log.warn('Document upload session state has not been found; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', documentsIndexUrl, sessionKey, session.id);
+    log.debug('Document upload session state not found; redirecting to documents index', {
+      [ATTR_CDCP_REDIRECT_TARGET]: documentsIndexUrl,
+      [ATTR_CDCP_SESSION_KEY]: sessionKey,
+      [ATTR_SESSION_ID]: session.id,
+    });
     throw replace(documentsIndexUrl);
   }
 
@@ -101,7 +108,7 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
 
   const sessionKey = getSessionKey(parsedId);
   session.set(sessionKey, initialState);
-  log.info('Document upload session state started; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Document upload session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }
 
@@ -132,7 +139,7 @@ export function resetDocumentUploadState({ id, params, session }: ResetStateArgs
 
   const sessionKey = getSessionKey(currentState.id);
   session.set(sessionKey, resettedState);
-  log.info('Document upload session state reset; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Document upload session state reset', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return resettedState;
 }
 
@@ -165,7 +172,7 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
   const sessionKey = getSessionKey(currentState.id);
   session.set(sessionKey, newState);
 
-  log.info('Document upload session state updated; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Document upload session state updated', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return newState;
 }
 
@@ -196,7 +203,7 @@ export function clearDocumentUploadState({ id, params, session }: ClearStateArgs
   const state = loadDocumentUploadState({ id, params, session });
   const sessionKey = getSessionKey(state.id);
   session.unset(sessionKey);
-  log.info('Document upload session state cleared; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Document upload session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
 export function getDocumentUploadFormUrl(id: string, params: DocumentUploadStateParams) {

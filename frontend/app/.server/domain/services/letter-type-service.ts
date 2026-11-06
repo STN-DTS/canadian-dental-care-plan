@@ -11,6 +11,7 @@ import type { LetterTypeDtoMapper } from '~/.server/domain/mappers';
 import type { LetterTypeRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing letter type data.
@@ -75,7 +76,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     const allLetterTypesCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_ALL_LETTER_TYPES_CACHE_TTL_SECONDS;
     const letterTypeCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_LETTER_TYPE_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL values; allLetterTypesCacheTTL: %d ms, letterTypeCacheTTL: %d ms', allLetterTypesCacheTTL, letterTypeCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allLetterTypesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: letterTypeCacheTTL });
 
     this.listLetterTypes = memoize(this.listLetterTypes, {
       async: true,
@@ -83,7 +84,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     });
 
     type MemoizedListLetterTypes = Memoized<typeof this.listLetterTypes, Options<typeof this.listLetterTypes>>;
-    (this.listLetterTypes as MemoizedListLetterTypes).cache.on('add', () => this.log.info('Creating new listLetterTypes memo'));
+    (this.listLetterTypes as MemoizedListLetterTypes).cache.on('add', () => this.log.debug('Creating new listLetterTypes memo'));
 
     this.getLetterTypeById = memoize(this.getLetterTypeById, {
       async: true,
@@ -92,7 +93,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     });
 
     type MemoizedGetLetterTypeById = Memoized<typeof this.getLetterTypeById, Options<typeof this.getLetterTypeById>>;
-    (this.getLetterTypeById as MemoizedGetLetterTypeById).cache.on('add', () => this.log.info('Creating new getLetterTypeById memo'));
+    (this.getLetterTypeById as MemoizedGetLetterTypeById).cache.on('add', () => this.log.debug('Creating new getLetterTypeById memo'));
 
     this.log.debug('DefaultLetterTypeService initiated.');
   }
@@ -102,40 +103,39 @@ export class DefaultLetterTypeService implements LetterTypeService {
     const letterTypeEntities = await this.letterTypeRepository.listAllLetterTypes();
     const filteredLetterTypeEntities = letterTypeEntities.filter((letter) => !this.serverConfig.INVALID_LETTER_TYPE_IDS.includes(letter.esdc_value));
     const letterTypeDtos = this.letterTypeDtoMapper.mapLetterTypeEntitiesToLetterTypeDtos(filteredLetterTypeEntities);
-    this.log.trace('Returning letter types: [%j]', letterTypeDtos);
+    this.log.trace('Returning letter types', { [ATTR_CDCP_REFERENCE_COUNT]: letterTypeDtos.length });
     return letterTypeDtos;
   }
 
   async getLetterTypeById(id: string): Promise<LetterTypeDto> {
-    this.log.trace('Getting letter type with id: [%s]', id);
+    this.log.trace('Getting letter type');
 
     const isInvalidId = this.serverConfig.INVALID_LETTER_TYPE_IDS.includes(id);
     const letterTypeEntity = await this.letterTypeRepository.findLetterTypeById(id);
     const letterTypeEntityOption = isInvalidId ? Option.none() : letterTypeEntity;
 
     if (Option.isNone(letterTypeEntityOption)) {
-      this.log.error('Letter type with id: [%s] not found', id);
       throw new LetterTypeNotFoundException(`Letter type with id: [${id}] not found`);
     }
 
     const letterTypeDto = this.letterTypeDtoMapper.mapLetterTypeEntityToLetterTypeDto(Option.getOrThrow(letterTypeEntityOption));
-    this.log.trace('Returning letter type: [%j]', letterTypeDto);
+    this.log.trace('Returning letter type');
     return letterTypeDto;
   }
 
   async listLocalizedLetterTypes(locale: AppLocale): Promise<ReadonlyArray<LetterTypeLocalizedDto>> {
-    this.log.trace('Getting all localized letter types with locale: [%s]', locale);
+    this.log.trace('Getting all localized letter types', { [ATTR_CDCP_LOCALE]: locale });
     const letterTypeDtos = await this.listLetterTypes();
     const localizedLetterTypeDtos = this.letterTypeDtoMapper.mapLetterTypeDtosToLetterTypeLocalizedDtos(letterTypeDtos, locale);
-    this.log.trace('Returning localized letter types: [%j]', localizedLetterTypeDtos);
+    this.log.trace('Returning localized letter types', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedLetterTypeDtos.length });
     return localizedLetterTypeDtos;
   }
 
   async getLocalizedLetterTypeById(id: string, locale: AppLocale): Promise<LetterTypeLocalizedDto> {
-    this.log.trace('Getting localized letter type with id: [%s] and locale: [%s]', id, locale);
+    this.log.trace('Getting localized letter type', { [ATTR_CDCP_LOCALE]: locale });
     const letterTypeDto = await this.getLetterTypeById(id);
     const localizedLetterTypeDto = this.letterTypeDtoMapper.mapLetterTypeDtoToLetterTypeLocalizedDto(letterTypeDto, locale);
-    this.log.trace('Returning localized letter type: [%j]', localizedLetterTypeDto);
+    this.log.trace('Returning localized letter type', { [ATTR_CDCP_LOCALE]: locale });
     return localizedLetterTypeDto;
   }
 }

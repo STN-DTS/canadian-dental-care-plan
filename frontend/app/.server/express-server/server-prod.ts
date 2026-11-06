@@ -18,10 +18,7 @@ export async function configureProductionServer(app: express.Express): Promise<v
 
   // Import prebuilt server app in production (path relative to ./build/server/server.js).
   const BUILD_PATH = './index.js'; // Short-circuit the type-checking of the built output.
-  const buildServer = await import(BUILD_PATH).catch((error) => {
-    log.error('Failed to import prebuilt server app from %s', BUILD_PATH, error);
-    throw error;
-  });
+  const buildServer = await import(/* @vite-ignore */ BUILD_PATH);
 
   const buildServerMiddleware = buildServer.app;
   app.use(buildServerMiddleware);

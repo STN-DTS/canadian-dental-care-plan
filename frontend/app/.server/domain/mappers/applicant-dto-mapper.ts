@@ -4,6 +4,7 @@ import type { ApplicantDto, FindApplicantByBasicInfoDto, FindApplicantBySinReque
 import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, FindApplicantBySinRequestEntity } from '~/.server/domain/entities';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_CLIENT_ID } from '~/.server/logging/log-attributes';
 import { expectDefined } from '~/utils/assert-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
@@ -75,7 +76,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     const isHomeAddressDefined = homeAddress !== undefined && !!homeAddress.AddressStreet.StreetName && !!homeAddress.AddressCityName && !!homeAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isHomeAddressDefined) {
-      this.log.warn('Home address for client %s is missing required fields. Home address will be omitted from the response.', clientId);
+      this.log.warn('Home address is missing required fields; omitting home address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
     }
 
     const mailingAddress = personContactInformation?.Address.find((address) => address.AddressCategoryCode.ReferenceDataName === 'Mailing');
@@ -83,12 +84,12 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     const isMailingAddressDefined = mailingAddress !== undefined && !!mailingAddress.AddressStreet.StreetName && !!mailingAddress.AddressCityName && !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isMailingAddressDefined) {
-      this.log.warn('Mailing address for client %s is missing required fields. Mailing address will be omitted from the response.', clientId);
+      this.log.warn('Mailing address is missing required fields; omitting mailing address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
     }
 
     return {
       applicantType: applicant.ApplicantCategoryCode.ReferenceDataID,
-      clientId: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined'),
+      clientId,
       clientNumber: expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client Number')?.IdentificationID, 'Expected clientNumber to be defined'),
       dateOfBirth: applicant.PersonBirthDate.date,
       firstName: expectDefined(applicant.PersonName[0]?.PersonGivenName[0], 'Expected applicant.PersonName[0].PersonGivenName[0] to be defined'),

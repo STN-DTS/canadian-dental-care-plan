@@ -7,6 +7,7 @@ import type { CountriesWithProvinceTerritoryStates, ProvinceTerritoryStateEntity
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import provinceTerritoryStateJsonDataSource from '~/.server/resources/power-platform/province-territory-state.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -86,50 +87,44 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch provinces, territories, and states',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch provinces, territories, and states. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const countriesWithprovinceTerritoryStates = (await response.json()) as CountriesWithProvinceTerritoryStates;
     const provinceTerritoryStateEntities: ProvinceTerritoryStateEntity[] = countriesWithprovinceTerritoryStates.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
-    this.log.trace('Provinces, territories, and states: [%j]', provinceTerritoryStateEntities);
+    this.log.trace('Provinces, territories, and states', { [ATTR_CDCP_REFERENCE_COUNT]: provinceTerritoryStateEntities.length });
 
     return provinceTerritoryStateEntities;
   }
 
   async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
-    this.log.debug('Fetching provinces, territories, and states with id: [%s]', id);
+    this.log.debug('Fetching provinces, territories, and states');
 
     const provinceTerritoryStateEntities = await this.listAllProvinceTerritoryStates();
     const provinceTerritoryEntity = provinceTerritoryStateEntities.find((status) => status.esdc_provinceterritorystateid === id);
 
     if (!provinceTerritoryEntity) {
-      this.log.warn('ProvinceTerritoryState not found; id: [%s]', id);
+      this.log.debug('ProvinceTerritoryState not found');
       return Option.none();
     }
 
-    this.log.trace('Returning province, territory, and state : [%j]', provinceTerritoryEntity);
+    this.log.trace('Returning province, territory, and state');
     return Option.some(provinceTerritoryEntity);
   }
 
   async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
-    this.log.debug('Fetching provinces, territories, and states with id: [%s]', code);
+    this.log.debug('Fetching provinces, territories, and states');
 
     const provinceTerritoryStateEntities = await this.listAllProvinceTerritoryStates();
     const provinceTerritoryEntity = provinceTerritoryStateEntities.find((status) => status.esdc_internationalalphacode === code);
 
     if (!provinceTerritoryEntity) {
-      this.log.warn('ProvinceTerritoryState not found; code: [%s]', code);
+      this.log.debug('ProvinceTerritoryState not found');
       return Option.none();
     }
 
-    this.log.trace('Returning province, territory, and state : [%j]', provinceTerritoryEntity);
+    this.log.trace('Returning province, territory, and state');
     return Option.some(provinceTerritoryEntity);
   }
 
@@ -157,22 +152,22 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
 
     if (provinceTerritoryStateEntities.length === 0) {
-      this.log.warn('No province territory states found');
+      this.log.warn('No province territory states found', { [ATTR_CDCP_REFERENCE_COUNT]: 0 });
       return [];
     }
 
-    this.log.trace('Returning province territory states: [%j]', provinceTerritoryStateEntities);
+    this.log.trace('Returning province territory states', { [ATTR_CDCP_REFERENCE_COUNT]: provinceTerritoryStateEntities.length });
     return await Promise.resolve(provinceTerritoryStateEntities);
   }
 
   async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
-    this.log.debug('Fetching province territory state with id: [%s]', id);
+    this.log.debug('Fetching province territory state');
 
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
     const provinceTerritoryStateEntity = provinceTerritoryStateEntities.find(({ esdc_provinceterritorystateid }) => esdc_provinceterritorystateid === id);
 
     if (!provinceTerritoryStateEntity) {
-      this.log.warn('ProvinceTerritoryState not found; id: [%s]', id);
+      this.log.debug('ProvinceTerritoryState not found');
       return Option.none();
     }
 
@@ -180,13 +175,13 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
   }
 
   async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
-    this.log.debug('Fetching province territory state with code: [%s]', code);
+    this.log.debug('Fetching province territory state');
 
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
     const provinceTerritoryStateEntity = provinceTerritoryStateEntities.find(({ esdc_internationalalphacode }) => esdc_internationalalphacode === code);
 
     if (!provinceTerritoryStateEntity) {
-      this.log.warn('ProvinceTerritoryState not found; code: [%s]', code);
+      this.log.debug('ProvinceTerritoryState not found');
       return Option.none();
     }
 

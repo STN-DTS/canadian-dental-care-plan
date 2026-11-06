@@ -1,10 +1,14 @@
 import { data, redirectDocument } from 'react-router';
 import type { Params } from 'react-router';
 
+import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { ArrayElement, PickDeep, ReadonlyDeep } from 'type-fest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_APPLICATION_ALLOWED_FLOWS, ATTR_CDCP_APPLICATION_CHILD_ID, ATTR_CDCP_APPLICATION_FLOW, ATTR_CDCP_APPLICATION_ID, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
@@ -115,14 +119,17 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
 
   if (!params.id) {
-    log.warn('Invalid "id" param; redirecting to [%s]; id: [%s], sessionId: [%s]', cdcpWebsiteApplicationUrl, params.id, session.id);
+    log.debug('Missing application flow ID; redirecting to CDCP application website', { [ATTR_SESSION_ID]: session.id });
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
   const sessionKey = getSessionKey(params.id);
 
   if (!session.has(sessionKey)) {
-    log.warn('Application session state has not been found; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', cdcpWebsiteApplicationUrl, sessionKey, session.id);
+    log.debug('Application session state not found; redirecting to CDCP application website', {
+      [ATTR_CDCP_SESSION_KEY]: sessionKey,
+      [ATTR_SESSION_ID]: session.id,
+    });
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
@@ -135,7 +142,10 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
 
   if (Temporal.Instant.compare(now, lastUpdatedOn.add({ minutes: 20 })) >= 0) {
     session.unset(sessionKey);
-    log.warn('Application session state has expired; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', cdcpWebsiteApplicationUrl, sessionKey, session.id);
+    log.debug('Application session state expired; redirecting to CDCP application website', {
+      [ATTR_CDCP_SESSION_KEY]: sessionKey,
+      [ATTR_SESSION_ID]: session.id,
+    });
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
@@ -177,7 +187,10 @@ export function savePublicApplicationState({ params, session, state }: SavePubli
 
   const sessionkey = getSessionKey(currentState.id);
   session.set(sessionkey, newState);
-  log.info('Application session state saved; sessionKey: [%s], sessionId: [%s]', sessionkey, session.id);
+  log.debug('Application session state saved', {
+    [ATTR_CDCP_SESSION_KEY]: sessionkey,
+    [ATTR_SESSION_ID]: session.id,
+  });
   return newState;
 }
 
@@ -196,7 +209,7 @@ export function clearPublicApplicationState({ params, session }: ClearStateArgs)
 
   const sessionKey = getSessionKey(id);
   session.unset(sessionKey);
-  log.info('Application session state cleared; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Application session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
 interface StartArgs {
@@ -224,7 +237,7 @@ export function startApplicationState({ applicationYear, session }: StartArgs): 
 
   const sessionKey = getSessionKey(initialState.id);
   session.set(sessionKey, initialState);
-  log.info('Application session state started; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Application session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }
 
@@ -301,7 +314,10 @@ export function validateApplicationFlow<
 
   if (!inputModel || !type) {
     const redirectUrl = getInitialApplicationFlowUrl('entry', params);
-    log.warn('Input model or type is not defined in the state; redirecting to [%s], stateId: [%s]', redirectUrl, state.id);
+    log.debug('Input model or application type missing; redirecting to application entry', {
+      [ATTR_URL_PATH]: redirectUrl,
+      [ATTR_CDCP_APPLICATION_ID]: state.id,
+    });
     throw redirectDocument(redirectUrl);
   }
 
@@ -309,13 +325,21 @@ export function validateApplicationFlow<
 
   if (!allowedFlows.includes(flowKey)) {
     const redirectUrl = getInitialApplicationFlowUrl(flowKey, params);
-    log.warn('Flow [%s] is not allowed; allowedTypesAndFlows: [%s], redirecting to [%s], stateId: [%s]', flowKey, allowedFlows, redirectUrl, state.id);
+    log.debug('Application flow not allowed; redirecting to flow entry', {
+      [ATTR_URL_PATH]: redirectUrl,
+      [ATTR_CDCP_APPLICATION_ID]: state.id,
+      [ATTR_CDCP_APPLICATION_FLOW]: flowKey,
+      [ATTR_CDCP_APPLICATION_ALLOWED_FLOWS]: [...allowedFlows],
+    });
     throw redirectDocument(redirectUrl);
   }
 
   if (inputModel === 'simplified' && state.clientApplication === undefined) {
     const redirectUrl = getInitialApplicationFlowUrl('entry', params);
-    log.warn("Input model is 'simplified' but clientApplication is not defined in state; redirecting to [%s], stateId: [%s]", redirectUrl, state.id);
+    log.debug('Simplified application has no client application; redirecting to application entry', {
+      [ATTR_URL_PATH]: redirectUrl,
+      [ATTR_CDCP_APPLICATION_ID]: state.id,
+    });
     throw redirectDocument(redirectUrl);
   }
 }
@@ -392,7 +416,11 @@ export function getSingleChildState({ params, session }: getSingleChildStateArgs
   const childState = applicationState.children.find(({ id }) => id === childId);
 
   if (!childState) {
-    log.warn('Public application single child has not been found; stateId: [%s] childId: [%s]', applicationState.id, childId);
+    log.debug('Public application child state not found', {
+      [ATTR_CDCP_APPLICATION_ID]: applicationState.id,
+      [ATTR_CDCP_APPLICATION_CHILD_ID]: childId,
+      [ATTR_SESSION_ID]: session.id,
+    });
     throw data(null, { status: 404 });
   }
 

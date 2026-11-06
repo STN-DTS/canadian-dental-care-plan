@@ -9,6 +9,7 @@ import { DocumentUploadException } from '~/.server/domain/exceptions/document-up
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_DOCUMENT_OUTCOME } from '~/.server/logging/log-attributes';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { base64ToArrayBuffer, detectEicarContent } from '~/utils/file-utils';
 
@@ -89,7 +90,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   }
 
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
-    this.log.trace('Uploading document for filename [%s]', documentUploadRequestEntity.filename);
+    this.log.trace('Uploading document');
 
     const url = `${this.baseUrl}/SPOUploadDocument`;
 
@@ -115,13 +116,6 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     }
 
     if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for document upload (SPOUploadDocument)`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-      });
-
       await response.body?.cancel().catch(() => {
         // Preserve the original HTTP failure if cleanup fails.
       });
@@ -137,7 +131,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   }
 
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
-    this.log.trace('Scanning document for filename [%s]', scanDocumentRequestEntity.filename);
+    this.log.trace('Scanning document');
 
     const url = `${this.baseUrl}/Scan`;
 
@@ -161,14 +155,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     });
 
     if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for document scan`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        filename: scanDocumentRequestEntity.filename,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for document scan. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
@@ -196,7 +183,7 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
   }
 
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
-    this.log.debug('Uploading document for filename [%s]', documentUploadRequestEntity.filename);
+    this.log.debug('Uploading mock document');
 
     // Model the scan performed by the real upload endpoint, without a separate caller request.
     const scanResult = await this.scanDocument(documentUploadRequestEntity);
@@ -206,7 +193,7 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
     }
 
     if (documentUploadRequestEntity.filename === 'mock-upload-failure.txt') {
-      this.log.warn('Mock document upload failed for filename [%s]', documentUploadRequestEntity.filename);
+      this.log.debug('Mock document upload rejected', { [ATTR_CDCP_DOCUMENT_OUTCOME]: 'rejected' });
 
       return await Promise.resolve({
         DocumentFileName: null,
@@ -217,7 +204,7 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
       });
     }
 
-    this.log.debug('Successfully uploaded document: [%s]', documentUploadRequestEntity.filename);
+    this.log.debug('Mock document uploaded successfully');
 
     return await Promise.resolve({
       DocumentFileName: documentUploadRequestEntity.filename,
@@ -226,12 +213,12 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
   }
 
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
-    this.log.debug('Scanning document for filename [%s]', scanDocumentRequestEntity.filename);
+    this.log.debug('Scanning mock document');
 
     const documentBuffer = base64ToArrayBuffer(scanDocumentRequestEntity.binary);
 
     if (!documentBuffer) {
-      this.log.warn('Document scan failed: unable to decode binary content for filename [%s]', scanDocumentRequestEntity.filename);
+      this.log.debug('Mock document scan could not decode binary content', { [ATTR_CDCP_DOCUMENT_OUTCOME]: 'rejected' });
       return await Promise.resolve({
         DataId: null,
         Error: {
@@ -242,7 +229,7 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
     }
 
     if (detectEicarContent(documentBuffer)) {
-      this.log.warn('Document scan detected EICAR test content for filename [%s]', scanDocumentRequestEntity.filename);
+      this.log.debug('Mock document scan detected EICAR test content', { [ATTR_CDCP_DOCUMENT_OUTCOME]: 'unsafe' });
       return await Promise.resolve({
         DataId: null,
         Error: {

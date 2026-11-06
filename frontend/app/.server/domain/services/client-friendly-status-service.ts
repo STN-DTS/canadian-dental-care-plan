@@ -11,6 +11,7 @@ import type { ClientFriendlyStatusDtoMapper } from '~/.server/domain/mappers';
 import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing client friendly status data.
@@ -76,7 +77,7 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
     // Configure caching for client friendly status operations
     const clientFriendlyStatusCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL value: clientFriendlyStatusCacheTTL: %d ms', clientFriendlyStatusCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_TTL_MS]: clientFriendlyStatusCacheTTL });
 
     this.getClientFriendlyStatusById = memoize(this.getClientFriendlyStatusById, {
       async: true,
@@ -85,31 +86,30 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
     });
 
     type MemoizedGetClientFriendlyStatusById = Memoized<typeof this.getClientFriendlyStatusById, Options<typeof this.getClientFriendlyStatusById>>;
-    (this.getClientFriendlyStatusById as MemoizedGetClientFriendlyStatusById).cache.on('add', () => this.log.info('Creating new getClientFriendlyStatusById memo'));
+    (this.getClientFriendlyStatusById as MemoizedGetClientFriendlyStatusById).cache.on('add', () => this.log.debug('Creating new getClientFriendlyStatusById memo'));
 
     this.log.debug('DefaultClientFriendlyStatusService initiated.');
   }
 
   async getClientFriendlyStatusById(id: string): Promise<ClientFriendlyStatusDto> {
-    this.log.debug('Get client friendly status with id: [%s]', id);
+    this.log.debug('Get client friendly status');
 
     const clientFriendlyStatusEntity = await this.clientFriendlyStatusRepository.findClientFriendlyStatusById(id);
 
     if (Option.isNone(clientFriendlyStatusEntity)) {
-      this.log.error('Client friendly status with id: [%s] not found', id);
       throw new ClientFriendlyStatusNotFoundException(`Client friendly status with id: [${id}] not found`);
     }
 
     const clientFriendlyStatusDto = this.clientFriendlyStatusDtoMapper.mapClientFriendlyStatusEntityToClientFriendlyStatusDto(Option.getOrThrow(clientFriendlyStatusEntity));
-    this.log.trace('Returning client friendly status: [%j]', clientFriendlyStatusDto);
+    this.log.trace('Returning client friendly status');
     return clientFriendlyStatusDto;
   }
 
   async getLocalizedClientFriendlyStatusById(id: string, locale: AppLocale): Promise<ClientFriendlyStatusLocalizedDto> {
-    this.log.debug('Get localized client friendly status with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized client friendly status', { [ATTR_CDCP_LOCALE]: locale });
     const clientFriendlyStatusDto = await this.getClientFriendlyStatusById(id);
     const clientFriendlyStatusLocalizedDto = this.clientFriendlyStatusDtoMapper.mapClientFriendlyStatusDtoToClientFriendlyStatusLocalizedDto(clientFriendlyStatusDto, locale);
-    this.log.trace('Returning localized client friendly status: [%j]', clientFriendlyStatusLocalizedDto);
+    this.log.trace('Returning localized client friendly status', { [ATTR_CDCP_LOCALE]: locale });
     return clientFriendlyStatusLocalizedDto;
   }
 }

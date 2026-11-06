@@ -8,6 +8,7 @@ import type { LetterRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LETTERS_SORT_ORDER, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 export interface LetterService {
   /**
@@ -47,7 +48,7 @@ export class DefaultLetterService implements LetterService {
   }
 
   async findLettersByClientId({ clientId, userId, sortOrder = 'desc' }: LettersRequestDto): Promise<ReadonlyArray<LetterDto>> {
-    this.log.trace('Finding letters with clientId [%s], userId [%s], and sortOrder [%s]', clientId, userId, sortOrder);
+    this.log.trace('Finding letters', { [ATTR_CDCP_USER_ID]: userId, [ATTR_CDCP_LETTERS_SORT_ORDER]: sortOrder });
 
     this.auditService.createAudit('letters.get', { userId });
 
@@ -58,19 +59,19 @@ export class DefaultLetterService implements LetterService {
       by: (letterDto) => letterDto.date,
     });
 
-    this.log.trace('Returning letters [%j] for clientId [%s]', sortedLetterDtos, clientId);
+    this.log.trace('Letters mapped and sorted');
     return sortedLetterDtos;
   }
 
   async getPdfByLetterId({ letterId, userId }: PdfRequestDto): Promise<string> {
-    this.log.trace('Finding PDF with letterId [%s] and userId [%s]', letterId, userId);
+    this.log.trace('Finding letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId, [ATTR_CDCP_USER_ID]: userId });
 
     this.auditService.createAudit('pdf.get', { letterId, userId });
 
     const pdfEntity = await this.letterRepository.getPdfByLetterId(letterId);
     const pdf = this.letterDtoMapper.mapPdfEntityToString(pdfEntity);
 
-    this.log.trace('Returning pdf [%s] for letterId [%s]', pdf, letterId);
+    this.log.trace('Letter PDF mapped', { [ATTR_CDCP_LETTER_ID]: letterId });
     return pdf;
   }
 }

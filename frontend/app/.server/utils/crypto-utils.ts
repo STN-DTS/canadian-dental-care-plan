@@ -1,11 +1,12 @@
-/**
- * Useful utility functions for crypto stuff.
- */
 import { Buffer, atob } from 'node:buffer';
 import type { webcrypto } from 'node:crypto';
 import { createHash, subtle } from 'node:crypto';
 
 import { createLogger } from '~/.server/logging';
+/**
+ * Useful utility functions for crypto stuff.
+ */
+import { ATTR_CDCP_CRYPTO_KEY_USAGE } from '~/.server/logging/log-attributes';
 
 type CryptoKeyAlgorithm = 'encrypt' | 'decrypt' | 'sign' | 'verify';
 
@@ -23,7 +24,7 @@ export function generateJwkId(jwk: webcrypto.JsonWebKey) {
  */
 export async function generateCryptoKey(pem: string, algorithm: CryptoKeyAlgorithm): Promise<webcrypto.CryptoKey> {
   const log = createLogger('crypto-utils/generateCryptoKey');
-  log.trace('Converting PEM [%s] to CryptoKey with algorighm [%s]', pem, algorithm);
+  log.trace('Converting PEM to CryptoKey', { [ATTR_CDCP_CRYPTO_KEY_USAGE]: algorithm });
 
   switch (algorithm) {
     case 'encrypt': {

@@ -7,6 +7,7 @@ import type { CountryEntity, CountryResponseEntity } from '~/.server/domain/enti
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import countryJsonDataSource from '~/.server/resources/power-platform/country.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -78,35 +79,29 @@ export class DefaultCountryRepository implements CountryRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch countries',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch countries. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const countryResponseEntity = (await response.json()) as CountryResponseEntity;
     const countryEntities = countryResponseEntity.value;
 
-    this.log.trace('Countries: [%j]', countryEntities);
+    this.log.trace('Countries', { [ATTR_CDCP_REFERENCE_COUNT]: countryEntities.length });
     return countryEntities;
   }
 
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
-    this.log.debug('Fetching country with id: [%s]', id);
+    this.log.debug('Fetching country');
 
     const countryEntities = await this.listAllCountries();
     const countryEntity = countryEntities.find((status) => status.esdc_countryid === id);
 
     if (!countryEntity) {
-      this.log.warn('Country not found; id: [%s]', id);
+      this.log.debug('Country not found');
       return Option.none();
     }
 
-    this.log.trace('Returning country: [%j]', countryEntity);
+    this.log.trace('Returning country');
     return Option.some(countryEntity);
   }
 
@@ -134,22 +129,22 @@ export class MockCountryRepository implements CountryRepository {
     const countryEntities = countryJsonDataSource.value;
 
     if (countryEntities.length === 0) {
-      this.log.warn('No countries found');
+      this.log.warn('No countries found', { [ATTR_CDCP_REFERENCE_COUNT]: 0 });
       return [];
     }
 
-    this.log.trace('Returning countries: [%j]', countryEntities);
+    this.log.trace('Returning countries', { [ATTR_CDCP_REFERENCE_COUNT]: countryEntities.length });
     return await Promise.resolve(countryEntities);
   }
 
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
-    this.log.debug('Fetching country with id: [%s]', id);
+    this.log.debug('Fetching country');
 
     const countryEntities = countryJsonDataSource.value;
     const countryEntity = countryEntities.find(({ esdc_countryid }) => esdc_countryid === id);
 
     if (!countryEntity) {
-      this.log.warn('Country not found; id: [%s]', id);
+      this.log.debug('Country not found');
       return Option.none();
     }
 

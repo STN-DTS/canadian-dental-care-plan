@@ -8,6 +8,7 @@ import type { ClientApplicationRepository } from '~/.server/domain/repositories'
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 /**
@@ -63,7 +64,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
   }
 
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): Promise<Option.Option<ClientApplicationDto>> {
-    this.log.trace('Get client application by basic info: [%j]', clientApplicationBasicInfoRequestDto);
+    this.log.trace('Finding client application by basic info', { [ATTR_CDCP_USER_ID]: clientApplicationBasicInfoRequestDto.userId });
 
     this.auditService.createAudit('client-application.basic-info.get', { userId: clientApplicationBasicInfoRequestDto.userId });
 
@@ -71,12 +72,12 @@ export class DefaultClientApplicationService implements ClientApplicationService
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity);
 
     if (Option.isNone(clientApplicationEntity)) {
-      this.log.trace('No client application found with basic info: [%j]', clientApplicationBasicInfoRequestDto);
+      this.log.trace('No client application found by basic info', { [ATTR_CDCP_USER_ID]: clientApplicationBasicInfoRequestDto.userId });
       return Option.none();
     }
 
     const clientApplicationDto = this.clientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto(Option.getOrThrow(clientApplicationEntity));
-    this.log.trace('Returning client application: [%j]', clientApplicationDto);
+    this.log.trace('Returning client application', { [ATTR_CDCP_USER_ID]: clientApplicationBasicInfoRequestDto.userId });
     return Option.some(clientApplicationDto);
   }
 
@@ -85,7 +86,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
     const clientApplicationOption = await this.findClientApplicationByBasicInfo(basicInfoRequestDto);
 
     if (Option.isNone(clientApplicationOption)) {
-      this.log.trace('No client application found with basic info: [%j]', basicInfoRequestDto);
+      this.log.trace('No client application found by basic info', { [ATTR_CDCP_USER_ID]: basicInfoRequestDto.userId });
       return Option.none();
     }
 
@@ -94,16 +95,16 @@ export class DefaultClientApplicationService implements ClientApplicationService
     const clientApplication = Option.getOrThrow(clientApplicationOption);
 
     if (sanitizeSin(clientApplication.applicantInformation.socialInsuranceNumber) !== sanitizeSin(sin)) {
-      this.log.trace('Client application found with basic info, but SIN does not match. Basic info: [%j], SIN: [***-***-%s]', basicInfoRequestDto, sin.slice(-3));
+      this.log.trace('Client application identity check did not match', { [ATTR_CDCP_USER_ID]: basicInfoRequestDto.userId });
       return Option.none();
     }
 
-    this.log.trace('Client application found with basic info and SIN: [%j]', clientApplication);
+    this.log.trace('Client application identity check matched', { [ATTR_CDCP_USER_ID]: basicInfoRequestDto.userId });
     return Option.some(clientApplication);
   }
 
   async findClientApplicationBySin(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): Promise<Option.Option<ClientApplicationDto>> {
-    this.log.trace('Get client application with sin: [%j]', clientApplicationSinRequestDto);
+    this.log.trace('Finding client application by SIN', { [ATTR_CDCP_USER_ID]: clientApplicationSinRequestDto.userId });
 
     this.auditService.createAudit('client-application.sin.get', { userId: clientApplicationSinRequestDto.userId });
 
@@ -111,12 +112,12 @@ export class DefaultClientApplicationService implements ClientApplicationService
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationBySin(clientApplicationSinRequestEntity);
 
     if (Option.isNone(clientApplicationEntity)) {
-      this.log.trace('No client application found with SIN: [%j]', clientApplicationSinRequestDto);
+      this.log.trace('No client application found by SIN', { [ATTR_CDCP_USER_ID]: clientApplicationSinRequestDto.userId });
       return Option.none();
     }
 
     const clientApplicationDto = this.clientApplicationDtoMapper.mapClientApplicationEntityToClientApplicationDto(Option.getOrThrow(clientApplicationEntity));
-    this.log.trace('Returning client application: [%j]', clientApplicationDto);
+    this.log.trace('Returning client application', { [ATTR_CDCP_USER_ID]: clientApplicationSinRequestDto.userId });
     return Option.some(clientApplicationDto);
   }
 }

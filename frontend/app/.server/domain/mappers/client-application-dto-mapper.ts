@@ -162,7 +162,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
       !!homeAddress.AddressCountry.CountryCode.ReferenceDataID; // CountryCode is required for home address
 
     if (!isHomeAddressDefined) {
-      this.log.warn(`Home address for client ${clientId} is missing required fields. Home address will be omitted from the response; homeAddress: [%j]`, homeAddress);
+      this.log.debug('Home address is missing required fields; omitting home address from response');
     }
 
     // Mailing address is not guaranteed to be present for all clients, so we need to check if it exists before trying to access its properties
@@ -175,7 +175,6 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
       !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID; // CountryCode is required for mailing address
 
     if (!isMailingAddressDefined) {
-      this.log.error(`Mailing address for client ${clientId} is missing required fields and is required for this operation; mailingAddress: [%j]`, mailingAddress);
       throw new Error(`Mailing address for client ${clientId} is missing required fields`);
     }
 

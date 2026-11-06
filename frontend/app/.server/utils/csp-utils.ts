@@ -1,4 +1,5 @@
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_CSP_DEVELOPMENT_MODE } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
 
 export const adobeAnalyticsCSP = {
@@ -40,6 +41,6 @@ export function generateContentSecurityPolicy(nonce: string) {
     `style-src 'self' 'unsafe-inline' ${hcaptchaCSP.styleSrc}`,
   ].join('; ');
 
-  log.trace(`Generated content security policy: [${contentSecurityPolicy}]`);
+  log.trace('Content security policy generated', { [ATTR_CDCP_CSP_DEVELOPMENT_MODE]: isDevelopment });
   return contentSecurityPolicy;
 }

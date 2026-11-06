@@ -7,6 +7,7 @@ import { SunLifeCommunicationMethodNotFoundException } from '~/.server/domain/ex
 import type { SunLifeCommunicationMethodDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing SunLife communication method data.
@@ -70,36 +71,35 @@ export class DefaultSunLifeCommunicationMethodService implements SunLifeCommunic
 
   listSunLifeCommunicationMethods(): ReadonlyArray<SunLifeCommunicationMethodDto> {
     this.log.debug('Get all SunLife communication methods');
-    this.log.trace('Returning SunLife communication methods: [%j]', this.sunLifeCommunicationMethodDtos);
+    this.log.trace('Returning SunLife communication methods', { [ATTR_CDCP_REFERENCE_COUNT]: this.sunLifeCommunicationMethodDtos.length });
     return this.sunLifeCommunicationMethodDtos;
   }
 
   getSunLifeCommunicationMethodById(id: string): SunLifeCommunicationMethodDto {
-    this.log.debug('Get SunLife communication method with id: [%s]', id);
+    this.log.debug('Get SunLife communication method');
     const sunLifeCommunicationMethodDto = this.sunLifeCommunicationMethodDtos.find((dto) => dto.id === id);
 
     if (!sunLifeCommunicationMethodDto) {
-      this.log.error('SunLife communication method with id: [%s] not found', id);
       throw new SunLifeCommunicationMethodNotFoundException(`SunLife communication method with id: [${id}] not found`);
     }
 
-    this.log.trace('Returning SunLife communication method: [%j]', sunLifeCommunicationMethodDto);
+    this.log.trace('Returning SunLife communication method');
     return sunLifeCommunicationMethodDto;
   }
 
   listLocalizedSunLifeCommunicationMethods(locale: AppLocale): ReadonlyArray<SunLifeCommunicationMethodLocalizedDto> {
-    this.log.debug('Get all localized SunLife communication methods with locale: [%s]', locale);
+    this.log.debug('Get all localized SunLife communication methods', { [ATTR_CDCP_LOCALE]: locale });
     const sunLifeCommunicationMethodDtos = this.listSunLifeCommunicationMethods();
     const localizedSunLifeCommunicationMethodDtos = this.sunLifeCommunicationMethodDtoMapper.mapSunLifeCommunicationMethodDtosToSunLifeCommunicationMethodLocalizedDtos(sunLifeCommunicationMethodDtos, locale);
-    this.log.trace('Returning localized SunLife communication methods: [%j]', localizedSunLifeCommunicationMethodDtos);
+    this.log.trace('Returning localized SunLife communication methods', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedSunLifeCommunicationMethodDtos.length });
     return localizedSunLifeCommunicationMethodDtos;
   }
 
   getLocalizedSunLifeCommunicationMethodById(id: string, locale: AppLocale): SunLifeCommunicationMethodLocalizedDto {
-    this.log.debug('Get localized SunLife communication method with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized SunLife communication method', { [ATTR_CDCP_LOCALE]: locale });
     const sunLifeCommunicationMethodDto = this.getSunLifeCommunicationMethodById(id);
     const localizedSunLifeCommunicationMethodDto = this.sunLifeCommunicationMethodDtoMapper.mapSunLifeCommunicationMethodDtoToSunLifeCommunicationMethodLocalizedDto(sunLifeCommunicationMethodDto, locale);
-    this.log.trace('Returning localized SunLife communication method: [%j]', localizedSunLifeCommunicationMethodDto);
+    this.log.trace('Returning localized SunLife communication method', { [ATTR_CDCP_LOCALE]: locale });
     return localizedSunLifeCommunicationMethodDto;
   }
 }

@@ -22,6 +22,8 @@
       "ES2022",
       // Array APIs introduced in ES2023, including `Array.prototype.toSorted()`.
       "ES2023.Array",
+      // Native Error.isError is available in the Node.js 26 server runtime.
+      "ESNext.Error",
       // Runtime Temporal users import temporal-polyfill/global for older browsers.
       "ESNext.Temporal"
     ],

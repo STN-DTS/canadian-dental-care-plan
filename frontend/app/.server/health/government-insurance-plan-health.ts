@@ -8,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { GovernmentInsurancePlanRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 
 @injectable()
 export class GovernmentInsurancePlanHealthCheck implements HealthCheck {
@@ -33,7 +34,7 @@ export class GovernmentInsurancePlanHealthCheck implements HealthCheck {
 
   private init(): void {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
-    this.log.debug('Initializing GovernmentInsurancePlanHealthCheck with cache TTL of %d ms.', healthCacheTTL);
+    this.log.debug('Initializing GovernmentInsurancePlanHealthCheck', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
     this.check = memoize(this.check, {
       async: true,

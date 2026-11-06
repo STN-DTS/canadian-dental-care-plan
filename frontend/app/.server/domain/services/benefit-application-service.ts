@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable, optional } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -9,7 +10,8 @@ import type { BenefitApplicationRepository } from '~/.server/domain/repositories
 import type { AuditService } from '~/.server/domain/services';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
-import { createLogger } from '~/.server/logging';
+import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging';
+import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -66,17 +68,15 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   }
 
   async createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating benefit application for request [%j]', benefitApplicationRequestDto);
+    this.log.trace('Creating public benefit application', { [ATTR_CDCP_USER_ID]: benefitApplicationRequestDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      this.log.error('Request to create benefit application is unavailable (killswitch engaged).');
       throw new AppError('Request to create benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (benefitApplicationRequestDto.applicationChannelCode !== 'public') {
-      this.log.error('Received request to create public benefit application with invalid application channel code: [%s]', benefitApplicationRequestDto.applicationChannelCode);
       throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
@@ -87,11 +87,15 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(benefitApplicationRequestEntity);
       const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 
-      this.log.trace('Returning application code: [%s]', applicationCode);
+      this.log.info('Benefit application confirmation received', {
+        [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
+        [ATTR_CDCP_APPLICATION_CHANNEL]: 'public',
+        [ATTR_CDCP_USER_ID]: benefitApplicationRequestDto.userId,
+      });
       return applicationCode;
     } catch (error) {
       if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
-        this.log.error('Received XAPI_TOO_MANY_REQUESTS; killswitch engage!');
+        this.log.error('Upstream rate limit received; engaging application killswitch', { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }
 
@@ -100,10 +104,9 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   }
 
   async createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating protected benefit application for request [%j]', protectedBenefitApplicationRequestDto);
+    this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId });
 
     if (protectedBenefitApplicationRequestDto.applicationChannelCode !== 'protected') {
-      this.log.error('Received request to create protected benefit application with invalid application channel code: [%s]', protectedBenefitApplicationRequestDto.applicationChannelCode);
       throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
@@ -113,7 +116,11 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(protectedBenefitApplicationRequestEntity);
     const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 
-    this.log.trace('Returning application code: [%s]', applicationCode);
+    this.log.info('Benefit application confirmation received', {
+      [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
+      [ATTR_CDCP_APPLICATION_CHANNEL]: 'protected',
+      [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId,
+    });
     return applicationCode;
   }
 }

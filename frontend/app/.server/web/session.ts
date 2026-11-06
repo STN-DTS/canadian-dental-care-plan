@@ -1,3 +1,4 @@
+import { ATTR_SESSION_ID, ATTR_SESSION_PREVIOUS_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 import type { Request } from 'express';
 import assert from 'node:assert';
@@ -5,6 +6,8 @@ import assert from 'node:assert';
 import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+// Session attributes are currently incubating OpenTelemetry conventions.
+import { ATTR_CDCP_SESSION_KEY, ATTR_CDCP_SESSION_KEY_EXISTS } from '~/.server/logging/log-attributes';
 import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -177,7 +180,7 @@ export class ExpressSession implements Session {
     assert.ok(req.session, 'req.session object is undefined. Ensure session middleware is properly configured.');
     this.req = req;
     this.log = createLogger('~/.server/web/ExpressSession');
-    this.log.trace('Session initialized with ID: %s', this.id);
+    this.log.trace('Session initialized', { [ATTR_SESSION_ID]: this.id });
   }
 
   private get session(): Request['session'] {
@@ -201,19 +204,19 @@ export class ExpressSession implements Session {
     }
 
     const exists = sanitizedKey in this.session;
-    this.log.trace('Session [%s]: Checking for key "%s", exists: %s', this.id, key, exists);
+    this.log.trace('Checking for session key', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key, [ATTR_CDCP_SESSION_KEY_EXISTS]: exists });
     return exists;
   }
 
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     if (!this.has(key)) {
-      this.log.trace('Session [%s]: Key "%s" not found', this.id, key);
+      this.log.trace('Session key not found', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
       return Option.none();
     }
 
     const sanitizedKey = this.sanitizeKey(key);
     const value = this.session[sanitizedKey] as SessionTypeMap[K];
-    this.log.trace('Session [%s]: Found key "%s"', this.id, key);
+    this.log.trace('Session key found', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
     return Option.some(value);
   }
 
@@ -221,12 +224,11 @@ export class ExpressSession implements Session {
     const value = this.find(key);
 
     if (Option.isNone(value)) {
-      this.log.error('Session [%s]: Attempted to get non-existent key "%s"', this.id, key);
       throw new Error(`Key '${key}' not found in session [${this.id}]`);
     }
 
     const unwrappedValue = Option.getOrThrow(value);
-    this.log.trace('Session [%s]: Retrieved value for key "%s": %j', this.id, key, unwrappedValue);
+    this.log.trace('Session value retrieved', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
     return unwrappedValue;
   }
 
@@ -234,48 +236,46 @@ export class ExpressSession implements Session {
     const sanitizedKey = this.sanitizeKey(key);
     this.assertNotReservedKey(sanitizedKey);
     this.session[sanitizedKey] = value;
-    this.log.trace('Session [%s]: Set key "%s" to value: %j', this.id, key, value);
+    this.log.trace('Session value set', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
   }
 
   unset(key: SessionKey): boolean {
     if (!this.has(key)) {
-      this.log.warn('Session [%s]: Attempted to unset non-existent key "%s"', this.id, key);
+      this.log.debug('Cannot unset missing session key', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
       return false;
     }
 
     const sanitizedKey = this.sanitizeKey(key);
     this.assertNotReservedKey(sanitizedKey);
     delete this.session[sanitizedKey];
-    this.log.trace('Session [%s]: Unset key "%s"', this.id, key);
+    this.log.trace('Session key unset', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
     return true;
   }
 
   async destroy(): Promise<void> {
     const id = this.id; // Capture ID before destruction for logging
-    this.log.debug('Destroying session [%s]', id);
+    this.log.debug('Destroying session', { [ATTR_SESSION_ID]: id });
     return await new Promise((resolve, reject) => {
       this.session.destroy((err) => {
         if (err) {
-          this.log.error('Failed to destroy session %s: %s', id, err.message);
           return reject(err);
         }
 
-        this.log.info('Session %s destroyed successfully', id);
+        this.log.debug('Session destroyed successfully', { [ATTR_SESSION_ID]: id });
         resolve();
       });
     });
   }
 
   async save(): Promise<void> {
-    this.log.debug('Saving session [%s]', this.id);
+    this.log.debug('Saving session', { [ATTR_SESSION_ID]: this.id });
     return await new Promise((resolve, reject) => {
       this.session.save((err) => {
         if (err) {
-          this.log.error('Failed to save session %s: %s', this.id, err.message);
           return reject(err);
         }
 
-        this.log.info('Session %s saved successfully', this.id);
+        this.log.debug('Session saved successfully', { [ATTR_SESSION_ID]: this.id });
         resolve();
       });
     });
@@ -283,16 +283,15 @@ export class ExpressSession implements Session {
 
   async regenerate(): Promise<void> {
     const originalId = this.id;
-    this.log.debug('Regenerating session. Original ID: %s', originalId);
+    this.log.debug('Regenerating session', { [ATTR_SESSION_ID]: originalId });
 
     return await new Promise((resolve, reject) => {
       this.session.regenerate((err) => {
         if (err) {
-          this.log.error('Failed to regenerate session %s: %s', originalId, err.message);
           return reject(err);
         }
 
-        this.log.info('Session %s regenerated successfully; new ID: %s', originalId, this.id);
+        this.log.debug('Session regenerated successfully', { [ATTR_SESSION_ID]: this.id, [ATTR_SESSION_PREVIOUS_ID]: originalId });
         resolve();
       });
     });
@@ -326,32 +325,29 @@ export class NoopSession implements Session {
   private readonly log = createLogger('~/.server/web/NoopSession');
 
   get id(): string {
-    this.log.error('Accessed "id" on NoopSession. This indicates a misuse of session in a stateless context.');
     throw new Error('No session available in stateless context');
   }
 
   has(key: SessionKey): boolean {
-    this.log.warn('Called "has" on NoopSession for key "%s". Returning false.', key);
+    this.log.warn('Called "has" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
   }
 
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
-    this.log.warn('Called "find" on NoopSession for key "%s". Returning None.', key);
+    this.log.warn('Called "find" on NoopSession; returning None', { [ATTR_CDCP_SESSION_KEY]: key });
     return Option.none();
   }
 
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
-    this.log.error('Called "get" on NoopSession for key "%s". This is a misuse of session in a stateless context.', key);
     throw new Error('No session available in stateless context');
   }
 
   set<K extends SessionKey>(key: K, value: SessionTypeMap[K]): void {
-    this.log.error('Called "set" on NoopSession for key "%s". This is a misuse of session in a stateless context.', key);
     throw new Error('No session available in stateless context');
   }
 
   unset(key: SessionKey): boolean {
-    this.log.warn('Called "unset" on NoopSession for key "%s". Returning false.', key);
+    this.log.warn('Called "unset" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
   }
 

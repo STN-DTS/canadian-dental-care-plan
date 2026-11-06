@@ -84,7 +84,7 @@ export class DefaultProfileRepository implements ProfileRepository {
   }
 
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity: UpdateCommunicationPreferenceRequestEntity): Promise<void> {
-    this.log.trace('Updating communication preferences for request [%j]', updateCommunicationPreferenceRequestEntity);
+    this.log.trace('Updating communication preferences');
 
     const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.communication-preferences.posts', url, {
@@ -105,20 +105,14 @@ export class DefaultProfileRepository implements ProfileRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for update benefit application communication preferences`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for update benefit application communication preferences. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
   }
 
   async updatePhoneNumbers(updatePhoneNumbersRequestEntity: UpdatePhoneNumbersRequestEntity): Promise<void> {
-    this.log.trace('Updating phone numbers for request [%j]', updatePhoneNumbersRequestEntity);
+    this.log.trace('Updating phone numbers');
 
     const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.phone-numbers.posts', url, {
@@ -139,20 +133,14 @@ export class DefaultProfileRepository implements ProfileRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for update benefit application phone numbers`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for update benefit application phone numbers. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
   }
 
   async updateEmailAddress(updateEmailAddressRequestEntity: UpdateEmailAddressRequestEntity): Promise<void> {
-    this.log.trace('Updating email address for request [%j]', updateEmailAddressRequestEntity);
+    this.log.trace('Updating email address');
 
     const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.email-address.posts', url, {
@@ -173,20 +161,14 @@ export class DefaultProfileRepository implements ProfileRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for update benefit application email address`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for update benefit application email address. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
   }
 
   async updateDentalBenefits(updateDentalBenefitsRequestEntity: UpdateDentalBenefitsRequestEntity): Promise<void> {
-    this.log.trace('Updating dental benefits for request [%j]', updateDentalBenefitsRequestEntity);
+    this.log.trace('Updating dental benefits');
 
     const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.dental-benefits.posts', url, {
@@ -207,20 +189,14 @@ export class DefaultProfileRepository implements ProfileRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for update benefit application dental benefits`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for update benefit application dental benefits. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
   }
 
   async updateAddresses(updateAddressRequestEntity: UpdateAddressRequestEntity): Promise<void> {
-    this.log.trace('Updating mailing and home addresses for request [%j]', updateAddressRequestEntity);
+    this.log.trace('Updating mailing and home addresses');
 
     const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.mailing-and-home-addresses.posts', url, {
@@ -241,13 +217,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for update benefit application mailing and home addresses`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       throw new Error(`Failed to 'POST' for update benefit application mailing and home addresses. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
@@ -271,35 +241,35 @@ export class MockProfileRepository implements ProfileRepository {
   }
 
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity: UpdateCommunicationPreferenceRequestEntity): Promise<void> {
-    this.log.debug('Mock updating communication preferences for request [%j]', updateCommunicationPreferenceRequestEntity);
+    this.log.debug('Mock updating communication preferences');
 
     this.log.debug('Successfully mock updated communication preferences');
     return await Promise.resolve();
   }
 
   async updatePhoneNumbers(updatePhoneNumbersRequestEntity: UpdatePhoneNumbersRequestEntity): Promise<void> {
-    this.log.debug('Mock updating phone numbers for request [%j]', updatePhoneNumbersRequestEntity);
+    this.log.debug('Mock updating phone numbers');
 
     this.log.debug('Successfully mock updated phone numbers');
     return await Promise.resolve();
   }
 
   async updateDentalBenefits(updateDentalBenefitsRequestEntity: UpdateDentalBenefitsRequestEntity): Promise<void> {
-    this.log.debug('Mock updating dental benefits for request [%j]', updateDentalBenefitsRequestEntity);
+    this.log.debug('Mock updating dental benefits');
 
     this.log.debug('Successfully mock updated dental benefits');
     return await Promise.resolve();
   }
 
   async updateEmailAddress(updateEmailAddressRequestEntity: UpdateEmailAddressRequestEntity): Promise<void> {
-    this.log.debug('Mock updating email address for request [%j]', updateEmailAddressRequestEntity);
+    this.log.debug('Mock updating email address');
 
     this.log.debug('Successfully mock updated email address');
     return await Promise.resolve();
   }
 
   async updateAddresses(updateAddressRequestEntity: UpdateAddressRequestEntity): Promise<void> {
-    this.log.debug('Mock updating mailing and home addresses for request [%j]', updateAddressRequestEntity);
+    this.log.debug('Mock updating mailing and home addresses');
 
     this.log.debug('Successfully mock updated mailing and home addresses');
     return await Promise.resolve();

@@ -1,4 +1,4 @@
-import { Option } from 'effect';
+import type { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
@@ -8,6 +8,7 @@ import type { ApplicationStatusRepository } from '~/.server/domain/repositories'
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 /**
  * A service that provides access to application status data.
@@ -54,7 +55,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
   }
 
   async findApplicationStatusIdByBasicInfo(applicationStatusBasicInfoRequestDto: ApplicationStatusBasicInfoRequestDto): Promise<Option.Option<string>> {
-    this.log.trace('Finding application status id by basic info: [%j]', applicationStatusBasicInfoRequestDto);
+    this.log.trace('Finding application status by basic info', { [ATTR_CDCP_USER_ID]: applicationStatusBasicInfoRequestDto.userId });
 
     this.auditService.createAudit('application-status.post', { userId: applicationStatusBasicInfoRequestDto.userId });
 
@@ -62,12 +63,12 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity);
     const applicationStatusId = this.applicationStatusDtoMapper.mapApplicationStatusEntityToApplicationStatusId(applicationStatusEntity);
 
-    this.log.trace('Returning application status id: [%s]', Option.getOrUndefined(applicationStatusId));
+    this.log.trace('Application status lookup completed', { [ATTR_CDCP_USER_ID]: applicationStatusBasicInfoRequestDto.userId });
     return applicationStatusId;
   }
 
   async findApplicationStatusIdBySin(applicationStatusSinRequestDto: ApplicationStatusSinRequestDto): Promise<Option.Option<string>> {
-    this.log.trace('Finding application status id by sin: [%j]', applicationStatusSinRequestDto);
+    this.log.trace('Finding application status by SIN', { [ATTR_CDCP_USER_ID]: applicationStatusSinRequestDto.userId });
 
     this.auditService.createAudit('application-status.post', { userId: applicationStatusSinRequestDto.userId });
 
@@ -75,7 +76,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusBySin(applicationStatusSinRequestEntity);
     const applicationStatusId = this.applicationStatusDtoMapper.mapApplicationStatusEntityToApplicationStatusId(applicationStatusEntity);
 
-    this.log.trace('Returning application status id: [%s]', Option.getOrUndefined(applicationStatusId));
+    this.log.trace('Application status lookup completed', { [ATTR_CDCP_USER_ID]: applicationStatusSinRequestDto.userId });
     return applicationStatusId;
   }
 }

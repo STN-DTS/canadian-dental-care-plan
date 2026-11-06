@@ -10,6 +10,7 @@ import type { ClientEligibilityRepository } from '~/.server/domain/repositories'
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 import { secondsToMilliseconds } from '~/utils/units-utils';
 
 /**
@@ -50,7 +51,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
 
   private init(): void {
     const clientEligibilityCacheTtl = secondsToMilliseconds(this.serverConfig.LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS);
-    this.log.debug('Cache TTL value: %d ms', clientEligibilityCacheTtl);
+    this.log.debug('Client eligibility cache configured', { [ATTR_CDCP_CACHE_TTL_MS]: clientEligibilityCacheTtl });
 
     this.listClientEligibilitiesByClientNumbers = memoize(this.listClientEligibilitiesByClientNumbers, {
       async: true,
@@ -59,15 +60,15 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     });
 
     type MemoizedListClientEligibilitiesByClientNumbers = Memoized<typeof this.listClientEligibilitiesByClientNumbers, Options<typeof this.listClientEligibilitiesByClientNumbers>>;
-    (this.listClientEligibilitiesByClientNumbers as MemoizedListClientEligibilitiesByClientNumbers).cache.on('add', ({ key }) => {
-      this.log.info('Creating new listClientEligibilitiesByClientNumbers memo');
+    (this.listClientEligibilitiesByClientNumbers as MemoizedListClientEligibilitiesByClientNumbers).cache.on('add', () => {
+      this.log.debug('Client eligibility cache entry created');
     });
 
     this.log.debug('DefaultClientEligibilityService initiated.');
   }
 
   async listClientEligibilitiesByClientNumbers(clientNumbers: ReadonlyArray<string>): Promise<ReadonlyMap<string, ClientEligibilityDto>> {
-    this.log.trace('Get client eligibility with numbers: [%j]', clientNumbers);
+    this.log.trace('Getting client eligibility');
 
     this.auditService.createAudit('client-eligibility.number.get');
 
@@ -76,7 +77,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     const clientEligibilityEntities = await this.clientEligibilityRepository.listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity);
     const clientEligibilityDtos = clientEligibilityEntities.map((entity) => this.clientEligibilityDtoMapper.mapClientEligibilityEntityToClientEligibilityDto(entity));
 
-    this.log.trace('Returning client eligibility: [%j]', clientEligibilityDtos);
+    this.log.trace('Returning client eligibility');
     return new Map(clientEligibilityDtos.map((dto) => [dto.clientNumber, dto]));
   }
 }

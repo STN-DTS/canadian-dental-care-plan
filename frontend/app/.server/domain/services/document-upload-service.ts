@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
@@ -9,6 +10,7 @@ import type { DocumentUploadRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_DOCUMENT_OUTCOME, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 export interface DocumentUploadService {
   /**
@@ -50,7 +52,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
   }
 
   async uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto> {
-    this.log.trace('Uploading document with fileName [%s] for userId [%s]', documentUploadRequestDto.fileName, documentUploadRequestDto.userId);
+    this.log.trace('Uploading document', { [ATTR_CDCP_USER_ID]: documentUploadRequestDto.userId });
 
     try {
       this.auditService.createAudit('documentupload.upload', { userId: documentUploadRequestDto.userId });
@@ -59,17 +61,21 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
       const responseEntity = await this.documentUploadRepository.uploadDocument(requestEntity);
 
       if (responseEntity.DocumentFileName === null) {
-        this.log.warn('Document upload rejected with code [%s]', responseEntity.Error.ErrorCode);
-        return { status: this.getRejectionStatus(responseEntity.Error), error: this.documentUploadDtoMapper.mapDocumentUploadErrorEntityToDto(responseEntity.Error) };
+        const status = this.getRejectionStatus(responseEntity.Error);
+        this.log.warn('Document upload rejected', { [ATTR_CDCP_DOCUMENT_OUTCOME]: status });
+        return { status, error: this.documentUploadDtoMapper.mapDocumentUploadErrorEntityToDto(responseEntity.Error) };
       }
 
       this.log.trace('Document uploaded successfully.');
       return { status: 'success', documentFileName: responseEntity.DocumentFileName };
     } catch (error) {
       if (error instanceof DocumentUploadException) {
-        this.log.error('Technical upload failure; kind [%s]; HTTP status [%s]', error.kind, error.httpStatus);
+        this.log.error('Technical document upload failure', {
+          [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
+          [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
+        });
       } else {
-        this.log.error('Unexpected document upload error [%s]', error);
+        this.log.error('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       }
 
       return { status: 'error', error: error };
@@ -77,7 +83,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
   }
 
   async scanDocument(documentScanRequestDto: DocumentScanRequestDto): Promise<DocumentScanResponseDto> {
-    this.log.trace('Scanning document with fileName [%s] for userId [%s]', documentScanRequestDto.fileName, documentScanRequestDto.userId);
+    this.log.trace('Scanning document', { [ATTR_CDCP_USER_ID]: documentScanRequestDto.userId });
 
     try {
       this.auditService.createAudit('documentupload.scan', { userId: documentScanRequestDto.userId });
@@ -86,14 +92,15 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
       const responseEntity = await this.documentUploadRepository.scanDocument(requestEntity);
 
       if (responseEntity.DataId === null) {
-        this.log.warn('Document scan rejected with code [%s]', responseEntity.Error.ErrorCode);
-        return { status: this.getRejectionStatus(responseEntity.Error), Error: this.documentUploadDtoMapper.mapDocumentUploadErrorEntityToDto(responseEntity.Error) };
+        const status = this.getRejectionStatus(responseEntity.Error);
+        this.log.warn('Document scan rejected', { [ATTR_CDCP_DOCUMENT_OUTCOME]: status });
+        return { status, Error: this.documentUploadDtoMapper.mapDocumentUploadErrorEntityToDto(responseEntity.Error) };
       }
 
       this.log.trace('Document scanned successfully.');
       return { status: 'success', DataId: responseEntity.DataId };
-    } catch (error) {
-      this.log.error('Unexpected document scan error [%s]', error);
+    } catch {
+      this.log.error('Unexpected document scan error', { [ATTR_ERROR_TYPE]: 'document_scan_failed' });
       return { status: 'error' };
     }
   }

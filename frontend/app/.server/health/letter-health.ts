@@ -8,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { LetterRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 
 @injectable()
 export class LetterHealthCheck implements HealthCheck {
@@ -33,7 +34,7 @@ export class LetterHealthCheck implements HealthCheck {
 
   private init(): void {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
-    this.log.debug('Initializing LetterHealthCheck with cache TTL of %d ms.', healthCacheTTL);
+    this.log.debug('Initializing LetterHealthCheck', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
     this.check = memoize(this.check, {
       async: true,

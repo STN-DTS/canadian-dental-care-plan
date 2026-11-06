@@ -74,7 +74,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
   }
 
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
-    this.log.debug('Fetching appeal upload eligibility for client number: [%s]', clientNumber);
+    this.log.debug('Fetching appeal upload eligibility');
 
     const url = new URL(`${this.baseUrl}/esdc_clients(esdc_clientnumber='${encodeURIComponent(clientNumber)}')`);
     url.searchParams.set('$select', 'esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon');
@@ -99,24 +99,18 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     });
 
     if (response.status === HttpStatusCodes.NOT_FOUND) {
-      this.log.debug('No client found for appeal upload eligibility; clientNumber: [%s]', clientNumber);
+      this.log.debug('No client found for appeal upload eligibility');
       return Option.none();
     }
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch appeal upload eligibility',
-        status: response.status,
-        statusText: response.statusText,
-        url: url.href,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch appeal upload eligibility. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const appealUploadEligibilityResponseEntity = (await response.json()) as AppealUploadEligibilityResponseEntity;
 
-    this.log.trace('Appeal upload eligibility: [%j]', appealUploadEligibilityResponseEntity);
+    this.log.trace('Appeal upload eligibility received');
     return Option.some(appealUploadEligibilityResponseEntity);
   }
 
@@ -136,12 +130,12 @@ export class MockAppealUploadEligibilityRepository implements AppealUploadEligib
   }
 
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
-    this.log.debug('Fetching mock appeal upload eligibility for client number: [%s]', clientNumber);
+    this.log.debug('Fetching mock appeal upload eligibility');
 
     const appealUploadEligibilityResponseEntity = appealUploadEligibilityJsonDataSource as AppealUploadEligibilityResponseEntity;
 
     if (appealUploadEligibilityResponseEntity.esdc_clientnumber !== clientNumber) {
-      this.log.warn('No mock client found for appeal upload eligibility; clientNumber: [%s]', clientNumber);
+      this.log.debug('No mock client found for appeal upload eligibility');
       return await Promise.resolve(Option.none());
     }
 

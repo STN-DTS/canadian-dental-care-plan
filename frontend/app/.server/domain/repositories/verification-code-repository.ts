@@ -51,7 +51,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
   }
 
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
-    this.log.trace('Sending verification code email for request: [%j]', verificationCodeEmailRequestEntity);
+    this.log.trace('Sending verification code email');
 
     const url = `${this.baseUrl}/notifications/email`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.email-notifications.posts', url, {
@@ -66,13 +66,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' email notification`,
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -83,7 +77,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     }
 
     const verificationCodeEmailResponseEntity = (await response.json()) as VerificationCodeEmailResponseEntity;
-    this.log.trace('Returning verification code email response [%j]', verificationCodeEmailResponseEntity);
+    this.log.trace('Verification code email response received');
     return verificationCodeEmailResponseEntity;
   }
 
@@ -108,13 +102,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'GET' email notifications`,
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -135,7 +123,7 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
   }
 
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
-    this.log.trace('Sending verification code email for request: [%j]', verificationCodeEmailRequestEntity);
+    this.log.trace('Generating mock verification code email');
 
     const id = randomUUID();
     const verificationCodeEmailResponseEntity: VerificationCodeEmailResponseEntity = {
@@ -153,7 +141,7 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
       },
     };
 
-    this.log.trace('Returning verification code email response [%j]', verificationCodeEmailResponseEntity);
+    this.log.trace('Mock verification code email response generated');
     return await Promise.resolve(verificationCodeEmailResponseEntity);
   }
 

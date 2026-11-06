@@ -7,6 +7,7 @@ import { GCCommunicationMethodNotFoundException } from '~/.server/domain/excepti
 import type { GCCommunicationMethodDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing GC communication method data.
@@ -70,36 +71,35 @@ export class DefaultGCCommunicationMethodService implements GCCommunicationMetho
 
   listGCCommunicationMethods(): ReadonlyArray<GCCommunicationMethodDto> {
     this.log.debug('Get all GC communication methods');
-    this.log.trace('Returning GC communication methods: [%j]', this.gcCommunicationMethodDtos);
+    this.log.trace('Returning GC communication methods', { [ATTR_CDCP_REFERENCE_COUNT]: this.gcCommunicationMethodDtos.length });
     return this.gcCommunicationMethodDtos;
   }
 
   getGCCommunicationMethodById(id: string): GCCommunicationMethodDto {
-    this.log.debug('Get GC communication method with id: [%s]', id);
+    this.log.debug('Get GC communication method');
     const gcCommunicationMethodDto = this.gcCommunicationMethodDtos.find((dto) => dto.id === id);
 
     if (!gcCommunicationMethodDto) {
-      this.log.error('GC communication method with id: [%s] not found', id);
       throw new GCCommunicationMethodNotFoundException(`GC communication method with id: [${id}] not found`);
     }
 
-    this.log.trace('Returning GC communication method: [%j]', gcCommunicationMethodDto);
+    this.log.trace('Returning GC communication method');
     return gcCommunicationMethodDto;
   }
 
   listLocalizedGCCommunicationMethods(locale: AppLocale): ReadonlyArray<GCCommunicationMethodLocalizedDto> {
-    this.log.debug('Get all localized GC communication methods with locale: [%s]', locale);
+    this.log.debug('Get all localized GC communication methods', { [ATTR_CDCP_LOCALE]: locale });
     const gcCommunicationMethodDtos = this.listGCCommunicationMethods();
     const localizedGCCommunicationMethodDtos = this.gcCommunicationMethodDtoMapper.mapGCCommunicationMethodDtosToGCCommunicationMethodLocalizedDtos(gcCommunicationMethodDtos, locale);
-    this.log.trace('Returning localized GC communication methods: [%j]', localizedGCCommunicationMethodDtos);
+    this.log.trace('Returning localized GC communication methods', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedGCCommunicationMethodDtos.length });
     return localizedGCCommunicationMethodDtos;
   }
 
   getLocalizedGCCommunicationMethodById(id: string, locale: AppLocale): GCCommunicationMethodLocalizedDto {
-    this.log.debug('Get localized GC communication method with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized GC communication method', { [ATTR_CDCP_LOCALE]: locale });
     const gcCommunicationMethodDto = this.getGCCommunicationMethodById(id);
     const localizedGCCommunicationMethodDto = this.gcCommunicationMethodDtoMapper.mapGCCommunicationMethodDtoToGCCommunicationMethodLocalizedDto(gcCommunicationMethodDto, locale);
-    this.log.trace('Returning localized GC communication method: [%j]', localizedGCCommunicationMethodDto);
+    this.log.trace('Returning localized GC communication method', { [ATTR_CDCP_LOCALE]: locale });
     return localizedGCCommunicationMethodDto;
   }
 }

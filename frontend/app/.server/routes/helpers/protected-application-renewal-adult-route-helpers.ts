@@ -1,8 +1,10 @@
 import { redirect } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
+import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_APPLICATION_ID, ATTR_CDCP_REDIRECT_TARGET } from '~/.server/logging/log-attributes';
 import { getAllowedTypeOfApplication } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ApplicationStateParams, ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getContextualAgeCategoryFromDate, getProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
@@ -39,7 +41,7 @@ export function loadProtectedApplicationRenewalAdultState({ params, requestUrl, 
   const confirmationRouteUrl = getPathById('protected/application/$id/renewal-adult/confirmation', params);
 
   if (applicationState.submissionInfo && !pathname.endsWith(confirmationRouteUrl)) {
-    log.warn('Redirecting user to "%s" since the application has been submitted; sessionId: [%s], ', confirmationRouteUrl, applicationState.id);
+    log.debug('Application already submitted; redirecting to confirmation', { [ATTR_URL_PATH]: pathname, [ATTR_CDCP_REDIRECT_TARGET]: confirmationRouteUrl, [ATTR_CDCP_APPLICATION_ID]: applicationState.id });
     throw redirect(confirmationRouteUrl);
   }
 
@@ -48,7 +50,7 @@ export function loadProtectedApplicationRenewalAdultState({ params, requestUrl, 
   const typeOfApplicationRouteUrl = getPathById('protected/application/$id/your-application', params);
 
   if (!applicationState.submissionInfo && pathname.endsWith(confirmationRouteUrl)) {
-    log.warn('Redirecting user to "%s" since the application has not been submitted; sessionId: [%s], ', typeOfApplicationRouteUrl, applicationState.id);
+    log.debug('Application not submitted; redirecting to application overview', { [ATTR_URL_PATH]: pathname, [ATTR_CDCP_REDIRECT_TARGET]: typeOfApplicationRouteUrl, [ATTR_CDCP_APPLICATION_ID]: applicationState.id });
     throw redirect(typeOfApplicationRouteUrl);
   }
 

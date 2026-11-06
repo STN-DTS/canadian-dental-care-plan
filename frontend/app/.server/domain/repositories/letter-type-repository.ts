@@ -7,6 +7,7 @@ import type { LetterTypeEntity, LetterTypeResponseEntity } from '~/.server/domai
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import letterTypeJsonDataSource from '~/.server/resources/power-platform/letter-type.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -79,35 +80,29 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch letter types',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch letter types. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const letterTypeResponseEntity = (await response.json()) as LetterTypeResponseEntity;
     const letterTypeEntities = letterTypeResponseEntity.value;
 
-    this.log.trace('Letter types: [%j]', letterTypeEntities);
+    this.log.trace('Letter types', { [ATTR_CDCP_REFERENCE_COUNT]: letterTypeEntities.length });
     return letterTypeEntities;
   }
 
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
-    this.log.debug('Fetching letter type with id: [%s]', id);
+    this.log.debug('Fetching letter type');
 
     const letterTypeEntities = await this.listAllLetterTypes();
     const letterTypeEntity = letterTypeEntities.find((letter) => letter.esdc_value === id);
 
     if (!letterTypeEntity) {
-      this.log.warn('Letter type not found; id: [%s]', id);
+      this.log.debug('Letter type not found');
       return Option.none();
     }
 
-    this.log.trace('Returning letter type: [%j]', letterTypeEntity);
+    this.log.trace('Returning letter type');
     return Option.some(letterTypeEntity);
   }
 
@@ -134,18 +129,18 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     this.log.debug('Fetching all letter types');
     const letterTypeEntities = letterTypeJsonDataSource.value;
 
-    this.log.trace('Returning letter types: [%j]', letterTypeEntities);
+    this.log.trace('Returning letter types', { [ATTR_CDCP_REFERENCE_COUNT]: letterTypeEntities.length });
     return await Promise.resolve(letterTypeEntities);
   }
 
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
-    this.log.debug('Fetching letter type with id: [%s]', id);
+    this.log.debug('Fetching letter type');
 
     const letterTypeEntities = letterTypeJsonDataSource.value;
     const letterTypeEntity = letterTypeEntities.find(({ esdc_value }) => esdc_value === id);
 
     if (!letterTypeEntity) {
-      this.log.warn('Letter type not found; id: [%s]', id);
+      this.log.debug('Letter type not found');
       return Option.none();
     }
 

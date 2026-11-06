@@ -6,6 +6,7 @@ import type { LetterEntity, PdfEntity } from '~/.server/domain/entities';
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_LETTER_ID } from '~/.server/logging/log-attributes';
 import getPdfByLetterIdJson from '~/.server/resources/cct/get-pdf-by-letter-id.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
@@ -88,7 +89,7 @@ export class DefaultLetterRepository implements LetterRepository {
   }
 
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
-    this.log.trace('Fetching letters for clientId [%s]', clientId);
+    this.log.trace('Fetching letters');
 
     const url = new URL(`${this.baseUrl}/GetDocInfoByClientId`);
     url.searchParams.set('clientid', clientId);
@@ -110,13 +111,7 @@ export class DefaultLetterRepository implements LetterRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to find letters',
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -127,12 +122,12 @@ export class DefaultLetterRepository implements LetterRepository {
     }
 
     const letterEntities = (await response.json()) as ReadonlyArray<LetterEntity>;
-    this.log.trace('Returning letters [%j]', letterEntities);
+    this.log.trace('Letter response received');
     return letterEntities;
   }
 
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
-    this.log.trace('Fetching PDF for letterId [%s]', letterId);
+    this.log.trace('Fetching letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
     const url = new URL(`${this.baseUrl}/GetPdfByLetterId`);
     url.searchParams.set('id', letterId);
@@ -154,13 +149,7 @@ export class DefaultLetterRepository implements LetterRepository {
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to get PDF',
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -171,7 +160,7 @@ export class DefaultLetterRepository implements LetterRepository {
     }
 
     const pdfEntity = (await response.json()) as PdfEntity;
-    this.log.trace('Returning PDF [%j]', pdfEntity);
+    this.log.trace('Letter PDF response received', { [ATTR_CDCP_LETTER_ID]: letterId });
     return pdfEntity;
   }
 
@@ -195,7 +184,7 @@ export class MockLetterRepository implements LetterRepository {
   }
 
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
-    this.log.debug('Fetching letters for clientId [%s]', clientId);
+    this.log.debug('Fetching mock letters');
 
     const letterEntities: ReadonlyArray<LetterEntity> = [
       {
@@ -205,16 +194,16 @@ export class MockLetterRepository implements LetterRepository {
       },
     ];
 
-    this.log.debug('Returning letters [%j]', letterEntities);
+    this.log.debug('Mock letter response generated');
     return await Promise.resolve(letterEntities);
   }
 
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
-    this.log.debug('Fetching PDF for letterId [%s]', letterId);
+    this.log.debug('Fetching mock letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
     const pdfEntity: PdfEntity = getPdfByLetterIdJson;
 
-    this.log.debug('Returning PDF [%j]', pdfEntity);
+    this.log.debug('Mock letter PDF response generated', { [ATTR_CDCP_LETTER_ID]: letterId });
     return await Promise.resolve(pdfEntity);
   }
 

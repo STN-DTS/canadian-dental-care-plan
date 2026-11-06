@@ -7,6 +7,7 @@ import type { GovernmentInsurancePlanEntity, GovernmentInsurancePlanResponseEnti
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import governmentInsurancePlanJsonDataSource from '~/.server/resources/power-platform/government-insurance-plan.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -78,35 +79,29 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch government insurance plans',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch government insurance plans. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const governmentInsurancePlanResponseEntity = (await response.json()) as GovernmentInsurancePlanResponseEntity;
     const governmentInsurancePlanEntities = governmentInsurancePlanResponseEntity.value;
 
-    this.log.trace('Government insurance plans: [%j]', governmentInsurancePlanEntities);
+    this.log.trace('Government insurance plans', { [ATTR_CDCP_REFERENCE_COUNT]: governmentInsurancePlanEntities.length });
     return governmentInsurancePlanEntities;
   }
 
   async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
-    this.log.debug('Fetching government insurance plan with id: [%s]', id);
+    this.log.debug('Fetching government insurance plan');
 
     const governmentInsurancePlanEntities = await this.listAllGovernmentInsurancePlans();
     const governmentInsurancePlanEntity = governmentInsurancePlanEntities.find((plan) => plan.esdc_governmentinsuranceplanid === id);
 
     if (!governmentInsurancePlanEntity) {
-      this.log.warn('Government insurance plan not found; id: [%s]', id);
+      this.log.debug('Government insurance plan not found');
       return Option.none();
     }
 
-    this.log.trace('Returning government insurance plan: [%j]', governmentInsurancePlanEntity);
+    this.log.trace('Returning government insurance plan');
     return Option.some(governmentInsurancePlanEntity);
   }
 
@@ -134,22 +129,22 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
     const governmentInsurancePlanEntities = governmentInsurancePlanJsonDataSource.value;
 
     if (governmentInsurancePlanEntities.length === 0) {
-      this.log.warn('No government insurance plans found');
+      this.log.warn('No government insurance plans found', { [ATTR_CDCP_REFERENCE_COUNT]: 0 });
       return [];
     }
 
-    this.log.trace('Returning government insurance plans: [%j]', governmentInsurancePlanEntities);
+    this.log.trace('Returning government insurance plans', { [ATTR_CDCP_REFERENCE_COUNT]: governmentInsurancePlanEntities.length });
     return await Promise.resolve(governmentInsurancePlanEntities);
   }
 
   async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
-    this.log.debug('Fetching government insurance plan with id: [%s]', id);
+    this.log.debug('Fetching government insurance plan');
 
     const governmentInsurancePlanEntities = governmentInsurancePlanJsonDataSource.value;
     const governmentInsurancePlanEntity = governmentInsurancePlanEntities.find(({ esdc_governmentinsuranceplanid }) => esdc_governmentinsuranceplanid === id);
 
     if (!governmentInsurancePlanEntity) {
-      this.log.info('Government insurance plan not found; id: [%s]', id);
+      this.log.info('Government insurance plan not found');
       return Option.none();
     }
 

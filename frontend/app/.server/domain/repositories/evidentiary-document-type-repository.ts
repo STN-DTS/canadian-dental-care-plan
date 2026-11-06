@@ -7,6 +7,7 @@ import type { EvidentiaryDocumentTypeEntity, EvidentiaryDocumentTypeResponseEnti
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import evidentiaryDocumentTypeJsonDataSource from '~/.server/resources/power-platform/evidentiary-document-type.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -60,7 +61,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
   }
 
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
-    this.log.trace('Fetching all evidentiary evidentiary document types');
+    this.log.trace('Fetching all evidentiary document types');
 
     const url = new URL(`${this.baseUrl}/esdc_evidentiarydocumenttypes`);
     url.searchParams.set('$select', 'esdc_evidentiarydocumenttypeid,esdc_value,esdc_nameenglish,esdc_namefrench,statecode');
@@ -80,35 +81,29 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch evidentiary evidentiary document types',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch evidentiary evidentiary document types. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const documentResponseEntity = (await response.json()) as EvidentiaryDocumentTypeResponseEntity;
     const documentTypeEntities = documentResponseEntity.value;
 
-    this.log.trace('EvidentiaryDocumentTypes: [%j]', documentTypeEntities);
+    this.log.trace('EvidentiaryDocumentTypes', { [ATTR_CDCP_REFERENCE_COUNT]: documentTypeEntities.length });
     return documentTypeEntities;
   }
 
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
-    this.log.debug('Fetching evidentiary document type with id: [%s]', id);
+    this.log.debug('Fetching evidentiary document type');
 
     const documentTypeEntities = await this.listAllEvidentiaryDocumentTypes();
     const documentEntity = documentTypeEntities.find(({ esdc_evidentiarydocumenttypeid }) => esdc_evidentiarydocumenttypeid === id);
 
     if (!documentEntity) {
-      this.log.warn('Document type not found; id: [%s]', id);
+      this.log.debug('Document type not found');
       return Option.none();
     }
 
-    this.log.trace('Returning document: [%j]', documentEntity);
+    this.log.trace('Returning document');
     return Option.some(documentEntity);
   }
 
@@ -132,26 +127,26 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
   }
 
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
-    this.log.debug('Fetching all evidentiary evidentiary document types');
+    this.log.debug('Fetching all evidentiary document types');
     const documentTypeEntities = evidentiaryDocumentTypeJsonDataSource.value;
 
     if (documentTypeEntities.length === 0) {
-      this.log.warn('No evidentiary evidentiary document types found');
+      this.log.warn('No evidentiary document types found', { [ATTR_CDCP_REFERENCE_COUNT]: 0 });
       return [];
     }
 
-    this.log.trace('Returning evidentiary evidentiary document types: [%j]', documentTypeEntities);
+    this.log.trace('Returning evidentiary document types', { [ATTR_CDCP_REFERENCE_COUNT]: documentTypeEntities.length });
     return await Promise.resolve(documentTypeEntities);
   }
 
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
-    this.log.debug('Fetching evidentiary document type with id: [%s]', id);
+    this.log.debug('Fetching evidentiary document type');
 
     const documentTypeEntities = evidentiaryDocumentTypeJsonDataSource.value;
     const documentEntity = documentTypeEntities.find(({ esdc_evidentiarydocumenttypeid }) => esdc_evidentiarydocumenttypeid === id);
 
     if (!documentEntity) {
-      this.log.warn('Document type not found; id: [%s]', id);
+      this.log.debug('Document type not found');
       return Option.none();
     }
 

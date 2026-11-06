@@ -1,8 +1,10 @@
+import { ATTR_DB_OPERATION_NAME } from '@opentelemetry/semantic-conventions';
 import { injectable } from 'inversify';
 
 import { getRedisClient } from '~/.server/data/redis-client';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_DELETED_COUNT, ATTR_CDCP_CACHE_HIT, ATTR_CDCP_CACHE_KEY, ATTR_CDCP_CACHE_TTL_SECONDS } from '~/.server/logging/log-attributes';
 
 /**
  * The RedisService is a service module for interacting with a Redis server. It
@@ -44,35 +46,35 @@ export class DefaultRedisService implements RedisService {
   async get<T>(key: string): Promise<T | null> {
     const redisClient = await getRedisClient();
     const value = await redisClient.get(key);
-    this.log.debug('GET key=[%s] hit=[%s]', key, value);
+    this.log.debug('Redis GET completed', { [ATTR_DB_OPERATION_NAME]: 'GET', [ATTR_CDCP_CACHE_KEY]: key, [ATTR_CDCP_CACHE_HIT]: value !== null });
     return value ? JSON.parse(value) : null;
   }
 
   async set(key: string, value: unknown, ttlSecs: number): Promise<'OK'> {
     const redisClient = await getRedisClient();
     const result = await redisClient.setEx(key, ttlSecs, JSON.stringify(value));
-    this.log.debug('SET key=[%s] ttl=[%s]', key, ttlSecs);
+    this.log.debug('Redis SETEX completed', { [ATTR_DB_OPERATION_NAME]: 'SETEX', [ATTR_CDCP_CACHE_KEY]: key, [ATTR_CDCP_CACHE_TTL_SECONDS]: ttlSecs });
     return result;
   }
 
   async del(key: string): Promise<number> {
     const redisClient = await getRedisClient();
     const result = await redisClient.del(key);
-    this.log.debug('DEL key=[%s] result=[%s]', key, result);
+    this.log.debug('Redis DEL completed', { [ATTR_DB_OPERATION_NAME]: 'DEL', [ATTR_CDCP_CACHE_KEY]: key, [ATTR_CDCP_CACHE_DELETED_COUNT]: result });
     return result;
   }
 
   async ping(): Promise<'PONG'> {
     const redisClient = await getRedisClient();
     await redisClient.ping();
-    this.log.debug('PING successful');
+    this.log.debug('Redis PING completed', { [ATTR_DB_OPERATION_NAME]: 'PING' });
     return 'PONG';
   }
 
   async ttl(key: string): Promise<number> {
     const redisClient = await getRedisClient();
     const ttl = await redisClient.ttl(key);
-    this.log.debug('TTL key=[%s] ttl=[%s]', key, ttl);
+    this.log.debug('Redis TTL completed', { [ATTR_DB_OPERATION_NAME]: 'TTL', [ATTR_CDCP_CACHE_KEY]: key, [ATTR_CDCP_CACHE_TTL_SECONDS]: ttl });
     return ttl;
   }
 }

@@ -43,7 +43,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
   }
 
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
-    this.log.trace('Creating benefit application for request [%j]', benefitApplicationRequestEntity);
+    this.log.trace('Submitting benefit application');
 
     const url = `${this.serverConfig.INTEROP_BENEFIT_APPLICATION_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/benefit-application`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.benefit-application.posts', url, {
@@ -65,13 +65,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for benefit application`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -82,7 +76,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
     }
 
     const benefitApplicationResponseEntity = (await response.json()) as BenefitApplicationResponseEntity;
-    this.log.trace('Returning benefit application response [%j]', benefitApplicationResponseEntity);
+    this.log.trace('Benefit application response received');
     return benefitApplicationResponseEntity;
   }
 }
@@ -96,7 +90,7 @@ export class MockBenefitApplicationRepository implements BenefitApplicationRepos
   }
 
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
-    this.log.debug('Creating benefit application for request [%j]', benefitApplicationRequestEntity);
+    this.log.debug('Creating mock benefit application');
 
     const benefitApplicationResponseEntity: BenefitApplicationResponseEntity = {
       BenefitApplication: {
@@ -109,7 +103,7 @@ export class MockBenefitApplicationRepository implements BenefitApplicationRepos
       },
     };
 
-    this.log.debug('Returning benefit application response [%j]', benefitApplicationResponseEntity);
+    this.log.debug('Mock benefit application response generated');
     return await Promise.resolve(benefitApplicationResponseEntity);
   }
 }

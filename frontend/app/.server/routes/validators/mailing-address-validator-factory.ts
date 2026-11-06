@@ -36,8 +36,8 @@ export class DefaultMailingAddressValidatorFactory implements MailingAddressVali
     this.createMailingAddressValidator = memoize(this.createMailingAddressValidator);
 
     type MemoizedCreateMailingAddressValidator = Memoized<typeof this.createMailingAddressValidator, Options<typeof this.createMailingAddressValidator>>;
-    (this.createMailingAddressValidator as MemoizedCreateMailingAddressValidator).cache.on('add', ({ key }) => {
-      this.log.info('Creating new createMailingAddressValidator memo; cache.key: %s', key);
+    (this.createMailingAddressValidator as MemoizedCreateMailingAddressValidator).cache.on('add', () => {
+      this.log.debug('Mailing address validator cache entry created');
     });
 
     this.log.debug('DefaultMailingAddressValidatorFactory initiated.');

@@ -7,6 +7,7 @@ import { LanguageNotFoundException } from '~/.server/domain/exceptions';
 import type { LanguageDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { moveToTop } from '~/.server/utils/collection-utils';
 
 /**
@@ -92,7 +93,7 @@ export class DefaultLanguageService implements LanguageService {
    */
   listLanguages(): ReadonlyArray<LanguageDto> {
     this.log.debug('Get all languages');
-    this.log.trace('Returning languages: [%j]', this.languageDtos);
+    this.log.trace('Returning languages', { [ATTR_CDCP_REFERENCE_COUNT]: this.languageDtos.length });
     return this.languageDtos;
   }
 
@@ -104,15 +105,14 @@ export class DefaultLanguageService implements LanguageService {
    * @throws {LanguageNotFoundException} If no language is found with the specified ID.
    */
   getLanguageById(id: string): LanguageDto {
-    this.log.debug('Get language with id: [%s]', id);
+    this.log.debug('Get language');
     const languageDto = this.languageDtos.find((dto) => dto.id === id);
 
     if (!languageDto) {
-      this.log.error('Language with id: [%s] not found', id);
       throw new LanguageNotFoundException(`Language with id: [${id}] not found`);
     }
 
-    this.log.trace('Returning language: [%j]', languageDto);
+    this.log.trace('Returning language');
     return languageDto;
   }
 
@@ -123,11 +123,11 @@ export class DefaultLanguageService implements LanguageService {
    * @returns An array of localized Language DTOs.
    */
   listAndSortLocalizedLanguages(locale: AppLocale): ReadonlyArray<LanguageLocalizedDto> {
-    this.log.debug('Get and sort all localized languages with locale: [%s]', locale);
+    this.log.debug('Get and sort all localized languages', { [ATTR_CDCP_LOCALE]: locale });
     const languageDtos = this.listLanguages();
     const localizedLanguageDtos = this.languageDtoMapper.mapLanguageDtosToLanguageLocalizedDtos(languageDtos, locale);
     const sortedLocalizedLanguageDtos = this.sortLocalizedLanguages(localizedLanguageDtos, locale);
-    this.log.trace('Returning sorted localized languages: [%j]', sortedLocalizedLanguageDtos);
+    this.log.trace('Returning sorted localized languages', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: sortedLocalizedLanguageDtos.length });
     return sortedLocalizedLanguageDtos;
   }
 
@@ -140,10 +140,10 @@ export class DefaultLanguageService implements LanguageService {
    * @throws {LanguageNotFoundException} If no language is found with the specified ID.
    */
   getLocalizedLanguageById(id: string, locale: AppLocale): LanguageLocalizedDto {
-    this.log.debug('Get localized language with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized language', { [ATTR_CDCP_LOCALE]: locale });
     const languageDto = this.getLanguageById(id);
     const localizedLanguageDto = this.languageDtoMapper.mapLanguageDtoToLanguageLocalizedDto(languageDto, locale);
-    this.log.trace('Returning localized language: [%j]', localizedLanguageDto);
+    this.log.trace('Returning localized language', { [ATTR_CDCP_LOCALE]: locale });
     return localizedLanguageDto;
   }
 

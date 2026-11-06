@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_OTEL_EVENT_NAME, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import type { RequestHandler } from 'express';
 import expressSession from 'express-session';
 import { minimatch } from 'minimatch';
@@ -7,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import type { ServerConfig } from '~/.server/configs';
 import { createMemoryStore, createRedisStore } from '~/.server/express-server/session';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_HTTP_RESPONSE_CONTENT_LENGTH_BYTES, ATTR_CDCP_HTTP_RESPONSE_TIME_MS } from '~/.server/logging/log-attributes';
 
 /**
  * Checks if a given path should be ignored based on a list of ignore patterns.
@@ -59,7 +61,7 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
 
   return function securityHeadersMiddleware(request, response, next) {
     if (shouldIgnore(ignorePatterns, request.path)) {
-      log.trace('Skipping adding security headers to response: [%s]', request.path);
+      log.trace('Skipping security response headers', { [ATTR_URL_PATH]: request.path });
       return next();
     }
 
@@ -79,13 +81,14 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
 }
 
 /**
- * Creates named request-logger middleware with production-aware Morgan format and status-based severity.
+ * Creates named request-logger middleware with structured completion records and status-based severity.
  *
- * Health readiness requests are excluded from request logging.
+ * The cdcp.http.request.completed event contains method, query-free path, status when sent,
+ * response time in milliseconds and declared response content length in bytes when available.
+ * Incomplete responses carry a fixed error type. Health readiness requests are excluded.
  */
-export function createRequestLoggerMiddleware(isProduction: boolean): RequestHandler {
+export function createRequestLoggerMiddleware(_isProduction: boolean): RequestHandler {
   const log = createLogger('express/middleware/requestLoggerMiddleware');
-  const logFormat = isProduction ? 'tiny' : 'dev';
 
   // List of paths to ignore for request logging. These are typically health check endpoints that
   // are called frequently and can clutter the logs.
@@ -96,18 +99,31 @@ export function createRequestLoggerMiddleware(isProduction: boolean): RequestHan
       return next();
     }
 
-    return morgan(logFormat, {
-      stream: {
-        write: (message) => {
-          if (response.statusCode >= 500) {
-            log.error(message.trim());
-          } else if (response.statusCode >= 400) {
-            log.warn(message.trim());
-          } else {
-            log.info(message.trim());
-          }
-        },
-      },
+    const pathname = request.path;
+    const method = request.method;
+
+    return morgan((tokens, req, res) => {
+      const status = res.headersSent ? res.statusCode : undefined;
+      const responseTime = tokens['response-time']?.(req, res);
+      const contentLength = res.getHeader('content-length');
+      const incomplete = !res.writableFinished;
+      const attributes = {
+        [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
+        [ATTR_HTTP_REQUEST_METHOD]: method,
+        [ATTR_URL_PATH]: pathname,
+        ...(status !== undefined && { [ATTR_HTTP_RESPONSE_STATUS_CODE]: status }),
+        ...(responseTime !== undefined && { [ATTR_CDCP_HTTP_RESPONSE_TIME_MS]: Number(responseTime) }),
+        ...(contentLength !== undefined && Number.isFinite(Number(contentLength)) && { [ATTR_CDCP_HTTP_RESPONSE_CONTENT_LENGTH_BYTES]: Number(contentLength) }),
+        ...(incomplete ? { [ATTR_ERROR_TYPE]: 'http_response_incomplete' } : res.statusCode >= 400 ? { [ATTR_ERROR_TYPE]: String(res.statusCode) } : {}),
+      };
+
+      if (incomplete || res.statusCode >= 500) {
+        log.error('HTTP request completed', attributes);
+      } else if (res.statusCode >= 400) {
+        log.warn('HTTP request completed', attributes);
+      } else {
+        log.info('HTTP request completed', attributes);
+      }
     })(request, response, next);
   };
 }
@@ -155,7 +171,7 @@ export async function createSessionMiddleware(isProduction: boolean, serverConfi
 
   return async function sessionMiddleware(request, response, next) {
     if (shouldIgnore(ignorePatterns, request.path)) {
-      log.trace('Skipping session: [%s]', request.path);
+      log.trace('Skipping session middleware', { [ATTR_URL_PATH]: request.path });
       return next();
     }
 

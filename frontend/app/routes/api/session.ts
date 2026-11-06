@@ -1,13 +1,17 @@
-/**
- * An API route that can be used to perform actions with user's server-side session.
- */
 import { redirectDocument } from 'react-router';
 
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+// Session attributes are currently incubating OpenTelemetry conventions.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
+/**
+ * An API route that can be used to perform actions with user's server-side session.
+ */
+import { ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
 import { getApiSessionRedirectToUrl } from '~/.server/utils/api-session-utils';
 import { APP_LOCALES } from '~/utils/locale-utils';
 
@@ -26,7 +30,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
 
   const log = createLogger('routes/api/session');
   const sessionId = session.id;
-  log.debug("Action with user's server-side session; sessionId: [%s]", sessionId);
+  log.debug('Handling server-side session action', { [ATTR_SESSION_ID]: sessionId });
 
   const bodySchema = z.object({
     action: z.enum(API_SESSION_ACTIONS),
@@ -38,7 +42,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
   const parsedBody = bodySchema.safeParse(requestBody);
 
   if (!parsedBody.success) {
-    log.debug('Invalid request body [%j]; sessionId: [%s]', requestBody, sessionId);
+    log.debug('Invalid session action request', { [ATTR_SESSION_ID]: sessionId, [ATTR_ERROR_TYPE]: 'invalid_session_action_request' });
     return Response.json({ errors: z.flattenError(parsedBody.error).fieldErrors }, { status: 400 });
   }
 
@@ -46,7 +50,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
 
   switch (action) {
     case 'end': {
-      log.debug("Ending user's server-side session; sessionId: [%s], locale: [%s], redirectTo: [%s]", sessionId, locale, redirectTo);
+      log.debug('Ending server-side session', { [ATTR_SESSION_ID]: sessionId, [ATTR_CDCP_LOCALE]: locale });
 
       await session.destroy();
 
@@ -62,7 +66,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
     }
 
     case 'extend': {
-      log.debug("Extending user's server-side session lifetime; sessionId: [%s]", sessionId);
+      log.debug('Extending server-side session lifetime', { [ATTR_SESSION_ID]: sessionId });
       return Response.json({
         status: 'success',
         message: 'Session extended successfully.',

@@ -8,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { CountryRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 
 @injectable()
 export class CountryHealthCheck implements HealthCheck {
@@ -33,7 +34,7 @@ export class CountryHealthCheck implements HealthCheck {
 
   private init(): void {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
-    this.log.debug('Initializing CountryHealthCheck with cache TTL of %d ms.', healthCacheTTL);
+    this.log.debug('Initializing CountryHealthCheck', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
     this.check = memoize(this.check, {
       async: true,

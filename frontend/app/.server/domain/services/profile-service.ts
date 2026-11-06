@@ -7,6 +7,7 @@ import type { ProfileRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 export interface ProfileService {
   /**
@@ -78,7 +79,7 @@ export class DefaultProfileService implements ProfileService {
   }
 
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating communication preferences for request [%j]', updateCommunicationPreferenceRequestDto);
+    this.log.trace('Updating communication preferences', { [ATTR_CDCP_USER_ID]: userId });
 
     this.auditService.createAudit('profile-update.communication-preferences.post', { userId });
 
@@ -89,7 +90,7 @@ export class DefaultProfileService implements ProfileService {
   }
 
   async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating phone numbers for request [%j]', updatePhoneNumbersRequestDto);
+    this.log.trace('Updating phone numbers', { [ATTR_CDCP_USER_ID]: userId });
 
     this.auditService.createAudit('profile-update.phone-numbers.post', { userId });
 
@@ -100,7 +101,7 @@ export class DefaultProfileService implements ProfileService {
   }
 
   async updateDentalBenefits(updateDentalBenefitsRequestDto: UpdateDentalBenefitsRequestDto): Promise<void> {
-    this.log.trace('Updating dental benefits for request [%j]', updateDentalBenefitsRequestDto);
+    this.log.trace('Updating dental benefits');
 
     const updateDentalBenefitsRequestEntity = this.profileDtoMapper.mapUpdateDentalBenefitsRequestDtoToUpdateDentalBenefitsRequestEntity(updateDentalBenefitsRequestDto);
     await this.profileRepository.updateDentalBenefits(updateDentalBenefitsRequestEntity);
@@ -109,7 +110,7 @@ export class DefaultProfileService implements ProfileService {
   }
 
   async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating email address for request [%j]', updateEmailAddressRequestDto);
+    this.log.trace('Updating email address', { [ATTR_CDCP_USER_ID]: userId });
 
     this.auditService.createAudit('profile-update.email-address.post', { userId });
 
@@ -120,7 +121,7 @@ export class DefaultProfileService implements ProfileService {
   }
 
   async updateAddresses(updateAddressRequestDto: UpdateAddressRequestDto): Promise<void> {
-    this.log.trace('Updating mailing and home addresses for request [%j]', updateAddressRequestDto);
+    this.log.trace('Updating mailing and home addresses');
 
     const updateAddressRequestEntity = this.profileDtoMapper.mapUpdateAddressRequestDtoToUpdateAddressRequestEntity(updateAddressRequestDto);
     await this.profileRepository.updateAddresses(updateAddressRequestEntity);

@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, mockReset } from 'vitest-mock-extended';
 
@@ -36,7 +37,7 @@ describe('DefaultHCaptchaValidator', () => {
     });
 
     expect(result).toEqual({ isValid: true });
-    expect(mockLogger.debug).toHaveBeenCalledWith('Starting hCaptcha response validation for user: %s, IP: %s', 'test-user', '127.0.0.1');
+    expect(mockLogger.debug).toHaveBeenCalledWith('Starting hCaptcha response validation', { 'cdcp.user.id': 'test-user' });
   });
 
   it('should return isValid: true when the hCaptcha response is missing', async () => {
@@ -47,7 +48,7 @@ describe('DefaultHCaptchaValidator', () => {
     });
 
     expect(result).toEqual({ isValid: true });
-    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha response not found for user: %s; gracefully passing validation', 'test-user');
+    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha response not found; gracefully passing validation', { 'cdcp.user.id': 'test-user' });
   });
 
   it('should return isValid: false when the hCaptcha score exceeds the threshold', async () => {
@@ -64,7 +65,12 @@ describe('DefaultHCaptchaValidator', () => {
       isValid: false,
       errorMessage: 'hCaptcha response validation failed; hCaptcha score exceeds threshold.',
     });
-    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha score exceeds max threshold for user: %s, score: %s', 'test-user', 1);
+    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha score exceeds max threshold', {
+      'cdcp.user.id': 'test-user',
+      'cdcp.hcaptcha.score': 1,
+      'cdcp.hcaptcha.max_score': 0.9,
+      [ATTR_ERROR_TYPE]: 'hcaptcha_score_exceeded',
+    });
   });
 
   it('should return isValid: true when an error occurs during validation', async () => {
@@ -78,6 +84,9 @@ describe('DefaultHCaptchaValidator', () => {
     });
 
     expect(result).toEqual({ isValid: true });
-    expect(mockLogger.warn).toHaveBeenCalledWith('Error during hCaptcha response validation for user: %s; gracefully passing validation; error: %s', 'test-user', 'Service unavailable');
+    expect(mockLogger.warn).toHaveBeenCalledWith('Error during hCaptcha response validation; gracefully passing validation', {
+      'cdcp.user.id': 'test-user',
+      [ATTR_ERROR_TYPE]: 'hcaptcha_validation_failed',
+    });
   });
 });

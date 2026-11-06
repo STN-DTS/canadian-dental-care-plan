@@ -1,11 +1,15 @@
 import { invariant } from '@dts-stn/invariant';
+import { ATTR_ERROR_TYPE, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
 import { createClient, createSentinel } from 'redis';
 import type { RedisClientType, RedisSentinelType } from 'redis';
 
 import type { ServerConfig } from '~/.server/configs';
+import { redisErrorType } from '~/.server/data/redis-error-type';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_ERROR_CODE, ATTR_CDCP_RETRY_COUNT, ATTR_CDCP_RETRY_DELAY_MS } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
 import { singleton } from '~/.server/utils/instance-registry';
+import { operationalErrorCode } from '~/instrumentation/operational-error-type';
 
 export type RedisClient = RedisClientType | RedisSentinelType;
 
@@ -77,16 +81,17 @@ function createRedisClient(config: RedisStandaloneClientServerConfig): RedisClie
   log.debug('Registering event handlers for standalone Redis client');
   client
     .on('connect', () => {
-      log.info('Connecting to redis://%s:%s', config.REDIS_STANDALONE_HOST, config.REDIS_STANDALONE_PORT);
+      log.info('Connecting to standalone Redis', { [ATTR_SERVER_ADDRESS]: config.REDIS_STANDALONE_HOST, [ATTR_SERVER_PORT]: config.REDIS_STANDALONE_PORT });
     })
     .on('ready', () => {
       log.info('Standalone Redis client is ready');
     })
     .on('reconnecting', () => {
-      log.warn('Reconnecting to redis://%s:%s', config.REDIS_STANDALONE_HOST, config.REDIS_STANDALONE_PORT);
+      log.debug('Reconnecting to standalone Redis', { [ATTR_SERVER_ADDRESS]: config.REDIS_STANDALONE_HOST, [ATTR_SERVER_PORT]: config.REDIS_STANDALONE_PORT });
     })
-    .on('error', (error: Error) => {
-      log.error('Standalone Redis client error: %o', error);
+    .on('error', (error: unknown) => {
+      const code = operationalErrorCode(error);
+      log.error('Standalone Redis client error', { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_STANDALONE_HOST, [ATTR_SERVER_PORT]: config.REDIS_STANDALONE_PORT });
     });
 
   return client as RedisClientType;
@@ -144,16 +149,17 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
   log.debug('Registering event handlers for Redis Sentinel client');
   sentinel
     .on('connect', () => {
-      log.info('Connecting to redis-sentinel://%s:%s', config.REDIS_SENTINEL_HOST, config.REDIS_SENTINEL_PORT);
+      log.info('Connecting to Redis Sentinel', { [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
     })
     .on('ready', () => {
       log.info('Redis Sentinel client is ready');
     })
     .on('reconnecting', () => {
-      log.warn('Reconnecting to redis-sentinel://%s:%s', config.REDIS_SENTINEL_HOST, config.REDIS_SENTINEL_PORT);
+      log.debug('Reconnecting to Redis Sentinel', { [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
     })
-    .on('error', (error: Error) => {
-      log.error('Redis Sentinel client error: %o', error);
+    .on('error', (error: unknown) => {
+      const code = operationalErrorCode(error);
+      log.error('Redis Sentinel client error', { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
     });
 
   return sentinel as RedisSentinelType;
@@ -164,12 +170,11 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
  * Adds random jitter to avoid thundering herd problems.
  *
  * @param retries - The number of consecutive failed connection attempts.
- * @param cause - The error that caused the reconnection attempt.
  * @returns The delay in milliseconds before the next reconnection attempt.
  *
  * @see https://github.com/redis/docs/blob/5e1b0aad58aedd24a7f93aba58502b4a27e67c32/content/develop/clients/nodejs/connect.md?plain=1#L312
  */
-function exponentialBackoffReconnectionStrategy(retries: number, cause: Error): number {
+function exponentialBackoffReconnectionStrategy(retries: number): number {
   const log = createLogger('redis-client/reconnectionStrategy');
   // Generate a random jitter between 0 – 100 ms:
   const jitter = Math.floor(Math.random() * 100);
@@ -179,6 +184,6 @@ function exponentialBackoffReconnectionStrategy(retries: number, cause: Error): 
   const delay = Math.min(Math.pow(2, retries) * 50, 3000);
 
   const retryIn = delay + jitter;
-  log.error('Redis connection failed (attempt #%s); retrying in %s ms. Cause: %o', retries, retryIn, cause);
+  log.debug('Redis reconnection scheduled', { [ATTR_CDCP_RETRY_COUNT]: retries, [ATTR_CDCP_RETRY_DELAY_MS]: retryIn });
   return retryIn;
 }

@@ -50,10 +50,10 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
   }
 
   async mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto: ProgramApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto> {
-    this.log.trace('Mapping program applicant dto to client application renewal eligibility dto: [%j]', programApplicantDto);
+    this.log.trace('Mapping program applicant to renewal eligibility');
 
     const isChildOrYouthAtIntake = isChildOrYouth(programApplicantDto.dateOfBirth, applicationYear);
-    this.log.trace('Program applicant age category: [%s], date of birth: [%s]', isChildOrYouthAtIntake ? 'child/youth' : 'adult', programApplicantDto.dateOfBirth);
+    this.log.trace('Program applicant intake age check completed');
 
     if (isChildOrYouthAtIntake) {
       this.log.debug('Applicant age is child/youth at intake, returning ineligible result');
@@ -69,7 +69,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     applicationYear: { taxYear: string },
     applicationCategoryCodeName: 'New' | 'Renewal' = 'Renewal',
   ): Promise<ClientApplicationRenewalEligibilityDto> {
-    this.log.trace('Mapping client application dto to client application renewal eligibility dto: [%j]', clientApplicationDto);
+    this.log.trace('Mapping client application to renewal eligibility');
 
     if (clientApplicationDto.previousApplication) {
       this.log.debug('Client application has a previous application, returning ineligible result');
@@ -168,11 +168,11 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
       const eligibility = eligibilities.get(clientNumber);
 
       if (!eligibility) {
-        this.log.trace('No client eligibility found for client number [%s], skipping', clientNumber);
+        this.log.trace('No client eligibility found; skipping client');
         continue;
       }
 
-      this.log.trace('Client eligibility for client number [%s]: [%j]', clientNumber, eligibility);
+      this.log.trace('Client eligibility found');
       entries.push([clientNumber, eligibility]);
     }
 
@@ -195,7 +195,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     for (const [clientNumber, eligibility] of clientEligibilities) {
       // Step 1: enrollment gate — skip clients that are not enrolled.
       const isEnrolled = eligibility.enrollmentStatusCode === this.serverConfig.ENROLLMENT_STATUS_CODE_ENROLLED;
-      this.log.trace('Checking client number [%s] enrollment status: isEnrolled=[%s]', clientNumber, isEnrolled);
+      this.log.trace('Client enrollment check completed');
 
       if (!isEnrolled) {
         continue;
@@ -203,7 +203,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
 
       // Step 2: profile eligibility
       const isEligible = eligibility.eligibilityStatusCode === this.serverConfig.ELIGIBILITY_STATUS_CODE_ELIGIBLE;
-      this.log.trace('Checking client number [%s] profile eligibility: isEnrolled=[%s], isEligible=[%s]', clientNumber, isEnrolled, isEligible);
+      this.log.trace('Client profile eligibility check completed');
 
       if (isEligible) {
         entries.push([clientNumber, eligibility]);
@@ -221,14 +221,14 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
    * - Missing or unrecognised tier code → `'full'` (all fields required).
    */
   private getInputModel(clientApplication: ClientApplicationDto): 'simplified' | 'full' {
-    const { applicantInformation, applicationYearId, coverageCopayTierCode } = clientApplication;
+    const { coverageCopayTierCode } = clientApplication;
 
     if (!coverageCopayTierCode || !isValidCoverageCopayTierCode(coverageCopayTierCode)) {
-      this.log.trace('Client application with client number [%s] and application year [%s] has no valid coverage copay tier code, using full input model', applicantInformation.clientNumber, applicationYearId);
+      this.log.trace('No valid coverage copay tier code; using full input model');
       return 'full';
     }
 
-    this.log.trace('Client application with client number [%s] and application year [%s] has valid coverage copay tier code [%s], using simplified input model', applicantInformation.clientNumber, applicationYearId, coverageCopayTierCode);
+    this.log.trace('Valid coverage copay tier code; using simplified input model');
     return 'simplified';
   }
 }

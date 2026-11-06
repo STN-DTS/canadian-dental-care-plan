@@ -1,11 +1,15 @@
-/**
- * An API route that can be used to perform actions with user's public application state.
- */
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+// Session attributes are currently incubating OpenTelemetry conventions.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { createLogger } from '~/.server/logging';
+/**
+ * An API route that can be used to perform actions with user's public application state.
+ */
+import { ATTR_CDCP_APPLICATION_ID } from '~/.server/logging/log-attributes';
 import { savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { ApplicationStateParams } from '~/.server/routes/helpers/public-application-route-helpers';
 
@@ -21,7 +25,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
 
   const log = createLogger('routes/api/application-state');
   const sessionId = session.id;
-  log.debug("Action with with user's application state; sessionId: [%s]", sessionId);
+  log.debug('Handling public application state action', { [ATTR_SESSION_ID]: sessionId });
 
   const bodySchema = z.object({
     action: z.enum(API_APPLICATION_STATE_ACTIONS),
@@ -32,7 +36,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
   const parsedBody = bodySchema.safeParse(requestBody);
 
   if (!parsedBody.success) {
-    log.debug('Invalid request body [%j]; sessionId: [%s]', requestBody, sessionId);
+    log.debug('Invalid public application state request', { [ATTR_SESSION_ID]: sessionId, [ATTR_ERROR_TYPE]: 'invalid_application_state_request' });
     return Response.json({ errors: z.flattenError(parsedBody.error).fieldErrors }, { status: 400 });
   }
 
@@ -44,7 +48,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
   switch (parsedBody.data.action) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     case 'extend': {
-      log.debug("Extending user's application state; id: [%s], sessionId: [%s]", params.id, sessionId);
+      log.debug('Extending public application state', { [ATTR_CDCP_APPLICATION_ID]: params.id, [ATTR_SESSION_ID]: sessionId });
       savePublicApplicationState({ params, session, state: {} });
       return Response.json({
         status: 'success',

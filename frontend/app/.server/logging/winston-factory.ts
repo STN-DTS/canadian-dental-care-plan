@@ -2,7 +2,9 @@ import path from 'node:path';
 import type * as w from 'winston';
 import winston, { format } from 'winston';
 
+import { ATTR_CDCP_LOG_AUDIT_FILE_PATH, ATTR_CDCP_LOG_LEVEL } from '~/.server/logging/log-attributes';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
+import { formatUrlPaths } from '~/.server/logging/winston-format';
 import 'winston-daily-rotate-file';
 
 import { getLevelsConfig } from '~/.server/logging/winston-levels-config';
@@ -22,7 +24,7 @@ export function createWinstonInstance(config: LoggingConfig): w.Logger {
   const winstonInstance = winston.createLogger({
     level: config.LOG_LEVEL,
     levels: levelsConfig.levels,
-    format: format.combine(format.timestamp(), format.errors({ stack: true })),
+    format: format.combine(format.timestamp(), format.errors({ stack: true }), formatUrlPaths()),
     transports: [createConsoleTransport(config)],
     exitOnError: false,
   });
@@ -30,7 +32,7 @@ export function createWinstonInstance(config: LoggingConfig): w.Logger {
   // Configure audit logging if enabled
   configureAuditLogging(winstonInstance, config);
 
-  winstonInstance.info('Logger initialized with level "%s"', winstonInstance.level);
+  winstonInstance.info('Logger initialized', { [ATTR_CDCP_LOG_LEVEL]: winstonInstance.level });
   return winstonInstance;
 }
 
@@ -45,7 +47,6 @@ function configureAuditLogging(logger: w.Logger, config: LoggingConfig): void {
     const dailyRotateFileTransport = createDailyRotateFileTransport(config);
     logger.add(dailyRotateFileTransport);
 
-    const logPath = path.join(dailyRotateFileTransport.dirname || '.', dailyRotateFileTransport.filename);
-    logger.info(`Audit logging enabled. Writing logs to ${logPath}`);
+    logger.info('Audit logging enabled', { [ATTR_CDCP_LOG_AUDIT_FILE_PATH]: path.join(dailyRotateFileTransport.dirname || '.', dailyRotateFileTransport.filename) });
   }
 }

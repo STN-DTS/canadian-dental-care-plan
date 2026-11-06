@@ -4,7 +4,6 @@ import { mock } from 'vitest-mock-extended';
 import type { MockProxy } from 'vitest-mock-extended';
 
 import { DefaultAppContainerProvider } from '~/.server/app-container-provider';
-import type { ServiceIdentifier } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 
@@ -14,9 +13,11 @@ describe('DefaultAppContainerProvider', () => {
 
   let mockLogger: MockProxy<Logger>;
 
-  type MockService = { name: string };
+  class MockService {
+    name = 'MockService';
+  }
   const mockService: MockService = { name: 'MockService' };
-  const mockServiceIdentifier = Symbol.for('MockService') as unknown as ServiceIdentifier<MockService>;
+  const mockServiceIdentifier = MockService;
 
   beforeEach(() => {
     mockLogger = mock<Logger>();
@@ -33,14 +34,14 @@ describe('DefaultAppContainerProvider', () => {
       const result = appContainerProvider.find(mockServiceIdentifier);
 
       expect(result).toEqual(mockService);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Finding service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Finding optional service', { 'cdcp.container.service.name': 'MockService' });
     });
 
     it('should return undefined if service is not found', () => {
       const result = appContainerProvider.find(mockServiceIdentifier);
 
       expect(result).toBeUndefined();
-      expect(mockLogger.trace).toHaveBeenCalledWith('Finding service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Finding optional service', { 'cdcp.container.service.name': 'MockService' });
     });
   });
 
@@ -51,12 +52,12 @@ describe('DefaultAppContainerProvider', () => {
       const result = appContainerProvider.get(mockServiceIdentifier);
 
       expect(result).toEqual(mockService);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Get service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Getting required service', { 'cdcp.container.service.name': 'MockService' });
     });
 
     it('should throw an error if service is not found', () => {
       expect(() => appContainerProvider.get(mockServiceIdentifier)).toThrowError();
-      expect(mockLogger.trace).toHaveBeenCalledWith('Get service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Getting required service', { 'cdcp.container.service.name': 'MockService' });
     });
   });
 
@@ -71,14 +72,14 @@ describe('DefaultAppContainerProvider', () => {
       const result = appContainerProvider.findAll(mockServiceIdentifier);
 
       expect(result).toEqual(mockServiceInstances);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Finding service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Finding all optional services', { 'cdcp.container.service.name': 'MockService' });
     });
 
     it('should return an empty array if no instances are found', () => {
       const result = appContainerProvider.findAll(mockServiceIdentifier);
 
       expect(result).toEqual([]);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Finding service for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Finding all optional services', { 'cdcp.container.service.name': 'MockService' });
     });
   });
 
@@ -93,13 +94,13 @@ describe('DefaultAppContainerProvider', () => {
       const result = appContainerProvider.getAll(mockServiceIdentifier);
 
       expect(result).toEqual(mockServiceInstances);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Getting all services for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Getting all required services', { 'cdcp.container.service.name': 'MockService' });
     });
 
     it('should return empty array when no instances are found', () => {
       const result = appContainerProvider.getAll(mockServiceIdentifier);
       expect(result).toHaveLength(0);
-      expect(mockLogger.trace).toHaveBeenCalledWith('Getting all services for service identifier: %s', mockServiceIdentifier);
+      expect(mockLogger.trace).toHaveBeenCalledWith('Getting all required services', { 'cdcp.container.service.name': 'MockService' });
     });
   });
 });

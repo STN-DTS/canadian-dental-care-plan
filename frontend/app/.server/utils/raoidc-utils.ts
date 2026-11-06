@@ -1,6 +1,3 @@
-/**
- * Utility functions to help with RAOIDC requests.
- */
 import { invariant } from '@dts-stn/invariant';
 import type { JWK, JWTPayload, JWTVerifyResult } from 'jose';
 import { SignJWT, compactDecrypt, decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
@@ -10,6 +7,10 @@ import { fetch } from 'undici';
 
 import type { FetchFn } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
+/**
+ * Utility functions to help with RAOIDC requests.
+ */
+import { ATTR_CDCP_AUTH_SESSION_VALID } from '~/.server/logging/log-attributes';
 
 /**
  * An OIDC ID token.
@@ -148,7 +149,7 @@ export interface JWKSet {
 export async function fetchServerMetadata(authServerUrl: string, fetchFn?: FetchFn) {
   const log = createLogger('raoidc-utils/fetchServerMetadata');
   const discoveryUrl = authServerUrl + '/.well-known/openid-configuration';
-  log.info('Fetching OIDC server metadata from [%s]', discoveryUrl);
+  log.debug('Fetching OIDC server metadata');
 
   // oxfmt-ignore
   const discoveryResponse = fetchFn
@@ -161,10 +162,9 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
 
   const serverMetadata = (await discoveryResponse.json()) as ServerMetadata;
   validateServerMetadata(serverMetadata);
-  log.trace('Server metadata response: [%j]', serverMetadata);
+  log.trace('OIDC server metadata received and validated');
 
-  const jwksUrl = serverMetadata.jwks_uri;
-  log.info('Fetching OIDC server public keys from [%s]', jwksUrl);
+  log.debug('Fetching OIDC server public keys');
 
   // oxfmt-ignore
   const jwksResponse = fetchFn
@@ -177,7 +177,7 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
 
   const jwkSet = (await jwksResponse.json()) as JWKSet;
   validateJwkSet(jwkSet);
-  log.trace('Server JWKS response: [%j]', jwkSet);
+  log.trace('OIDC server public keys received and validated');
 
   return { jwkSet, serverMetadata };
 }
@@ -203,7 +203,7 @@ export function generateAuthorizationRequest(authorizationUri: string, clientId:
   authorizationRequest.searchParams.set('scope', scope);
   authorizationRequest.searchParams.set('state', state);
 
-  log.debug('Generated authorization request: [%s]', authorizationRequest);
+  log.debug('OIDC authorization request generated');
   return authorizationRequest;
 }
 
@@ -302,7 +302,7 @@ export async function fetchUserInfo(userinfoUri: string, serverJwks: JWKSet, acc
 export async function validateSession(authUrl: string, clientId: string, sessionId: string, fetchFn?: FetchFn) {
   const log = createLogger('raoidc-utils/validateSession');
   const validateUrl = new URL('validatesession', authUrl + '/');
-  log.debug('Validating/extending session [%s] via [%s]', sessionId, validateUrl);
+  log.debug('Validating and extending RAOIDC provider session');
 
   validateUrl.searchParams.set('client_id', clientId);
   validateUrl.searchParams.set('shared_session_id', sessionId);
@@ -320,7 +320,7 @@ export async function validateSession(authUrl: string, clientId: string, session
   // to indicate if the session is valid
   const result = (await response.text()) === 'true';
 
-  log.debug('Session [%s] is valid: [%s]', sessionId, result);
+  log.debug('RAOIDC provider session validation completed', { [ATTR_CDCP_AUTH_SESSION_VALID]: result });
   return result;
 }
 
@@ -331,7 +331,7 @@ export async function validateSession(authUrl: string, clientId: string, session
  */
 async function createClientAssertion(issuer: string, client: ClientMetadata) {
   const log = createLogger('raoidc-utils/createClientAssertion');
-  log.debug(`Creating client [%s] assertion for issuer [%s]`, client.clientId, issuer);
+  log.debug('Creating OIDC client assertion');
 
   const now = Math.floor(Temporal.Now.instant().epochMilliseconds / 1000); // current time, rounded down to the nearest second
   const expiry = now + 60; // valid for 1 minute
@@ -457,7 +457,7 @@ function validateJwkSet(jwkSet: JWKSet) {
     throw new Error('JWK set has no keys');
   }
 
-  log.info('JWK set has been successfilly validated');
+  log.debug('JWK set successfully validated');
 }
 
 /**
@@ -487,20 +487,17 @@ function validateServerMetadata(serverMetadata: ServerMetadata) {
     throw new Error('Server metadata has no jwks endpoint');
   }
 
-  log.info('Server metadata has been successfilly validated');
+  log.debug('OIDC server metadata successfully validated');
 }
 
 /**
  * Verify a JWT by checking it against a collection of JWKs.
  */
 async function verifyJwt<Payload = JWTPayload>(jwt: string, jwks: JWKSet) {
-  const log = createLogger('raoidc-utils/verifyJwt');
-
   const { alg, kid } = decodeProtectedHeader(jwt);
   const key = jwks.keys.find((jwk) => jwk.kid === kid);
 
   if (!key) {
-    log.error('JWT verification failure; no matching JWK with kid=%s could be found', kid);
     throw new Error('No matching JWK was found to verify JWT');
   }
 

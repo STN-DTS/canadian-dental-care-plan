@@ -9,6 +9,7 @@ import type { ApplicationYearDtoMapper } from '~/.server/domain/mappers';
 import type { ApplicationYearRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 
 export interface ApplicationYearService {
   /**
@@ -49,7 +50,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
   }
 
   private init(): void {
-    this.log.debug('Cache TTL value: %d ms', 1000 * this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_TTL_MS]: 1000 * this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS });
 
     this.getIntakeApplicationYear = memoize(this.getIntakeApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
@@ -58,7 +59,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     });
 
     type MemoizedGetIntakeApplicationYear = Memoized<typeof this.getIntakeApplicationYear, Options<typeof this.getIntakeApplicationYear>>;
-    (this.getIntakeApplicationYear as MemoizedGetIntakeApplicationYear).cache.on('add', () => this.log.info('Creating new getIntakeApplicationYear memo'));
+    (this.getIntakeApplicationYear as MemoizedGetIntakeApplicationYear).cache.on('add', () => this.log.debug('Creating new getIntakeApplicationYear memo'));
 
     this.getRenewalApplicationYear = memoize(this.getRenewalApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
@@ -67,28 +68,28 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     });
 
     type MemoizedGetRenewalApplicationYear = Memoized<typeof this.getRenewalApplicationYear, Options<typeof this.getRenewalApplicationYear>>;
-    (this.getRenewalApplicationYear as MemoizedGetRenewalApplicationYear).cache.on('add', () => this.log.info('Creating new getRenewalApplicationYear memo'));
+    (this.getRenewalApplicationYear as MemoizedGetRenewalApplicationYear).cache.on('add', () => this.log.debug('Creating new getRenewalApplicationYear memo'));
 
     this.log.debug('DefaultApplicationYearService initiated.');
   }
 
   getIntakeApplicationYear(date: string): ApplicationYearResultDto {
-    this.log.trace('Finding intake application year results with date: [%s]', date);
+    this.log.trace('Finding intake application year results');
 
     const intakeApplicationYearEntity = this.applicationYearRepository.getIntakeApplicationYear(date);
     const intakeApplicationYearResultDto = this.applicationYearDtoMapper.mapApplicationYearResultEntityToApplicationYearResultDto(intakeApplicationYearEntity);
 
-    this.log.trace('Returning intake application year result: [%j]', intakeApplicationYearResultDto);
+    this.log.trace('Returning intake application year result');
     return intakeApplicationYearResultDto;
   }
 
   getRenewalApplicationYear(date: string): ApplicationYearResultDto {
-    this.log.trace('Finding renewal application year results with date: [%s]', date);
+    this.log.trace('Finding renewal application year results');
 
     const renewalApplicationYearEntity = this.applicationYearRepository.getRenewalApplicationYear(date);
     const renewalApplicationYearResultDto = this.applicationYearDtoMapper.mapApplicationYearResultEntityToApplicationYearResultDto(renewalApplicationYearEntity);
 
-    this.log.trace('Returning renewal application year result: [%j]', renewalApplicationYearResultDto);
+    this.log.trace('Returning renewal application year result');
     return renewalApplicationYearResultDto;
   }
 }

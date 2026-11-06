@@ -1,11 +1,13 @@
 import type { Params } from 'react-router';
 
+import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import type { Namespace } from 'i18next';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import { i18nResources } from '~/.server/i18n-resources';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
 import { APP_LOCALES } from '~/utils/locale-utils';
 
@@ -34,16 +36,16 @@ export function getLocale(requestUrl: URL): AppLocale {
   const { pathname } = requestUrl;
 
   if (pathname.startsWith('/en')) {
-    log.debug('Locale [en] detected in URL; pathname: [%s]', pathname);
+    log.debug('Locale detected in URL', { [ATTR_CDCP_LOCALE]: 'en', [ATTR_URL_PATH]: pathname });
     return 'en';
   }
 
   if (pathname.startsWith('/fr')) {
-    log.debug('Locale [fr] detected in URL; pathname: [%s]', pathname);
+    log.debug('Locale detected in URL', { [ATTR_CDCP_LOCALE]: 'fr', [ATTR_URL_PATH]: pathname });
     return 'fr';
   }
 
-  log.debug('No locale detected in URL; returning default [en]; pathname: [%s]', pathname);
+  log.debug('No supported locale detected in URL; using default', { [ATTR_CDCP_LOCALE]: 'en', [ATTR_URL_PATH]: pathname });
   return 'en';
 }
 
@@ -62,16 +64,16 @@ export function getLocaleFromParams(params: Params): AppLocale {
   const lang = params.lang;
 
   if (lang === 'en') {
-    log.debug("Locale [en] detected in 'lang' param; lang: [%s]", lang);
+    log.debug('Locale detected in lang parameter', { [ATTR_CDCP_LOCALE]: 'en' });
     return 'en';
   }
 
   if (lang === 'fr') {
-    log.debug("Locale [fr] detected in 'lang' param; lang: [%s]", lang);
+    log.debug('Locale detected in lang parameter', { [ATTR_CDCP_LOCALE]: 'fr' });
     return 'fr';
   }
 
-  log.debug("No locale detected in 'lang' param; returning default [en]; lang: [%s]", lang);
+  log.debug('No supported locale detected in lang parameter; using default', { [ATTR_CDCP_LOCALE]: 'en' });
   return 'en';
 }
 

@@ -9,6 +9,7 @@ import type { ApplicantRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services/audit-service';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 /** Provides lookups restricted to applicants with a program-assigned type. */
 export interface ProgramApplicantService {
@@ -53,15 +54,15 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
     const applicantEntityOption = await this.applicantRepository.findApplicantByBasicInfo(requestEntity);
 
     if (Option.isNone(applicantEntityOption)) {
-      this.log.trace('No program applicant found for basic info: [%j]', request);
+      this.log.trace('No program applicant found by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
       return Option.none();
     }
 
     const applicantEntity = Option.getOrThrow(applicantEntityOption);
-    this.log.trace('Applicant entity retrieved for basic info: [%j]', request);
+    this.log.trace('Applicant retrieved by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
 
     if (!this.isProgramApplicant(applicantEntity)) {
-      this.log.trace('Applicant entity for basic info: [%j] is not a program applicant', request);
+      this.log.trace('Applicant found by basic info is not a program applicant', { [ATTR_CDCP_USER_ID]: request.userId });
       return Option.none();
     }
 
@@ -75,15 +76,15 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
     const applicantEntityOption = await this.applicantRepository.findApplicantBySin(requestEntity);
 
     if (Option.isNone(applicantEntityOption)) {
-      this.log.trace('No program applicant found for sin [%s]', request.sin);
+      this.log.trace('No program applicant found by SIN', { [ATTR_CDCP_USER_ID]: request.userId });
       return Option.none();
     }
 
     const applicantEntity = Option.getOrThrow(applicantEntityOption);
-    this.log.trace('Applicant entity retrieved for sin [%s]', request.sin);
+    this.log.trace('Applicant retrieved by SIN', { [ATTR_CDCP_USER_ID]: request.userId });
 
     if (!this.isProgramApplicant(applicantEntity)) {
-      this.log.trace('Applicant entity for sin [%s] is not a program applicant', request.sin);
+      this.log.trace('Applicant found by SIN is not a program applicant', { [ATTR_CDCP_USER_ID]: request.userId });
       return Option.none();
     }
 

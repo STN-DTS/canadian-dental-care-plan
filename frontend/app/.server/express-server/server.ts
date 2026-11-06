@@ -1,3 +1,4 @@
+import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import compression from 'compression';
 import express from 'express';
 import sourceMapSupport from 'source-map-support';
@@ -7,6 +8,7 @@ import { createGlobalErrorHandler } from '~/.server/express-server/request-handl
 import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
 import { configureProductionServer, configureProductionStaticAssets } from '~/.server/express-server/server-prod';
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_RUNTIME_MODE, ATTR_CDCP_SERVER_LISTEN_TARGET, ATTR_CDCP_SESSION_STORAGE } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
 
 console.log('Starting Canadian Dental Care Plan server...');
@@ -22,7 +24,7 @@ const port = process.env.PORT ?? '3000'; // TODO :: add this to env schema
 log.info('Installing source map support');
 sourceMapSupport.install();
 
-log.info(`Initializing %s mode express server...`, environment.NODE_ENV);
+log.info('Initializing Express server', { [ATTR_CDCP_RUNTIME_MODE]: environment.NODE_ENV });
 const app = express();
 
 log.info('Disabling X-Powered-By response header');
@@ -52,7 +54,7 @@ if (isProduction) {
 log.info('Security headers middleware');
 app.use(createSecurityHeadersMiddleware());
 
-log.info('Session middleware (%s)', environment.SESSION_STORAGE_TYPE);
+log.info('Configuring session middleware', { [ATTR_CDCP_SESSION_STORAGE]: environment.SESSION_STORAGE_TYPE });
 app.use(await createSessionMiddleware(isProduction, environment));
 
 /**
@@ -68,7 +70,7 @@ app.all(['/:lang/protected/apply{/*splat}', '/:lang/protege/demander{/*splat}'],
   const isFrench = lang === 'fr';
   const basePath = isFrench ? 'protege/demande' : 'protected/application';
   const redirectUrl = `/${lang}/${basePath}`;
-  log.info('Redirecting protected apply. request: [%s], redirectUrl: [%s]', req.originalUrl, redirectUrl);
+  log.debug('Redirecting legacy protected application route', { [ATTR_URL_PATH]: req.path, [ATTR_CDCP_REDIRECT_TARGET]: redirectUrl });
   res.redirect(302, redirectUrl);
 });
 
@@ -85,7 +87,7 @@ app.all(['/:lang/apply{/*splat}', '/:lang/demander{/*splat}'], (req, res) => {
   const isFrench = lang === 'fr';
   const basePath = isFrench ? 'demande' : 'application';
   const redirectUrl = `/${lang}/${basePath}`;
-  log.info('Redirecting public apply. request: [%s], redirectUrl: [%s]', req.originalUrl, redirectUrl);
+  log.debug('Redirecting legacy public application route', { [ATTR_URL_PATH]: req.path, [ATTR_CDCP_REDIRECT_TARGET]: redirectUrl });
   res.redirect(302, redirectUrl);
 });
 
@@ -98,7 +100,7 @@ if (isProduction) {
 log.info('Registering global error handler');
 app.use(createGlobalErrorHandler());
 
-log.info('Server initialization completed successfully. Listening on port %s', port);
+log.info('Server initialization completed successfully');
 app.listen(port, () => {
-  log.info(`Listening on http://localhost:${port}/`);
+  log.info(`Listening on http://localhost:${port}/`, { [ATTR_CDCP_SERVER_LISTEN_TARGET]: port });
 });

@@ -48,7 +48,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
   }
 
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
-    this.log.trace('Fetching client application for basic info [%j]', clientApplicationBasicInfoRequestEntity);
+    this.log.trace('Fetching client application by basic info');
 
     const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/retrieve-benefit-application`);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.retrieve-benefit-application_by-basic-info.posts', url, {
@@ -63,22 +63,16 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
 
     if (response.status === 200) {
       const data = (await response.json()) as ClientApplicationEntity;
-      this.log.trace('Client application [%j]', data);
+      this.log.trace('Client application retrieved');
       return Option.some(data);
     }
 
     if (response.status === 204) {
-      this.log.trace('Client application not found for basic info [%j]', clientApplicationBasicInfoRequestEntity);
+      this.log.trace('Client application not found by basic info');
       return Option.none();
     }
 
-    this.log.error('%j', {
-      message: "Failed to 'POST' for client application data by basic info",
-      status: response.status,
-      statusText: response.statusText,
-      url: url,
-      responseBody: await response.text(),
-    });
+    await response.text();
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -89,7 +83,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
   }
 
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
-    this.log.trace('Fetching client application for sin [%j]', clientApplicationSinRequestEntity);
+    this.log.trace('Fetching client application by SIN');
 
     const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/retrieve-benefit-application`);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.retrieve-benefit-application_by-sin.posts', url, {
@@ -104,22 +98,16 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
 
     if (response.status === 200) {
       const data = (await response.json()) as ClientApplicationEntity;
-      this.log.trace('Client application [%j]', data);
+      this.log.trace('Client application retrieved');
       return Option.some(data);
     }
 
     if (response.status === 204) {
-      this.log.trace('Client application not found for sin [%j]', clientApplicationSinRequestEntity);
+      this.log.trace('Client application not found by SIN');
       return Option.none();
     }
 
-    this.log.error('%j', {
-      message: "Failed to 'POST' for client application data by sin",
-      status: response.status,
-      statusText: response.statusText,
-      url: url,
-      responseBody: await response.text(),
-    });
+    await response.text();
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -256,7 +244,7 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
   }
 
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
-    this.log.debug('Fetching client application for basic info [%j]', clientApplicationBasicInfoRequestEntity);
+    this.log.debug('Fetching mock client application by basic info');
 
     const identificationId = expectDefined(clientApplicationBasicInfoRequestEntity.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected identificationId to be defined');
     const personGivenName = expectDefined(clientApplicationBasicInfoRequestEntity.Applicant.PersonName.PersonGivenName[0], 'Expected personGivenName to be defined');
@@ -265,7 +253,7 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
 
     // If the ID is '10000000000', return a 404 error
     if (identificationId === '10000000000') {
-      this.log.debug('Client application not found for basic info [%j]', clientApplicationBasicInfoRequestEntity);
+      this.log.debug('Mock client application not found by basic info');
       return await Promise.resolve(Option.none());
     }
 
@@ -302,18 +290,18 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
       },
     };
 
-    this.log.debug('Client application [%j]', clientApplicationEntity);
+    this.log.debug('Mock client application retrieved');
     return await Promise.resolve(Option.some(clientApplicationEntity));
   }
 
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
-    this.log.debug('Fetching client application for sin [%j]', clientApplicationSinRequestEntity);
+    this.log.debug('Fetching mock client application by SIN');
 
     const personSINIdentification = clientApplicationSinRequestEntity.Applicant.PersonSINIdentification.IdentificationID;
 
     // If the ID is '900000001', return a 404 error
     if (personSINIdentification === '900000001') {
-      this.log.debug('Client application not found for sin [%j]', clientApplicationSinRequestEntity);
+      this.log.debug('Mock client application not found by SIN');
       return await Promise.resolve(Option.none());
     }
 
@@ -344,7 +332,7 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
       },
     };
 
-    this.log.debug('Client application [%j]', clientApplicationEntity);
+    this.log.debug('Mock client application retrieved');
     return await Promise.resolve(Option.some(clientApplicationEntity));
   }
 }

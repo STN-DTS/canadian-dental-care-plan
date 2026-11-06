@@ -2,8 +2,6 @@ import { XMLParser } from 'fast-xml-parser';
 import { injectable } from 'inversify';
 import * as z from 'zod';
 
-import { createLogger } from '~/.server/logging';
-import type { Logger } from '~/.server/logging';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
 
 export interface DynatraceDtoMapper {
@@ -18,12 +16,6 @@ export interface DynatraceDtoMapper {
 
 @injectable()
 export class DefaultDynatraceDtoMapper implements DynatraceDtoMapper {
-  private readonly log: Logger;
-
-  constructor() {
-    this.log = createLogger('DefaultDynatraceDtoMapper');
-  }
-
   mapDynatraceRumScriptToDynatraceRumScriptDto(dynatraceRumScript: string): DynatraceRumScriptDto | null {
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', allowBooleanAttributes: true });
     const xmlParsedScript = parser.parse(dynatraceRumScript);
@@ -39,7 +31,6 @@ export class DefaultDynatraceDtoMapper implements DynatraceDtoMapper {
     const validatedScript = scriptSchema.safeParse(xmlParsedScript);
 
     if (!validatedScript.success) {
-      this.log.error('Script tag is invalid; parsedBody: [%j]; error: [%j]', xmlParsedScript, validatedScript.error);
       throw new Error(`Mapping validation failed for Dynatrace RUM Script: [${dynatraceRumScript}]`);
     }
 

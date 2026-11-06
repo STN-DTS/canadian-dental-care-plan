@@ -7,6 +7,7 @@ import type { DocumentUploadReasonEntity, DocumentUploadReasonResponseEntity } f
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import documentUploadReasonJsonDataSource from '~/.server/resources/power-platform/document-upload-reason.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -81,35 +82,29 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to fetch document upload reasons',
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to fetch document upload reasons. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const documentResponseEntity = (await response.json()) as DocumentUploadReasonResponseEntity;
     const documentUploadReasonEntities = documentResponseEntity.value;
 
-    this.log.trace('DocumentUploadReasons: [%j]', documentUploadReasonEntities);
+    this.log.trace('DocumentUploadReasons', { [ATTR_CDCP_REFERENCE_COUNT]: documentUploadReasonEntities.length });
     return documentUploadReasonEntities;
   }
 
   async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
-    this.log.debug('Fetching document upload reason with id: [%s]', id);
+    this.log.debug('Fetching document upload reason');
 
     const documentUploadReasonEntities = await this.listAllDocumentUploadReasons();
     const documentEntity = documentUploadReasonEntities.find(({ esdc_documentuploadreasonid }) => esdc_documentuploadreasonid === id);
 
     if (!documentEntity) {
-      this.log.warn('Document upload reason not found; id: [%s]', id);
+      this.log.debug('Document upload reason not found');
       return Option.none();
     }
 
-    this.log.trace('Returning document upload reason: [%j]', documentEntity);
+    this.log.trace('Returning document upload reason');
     return Option.some(documentEntity);
   }
 
@@ -137,22 +132,22 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
     const documentUploadReasonEntities = documentUploadReasonJsonDataSource.value;
 
     if (documentUploadReasonEntities.length === 0) {
-      this.log.warn('No document upload reasons found');
+      this.log.warn('No document upload reasons found', { [ATTR_CDCP_REFERENCE_COUNT]: 0 });
       return [];
     }
 
-    this.log.trace('Returning document upload reasons: [%j]', documentUploadReasonEntities);
+    this.log.trace('Returning document upload reasons', { [ATTR_CDCP_REFERENCE_COUNT]: documentUploadReasonEntities.length });
     return await Promise.resolve(documentUploadReasonEntities);
   }
 
   async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
-    this.log.debug('Fetching document upload reason with id: [%s]', id);
+    this.log.debug('Fetching document upload reason');
 
     const documentUploadReasonEntities = documentUploadReasonJsonDataSource.value;
     const documentEntity = documentUploadReasonEntities.find(({ esdc_documentuploadreasonid }) => esdc_documentuploadreasonid === id);
 
     if (!documentEntity) {
-      this.log.warn('Document upload reason not found; id: [%s]', id);
+      this.log.debug('Document upload reason not found');
       return Option.none();
     }
 

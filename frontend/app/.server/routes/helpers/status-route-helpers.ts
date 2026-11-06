@@ -1,8 +1,11 @@
 import { redirectDocument } from 'react-router';
 
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as z from 'zod';
 
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
 
@@ -56,14 +59,18 @@ export function loadStatusState({ id, params, session }: LoadStateArgs): StatusS
   const parsedId = idSchema.safeParse(id);
 
   if (!parsedId.success) {
-    log.warn('Invalid "id" query string format; redirecting to [%s]; id: [%s], sessionId: [%s]', statusIndexUrl, id, session.id);
+    log.debug('Invalid status flow ID; redirecting to status index', { [ATTR_CDCP_REDIRECT_TARGET]: statusIndexUrl, [ATTR_SESSION_ID]: session.id });
     throw redirectDocument(statusIndexUrl);
   }
 
   const sessionKey = getSessionKey(parsedId.data);
 
   if (!session.has(sessionKey)) {
-    log.warn('Status session state has not been found; redirecting to [%s]; sessionKey: [%s], sessionId: [%s]', statusIndexUrl, sessionKey, session.id);
+    log.debug('Status session state not found; redirecting to status index', {
+      [ATTR_CDCP_REDIRECT_TARGET]: statusIndexUrl,
+      [ATTR_CDCP_SESSION_KEY]: sessionKey,
+      [ATTR_SESSION_ID]: session.id,
+    });
     throw redirectDocument(statusIndexUrl);
   }
 
@@ -94,7 +101,7 @@ export function saveStatusState({ id, params, session, state }: SaveStateArgs) {
 
   const sessionKey = getSessionKey(currentState.id);
   session.set(sessionKey, newState);
-  log.info('Status session state saved; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Status session state saved', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return newState;
 }
 
@@ -113,7 +120,7 @@ export function clearStatusState({ id, params, session }: ClearStateArgs) {
   const state = loadStatusState({ id, params, session });
   const sessionKey = getSessionKey(state.id);
   session.unset(sessionKey);
-  log.info('Status session state cleared; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Status session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
 interface StartArgs {
@@ -137,7 +144,7 @@ export function startStatusState({ id, session }: StartArgs) {
 
   const sessionKey = getSessionKey(parsedId);
   session.set(sessionKey, initialState);
-  log.info('Status session state started; sessionKey: [%s], sessionId: [%s]', sessionKey, session.id);
+  log.debug('Status session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }
 

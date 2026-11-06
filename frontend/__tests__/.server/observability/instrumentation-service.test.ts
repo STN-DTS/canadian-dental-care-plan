@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
 import { mock } from 'vitest-mock-extended';
@@ -30,32 +31,32 @@ describe('DefaultInstrumentationService', () => {
     it('should replace invalid characters with underscore', () => {
       const invalidCharsName = 'name with spaces!';
       expect(service['sanitizeMetricName'](invalidCharsName)).toBe('name_with_spaces_');
-      expect(mockLogger.warn).toHaveBeenCalledWith(`Invalid metric name "${invalidCharsName}". Sanitized to "name_with_spaces_"`);
+      expect(mockLogger.warn).toHaveBeenCalledWith('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     });
 
     it('should strip leading non-letter characters', () => {
       const leadingInvalidName = '123invalid';
       expect(service['sanitizeMetricName'](leadingInvalidName)).toBe('invalid');
-      expect(mockLogger.warn).toHaveBeenCalledWith(`Invalid metric name "${leadingInvalidName}". Sanitized to "invalid"`);
+      expect(mockLogger.warn).toHaveBeenCalledWith('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     });
 
     it('should truncate the name to 255 characters', () => {
       const longName = 'a'.repeat(300);
       const truncatedName = 'a'.repeat(255);
       expect(service['sanitizeMetricName'](longName)).toBe(truncatedName);
-      expect(mockLogger.warn).toHaveBeenCalledWith(`Invalid metric name "${longName}". Sanitized to "${truncatedName}"`);
+      expect(mockLogger.warn).toHaveBeenCalledWith('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     });
 
     it('should handle a combination of invalid characters', () => {
       const complexInvalidName = '  $Invalid Name with#SpecialChars  ';
       expect(service['sanitizeMetricName'](complexInvalidName)).toBe('Invalid_Name_with_SpecialChars__');
-      expect(mockLogger.warn).toHaveBeenCalledWith(`Invalid metric name "${complexInvalidName}". Sanitized to "Invalid_Name_with_SpecialChars__"`);
+      expect(mockLogger.warn).toHaveBeenCalledWith('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     });
 
     it('should handle leading and trailing invalid characters', () => {
       const leadingTrailingInvalid = '!!!test_name!!!';
       expect(service['sanitizeMetricName'](leadingTrailingInvalid)).toBe('test_name___');
-      expect(mockLogger.warn).toHaveBeenCalledWith(`Invalid metric name "${leadingTrailingInvalid}". Sanitized to "test_name___"`);
+      expect(mockLogger.warn).toHaveBeenCalledWith('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     });
   });
 });

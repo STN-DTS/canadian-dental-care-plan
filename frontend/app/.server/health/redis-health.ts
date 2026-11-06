@@ -8,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { RedisService } from '~/.server/data';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 
 @injectable()
 export class RedisHealthCheck implements HealthCheck {
@@ -42,7 +43,7 @@ export class RedisHealthCheck implements HealthCheck {
   private init(): void {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
 
-    this.log.debug('Cache TTL value: healthCacheTTL: %d ms', healthCacheTTL);
+    this.log.debug('Initializing Redis health check cache', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
     this.check = memoize(this.check, {
       async: true,

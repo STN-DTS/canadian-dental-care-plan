@@ -46,6 +46,10 @@ test('the application preload exports a Winston log through its automatically at
         `
           import assert from 'node:assert/strict';
           import { DefaultLogger } from './app/.server/logging/logger-default.ts';
+          import { redisErrorType } from './app/.server/data/redis-error-type.ts';
+          import { operationalErrorCode } from './app/instrumentation/operational-error-type.ts';
+          import { ATTR_CDCP_ERROR_CODE } from './app/instrumentation/log-attributes.ts';
+          import { maskApplicationConfirmationCode } from './app/.server/logging/mask-application-confirmation-code.ts';
           import { createWinstonInstance } from './app/.server/logging/winston-factory.ts';
 
           const winston = createWinstonInstance({
@@ -56,10 +60,32 @@ test('the application preload exports a Winston log through its automatically at
           });
           assert.equal(winston.transports.length, 2);
           const logger = new DefaultLogger(winston, 'winston-export-test');
+          logger.error('Synthetic Redis connection failed', {
+            'error.type': redisErrorType(Object.assign(new Error('operational-person@example.test operational-token-canary 000-000-000'), { code: 'ECONNREFUSED' })),
+            [ATTR_CDCP_ERROR_CODE]: operationalErrorCode(Object.assign(new Error('operational-token-canary'), { code: 'ECONNREFUSED' })),
+          });
+          logger.error('Synthetic known exception', {
+            'error.type': redisErrorType(new TypeError('operational-token-canary')),
+          });
+          class SyntheticOperationalError extends Error {}
+          logger.error('Synthetic custom exception', {
+            'error.type': redisErrorType(new SyntheticOperationalError('operational-token-canary')),
+          });
+          logger.error('Synthetic unknown failure', {
+            'error.type': redisErrorType({ name: 'untrusted-error-name-canary' }),
+          });
           logger.info('Synthetic dependency request finished', {
             'org.event.category': 'application',
             'org.operation.outcome': 'success',
             'org.retry.count': 2,
+          });
+          logger.info('Synthetic backend request finished', {
+            'url.full': "https://backend.example.test/dental-care/appeal-upload-eligible/pp/v1/esdc_clients(esdc_clientnumber='000-000-000%20path-person%40example.test%20path-token-canary')",
+            'url.path': '/dental-care/doc-metadata/pp/v1/esdc_clients(00000000-0000-0000-0000-000000000001)/Microsoft.Dynamics.CRM.esdc_UploadEvidentiaryDocuments',
+          });
+          logger.info('Synthetic application confirmation received', {
+            'cdcp.application.confirmation_code': maskApplicationConfirmationCode('12345678'),
+            'url.path': '/en/application/confirmation',
           });
           await new Promise(resolve => setImmediate(resolve));
           winston.close();
@@ -88,6 +114,29 @@ test('the application preload exports a Winston log through its automatically at
     expect(exported).toContain('org.retry.count');
     expect(exported).not.toContain('local-synthetic-key');
     expect(stdout).toContain('Synthetic dependency request finished');
+
+    for (const output of [exported, stdout]) {
+      expect(output).toContain('Synthetic Redis connection failed');
+      expect(output).toContain('cdcp.error.code');
+      expect(output).toContain('ECONNREFUSED');
+      expect(output).toContain('TypeError');
+      expect(output).toContain('SyntheticOperationalError');
+      expect(output).toContain('_OTHER');
+      expect(output).not.toContain('untrusted-error-name-canary');
+      expect(output).not.toContain('operational-person');
+      expect(output).not.toContain('operational-token-canary');
+      expect(output).toContain('Synthetic backend request finished');
+      expect(output).toContain('/dental-care/appeal-upload-eligible/pp/v1/esdc_clients([REDACTED])');
+      expect(output).toContain('/dental-care/doc-metadata/pp/v1/esdc_clients([REDACTED])');
+      expect(output).not.toContain('000-000-000');
+      expect(output).not.toContain('path-person');
+      expect(output).not.toContain('path-token-canary');
+      expect(output).not.toContain('00000000-0000-0000-0000-000000000001');
+      expect(output).toContain('/en/application/confirmation');
+      expect(output).toContain('1234****');
+      expect(output).not.toContain('12345678');
+    }
+
     expect(stderr).not.toContain('log records will not be automatically sent');
   } finally {
     await new Promise<void>((resolve, reject) => {

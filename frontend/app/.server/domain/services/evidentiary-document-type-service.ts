@@ -11,6 +11,7 @@ import type { EvidentiaryDocumentTypeDtoMapper } from '~/.server/domain/mappers'
 import type { EvidentiaryDocumentTypeRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 /**
@@ -93,7 +94,7 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     const allEvidentiaryDocumentTypesCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS;
     const evidentiaryDocumentTypeCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL values; allEvidentiaryDocumentTypesCacheTTL: %d ms, evidentiaryDocumentTypeCacheTTL: %d ms', allEvidentiaryDocumentTypesCacheTTL, evidentiaryDocumentTypeCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allEvidentiaryDocumentTypesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: evidentiaryDocumentTypeCacheTTL });
 
     this.listEvidentiaryDocumentTypes = memoize(this.listEvidentiaryDocumentTypes, {
       async: true,
@@ -101,7 +102,7 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     });
 
     type MemoizedListEvidentiaryDocumentTypes = Memoized<typeof this.listEvidentiaryDocumentTypes, Options<typeof this.listEvidentiaryDocumentTypes>>;
-    (this.listEvidentiaryDocumentTypes as MemoizedListEvidentiaryDocumentTypes).cache.on('add', () => this.log.info('Creating new listEvidentiaryDocumentTypes memo'));
+    (this.listEvidentiaryDocumentTypes as MemoizedListEvidentiaryDocumentTypes).cache.on('add', () => this.log.debug('Creating new listEvidentiaryDocumentTypes memo'));
 
     this.getEvidentiaryDocumentTypeById = memoize(this.getEvidentiaryDocumentTypeById, {
       async: true,
@@ -110,7 +111,7 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     });
 
     type MemoizedGetEvidentiaryDocumentTypeById = Memoized<typeof this.getEvidentiaryDocumentTypeById, Options<typeof this.getEvidentiaryDocumentTypeById>>;
-    (this.getEvidentiaryDocumentTypeById as MemoizedGetEvidentiaryDocumentTypeById).cache.on('add', () => this.log.info('Creating new getEvidentiaryDocumentTypeById memo'));
+    (this.getEvidentiaryDocumentTypeById as MemoizedGetEvidentiaryDocumentTypeById).cache.on('add', () => this.log.debug('Creating new getEvidentiaryDocumentTypeById memo'));
 
     this.log.debug('DefaultEvidentiaryDocumentTypeService initiated.');
   }
@@ -119,54 +120,53 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     this.log.trace('Getting all evidentiary document types');
     const evidentiaryDocumentTypeEntities = await this.evidentiaryDocumentTypeRepository.listAllEvidentiaryDocumentTypes();
     const evidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeEntitiesToEvidentiaryDocumentTypeDtos(evidentiaryDocumentTypeEntities);
-    this.log.trace('Returning evidentiary document types: [%j]', evidentiaryDocumentTypeDtos);
+    this.log.trace('Returning evidentiary document types', { [ATTR_CDCP_REFERENCE_COUNT]: evidentiaryDocumentTypeDtos.length });
     return evidentiaryDocumentTypeDtos;
   }
 
   async listEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>> {
-    this.log.trace('Getting evidentiary document types with status: [%s]', status);
+    this.log.trace('Getting evidentiary document types');
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
     const filteredEvidentiaryDocumentTypeDtos = evidentiaryDocumentTypeDtos.filter(({ status: dtoStatus }) => dtoStatus === status);
-    this.log.trace('Returning evidentiary document types with status: [%s]: [%j]', status, filteredEvidentiaryDocumentTypeDtos);
+    this.log.trace('Returning evidentiary document types', { [ATTR_CDCP_REFERENCE_COUNT]: filteredEvidentiaryDocumentTypeDtos.length });
     return filteredEvidentiaryDocumentTypeDtos;
   }
 
   async getEvidentiaryDocumentTypeById(id: string): Promise<EvidentiaryDocumentTypeDto> {
-    this.log.trace('Getting evidentiary document type with id: [%s]', id);
+    this.log.trace('Getting evidentiary document type');
 
     const evidentiaryDocumentTypeEntityOption = await this.evidentiaryDocumentTypeRepository.findEvidentiaryDocumentTypeById(id);
 
     if (Option.isNone(evidentiaryDocumentTypeEntityOption)) {
-      this.log.error('Evidentiary document type with id: [%s] not found', id);
       throw new EvidentiaryDocumentTypeNotFoundException(`Evidentiary document type with id: [${id}] not found`);
     }
 
     const evidentiaryDocumentTypeDto = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeEntityToEvidentiaryDocumentTypeDto(Option.getOrThrow(evidentiaryDocumentTypeEntityOption));
-    this.log.trace('Returning evidentiary document type: [%j]', evidentiaryDocumentTypeDto);
+    this.log.trace('Returning evidentiary document type');
     return evidentiaryDocumentTypeDto;
   }
 
   async listLocalizedEvidentiaryDocumentTypes(locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
-    this.log.trace('Getting all localized evidentiary document types with locale: [%s]', locale);
+    this.log.trace('Getting all localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
     const localizedEvidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos, locale);
-    this.log.trace('Returning localized evidentiary document types: [%j]', localizedEvidentiaryDocumentTypeDtos);
+    this.log.trace('Returning localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedEvidentiaryDocumentTypeDtos.length });
     return localizedEvidentiaryDocumentTypeDtos;
   }
 
   async listLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
-    this.log.trace('Getting localized evidentiary document types with status: [%s] and locale: [%s]', status, locale);
+    this.log.trace('Getting localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypesByStatus(status);
     const localizedEvidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos, locale);
-    this.log.trace('Returning localized evidentiary document types with status: [%s]: [%j]', status, localizedEvidentiaryDocumentTypeDtos);
+    this.log.trace('Returning localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedEvidentiaryDocumentTypeDtos.length });
     return localizedEvidentiaryDocumentTypeDtos;
   }
 
   async getLocalizedEvidentiaryDocumentTypeById(id: string, locale: AppLocale): Promise<EvidentiaryDocumentTypeLocalizedDto> {
-    this.log.trace('Getting localized evidentiary document type with id: [%s] and locale: [%s]', id, locale);
+    this.log.trace('Getting localized evidentiary document type', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDto = await this.getEvidentiaryDocumentTypeById(id);
     const localizedEvidentiaryDocumentTypeDto = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtoToEvidentiaryDocumentTypeLocalizedDto(evidentiaryDocumentTypeDto, locale);
-    this.log.trace('Returning localized evidentiary document type: [%j]', localizedEvidentiaryDocumentTypeDto);
+    this.log.trace('Returning localized evidentiary document type', { [ATTR_CDCP_LOCALE]: locale });
     return localizedEvidentiaryDocumentTypeDto;
   }
 }

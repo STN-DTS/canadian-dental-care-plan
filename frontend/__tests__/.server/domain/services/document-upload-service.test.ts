@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -79,7 +80,7 @@ describe('DefaultDocumentUploadService', () => {
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'rejected', error: { errorCode: 'EWDU_REJECTED', errorMessage: 'Document rejected' } });
 
       expect(mapper.mapDocumentUploadErrorEntityToDto).toHaveBeenCalledWith({ ErrorCode: 'EWDU_REJECTED', ErrorMessage: 'Document rejected' });
-      expect(logger.warn).toHaveBeenCalledWith('Document upload rejected with code [%s]', 'EWDU_REJECTED');
+      expect(logger.warn).toHaveBeenCalledWith('Document upload rejected', { 'cdcp.document.outcome': 'rejected' });
       expect(logger.error).not.toHaveBeenCalled();
     });
 
@@ -106,7 +107,10 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Technical upload failure; kind [%s]; HTTP status [%s]', error.kind, error.httpStatus);
+      expect(logger.error).toHaveBeenCalledWith('Technical document upload failure', {
+        [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
+        [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
+      });
       expect(repository.uploadDocument).toHaveBeenCalledOnce();
     });
 
@@ -118,7 +122,7 @@ describe('DefaultDocumentUploadService', () => {
       expect(result).toEqual({ status: 'error', error });
       expect(result.status === 'error' && result.error).toBe(error);
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
     });
 
     it('should absorb request mapping failures without submitting the file', async () => {
@@ -127,7 +131,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       expect(repository.uploadDocument).not.toHaveBeenCalled();
     });
 
@@ -140,7 +144,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
     });
 
     it('should not submit an unaudited upload if auditing fails', async () => {
@@ -151,7 +155,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       expect(mapper.mapDocumentUploadRequestDtoToEntity).not.toHaveBeenCalled();
       expect(repository.uploadDocument).not.toHaveBeenCalled();
     });
@@ -175,7 +179,7 @@ describe('DefaultDocumentUploadService', () => {
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'rejected', Error: { errorCode: 'EWDU_REJECTED', errorMessage: 'Document rejected' } });
 
       expect(mapper.mapDocumentUploadErrorEntityToDto).toHaveBeenCalledWith({ ErrorCode: 'EWDU_REJECTED', ErrorMessage: 'Document rejected' });
-      expect(logger.warn).toHaveBeenCalledWith('Document scan rejected with code [%s]', 'EWDU_REJECTED');
+      expect(logger.warn).toHaveBeenCalledWith('Document scan rejected', { 'cdcp.document.outcome': 'rejected' });
       expect(logger.error).not.toHaveBeenCalled();
     });
 
@@ -196,7 +200,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'error' });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error', { [ATTR_ERROR_TYPE]: 'document_scan_failed' });
       expect(repository.scanDocument).toHaveBeenCalledOnce();
     });
 
@@ -208,7 +212,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'error' });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error', { [ATTR_ERROR_TYPE]: 'document_scan_failed' });
       expect(repository.scanDocument).not.toHaveBeenCalled();
     });
 
@@ -221,7 +225,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'error' });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error', { [ATTR_ERROR_TYPE]: 'document_scan_failed' });
     });
 
     it('should not scan an unaudited document if auditing fails', async () => {
@@ -232,7 +236,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'error' });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error [%s]', error);
+      expect(logger.error).toHaveBeenCalledWith('Unexpected document scan error', { [ATTR_ERROR_TYPE]: 'document_scan_failed' });
       expect(repository.scanDocument).not.toHaveBeenCalled();
     });
   });

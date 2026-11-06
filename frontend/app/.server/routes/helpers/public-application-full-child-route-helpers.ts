@@ -1,6 +1,9 @@
 import { redirect } from 'react-router';
 
+import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+
 import { createLogger } from '~/.server/logging';
+import { ATTR_CDCP_APPLICATION_ID, ATTR_CDCP_REDIRECT_TARGET } from '~/.server/logging/log-attributes';
 import { getAllowedTypeOfApplication, isChildClientNumberValid, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ApplicationStateParams, PublicApplicationChildrenState, PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getChildrenState, getContextualAgeCategoryFromDate, getPublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -34,7 +37,7 @@ export function loadPublicApplicationFullChildState({ params, requestUrl, sessio
   const confirmationRouteUrl = getPathById('public/application/$id/full-children/confirmation', params);
 
   if (applicationState.submissionInfo && !pathname.endsWith(confirmationRouteUrl)) {
-    log.warn('Redirecting user to "%s" since the application has been submitted; sessionId: [%s], ', confirmationRouteUrl, applicationState.id);
+    log.debug('Application already submitted; redirecting to confirmation', { [ATTR_URL_PATH]: pathname, [ATTR_CDCP_REDIRECT_TARGET]: confirmationRouteUrl, [ATTR_CDCP_APPLICATION_ID]: applicationState.id });
     throw redirect(confirmationRouteUrl);
   }
 
@@ -43,7 +46,7 @@ export function loadPublicApplicationFullChildState({ params, requestUrl, sessio
   const typeOfApplicationRouteUrl = getPathById('public/application/$id/type-application', params);
 
   if (!applicationState.submissionInfo && pathname.endsWith(confirmationRouteUrl)) {
-    log.warn('Redirecting user to "%s" since the application has not been submitted; sessionId: [%s], ', typeOfApplicationRouteUrl, applicationState.id);
+    log.debug('Application not submitted; redirecting to application type selection', { [ATTR_URL_PATH]: pathname, [ATTR_CDCP_REDIRECT_TARGET]: typeOfApplicationRouteUrl, [ATTR_CDCP_APPLICATION_ID]: applicationState.id });
     throw redirect(typeOfApplicationRouteUrl);
   }
 

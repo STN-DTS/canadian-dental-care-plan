@@ -9,6 +9,7 @@
 import { invariant } from '@dts-stn/invariant';
 import type { Attributes, Counter, Histogram, MetricOptions, Span, SpanOptions } from '@opentelemetry/api';
 import { metrics, trace } from '@opentelemetry/api';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -125,7 +126,7 @@ export class DefaultInstrumentationService implements InstrumentationService {
       .replace(/^[^a-zA-Z]+/, ''); // Strip leading non-[a-z] chars
 
     const trimmed = sanitized.slice(0, 255);
-    this.log.warn(`Invalid metric name "${metricName}". Sanitized to "${trimmed}"`);
+    this.log.warn('Invalid metric name sanitized', { [ATTR_ERROR_TYPE]: 'invalid_metric_name' });
     return trimmed;
   }
 }

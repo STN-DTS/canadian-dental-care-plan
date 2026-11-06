@@ -36,8 +36,8 @@ export class DefaultHomeAddressValidatorFactory implements HomeAddressValidatorF
     this.createHomeAddressValidator = memoize(this.createHomeAddressValidator);
 
     type MemoizedCreateHomeAddressValidator = Memoized<typeof this.createHomeAddressValidator, Options<typeof this.createHomeAddressValidator>>;
-    (this.createHomeAddressValidator as MemoizedCreateHomeAddressValidator).cache.on('add', ({ key }) => {
-      this.log.info('Creating new createHomeAddressValidator memo; cache.key: %s', key);
+    (this.createHomeAddressValidator as MemoizedCreateHomeAddressValidator).cache.on('add', () => {
+      this.log.debug('Home address validator cache entry created');
     });
 
     this.log.debug('DefaultHomeAddressValidatorFactory initiated.');

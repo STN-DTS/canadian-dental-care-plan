@@ -73,7 +73,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
   }
 
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
-    this.log.trace('Fetching applicant by basic info [%j]', request);
+    this.log.trace('Fetching applicant by basic info');
 
     const url = `${this.baseUrl}/applicant`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant_by-basic-info.posts', url, {
@@ -95,7 +95,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
 
     if (response.status === 200) {
       const applicantResponseEntity = (await response.json()) as ApplicantResponseEntity;
-      this.log.trace('Returning applicant [%j]', applicantResponseEntity);
+      this.log.trace('Returning applicant');
       return Option.some(applicantResponseEntity);
     }
 
@@ -104,13 +104,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       return Option.none();
     }
 
-    this.log.error('%j', {
-      message: "'Failed to 'POST' for applicant.",
-      status: response.status,
-      statusText: response.statusText,
-      url: url,
-      responseBody: await response.text(),
-    });
+    await response.text();
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -121,7 +115,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
   }
 
   async findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
-    this.log.trace('Fetching applicant by SIN [%j]', request);
+    this.log.trace('Fetching applicant by SIN');
 
     const url = `${this.baseUrl}/applicant`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant_by-sin.posts', url, {
@@ -143,7 +137,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
 
     if (response.status === 200) {
       const applicantResponseEntity = (await response.json()) as ApplicantResponseEntity;
-      this.log.trace('Returning applicant [%j]', applicantResponseEntity);
+      this.log.trace('Returning applicant');
       return Option.some(applicantResponseEntity);
     }
 
@@ -152,13 +146,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       return Option.none();
     }
 
-    this.log.error('%j', {
-      message: "'Failed to 'POST' for applicant.",
-      status: response.status,
-      statusText: response.statusText,
-      url: url,
-      responseBody: await response.text(),
-    });
+    await response.text();
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -296,7 +284,7 @@ export class MockApplicantRepository implements ApplicantRepository {
   }
 
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
-    this.log.debug('Fetching applicant by basic info [%j]', request);
+    this.log.debug('Fetching mock applicant by basic info');
 
     const reqClientNumber = request.Applicant.ClientIdentification[0]?.IdentificationID;
     invariant(reqClientNumber, 'Client number must be defined');
@@ -319,12 +307,12 @@ export class MockApplicantRepository implements ApplicantRepository {
     }
 
     const applicantResponseEntity = this.mapToApplicantResponseEntity(applicantEntity);
-    this.log.debug('Returning applicant [%j]', applicantResponseEntity);
+    this.log.debug('Returning mock applicant');
     return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 
   async findApplicantBySin(applicantRequestEntity: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
-    this.log.debug('Fetching applicant by SIN [%j]', applicantRequestEntity);
+    this.log.debug('Fetching mock applicant by SIN');
 
     const sin = applicantRequestEntity.Applicant.PersonSINIdentification.IdentificationID;
     const applicantEntity = this.mockApplicantDb.find(({ sinIdentification }) => sinIdentification === sin);
@@ -335,7 +323,7 @@ export class MockApplicantRepository implements ApplicantRepository {
     }
 
     const applicantResponseEntity = this.mapToApplicantResponseEntity(applicantEntity);
-    this.log.debug('Returning applicant [%j]', applicantResponseEntity);
+    this.log.debug('Returning mock applicant');
     return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 

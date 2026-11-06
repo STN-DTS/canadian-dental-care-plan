@@ -3,6 +3,7 @@ import type { Container } from 'inversify';
 import type { ServiceIdentifier } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CONTAINER_SERVICE_NAME } from '~/.server/logging/log-attributes';
 
 /**
  * AppContainerProvider interface provides methods for accessing services within an Inversify IoC container.
@@ -47,22 +48,22 @@ export class DefaultAppContainerProvider implements AppContainerProvider {
   }
 
   find<T>(serviceIdentifier: ServiceIdentifier<T>): T | undefined {
-    this.log.trace('Finding service for service identifier: %s', serviceIdentifier);
+    this.log.trace('Finding optional service', { [ATTR_CDCP_CONTAINER_SERVICE_NAME]: serviceIdentifier.name });
     return this.container.get(serviceIdentifier, { optional: true });
   }
 
   findAll<T>(serviceIdentifier: ServiceIdentifier<T>): T[] {
-    this.log.trace('Finding service for service identifier: %s', serviceIdentifier);
+    this.log.trace('Finding all optional services', { [ATTR_CDCP_CONTAINER_SERVICE_NAME]: serviceIdentifier.name });
     return this.container.getAll(serviceIdentifier, { optional: true });
   }
 
   get<T>(serviceIdentifier: ServiceIdentifier<T>): T {
-    this.log.trace('Get service for service identifier: %s', serviceIdentifier);
+    this.log.trace('Getting required service', { [ATTR_CDCP_CONTAINER_SERVICE_NAME]: serviceIdentifier.name });
     return this.container.get(serviceIdentifier);
   }
 
   getAll<T>(serviceIdentifier: ServiceIdentifier<T>): T[] {
-    this.log.trace('Getting all services for service identifier: %s', serviceIdentifier);
+    this.log.trace('Getting all required services', { [ATTR_CDCP_CONTAINER_SERVICE_NAME]: serviceIdentifier.name });
     return this.container.getAll(serviceIdentifier);
   }
 }

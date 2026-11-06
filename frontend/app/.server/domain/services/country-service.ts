@@ -11,6 +11,7 @@ import type { CountryDtoMapper } from '~/.server/domain/mappers';
 import type { CountryRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { moveToTop } from '~/.server/utils/collection-utils';
 
 /**
@@ -90,7 +91,7 @@ export class DefaultCountryService implements CountryService {
     const allCountriesCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_ALL_COUNTRIES_CACHE_TTL_SECONDS;
     const countryCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_COUNTRY_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL values; allCountriesCacheTTL: %d ms, countryCacheTTL: %d ms', allCountriesCacheTTL, countryCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allCountriesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: countryCacheTTL });
 
     this.listCountries = memoize(this.listCountries, {
       async: true,
@@ -98,8 +99,8 @@ export class DefaultCountryService implements CountryService {
     });
 
     type MemoizedListCountries = Memoized<typeof this.listCountries, Options<typeof this.listCountries>>;
-    (this.listCountries as MemoizedListCountries).cache.on('add', ({ key }) => {
-      this.log.info('Creating new listCountries memo; keys: %s', key);
+    (this.listCountries as MemoizedListCountries).cache.on('add', () => {
+      this.log.debug('Creating new listCountries memo');
     });
 
     this.getCountryById = memoize(this.getCountryById, {
@@ -109,8 +110,8 @@ export class DefaultCountryService implements CountryService {
     });
 
     type MemoizedGetCountryById = Memoized<typeof this.getCountryById, Options<typeof this.getCountryById>>;
-    (this.getCountryById as MemoizedGetCountryById).cache.on('add', ({ key }) => {
-      this.log.info('Creating new getCountryById memo; keys: %s', key);
+    (this.getCountryById as MemoizedGetCountryById).cache.on('add', () => {
+      this.log.debug('Creating new getCountryById memo');
     });
 
     this.log.debug('DefaultCountryService initialized.');
@@ -125,7 +126,7 @@ export class DefaultCountryService implements CountryService {
     this.log.debug('Get all countries');
     const countryEntities = await this.countryRepository.listAllCountries();
     const countryDtos = this.countryDtoMapper.mapCountryEntitiesToCountryDtos(countryEntities);
-    this.log.trace('Returning countries: [%j]', countryDtos);
+    this.log.trace('Returning countries', { [ATTR_CDCP_REFERENCE_COUNT]: countryDtos.length });
     return countryDtos;
   }
 
@@ -137,16 +138,15 @@ export class DefaultCountryService implements CountryService {
    * @throws {CountryNotFoundException} If no country is found with the specified ID.
    */
   async getCountryById(id: string): Promise<CountryDto> {
-    this.log.debug('Get country with id: [%s]', id);
+    this.log.debug('Get country');
     const countryEntity = await this.countryRepository.findCountryById(id);
 
     if (Option.isNone(countryEntity)) {
-      this.log.error('Country with id: [%s] not found', id);
       throw new CountryNotFoundException(`Country with id: [${id}] not found`);
     }
 
     const countryDto = this.countryDtoMapper.mapCountryEntityToCountryDto(Option.getOrThrow(countryEntity));
-    this.log.trace('Returning country: [%j]', countryDto);
+    this.log.trace('Returning country');
     return countryDto;
   }
 
@@ -157,11 +157,11 @@ export class DefaultCountryService implements CountryService {
    * @returns An array of localized Country DTOs.
    */
   async listAndSortLocalizedCountries(locale: AppLocale): Promise<ReadonlyArray<CountryLocalizedDto>> {
-    this.log.debug('Get and sort all localized countries with locale: [%s]', locale);
+    this.log.debug('Get and sort all localized countries', { [ATTR_CDCP_LOCALE]: locale });
     const countryDtos = await this.listCountries();
     const localizedCountryDtos = this.countryDtoMapper.mapCountryDtosToCountryLocalizedDtos(countryDtos, locale);
     const sortedLocalizedCountryDtos = this.sortLocalizedCountries(localizedCountryDtos, locale);
-    this.log.trace('Returning sorted localized countries: [%j]', sortedLocalizedCountryDtos);
+    this.log.trace('Returning sorted localized countries', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: sortedLocalizedCountryDtos.length });
     return sortedLocalizedCountryDtos;
   }
 
@@ -174,10 +174,10 @@ export class DefaultCountryService implements CountryService {
    * @throws {CountryNotFoundException} If no country is found with the specified ID.
    */
   async getLocalizedCountryById(id: string, locale: AppLocale): Promise<CountryLocalizedDto> {
-    this.log.debug('Get localized country with id: [%s] and locale: [%s]', id, locale);
+    this.log.debug('Get localized country', { [ATTR_CDCP_LOCALE]: locale });
     const countryDto = await this.getCountryById(id);
     const localizedCountryDto = this.countryDtoMapper.mapCountryDtoToCountryLocalizedDto(countryDto, locale);
-    this.log.trace('Returning localized country: [%j]', localizedCountryDto);
+    this.log.trace('Returning localized country', { [ATTR_CDCP_LOCALE]: locale });
     return localizedCountryDto;
   }
 

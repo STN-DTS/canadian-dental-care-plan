@@ -73,7 +73,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
   }
 
   async getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity: ApplicationStatusBasicInfoRequestEntity): Promise<ApplicationStatusEntity> {
-    this.log.trace('Fetching application status for basic info [%j]', applicationStatusBasicInfoRequestEntity);
+    this.log.trace('Fetching application status by basic info');
 
     const url = `${this.baseUrl}/status_fnlndob`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.status-fnlndob.posts', url, {
@@ -94,13 +94,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for application status by basic info`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -111,12 +105,12 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     }
 
     const applicationStatusEntity = (await response.json()) as ApplicationStatusEntity;
-    this.log.trace('Returning application status [%j]', applicationStatusEntity);
+    this.log.trace('Returning application status');
     return applicationStatusEntity;
   }
 
   async getApplicationStatusBySin(applicationStatusSinRequestEntity: ApplicationStatusSinRequestEntity): Promise<ApplicationStatusEntity> {
-    this.log.trace('Fetching application status for sin [%j]', applicationStatusSinRequestEntity);
+    this.log.trace('Fetching application status by SIN');
 
     const url = `${this.baseUrl}/status`;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.status.posts', url, {
@@ -137,13 +131,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: `Failed to 'POST' for application status by sin`,
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -154,7 +142,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     }
 
     const applicationStatusEntity = (await response.json()) as ApplicationStatusEntity;
-    this.log.trace('Returning application status [%j]', applicationStatusEntity);
+    this.log.trace('Returning application status');
     return applicationStatusEntity;
   }
 
@@ -208,7 +196,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
   }
 
   async getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity: ApplicationStatusBasicInfoRequestEntity): Promise<ApplicationStatusEntity> {
-    this.log.debug('Fetching application status for basic info [%j]', applicationStatusBasicInfoRequestEntity);
+    this.log.debug('Fetching mock application status by basic info');
 
     const applicationCode = expectDefined(applicationStatusBasicInfoRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
 
@@ -225,12 +213,12 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
       },
     };
 
-    this.log.debug('Returning application status [%j]', applicationStatusEntity);
+    this.log.debug('Returning mock application status');
     return await Promise.resolve(applicationStatusEntity);
   }
 
   async getApplicationStatusBySin(applicationStatusSinRequestEntity: ApplicationStatusSinRequestEntity): Promise<ApplicationStatusEntity> {
-    this.log.debug('Fetching application status for sin [%j]', applicationStatusSinRequestEntity);
+    this.log.debug('Fetching mock application status by SIN');
 
     const applicationCode = expectDefined(applicationStatusSinRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
 
@@ -247,7 +235,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
       },
     };
 
-    this.log.debug('Returning application status [%j]', applicationStatusEntity);
+    this.log.debug('Returning mock application status');
     return await Promise.resolve(applicationStatusEntity);
   }
 

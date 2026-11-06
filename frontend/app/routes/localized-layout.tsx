@@ -1,5 +1,6 @@
 import { Outlet, data, isRouteErrorResponse } from 'react-router';
 
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
 import { createLogger } from '~/.server/logging';
@@ -18,7 +19,7 @@ const log = createLogger('localized-layout');
  */
 const appLocaleMiddleware: Route.MiddlewareFunction = async ({ params }, next) => {
   if (!isAppLocale(params.lang)) {
-    log.warn('Invalid lang requested [%s]; responding with 404', params.lang);
+    log.debug('Unsupported application locale requested', { [ATTR_ERROR_TYPE]: 'unsupported_locale' });
     throw data(null, { status: 404 });
   }
 

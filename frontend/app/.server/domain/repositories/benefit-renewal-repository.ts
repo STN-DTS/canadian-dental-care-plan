@@ -36,7 +36,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
   }
 
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
-    this.log.trace('Submiting benefit renewal for request [%j]', benefitRenewalRequest);
+    this.log.trace('Submitting benefit renewal');
 
     const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/benefit-application`);
     url.searchParams.set('scenario', 'RENEWAL');
@@ -60,13 +60,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: "Failed to 'POST' for benefit renewal data",
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
@@ -77,7 +71,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
     }
 
     const data = (await response.json()) as BenefitRenewalResponseEntity;
-    this.log.trace('Benefit renewal: [%j]', data);
+    this.log.trace('Benefit renewal response received');
 
     return data;
   }
@@ -92,7 +86,7 @@ export class MockBenefitRenewalRepository implements BenefitRenewalRepository {
   }
 
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
-    this.log.debug('Submiting benefit renewal for request [%j]', benefitRenewalRequest);
+    this.log.debug('Creating mock benefit renewal');
 
     const benefitRenewalResponseEntity: BenefitRenewalResponseEntity = {
       BenefitApplication: {
@@ -105,7 +99,7 @@ export class MockBenefitRenewalRepository implements BenefitRenewalRepository {
       },
     };
 
-    this.log.debug('Benefit renewal: [%j]', benefitRenewalResponseEntity);
+    this.log.debug('Mock benefit renewal response generated');
 
     return await Promise.resolve(benefitRenewalResponseEntity);
   }

@@ -146,6 +146,7 @@ describe('DefaultCountryService', () => {
       ];
 
       const mockCountryDtoMapper = mock<CountryDtoMapper>();
+      mockCountryDtoMapper.mapCountryEntitiesToCountryDtos.mockReturnValueOnce(mockMappedCountryLocalizedDtos.map(({ id, name }) => ({ id, nameEn: name, nameFr: name })));
       mockCountryDtoMapper.mapCountryDtosToCountryLocalizedDtos.mockReturnValueOnce(mockMappedCountryLocalizedDtos);
 
       const service = new DefaultCountryService(mockCountryDtoMapper, mockCountryRepository, mockServerConfig);

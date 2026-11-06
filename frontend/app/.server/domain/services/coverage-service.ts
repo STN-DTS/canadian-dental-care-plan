@@ -32,7 +32,7 @@ export class DefaultCoverageService implements CoverageService {
   }
 
   getCoverage(date: Temporal.PlainDate): CoverageDto {
-    this.log.trace('Finding coverage with date: [%s]', date.toString());
+    this.log.trace('Finding coverage for a date');
     // Subtract one year if month is less than July
     const startYear = date.year - (date.month < 7 ? 1 : 0);
     const endYear = startYear + 1;

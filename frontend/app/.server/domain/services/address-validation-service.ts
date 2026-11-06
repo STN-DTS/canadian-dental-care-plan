@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
@@ -7,6 +8,7 @@ import type { AddressValidationRepository } from '~/.server/domain/repositories'
 import type { AuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 
 export interface AddressValidationService {
   /**
@@ -42,18 +44,18 @@ export class DefaultAddressValidationService implements AddressValidationService
   }
 
   async getAddressCorrectionResult(addressCorrectionRequestDto: AddressCorrectionRequestDto): Promise<AddressCorrectionResultDto> {
-    this.log.trace('Getting address correction results with addressCorrectionRequest: [%j]', addressCorrectionRequestDto);
+    this.log.trace('Getting address correction results', { [ATTR_CDCP_USER_ID]: addressCorrectionRequestDto.userId });
     this.auditService.createAudit('address-validation.get-address-correction-result', { userId: addressCorrectionRequestDto.userId });
 
     try {
       const addressCorrectionResultEntity = await this.addressValidationRepository.getAddressCorrectionResult(addressCorrectionRequestDto);
       const addressCorrectionResultDto = this.addressValidationDtoMapper.mapAddressCorrectionResultEntityToAddressCorrectionResultDto(addressCorrectionResultEntity);
-      this.log.trace('Returning address correction result: [%j]', addressCorrectionResultDto);
+      this.log.trace('Address correction result mapped');
       return addressCorrectionResultDto;
-    } catch (error) {
-      this.log.warn('Unexpected error occurred while getting address correction results. [%s]', error);
+    } catch {
+      this.log.warn('Address correction unavailable; using fallback result', { [ATTR_ERROR_TYPE]: 'address_correction_failed' });
       const addressCorrectionResultDto = this.addressValidationDtoMapper.mapAddressCorrectionRequestDtoToAddressCorrectionResultDto(addressCorrectionRequestDto, 'service-unavailable');
-      this.log.trace('Service unavailable, returning address correction result: [%j]', addressCorrectionResultDto);
+      this.log.trace('Address correction fallback result mapped');
       return addressCorrectionResultDto;
     }
   }

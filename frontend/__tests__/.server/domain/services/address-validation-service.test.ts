@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -85,7 +86,7 @@ describe('DefaultAddressValidationService', () => {
       const result = await service.getAddressCorrectionResult(mockAddressCorrectionRequestDto);
 
       expect(result).toEqual(mockAddressCorrectionResultDto);
-      expect(mockLogger.warn).toHaveBeenCalledWith('Unexpected error occurred while getting address correction results. [%s]', new Error('Some error'));
+      expect(mockLogger.warn).toHaveBeenCalledWith('Address correction unavailable; using fallback result', { [ATTR_ERROR_TYPE]: 'address_correction_failed' });
     });
   });
 });

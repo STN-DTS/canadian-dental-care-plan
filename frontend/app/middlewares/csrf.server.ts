@@ -5,6 +5,7 @@
  *
  * @see https://sergiodxa.github.io/remix-utils/modules/Middleware_CSRF.html
  */
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { createCsrfMiddleware } from 'remix-utils/middleware/csrf';
 
 import { createLogger } from '~/.server/logging/logger-factory';
@@ -12,8 +13,8 @@ import { createLogger } from '~/.server/logging/logger-factory';
 const log = createLogger('middleware/csrf');
 
 export const csrfMiddleware = createCsrfMiddleware({
-  onUntrustedRequest: (error) => {
-    log.warn('Untrusted request detected: %o', error);
+  onUntrustedRequest: () => {
+    log.warn('Untrusted request rejected', { [ATTR_ERROR_TYPE]: 'untrusted_request_origin' });
     return new Response('Untrusted request', { status: 403 });
   },
 });

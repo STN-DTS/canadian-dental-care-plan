@@ -50,7 +50,7 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
   }
 
   async getAddressCorrectionResult(addressCorrectionRequestEntity: AddressCorrectionRequestEntity): Promise<AddressCorrectionResultEntity> {
-    this.log.trace('Checking correctness of address for addressCorrectionRequest: [%j]', addressCorrectionRequestEntity);
+    this.log.trace('Requesting address correction');
     const { address, city, postalCode, provinceCode } = addressCorrectionRequestEntity;
 
     const url = new URL(`${this.baseUrl}/CAN/correct`);
@@ -70,18 +70,12 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
     });
 
     if (!response.ok) {
-      this.log.error('%j', {
-        message: 'Failed to correct address',
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        responseBody: await response.text(),
-      });
+      await response.text();
       throw new Error(`Failed to correct address. Status: ${response.status}, Status Text: ${response.statusText}`);
     }
 
     const addressCorrectionResults = (await response.json()) as AddressCorrectionResultEntity;
-    this.log.trace('Address correction results: [%j]', addressCorrectionResults);
+    this.log.trace('Address correction response received');
 
     return addressCorrectionResults;
   }
@@ -106,7 +100,7 @@ export class MockAddressValidationRepository implements AddressValidationReposit
   }
 
   async getAddressCorrectionResult(addressCorrectionRequestEntity: AddressCorrectionRequestEntity): Promise<AddressCorrectionResultEntity> {
-    this.log.debug('Checking correctness of address for addressCorrectionRequest: [%j]', addressCorrectionRequestEntity);
+    this.log.debug('Generating mock address correction');
     const statusCode = this.mockStatusCodeFromProvinceCode(addressCorrectionRequestEntity.provinceCode);
     const addressCorrectionResults: AddressCorrectionResultEntity = {
       'wsaddr:CorrectionResults': {
@@ -120,7 +114,7 @@ export class MockAddressValidationRepository implements AddressValidationReposit
       },
     };
 
-    this.log.debug('Address correction results: [%j]', addressCorrectionResults);
+    this.log.debug('Mock address correction response generated');
     return await Promise.resolve(addressCorrectionResults);
   }
 

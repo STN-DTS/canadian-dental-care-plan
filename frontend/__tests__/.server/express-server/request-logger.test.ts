@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_OTEL_EVENT_NAME, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import express from 'express';
 import { once } from 'node:events';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +16,7 @@ describe('requestLoggerMiddleware', () => {
     app.use(createRequestLoggerMiddleware(isProduction));
     app.get('/request', (_request, response) => response.send('ok'));
     app.get('/status/:status', (request, response) => response.status(Number(request.params.status)).end());
+    app.get('/abort', (_request, response) => response.destroy());
     app.get('/api/readyz', (_request, response) => response.send('ready'));
     const result = vi.mocked(createLogger).mock.results[0];
 
@@ -33,9 +35,16 @@ describe('requestLoggerMiddleware', () => {
         throw new Error('Expected a loopback TCP address');
       }
 
-      const response = await fetch(`http://127.0.0.1:${address.port}/request`, { headers: { connection: 'close' } });
+      const response = await fetch(`http://127.0.0.1:${address.port}/request?sin=999999998&email=canary%40example.invalid&token=synthetic-secret`, { headers: { connection: 'close' } });
       expect(await response.text()).toBe('ok');
-      expect(logger.info).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('GET /request'));
+      expect(logger.info).toHaveBeenCalledExactlyOnceWith('HTTP request completed', {
+        [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
+        [ATTR_HTTP_REQUEST_METHOD]: 'GET',
+        [ATTR_URL_PATH]: '/request',
+        [ATTR_HTTP_RESPONSE_STATUS_CODE]: 200,
+        'cdcp.http.response_time_ms': expect.any(Number),
+        'cdcp.http.response_content_length_bytes': 2,
+      });
 
       await Promise.all(
         [302, 399, 400, 404, 429, 500, 503].map(async (status) => {
@@ -45,7 +54,16 @@ describe('requestLoggerMiddleware', () => {
           });
           await result.text();
           const method = status >= 500 ? logger.error : status >= 400 ? logger.warn : logger.info;
-          expect(method).toHaveBeenCalledWith(expect.stringContaining(`GET /status/${status}`));
+          expect(method).toHaveBeenCalledWith(
+            'HTTP request completed',
+            expect.objectContaining({
+              [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
+              [ATTR_HTTP_REQUEST_METHOD]: 'GET',
+              [ATTR_URL_PATH]: `/status/${status}`,
+              [ATTR_HTTP_RESPONSE_STATUS_CODE]: status,
+              ...(status >= 400 && { [ATTR_ERROR_TYPE]: String(status) }),
+            }),
+          );
         }),
       );
 
@@ -53,11 +71,20 @@ describe('requestLoggerMiddleware', () => {
       expect(logger.warn).toHaveBeenCalledTimes(3);
       expect(logger.error).toHaveBeenCalledTimes(2);
 
+      await expect(fetch(`http://127.0.0.1:${address.port}/abort`, { headers: { connection: 'close' } })).rejects.toThrow();
+      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledTimes(3));
+      expect(logger.error).toHaveBeenLastCalledWith('HTTP request completed', {
+        [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
+        [ATTR_HTTP_REQUEST_METHOD]: 'GET',
+        [ATTR_URL_PATH]: '/abort',
+        [ATTR_ERROR_TYPE]: 'http_response_incomplete',
+      });
+
       const readiness = await fetch(`http://127.0.0.1:${address.port}/api/readyz`, { headers: { connection: 'close' } });
       expect(await readiness.text()).toBe('ready');
       expect(logger.info).toHaveBeenCalledTimes(3);
       expect(logger.warn).toHaveBeenCalledTimes(3);
-      expect(logger.error).toHaveBeenCalledTimes(2);
+      expect(logger.error).toHaveBeenCalledTimes(3);
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

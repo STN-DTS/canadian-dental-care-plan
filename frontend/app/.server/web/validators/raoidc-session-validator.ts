@@ -1,3 +1,5 @@
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
@@ -50,20 +52,20 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
   }
 
   async validateRaoidcSession({ session }: ValidateRaoidcSessionParams): Promise<ValidateRaoidcSessionResult> {
-    this.log.debug('Performing RAOIDC session [%s] validation', session.id);
+    this.log.debug('Performing RAOIDC session validation', { [ATTR_SESSION_ID]: session.id });
     const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;
 
     const idTokenOption = session.find('idToken');
 
     if (Option.isNone(idTokenOption)) {
-      this.log.debug('idToken not found in session [%s]', session.id);
+      this.log.debug('ID token not found in session', { [ATTR_SESSION_ID]: session.id });
       return { isValid: false, errorMessage: `RAOIDC session validation failed; idToken not found in session [${session.id}]` };
     }
 
     const userInfoTokenOption = session.find('userInfoToken');
 
     if (Option.isNone(userInfoTokenOption)) {
-      this.log.debug('userInfoToken not found in session [%s]', session.id);
+      this.log.debug('User information token not found in session', { [ATTR_SESSION_ID]: session.id });
       return { isValid: false, errorMessage: `RAOIDC session validation failed; userInfoToken not found in session [${session.id}]` };
     }
 
@@ -71,7 +73,7 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
     const userInfoToken = Option.getOrThrow(userInfoTokenOption);
 
     if (userInfoToken.mocked) {
-      this.log.debug('Mocked user; skipping RAOIDC session [%s] validation', session.id);
+      this.log.debug('Mocked user; skipping RAOIDC session validation', { [ATTR_SESSION_ID]: session.id });
       return { isValid: true };
     }
 
@@ -79,11 +81,11 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
     const sessionValid = await validateSession(AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID, idToken.sid, this.fetchFn);
 
     if (!sessionValid) {
-      this.log.debug('RAOIDC session [%s] has expired', session.id);
+      this.log.debug('RAOIDC session has expired', { [ATTR_SESSION_ID]: session.id });
       return { isValid: false, errorMessage: `RAOIDC session validation failed; session [${session.id}] has expired` };
     }
 
-    this.log.debug('Authentication check passed for RAOIDC session [%s]', session.id);
+    this.log.debug('Authentication check passed for RAOIDC session', { [ATTR_SESSION_ID]: session.id });
     return { isValid: true };
   }
 }

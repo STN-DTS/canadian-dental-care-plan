@@ -11,6 +11,7 @@ import type { DocumentUploadReasonDtoMapper } from '~/.server/domain/mappers';
 import type { DocumentUploadReasonRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 
 /**
  * Service interface for managing document upload reason data.
@@ -75,7 +76,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     const allDocumentUploadReasonsCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_ALL_DOCUMENT_UPLOAD_REASONS_CACHE_TTL_SECONDS;
     const documentUploadReasonCacheTTL = 1000 * this.serverConfig.LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_TTL_SECONDS;
 
-    this.log.debug('Cache TTL values; allDocumentUploadReasonsCacheTTL: %d ms, documentUploadReasonCacheTTL: %d ms', allDocumentUploadReasonsCacheTTL, documentUploadReasonCacheTTL);
+    this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allDocumentUploadReasonsCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: documentUploadReasonCacheTTL });
 
     this.listDocumentUploadReasons = memoize(this.listDocumentUploadReasons, {
       async: true,
@@ -83,7 +84,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     });
 
     type MemoizedListDocumentUploadReasons = Memoized<typeof this.listDocumentUploadReasons, Options<typeof this.listDocumentUploadReasons>>;
-    (this.listDocumentUploadReasons as MemoizedListDocumentUploadReasons).cache.on('add', () => this.log.info('Creating new listDocumentUploadReasons memo'));
+    (this.listDocumentUploadReasons as MemoizedListDocumentUploadReasons).cache.on('add', () => this.log.debug('Creating new listDocumentUploadReasons memo'));
 
     this.getDocumentUploadReasonById = memoize(this.getDocumentUploadReasonById, {
       async: true,
@@ -92,7 +93,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     });
 
     type MemoizedGetDocumentUploadReasonById = Memoized<typeof this.getDocumentUploadReasonById, Options<typeof this.getDocumentUploadReasonById>>;
-    (this.getDocumentUploadReasonById as MemoizedGetDocumentUploadReasonById).cache.on('add', () => this.log.info('Creating new getDocumentUploadReasonById memo'));
+    (this.getDocumentUploadReasonById as MemoizedGetDocumentUploadReasonById).cache.on('add', () => this.log.debug('Creating new getDocumentUploadReasonById memo'));
 
     this.log.debug('DefaultDocumentUploadReasonService initiated.');
   }
@@ -101,38 +102,37 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     this.log.trace('Getting all document upload reasons');
     const documentUploadReasonEntities = await this.documentUploadReasonRepository.listAllDocumentUploadReasons();
     const documentUploadReasonDtos = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonEntitiesToDocumentUploadReasonDtos(documentUploadReasonEntities);
-    this.log.trace('Returning document upload reasons: [%j]', documentUploadReasonDtos);
+    this.log.trace('Returning document upload reasons', { [ATTR_CDCP_REFERENCE_COUNT]: documentUploadReasonDtos.length });
     return documentUploadReasonDtos;
   }
 
   async getDocumentUploadReasonById(id: string): Promise<DocumentUploadReasonDto> {
-    this.log.trace('Getting document upload reason with id: [%s]', id);
+    this.log.trace('Getting document upload reason');
 
     const documentUploadReasonEntityOption = await this.documentUploadReasonRepository.findDocumentUploadReasonById(id);
 
     if (Option.isNone(documentUploadReasonEntityOption)) {
-      this.log.error('Document upload reason with id: [%s] not found', id);
       throw new DocumentUploadReasonNotFoundException(`Document upload reason with id: [${id}] not found`);
     }
 
     const documentUploadReasonDto = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonEntityToDocumentUploadReasonDto(Option.getOrThrow(documentUploadReasonEntityOption));
-    this.log.trace('Returning document upload reason: [%j]', documentUploadReasonDto);
+    this.log.trace('Returning document upload reason');
     return documentUploadReasonDto;
   }
 
   async listLocalizedDocumentUploadReasons(locale: AppLocale): Promise<ReadonlyArray<DocumentUploadReasonLocalizedDto>> {
-    this.log.trace('Getting all localized document upload reasons with locale: [%s]', locale);
+    this.log.trace('Getting all localized document upload reasons', { [ATTR_CDCP_LOCALE]: locale });
     const documentUploadReasonDtos = await this.listDocumentUploadReasons();
     const localizedDocumentUploadReasonDtos = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonDtosToDocumentUploadReasonLocalizedDtos(documentUploadReasonDtos, locale);
-    this.log.trace('Returning localized document upload reasons: [%j]', localizedDocumentUploadReasonDtos);
+    this.log.trace('Returning localized document upload reasons', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedDocumentUploadReasonDtos.length });
     return localizedDocumentUploadReasonDtos;
   }
 
   async getLocalizedDocumentUploadReasonById(id: string, locale: AppLocale): Promise<DocumentUploadReasonLocalizedDto> {
-    this.log.trace('Getting localized document upload reason with id: [%s] and locale: [%s]', id, locale);
+    this.log.trace('Getting localized document upload reason', { [ATTR_CDCP_LOCALE]: locale });
     const documentUploadReasonDto = await this.getDocumentUploadReasonById(id);
     const localizedDocumentUploadReasonDto = this.documentUploadReasonDtoMapper.mapDocumentUploadReasonDtoToDocumentUploadReasonLocalizedDto(documentUploadReasonDto, locale);
-    this.log.trace('Returning localized document upload reason: [%j]', localizedDocumentUploadReasonDto);
+    this.log.trace('Returning localized document upload reason', { [ATTR_CDCP_LOCALE]: locale });
     return localizedDocumentUploadReasonDto;
   }
 }

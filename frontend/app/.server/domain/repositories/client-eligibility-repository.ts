@@ -37,7 +37,7 @@ export class DefaultClientEligibilityRepository implements ClientEligibilityRepo
   }
 
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
-    this.log.trace('Fetching client eligibility for client numbers [%j]', clientEligibilityRequestEntity);
+    this.log.trace('Fetching client eligibility');
 
     const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/applicant-eligibility`);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant-eligibility_by-client-number.posts', url, {
@@ -52,17 +52,11 @@ export class DefaultClientEligibilityRepository implements ClientEligibilityRepo
 
     if (response.ok) {
       const data = (await response.json()) as ReadonlyArray<ClientEligibilityEntity>;
-      this.log.trace('Client eligibility [%j]', data);
+      this.log.trace('Client eligibility received');
       return data;
     }
 
-    this.log.error('%j', {
-      message: "Failed to 'POST' for client eligibility by client numbers",
-      status: response.status,
-      statusText: response.statusText,
-      url: url,
-      responseBody: await response.text(),
-    });
+    await response.text();
 
     throw new Error(`Failed to 'POST' for client eligibility by client numbers. Status: ${response.status}, Status Text: ${response.statusText}`);
   }
@@ -76,7 +70,7 @@ export class MockClientEligibilityRepository implements ClientEligibilityReposit
     this.log = createLogger('MockClientEligibilityRepository');
   }
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
-    this.log.debug('Fetching client eligibility for client numbers [%j]', clientEligibilityRequestEntity);
+    this.log.debug('Fetching mock client eligibility');
 
     this.log.debug('Successfully mock client eligibility');
     return await Promise.resolve(clientEligibilityJsonDataSource as ReadonlyArray<ClientEligibilityEntity>);
