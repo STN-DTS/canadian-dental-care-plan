@@ -27,5 +27,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
+  "include": ["**/*", ".github/scripts/**/*.ts"],
   "exclude": ["frontend/**/*"]
 }

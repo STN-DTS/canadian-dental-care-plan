@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@pnp/cli-microsoft365": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",

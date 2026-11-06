@@ -52,8 +52,8 @@ dependencies. Existing callers omit this input and continue to install dependenc
 Setup policy and the upstream action pin are maintained in one place.
 Changes to the composite action also enable frontend validation in PR checks
 and trigger the nonprod branch workflow.
-The SharePoint report-upload job needs only Node.js and uses `actions/setup-node`
-with `node-version-file: package.json`, without installing pnpm or workspace dependencies.
+The SharePoint report-upload job uses the same composite action to install the
+workspace-pinned Microsoft 365 CLI from the root lockfile.
 Workflows check out the repository before setting up Node.js; `workflow_run`
 consumers use the trusted default branch.
 
@@ -289,8 +289,33 @@ Vault and Azure connectivity, and network access to the target AKS API. The
 service principal must be authorized to obtain cluster credentials and apply
 resources in `canada-dental-care-plan`.
 
-The SharePoint upload requires Docker with `linux/amd64` support and access to
-Docker Hub; its CLI image is pinned by digest.
+The SharePoint upload uses `@pnp/cli-microsoft365` version `11.11.0`, pinned in
+the root pnpm catalog and lockfile. Node.js 26 runs
+[upload-prod-test-results-sharepoint.ts](../scripts/upload-prod-test-results-sharepoint.ts)
+with native type stripping. Its `download` mode streams the exact source run
+attempt's artifact to `<release-tag>.zip`. Its `upload` mode invokes the workspace
+CLI through `pnpm exec`, authenticates with the decoded Vault PFX certificate,
+and overwrites the destination file. Only the upload step receives credentials.
+The root TypeScript configuration explicitly includes workflow scripts and
+their tests so `pnpm run typecheck` validates them.
+The runner needs npm registry access for dependency installation, plus GitHub,
+Vault, Microsoft Entra, and SharePoint connectivity. Docker is not required.
+
+Each upload creates a private authentication directory. CLI subprocesses use it
+for `HOME`, `XDG_CONFIG_HOME`, and temporary storage, isolating connection files,
+token caches, CLI configuration, and the CLI's temporary cache. The pnpm launcher
+keeps its original `HOME` so toolchain resolution does not change. The script
+disables CLI telemetry before login, suppresses child output, logs out, and
+removes authentication state in `finally`. Logout or cleanup failures fail the
+step without replacing an earlier upload error. The workflow invokes the
+script's `cleanup` mode with `always()` when temporary directories were
+published, including after cancellation. Cleanup attempts both directories and
+rejects paths outside the workflow's temporary directory prefixes.
+Forced runner termination can prevent cleanup. The success summary appears
+only after upload and cleanup succeed.
+Private authentication storage does not provide the removed container's
+read-only filesystem or capability isolation. The CLI runs directly on the
+trusted production runner.
 
 Every workflow gates execution through `check-repository` to skip repositories
 marked as forks. This is an operational safeguard, not a security boundary;
