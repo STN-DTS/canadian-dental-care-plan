@@ -12,7 +12,7 @@
 ## Migrate in verifiable units
 
 1. Inventory call sites, completion owners, exception hooks, sinks, filters, dashboards, alerts, and audit consumers.
-2. Remove disclosure paths first. Do not dual-write unsafe legacy records for compatibility. Report historical exposure through incident handling.
+2. Identify suspected disclosure paths, but do not add, remove, rename, or redefine log attributes without explicit human approval. Before recommending a field change, verify its schema and documented purpose; do not infer that a field is unsafe merely because its name or value looks like an identifier. Preserve the existing attribute set until the human decides. Do not dual-write unsafe legacy records for compatibility. Report historical exposure through incident handling.
 3. Classify the record. For ordinary diagnostics, declare approved fields without inventing an event name. For named events, declare the event schema and occurrence. For canonical completion events, identify the terminal owner. Remove duplicate exception logs and redundant breadcrumbs in the same unit.
 4. Correct severity and any approved destination-category mapping centrally. Do not introduce categories for ordinary diagnostics without a declared need. Preserve distinct security and audit events and their protected delivery routes.
 5. Update queries and consumers with incompatible schema changes. Version the contract when needed, not every record by default.
@@ -21,6 +21,7 @@
 ## Minimum gate for every logging change
 
 - Every field has an approved purpose, type, bounds, and destination. No whole objects or forbidden values enter the record.
+- A human explicitly approved any attribute addition, removal, rename, or semantic change. The change summary names each changed field and its reason. Tests verify both sides of the contract: approved fields still appear, and prohibited or undeclared fields remain absent. Ambiguous schema entries are reported, not silently changed.
 - Standard attributes retain their defined semantics. Custom names are explicitly identified, necessary, and namespaced without colliding with standard namespaces. Do not duplicate `error.type` as a reason code, mix inbound and downstream HTTP statuses, or use HTTP resend ordinals as total operation retries.
 - Category is absent unless the approved schema or routing policy needs it. Where required, verify its field, bounded vocabulary, and destination mapping. Audit and security delivery remains protected even when ordinary diagnostics have no category.
 - Messages are stable. Ordinary diagnostics omit `EventName`, even when they have structured fields. Named events preserve a non-empty native `EventName`, occurrence `Timestamp`, and approved event structure at the destination. Do not export deprecated `event.name` or mistake a metadata property for a native field. Structured values remain typed at the destination.

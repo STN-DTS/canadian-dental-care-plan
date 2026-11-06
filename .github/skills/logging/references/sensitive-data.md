@@ -18,6 +18,14 @@ Every emitted field needs a declared name, purpose, source, type, size bound, cl
 
 Never use an authentication identifier as a request ID. Validate incoming trace context through the tracing library. Generate a random correlation ID at ingress if tracing is absent. Do not accept arbitrary caller-provided strings as trusted correlation.
 
+## Changes to existing fields
+
+Only a human may decide to add, remove, rename, or redefine a log attribute. An AI agent must not make those schema changes without explicit human approval, even when it believes a field is unnecessary or unsafe. The agent may explain the evidence and propose a change, but must leave the attribute set unchanged until approval.
+
+After approval, inspect the field's schema entry, source, purpose, bounds, classification, destinations, and tests. Preserve fields that are explicitly admitted for a bounded diagnostic or audit purpose; identifier-shaped values are not all equivalent. For example, an approved opaque internal record ID may be allowed while a raw session ID, credential, or government identifier remains prohibited.
+
+State every added, removed, renamed, or redefined field and its specific reason in the change summary. Add or update tests so approved fields remain emitted and prohibited or undeclared fields remain absent. If approval, the existing schema, or a field's purpose is unclear, surface that uncertainty rather than changing the attribute set.
+
 ## Exception serialization
 
 Use `error.type` for predictable low-cardinality failure classification, with a documented fixed code or an allowlisted canonical exception class. Use `exception.type` only for the admitted canonical class of an actual exception. Do not derive either from arbitrary error properties or duplicate the classification in a custom reason field. Stack frames are optional, not mandatory at every ERROR.
