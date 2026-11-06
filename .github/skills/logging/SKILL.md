@@ -1,7 +1,7 @@
 ---
 name: logging
 description: |
-  **WORKFLOW SKILL** - Privacy-first logging with OpenTelemetry severity, for any language or logger.
+  **WORKFLOW SKILL** - Privacy-first logging with OpenTelemetry LogRecords, EventRecords, and semantic conventions, for any language or logger.
   USE FOR: add logging, review logging code, fix log levels, redact sensitive data, log exceptions, audit events, access logs.
   DO NOT USE FOR: metrics, span design, alert rules, incident response, analyzing runtime log output.
   FOR SINGLE OPERATIONS: Change one log line with the severity table below.
@@ -20,6 +20,14 @@ OpenTelemetry uses one `LogRecord` model. A log record with a non-empty native `
 
 Structured attributes, category, and severity do not make a log record an event record. Do not invent event names or terminal events for helper diagnostics. See [events.md](./references/events.md#log-records-and-event-records).
 
+## Standards and application policy
+
+Reuse OpenTelemetry native fields and applicable semantic conventions with their defined meaning, type, and stability. Use the installed semantic-conventions constants where available. Do not treat a similar name as an equivalent convention.
+
+When no convention fits, omit unnecessary fields or document a custom field under an approved application namespace or company reverse-domain namespace. Never invent fields in OpenTelemetry namespaces, including reserved `otel.*`. See [events.md](./references/events.md#attribute-selection).
+
+The privacy restrictions, canonical completion ownership, protected audit delivery, and exact HTTP severity choices below are application policy, not OpenTelemetry requirements. Standard attributes remain subject to privacy admission.
+
 ## Workflow
 
 1. Detect the logger, the OpenTelemetry bridge, every sink, and the completion hook (the middleware or wrapper that sees each request or job finish). See [review.md](./references/review.md#detect-the-logging-path).
@@ -31,7 +39,8 @@ Structured attributes, category, and severity do not make a log record an event 
 ## Rules
 
 - Never log SINs or derived forms, personal data, credentials, API keys, tokens, headers, raw session IDs, raw URLs or query strings, environment dumps, or whole objects.
-- Log a safe exception type and a fixed reason code. Messages and stacks are sensitive; admit them only through the rules in [sensitive-data.md](./references/sensitive-data.md). Set `error.type` from a fixed code, never from an error's name or message.
+- Use fixed messages and fresh allowlisted structured attributes. Do not pass splat interpolation arguments or embed serialized objects in the message. Preserve useful TRACE and DEBUG diagnostics without exporting sensitive inputs.
+- Classify failures with predictable, low-cardinality `error.type`; omit it on success and expected non-error outcomes. Use a documented fixed code or an explicitly allowlisted canonical exception class, never arbitrary error names or messages. Record `exception.type` only for an actual exception with an admitted class name. Do not duplicate `error.type` in a custom reason field. Messages and stacks require admission under [sensitive-data.md](./references/sensitive-data.md).
 - Every log record and event record carries a severity under this skill's policy. Category is optional unless an approved schema or routing policy requires it. Do not automatically add a category field. OpenTelemetry does not require one. A category does not replace severity or determine the record kind.
 - Ordinary diagnostic log records omit `EventName`. Event records use a non-empty native `EventName` that identifies their documented structure. Do not emit the deprecated `event.name` attribute.
 - Audit and security events bypass sampling and level filters.
@@ -50,7 +59,7 @@ Structured attributes, category, and severity do not make a log record an event 
 | Retry attempt                                | DEBUG (5)  |
 | Process-ending failure at the top level      | FATAL (21) |
 
-Set severity text and number together, for example `INFO2` with 10.
+Map source levels to `SeverityNumber` and preserve the actual source label in `SeverityText`. `INFO2` is the normalized display name for 10, not a required source label. See [severity.md](./references/severity.md).
 
 ## When the platform can't comply
 
@@ -61,7 +70,7 @@ Set severity text and number together, for example `INFO2` with 10.
 ## Example
 
 Bad: `warn("Invalid body: %j", body)`, then return 400.
-Good: one access event, WARN (13), with status 400 and `org.reason.code: "validation_failed"`.
+Good: one access event, WARN (13), with `http.response.status_code: 400` and `error.type: "validation_failed"` when the request failed validation.
 
 ## Troubleshooting
 

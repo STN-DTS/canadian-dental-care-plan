@@ -4,6 +4,7 @@
 
 - Find the approved logger, structured-field API, exception serializer, request completion hook, trace context, and audit destination.
 - Read configuration and installed bridge versions. Trace emission through filters, formatters, auto-instrumentation, collectors, and every sink, including bootstrap and emergency output.
+- Consult applicable OpenTelemetry conventions before choosing attribute or event names. Verify meaning, value type, stability, and installed constants. Native fields need explicit bridge mapping; custom fields need a documented application or company namespace, not invented standard names.
 - Map source levels to [severity numbers](./severity.md) and test the exported numbers. Never equate local priority integers with OpenTelemetry numbers.
 - Fix a missing level or bridge mis-mapping in the shared adapter, not at call sites.
 - If no approved logging path exists, report the gap. Do not substitute console output or add a library without project approval.
@@ -20,6 +21,7 @@
 ## Minimum gate for every logging change
 
 - Every field has an approved purpose, type, bounds, and destination. No whole objects or forbidden values enter the record.
+- Standard attributes retain their defined semantics. Custom names are explicitly identified, necessary, and namespaced without colliding with standard namespaces. Do not duplicate `error.type` as a reason code, mix inbound and downstream HTTP statuses, or use HTTP resend ordinals as total operation retries.
 - Category is absent unless the approved schema or routing policy needs it. Where required, verify its field, bounded vocabulary, and destination mapping. Audit and security delivery remains protected even when ordinary diagnostics have no category.
 - Messages are stable. Ordinary diagnostics omit `EventName`, even when they have structured fields. Named events preserve a non-empty native `EventName`, occurrence `Timestamp`, and approved event structure at the destination. Do not export deprecated `event.name` or mistake a metadata property for a native field. Structured values remain typed at the destination.
 - The relevant canonical events map successful HTTP to 10, inbound 4xx to 13, and inbound 5xx to 17.
@@ -52,14 +54,15 @@ Set access, retention, integrity, and deletion controls for each approved record
 
 ## Sources
 
-OpenTelemetry pages were checked on 2026-11-03.
-
 Organization policy supplies the exact HTTP severity mapping, reserved sublevels, government-identifier prohibition, exception-message allowlist, and unsampled security and audit routing. Category fields and vocabularies require a separate application or destination policy. External sources support these decisions but do not mandate all of them.
+
+Canonical completion ownership is also local operational policy. OpenTelemetry does not require a completion event for every request or job, an application outcome attribute, or a custom reason field on every diagnostic.
 
 ### Specifications
 
 - [OpenTelemetry logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/). Supplies severity ranges, recommended source mapping, short names including INFO2, native trace fields, event time, Resource, InstrumentationScope, Body, Attributes, and EventName. It does not prescribe HTTP log severity.
 - [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/). Supplies the shared vocabulary and resource-attribute framework. The resource fields used here are `service.name`, `service.version`, and `deployment.environment.name`.
+- [Naming conventions](https://opentelemetry.io/docs/specs/semconv/general/naming/). Recommends consulting existing conventions first, lowercase namespaces and snake_case components, company reverse-domain or unique internal application prefixes for custom names, and avoiding collisions with standard namespaces. Reserves `otel.*` for OpenTelemetry-defined attributes.
 - [HTTP attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/http/). Supplies `http.request.method`, `http.route`, and `http.response.status_code`. Requires unknown-method handling and forbids substituting a raw path for a route template.
 - [HTTP span conventions](https://opentelemetry.io/docs/specs/semconv/http/http-spans/). Supplies separate client and server perspectives, contextual status handling, and cancellation guidance. Span status is not log severity.
 - [Error attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/error/). Supplies predictable low-cardinality `error.type`, omission on success, and the deprecation of `error.message`.

@@ -8,6 +8,8 @@ Ordinary diagnostic log records omit `EventName`. They may include approved stru
 
 Use event records for named occurrences such as checkpoints, state changes, audit facts, and completion outcomes. Document when each event occurs, its stable name, its attribute schema, its occurrence timestamp, and its default severity number. The name identifies the structure, not an arbitrary message or request.
 
+Reuse a defined OpenTelemetry event name only when the occurrence and schema match its convention. Otherwise use a documented custom namespaced name. Event definitions specify default severity numbers, not source severity text, and may define only a string display message for `Body`.
+
 Use spans for operations with duration and meaningful boundaries. Use span attributes for properties of the operation as a whole. A completion event is a point-in-time outcome checkpoint, not a replacement for a duration span.
 
 Privacy and field admission apply to both record kinds. Category is optional unless an approved schema or routing policy requires it. OpenTelemetry does not require a category. Ordinary diagnostics need approved fields, not a named-event schema or their own terminal owner.
@@ -36,42 +38,52 @@ At the OpenTelemetry JavaScript API, `logger.emit({ eventName: ... })` sets the 
 
 Non-OTLP exporters should use `otel.event.name` as an attribute fallback when the destination has no `EventName` or equivalent field. Document that destination mapping and verify it separately. Keep event-name bridge keys out of ordinary diagnostics.
 
-Constant message templates are acceptable when the logger retains the template and typed properties separately. Rendered prose or JSON embedded in a message is not a substitute for structured attributes.
+Prefer fixed messages with typed attributes. Constant templates are acceptable only when the bridge demonstrably retains the template and typed properties separately; do not use Winston splat interpolation. Rendered prose or JSON embedded in a message is not a substitute for structured attributes.
 
-## Attribute catalog
+## Attribute selection
 
-`org.*` denotes organization-defined extensions, not OpenTelemetry conventions. Keep this namespace or map it once to an organization-owned namespace. Do not invent new meanings inside standard namespaces.
+Consult the applicable domain convention and attribute registry first. Reuse a standard attribute only when its meaning and type match the record. Check its stability and availability in the installed package; prefer exported constants over literal keys where supported. Do not redefine standard fields to fit an application schema.
 
-If categorization is useful, use the approved application or destination field and bounded vocabulary, such as a separately defined Dynatrace `event.category`. Do not assume that a category describes audit or security delivery requirements.
+Native `Timestamp`, `EventName`, severity, resource, scope, and trace context belong in their mapped OpenTelemetry fields, not invented attributes. Prefer native `TraceId` and `SpanId` for correlation rather than adding request identifiers.
 
-| Attribute                      | Type and admission                                                                                                            |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `org.operation.name`           | Fixed operation name for canonical events.                                                                                    |
-| `org.operation.outcome`        | Canonical enum. `success`, `rejected`, `degraded`, `failure`, `cancelled`, or `terminated`.                                   |
-| `org.duration_ms`              | Nonnegative completion duration in milliseconds, measured with a monotonic clock.                                             |
-| `org.reason.code`              | Optional bounded reason code. Never raw error text.                                                                           |
-| `org.request_id`, `org.job_id` | Random ingress-generated correlation fallback when needed. Not personal or session identity.                                  |
-| `http.request.method`          | Known method string. Unknown methods become `_OTHER`. Do not retain arbitrary original input.                                 |
-| `http.route`                   | Matched low-cardinality route template. Omit when unavailable. Never substitute the raw path.                                 |
-| `http.response.status_code`    | Actual response status as an integer, when known. On an access event this is our response, not the dependency response.       |
-| `error.type`                   | Predictable low-cardinality classification when the operation ends in error. Omit on success and expected non-error outcomes. |
-| `exception.type`               | Safe exception class name when an exception needs recording.                                                                  |
-| `exception.message`            | Optional message from a first-party error type declared safe.                                                                 |
-| `exception.stacktrace`         | Optional bounded sanitized stack.                                                                                             |
-| `org.retry.count`              | Nonnegative total retry count for this unit of work. Not the HTTP convention for a particular resend attempt.                 |
-| `org.dependency.name`          | Fixed approved dependency alias, not a URL.                                                                                   |
-| `org.dependency.status_code`   | Remote HTTP status when relevant to the canonical outcome.                                                                    |
-| `org.record.id`                | Optional declared opaque internal record ID.                                                                                  |
-| `org.actor.id`                 | Optional declared opaque actor ID or centrally approved pseudonym.                                                            |
-| `org.sampling.probability`     | Inclusion probability greater than zero and at most one, required only on sampled streams.                                    |
+### Standard attributes
 
-Define bounds and permitted destinations for each admitted field. Add domain fields only through the same admission process. Keep correlation IDs out of metric labels, event names, and logger names.
+| Attribute                   | Type and admission                                                                                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http.request.method`       | Known method string. Unknown methods become `_OTHER`. Do not retain arbitrary original input.                                                                                            |
+| `http.route`                | Matched low-cardinality route template. Omit when unavailable. Never substitute the raw path.                                                                                            |
+| `http.response.status_code` | Actual integer response status for the HTTP operation described by this record. An inbound completion records our response; a downstream HTTP record records that dependency's response. |
+| `http.request.resend_count` | Nonnegative integer ordinal of an HTTP resending attempt, including redirects. Not a total retry count for a job or operation.                                                           |
+| `error.type`                | Predictable low-cardinality failure classification. Use a documented fixed code or an allowlisted canonical exception class. Omit on success and expected non-error outcomes.            |
+| `exception.type`            | Admitted canonical class name of an actual exception. Do not put a reason code in this field.                                                                                            |
+| `exception.message`         | Optional message from a first-party error type declared safe.                                                                                                                            |
+| `exception.stacktrace`      | Optional bounded sanitized stack.                                                                                                                                                        |
+
+This is a selection, not a universal required schema. HTTP attributes describe HTTP operations, not arbitrary helpers. Domain conventions may supply other appropriate fields. Standard status or identity attributes do not override privacy restrictions.
+
+### Custom fields
+
+There is no universal OpenTelemetry attribute for every operation name, outcome, duration, reason, dependency alias, audit action, or record reference. Do not prescribe a generic extension catalog or merely remove a prefix and call the result standard.
+
+If a field is necessary and no convention fits, use a documented application-owned namespace that does not clash with OpenTelemetry conventions. For internal CDCP fields, `cdcp.*` is an example; for cross-company use, OpenTelemetry recommends a company reverse-domain prefix. Follow lowercase dot-separated namespaces and snake_case within multi-word components. Never add custom fields to reserved `otel.*` or other standard namespaces.
+
+The schema owner defines each custom field's meaning, type, bounds, privacy classification, and destinations:
+
+- Operation names and dependency aliases are fixed, not URLs. Outcome values come from a documented bounded enum.
+- Durations normally belong in spans or metrics. A completion log may carry a custom nonnegative monotonic duration with documented units when independent log analysis needs it; a metric name is not a standard log-duration attribute.
+- A custom reason code is optional for non-error decisions or distinct domain detail. Do not repeat `error.type` under another key.
+- Total retries, log inclusion probability, and random correlation fallbacks remain custom unless an applicable convention defines them. Do not confuse log sampling with native `TraceFlags`.
+- Actor and target references require explicit privacy admission. Standard user or session attributes do not authorize personal data or session IDs.
+
+If categorization is useful, use an approved custom or destination-specific field and bounded vocabulary. Destination conventions are not automatically OpenTelemetry conventions or evidence of protected delivery.
+
+Keep correlation IDs out of metric labels, event names, and logger names.
 
 ## Canonical-event ownership
 
 For each owned request or job, use one scoped accumulator and one terminal emitter. Never store mutable request fields in a global logger. Every return, rejection, and throw must end in its actual outcome and one terminal event, unless a named completion hook owns that branch. A catch-only failure event does not cover a successful return. Helpers add approved fields or ordinary DEBUG or TRACE diagnostic log records. They do not duplicate completion events, and each diagnostic does not need a terminal owner.
 
-Use the actual status and schema-approved operation and reason values. Do not invent statuses or replace validated values with generic codes. The terminal event records the outcome, duration, and useful safe context. Streaming responses need finish, failure, and close handling after the handler returns. Deduplicate overlapping callbacks. A process crash can prevent emission. Completion logging is not a durability guarantee.
+Use the actual status and schema-approved operation and reason values. Do not invent statuses or replace validated values with generic codes. The terminal event records the outcome and useful safe context; include a custom duration only when the schema requires independent log timing. Streaming responses need finish, failure, and close handling after the handler returns. Deduplicate overlapping callbacks. A process crash can prevent emission. Completion logging is not a durability guarantee.
 
 Use a completion event as an outcome checkpoint. Use spans for the operation duration and step timing. Copy only fields needed to understand or retain the log independently, not every span attribute.
 
@@ -81,9 +93,9 @@ A separate security decision or audit commitment may precede completion. Preserv
 
 Identify audit and security records through an explicit approved schema and delivery policy. Use a dedicated route or a tested schema-to-route mapping. A category field may select that route if the policy defines it, but no particular category key is required. Do not infer protected delivery from severity, an event-name prefix, or an unreviewed category value. Apply no sampling or ordinary level threshold at the call site, logger, collector, or destination.
 
-Define events for authentication results, authorization denials, security-control decisions, and high-risk administrative actions. Give each a fixed event name and approved fields for action, target type, result, and reason. Use `org.audit.action`, `org.audit.target_type`, `org.audit.result`, and `org.reason.code` for audit events. Use `org.security.control` and `org.reason.code` for security decisions.
+Define events for authentication results, authorization denials, security-control decisions, and high-risk administrative actions. Reuse an applicable OpenTelemetry event convention when its occurrence and schema match. Otherwise define a custom namespaced event and approved fields for action, target type, result, reason, or security control as needed. These concepts do not imply a universal OpenTelemetry audit or security attribute catalog. Use `error.type` only when the occurrence represents an error.
 
-Include the minimum approved actor and target references when attributable evidence requires them. Use `org.actor.id` and `org.record.id`. Do not make a person ID or client IP mandatory on every record. Never accept arbitrary audit details.
+Include the minimum approved actor and target references when attributable evidence requires them, using applicable conventions or documented custom fields. Do not make a person ID or client IP mandatory on every record. Never accept arbitrary audit details.
 
 Define delivery, integrity, access, retention, and failure handling separately from severity. If durable audit evidence is required, use the approved transactional or fail-closed mechanism. An unfiltered asynchronous logger alone cannot guarantee delivery.
 
@@ -118,13 +130,13 @@ Logical projection with explicitly mapped field names, not OTLP wire JSON.
   "severity_number": 5,
   "severity_text": "DEBUG",
   "attributes": {
-    "org.dependency.name": "document_storage",
-    "org.retry.count": 1
+    "cdcp.dependency.name": "document_storage",
+    "cdcp.retry.count": 1
   }
 }
 ```
 
-This diagnostic has approved structured fields but no `EventName`. It is not an event record or a completion event.
+The `cdcp.*` fields are illustrative custom attributes, not OpenTelemetry standards: a fixed dependency alias and nonnegative operation retry count. This diagnostic has no `EventName`. It is not an event record or a completion event.
 
 ### Canonical failure event record
 
@@ -132,22 +144,21 @@ Logical projection onto native OpenTelemetry fields, not OTLP wire JSON.
 
 ```json
 {
-  "event_name": "org.document.upload.finished",
+  "event_name": "cdcp.document.upload.finished",
   "message": "Document upload finished",
   "severity_number": 17,
   "severity_text": "ERROR",
   "attributes": {
-    "org.operation.name": "document.upload",
-    "org.operation.outcome": "failure",
-    "org.reason.code": "storage_unavailable",
-    "org.duration_ms": 1247,
+    "cdcp.operation.outcome": "failure",
     "http.request.method": "POST",
     "http.route": "/documents",
     "http.response.status_code": 503,
     "error.type": "storage_unavailable",
-    "org.retry.count": 2
+    "cdcp.retry.count": 2
   }
 }
 ```
 
-The logger maps `event_name` to native `EventName` and supplies the occurrence `Timestamp`, resource metadata, and active trace context. This named event describes a completion outcome. No filename, document content, person identifier, or exception message enters this record.
+The custom event name identifies a documented application completion schema; it is not an OpenTelemetry standard event. The custom outcome enum and total retry count are included only if needed for independent log analysis. `error.type` supplies the failure classification without a duplicate reason field. Duration belongs to the associated span.
+
+The logger maps `event_name` to native `EventName` and supplies the occurrence `Timestamp`, resource metadata, and active trace context. The HTTP attributes describe the incoming upload request, not a storage dependency response. No filename, document content, person identifier, or exception message enters this record.

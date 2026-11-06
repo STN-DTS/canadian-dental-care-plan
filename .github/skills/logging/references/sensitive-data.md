@@ -2,7 +2,7 @@
 
 ## Field admission
 
-Every emitted field needs a declared name, purpose, source, type, size bound, classification, and permitted destinations. An outer allowlisted key does not approve arbitrary nested contents. Prefer scalar values and bounded arrays of approved enums.
+Every emitted field needs a declared name, purpose, source, type, size bound, classification, and permitted destinations. Reuse applicable OpenTelemetry conventions without changing their semantics. A standard key is not privacy approval, and a custom namespace is not redaction. An outer allowlisted key does not approve arbitrary nested contents. Prefer scalar values and bounded arrays of approved enums.
 
 | Data                                                                                                                                       | Rule                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,9 +20,9 @@ Never use an authentication identifier as a request ID. Validate incoming trace 
 
 ## Exception serialization
 
-Safe exception type and fixed reason code are the default. Stack frames are optional, not mandatory at every ERROR.
+Use `error.type` for predictable low-cardinality failure classification, with a documented fixed code or an allowlisted canonical exception class. Use `exception.type` only for the admitted canonical class of an actual exception. Do not derive either from arbitrary error properties or duplicate the classification in a custom reason field. Stack frames are optional, not mandatory at every ERROR.
 
-Admit exception messages only for first-party error types whose message contract is declared safe and tested. Library exceptions and generic errors do not qualify. Replace their messages with a fixed reason code.
+Admit exception messages only for first-party error types whose message contract is declared safe and tested. Library exceptions and generic errors do not qualify. Omit their messages; classify the failure with a fixed `error.type` rather than placing a substitute code in `exception.message`.
 
 The serializer must remove unsafe stack first lines, nested cause messages, captured locals, arguments, URLs, response content, and custom properties. Review file paths and code locations before retaining frames. Bound stack length and cause depth.
 
