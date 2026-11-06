@@ -22,7 +22,7 @@ Structured attributes, category, and severity do not make a log record an event 
 
 ## Standards and application policy
 
-Reuse OpenTelemetry native fields and applicable semantic conventions with their defined meaning, type, and stability. Use the installed semantic-conventions constants where available. Do not treat a similar name as an equivalent convention.
+Reuse OpenTelemetry native fields and applicable semantic conventions with their defined meaning, type, and stability. Prefer stable, non-deprecated constants from the installed package over literal attribute keys and standardized enum values. In JavaScript, use named exports from `@opentelemetry/semantic-conventions`, such as `[ATTR_ERROR_TYPE]`, rather than legacy deprecated aliases. Use incubating conventions only when needed and explicitly document their stability. Custom failure codes remain application-defined strings when no standard value matches. Do not treat a similar name as an equivalent convention.
 
 When no convention fits, omit unnecessary fields or document a custom field under an approved application namespace or company reverse-domain namespace. Never invent fields in OpenTelemetry namespaces, including reserved `otel.*`. See [events.md](./references/events.md#attribute-selection).
 
