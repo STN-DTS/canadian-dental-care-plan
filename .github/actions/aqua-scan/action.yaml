@@ -44,27 +44,15 @@ runs:
           canada-dental-care-plan/data/shared/cicd/aquasec AQUA_PASSWORD | AQUA_PASSWORD;
           canada-dental-care-plan/data/shared/cicd/aquasec AQUA_POLICIES | AQUA_POLICIES;
         url: ${{ inputs.vault-url }}
-    - name: Create Aqua reports directories and fetch Trivy template
-      shell: bash
-      env:
-        TRIVY_TEMPLATE_COMMIT: 6fb20c8edd70745d6b34bff0387b53b03c8a760a
-        TRIVY_TEMPLATE_SHA256: d36b637cc77bc1a49b1f9a2358173756cd27a5d3385fab6365c0bab09abe5f0a
-      run: |
-        set -euo pipefail
-
-        echo "Preparing scan report directories and downloading the pinned Trivy template..."
-        mkdir -p .github/aqua-reports contrib
-        curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_TEMPLATE_COMMIT}/contrib/html.tpl" -o contrib/html.tpl
-        printf '%s  %s\n' "$TRIVY_TEMPLATE_SHA256" contrib/html.tpl | sha256sum --check
-        echo "Trivy report template checksum verified."
     - name: Run Aqua vulnerability scanner
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
-        format: template
         image-ref: ${{ inputs.image-ref }}
         output: .github/aqua-reports/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
         scanners: vuln
-        template: '@contrib/html.tpl'
+        format: 'template'
+        template: '@$HOME/.local/bin/trivy-bin/contrib/html.tpl'
+        version: v0.76.2
     - name: Upload Aqua scan report
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
