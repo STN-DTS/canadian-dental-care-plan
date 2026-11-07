@@ -285,7 +285,9 @@ with setup-trivy into `runner.temp` and runs the CLI directly. Set the Trivy
 version on the setup-trivy step. The action scans once to JSON, then converts
 that report to SARIF for code scanning and to HTML for the report artifact;
 `trivy convert` reads only Trivy JSON, not SARIF. Jobs that call the action
-need `security-events: write`.
+need `security-events: write`. The scan uses `--ignore-unfixed`, so code
+scanning alerts and the Trivy HTML report list only vulnerabilities with an
+available fix; the Aqua scannercli report still covers unfixed findings.
 
 GitOps deployment requires Azure CLI, kubectl, kubelogin,
 Vault and Azure connectivity, and network access to the target AKS API. The

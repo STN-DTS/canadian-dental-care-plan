@@ -71,7 +71,7 @@ runs:
       run: |
         set -euo pipefail
 
-        trivy image --cache-dir "$CACHE_DIR" --scanners vuln --format json --output "$REPORT_BASE.json" "$IMAGE_REF"
+        trivy image --cache-dir "$CACHE_DIR" --scanners vuln --ignore-unfixed --format json --output "$REPORT_BASE.json" "$IMAGE_REF"
         trivy convert --format sarif --output "$REPORT_BASE.sarif" "$REPORT_BASE.json"
         trivy convert --format template --template "@$RUNNER_TEMP/trivy-bin/contrib/html.tpl" \
           --output "$HTML_REPORT" "$REPORT_BASE.json"
