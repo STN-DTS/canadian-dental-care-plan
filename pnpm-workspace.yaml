@@ -7,7 +7,6 @@ failIfNoMatch: true
 # https://pnpm.io/settings#allowbuilds
 allowBuilds:
   '@azure/msal-node-extensions': false
-  '@swc/core': false
   esbuild: false
   keytar: false
   protobufjs: false
@@ -203,13 +202,13 @@ savePrefix: ''
 # https://pnpm.io/settings/other#savetypes
 saveTypes: true
 
+audit:
+  level: high
+  ignorePrune: true
+
 overrides:
-  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.1.0
-  csv-parse@<7.0.2: 7.0.2
-  fast-xml-parser@<5.7.0: 5.7.0
-  glob@>=9.0.0 <=14.0.1: 14.0.2
-  minimatch@>=7.0.0 <11.0.1: 11.0.1
-  uuid@<11.1.1: 11.1.1
+  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.2.1
 
 minimumReleaseAgeExclude:
-  - '@pnp/cli-microsoft365@12.0.0'
+  - '@azure/msal-common@16.16.1'
+  - '@azure/msal-node@7.2.1'
