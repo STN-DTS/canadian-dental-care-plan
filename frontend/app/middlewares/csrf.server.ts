@@ -14,7 +14,7 @@ const log = createLogger('middleware/csrf');
 
 export const csrfMiddleware = createCsrfMiddleware({
   onUntrustedRequest: () => {
-    log.warn('Untrusted request rejected', { [ATTR_ERROR_TYPE]: 'untrusted_request_origin' });
+    log.debug('Untrusted request rejected', { [ATTR_ERROR_TYPE]: 'untrusted_request_origin' });
     return new Response('Untrusted request', { status: 403 });
   },
 });

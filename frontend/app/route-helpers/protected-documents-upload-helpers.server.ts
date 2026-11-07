@@ -6,7 +6,6 @@ import { getAppContext } from '~/.server/context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
@@ -70,8 +69,6 @@ export type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDoc
  * @returns Success when every document uploads; otherwise, file-specific errors.
  */
 export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']): Promise<UploadDocumentsResponse> {
-  const log = createLogger('protected-documents-upload-helpers/uploadDocuments');
-
   const user = getUser();
   const applicant = getApplicant();
   const url = getUrl();
@@ -101,7 +98,6 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
         case 'error':
           return { id, error: t(($) => $.upload.errorMessage.uploadError, { filename: file.name }) };
         case 'success':
-          log.trace('Document uploaded successfully', { [ATTR_CDCP_USER_ID]: user.id });
           return { id, success: true, uploadDate: uploadDate.toString() };
       }
     }),

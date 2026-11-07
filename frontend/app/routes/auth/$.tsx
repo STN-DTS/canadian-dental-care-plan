@@ -99,7 +99,7 @@ async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'con
   const { AUTH_RASCL_LOGOUT_URL } = appContainer.get(TYPES.ServerConfig);
 
   if (!session.has('idToken')) {
-    log.debug(`User has not authenticated; bypassing RAOIDC logout and redirecting to RASCL logout`);
+    log.debug('User has not authenticated; bypassing RAOIDC logout and redirecting to RASCL logout');
     instrumentationService.createCounter('auth.logout.requests.unauthenticated').add(1);
     throw redirectDocument(AUTH_RASCL_LOGOUT_URL);
   }
@@ -133,7 +133,7 @@ async function handleRaoidcLoginRequest({ context, url }: Pick<Route.LoaderArgs,
   const returnUrl = searchParams.get('returnto');
 
   if (returnUrl && !isSafeReturnUrl(returnUrl)) {
-    log.warn('Invalid authentication return URL', { [ATTR_ERROR_TYPE]: 'invalid_authentication_return_url' });
+    log.debug('Invalid authentication return URL', { [ATTR_ERROR_TYPE]: 'invalid_authentication_return_url' });
     instrumentationService.createCounter('auth.login.raoidc.requests.invalid-return-url').add(1);
 
     return Response.json(null, { status: 400 });
@@ -184,7 +184,7 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
     }
 
     const authLoginUrl = `/auth/login?${new URLSearchParams({ returnto: returnUrl })}`;
-    log.warn('Authentication callback session data is missing; restarting login', {
+    log.debug('Authentication callback session data is missing; restarting login', {
       [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing',
       [ATTR_SESSION_ID]: session.id,
       [ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS]: missingSessionKeys,

@@ -37,7 +37,7 @@ const [csrfTokenMiddleware, getCsrfToken] = createCsrfTokenMiddleware({
   formDataKey: CSRF_FORM_DATA_KEY,
   secret: CSRF_TOKEN_SECRET,
   onInvalidToken() {
-    log.warn('Invalid CSRF token', { [ATTR_ERROR_TYPE]: 'invalid_csrf_token' });
+    log.debug('Invalid CSRF token', { [ATTR_ERROR_TYPE]: 'invalid_csrf_token' });
     return new Response('Invalid CSRF token', { status: 403 });
   },
 });

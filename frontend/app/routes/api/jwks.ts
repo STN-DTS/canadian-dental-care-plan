@@ -3,7 +3,6 @@ import { subtle } from 'node:crypto';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
-import { createLogger } from '~/.server/logging';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 
 import type { Route } from './+types/jwks';
@@ -16,18 +15,11 @@ interface JWK extends JsonWebKey {
 }
 
 /**
- * Return a promise that resolves to an array of public JWKs. If no public
- * keys have been configured, this function returns an empty array.
+ * Return a promise that resolves to an array of public JWKs. Startup
+ * environment validation rejects a missing or empty public key.
  */
 async function getJwks(serverConfig: Pick<ServerConfig, 'AUTH_JWT_PUBLIC_KEY'>) {
-  const log = createLogger('[.]well-known.jwks[.]json');
   const { AUTH_JWT_PUBLIC_KEY } = serverConfig;
-
-  if (!AUTH_JWT_PUBLIC_KEY) {
-    log.warn('AUTH_JWT_PUBLIC_KEY is not set, returning empty JWKS');
-    return [];
-  }
-
   const jwk = await subtle.exportKey('jwk', await generateCryptoKey(AUTH_JWT_PUBLIC_KEY, 'encrypt'));
   const keyId = generateJwkId(jwk);
 

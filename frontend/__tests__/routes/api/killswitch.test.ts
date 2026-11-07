@@ -65,11 +65,12 @@ describe('killswitch API loader logging', () => {
     expect(logger.info).not.toHaveBeenCalled();
   });
 
-  it('warns when the killswitch cannot be enabled', async () => {
+  it('logs an error when the killswitch cannot be enabled', async () => {
     vi.spyOn(logging, 'createLogger').mockReturnValue(logger);
 
     await expect(loader(createArgs(true, undefined, '?engage'))).resolves.toEqual({ engaged: false });
-    expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Failed to enable killswitch via killswitch API');
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith('Failed to enable killswitch via killswitch API', { 'error.type': 'killswitch_engage_failed' });
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('uses the killswitch Redis key', async () => {

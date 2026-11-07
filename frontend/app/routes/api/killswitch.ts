@@ -1,3 +1,5 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
@@ -34,7 +36,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     const killswitchEngaged = (await redisService?.set(KILLSWITCH_KEY, true, serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS)) === 'OK';
 
     if (!killswitchEngaged) {
-      log.warn('Failed to enable killswitch via killswitch API');
+      log.error('Failed to enable killswitch via killswitch API', { [ATTR_ERROR_TYPE]: 'killswitch_engage_failed' });
     }
 
     return {
