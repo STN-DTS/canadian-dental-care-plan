@@ -123,6 +123,7 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
 
   const sentinel = createSentinel({
     name: config.REDIS_SENTINEL_NAME,
+    scanInterval: 10_000, // Documented default says 10_000, but actual default is 0
     sentinelRootNodes: [
       {
         host: config.REDIS_SENTINEL_HOST,
