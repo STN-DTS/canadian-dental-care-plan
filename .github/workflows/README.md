@@ -447,8 +447,12 @@ accessible. The override retains the original action name, release-version
 comment, and full commit-SHA pin; annotated tags resolve to their underlying
 commit rather than the tag-object SHA. It does not add a PAT or broaden App
 permissions. Because Renovate's `git-tags` datasource provides no publication
-timestamps, only this action is exempt from the three-day release-age check.
-All other dependencies retain their existing age policies. Verify the first
+timestamps, this action is exempt from the three-day release-age check.
+Renovate also extracts the setup-trivy `version` input as the
+`aquasecurity/trivy` GitHub release, which hits the same allowlist. A matching
+override looks up that Trivy CLI version through public Git tags and is likewise
+exempt from the release-age check. All other dependencies retain their existing
+age policies. Verify the first
 workflow run after this change has no Trivy lookup warning; changelog API calls
 may still be restricted even when tag and digest updates succeed.
 

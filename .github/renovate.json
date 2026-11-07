@@ -59,6 +59,15 @@
       "minimumReleaseAge": null
     },
     {
+      // Renovate extracts setup-trivy's `version` input as this GitHub release; same allowlist workaround.
+      "matchManagers": ["github-actions"],
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["aquasecurity/trivy"],
+      "overrideDatasource": "git-tags",
+      "overridePackageName": "https://github.com/aquasecurity/trivy.git",
+      "minimumReleaseAge": null
+    },
+    {
       // Application builds and environment promotion manage this private registry, not Renovate.
       "matchDatasources": ["docker"],
       "matchPackageNames": ["dtsrhpdevscedacr.azurecr.io/**"],
