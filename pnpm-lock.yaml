@@ -379,8 +379,8 @@ catalogs:
       specifier: 22.3.0
       version: 22.3.0
     filesize:
-      specifier: 11.0.29
-      version: 11.0.29
+      specifier: 11.0.30
+      version: 11.0.30
     i18next:
       specifier: 26.7.1
       version: 26.7.1
@@ -706,7 +706,7 @@ importers:
         version: 22.3.0
       filesize:
         specifier: 'catalog:'
-        version: 11.0.29
+        version: 11.0.30
       i18next:
         specifier: 'catalog:'
         version: 26.7.1(typescript@7.0.2)
@@ -2110,6 +2110,7 @@ packages:
   '@opentelemetry/propagator-jaeger@2.10.0':
     resolution: {integrity: sha512-yw/IX8DL470dSMZJoE82ScfYGp7JWZ/G8kFJo35ZILUVTB2jFPTOaioN+8s09pH0RHsWNhweVZb+ZnjJJpCChg==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Package no longer supported. See https://github.com/open-telemetry/opentelemetry-js/pull/7077
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -4356,8 +4357,8 @@ packages:
     resolution: {integrity: sha512-PrPedgnnWl5bWz3JHgar0QSzRvzeyFh7dZ9JpYOgcPZu4KALS9zw4MMa6qXRYyjeBsAlpaWB2boLuG991+0HIQ==}
     engines: {node: '>=22'}
 
-  filesize@11.0.29:
-    resolution: {integrity: sha512-+Mkmp8keoklLzAnvP/RQGDUEWEpjGmhvm4d4U739C1ZnkqxqoSqdLHnjv9/4QX6lltKSRk6qzQI7+94JVDtuCA==}
+  filesize@11.0.30:
+    resolution: {integrity: sha512-qaIUqg5pU4bdTZQG8w+v5IhPAlOHm/ifT+1NlBuPTlmIAKeBwG1CEYkaLYNLJCfDOGWb7QqXUyQnsYlIC7pAwA==}
     engines: {node: '>= 10.8.0'}
 
   finalhandler@2.1.1:
@@ -9828,7 +9829,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  filesize@11.0.29: {}
+  filesize@11.0.30: {}
 
   finalhandler@2.1.1:
     dependencies:
