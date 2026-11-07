@@ -205,7 +205,7 @@ saveTypes: true
 
 overrides:
   '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.1.0
-  csv-parse@<7.0.2: 7.0.2
+  csv-parse@<7.0.2: 7.0.3
   fast-xml-parser@<5.7.0: 5.7.0
   glob@>=9.0.0 <=14.0.1: 14.0.2
   minimatch@>=7.0.0 <11.0.1: 11.0.1
