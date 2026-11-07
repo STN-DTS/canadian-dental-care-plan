@@ -1,5 +1,5 @@
 import type { TransformableInfo } from 'logform';
-import { MESSAGE } from 'triple-beam';
+import { MESSAGE, SPLAT } from 'triple-beam';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Logger } from '~/.server/logging/logger';
@@ -22,11 +22,13 @@ describe('DefaultLogger', () => {
       transport.on('logged', (info: TransformableInfo) => entries.push(info));
       const logger: Logger = new DefaultLogger(winston, 'structured-event');
 
-      logger.info('Dependency request finished', {
+      const fields = Object.freeze({
         'org.event.category': 'application',
         'org.operation.outcome': 'success',
         'org.retry.count': 2,
+        'url.path': '/en/documents/upload',
       });
+      logger.info('Dependency request finished', fields);
 
       await new Promise<void>((resolve) => setImmediate(resolve));
       const entry = entries.find((info) => info.message === 'Dependency request finished');
@@ -35,9 +37,13 @@ describe('DefaultLogger', () => {
         'org.event.category': 'application',
         'org.operation.outcome': 'success',
         'org.retry.count': 2,
+        'url.path': '/en/documents/upload',
       });
       expect(String(entry?.[MESSAGE])).toContain('Dependency request finished');
       expect(String(entry?.[MESSAGE])).toContain('org.retry.count');
+      expect(Object.getOwnPropertySymbols(entry ?? {})).not.toContain(SPLAT);
+      expect(fields['url.path']).toBe('/en/documents/upload');
+      expect(String(entry?.[MESSAGE])).toContain('/en/documents/upload');
 
       const metadata = environment === 'production' ? JSON.parse(String(entry?.[MESSAGE])) : entry;
       expect(metadata).toMatchObject({ 'org.retry.count': 2 });
@@ -47,8 +53,8 @@ describe('DefaultLogger', () => {
     }
   });
 
-  it('emits info request logs and more severe levels while filtering diagnostics', async () => {
-    const winston = createWinstonInstance({ ...defaultsConfig, LOG_LEVEL: 'info', AUDIT_LOG_ENABLED: false });
+  it.each(['info', 'http'] as const)('filters successful HTTP completions only at the info threshold, using %s', async (level) => {
+    const winston = createWinstonInstance({ ...defaultsConfig, LOG_LEVEL: level, AUDIT_LOG_ENABLED: false });
     const transport = winston.transports[0];
 
     if (!transport) {
@@ -63,7 +69,8 @@ describe('DefaultLogger', () => {
       logger.audit('audit-event');
       logger.error('error-event');
       logger.warn('warn-event');
-      logger.info('request-event');
+      logger.http('request-event');
+      logger.info('info-event');
       logger.debug('debug-event');
       logger.trace('trace-event');
 
@@ -72,11 +79,12 @@ describe('DefaultLogger', () => {
       expect(output).toContain('audit-event');
       expect(output).toContain('error-event');
       expect(output).toContain('warn-event');
-      expect(output).toContain('request-event');
+      expect(output.includes('request-event')).toBe(level === 'http');
+      expect(output).toContain('info-event');
       expect(output).not.toContain('debug-event');
       expect(output).not.toContain('trace-event');
-      expect(logger).not.toHaveProperty('http');
-      expect(winston.levels).not.toHaveProperty('http');
+      expect(logger.http).toBeTypeOf('function');
+      expect(winston.levels).toHaveProperty('http');
     } finally {
       winston.close();
     }

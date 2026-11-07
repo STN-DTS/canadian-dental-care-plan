@@ -67,7 +67,7 @@ describe('safePrint', () => {
   });
 
   it('calls onUnavailable and logs when window.print throws', () => {
-    const error = new Error('print failed');
+    const error = new Error('Synthetic print failure');
     Object.defineProperty(window, 'print', {
       configurable: true,
       writable: true,
@@ -82,7 +82,7 @@ describe('safePrint', () => {
     safePrint(onUnavailable);
 
     expect(removeEventListenerSpy).toHaveBeenCalledTimes(1);
-    expect(consoleErrorSpy).toHaveBeenCalledWith('safePrint: window.print() threw an error.', error);
+    expect(consoleErrorSpy).toHaveBeenCalledExactlyOnceWith('safePrint: window.print() threw an error.', error);
     expect(onUnavailable).toHaveBeenCalledTimes(1);
   });
 });

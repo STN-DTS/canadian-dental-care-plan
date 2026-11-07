@@ -51,6 +51,11 @@ export class DefaultLogger implements Logger {
     this.logInternal('error', message, meta);
   }
 
+  http(message: unknown): void;
+  http(message: string, ...meta: unknown[]): void {
+    this.logInternal('http', message, meta);
+  }
+
   info(message: unknown): void;
   info(message: string, ...meta: unknown[]): void {
     this.logInternal('info', message, meta);
@@ -105,7 +110,7 @@ export class DefaultLogger implements Logger {
     const tokens = msg.match(formatRegExp); // Find all tokens.
 
     if (!tokens && splat[0] !== null && typeof splat[0] === 'object') {
-      const entry: LogEntry = Object.assign(splat[0], baseEntry, { message: msg, [SPLAT]: splat });
+      const entry: LogEntry = Object.assign({}, splat[0], baseEntry, { message: msg });
       this.logger.log(entry);
       return;
     }

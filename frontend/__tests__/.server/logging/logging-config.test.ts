@@ -22,7 +22,7 @@ describe('logging configuration', () => {
     expect(getLoggingConfig().LOG_LEVEL).toBe(level);
   });
 
-  it.each(['audit', 'error', 'warn', 'info', 'debug', 'trace'])('accepts explicit %s logging', async (level) => {
+  it.each(['audit', 'error', 'warn', 'http', 'info', 'debug', 'trace'])('accepts explicit %s logging', async (level) => {
     vi.resetModules();
     vi.stubEnv('LOG_LEVEL', level);
     const { getLoggingConfig } = await import('~/.server/logging/logging-config');
@@ -30,11 +30,18 @@ describe('logging configuration', () => {
     expect(getLoggingConfig().LOG_LEVEL).toBe(level);
   });
 
-  it('rejects the removed http level', async () => {
+  it('rejects info2 as a source level', async () => {
     vi.resetModules();
-    vi.stubEnv('LOG_LEVEL', 'http');
+    vi.stubEnv('LOG_LEVEL', 'info2');
     const { getLoggingConfig } = await import('~/.server/logging/logging-config');
 
     expect(() => getLoggingConfig()).toThrow();
+  });
+
+  it('accepts audit even though its Winston priority is zero', async () => {
+    const { defaultsConfig } = await import('~/.server/logging/logging-config');
+    const { getLevelsConfig } = await import('~/.server/logging/winston-levels-config');
+
+    expect(() => getLevelsConfig({ ...defaultsConfig, LOG_LEVEL: 'audit' })).not.toThrow();
   });
 });

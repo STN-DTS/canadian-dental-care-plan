@@ -8,7 +8,7 @@ import * as attributes from '~/.server/logging/log-attributes';
 test('custom attribute constants have unique wire names matching their export names', () => {
   const entries = Object.entries(attributes);
 
-  expect(entries).toHaveLength(56);
+  expect(entries).toHaveLength(57);
   expect(new Set(Object.values(attributes)).size).toBe(entries.length);
 
   for (const [name, value] of entries) {

@@ -100,7 +100,7 @@ describe('useDocumentUploadForm', () => {
   });
 
   it('reports an unexpected local file-selection validation failure', async () => {
-    const error = new Error('File hashing failed');
+    const error = new Error('Synthetic file selection validation failure');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     validateFileSelectionMock.mockRejectedValueOnce(error);
     vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined));
@@ -113,7 +113,7 @@ describe('useDocumentUploadForm', () => {
     await waitFor(() => expect(result.current.actionData?.errors.properties?.files?.errors).toHaveLength(1));
     expect(result.current.documentUploadFormState.documents).toEqual([]);
     expect(result.current.isValidating).toBe(false);
-    expect(consoleError).toHaveBeenCalledWith('Failed to validate the selected upload files.', error);
+    expect(consoleError).toHaveBeenCalledExactlyOnceWith('Failed to validate the selected upload files.', error);
   });
 
   it('preserves selected files, document types, and other form data when a reviewed submission is confirmed', async () => {

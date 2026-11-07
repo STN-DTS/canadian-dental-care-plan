@@ -16,7 +16,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const serverConfig = appContainer.get(TYPES.ServerConfig);
 
   if (!serverConfig.ENABLED_FEATURES.includes('killswitch-api')) {
-    log.warn('killswitch-api is not enabled; returning 404 response');
     throw Response.json(null, { status: HttpStatusCodes.NOT_FOUND });
   }
 
@@ -32,10 +31,11 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const engage = searchParams.get('engage') !== null;
 
   if (engage) {
-    log.info('Force-enabling killswitch via killswitch API call');
-
-    // note: `redisService` might not be defined, so we have to check that the return value is `OK` to know if the switch has been flipped
     const killswitchEngaged = (await redisService?.set(KILLSWITCH_KEY, true, serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS)) === 'OK';
+
+    if (!killswitchEngaged) {
+      log.warn('Failed to enable killswitch via killswitch API');
+    }
 
     return {
       engaged: killswitchEngaged,

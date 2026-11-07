@@ -25,7 +25,7 @@
 - Standard attributes retain their defined semantics. Custom names are explicitly identified, necessary, and namespaced without colliding with standard namespaces. Do not duplicate `error.type` as a reason code, mix inbound and downstream HTTP statuses, or use HTTP resend ordinals as total operation retries.
 - Category is absent unless the approved schema or routing policy needs it. Where required, verify its field, bounded vocabulary, and destination mapping. Audit and security delivery remains protected even when ordinary diagnostics have no category.
 - Messages are stable. Ordinary diagnostics omit `EventName`, even when they have structured fields. Named events preserve a non-empty native `EventName`, occurrence `Timestamp`, and approved event structure at the destination. Do not export deprecated `event.name` or mistake a metadata property for a native field. Structured values remain typed at the destination.
-- The relevant canonical events map successful HTTP to 10, inbound 4xx to 13, and inbound 5xx to 17.
+- The relevant canonical events map successful HTTP to DEBUG4 8 (or DEBUG 5 without a custom sublevel), inbound 4xx to 13, and inbound 5xx to 17. Production INFO drops successful HTTP records before delivery while retaining 4xx and 5xx.
 - Dependency status does not overwrite local response status. Retries do not emit failure records at every layer.
 - For an owned request or job, one terminal event owns the result. Ordinary helper diagnostics do not need their own completion events. Exception detail appears once. Audit and security facts retain independent delivery.
 - Trace context survives applicable asynchronous boundaries. Concurrent requests cannot exchange context.
@@ -43,7 +43,7 @@ Use bounded asynchronous buffers and a shutdown deadline. Ordinary diagnostic ex
 
 ## Volume and operations
 
-Keep production diagnostics at INFO or the equivalent threshold that retains INFO2. Enable DEBUG or TRACE only for a scoped investigation with an owner and expiry. Privacy rules do not relax.
+Keep production diagnostics at INFO, filtering successful HTTP completions. Enable HTTP, DEBUG or TRACE only for a scoped investigation with an owner and expiry. Privacy rules do not relax.
 
 Sample routine successes under a documented trace-consistent or operation-consistent policy. Record inclusion probability. Use metrics for exact counts rather than treating sampled logs as totals.
 

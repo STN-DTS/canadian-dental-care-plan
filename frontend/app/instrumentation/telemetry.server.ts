@@ -34,7 +34,7 @@ import { UrlPathRedactor } from '~/instrumentation/url-path-redactor';
  * Every log level must have a matching entry in {@link winstonSeverityMapping} for correct
  * OpenTelemetry severity mapping.
  */
-type WinstonLogLevel = 'audit' | 'debug' | 'error' | 'info' | 'trace' | 'warn';
+type WinstonLogLevel = 'audit' | 'debug' | 'error' | 'http' | 'info' | 'trace' | 'warn';
 
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
@@ -120,9 +120,10 @@ function getLogRecordProcessor(): LogRecordProcessor | undefined {
 }
 
 // Mapping of Winston log levels to OpenTelemetry severity numbers.
-const winstonSeverityMapping: Record<WinstonLogLevel, number> = {
+export const winstonSeverityMapping: Record<WinstonLogLevel, number> = {
   trace: SeverityNumber.TRACE,
   debug: SeverityNumber.DEBUG,
+  http: SeverityNumber.DEBUG4,
   info: SeverityNumber.INFO,
   audit: SeverityNumber.INFO,
   warn: SeverityNumber.WARN,

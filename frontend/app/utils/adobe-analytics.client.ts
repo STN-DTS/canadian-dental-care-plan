@@ -37,8 +37,8 @@ export function withAdobeAnalytics(callback: (adobeDataLayer: AdobeDataLayer) =>
 
   try {
     callback(window.adobeDataLayer);
-  } catch (error) {
-    console.warn('An error occurred while pushing an event to Adobe Analytics:', error);
+  } catch {
+    console.warn('An error occurred while pushing an event to Adobe Analytics.');
   }
 }
 
@@ -109,7 +109,7 @@ export function pushFormSubmitEvent(formName: string, formValues: ReadonlyMap<st
         },
       });
     } catch (error) {
-      console.warn('Failed to push form submit event to Adobe Analytics:', error);
+      console.warn('Failed to push form submit event to Adobe Analytics.', error);
     }
   });
 }

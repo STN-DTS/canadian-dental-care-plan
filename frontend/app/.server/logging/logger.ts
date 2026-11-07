@@ -6,6 +6,7 @@
  * - `audit`: Critical system events requiring persistence.
  * - `error`: Runtime errors that may require immediate attention.
  * - `warn`: Warnings for potential issues that don't halt execution.
+ * - `http`: Successful HTTP request completion.
  * - `info`: General system information.
  * - `debug`: Detailed logs useful during development.
  * - `trace`: Highly detailed tracing for diagnostics.
@@ -14,6 +15,7 @@ export interface Logger {
   audit: LeveledLogMethod;
   debug: LeveledLogMethod;
   error: LeveledLogMethod;
+  http: LeveledLogMethod;
   info: LeveledLogMethod;
   trace: LeveledLogMethod;
   warn: LeveledLogMethod;

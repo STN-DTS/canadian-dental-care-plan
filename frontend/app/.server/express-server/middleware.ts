@@ -83,7 +83,7 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
 /**
  * Creates named request-logger middleware with structured completion records and status-based severity.
  *
- * The cdcp.http.request.completed event contains method, query-free path, status when sent,
+ * The cdcp.http.request.completed event contains method, the application request path, status when sent,
  * response time in milliseconds and declared response content length in bytes when available.
  * Incomplete responses carry a fixed error type. Health readiness requests are excluded.
  */
@@ -122,7 +122,7 @@ export function createRequestLoggerMiddleware(_isProduction: boolean): RequestHa
       } else if (res.statusCode >= 400) {
         log.warn('HTTP request completed', attributes);
       } else {
-        log.info('HTTP request completed', attributes);
+        log.http('HTTP request completed', attributes);
       }
     })(request, response, next);
   };

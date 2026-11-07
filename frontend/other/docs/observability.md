@@ -173,9 +173,12 @@ when `OTEL_LOGS_ENDPOINT` enables log sending. Do not add a second transport
 manually, because the instrumentation attaches it when Winston is configured.
 
 The [Winston export test](../../__tests__/instrumentation/winston-export.server.test.ts)
-starts the application preload and captures OTLP protobuf output with a loopback
-collector. It verifies transport attachment and delivery of a fixed message with
-structured fields. It does not establish sink-wide privacy compliance.
+starts the application preload, observes native records at the exporter boundary,
+and captures actual OTLP output with a loopback collector. It verifies native
+event names, timestamps, typed fields, severity numbers and source labels without
+adding a protobuf decoder dependency. It also checks
+serialized console and temporary audit-file output. This local coverage does not
+establish live collector or storage policies.
 
 Enabling export also enables export of existing log calls. The current log
 redactors do not sanitize string bodies. Keep sensitive data out of messages
@@ -190,14 +193,16 @@ key-bearing suffix of `esdc_clients(...)` paths under
 `/dental-care/doc-metadata/pp/v1`. The suffix becomes `esdc_clients([REDACTED])`,
 including any navigation or action after the key. This avoids parsing
 untrusted OData key delimiters. Application pathnames and collection paths
-remain unchanged.
+remain unchanged in spans.
 
 The rule covers `url.full`, `url.path`, `http.url`, `http.target`, and
-`react_router.url`, including string arrays. It runs in Winston's shared
-format before transport output, and in the telemetry processors before log
-and span export. The approved `cdcp.application.confirmation_code` field is
-unaffected. String messages, arbitrary metadata keys, span names, and exception
-details are not inspected; callers must still omit sensitive values.
+`react_router.url`, including string arrays, in Winston output and OpenTelemetry
+logs and spans. Backend client identifiers are redacted; approved application
+request paths are retained in the canonical HTTP completion event. Query
+parameters are handled separately by the query-parameter redactors. The
+approved `cdcp.application.confirmation_code` field is unaffected. String
+messages, arbitrary metadata keys, span names, and exception details are not
+inspected; callers must still omit sensitive values.
 
 The Winston export and ESM instrumentation tests exercise synthetic client
 numbers, email-shaped values, and token markers through console logs, local
@@ -241,6 +246,57 @@ wire names independently of the registry.
 key, and stays separate. This registry does not change event ownership,
 OpenTelemetry severity mapping, or audit record schemas/delivery. It belongs
 to server application logging, not the self-contained telemetry preload.
+
+`createRequestLoggerMiddleware` owns the canonical completion event and retains
+the application `request.path` without its query string. It uses
+Winston `http` for final HTTP 1xx-3xx responses, which exports as
+`SeverityNumber.DEBUG4` (8), below ordinary INFO (9). Winston's `http` priority
+also sits below `info`, so production `LOG_LEVEL=info` drops successful
+completions before console or OpenTelemetry delivery. Use `LOG_LEVEL=http`,
+`debug` or `trace` to include them during a scoped investigation.
+
+Inbound 4xx remains WARN (13); incomplete responses and inbound 5xx remain
+ERROR (17), and are retained at INFO. Audit and ordinary application INFO
+records remain severity 9. This filtering does not change request handling,
+metrics, spans or completion ownership.
+
+### Audit records
+
+`DefaultAuditService.createAudit` emits `cdcp.audit.recorded` when an internal
+audit call occurs. It records the audit fact, not the outcome of the associated
+business operation. The fixed body is `Audit event recorded`; the source label
+is `audit`, normalized to INFO (9). The SDK supplies the native occurrence and
+observed timestamps.
+
+The bounded schema admits:
+
+- `cdcp.audit.event_id`: a code-defined action identifier of at most 128
+  lowercase ASCII letters, digits, dots or hyphens, beginning with a letter.
+- `cdcp.user.id`: the existing approved opaque actor identifier, when present.
+- `cdcp.letter.id`: the existing approved opaque letter identifier, only for
+  `pdf.get`.
+
+Actor and letter identifiers are at most 255 ASCII letters, digits, dots,
+underscores, colons or hyphens. Government-number-shaped values are rejected.
+These fields remain linkable protected data; the format check does not
+authorize new identifier sources, destinations, retention or access.
+Arbitrary `AuditDetails` fields, whole objects, accessors and proxies are not
+serialized. Rejected metadata produces a fixed diagnostic without its keys or
+values; the admitted audit fact is still emitted.
+
+OpenTelemetry receives a native `EventName`. Console and file JSON retain
+`otel.event.name` as the non-OTLP fallback. The old `%j` message and nested
+`details` payload are not emitted. Consumers should query the documented flat
+fields rather than expecting interpolation or arbitrary metadata.
+
+Audit priority bypasses ordinary Winston thresholds, including `LOG_LEVEL=error`
+and `LOG_LEVEL=audit`, and is independent of trace sampling. Persistent output
+still follows `AUDIT_LOG_ENABLED`. Audit files retain the transport's default
+permissions, subject to the process umask. Deployment configuration must allow
+Fluentd to read them while enforcing approved access, integrity and retention
+policies. The local sink test verifies
+delivery to file, console and OTLP with ordinary diagnostics filtered out and
+trace sampling disabled.
 
 ### Application confirmation codes
 

@@ -104,7 +104,7 @@ export function formatLabels(options?: FormatLabelsOptions): Logform.Format {
  * Metadata is displayed using Node.js's `util.inspect` when present.
  *
  * Output format:
- *   "timestamp LEVEL [trace_id,span_id] [label] : message --- {metadata}"
+ *   "timestamp LEVEL [trace_id,span_id] [label] : message {metadata}"
  *
  * The trace context block and metadata suffix are optional.
  *
@@ -128,7 +128,7 @@ export function formatPrintf(): Logform.Format {
 
       // Only append metadata if there are still properties after stripped internals
       if (!isEmpty(stripped)) {
-        msg += ` --- ${inspect(stripped, false, 4, true)}`;
+        msg += ` ${inspect(stripped, { breakLength: Infinity, colors: true })}`;
       }
     }
 

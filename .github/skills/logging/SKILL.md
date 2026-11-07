@@ -51,7 +51,7 @@ The privacy restrictions, canonical completion ownership, protected audit delive
 
 | Outcome                                      | Severity   |
 | -------------------------------------------- | ---------- |
-| Final HTTP 1xx-3xx                           | INFO2 (10) |
+| Final HTTP 1xx-3xx                           | DEBUG4 (8) |
 | Other normal events, including audit success | INFO (9)   |
 | Final inbound 4xx                            | WARN (13)  |
 | Final inbound 5xx                            | ERROR (17) |
@@ -60,12 +60,12 @@ The privacy restrictions, canonical completion ownership, protected audit delive
 | Retry attempt                                | DEBUG (5)  |
 | Process-ending failure at the top level      | FATAL (21) |
 
-Map source levels to `SeverityNumber` and preserve the actual source label in `SeverityText`. `INFO2` is the normalized display name for 10, not a required source label. See [severity.md](./references/severity.md).
+Map source levels to `SeverityNumber` and preserve the actual source label in `SeverityText`. `DEBUG4` is the normalized display name for 8, not a required source label. Successful HTTP completion uses Winston `http`, below `info`, so production INFO filtering drops it before delivery. See [severity.md](./references/severity.md).
 
 ## When the platform can't comply
 
 - No FATAL: use ERROR (17) with outcome `terminated`.
-- No INFO2: see [severity.md](./references/severity.md#adapt-missing-or-incorrect-levels).
+- No HTTP sublevel: use DEBUG (5) for successful completions and verify production INFO filtering; see [severity.md](./references/severity.md#adapt-missing-or-incorrect-levels).
 - No structured fields, shared adapter, or unsampled audit route: make the safe change, report the gap, and don't claim compliance. Never relax a privacy rule to fit the platform.
 
 ## Example

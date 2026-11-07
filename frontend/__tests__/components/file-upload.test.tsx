@@ -211,7 +211,7 @@ describe('FileUpload', () => {
 
     fireEvent.change(input, { target: { files: [file] } });
 
-    await waitFor(() => expect(consoleError).toHaveBeenCalledWith('File upload pre-add validation failed.', error));
+    await waitFor(() => expect(consoleError).toHaveBeenCalledExactlyOnceWith('File upload pre-add validation failed.', error));
     expect(onValueChange).not.toHaveBeenCalled();
   });
 

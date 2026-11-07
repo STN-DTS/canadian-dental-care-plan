@@ -8,9 +8,9 @@ OpenTelemetry defines increasing severity numbers. Logger threshold integers may
 | ----------- | ---------------------: | -------------------------------------------------------------- |
 | TRACE 1-4   |                      1 | Fine-grained diagnostics, normally disabled.                   |
 | DEBUG 5-8   |                      5 | Component, dependency, and network diagnostics.                |
+| DEBUG 5-8   | 8, displayed as DEBUG4 | Successful canonical HTTP events, muted at production INFO.    |
 | INFO 9-12   |                      9 | Normal application and lifecycle events.                       |
-| INFO 9-12   | 10, displayed as INFO2 | Successful canonical HTTP events.                              |
-| INFO 9-12   |              11 and 12 | Reserved. Do not emit new first-party INFO3 or INFO4 levels.   |
+| INFO 9-12   |          10 through 12 | Reserved. Do not emit new first-party INFO2-INFO4 levels.      |
 | WARN 13-16  |                     13 | Warnings, material degradation, and final inbound 4xx.         |
 | ERROR 17-20 |                     17 | Failed server work, integration faults, and final inbound 5xx. |
 | FATAL 21-24 |                     21 | Abnormal process-ending failures at the top-level boundary.    |
@@ -23,7 +23,7 @@ Number 0 means unspecified, not TRACE. Backend display and alert behavior requir
 
 | Situation                                                                    | Record and severity                                                                                                              |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Successful final HTTP 1xx through 3xx                                        | One access completion at INFO2 10. An interim 100 response is not completion.                                                    |
+| Successful final HTTP 1xx through 3xx                                        | One access completion at DEBUG4 8, filtered at production INFO. An interim 100 response is not completion.                       |
 | Final inbound 4xx                                                            | One access event at WARN 13, including expected 400, 401, 403, 404, 409, 422, and 429.                                           |
 | Final inbound 5xx                                                            | One access event at ERROR 17, including deliberate maintenance or kill-switch 503 responses.                                     |
 | Server timeout or failed response stream                                     | ERROR 17 with failure outcome. Preserve the actual sent status if known. Never invent a sent 500.                                |
@@ -46,7 +46,7 @@ Number 0 means unspecified, not TRACE. Backend display and alert behavior requir
 
 A caught exception is not proof of recovery. A public caller can trigger a real server defect. Neither fact permits demoting a failed server operation.
 
-HTTP status owns the access record. A successful 200 served through a fallback remains INFO2 with a degraded outcome. Record a distinct dependency failure or degradation transition separately only when it needs independent operational attention. If the dependency failure becomes the final 5xx, fold its safe details into that canonical ERROR instead. Never duplicate the same exception stack.
+HTTP status owns the access record. A successful 200 served through a fallback remains DEBUG4 with a degraded outcome. Record a distinct dependency failure or degradation transition separately only when it needs independent operational attention. If the dependency failure becomes the final 5xx, fold its safe details into that canonical ERROR instead. Never duplicate the same exception stack.
 
 HTTP span status follows its own conventions. Server-span 4xx normally leaves status unset. Client-span 4xx normally sets Error. Neither rule dictates log severity.
 
@@ -54,8 +54,8 @@ HTTP span status follows its own conventions. Server-span 4xx normally leaves st
 
 1. Record each source method, source threshold, logical event severity, and exported `SeverityNumber`.
 2. Prefer an existing numeric-severity API or configure the shared adapter to preserve logical levels.
-3. If the logger lacks INFO2, use its informational transport method and a shared canonical-event adapter that exports logical severity 10. Match a defined HTTP completion schema and successful outcome, not arbitrary message text or a mandatory category field. Do not remap all INFO to 10.
-4. If that distinction cannot survive export, retain native INFO with approved HTTP completion fields and report an unresolved application-policy mapping gap. Native INFO 9 is valid OpenTelemetry; it does not satisfy this policy's selected HTTP sublevel. Do not invent INFO2 merely in a display label.
+3. Configure Winston `http` below `info` and map it to DEBUG4 8. If no custom HTTP sublevel is available, use DEBUG 5 for successful completions, such as Pino `debug`. Do not remap ordinary application INFO or audit records.
+4. Verify successful HTTP completions are dropped at production INFO before every transport, while inbound 4xx remains WARN 13 and inbound 5xx remains ERROR 17. A lower exported severity alone does not establish source-side filtering.
 5. If TRACE is absent, use scoped DEBUG and document the loss of granularity. If neither exists, omit optional diagnostics rather than promote them to INFO.
 6. If FATAL is absent, emit ERROR 17 and explicitly describe termination in the fixed message or an approved custom outcome field. There is no universal OpenTelemetry termination-outcome attribute. Keep bounded flushing and abnormal exit at the top-level owner.
 7. If WARN or ERROR cannot be represented, add the shared normalized mapping before accepting the change. A category field alone cannot replace failure severity.

@@ -2,9 +2,11 @@ import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CO
 import express from 'express';
 import { once } from 'node:events';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 
 import { createRequestLoggerMiddleware } from '~/.server/express-server/middleware';
 import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -13,18 +15,13 @@ beforeEach(() => {
 describe('requestLoggerMiddleware', () => {
   it.each([true, false])('uses status-based severity and skips readiness when production is %s', async (isProduction) => {
     const app = express();
+    const logger = mock<Logger>();
+    vi.mocked(createLogger).mockReturnValue(logger);
     app.use(createRequestLoggerMiddleware(isProduction));
     app.get('/request', (_request, response) => response.send('ok'));
     app.get('/status/:status', (request, response) => response.status(Number(request.params.status)).end());
     app.get('/abort', (_request, response) => response.destroy());
     app.get('/api/readyz', (_request, response) => response.send('ready'));
-    const result = vi.mocked(createLogger).mock.results[0];
-
-    if (result?.type !== 'return') {
-      throw new Error('Expected request middleware to create a logger');
-    }
-
-    const logger = result.value;
     const server = app.listen(0, '127.0.0.1');
 
     try {
@@ -37,7 +34,7 @@ describe('requestLoggerMiddleware', () => {
 
       const response = await fetch(`http://127.0.0.1:${address.port}/request?sin=999999998&email=canary%40example.invalid&token=synthetic-secret`, { headers: { connection: 'close' } });
       expect(await response.text()).toBe('ok');
-      expect(logger.info).toHaveBeenCalledExactlyOnceWith('HTTP request completed', {
+      expect(logger.http).toHaveBeenCalledExactlyOnceWith('HTTP request completed', {
         [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
         [ATTR_HTTP_REQUEST_METHOD]: 'GET',
         [ATTR_URL_PATH]: '/request',
@@ -53,7 +50,7 @@ describe('requestLoggerMiddleware', () => {
             headers: { connection: 'close' },
           });
           await result.text();
-          const method = status >= 500 ? logger.error : status >= 400 ? logger.warn : logger.info;
+          const method = status >= 500 ? logger.error : status >= 400 ? logger.warn : logger.http;
           expect(method).toHaveBeenCalledWith(
             'HTTP request completed',
             expect.objectContaining({
@@ -67,7 +64,7 @@ describe('requestLoggerMiddleware', () => {
         }),
       );
 
-      expect(logger.info).toHaveBeenCalledTimes(3);
+      expect(logger.http).toHaveBeenCalledTimes(3);
       expect(logger.warn).toHaveBeenCalledTimes(3);
       expect(logger.error).toHaveBeenCalledTimes(2);
 
@@ -82,7 +79,7 @@ describe('requestLoggerMiddleware', () => {
 
       const readiness = await fetch(`http://127.0.0.1:${address.port}/api/readyz`, { headers: { connection: 'close' } });
       expect(await readiness.text()).toBe('ready');
-      expect(logger.info).toHaveBeenCalledTimes(3);
+      expect(logger.http).toHaveBeenCalledTimes(3);
       expect(logger.warn).toHaveBeenCalledTimes(3);
       expect(logger.error).toHaveBeenCalledTimes(3);
     } finally {

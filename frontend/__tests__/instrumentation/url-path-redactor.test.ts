@@ -14,6 +14,7 @@ describe('UrlPathRedactor', () => {
       redacted: true,
       attributes: { [key]: `https://backend.example.test${redactedClientPath}?$select=esdc_clientid`, status: 200 },
     });
+
     expect(attributes[key]).toContain('path-client-canary');
   });
 
@@ -43,6 +44,10 @@ describe('UrlPathRedactor', () => {
     '',
   ])('preserves application paths, collection paths and non-path components: %s', (value) => {
     expect(redactor.redactAttributes({ 'url.full': value })).toEqual({ redacted: false });
+  });
+
+  test.each(['/en/application/confirmation', '/fr/demande/confirmation', '/dental-care/documents/upload'])('preserves approved application request paths: %s', (path) => {
+    expect(redactor.redactAttributes({ 'url.path': path })).toEqual({ redacted: false });
   });
 
   test('redacts string arrays and retains unsupported values', () => {

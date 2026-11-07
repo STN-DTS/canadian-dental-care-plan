@@ -1,11 +1,13 @@
 /**
  * Available log level names. Winston's numeric configuration defines severity
  * and filtering. For example, 'info' includes 'audit', 'error', 'warn', and 'info'.
+ * The more verbose 'http' threshold also includes successful HTTP completions.
  */
 export const logLevels = [
   'audit', // Critical system events requiring persistence
   'debug', // Detailed information useful during development and debugging
   'error', // Runtime errors that may require immediate attention
+  'http', // Successful HTTP request completion
   'info', // General operational information about system status
   'trace', // Highly detailed tracing information, potentially performance-impacting
   'warn', // Warnings, potential issues that don't stop execution

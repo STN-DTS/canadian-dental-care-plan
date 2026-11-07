@@ -1,5 +1,6 @@
 /**
- * Represents the details associated with an audit event.
+ * Audit context. Logging admits only opaque `userId` and, for `pdf.get`, `letterId`;
+ * other metadata is omitted rather than serialized.
  */
 export type AuditDetails = Readonly<
   Record<string, unknown> & {

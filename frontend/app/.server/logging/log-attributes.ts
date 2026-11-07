@@ -40,6 +40,9 @@ export const ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS = 'cdcp.auth.missing_session_
 /** boolean: result of provider session validation; never a provider session ID or token. */
 export const ATTR_CDCP_AUTH_SESSION_VALID = 'cdcp.auth.session_valid';
 
+/** string: code-defined audit action identifier, at most 128 lowercase ASCII letters, digits, dots or hyphens. */
+export const ATTR_CDCP_AUDIT_EVENT_ID = 'cdcp.audit.event_id';
+
 /** string: configured build date metadata; not an applicant or request timestamp. */
 export const ATTR_CDCP_BUILD_DATE = 'cdcp.build.date';
 

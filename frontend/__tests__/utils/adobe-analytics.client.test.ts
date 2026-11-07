@@ -73,6 +73,19 @@ describe('pushErrorEvent', () => {
     expect(spyConsoleWarnSpy).toHaveBeenCalledWith('window.adobeDataLayer is not defined. This could mean your adobe analytics script has not loaded on the page yet.');
   });
 
+  it('does not log exception details when pushing an event fails', () => {
+    window.adobeDataLayer = {
+      push: () => {
+        throw new Error('999999998 999999999 analytics-person@example.invalid analytics-token-canary');
+      },
+    };
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    pushErrorEvent(404);
+
+    expect(consoleWarnSpy).toHaveBeenCalledExactlyOnceWith('An error occurred while pushing an event to Adobe Analytics.');
+  });
+
   it('sends a pushErrorEvent event with the correct pushErrorEvent status code', () => {
     window.adobeDataLayer = { push: vi.fn() };
 
@@ -234,5 +247,19 @@ describe('pushFormSubmitEvent', () => {
         list: '',
       },
     });
+  });
+
+  it('logs the exception when pushing form values fails', () => {
+    const error = new Error('Synthetic Adobe Analytics failure');
+    window.adobeDataLayer = {
+      push: () => {
+        throw error;
+      },
+    };
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    pushFormSubmitEvent('my-form', new Map());
+
+    expect(consoleWarnSpy).toHaveBeenCalledExactlyOnceWith('Failed to push form submit event to Adobe Analytics.', error);
   });
 });
