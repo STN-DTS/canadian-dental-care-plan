@@ -48,7 +48,7 @@ runs:
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: ${{ inputs.image-ref }}
-        output: .github/aqua-reports/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
+        output: ${{ github.workspace }}/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
         scanners: vuln
         format: 'template'
         template: '@$HOME/.local/bin/trivy-bin/contrib/html.tpl'
@@ -57,9 +57,8 @@ runs:
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         if-no-files-found: warn
-        include-hidden-files: true
         name: aqua-scan-report-${{ inputs.artifact-prefix }}
-        path: .github/aqua-reports/
+        path: ${{ github.workspace }}/aqua-scan-report-${{ inputs.artifact-prefix }}-*.html
         retention-days: 7
     - name: Run Aqua scannercli
       id: scanner
@@ -88,7 +87,7 @@ runs:
           --env IMAGE_REF \
           --env REPORT_FILE \
           --volume /var/run/docker.sock:/var/run/docker.sock \
-          --volume "$GITHUB_WORKSPACE/.github/aqua-reports:/reports" \
+          --volume "$GITHUB_WORKSPACE:/reports" \
           --volume "$password_file:/run/secrets/aqua-password:ro" \
           --entrypoint /bin/sh \
           asttsa-security-tools-docker.nxrm.itsec.esdc-edsc.canada.ca/aquasec/scanner:2022.4.805@sha256:ae32e1b47558412021210bba6f6e6e519a8f3ae97a3842ce468829b462085406 \
@@ -112,9 +111,8 @@ runs:
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         if-no-files-found: warn
-        include-hidden-files: true
         name: scannercli-report-${{ inputs.artifact-prefix }}
-        path: .github/aqua-reports/scannercli-report-${{ inputs.artifact-prefix }}-*
+        path: ${{ github.workspace }}/scannercli-report-${{ inputs.artifact-prefix }}-*
         retention-days: 7
     - name: Summarize Aqua scanner result
       if: ${{ always() && !env.ACT }}
