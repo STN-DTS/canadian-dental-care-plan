@@ -279,10 +279,13 @@ and GitOps deployment use
 used by their jobs.
 
 Self-hosted runners must be version `2.327.1` or newer for the Node.js 24
-runtime used by Vault v4 and Trivy's nested cache actions. The shared
-[aqua-scan action](../actions/aqua-scan/action.yaml) pins Trivy action v0.36.0
-for Node.js 24-compatible caching;
-update the scanner version separately from the action runtime.
+runtime used by Vault v4 and the Trivy setup and cache actions.
+The shared [aqua-scan action](../actions/aqua-scan/action.yaml) installs Trivy
+with setup-trivy into `runner.temp` and runs the CLI directly. Set the Trivy
+version on the setup-trivy step. The action scans once to JSON, then converts
+that report to SARIF for code scanning and to HTML for the report artifact;
+`trivy convert` reads only Trivy JSON, not SARIF. Jobs that call the action
+need `security-events: write`.
 
 GitOps deployment requires Azure CLI, kubectl, kubelogin,
 Vault and Azure connectivity, and network access to the target AKS API. The
@@ -434,8 +437,8 @@ A nonprod GitOps PR still triggers deployment when manually merged;
 review its rendered overlays first. Dependency updates outside GitOps retain
 their inherited grouping and automerge policy.
 
-Trivy action updates use a narrowly scoped datasource override:
-`aquasecurity/trivy-action` is looked up through public Git tags instead of
+Trivy setup updates use a narrowly scoped datasource override:
+`aquasecurity/setup-trivy` is looked up through public Git tags instead of
 App-authenticated GitHub GraphQL. Aqua's organization IP allowlist rejects the
 runner's authenticated API requests even though the public Git repository is
 accessible. The override retains the original action name, release-version

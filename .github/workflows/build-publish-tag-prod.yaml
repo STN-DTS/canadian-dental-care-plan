@@ -98,6 +98,9 @@ jobs:
             frontend/test-results/
           retention-days: 7
   build-frontend:
+    permissions:
+      contents: read
+      security-events: write
     runs-on: arc-runners-dshp-prod
     needs:
       - check-repository

@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 
-# Scans a local OCI image with Trivy and Aqua and publishes HTML reports.
+# Scans a local OCI image with Trivy and Aqua, publishes HTML reports, and uploads Trivy SARIF to code scanning.
+# Calling jobs need security-events: write.
 # Retrieves scanner credentials from Vault; scannercli failures remain advisory.
 
 name: Aqua scan
@@ -44,15 +45,42 @@ runs:
           canada-dental-care-plan/data/shared/cicd/aquasec AQUA_PASSWORD | AQUA_PASSWORD;
           canada-dental-care-plan/data/shared/cicd/aquasec AQUA_POLICIES | AQUA_POLICIES;
         url: ${{ inputs.vault-url }}
-    - name: Run Aqua vulnerability scanner
-      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+    - name: Install Trivy
+      uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
       with:
-        image-ref: ${{ inputs.image-ref }}
-        output: ${{ github.workspace }}/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
-        scanners: vuln
-        format: 'template'
-        template: '@/home/runner/.local/bin/trivy-bin/contrib/html.tpl'
+        cache: true
+        path: ${{ runner.temp }}
         version: v0.76.2
+    - name: Get Trivy DB cache date
+      id: trivy-db-date
+      shell: bash
+      run: printf 'date=%s\n' "$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+    - name: Cache Trivy vulnerability DB
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        key: trivy-db-${{ steps.trivy-db-date.outputs.date }}
+        path: ${{ runner.temp }}/trivy-cache
+        restore-keys: trivy-db-
+    - name: Scan image with Trivy
+      shell: bash
+      env:
+        CACHE_DIR: ${{ runner.temp }}/trivy-cache
+        HTML_REPORT: ${{ github.workspace }}/aqua-scan-report-${{ inputs.artifact-prefix }}-${{ inputs.scan-timestamp }}.html
+        IMAGE_REF: ${{ inputs.image-ref }}
+        REPORT_BASE: ${{ runner.temp }}/trivy-${{ inputs.artifact-prefix }}
+      run: |
+        set -euo pipefail
+
+        trivy image --cache-dir "$CACHE_DIR" --scanners vuln --format json --output "$REPORT_BASE.json" "$IMAGE_REF"
+        trivy convert --format sarif --output "$REPORT_BASE.sarif" "$REPORT_BASE.json"
+        trivy convert --format template --template "@$RUNNER_TEMP/trivy-bin/contrib/html.tpl" \
+          --output "$HTML_REPORT" "$REPORT_BASE.json"
+    - name: Upload Trivy SARIF to code scanning
+      if: ${{ !env.ACT }}
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      with:
+        category: trivy-${{ inputs.artifact-prefix }}
+        sarif_file: ${{ runner.temp }}/trivy-${{ inputs.artifact-prefix }}.sarif
     - name: Upload Aqua scan report
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:

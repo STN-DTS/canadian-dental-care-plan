@@ -52,9 +52,9 @@
     {
       // Aqua's IP allowlist rejects App-authenticated API lookups; public Git tags retain SHA pinning.
       "matchManagers": ["github-actions"],
-      "matchPackageNames": ["aquasecurity/trivy-action"],
+      "matchPackageNames": ["aquasecurity/setup-trivy"],
       "overrideDatasource": "git-tags",
-      "overridePackageName": "https://github.com/aquasecurity/trivy-action.git",
+      "overridePackageName": "https://github.com/aquasecurity/setup-trivy.git",
       // Git tag lookup has no publication timestamps.
       "minimumReleaseAge": null
     },

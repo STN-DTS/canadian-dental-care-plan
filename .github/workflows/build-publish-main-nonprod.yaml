@@ -143,6 +143,9 @@ jobs:
             frontend/test-results/
           retention-days: 7
   build-frontend:
+    permissions:
+      contents: read
+      security-events: write
     if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/v')) }}
     runs-on: arc-runners-dshp-dev
     needs:
