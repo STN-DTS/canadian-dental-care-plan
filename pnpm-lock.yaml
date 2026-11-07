@@ -527,7 +527,7 @@ catalogs:
       version: 4.6.7
 
 overrides:
-  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.1.0
+  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.1.2
   csv-parse@<7.0.2: 7.0.2
   fast-xml-parser@<5.7.0: 5.7.0
   glob@>=9.0.0 <=14.0.1: 14.0.2
@@ -919,10 +919,6 @@ packages:
     peerDependencies:
       playwright-core: '>= 1.0.0'
 
-  '@azure/msal-common@16.14.2':
-    resolution: {integrity: sha512-HOBR0Gfo39TMrkxNG8k6cfjRkrRjXZc3JQs3ebMWQc9S4cihuknMYra3sgmzbZB752oQBqBN9+WF7c826p2vIQ==}
-    engines: {node: '>=0.8.0'}
-
   '@azure/msal-common@16.15.0':
     resolution: {integrity: sha512-lwdLb1B9Q5nEhPLVIKe78XH5wFMN15fCiDkY7ylPDSWZuWcD93G3jpJajrKhO3CQld8SLKz0sHiOi24mxdvtsg==}
     engines: {node: '>=0.8.0'}
@@ -934,8 +930,8 @@ packages:
   '@azure/msal-node-runtime@0.20.7':
     resolution: {integrity: sha512-IH1Ps+tei0oshkP9k7wLj2rUURxSB0PI1f5dQJZ4hwhqh5pHZ+5QEeT/QQe35c7I0f1h2omsqAo+iM220sGOyw==}
 
-  '@azure/msal-node@7.1.0':
-    resolution: {integrity: sha512-s1O6hSY/C/dmqykTmmeHY6GhSkDuY8N1gxyhuLyaCwbY7N+UBvU2Wu4flas7+NxZiAPcXNPVpgt3n/HP/5yL+w==}
+  '@azure/msal-node@7.1.2':
+    resolution: {integrity: sha512-52hKQLGpEQzwNufIXG1SPVU+wQ3RIe7Rp2+g+VdAmZojCAZ6yCdGEffzQEQ6RnBZGBEs40nl14rWBmfJpCoHsg==}
     engines: {node: '>=20'}
 
   '@babel/code-frame@7.29.7':
@@ -5917,8 +5913,6 @@ snapshots:
       axe-core: 4.14.0
       playwright-core: 1.64.1
 
-  '@azure/msal-common@16.14.2': {}
-
   '@azure/msal-common@16.15.0': {}
 
   '@azure/msal-node-extensions@5.5.4':
@@ -5931,9 +5925,9 @@ snapshots:
   '@azure/msal-node-runtime@0.20.7':
     optional: true
 
-  '@azure/msal-node@7.1.0':
+  '@azure/msal-node@7.1.2':
     dependencies:
-      '@azure/msal-common': 16.14.2
+      '@azure/msal-common': 16.15.0
       jsonwebtoken: 9.0.3
 
   '@babel/code-frame@7.29.7':
@@ -7196,7 +7190,7 @@ snapshots:
   '@pnp/cli-microsoft365@12.0.0(@types/node@26.6.6)(debug@4.4.3)(swiper@12.2.0)':
     dependencies:
       '@azure/msal-common': 16.15.0
-      '@azure/msal-node': 7.1.0
+      '@azure/msal-node': 7.1.2
       '@inquirer/confirm': 6.3.5(@types/node@26.6.6)
       '@inquirer/input': 5.1.9(@types/node@26.6.6)
       '@inquirer/select': 5.2.8(@types/node@26.6.6)
