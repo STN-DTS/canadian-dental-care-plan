@@ -21,7 +21,8 @@ type UploadOptions = {
   failCommands?: string;
   failCleanup?: boolean;
   failCertificate?: boolean;
-  failPublish?: boolean;
+  failAuthPublish?: boolean;
+  failSummary?: boolean;
   failPnpm?: boolean;
   missingCli?: boolean;
   certificate?: string;
@@ -41,7 +42,7 @@ type CliCall = {
   secretEnv: string[];
 };
 
-type PnpmCall = { home: string; args: string[] };
+type PnpmCall = { home: string; args: string[]; execPath: string };
 
 const script = fileURLToPath(new URL('./upload-prod-test-results-sharepoint.ts', import.meta.url));
 const workflow = readFileSync(new URL('../workflows/upload-prod-test-results-sharepoint.yaml', import.meta.url), 'utf8');
@@ -124,7 +125,7 @@ const fakePnpm = `#!/usr/bin/env node
     const fs = require('node:fs');
     const { spawnSync } = require('node:child_process');
     const args = process.argv.slice(2);
-    fs.appendFileSync(process.env.PNPM_CALLS, JSON.stringify({ home: process.env.HOME, args: args.slice(0, 4) }) + '\\n');
+    fs.appendFileSync(process.env.PNPM_CALLS, JSON.stringify({ home: process.env.HOME, args: args.slice(0, 4), execPath: process.execPath }) + '\\n');
     if (process.env.FAIL_PNPM === 'true') {
       process.stderr.write(process.env.SECRET_CANARY);
       process.exit(12);
@@ -159,7 +160,8 @@ function executeUpload({
   failCommands = '',
   failCleanup = false,
   failCertificate = false,
-  failPublish = false,
+  failAuthPublish = false,
+  failSummary = false,
   failPnpm = false,
   missingCli = false,
   certificate = Buffer.from('pfx-canary').toString('base64'),
@@ -181,6 +183,7 @@ function executeUpload({
     }
 
     writeFileSync(archive, emptyArchive ? '' : 'zip-content');
+    symlinkSync(process.execPath, join(directory, 'node'));
     writeFileSync(join(directory, 'pnpm'), fakePnpm, { mode: 0o700 });
 
     if (!missingCli) {
@@ -196,7 +199,14 @@ function executeUpload({
       fs.rm = async () => { throw new Error(process.env.SECRET_CANARY); };
     }
     if (process.env.FAIL_CERTIFICATE === 'true') fs.writeFile = async () => { throw new Error(process.env.SECRET_CANARY); };
-    if (process.env.FAIL_PUBLISH === 'true') fs.appendFile = async () => { throw new Error(process.env.SECRET_CANARY); };
+    const appendFile = fs.appendFile;
+    fs.appendFile = async (path, ...args) => {
+      if ((process.env.FAIL_AUTH_PUBLISH === 'true' && path === process.env.GITHUB_ENV) ||
+          (process.env.FAIL_SUMMARY === 'true' && path === process.env.GITHUB_STEP_SUMMARY)) {
+        throw new Error(process.env.SECRET_CANARY);
+      }
+      return await appendFile(path, ...args);
+    };
     syncBuiltinESMExports();
     `,
     );
@@ -209,11 +219,12 @@ function executeUpload({
         CLIENT_CERT_PFX: certificate,
         CLIENT_CERT_PFX_PASSWORD: secretCanary,
         CLIENT_ID: missingCredential ? '' : secretCanary,
+        FAIL_AUTH_PUBLISH: String(failAuthPublish),
         FAIL_CLEANUP: String(failCleanup),
         FAIL_CERTIFICATE: String(failCertificate),
         FAIL_COMMANDS: failCommands,
         FAIL_PNPM: String(failPnpm),
-        FAIL_PUBLISH: String(failPublish),
+        FAIL_SUMMARY: String(failSummary),
         GH_TOKEN: secretCanary,
         GITHUB_ENV: githubEnv,
         GITHUB_STEP_SUMMARY: summary,
@@ -276,6 +287,7 @@ test('uploads through workspace CLI with private certificate authentication and 
   }
 
   for (const call of result.pnpmCalls) {
+    assert.equal(call.execPath, process.execPath);
     assert.equal(call.home, result.originalHome);
     assert.equal(call.args[0], 'exec');
     assert.equal(call.args[1], 'env');
@@ -324,16 +336,25 @@ test.each(['', 'spo'])('reports cleanup failure without hiding an earlier primar
   assert.ok(!result.stderr.includes(result.secretCanary));
 });
 
-test.each([{ failPnpm: true }, { missingCli: true }])('handles missing or failing launcher and CLI without secret output', (options) => {
+test.each([
+  { name: 'pnpm failure', options: { failPnpm: true } },
+  { name: 'missing m365 executable', options: { missingCli: true } },
+])('handles $name without secret output', ({ options }) => {
   const result = executeUpload(options);
   assert.equal(result.status, 1);
+  assert.match(result.stderr, /configuration failed/);
+  assert.match(result.stderr, /logout failed/);
   assert.equal(result.summary, '');
+  assert.equal(result.pnpmCalls.length, 2);
   assert.deepEqual(result.authDirectories, []);
   assert.ok(!result.stdout.includes(result.secretCanary));
   assert.ok(!result.stderr.includes(result.secretCanary));
 });
 
-test.each([{ failCertificate: true }, { failPublish: true }])('cleans authentication state when credential preparation fails', (options) => {
+test.each([
+  { name: 'certificate writing', options: { failCertificate: true } },
+  { name: 'authentication directory publication', options: { failAuthPublish: true } },
+])('cleans authentication state when $name fails', ({ options }) => {
   const result = executeUpload(options);
   assert.equal(result.status, 1);
   assert.equal(result.summary, '');
@@ -342,6 +363,18 @@ test.each([{ failCertificate: true }, { failPublish: true }])('cleans authentica
     result.calls.map((call) => call.args[0]),
     ['logout'],
   );
+  assert.ok(!result.stderr.includes(result.secretCanary));
+});
+
+test('reports summary publication failure after uploading and cleaning private state', () => {
+  const result = executeUpload({ failSummary: true });
+  assert.equal(result.status, 1);
+  assert.equal(result.summary, '');
+  assert.deepEqual(
+    result.calls.map((call) => call.args[0]),
+    ['cli', 'login', 'spo', 'logout'],
+  );
+  assert.deepEqual(result.authDirectories, []);
   assert.ok(!result.stderr.includes(result.secretCanary));
 });
 
