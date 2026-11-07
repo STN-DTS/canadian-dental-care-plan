@@ -3,7 +3,7 @@ import { createMemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { finishDocumentUploadState, loadDocumentUploadState, resetDocumentUploadState, startDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { finishDocumentUploadState, loadDocumentUploadState, recordDocumentUploadAttempt, resetDocumentUploadState, startDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { Session } from '~/.server/web/session';
 
@@ -100,6 +100,30 @@ describe('document upload lifecycle', () => {
     vi.mocked(session.get).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument] });
 
     expect(loadDocumentUploadState({ id: uploadId, session, params }).status).toBe('partial-upload');
+  });
+
+  it.each([
+    { previous: undefined, expected: 1 },
+    { previous: 2, expected: 3 },
+  ])('records upload attempt $expected after $previous earlier attempts', ({ previous, expected }) => {
+    vi.mocked(session.get).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: previous });
+
+    expect(recordDocumentUploadAttempt({ id: uploadId, session, params })).toBe(expected);
+    expect(session.set).toHaveBeenCalledExactlyOnceWith(`document-upload-flow-${uploadId}`, { id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: expected });
+  });
+
+  it('does not record an attempt on a finished flow', () => {
+    vi.mocked(session.get).mockReturnValue({ id: uploadId, status: 'finished', documents: [uploadedDocument], uploadAttemptCount: 1 });
+
+    expect(() => recordDocumentUploadAttempt({ id: uploadId, session, params })).toThrow();
+    expect(session.set).not.toHaveBeenCalled();
+  });
+
+  it('keeps the attempt count when the flow is reset or updated', () => {
+    vi.mocked(session.get).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: 2 });
+
+    expect(resetDocumentUploadState({ id: uploadId, session, params }).uploadAttemptCount).toBe(2);
+    expect(updateDocumentUploadState({ id: uploadId, session, params, state: { documents: [] } }).uploadAttemptCount).toBe(2);
   });
 
   it('preserves successful ISO timestamps through session serialization and completion', () => {

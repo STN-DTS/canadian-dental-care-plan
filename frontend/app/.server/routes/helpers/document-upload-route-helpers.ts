@@ -24,6 +24,8 @@ export interface DocumentUploadState {
   readonly id: string;
   readonly status: 'initialized' | 'partial-upload' | 'finished';
   readonly documents: ReadonlyArray<SubmittedDocument>;
+  /** Number of upload submissions recorded for this flow; absent until the first submission. */
+  readonly uploadAttemptCount?: number;
 }
 
 /**
@@ -174,6 +176,30 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
 
   log.debug('Document upload session state updated', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return newState;
+}
+
+interface RecordAttemptArgs {
+  id: string;
+  params: DocumentUploadStateParams;
+  session: Session;
+}
+
+/**
+ * Records one upload submission for the flow. Resetting the form keeps the count.
+ * @param args - The arguments.
+ * @returns The attempt number of this submission, starting at 1.
+ * @throws If the flow has already finished.
+ */
+export function recordDocumentUploadAttempt({ id, params, session }: RecordAttemptArgs): number {
+  const currentState = loadDocumentUploadState({ id, params, session });
+
+  if (currentState.status === 'finished') {
+    throw data(null, { status: 409 });
+  }
+
+  const uploadAttemptCount = (currentState.uploadAttemptCount ?? 0) + 1;
+  session.set(getSessionKey(currentState.id), { ...currentState, uploadAttemptCount } satisfies DocumentUploadState);
+  return uploadAttemptCount;
 }
 
 export function finishDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {

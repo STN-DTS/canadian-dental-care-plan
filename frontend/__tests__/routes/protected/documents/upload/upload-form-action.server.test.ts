@@ -5,7 +5,9 @@ import { mock } from 'vitest-mock-extended';
 
 import { appContext } from '~/.server/context';
 import type { AppContext } from '~/.server/context';
-import { finishDocumentUploadState, getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
+import { finishDocumentUploadState, getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, recordDocumentUploadAttempt, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
@@ -402,5 +404,120 @@ describe('action', () => {
     expect(result.status).toBe(302);
     expect(result.headers.get('Location')).toBe(submittedUrl);
     expect(result.headers.get('X-Remix-Replace')).toBe('true');
+  });
+});
+
+function attemptAttributes(counts: { attempt: number; outcome: string; submitted: number; uploaded: number; failed: number; total: number }) {
+  return {
+    'otel.event.name': 'cdcp.document_upload.attempt.completed',
+    'cdcp.document_upload.attempt.number': counts.attempt,
+    'cdcp.document_upload.attempt.outcome': counts.outcome,
+    'cdcp.document_upload.files.submitted_count': counts.submitted,
+    'cdcp.document_upload.files.uploaded_count': counts.uploaded,
+    'cdcp.document_upload.files.failed_count': counts.failed,
+    'cdcp.document_upload.flow.id': uploadId,
+    'cdcp.document_upload.flow.uploaded_total': counts.total,
+    'session.id': 'session-1',
+  };
+}
+
+function flowFinishedAttributes(attemptCount: number, total: number) {
+  return {
+    'otel.event.name': 'cdcp.document_upload.flow.finished',
+    'cdcp.document_upload.flow.attempt_count': attemptCount,
+    'cdcp.document_upload.flow.id': uploadId,
+    'cdcp.document_upload.flow.uploaded_total': total,
+    'session.id': 'session-1',
+  };
+}
+
+describe('upload telemetry', () => {
+  const logger = mock<Logger>();
+
+  beforeEach(() => {
+    vi.mocked(createLogger).mockReturnValue(logger);
+    vi.mocked(recordDocumentUploadAttempt).mockReturnValue(1);
+  });
+
+  it('logs the attempt and the finished flow when every file uploads', async () => {
+    const args = createActionArgs(validUploadFormData());
+    const { session } = args.context.get(appContext);
+
+    await action(args);
+
+    expect(recordDocumentUploadAttempt).toHaveBeenCalledExactlyOnceWith({ id: uploadId, session, params: args.params });
+    expect(logger.info).toHaveBeenCalledWith('Document upload attempt completed', attemptAttributes({ attempt: 1, outcome: 'uploaded', submitted: 1, uploaded: 1, failed: 0, total: 1 }));
+    expect(logger.info).toHaveBeenCalledWith('Document upload flow finished', flowFinishedAttributes(1, 1));
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning with per-attempt and flow counts when a retry partly fails', async () => {
+    vi.mocked(recordDocumentUploadAttempt).mockReturnValue(2);
+    const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:00Z' };
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: 1 });
+    const retryFile = new File(['retry'], 'retry.pdf');
+    const newFile = new File(['new'], 'new.pdf');
+    const files = {
+      'file-1': { file: retryFile, fileBuffer: new ArrayBuffer(retryFile.size), fileHash: 'retry-hash', documentType: 'receipt' },
+      'file-3': { file: newFile, fileBuffer: new ArrayBuffer(newFile.size), fileHash: 'new-hash', documentType: 'receipt' },
+    };
+    vi.mocked(getFiles).mockResolvedValue(new Map(Object.entries(files)));
+    vi.mocked(validateUploadedFiles).mockReturnValue({ success: true, data: { files } });
+    const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-3': { errors: [], properties: { file: { errors: ['upload failed'] } } } } } } } satisfies DocumentUploadSchemaErrorTree;
+    vi.mocked(uploadDocuments).mockResolvedValue({ success: false, errors, uploadDates: { 'file-1': '2026-11-01T06:30:00Z' } });
+    const args = createActionArgs(
+      createUploadFormData([
+        { id: 'file-1', file: retryFile, documentType: 'receipt' },
+        { id: 'file-3', file: newFile, documentType: 'receipt' },
+      ]),
+    );
+
+    await action(args);
+
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Document upload attempt completed with failed files', attemptAttributes({ attempt: 2, outcome: 'upload_failed', submitted: 2, uploaded: 1, failed: 1, total: 2 }));
+    expect(logger.info).not.toHaveBeenCalledWith('Document upload flow finished', expect.anything());
+  });
+
+  it('does not log or count a submission that fails form validation', async () => {
+    vi.mocked(validateUploadedFiles).mockReturnValue({ success: false, errors: { errors: [] } });
+
+    await action(createActionArgs(validUploadFormData()));
+
+    expect(recordDocumentUploadAttempt).not.toHaveBeenCalled();
+    expect(uploadDocuments).not.toHaveBeenCalled();
+    expect(logger.info).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('does not log or count a submission that fails content validation', async () => {
+    vi.mocked(validateDocumentContents).mockResolvedValue({ success: false, errors: { errors: [] } });
+
+    await action(createActionArgs(validUploadFormData()));
+
+    expect(recordDocumentUploadAttempt).not.toHaveBeenCalled();
+    expect(uploadDocuments).not.toHaveBeenCalled();
+    expect(logger.info).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('does not count a malformed request as an attempt', async () => {
+    const formData = new FormData();
+    formData.set('_action', 'upload');
+
+    await expect(action(createActionArgs(formData))).rejects.toMatchObject({ init: { status: 400 } });
+    expect(recordDocumentUploadAttempt).not.toHaveBeenCalled();
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+
+  it('logs the finished flow with the recorded attempt count on an explicit finish', async () => {
+    const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
+    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument, { ...uploadedDocument, id: 'pending', status: 'pending' }], uploadAttemptCount: 3 });
+    const formData = new FormData();
+    formData.set('_action', 'finish');
+
+    await action(createActionArgs(formData));
+
+    expect(recordDocumentUploadAttempt).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledExactlyOnceWith('Document upload flow finished', flowFinishedAttributes(3, 1));
   });
 });

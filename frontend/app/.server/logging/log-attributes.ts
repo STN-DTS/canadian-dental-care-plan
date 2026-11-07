@@ -91,6 +91,30 @@ export const ATTR_CDCP_CSP_DEVELOPMENT_MODE = 'cdcp.csp.development_mode';
 /** string: local document rejection classification, `rejected` or `unsafe`; no upstream text or content. */
 export const ATTR_CDCP_DOCUMENT_OUTCOME = 'cdcp.document.outcome';
 
+/** number: 1-based upload submission number within one document upload flow. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_NUMBER = 'cdcp.document_upload.attempt.number';
+
+/** string: upload submission result, `uploaded`, `upload_failed`, `validation_failed` or `content_validation_failed`. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_OUTCOME = 'cdcp.document_upload.attempt.outcome';
+
+/** number: files in one upload submission that were not uploaded; 0 to the configured maximum file count. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FILES_FAILED_COUNT = 'cdcp.document_upload.files.failed_count';
+
+/** number: files sent in one upload submission; 1 to the configured maximum file count. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FILES_SUBMITTED_COUNT = 'cdcp.document_upload.files.submitted_count';
+
+/** number: files uploaded successfully in one upload submission; 0 to the configured maximum file count. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FILES_UPLOADED_COUNT = 'cdcp.document_upload.files.uploaded_count';
+
+/** number: upload submissions recorded for one document upload flow when it finishes. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ATTEMPT_COUNT = 'cdcp.document_upload.flow.attempt_count';
+
+/** string: server-generated document upload flow UUID; never a filename or document identifier from the applicant. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ID = 'cdcp.document_upload.flow.id';
+
+/** number: files uploaded successfully so far in one document upload flow, across all submissions. */
+export const ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_UPLOADED_TOTAL = 'cdcp.document_upload.flow.uploaded_total';
+
 /** string: feature key from the application feature configuration; never arbitrary user input. */
 export const ATTR_CDCP_FEATURE_NAME = 'cdcp.feature.name';
 

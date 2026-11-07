@@ -24,6 +24,7 @@
   - [Runtime settings](#runtime-settings)
   - [Retry behavior](#retry-behavior)
   - [Security and privacy](#security-and-privacy)
+  - [Upload metrics events](#upload-metrics-events)
 - [Failure and consistency behavior](#failure-and-consistency-behavior)
 
 ## Purpose and summary
@@ -432,6 +433,17 @@ User-initiated retries submit only pending files. Power Platform manages its own
 - The server sends file bytes to downstream services as base64 JSON. The application and repository do not log them.
 - The repository uses an Interop API subscription key and EWDU encapsulation credentials.
 - The frontend does not trust browser validation; the server repeats all upload validation.
+
+### Upload metrics events
+
+The server upload action writes two named log events for business counts. Both carry `cdcp.document_upload.flow.id` and `session.id`, and neither carries filenames, file contents, or client numbers. Counts are best-effort: a crash or an export failure can lose an event.
+
+| Event (`otel.event.name`)                | When                                                                                  | Count attributes                                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `cdcp.document_upload.attempt.completed` | Each submission that passes form and content validation and reaches `uploadDocuments` | `attempt.number`, `attempt.outcome`, `files.submitted_count`, `files.uploaded_count`, `files.failed_count`, `flow.uploaded_total` |
+| `cdcp.document_upload.flow.finished`     | The flow finishes, after a full upload or an explicit finish request                  | `flow.attempt_count`, `flow.uploaded_total`                                                                                       |
+
+Every attribute name starts with `cdcp.document_upload.`. `attempt.outcome` is `uploaded` or `upload_failed`. A submission that fails form or content validation does not create an attempt event or increment the attempt count. The `upload_failed` outcome logs at `warn`; every other event logs at `info`. The attempt count is stored in the flow's session state, and a form reload keeps it.
 
 ## Failure and consistency behavior
 

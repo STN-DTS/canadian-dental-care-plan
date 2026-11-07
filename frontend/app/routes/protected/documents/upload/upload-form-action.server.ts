@@ -1,10 +1,24 @@
 import { data, replace } from 'react-router';
 
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
+// session.id is currently an incubating OpenTelemetry convention.
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { TFunction } from 'i18next';
 import * as z from 'zod';
 
 import { appContext } from '~/.server/context';
-import { finishDocumentUploadState, getDocumentUploadSubmittedUrl, loadDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { createLogger } from '~/.server/logging';
+import {
+  ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_NUMBER,
+  ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_OUTCOME,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FILES_FAILED_COUNT,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FILES_SUBMITTED_COUNT,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FILES_UPLOADED_COUNT,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ATTEMPT_COUNT,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ID,
+  ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_UPLOADED_TOTAL,
+} from '~/.server/logging/log-attributes';
+import { finishDocumentUploadState, getDocumentUploadSubmittedUrl, loadDocumentUploadState, recordDocumentUploadAttempt, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState, SubmittedDocument } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
@@ -71,6 +85,7 @@ function finishAction({ formAction, formData, params, session, uploadState }: Fi
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: uploadedDocuments } });
   finishDocumentUploadState({ id: uploadState.id, session, params });
+  logFlowFinished({ attemptCount: uploadState.uploadAttemptCount ?? 0, flowId: uploadState.id, session, uploadedTotal: uploadedDocuments.length });
   return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }
 
@@ -115,6 +130,8 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     throw data(null, { status: 409 });
   }
 
+  const previouslyUploadedTotal = uploadState.documents.filter((document) => document.status === 'uploaded').length;
+
   // Validate the upload form against the schema.
   const validationResult = validateUploadedFiles({ files, locale, t });
 
@@ -142,7 +159,9 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     return data({ formAction, source, responseType: 'content-validation-errors', errors: contentValidationResult.errors } as const, 400);
   }
 
+  const attemptNumber = recordDocumentUploadAttempt({ id: uploadState.id, session, params });
   const uploadResult = await uploadDocuments(validationResult.data.files);
+
   const processedDocuments = documents.map((document) => {
     if (document.status === 'uploaded' || (!uploadResult.success && hasUploadError(document.id, uploadResult))) {
       return document;
@@ -153,12 +172,94 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
 
   updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });
 
+  const uploadedTotal = processedDocuments.filter((document) => document.status === 'uploaded').length;
+
+  logUploadAttempt({
+    attemptNumber,
+    flowId: uploadState.id,
+    session,
+    submittedCount: Object.keys(validationResult.data.files).length,
+    outcome: uploadResult.success ? 'uploaded' : 'upload_failed',
+    uploadedCount: uploadedTotal - previouslyUploadedTotal,
+    uploadedTotal,
+  });
+
   if (!uploadResult.success) {
-    return data({ formAction, source, responseType: 'upload-errors', errors: uploadResult.errors, documents: processedDocuments } as const, 400);
+    return data(
+      {
+        formAction,
+        source,
+        responseType: 'upload-errors',
+        errors: uploadResult.errors,
+        documents: processedDocuments,
+      } as const,
+      400,
+    );
   }
 
   finishDocumentUploadState({ id: uploadState.id, session, params });
+  logFlowFinished({ attemptCount: attemptNumber, flowId: uploadState.id, session, uploadedTotal });
   return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
+}
+
+type UploadAttemptOutcome = 'uploaded' | 'upload_failed';
+
+type LogUploadAttemptParams = {
+  attemptNumber: number;
+  flowId: string;
+  outcome: UploadAttemptOutcome;
+  session: Session;
+  submittedCount: number;
+  uploadedCount: number;
+  uploadedTotal: number;
+};
+
+/**
+ * Logs the file counts of one upload submission. Downstream upload failures log at warn; all other outcomes log at info.
+ * @param args - The attempt number, flow ID, outcome, session, and file counts.
+ */
+function logUploadAttempt({ attemptNumber, flowId, outcome, session, submittedCount, uploadedCount, uploadedTotal }: LogUploadAttemptParams) {
+  const log = createLogger('upload-form-action.server/uploadAction');
+  const attributes = {
+    [ATTR_OTEL_EVENT_NAME]: 'cdcp.document_upload.attempt.completed',
+    [ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_NUMBER]: attemptNumber,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_OUTCOME]: outcome,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FILES_FAILED_COUNT]: submittedCount - uploadedCount,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FILES_SUBMITTED_COUNT]: submittedCount,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FILES_UPLOADED_COUNT]: uploadedCount,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ID]: flowId,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_UPLOADED_TOTAL]: uploadedTotal,
+    [ATTR_SESSION_ID]: session.id,
+  };
+
+  if (outcome === 'upload_failed') {
+    log.warn('Document upload attempt completed with failed files', attributes);
+    return;
+  }
+
+  log.info('Document upload attempt completed', attributes);
+}
+
+type LogFlowFinishedParams = {
+  attemptCount: number;
+  flowId: string;
+  session: Session;
+  uploadedTotal: number;
+};
+
+/**
+ * Logs the totals of a finished upload flow.
+ * @param args - The attempt count, flow ID, session, and uploaded file total.
+ */
+function logFlowFinished({ attemptCount, flowId, session, uploadedTotal }: LogFlowFinishedParams) {
+  const log = createLogger('upload-form-action.server/finishFlow');
+  log.info('Document upload flow finished', {
+    [ATTR_OTEL_EVENT_NAME]: 'cdcp.document_upload.flow.finished',
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ATTEMPT_COUNT]: attemptCount,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_ID]: flowId,
+    [ATTR_CDCP_DOCUMENT_UPLOAD_FLOW_UPLOADED_TOTAL]: uploadedTotal,
+    [ATTR_SESSION_ID]: session.id,
+  });
 }
 
 /**
