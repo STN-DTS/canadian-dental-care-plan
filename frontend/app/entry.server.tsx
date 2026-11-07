@@ -2,8 +2,8 @@ import { renderToPipeableStream } from 'react-dom/server';
 import type { RenderToPipeableStreamOptions } from 'react-dom/server';
 
 import { createReadableStreamFromReadable } from '@react-router/node';
-import type { ActionFunctionArgs, EntryContext, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
-import { ServerRouter } from 'react-router';
+import type { ActionFunctionArgs, EntryContext, HandleErrorFunction, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
+import { ServerRouter, isRouteErrorResponse } from 'react-router';
 
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { isbot } from 'isbot';
@@ -38,14 +38,15 @@ export function handleDataRequest(response: Response, { request, params, context
  * Logs React Router request errors using the application logger instead of
  * React Router's default console output.
  */
-export function handleError(_error: unknown, { context, request }: LoaderFunctionArgs | ActionFunctionArgs) {
+export function handleError(error: unknown, { context, request }: Parameters<HandleErrorFunction>[1]) {
   const { appContainer } = context.get(appContext);
   // Avoid logging aborted requests because React Router cancellation and
   // race-condition handling can abort requests during normal operation.
   const log = createLogger('entry.server/handleError');
 
   if (!request.signal.aborted) {
-    log.error('React Router request failed', {
+    const isClientError = isRouteErrorResponse(error) && error.status >= 400 && error.status < 500;
+    log[isClientError ? 'debug' : 'error']('React Router request failed', {
       [ATTR_ERROR_TYPE]: 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: request.method,
       [ATTR_URL_PATH]: new URL(request.url).pathname,

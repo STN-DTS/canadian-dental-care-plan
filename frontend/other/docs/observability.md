@@ -260,6 +260,13 @@ ERROR (17), and are retained at INFO. Audit and ordinary application INFO
 records remain severity 9. This filtering does not change request handling,
 metrics, spans or completion ownership.
 
+React Router's `handleError` logs recognized 4xx route errors at DEBUG.
+This includes POST requests to routes without an action, which return 405.
+The request completion event remains at WARN, so production keeps the rejection
+without a duplicate ERROR diagnostic. Route errors with 5xx status and
+unclassified errors remain at ERROR. Aborted requests remain excluded from
+the error hook. Its request failure counter and log attributes are unchanged.
+
 ### Audit records
 
 `DefaultAuditService.createAudit` emits `cdcp.audit.recorded` when an internal
