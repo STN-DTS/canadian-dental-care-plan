@@ -105,7 +105,7 @@ catalog:
   markdown-to-jsx: 9.10.5
   micro-memoize: 5.2.2
   mime: 4.1.2
-  minimatch: 11.0.4
+  minimatch: 11.0.5
   moderndash: 4.0.2
   morgan: 1.12.1
   npm-run-all2: 9.0.4
