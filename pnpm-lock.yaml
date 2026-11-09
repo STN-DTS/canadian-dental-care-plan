@@ -478,8 +478,8 @@ catalogs:
       specifier: 4.3.4
       version: 4.3.4
     temporal-polyfill:
-      specifier: 1.0.7
-      version: 1.0.7
+      specifier: 1.0.8
+      version: 1.0.8
     triple-beam:
       specifier: 1.4.1
       version: 1.4.1
@@ -790,7 +790,7 @@ importers:
         version: 3.7.0
       temporal-polyfill:
         specifier: 'catalog:'
-        version: 1.0.7
+        version: 1.0.8
       triple-beam:
         specifier: 'catalog:'
         version: 1.4.1
@@ -5474,8 +5474,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  temporal-polyfill@1.0.7:
-    resolution: {integrity: sha512-/qHG5yJUCFRAYrlo/4zgFsV7p+cSnGJjtpd3c3sKB3ayuIln3U0nthfKa9MoMl0nY7NAjrru5/w0BMjcAxg9MA==}
+  temporal-polyfill@1.0.8:
+    resolution: {integrity: sha512-RCCGa0GddT099XG49ijdD0tDf86L8vfuZun1+JyJiO4Y2NP9PACQsG0OnvNPXwVLisdvhr/zqL2nhKQmXXx08A==}
 
   temporal-spec@1.0.1:
     resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
@@ -10362,7 +10362,7 @@ snapshots:
       readable-stream: 3.6.2
     optional: true
 
-  temporal-polyfill@1.0.7:
+  temporal-polyfill@1.0.8:
     dependencies:
       temporal-spec: 1.0.1
       temporal-utils: 1.0.4
