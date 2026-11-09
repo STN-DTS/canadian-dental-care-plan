@@ -1,16 +1,187 @@
-import { RouterContextProvider } from 'react-router';
+import { RouterContextProvider, createStaticHandler } from 'react-router';
+import type { InstrumentationHandlerResult, ServerBuild } from 'react-router';
 
-import { SpanStatusCode } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
-import { describe, expect, it, vi } from 'vitest';
+import { ROOT_CONTEXT, SpanStatusCode, context as otelContext, trace } from '@opentelemetry/api';
+import type { Context, Span } from '@opentelemetry/api';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
-import { otelSpan } from '~/.server/utils/otel-instrumentation-utils';
+import { enrichRequestSpan, instrumentAppErrors, otelSpan, recordError, withAppErrorCapture } from '~/.server/utils/otel-instrumentation-utils';
 import type { Session } from '~/.server/web/session';
+import { AppError } from '~/errors/app-error';
+
+describe('React Router AppError capture', () => {
+  beforeEach(() => {
+    const storage = new AsyncLocalStorage<Context>();
+    vi.spyOn(otelContext, 'active').mockImplementation(() => storage.getStore() ?? ROOT_CONTEXT);
+    vi.spyOn(otelContext, 'with').mockImplementation((ctx, callback, thisArg, ...args) => storage.run(ctx, () => callback.apply(thisArg, args)));
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(['loader', 'action'] as const)('records the unchanged %s AppError despite React Router filtering result.error', async (phase) => {
+    const error = new AppError('Synthetic failure', undefined, { correlationId: 'AB-123456' });
+    const build = mock<ServerBuild>();
+    build.routes = {
+      test: {
+        id: 'test',
+        path: '/',
+        module: {
+          default: () => null,
+          [phase]: () => {
+            throw error;
+          },
+        },
+      },
+    };
+    const route = instrumentAppErrors(build).routes.test;
+
+    if (!route) {
+      throw new Error('Expected test route');
+    }
+
+    const handlerSpan = mock<Span>();
+    const requestSpan = mock<Span>();
+    const results: InstrumentationHandlerResult[] = [];
+    const router = createStaticHandler([{ id: 'test', path: '/', loader: route.module.loader, action: route.module.action }], {
+      instrumentations: [
+        {
+          route({ instrument }) {
+            instrument({
+              [phase]: async (handler: () => Promise<InstrumentationHandlerResult>) => {
+                await otelContext.with(trace.setSpan(otelContext.active(), handlerSpan), async () => {
+                  const result = await handler();
+                  results.push(result);
+                  recordError(handlerSpan, result.error);
+                });
+              },
+            });
+          },
+        },
+      ],
+    });
+
+    await withAppErrorCapture(async () => {
+      const result = await router.query(new Request('http://localhost/', { method: phase === 'action' ? 'POST' : 'GET' }));
+
+      if (result instanceof Response) {
+        throw new Error('Expected static context');
+      }
+
+      expect(result.errors?.test).toBe(error);
+      expect(result.statusCode).toBe(500);
+      expect(JSON.parse(JSON.stringify(result.errors?.test)).correlationId).toBe(error.correlationId);
+      enrichRequestSpan(requestSpan, 'GET', { status: 'success', error: undefined, statusCode: result.statusCode, meta: undefined });
+    });
+
+    expect(results).toEqual([{ status: 'success', error: undefined }]);
+
+    for (const span of [handlerSpan, requestSpan]) {
+      expect(span.setAttribute).toHaveBeenCalledWith('correlationId', error.correlationId);
+      expect(span.recordException).toHaveBeenCalledExactlyOnceWith({ name: error.name, message: error.msg, code: error.errorCode, stack: error.stack });
+    }
+  });
+
+  it('preserves wrappers, middleware names and loader hydration metadata across registration', () => {
+    const loader = Object.assign(
+      vi.fn(() => null),
+      { hydrate: true },
+    );
+    const middleware = vi.fn(function syntheticMiddleware() {
+      return new Response();
+    });
+    const build = mock<ServerBuild>();
+    build.routes = { test: { id: 'test', path: '/', module: { default: () => null, loader, middleware: [middleware] } } };
+    instrumentAppErrors(build);
+    const wrapped = build.routes.test?.module.loader;
+    expect(wrapped?.hydrate).toBe(true);
+    expect(build.routes.test?.module.middleware?.[0]?.name).toBe(middleware.name);
+    expect(instrumentAppErrors(build)).toBe(build);
+    expect(build.routes.test?.module.loader).toBe(wrapped);
+  });
+
+  it('suppresses captured AppErrors after the original request is aborted', async () => {
+    const controller = new AbortController();
+    const error = new AppError('Synthetic cancellation');
+    const build = mock<ServerBuild>();
+    build.routes = {
+      test: {
+        id: 'test',
+        path: '/',
+        module: {
+          default: () => null,
+          loader: () => {
+            controller.abort();
+            throw error;
+          },
+        },
+      },
+    };
+    const span = mock<Span>();
+    const loader = instrumentAppErrors(build).routes.test?.module.loader;
+
+    if (!loader) {
+      throw new Error('Expected test loader');
+    }
+
+    await withAppErrorCapture(async () => {
+      await otelContext.with(trace.setSpan(otelContext.active(), span), async () => {
+        await expect(loader({ request: new Request('http://localhost/', { signal: controller.signal }), params: {}, context: new RouterContextProvider(), url: new URL('http://localhost/'), pattern: '/' })).rejects.toBe(error);
+      });
+      enrichRequestSpan(span, 'GET', { status: 'success', error: undefined, statusCode: 500, meta: undefined });
+    });
+    expect(span.recordException).not.toHaveBeenCalled();
+    expect(span.setAttribute).not.toHaveBeenCalledWith('correlationId', expect.anything());
+  });
+});
+
+describe('span error correlation', () => {
+  it('records explicit AppError exception fields on request and handler spans', async () => {
+    const { context, span } = createSpanContext();
+    const error = new AppError('Synthetic failure', undefined, { correlationId: 'AB-123456' });
+    await otelSpan(context, 'loader', {}, vi.fn().mockResolvedValue({ status: 'error', error }));
+    expect(span.setAttribute).toHaveBeenCalledWith('correlationId', error.correlationId);
+    expect(span.recordException).toHaveBeenCalledWith({ name: 'AppError', message: error.msg, code: error.errorCode, stack: error.stack });
+
+    span.recordException.mockClear();
+    enrichRequestSpan(span, 'GET', { status: 'error', statusCode: 500, meta: undefined, error: error as unknown as Error });
+    expect(span.recordException).toHaveBeenCalledWith({ name: 'AppError', message: error.msg, code: error.errorCode, stack: error.stack });
+  });
+
+  it('uses N/A for ordinary errors', () => {
+    const span = mock<Span>();
+    const error = new Error('Synthetic failure');
+    recordError(span, error);
+    expect(span.setAttribute).toHaveBeenCalledWith('correlationId', 'N/A');
+    expect(span.recordException).toHaveBeenCalledWith(error);
+  });
+
+  it.each([undefined, null, new Response(null, { status: 302 }), new Response(null, { status: 400 })])('does not tag intentional responses or no error', (error) => {
+    const span = mock<Span>();
+    recordError(span, error);
+    expect(span.setAttribute).not.toHaveBeenCalled();
+    expect(span.recordException).not.toHaveBeenCalled();
+    expect(span.setStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not tag aborted requests or failing handlers', async () => {
+    const { context, span } = createSpanContext();
+    const controller = new AbortController();
+    controller.abort();
+    const error = new AppError('Synthetic failure');
+    recordError(span, error, controller.signal);
+    await otelSpan(context, 'loader', {}, vi.fn().mockResolvedValue({ status: 'error', error }), undefined, controller.signal);
+    enrichRequestSpan(span, 'GET', { status: 'error', statusCode: 500, meta: undefined, error: error as unknown as Error }, controller.signal);
+    expect(span.setAttribute).not.toHaveBeenCalledWith('correlationId', expect.anything());
+    expect(span.recordException).not.toHaveBeenCalled();
+    expect(span.end).toHaveBeenCalledOnce();
+  });
+});
 
 function createSpanContext() {
   const span = mock<Span>();

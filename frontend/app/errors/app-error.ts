@@ -45,7 +45,7 @@ export class AppError {
  *       information is lost when shipped to the client
  */
 export function isAppError(error: unknown): error is AppError {
-  return error instanceof Object && 'name' in error && error.name === 'AppError';
+  return typeof error === 'object' && error !== null && 'name' in error && error.name === 'AppError';
 }
 
 /**

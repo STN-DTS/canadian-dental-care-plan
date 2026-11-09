@@ -13,9 +13,9 @@
  *
  * @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/
  */
-import type { InstrumentationHandlerResult, InstrumentationServerHandlerResult, Params, RouterContextProvider } from 'react-router';
+import type { InstrumentationHandlerResult, InstrumentationServerHandlerResult, Params, RouterContextProvider, ServerBuild } from 'react-router';
 
-import { SpanStatusCode, context, createContextKey } from '@opentelemetry/api';
+import { SpanStatusCode, context, createContextKey, trace } from '@opentelemetry/api';
 import type { Attributes, Span, SpanOptions } from '@opentelemetry/api';
 import {
   ATTR_CLIENT_ADDRESS,
@@ -34,6 +34,9 @@ import {
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { singleton } from '~/.server/utils/instance-registry';
+import { isAppError } from '~/errors/app-error';
+import type { AppError } from '~/errors/app-error';
+import { getCorrelationId } from '~/errors/error-predicates';
 
 // -----------------------------------------------------------------------------
 // Constants & types
@@ -266,6 +269,7 @@ export async function otelSpan(
   options: SpanOptions,
   handler: () => Promise<InstrumentationServerHandlerResult | InstrumentationHandlerResult>,
   onResult?: (span: Span, result: InstrumentationServerHandlerResult | InstrumentationHandlerResult) => void,
+  signal?: AbortSignal,
 ) {
   const { appContainer } = context.get(appContext);
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
@@ -279,7 +283,7 @@ export async function otelSpan(
         if (onResult) {
           onResult(span, result);
         } else {
-          recordError(span, result.error);
+          recordError(span, result.error, signal);
         }
       } finally {
         span.end();
@@ -292,11 +296,22 @@ export async function otelSpan(
 /**
  * Records the exception, error status, and `error.type` attribute on a span when a handler fails.
  */
-export function recordError(span: Span, error: Error | undefined): void {
-  if (error) {
-    span.recordException(error);
+export function recordError(span: Span, error: unknown, signal?: AbortSignal): void {
+  const captured = context.active().getValue(APP_ERROR_CAPTURE_KEY) as AppErrorCapture | undefined;
+
+  if (error !== undefined && error !== null && !(error instanceof Response) && !(signal ?? captured?.signal)?.aborted) {
+    span.setAttribute('correlationId', getCorrelationId(error) ?? 'N/A');
+
+    if (isAppError(error)) {
+      span.recordException({ name: error.name, message: error.msg, code: error.errorCode, stack: error.stack });
+    } else if (error instanceof Error) {
+      span.recordException(error);
+    } else {
+      span.recordException({ name: 'UnknownError' });
+    }
+
     span.setStatus({ code: SpanStatusCode.ERROR, message: 'internal_error' });
-    span.setAttribute(ATTR_ERROR_TYPE, error.name);
+    span.setAttribute(ATTR_ERROR_TYPE, isAppError(error) || error instanceof Error ? error.name : 'UnknownError');
   }
 }
 
@@ -308,7 +323,7 @@ export function recordError(span: Span, error: Error | undefined): void {
  * @param method - The normalized HTTP method, used to rebuild the span name as `{method} {route}`.
  * @param result - The server handler result carrying `statusCode`, `meta`, and `error`.
  */
-export function enrichRequestSpan(span: Span, method: string, result: InstrumentationServerHandlerResult): void {
+export function enrichRequestSpan(span: Span, method: string, result: InstrumentationServerHandlerResult, signal?: AbortSignal): void {
   const { error, statusCode, meta } = result;
 
   span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, statusCode);
@@ -326,7 +341,71 @@ export function enrichRequestSpan(span: Span, method: string, result: Instrument
     span.setAttributes(paramAttributes(meta.params));
   }
 
-  recordError(span, error);
+  const captured = context.active().getValue(APP_ERROR_CAPTURE_KEY) as AppErrorCapture | undefined;
+  recordError(span, error ?? captured?.error, signal);
+}
+
+type AppErrorCapture = { error?: AppError; signal?: AbortSignal };
+const APP_ERROR_CAPTURE_KEY = createContextKey('cdcp_app_error_capture');
+const instrumentedBuilds = new WeakSet<ServerBuild>();
+
+export async function withAppErrorCapture<T>(handler: () => Promise<T>): Promise<T> {
+  return await context.with(context.active().setValue(APP_ERROR_CAPTURE_KEY, {}), handler);
+}
+
+async function captureAppError<T>(handler: () => T | Promise<T>, signal: AbortSignal): Promise<T> {
+  const captured = context.active().getValue(APP_ERROR_CAPTURE_KEY) as AppErrorCapture | undefined;
+
+  if (captured) {
+    captured.signal = signal;
+  }
+
+  try {
+    return await handler();
+  } catch (error) {
+    if (isAppError(error) && !signal.aborted) {
+      if (captured) {
+        captured.error = error;
+      }
+
+      const span = trace.getActiveSpan();
+
+      if (span) {
+        recordError(span, error, signal);
+      }
+    }
+
+    throw error;
+  }
+}
+
+export function instrumentAppErrors(build: ServerBuild): ServerBuild {
+  if (instrumentedBuilds.has(build)) {
+    return build;
+  }
+
+  for (const route of Object.values(build.routes)) {
+    if (!route) {
+      continue;
+    }
+
+    const { loader, action, middleware } = route.module;
+    route.module = {
+      ...route.module,
+      ...(loader ? { loader: Object.assign(async (args: Parameters<typeof loader>[0]) => await captureAppError(() => loader(args), args.request.signal), { hydrate: loader.hydrate }) } : {}),
+      ...(action ? { action: async (args) => await captureAppError(() => action(args), args.request.signal) } : {}),
+      ...(middleware
+        ? {
+            middleware: middleware.map((handler) =>
+              Object.defineProperty(async (args: Parameters<typeof handler>[0], next: Parameters<typeof handler>[1]) => await captureAppError(async () => await handler(args, next), args.request.signal), 'name', { value: handler.name }),
+            ),
+          }
+        : {}),
+    };
+  }
+
+  instrumentedBuilds.add(build);
+  return build;
 }
 
 // -----------------------------------------------------------------------------

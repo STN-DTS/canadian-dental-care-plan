@@ -20,6 +20,8 @@ import { generateContentSecurityPolicy } from '~/.server/utils/csp-utils';
 import { getLocale, initI18n } from '~/.server/utils/locale-utils';
 import { ClientEnvProvider } from '~/components/client-env-context';
 import { NonceProvider } from '~/components/nonce-context';
+import { isAppError } from '~/errors/app-error';
+import { getCorrelationId } from '~/errors/error-predicates';
 import { getNamespaces } from '~/utils/locale-utils';
 import { randomHexString } from '~/utils/string-utils';
 
@@ -46,10 +48,18 @@ export function handleError(error: unknown, { context, request }: Parameters<Han
 
   if (!request.signal.aborted) {
     const isClientError = isRouteErrorResponse(error) && error.status >= 400 && error.status < 500;
-    log[isClientError ? 'debug' : 'error']('React Router request failed', {
-      [ATTR_ERROR_TYPE]: 'react_router_request_failed',
+    const applicationError = isAppError(error) ? error : undefined;
+    log[isClientError ? 'debug' : 'error'](applicationError ? 'Application error' : 'React Router request failed', {
+      [ATTR_ERROR_TYPE]: applicationError ? 'AppError' : 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: request.method,
       [ATTR_URL_PATH]: new URL(request.url).pathname,
+      ...(applicationError
+        ? {
+            correlationId: getCorrelationId(applicationError),
+            errorCode: applicationError.errorCode,
+            'org.event.category': 'application',
+          }
+        : {}),
     });
 
     const instrumentationService = appContainer.get(TYPES.InstrumentationService);
