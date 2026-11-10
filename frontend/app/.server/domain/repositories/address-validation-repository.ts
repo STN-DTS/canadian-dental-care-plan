@@ -1,4 +1,5 @@
 import { fakerEN_CA as faker } from '@faker-js/faker';
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -65,7 +66,7 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
       headers: {
         'Accept-Language': 'en-CA',
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
     });
 

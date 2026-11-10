@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import { memoize } from 'micro-memoize';
 import type { Memoized, Options } from 'micro-memoize';
@@ -171,8 +172,8 @@ export class DefaultRaoidcService implements RaoidcService {
       throw new Error(`CSRF error: incoming state [${state}] does not match expected state [${expectedState}]`);
     }
 
-    const privateDecryptionKey = await generateCryptoKey(AUTH_JWT_PRIVATE_KEY, 'decrypt');
-    const privateSigningKey = await generateCryptoKey(AUTH_JWT_PRIVATE_KEY, 'sign');
+    const privateDecryptionKey = await generateCryptoKey(Redacted.value(AUTH_JWT_PRIVATE_KEY), 'decrypt');
+    const privateSigningKey = await generateCryptoKey(Redacted.value(AUTH_JWT_PRIVATE_KEY), 'sign');
     const privateKeyId = generateJwkId(await subtle.exportKey('jwk', privateSigningKey));
 
     const client: ClientMetadata = {

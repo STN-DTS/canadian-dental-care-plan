@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import { randomUUID } from 'node:crypto';
 
@@ -58,9 +59,9 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
       headers: {
-        Authorization: `ApiKey-v1 ${this.serverConfig.GC_NOTIFY_API_KEY}`,
+        Authorization: `ApiKey-v1 ${Redacted.value(this.serverConfig.GC_NOTIFY_API_KEY)}`,
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(verificationCodeEmailRequestEntity),
     });
@@ -95,9 +96,9 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        Authorization: `ApiKey-v1 ${this.serverConfig.GC_NOTIFY_API_KEY}`,
+        Authorization: `ApiKey-v1 ${Redacted.value(this.serverConfig.GC_NOTIFY_API_KEY)}`,
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
     });
 

@@ -1,6 +1,7 @@
 import { redirectDocument } from 'react-router';
 
 import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+import { Redacted } from 'effect';
 import { CompactEncrypt, SignJWT } from 'jose';
 import { subtle } from 'node:crypto';
 import * as z from 'zod';
@@ -235,13 +236,13 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
 /**
  * Creates an encrypted access token in JWE format.
  */
-async function generateAccessToken(serverPublicKey: string, serverPrivateKey: string): Promise<string> {
+async function generateAccessToken(serverPublicKey: string, serverPrivateKey: Redacted.Redacted<string>): Promise<string> {
   const accessTokenPayload = {/* intentionally left blank */};
 
   // oxfmt-ignore
   const accessToken = await new SignJWT(accessTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
-    .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
+    .sign(await generateCryptoKey(Redacted.value(serverPrivateKey), 'sign'));
 
   // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(accessToken))
@@ -252,7 +253,7 @@ async function generateAccessToken(serverPublicKey: string, serverPrivateKey: st
 /**
  * Creates an encrypted ID token in JWE format.
  */
-async function generateIdToken(clientPublicKey: string, serverPrivateKey: string): Promise<string> {
+async function generateIdToken(clientPublicKey: string, serverPrivateKey: Redacted.Redacted<string>): Promise<string> {
   const idTokenPayload = {
     aud: 'CDCP',
     iss: 'GC-ECAS-MOCK',
@@ -264,7 +265,7 @@ async function generateIdToken(clientPublicKey: string, serverPrivateKey: string
   // oxfmt-ignore
   const idToken = await new SignJWT(idTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
-    .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
+    .sign(await generateCryptoKey(Redacted.value(serverPrivateKey), 'sign'));
 
   // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(idToken))
@@ -275,7 +276,7 @@ async function generateIdToken(clientPublicKey: string, serverPrivateKey: string
 /**
  * Creates an encrypted userinfo token in JWE format.
  */
-async function generateUserInfoToken(clientPublicKey: string, serverPrivateKey: string): Promise<string> {
+async function generateUserInfoToken(clientPublicKey: string, serverPrivateKey: Redacted.Redacted<string>): Promise<string> {
   const userinfoTokenPayload = {
     aud: 'CDCP',
     birthdate: '2000-01-01',
@@ -290,7 +291,7 @@ async function generateUserInfoToken(clientPublicKey: string, serverPrivateKey: 
   // oxfmt-ignore
   const userinfoToken = await new SignJWT(userinfoTokenPayload)
     .setProtectedHeader({ alg: 'PS256', kid: '00000000-0000-0000-0000-000000000000' })
-    .sign(await generateCryptoKey(serverPrivateKey, 'sign'));
+    .sign(await generateCryptoKey(Redacted.value(serverPrivateKey), 'sign'));
 
   // oxfmt-ignore
   return await new CompactEncrypt(new TextEncoder().encode(userinfoToken))

@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import { URL } from 'node:url';
 
@@ -79,7 +80,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
@@ -123,7 +124,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
       headers: {
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),

@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -81,7 +82,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(applicationStatusBasicInfoRequestEntity),
       retryOptions: {
@@ -118,7 +119,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(applicationStatusSinRequestEntity),
       retryOptions: {

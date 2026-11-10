@@ -1,5 +1,6 @@
 import { invariant } from '@dts-stn/invariant';
 import { ATTR_ERROR_TYPE, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
+import { Redacted } from 'effect';
 import { createClient, createSentinel } from 'redis';
 import type { RedisClientType, RedisSentinelType } from 'redis';
 
@@ -69,7 +70,7 @@ function createRedisClient(config: RedisStandaloneClientServerConfig): RedisClie
   const client = createClient({
     url: `redis://${config.REDIS_STANDALONE_HOST}:${config.REDIS_STANDALONE_PORT}`,
     username: config.REDIS_USERNAME,
-    password: config.REDIS_PASSWORD,
+    password: config.REDIS_PASSWORD && Redacted.value(config.REDIS_PASSWORD),
     commandOptions: {
       timeout: config.REDIS_COMMAND_TIMEOUT_SECONDS * 1000,
     },
@@ -132,14 +133,14 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
     ],
     sentinelClientOptions: {
       username: config.REDIS_SENTINEL_USERNAME,
-      password: config.REDIS_SENTINEL_PASSWORD,
+      password: config.REDIS_SENTINEL_PASSWORD && Redacted.value(config.REDIS_SENTINEL_PASSWORD),
     },
     commandOptions: {
       timeout: config.REDIS_COMMAND_TIMEOUT_SECONDS * 1000,
     },
     nodeClientOptions: {
       username: config.REDIS_USERNAME,
-      password: config.REDIS_PASSWORD,
+      password: config.REDIS_PASSWORD && Redacted.value(config.REDIS_PASSWORD),
 
       socket: {
         reconnectStrategy: exponentialBackoffReconnectionStrategy,

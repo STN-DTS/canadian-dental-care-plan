@@ -1,4 +1,5 @@
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_OTEL_EVENT_NAME, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+import { Redacted } from 'effect';
 import type { RequestHandler } from 'express';
 import expressSession from 'express-session';
 import { minimatch } from 'minimatch';
@@ -154,7 +155,7 @@ export async function createSessionMiddleware(isProduction: boolean, serverConfi
   const generatedSessionMiddleware = expressSession({
     store: sessionStore,
     name: SESSION_COOKIE_NAME,
-    secret: SESSION_COOKIE_SECRET,
+    secret: Redacted.value(SESSION_COOKIE_SECRET),
     genid: () => randomUUID(),
     proxy: true,
     resave: false,

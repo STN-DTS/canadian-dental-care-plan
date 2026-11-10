@@ -1,4 +1,4 @@
-import { Option } from 'effect';
+import { Option, Redacted } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -55,7 +55,7 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
-      INTEROP_API_SUBSCRIPTION_KEY: 'SUBSCRIPTION_KEY',
+      INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
       INTEROP_API_MAX_RETRIES: 10,
       INTEROP_API_BACKOFF_MS: 3,
     };
@@ -104,7 +104,7 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
         proxyUrl: serverConfigMock.HTTP_PROXY_URL,
         method: 'GET',
         headers: {
-          'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+          'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
         },
         retryOptions: {
           backoffMs: 3,
@@ -155,7 +155,7 @@ describe('DefaultGovernmentInsurancePlanRepository', () => {
         proxyUrl: serverConfigMock.HTTP_PROXY_URL,
         method: 'GET',
         headers: {
-          'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+          'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
         },
         retryOptions: {
           backoffMs: 3,

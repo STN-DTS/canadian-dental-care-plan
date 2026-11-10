@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { Request, Response } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, mockReset } from 'vitest-mock-extended';
@@ -21,7 +22,7 @@ describe('DefaultHCaptchaRepository', () => {
     mockReset(mockHttpClient);
     vi.mocked(createLogger).mockReturnValue(mockLogger);
 
-    mockServerConfig.HCAPTCHA_SECRET_KEY = 'synthetic-hcaptcha-secret';
+    mockServerConfig.HCAPTCHA_SECRET_KEY = Redacted.make('synthetic-hcaptcha-secret');
     mockServerConfig.HCAPTCHA_SITE_KEY = 'synthetic-hcaptcha-sitekey';
     mockServerConfig.HCAPTCHA_VERIFY_URL = 'https://hcaptcha.example.test/siteverify';
     mockServerConfig.HEALTH_PLACEHOLDER_REQUEST_VALUE = 'synthetic-health-token';

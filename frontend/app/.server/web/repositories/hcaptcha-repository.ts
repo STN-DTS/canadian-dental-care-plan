@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import { Request } from 'undici';
 
@@ -54,7 +55,7 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     const body = new URLSearchParams({
       sitekey: this.serverConfig.HCAPTCHA_SITE_KEY,
       response: hCaptchaResponse,
-      secret: this.serverConfig.HCAPTCHA_SECRET_KEY,
+      secret: Redacted.value(this.serverConfig.HCAPTCHA_SECRET_KEY),
     });
 
     if (ipAddress) {

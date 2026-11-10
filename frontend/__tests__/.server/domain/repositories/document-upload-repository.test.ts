@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { Response } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -25,10 +26,10 @@ const scanRequest = { filename: uploadRequest.filename, binary: uploadRequest.bi
 
 const serverConfig = {
   HTTP_PROXY_URL: 'http://proxy.example.test',
-  INTEROP_API_SUBSCRIPTION_KEY: 'subscription-key',
+  INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
   INTEROP_API_BASE_URI: 'https://interop.example.test',
   EWDU_ENCAPSULATION_USERNAME: 'username',
-  EWDU_ENCAPSULATION_PASSWORD: 'password',
+  EWDU_ENCAPSULATION_PASSWORD: Redacted.make('password'),
   EWDU_PROGRAM_ACTIVITY_ID: 'activity-id',
   INTEROP_API_MAX_RETRIES: 3,
   INTEROP_API_BACKOFF_MS: 100,
@@ -52,12 +53,12 @@ describe('DefaultDocumentUploadRepository', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': 'subscription-key',
       },
       body: JSON.stringify({
         ...uploadRequest,
         username: serverConfig.EWDU_ENCAPSULATION_USERNAME,
-        password: serverConfig.EWDU_ENCAPSULATION_PASSWORD,
+        password: 'password',
         programActivityIdentificationID: serverConfig.EWDU_PROGRAM_ACTIVITY_ID,
       }),
       retryOptions: { retries: 0, retryConditions: {} },
@@ -186,12 +187,12 @@ describe('DefaultDocumentUploadRepository', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': 'subscription-key',
       },
       body: JSON.stringify({
         ...scanRequest,
         username: serverConfig.EWDU_ENCAPSULATION_USERNAME,
-        password: serverConfig.EWDU_ENCAPSULATION_PASSWORD,
+        password: 'password',
         programActivityIdentificationID: serverConfig.EWDU_PROGRAM_ACTIVITY_ID,
       }),
       retryOptions: {

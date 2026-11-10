@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -14,7 +15,7 @@ describe('DefaultAddressValidationRepository', () => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
       INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH: 30,
-      INTEROP_API_SUBSCRIPTION_KEY: 'SUBSCRIPTION_KEY',
+      INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
     };
   });
 
@@ -63,7 +64,7 @@ describe('DefaultAddressValidationRepository', () => {
           headers: {
             'Accept-Language': 'en-CA',
             'Content-Type': 'application/json',
-            'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+            'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
           },
         },
       );
@@ -110,7 +111,7 @@ describe('DefaultAddressValidationRepository', () => {
           headers: {
             'Accept-Language': 'en-CA',
             'Content-Type': 'application/json',
-            'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+            'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
           },
         },
       );

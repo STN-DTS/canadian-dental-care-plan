@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import type { Response } from 'undici';
 import * as z from 'zod';
@@ -84,7 +85,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     return {
       ...requestBody,
       username: this.serverConfig.EWDU_ENCAPSULATION_USERNAME,
-      password: this.serverConfig.EWDU_ENCAPSULATION_PASSWORD,
+      password: this.serverConfig.EWDU_ENCAPSULATION_PASSWORD && Redacted.value(this.serverConfig.EWDU_ENCAPSULATION_PASSWORD),
       programActivityIdentificationID: this.serverConfig.EWDU_PROGRAM_ACTIVITY_ID,
     };
   }
@@ -104,7 +105,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+          'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
         },
         body: JSON.stringify(requestBody),
         // A retry can save the same file twice if the first response was lost.
@@ -140,7 +141,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(this.addCredentialsToRequestBody(scanDocumentRequestEntity)),
       retryOptions: {

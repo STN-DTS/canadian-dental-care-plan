@@ -1,4 +1,4 @@
-import { Option } from 'effect';
+import { Option, Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -56,7 +56,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(clientApplicationBasicInfoRequestEntity),
     });
@@ -91,7 +91,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(clientApplicationSinRequestEntity),
     });

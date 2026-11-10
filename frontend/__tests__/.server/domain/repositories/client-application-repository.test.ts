@@ -1,4 +1,4 @@
-import { Option } from 'effect';
+import { Option, Redacted } from 'effect';
 import { Response } from 'undici';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -45,7 +45,7 @@ describe('DefaultClientApplicationRepository', () => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
       HTTP_PROXY_URL: 'https://proxy.example.com',
-      INTEROP_API_SUBSCRIPTION_KEY: 'SUBSCRIPTION_KEY',
+      INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
     };
   });
 
@@ -88,7 +88,7 @@ describe('DefaultClientApplicationRepository', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+            'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
           },
           body: JSON.stringify(requestEntity),
         },
@@ -164,7 +164,7 @@ describe('DefaultClientApplicationRepository', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': serverConfigMock.INTEROP_API_SUBSCRIPTION_KEY,
+          'Ocp-Apim-Subscription-Key': 'SUBSCRIPTION_KEY',
         },
         body: JSON.stringify(requestEntity),
       });

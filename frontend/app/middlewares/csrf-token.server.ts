@@ -14,6 +14,7 @@
 import { createCookie } from 'react-router';
 
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { Redacted } from 'effect';
 import { createCsrfTokenMiddleware } from 'remix-utils/middleware/csrf-token';
 
 import { createLogger } from '~/.server/logging/logger-factory';
@@ -28,14 +29,14 @@ const csrfCookie = createCookie(CSRF_TOKEN_COOKIE_NAME, {
   path: '/',
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  secrets: CSRF_TOKEN_COOKIE_SECRET ? [CSRF_TOKEN_COOKIE_SECRET] : undefined,
+  secrets: CSRF_TOKEN_COOKIE_SECRET ? [Redacted.value(CSRF_TOKEN_COOKIE_SECRET)] : undefined,
   sameSite: 'lax',
 });
 
 const [csrfTokenMiddleware, getCsrfToken] = createCsrfTokenMiddleware({
   cookie: csrfCookie,
   formDataKey: CSRF_FORM_DATA_KEY,
-  secret: CSRF_TOKEN_SECRET,
+  secret: CSRF_TOKEN_SECRET && Redacted.value(CSRF_TOKEN_SECRET),
   onInvalidToken() {
     log.debug('Invalid CSRF token', { [ATTR_ERROR_TYPE]: 'invalid_csrf_token' });
     return new Response('Invalid CSRF token', { status: 403 });

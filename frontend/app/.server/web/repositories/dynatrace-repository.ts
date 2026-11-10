@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -36,7 +37,7 @@ export class DefaultDynatraceRepository implements DynatraceRepository {
       return null;
     }
 
-    const retrieveRumScriptUrl = new URL(expandTemplate(this.serverConfig.DYNATRACE_API_RUM_SCRIPT_URI, { token: this.serverConfig.DYNATRACE_API_RUM_SCRIPT_TOKEN ?? '' }));
+    const retrieveRumScriptUrl = new URL(expandTemplate(this.serverConfig.DYNATRACE_API_RUM_SCRIPT_URI, { token: this.serverConfig.DYNATRACE_API_RUM_SCRIPT_TOKEN ? Redacted.value(this.serverConfig.DYNATRACE_API_RUM_SCRIPT_TOKEN) : '' }));
     this.log.debug('Dynatrace RUM script request URL generated');
 
     const response = await this.httpClient.instrumentedFetch('http.client.dynatrace-api.retrieve-rum-script.gets', retrieveRumScriptUrl, { proxyUrl: this.serverConfig.HTTP_PROXY_URL });

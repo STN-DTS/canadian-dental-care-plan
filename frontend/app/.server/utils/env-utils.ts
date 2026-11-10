@@ -4,6 +4,7 @@ import * as z from 'zod';
 
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import { singleton } from '~/.server/utils/instance-registry';
+import { stringToRedacted } from '~/.server/utils/zod-utils';
 import { isValidDateTimeString } from '~/utils/date-utils';
 import type { ClientEnv } from '~/utils/env-utils';
 import { clientEnvSchema } from '~/utils/env-utils';
@@ -80,30 +81,30 @@ const serverEnv = clientEnvSchema.extend({
 
   // interop api settings
   INTEROP_API_BASE_URI: z.url(),
-  INTEROP_API_SUBSCRIPTION_KEY: z.string().trim().min(1),
+  INTEROP_API_SUBSCRIPTION_KEY: z.string().trim().min(1).pipe(stringToRedacted),
   INTEROP_API_MAX_RETRIES: z.coerce.number().default(3),
   INTEROP_API_BACKOFF_MS: z.coerce.number().default(100),
   INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH: z.coerce.number().int().positive().default(30),
   INTEROP_APPLICANT_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
-  INTEROP_APPLICANT_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).optional(),
+  INTEROP_APPLICANT_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
   INTEROP_BENEFIT_APPLICATION_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
-  INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).optional(),
+  INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
   INTEROP_CCT_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
-  INTEROP_CCT_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).optional(),
+  INTEROP_CCT_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
   INTEROP_CCT_API_COMMUNITY: z.string().default('CDCP'),
   INTEROP_STATUS_CHECK_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
-  INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).optional(),
+  INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
 
   // Enterprise Wide Document Upload settings
   EWDU_ENCAPSULATION_USERNAME: z.string().default('CDCP'),
-  EWDU_ENCAPSULATION_PASSWORD: z.string().optional(),
+  EWDU_ENCAPSULATION_PASSWORD: z.string().pipe(stringToRedacted).optional(),
   EWDU_PROGRAM_ACTIVITY_ID: z.string().default('CDCP'),
 
   // simulation/testing date settings
   APPLICATION_CURRENT_DATE: z.string().optional(),
 
   // auth/oidc settings
-  AUTH_JWT_PRIVATE_KEY: z.string().refine(isValidPrivateKey),
+  AUTH_JWT_PRIVATE_KEY: z.string().refine(isValidPrivateKey).pipe(stringToRedacted),
   AUTH_JWT_PUBLIC_KEY: z.string().refine(isValidPublicKey),
   AUTH_LOGOUT_REDIRECT_URL: z.url(),
   AUTH_RAOIDC_BASE_URL: z.string().trim().min(1),
@@ -112,13 +113,13 @@ const serverEnv = clientEnvSchema.extend({
   AUTH_RASCL_LOGOUT_URL: z.string().trim().min(1),
 
   // GC Notify settings (@see https://documentation.notification.canada.ca/en/)
-  GC_NOTIFY_API_KEY: z.string().trim().min(1),
+  GC_NOTIFY_API_KEY: z.string().trim().min(1).pipe(stringToRedacted),
   GC_NOTIFY_ENGLISH_TEMPLATE_ID: z.string().trim().min(1).default('8b77428b-56a5-415c-9b48-ef1f10c128e7'),
   GC_NOTIFY_FRENCH_TEMPLATE_ID: z.string().trim().min(1).default('2991903c-56f9-4c4e-af2e-db3ecf04b44c'),
 
   // hCaptcha settings (@see https://docs.hcaptcha.com)
   HCAPTCHA_MAX_SCORE: z.coerce.number().default(0.79),
-  HCAPTCHA_SECRET_KEY: z.string().trim().min(1).default('0x0000000000000000000000000000000000000000'),
+  HCAPTCHA_SECRET_KEY: z.string().trim().min(1).default('0x0000000000000000000000000000000000000000').pipe(stringToRedacted),
   HCAPTCHA_VERIFY_URL: z.url().default('https://api.hcaptcha.com/siteverify'),
 
   // http proxy settings
@@ -132,7 +133,7 @@ const serverEnv = clientEnvSchema.extend({
   SESSION_COOKIE_DOMAIN: z.string().trim().min(1).optional(),
   SESSION_COOKIE_PATH: z.string().trim().min(1).default('/'),
   SESSION_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
-  SESSION_COOKIE_SECRET: z.string().trim().min(16).default(randomUUID()),
+  SESSION_COOKIE_SECRET: z.string().trim().min(16).default(randomUUID()).pipe(stringToRedacted),
   SESSION_COOKIE_HTTP_ONLY: z.string().transform(toBoolean).default(true),
   SESSION_COOKIE_SECURE: z.string().transform(toBoolean).default(true),
   SESSION_KEY_PREFIX: z.string().trim().min(1).default('SESSION:'),
@@ -144,12 +145,12 @@ const serverEnv = clientEnvSchema.extend({
   // Sentinels by default run listening for connections to TCP port 26379
   REDIS_SENTINEL_PORT: z.coerce.number().default(26_379),
   REDIS_SENTINEL_USERNAME: z.string().trim().min(1).optional(),
-  REDIS_SENTINEL_PASSWORD: z.string().trim().min(1).optional(),
+  REDIS_SENTINEL_PASSWORD: z.string().trim().min(1).pipe(stringToRedacted).optional(),
   REDIS_STANDALONE_HOST: z.string().trim().min(1).default('localhost'),
   // Redis by default run listening for connections to TCP port 6379
   REDIS_STANDALONE_PORT: z.coerce.number().default(6379),
   REDIS_USERNAME: z.string().trim().min(1).optional(),
-  REDIS_PASSWORD: z.string().trim().min(1).optional(),
+  REDIS_PASSWORD: z.string().trim().min(1).pipe(stringToRedacted).optional(),
   REDIS_COMMAND_TIMEOUT_SECONDS: z.string().transform(toNumber).default(1),
 
   // mocks settings
@@ -177,7 +178,7 @@ const serverEnv = clientEnvSchema.extend({
 
   // OpenTelemetry/Dynatrace settings
   OTEL_LOG_LEVEL: z.string().refine((val) => otelLogLevels.has(val)).default('info'),
-  OTEL_API_KEY: z.string().trim().transform(emptyToUndefined).optional(),
+  OTEL_API_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
   OTEL_ENVIRONMENT: z.string().trim().min(1).default('localhost'),
   OTEL_METRICS_ENDPOINT: z.string().trim().transform(emptyToUndefined).optional(),
   OTEL_METRICS_EXPORT_INTERVAL_MILLIS: z.coerce.number().default(60 * 1000),
@@ -189,7 +190,7 @@ const serverEnv = clientEnvSchema.extend({
 
   // Dynatrace OneAgent (RUM) - Manual insertion - Retrieve via REST API - Use the Dynatrace API to insert the RUM JavaScript.
   // @see https://docs.dynatrace.com/docs/platform-modules/digital-experience/web-applications/initial-setup/rum-injection#retrieve-via-rest-api
-  DYNATRACE_API_RUM_SCRIPT_TOKEN: z.string().trim().transform(emptyToUndefined).optional(),
+  DYNATRACE_API_RUM_SCRIPT_TOKEN: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
   DYNATRACE_API_RUM_SCRIPT_URI: z.string().trim().transform(emptyToUndefined).optional(),
   DYNATRACE_API_RUM_SCRIPT_URI_CACHE_TTL_SECONDS: z.coerce.number().default(1 * 60 * 60),
 
@@ -223,8 +224,8 @@ const serverEnv = clientEnvSchema.extend({
 
   // CSRF token and cookie configuration
   CSRF_TOKEN_COOKIE_NAME: z.string().trim().min(1).default('__CDCP||csrf'),
-  CSRF_TOKEN_COOKIE_SECRET: z.string().trim().min(1).optional(),
-  CSRF_TOKEN_SECRET: z.string().trim().min(1).optional(),
+  CSRF_TOKEN_COOKIE_SECRET: z.string().trim().min(1).pipe(stringToRedacted).optional(),
+  CSRF_TOKEN_SECRET: z.string().trim().min(1).pipe(stringToRedacted).optional(),
 
   /**
    * Defines the duration (in seconds) the application killswitch remains active once engaged.

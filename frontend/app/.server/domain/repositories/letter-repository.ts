@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -98,7 +99,7 @@ export class DefaultLetterRepository implements LetterRepository {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
         'cct-community': this.serverConfig.INTEROP_CCT_API_COMMUNITY,
       },
       retryOptions: {
@@ -136,7 +137,7 @@ export class DefaultLetterRepository implements LetterRepository {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
         'cct-community': this.serverConfig.INTEROP_CCT_API_COMMUNITY,
       },
       retryOptions: {

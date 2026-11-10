@@ -1,3 +1,4 @@
+import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -92,7 +93,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(updateCommunicationPreferenceRequestEntity),
       retryOptions: {
@@ -120,7 +121,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(updatePhoneNumbersRequestEntity),
       retryOptions: {
@@ -148,7 +149,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(updateEmailAddressRequestEntity),
       retryOptions: {
@@ -176,7 +177,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(updateDentalBenefitsRequestEntity),
       retryOptions: {
@@ -204,7 +205,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
       },
       body: JSON.stringify(updateAddressRequestEntity),
       retryOptions: {

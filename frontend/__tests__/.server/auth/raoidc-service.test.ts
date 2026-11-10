@@ -1,5 +1,6 @@
 import type { redirect } from 'react-router';
 
+import { Redacted } from 'effect';
 import type { JWTPayload } from 'jose';
 import type { Memoized, Options } from 'micro-memoize';
 import { subtle } from 'node:crypto';
@@ -35,7 +36,7 @@ describe('DefaultRaoidcService', () => {
     AUTH_RAOIDC_BASE_URL: 'https://example.com/auth',
     AUTH_RAOIDC_CLIENT_ID: 'mock_client_id',
     AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS: 10,
-    AUTH_JWT_PRIVATE_KEY: 'mock_private_key',
+    AUTH_JWT_PRIVATE_KEY: Redacted.make('mock_private_key'),
     AUTH_LOGOUT_REDIRECT_URL: 'https://example.com/auth/logout',
     HTTP_PROXY_URL: 'https://example.com/proxy',
   };
