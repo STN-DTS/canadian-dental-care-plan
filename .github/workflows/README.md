@@ -76,36 +76,19 @@ dependency automation, and report-upload workflows do not repeat these checks.
 
 ### Nonprod branch guards
 
-[build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts
-automatically only for pushes to `main` or `release/v*` that change at least one
-of these repository-relative paths:
-
-```yaml
-paths:
-  - .github/actions/aqua-scan/**
-  - .github/actions/azure-acr-login/**
-  - .github/actions/generate-build-vars/**
-  - .github/actions/push-container-image/**
-  - .github/actions/sign-container-image/**
-  - .github/workflows/build-publish-main-nonprod.yaml
-  - frontend/**
-  - package.json
-  - pnpm-lock.yaml
-  - pnpm-workspace.yaml
-  - oxfmt.config.ts
-  - oxlint.config.ts
-  - vitest.config.ts
-  - .dockerignore
-```
-
-The `detect-changes` job checks the same paths before enabling frontend testing
-and publishing. Changes limited to GitOps, infrastructure, documentation outside
-these paths, or unrelated local actions do not trigger this workflow. Keep both
-path lists aligned when adding or removing a local action used by the workflow.
+[build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts for
+every push to `main` or `release/v*`. The push trigger has no `paths` filter
+because GitHub would drop a push that creates a release branch from an
+unchanged `main` before any job runs. The `detect-changes` job enables frontend
+testing and publishing only when the push changes at least one of the paths in
+its `dorny/paths-filter` list (frontend sources, root workspace configuration,
+`.dockerignore`, this workflow, and the local actions it uses). Other pushes
+finish after the lightweight gate and change-detection jobs. Update that list
+when adding or removing a local action used by the workflow.
 
 Manual dispatches and reusable calls bypass path-based change detection. A push
-that creates a `release/v*` branch also enables frontend jobs once the workflow
-has been triggered; it does not bypass the push path filter. Publishing still
+that creates a `release/v*` branch also enables frontend jobs, even when the
+branch has no changes relative to its starting point. Publishing still
 requires a `main` or `release/v*` ref and successful version resolution and tests.
 Version resolution runs as the first step of the image-build job, after frontend
 tests and formatting succeed, before checkout or authentication.

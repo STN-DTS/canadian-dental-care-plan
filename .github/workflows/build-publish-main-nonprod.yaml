@@ -19,22 +19,8 @@ on:
     branches:
       - main
       - release/v*
-    paths:
-      - .github/actions/aqua-scan/**
-      - .github/actions/azure-acr-login/**
-      - .github/actions/generate-build-vars/**
-      - .github/actions/push-container-image/**
-      - .github/actions/setup-pnpm/**
-      - .github/actions/sign-container-image/**
-      - .github/workflows/build-publish-main-nonprod.yaml
-      - frontend/**
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - oxfmt.config.ts
-      - oxlint.config.ts
-      - vitest.config.ts
-      - .dockerignore
+  # No push path filter: it would drop release branch creation pushes before
+  # detect-changes can enable their first build.
   workflow_call: {}
   workflow_dispatch:
     inputs:
