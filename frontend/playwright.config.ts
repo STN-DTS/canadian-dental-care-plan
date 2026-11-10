@@ -22,6 +22,7 @@ function getReporterConfig(): ReporterDescription[] {
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/error-correlation.spec.ts',
   timeout: 15 * 1000,
   expect: { timeout: 10 * 1000 },
   fullyParallel: true,

@@ -1,3 +1,5 @@
+import { data } from 'react-router';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppError, isAppError } from '~/errors/app-error';
@@ -12,11 +14,15 @@ describe('error extraction', () => {
     const error = new AppError('Synthetic failure', ErrorCodes.TEST_ERROR_CODE, { correlationId: ' AB-123456 ' });
     const serialized = JSON.parse(JSON.stringify(error));
     const wrapped = { status: 500, statusText: 'Internal Server Error', internal: false, data: serialized };
+    const thrownData = data(error, { status: 500 });
 
     expect(getAppError(error)).toBe(error);
     expect(getAppError(wrapped)).toEqual(serialized);
+    expect(getAppError(thrownData)).toBe(error);
+    expect(getAppError(JSON.parse(JSON.stringify(thrownData)))).toEqual(serialized);
     expect(getCorrelationId(error)).toBe(' AB-123456 ');
     expect(getCorrelationId(wrapped)).toBe(error.correlationId);
+    expect(getCorrelationId(thrownData)).toBe(error.correlationId);
     expect(randomString).not.toHaveBeenCalled();
   });
 
@@ -24,9 +30,20 @@ describe('error extraction', () => {
     const error = { name: 'AppError', correlationId };
     expect(getCorrelationId(error)).toBeUndefined();
     expect(getCorrelationId({ status: 500, statusText: '', internal: false, data: error })).toBeUndefined();
+    expect(getCorrelationId(data(error, { status: 500 }))).toBeUndefined();
   });
 
-  it.each([undefined, null, new Error('Synthetic failure'), { correlationId: 'AB-123456' }, { data: { name: 'AppError', correlationId: 'AB-123456' } }])('ignores non-AppError shapes: %j', (error) => {
+  it.each([
+    undefined,
+    null,
+    new Error('Synthetic failure'),
+    { correlationId: 'AB-123456' },
+    { data: { name: 'AppError', correlationId: 'AB-123456' } },
+    { type: 'DataWithResponseInit', data: { name: 'AppError', correlationId: 'AB-123456' } },
+    { type: 'OtherWrapper', init: null, data: { name: 'AppError', correlationId: 'AB-123456' } },
+    data(new Error('Synthetic failure'), { status: 500 }),
+    new Response(null, { status: 400 }),
+  ])('ignores non-AppError shapes: %j', (error) => {
     expect(getAppError(error)).toBeUndefined();
     expect(getCorrelationId(error)).toBeUndefined();
   });

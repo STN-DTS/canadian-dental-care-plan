@@ -8,7 +8,7 @@ export function getAppError(error: unknown): AppError | undefined {
     return error;
   }
 
-  if (isRouteErrorResponse(error) && isAppError(error.data)) {
+  if ((isRouteErrorResponse(error) || (typeof error === 'object' && error !== null && 'type' in error && error.type === 'DataWithResponseInit' && 'data' in error && 'init' in error)) && isAppError(error.data)) {
     return error.data;
   }
 }

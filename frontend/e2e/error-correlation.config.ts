@@ -6,6 +6,7 @@ export default defineConfig({
   ...base,
   testDir: '.',
   testMatch: 'error-correlation.spec.ts',
+  testIgnore: [],
   workers: 1,
   retries: 0,
   reporter: 'list',

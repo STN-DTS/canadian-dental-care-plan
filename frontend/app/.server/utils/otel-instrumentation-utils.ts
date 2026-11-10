@@ -34,9 +34,8 @@ import {
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import { singleton } from '~/.server/utils/instance-registry';
-import { isAppError } from '~/errors/app-error';
 import type { AppError } from '~/errors/app-error';
-import { getCorrelationId } from '~/errors/error-predicates';
+import { getAppError, getCorrelationId } from '~/errors/error-predicates';
 
 // -----------------------------------------------------------------------------
 // Constants & types
@@ -300,10 +299,11 @@ export function recordError(span: Span, error: unknown, signal?: AbortSignal): v
   const captured = context.active().getValue(APP_ERROR_CAPTURE_KEY) as AppErrorCapture | undefined;
 
   if (error !== undefined && error !== null && !(error instanceof Response) && !(signal ?? captured?.signal)?.aborted) {
+    const applicationError = getAppError(error);
     span.setAttribute('correlationId', getCorrelationId(error) ?? 'N/A');
 
-    if (isAppError(error)) {
-      span.recordException({ name: error.name, message: error.msg, code: error.errorCode, stack: error.stack });
+    if (applicationError) {
+      span.recordException({ name: 'AppError', code: applicationError.errorCode });
     } else if (error instanceof Error) {
       span.recordException(error);
     } else {
@@ -311,7 +311,7 @@ export function recordError(span: Span, error: unknown, signal?: AbortSignal): v
     }
 
     span.setStatus({ code: SpanStatusCode.ERROR, message: 'internal_error' });
-    span.setAttribute(ATTR_ERROR_TYPE, isAppError(error) || error instanceof Error ? error.name : 'UnknownError');
+    span.setAttribute(ATTR_ERROR_TYPE, applicationError ? 'AppError' : error instanceof Error ? error.name : 'UnknownError');
   }
 }
 
@@ -363,15 +363,17 @@ async function captureAppError<T>(handler: () => T | Promise<T>, signal: AbortSi
   try {
     return await handler();
   } catch (error) {
-    if (isAppError(error) && !signal.aborted) {
+    const applicationError = getAppError(error);
+
+    if (applicationError && !signal.aborted) {
       if (captured) {
-        captured.error = error;
+        captured.error = applicationError;
       }
 
       const span = trace.getActiveSpan();
 
       if (span) {
-        recordError(span, error, signal);
+        recordError(span, applicationError, signal);
       }
     }
 
