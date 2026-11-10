@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<!-- saved from url=(0121)file:///C:/Users/sebastien.comeau/.copilot/chats/dafd4b81-2a01-47c7-937e-9a1b9652fd8f/prototypes/p7-ux-common-ground.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Before you start: UX mockup vs common ground - Canadian Dental Care Plan prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<!-- Optional web fonts: if offline, the font stacks below fall back to system fonts. -->
+<link rel="stylesheet" href="./cdcp-renewal-2027-ux-common-ground_files/css2">
+<style>
+  :root {
+    --font-heading: "Lato", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Noto Sans", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    --text: #333333;
+    --black: #000000;
+    --white: #ffffff;
+    --link: #284162;
+    --link-visited: #7834bc;
+    --link-hover: #0535d2;
+    --focus: #0535d2;
+    --gc-red: #af3c43;
+    --header-border: #38414d;
+    --footer-bg: #26374a;
+
+    --primary: #26374a;
+    --primary-hover: #2b4380;
+    --secondary-hover-bg: #d7e5f5;
+
+    --green-700: #15803d;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --red-100: #fee2e2;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --zinc-100: #f4f4f5;
+    --zinc-200: #e4e4e7;
+
+    /* Mockup measurements (UX hub) */
+    --mock-chevron: #6584a9;
+    --radius-card: 6px;
+    --radius-btn: 4px;
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --radius-sm: 0.125rem;
+    --radius-lg: 0.5rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--white);
+  }
+  h1, h2, h3 { font-family: var(--font-heading); color: var(--black); }
+  p { margin: 0 0 1rem; }
+
+  a { color: var(--link); text-decoration: underline; text-underline-offset: 0.15em; }
+  a:visited { color: var(--link-visited); }
+  a:hover { color: var(--link-hover); }
+  a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .sr-only {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+  }
+  .icon { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.125em; }
+
+  /* ---------- GC page shell (from P1) ---------- */
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 1rem; }
+  .skip-link { position: absolute; left: 1rem; top: -100px; z-index: 100; background: #fff; color: #284162; padding: .5rem 1rem; border: 2px solid #284162; }
+  .skip-link:focus { top: .5rem; }
+  .alpha-banner { background: #1e293b; color: #fff; font-size: 1rem; }
+  .alpha-banner p { margin: 0; padding: .5rem 0; }
+  .alpha-tag { display: inline-block; margin-right: .5rem; padding: 0 .5rem; border: 1px solid #fff; border-radius: .125rem; font-weight: 700; text-transform: uppercase; font-size: .875rem; }
+  .brand { border-bottom: 4px solid #38414d; }
+  .brand-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1rem; padding-bottom: 1rem; }
+  .fip { display: inline-flex; align-items: center; gap: .625rem; color: #000; text-decoration: none; }
+  .fip:visited, .fip:hover { color: #000; }
+  .fip:hover .fip-text { text-decoration: underline; }
+  .fip-flag { width: 2.5rem; height: 1.25rem; flex: none; }
+  .fip-text { display: flex; flex-direction: column; font-family: var(--font-heading); font-weight: 700; font-size: .95rem; line-height: 1.15; }
+  .lang-link { font-size: 1rem; }
+  .breadcrumbs { padding: .75rem 0; font-size: 1rem; }
+  .breadcrumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem 0; }
+  .breadcrumbs li { display: inline-flex; align-items: center; }
+  .breadcrumbs li + li::before { content: "\203A"; margin: 0 .6rem; color: #4b5563; }
+  .footer-main { background: #26374a; color: #fff; padding: 1.5rem 0; }
+  .footer-main h2 { color: #fff; font-family: var(--font-heading); font-size: 1.25rem; margin: 0 0 .5rem; }
+  .footer-main ul { list-style: none; margin: 0; padding: 0; }
+  .footer-main a, .footer-main a:visited, .footer-main a:hover { color: #fff; }
+  .footer-main a:focus-visible { outline-color: #fff; }
+  .footer-sub { background: #fff; padding: 1rem 0; }
+  .footer-sub-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+  .footer-sub ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; font-size: 1rem; }
+  .footer-sub li + li::before { content: "\2022"; margin: 0 .6rem; color: #4b5563; }
+  .wordmark { margin: 0; font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 1.75rem; color: #000; letter-spacing: .02em; }
+  /* ---------- end of GC page shell ---------- */
+
+  /* ---------- Views (?view=ux and ?view=cg): identical layout, measured from the UX mockup ---------- */
+  main { display: block; padding-top: 1rem; padding-bottom: 3rem; }
+  main:focus { outline: none; }
+  .page-col { max-width: 42.75rem; }
+
+  .app-label { font-family: var(--font-body); font-weight: 400; font-size: 1.0625rem; margin: 0.875rem 0 0.4375rem; color: var(--black); }
+  h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.2; margin: 0 0 2.375rem; }
+  h1::after { content: ""; display: block; width: 68px; height: 6px; margin-top: 0.5rem; background: var(--gc-red); }
+  h1:focus { outline: none; }
+  @media (max-width: 480px) { h1 { font-size: 1.875rem; } }
+
+  .hub-intro { margin-bottom: 1.3125rem; }
+  .hub-count { margin-bottom: 1.6875rem; }
+
+  .cards { display: flex; flex-direction: column; gap: 1.875rem; margin: 1.6875rem 0 0; }
+  .card {
+    border: 1px solid var(--zinc-200); border-radius: var(--radius-card); background: var(--white);
+    box-shadow: var(--shadow-card);
+    padding: 1.3125rem 1.5rem 1.5rem;
+  }
+  /* Figma error state: red border on all sides, warning line directly above the card. */
+  .card--error { border: 2px solid var(--red-600); padding: calc(1.3125rem - 1px) calc(1.5rem - 1px) calc(1.5rem - 1px); }
+  .card-error { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0 0 0.5rem; color: var(--red-700); font-size: 1rem; font-weight: 500; }
+  .card-error .icon { width: 1.25rem; height: 1.25rem; margin-top: 0.1em; }
+  .card-error strong { font-weight: 700; }
+  /* The mockup's title wraps before "Statement": its header keeps a column for the status tag. */
+  .card-header { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; align-items: start; gap: 0.5rem 1rem; }
+  .card-title { margin: 0 0 0.75rem; font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; line-height: 1.5; color: var(--black); }
+  .card-action { justify-self: end; padding-top: 0.125rem; }
+  .card-desc { margin: 0; font-size: 1.025rem; line-height: 1.6; }
+  .card-divider { height: 0; border-top: 1px solid var(--zinc-200); margin: 1.5625rem 0 1.5rem; }
+  /* Completed card (Figma): the answer summary replaces the description. */
+  .card-answer { font-size: 1.025rem; line-height: 1.6; margin: 0; }
+  .card-answer p { margin: 0; }
+  .card-answer ul { margin: 0; padding-left: 1.5rem; }
+  .card-entry .input-error { display: flex; width: fit-content; margin-bottom: 0.75rem; }
+  @media (max-width: 400px) {
+    .card-header { grid-template-columns: minmax(0, 1fr); }
+    .card-action { justify-self: start; padding-top: 0; margin-bottom: 0.75rem; }
+    .card-action:empty { display: none; }
+  }
+
+  /* UX mockup: solid navy "button" (it is a link) */
+  .ux-btn, .ux-btn:visited {
+    display: inline-block; max-width: 100%;
+    padding: 0.5rem 1rem; border-radius: var(--radius-btn);
+    background: var(--primary); color: var(--white);
+    font-family: var(--font-body); font-weight: 500; font-size: 1.125rem; line-height: 1.5;
+    text-decoration: none;
+  }
+  .ux-btn:hover { background: var(--primary-hover); color: var(--white); }
+  .ux-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+  /* Common ground: prominent text link */
+  /* Inline (not flex) so a wrapped link keeps its arrow right after the last word. */
+  .entry-link, .entry-link:visited {
+    display: inline;
+    font-family: var(--font-heading); font-weight: 700; font-size: 1.125rem; line-height: 1.5;
+    color: var(--link); text-decoration: none;
+  }
+  .entry-link > span { text-decoration: underline; text-underline-offset: 0.15em; }
+  .entry-link > .icon { margin-left: 0.375rem; vertical-align: -0.15em; }
+  .entry-link > .icon:first-child { margin-left: 0; margin-right: 0.5rem; }
+  .entry-link:hover { color: var(--link-hover); }
+  .entry-link:hover > span { text-decoration-thickness: 2px; }
+
+  /* Completed card action (Figma): pencil-square icon + plain underlined link */
+  .edit-link, .edit-link:visited {
+    font-family: var(--font-body); font-weight: 500; font-size: 1.125rem; line-height: 1.5;
+    color: var(--link); text-decoration: none;
+  }
+  .edit-link > span { text-decoration: underline; text-underline-offset: 0.15em; }
+  .edit-link > .icon { width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; vertical-align: -0.2em; }
+  .edit-link:hover { color: var(--link-hover); }
+  .edit-link:hover > span { text-decoration-thickness: 2px; }
+
+  /* Next: same two-line card shape in both views */
+  .hub-next { margin-top: 3.375rem; }
+  .nav-card, .nav-card:visited {
+    display: inline-flex; align-items: center; gap: 0.75rem;
+    width: 15.5rem; max-width: 100%;
+    margin: 0; padding: 0.8125rem 1rem 0.8125rem 1.75rem;
+    border: 2px solid var(--gray-300); border-radius: var(--radius-btn);
+    background: var(--white); color: var(--black);
+    font: inherit; text-align: left; text-decoration: none; cursor: pointer;
+  }
+  .nav-card:hover { color: var(--black); border-color: var(--gray-500); }
+  .nav-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .nav-card__text { display: flex; flex-direction: column; min-width: 0; }
+  .nav-card__small { font-family: var(--font-body); font-size: 1rem; line-height: 1.5; font-weight: 400; }
+  .nav-card__large { font-family: var(--font-heading); font-size: 1.125rem; line-height: 1.75; font-weight: 700; }
+  .nav-card .icon { width: 1.75rem; height: 1.75rem; }
+  .nav-card--primary { background: var(--primary); border-color: var(--primary); color: var(--white); }
+  .nav-card--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--white); }
+
+  /* Badge / status tag (P1) */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border: 1px solid transparent; border-radius: 9999px; padding: 0.25rem 0.5rem;
+    font-size: 1rem; line-height: 1; font-weight: 500; white-space: nowrap;
+  }
+  .badge--default { border-color: var(--gray-300); background: var(--white); color: var(--black); }
+  .badge--success { background: var(--green-700); color: var(--white); }
+
+  /* Buttons (P1) */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border: 2px solid transparent; border-radius: var(--radius-sm);
+    font-family: var(--font-heading); font-weight: 700; line-height: 1.25; text-align: center; text-decoration: none;
+    cursor: pointer;
+  }
+  .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+  .btn-lg { padding: 0.75rem 1.25rem; font-size: 1rem; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: var(--white); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; margin-top: 2rem; }
+  @media (max-width: 480px) { .form-actions .btn { width: 100%; } }
+
+  .back-link, .back-link:visited { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; color: var(--link); text-decoration: none; }
+  .back-link > span { text-decoration: underline; text-underline-offset: 0.15em; }
+  .back-link:hover { color: var(--link-hover); }
+
+  /* Error summary + inline errors (P1) */
+  .error-summary { border: 4px solid var(--red-600); padding: 1rem; margin: 0.75rem 0 1.25rem; }
+  .error-summary:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .error-summary h2 { margin: 0 0 0.75rem; font-size: 1.125rem; font-weight: 700; line-height: 1.3; }
+  .error-summary ul { list-style: disc; margin: 0; padding-left: 1.5rem; }
+  .error-summary li + li { margin-top: 0.25rem; }
+  .error-summary a, .error-summary a:visited { color: var(--red-700); text-decoration: underline; }
+  .error-summary a:hover { color: var(--red-700); text-decoration-thickness: 2px; }
+  /* Hub error summary (Figma): "There is a problem", numbered links, under the counter. */
+  .error-summary--hub { border: 3px solid var(--red-600); padding: 1.25rem 1.5rem; margin: 0 0 1.75rem; }
+  .error-summary--hub h2 { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 400; line-height: 1.3; color: var(--black); margin: 0 0 0.75rem; }
+  .error-summary--hub ol { list-style: decimal; margin: 0; padding-left: 1.5rem; }
+  .error-summary--hub li + li { margin-top: 0.25rem; }
+  .input-error {
+    display: inline-flex; align-items: flex-start; gap: 0.5rem;
+    margin: 0 0 0.5rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm);
+    background: var(--red-100); color: var(--red-700); font-weight: 500; font-size: 1rem;
+  }
+  .input-error .icon { margin-top: 0.2em; }
+
+  /* Form fields (P1) */
+  .field { margin: 0 0 1.75rem; padding: 0; border: 0; min-width: 0; }
+  .field--error { border-left: 4px solid var(--red-600); padding-left: 1rem; }
+  .field-legend { display: block; padding: 0; margin: 0 0 0.5rem; font-weight: 700; color: var(--black); }
+  .required { font-weight: 400; color: var(--text); }
+  .choices { display: flex; flex-direction: column; gap: 0.5rem; }
+  .choice { display: flex; align-items: flex-start; gap: 0.75rem; }
+  .choice input { flex: none; width: 1.5rem; height: 1.5rem; margin: 0.05rem 0 0; accent-color: var(--primary); cursor: pointer; }
+  .choice label { cursor: pointer; }
+  .choice input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .choice-wrap.field--error { margin: 0.25rem 0; }
+  details.disclosure { margin: 0 0 1rem; border: 1px solid var(--zinc-200); border-radius: var(--radius-lg); padding: 0.75rem 1rem; }
+  details.disclosure summary { cursor: pointer; color: var(--link); text-decoration: underline; font-weight: 500; }
+  details.disclosure summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  details.disclosure[open] summary { margin-bottom: 0.5rem; }
+  details.disclosure p { margin: 0; }
+  .spoke-sub { font-size: 1.5rem; margin: 0 0 0.5rem; }
+
+  /* Prototype controls: not part of the design (static, outside <main>) */
+  .proto-controls { padding: 1rem 0; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 0.875rem; line-height: 1.4; color: #111827; }
+  .proto-controls details { display: inline-block; max-width: 100%; background: #fffbeb; border: 2px dashed var(--gray-600); border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
+  .proto-controls summary { cursor: pointer; font-weight: 700; }
+  .proto-controls summary:focus-visible, .proto-controls button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .pc-body { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+  .pc-body button { justify-self: start; font: inherit; padding: 0.3rem 0.5rem; border: 1px solid #374151; border-radius: 0.25rem; background: var(--white); color: #111827; cursor: pointer; }
+  .pc-note { margin: 0; color: #374151; }
+
+  /* ---------- Comparison page (no query string) ---------- */
+  .cmp-container { max-width: 1600px; margin: 0 auto; padding: 0 1rem; }
+  .cmp-proto-tag { font-size: 1rem; color: var(--text); }
+  .cmp-main { padding: 0 0 3rem; }
+  .cmp-titlebar { background: var(--primary); color: var(--white); padding: 1rem 0; }
+  .cmp-titlebar h1 { color: var(--white); font-size: 1.75rem; line-height: 1.25; margin: 0; }
+  .cmp-titlebar h1::after { display: none; }
+  .cmp-intro { max-width: 70ch; margin: 1.25rem 0 1rem; }
+  .cmp-intro p { margin: 0 0 0.5rem; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin: 0 0 0.5rem; padding: 1rem; border: 1px solid var(--gray-300); border-radius: var(--radius-card); background: var(--zinc-100); }
+  .toolbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .toolbar-label { font-weight: 700; color: var(--black); margin-right: 0.25rem; }
+  .tbtn {
+    display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem;
+    padding: 0.4rem 0.875rem; border: 2px solid var(--primary); border-radius: var(--radius-btn);
+    background: var(--white); color: var(--primary);
+    font: 500 1rem/1.25 var(--font-body); cursor: pointer;
+  }
+  .tbtn:hover { background: var(--secondary-hover-bg); }
+  .tbtn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .tbtn .icon { display: none; }
+  .tbtn[aria-pressed="true"] { background: var(--secondary-hover-bg); font-weight: 700; box-shadow: inset 0 -3px 0 var(--primary); }
+  .tbtn[aria-pressed="true"] .icon { display: inline-block; }
+  .tbtn--reset { border-color: var(--gray-600); color: var(--black); }
+  .toolbar-status { margin: 0 0 1.5rem; font-size: 1rem; color: var(--gray-600); }
+  .panels { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem 1.5rem; align-items: start; }
+  @media (min-width: 1100px) { .panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .panel-label { font-size: 1.375rem; margin: 0 0 0.5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+  .panel-label small { font-family: var(--font-body); font-size: 1rem; font-weight: 400; color: var(--gray-600); }
+  .panel-note { margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; border-left: 4px solid var(--gray-500); background: var(--zinc-100); font-size: 1rem; color: var(--text); }
+  .cmp-summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem 1.5rem; margin: 0 0 1.5rem; }
+  @media (min-width: 900px) { .cmp-summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .cmp-box { border: 1px solid var(--gray-300); border-radius: var(--radius-card); padding: 1rem 1.25rem; }
+  .cmp-box h2 { font-size: 1.375rem; margin: 0 0 0.5rem; }
+  .cmp-box ul, .cmp-box ol { margin: 0; padding-left: 1.25rem; font-size: 1rem; }
+  .cmp-box li + li { margin-top: 0.25rem; }
+  .toolbar-radios { flex: 1 1 100%; margin: 0; padding: 0.75rem 0 0; border: 0; border-top: 1px solid var(--gray-300); min-width: 0; }
+  .toolbar-radios legend { float: left; margin: 0 1rem 0.5rem 0; padding: 0; }
+  .tradio { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 1.5rem 0.25rem 0; font-size: 1rem; }
+  .tradio input, .pc-radios input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--primary); cursor: pointer; flex: none; }
+  .tradio input:focus-visible, .pc-radios input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .tradio label { cursor: pointer; }
+  .pc-radios { margin: 0; padding: 0.5rem 0 0; border: 0; border-top: 1px dashed var(--gray-600); min-width: 0; }
+  .pc-radios legend { font-weight: 700; padding: 0; margin-bottom: 0.25rem; }
+  .pc-radios div { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+  .row-tag { display: inline-block; margin-top: 0.25rem; padding: 0 0.5rem; border: 1px solid currentColor; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; white-space: nowrap; }
+  .row-tag--same { color: var(--green-700); }
+  .row-tag--diff { color: var(--red-700); }
+  .row-tag--open { color: var(--link); }
+  .row-tag--note { color: var(--gray-600); }
+  .panel iframe { display: block; width: 100%; height: 1400px; border: 1px solid var(--gray-500); background: var(--white); }
+  .changes { margin-top: 3rem; }
+  .changes h2 { font-size: 1.75rem; margin: 0 0 0.75rem; }
+  .table-scroll { overflow-x: auto; }
+  .table-scroll:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .changes table { width: 100%; min-width: 46rem; border-collapse: collapse; font-size: 1rem; line-height: 1.5; }
+  .changes caption { text-align: left; color: var(--gray-600); padding-bottom: 0.5rem; }
+  .changes th, .changes td { text-align: left; vertical-align: top; padding: 0.625rem 0.75rem; border: 1px solid var(--gray-300); }
+  .changes thead th { background: var(--zinc-100); color: var(--black); }
+  .changes tbody th { color: var(--black); width: 14%; }
+  .changes td:nth-child(2), .changes td:nth-child(3) { width: 24%; }
+</style>
+</head>
+<body>
+<template id="tpl-app"></template>
+
+
+<a class="skip-link" href="file:///C:/Users/sebastien.comeau/.copilot/chats/dafd4b81-2a01-47c7-937e-9a1b9652fd8f/prototypes/p7-ux-common-ground.html#main-content" data-focus="main-content">Skip to main content</a>
+<header class="site-header">
+  <div class="brand">
+    <div class="cmp-container brand-inner">
+      <span class="fip">
+        <svg class="fip-flag" viewBox="0 0 40 20" aria-hidden="true" focusable="false">
+          <rect x="0" y="0" width="10" height="20" fill="#ea2d37"></rect>
+          <rect x="30" y="0" width="10" height="20" fill="#ea2d37"></rect>
+          <path fill="#ea2d37" d="M20 3.2l1.4 2.7 1.7-.9-.5 3.9 2.3-2.2.5 1.4 2.4-.4-.8 2.5 1.1.5-3.6 3 .5 1.5-3.4-.6V18h-.9v-3.4l-3.4.6.5-1.5-3.6-3 1.1-.5-.8-2.5 2.4.4.5-1.4 2.3 2.2-.5-3.9 1.7.9z"></path>
+        </svg>
+        <span class="fip-text"><span>Government of Canada</span><span lang="fr">Gouvernement du Canada</span></span>
+      </span>
+      <span class="cmp-proto-tag">Canadian Dental Care Plan prototype, for discussion</span>
+    </div>
+  </div>
+</header>
+
+<main id="main-content" class="cmp-main" tabindex="-1">
+  <div class="cmp-titlebar">
+    <div class="cmp-container"><h1>Before you start: UX mockup vs common ground</h1></div>
+  </div>
+  <div class="cmp-container">
+    <div class="cmp-intro">
+      <p>Both panels show the same page. The common ground version adopts the Figma patterns and keeps only the changes listed under “What’s still different”.</p>
+      <p>Pick a state to show it in both panels, or click through each panel yourself. Open a view on its own: <a href="file:///C:/Users/sebastien.comeau/.copilot/chats/dafd4b81-2a01-47c7-937e-9a1b9652fd8f/prototypes/p7-ux-common-ground.html?view=ux">UX mockup (as proposed)</a> or <a href="file:///C:/Users/sebastien.comeau/.copilot/chats/dafd4b81-2a01-47c7-937e-9a1b9652fd8f/prototypes/p7-ux-common-ground.html?view=cg">Common ground</a>.</p>
+    </div>
+
+    <div class="cmp-summary">
+      <section class="cmp-box" aria-labelledby="agree-heading">
+        <h2 id="agree-heading">Where we already agree</h2>
+        <ul id="agree-list">
+          <li>“Complete” badge on finished sections</li>
+          <li>Answer summary replaces the description</li>
+          <li>“Edit answer” link with a pencil icon</li>
+          <li>“There is a problem” error summary</li>
+          <li>Card-level error with a red border</li>
+          <li>Next is never disabled</li>
+          <li>The “N of 2 sections completed” counter</li>
+          <li>Card layout</li>
+          <li>Descriptions that explain why each section is needed</li>
+          <li>Circle-check icon removed</li>
+          <li>Previous and Next cards on later hubs</li>
+        </ul>
+      </section>
+      <section class="cmp-box" aria-labelledby="diff-heading">
+        <h2 id="diff-heading">What’s still different</h2>
+        <ol id="diff-list">
+          <li><strong>Not-started section entry:</strong> solid navy button-styled link vs a prominent text link with an arrow. The main accessibility concern (Space key, screen-reader and voice-control lists, solid navy means Save on the spokes). Figma already uses a link once a section is complete, so a link here makes both states consistent.</li>
+          <li><strong>Tax filing entry wording:</strong> “Confirm tax filing” vs “Answer the tax filing question”. This changes the error text too.</li>
+          <li><strong>“Not started” tag:</strong> none vs a tag.</li>
+          <li><strong>Next styling:</strong> open question, use the toggle.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-group" role="group" aria-labelledby="toolbar-label">
+        <span class="toolbar-label" id="toolbar-label">Show both panels:</span>
+        <button type="button" class="tbtn" data-state="not-started" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>Not started</button>
+        <button type="button" class="tbtn" data-state="one" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>One section completed</button>
+        <button type="button" class="tbtn" data-state="all" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>All sections completed</button>
+        <button type="button" class="tbtn" data-state="next-missing" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>Next pressed with sections missing</button>
+      </div>
+      <button type="button" class="tbtn tbtn--reset" id="reset-both">Reset both</button>
+      <fieldset class="toolbar-radios" id="cmp-next-mode">
+        <legend class="toolbar-label">Common ground Next button</legend>
+        <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-solid" value="solid" checked=""><label for="cmp-next-solid">Always solid (recommended)</label></div>
+        <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-outlined" value="outlined"><label for="cmp-next-outlined">Outlined until required sections are complete, then solid (Figma)</label></div>
+      </fieldset>
+    </div>
+    <p class="toolbar-status" id="toolbar-status" role="status">Both panels show: Not started.</p>
+
+    <div class="panels">
+      <section class="panel" aria-labelledby="label-ux">
+        <h2 class="panel-label" id="label-ux">UX mockup (as proposed) <small>Clickable copy of the Figma</small></h2>
+        <p class="panel-note" id="ux-note">Based on the UX team’s Figma (CDCP 2027).</p>
+        <iframe id="frame-ux" title="UX mockup (as proposed): Before you start your application" src="./cdcp-renewal-2027-ux-common-ground_files/p7-ux-common-ground.html" style="height: 1396px;"></iframe>
+      </section>
+      <section class="panel" aria-labelledby="label-cg">
+        <h2 class="panel-label" id="label-cg">Common ground <small>Figma patterns, plus the changes below</small></h2>
+        <iframe id="frame-cg" title="Common ground: Before you start your application" src="./cdcp-renewal-2027-ux-common-ground_files/p7-ux-common-ground(1).html" style="height: 1364px;"></iframe>
+      </section>
+    </div>
+
+    <section class="changes" aria-labelledby="changes-heading">
+      <h2 id="changes-heading">What changed and why</h2>
+      <div class="table-scroll" tabindex="0" role="region" aria-labelledby="changes-heading">
+        <table>
+          <caption>Rows marked “Same” come first, then the differences, the open question and a note.</caption>
+          <thead>
+            <tr><th scope="col">Element</th><th scope="col">UX mockup</th><th scope="col">Common ground</th><th scope="col">Why</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row--same">
+              <th scope="row">Descriptions <span class="row-tag row-tag--same">Same</span></th>
+              <td>Each not-started card explains why the section is needed.</td>
+              <td>Same.</td>
+              <td>People know why we ask before they start.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Circle-check icon <span class="row-tag row-tag--same">Same</span></th>
+              <td>Removed.</td>
+              <td>Same.</td>
+              <td>It made unfinished sections look finished.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">“Complete” badge <span class="row-tag row-tag--same">Same</span></th>
+              <td>Green “Complete” pill with a check, top-right.</td>
+              <td>Same.</td>
+              <td>The status is text, so it doesn’t rely on colour or an icon.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Completed card <span class="row-tag row-tag--same">Same</span></th>
+              <td>The answer summary replaces the description.</td>
+              <td>Same.</td>
+              <td>People can check their answer without opening the section.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">“Edit answer” link <span class="row-tag row-tag--same">Same</span></th>
+              <td>Divider, then a pencil icon and an underlined “Edit answer” link. The button is gone.</td>
+              <td>Same, plus hidden context for screen readers (“Edit answer for tax filing”).</td>
+              <td>Several links named only “Edit answer” sound identical in a screen-reader links list.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Error summary <span class="row-tag row-tag--same">Same</span></th>
+              <td>“There is a problem” with numbered links, under the counter.</td>
+              <td>Same. Each link moves focus to the card’s link.</td>
+              <td>The error is announced and each message leads to the fix.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Card-level error <span class="row-tag row-tag--same">Same</span></th>
+              <td>Red border, and a warning line above the missing card naming the action to select.</td>
+              <td>Same.</td>
+              <td>People scrolling the cards see what’s missing in place. WCAG 3.3.1 is met by the summary; this is a usability extra.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Next never disabled <span class="row-tag row-tag--same">Same</span></th>
+              <td>Next stays enabled.</td>
+              <td>Same.</td>
+              <td>No unexplained disabled state. The error summary explains what’s missing.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Counter <span class="row-tag row-tag--same">Same</span></th>
+              <td>“N of 2 sections completed.”</td>
+              <td>Same.</td>
+              <td>Shows overall progress at a glance.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Card layout <span class="row-tag row-tag--same">Same</span></th>
+              <td>Title, description or answer, divider, then the action.</td>
+              <td>Same.</td>
+              <td>A familiar structure that is easy to scan.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Previous / Next <span class="row-tag row-tag--same">Same</span></th>
+              <td>Later hubs add an outlined “Previous” card with a left chevron, to the left of Next. Not on this hub.</td>
+              <td>Same.</td>
+              <td>Consistent navigation between hubs.</td>
+            </tr>
+            <tr class="row--same">
+              <th scope="row">Icons <span class="row-tag row-tag--same">Same</span></th>
+              <td>Muted blue chevron circle in Next, check in the badge, pencil on “Edit answer”, warning triangle on card errors.</td>
+              <td>Same, plus an arrow on the not-started entry link. All decorative and hidden from screen readers.</td>
+              <td>Icons support the text. They never carry meaning on their own.</td>
+            </tr>
+            <tr class="row--diff">
+              <th scope="row">Not-started section entry <span class="row-tag row-tag--diff">Different</span></th>
+              <td>Solid navy button-styled link.</td>
+              <td>A prominent bold, underlined link with an arrow, in the same place.</td>
+              <td>The main accessibility concern. Links go to a page; buttons act. A link dressed as a button breaks that: Space does nothing, and screen-reader and voice-control users look in the wrong list. Solid navy also means Save on the spokes. Figma already uses a link once complete, so this makes both states consistent.</td>
+            </tr>
+            <tr class="row--diff">
+              <th scope="row">Tax filing entry wording <span class="row-tag row-tag--diff">Different</span></th>
+              <td>“Confirm tax filing”</td>
+              <td>“Answer the tax filing question”</td>
+              <td>Name the task, not a one-click result. This changes the error text too.</td>
+            </tr>
+            <tr class="row--diff">
+              <th scope="row">“Not started” tag <span class="row-tag row-tag--diff">Different</span></th>
+              <td>None.</td>
+              <td>“Not started” tag before a section is done.</td>
+              <td>Every section shows its status as text, not only finished ones. A small difference.</td>
+            </tr>
+            <tr class="row--open">
+              <th scope="row">Next button <span class="row-tag row-tag--open">Open question</span></th>
+              <td>Outlined until required sections are complete, then solid navy. Optional sections don’t count.</td>
+              <td>Solid navy always (recommended). The toggle shows the Figma rule.</td>
+              <td>One solid primary action per page, and a stable button is easier to find. To decide in the meeting.</td>
+            </tr>
+            <tr class="row--note">
+              <th scope="row">Figma detail to check <span class="row-tag row-tag--note">Note</span></th>
+              <td colspan="3">In the Figma error state the counter reads “0 of 2” while Terms shows Complete; probably a static-mockup slip.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-sub">
+    <div class="cmp-container footer-sub-inner">
+      <p class="pc-note">Prototype for a design discussion. No data is kept.</p>
+      <p class="wordmark"><span aria-hidden="true">Canada</span><span class="sr-only">Symbol of the Government of Canada</span></p>
+    </div>
+  </div>
+</footer>
+<template id="tpl-compare"></template>
+
+<script>
+(function () {
+  'use strict';
+
+  var VIEW = new URLSearchParams(window.location.search).get('view');
+  if (VIEW !== 'ux' && VIEW !== 'cg') VIEW = null;
+  var tpl = document.getElementById(VIEW ? 'tpl-app' : 'tpl-compare');
+  document.body.insertBefore(tpl.content.cloneNode(true), tpl);
+
+  var SCENARIOS = ['not-started', 'one', 'all', 'next-missing', 'reset'];
+
+  /* ---------- Icons (inline SVG, decorative) ---------- */
+  function svg(body) {
+    return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + body + '</svg>';
+  }
+  var ICON = {
+    circle: svg('<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>'),
+    check: svg('<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>'),
+    arrowRight: svg('<path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>'),
+    arrowLeft: svg('<path d="M20 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>'),
+    pencilSquare: svg('<path d="M11 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.6 3.9a2 2 0 0 1 2.8 2.8L12 15.1l-3.7.9.9-3.7 8.4-8.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'),
+    warning: svg('<path d="M12 3.2L22 20.5H2L12 3.2z" fill="currentColor"/><path d="M12 9.5v5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.25" fill="#fff"/>'),
+    error: svg('<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 7v6" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16.75" r="1.4" fill="#fff"/>'),
+    /* Figma: muted blue filled circle with a white chevron, on both the outlined and the solid Next. */
+    chevronMuted: svg('<circle cx="12" cy="12" r="12" fill="#6584a9"/><path d="M10.25 7.5L14.75 12l-4.5 4.5" fill="none" stroke="#fff" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>')
+  };
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* In-page links (skip link, error summary) move focus without changing the route. */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[data-focus]') : null;
+    if (!a) return;
+    var target = document.getElementById(a.getAttribute('data-focus'));
+    if (!target) return;
+    e.preventDefault();
+    var box = target.closest('.card-wrap, .card, fieldset, .field') || target;
+    box.scrollIntoView({ block: 'start' });
+    target.focus({ preventScroll: true });
+  });
+
+  if (VIEW) initApp(VIEW); else initCompare();
+
+  /* =====================================================================
+     Views: ?view=ux (UX mockup as proposed) and ?view=cg (common ground)
+     ===================================================================== */
+  function initApp(view) {
+    var IS_CG = view === 'cg';
+    var STORAGE_KEY = 'cdcp-proto-p7-' + view;
+    var EMBEDDED = window.parent !== window;
+    var SITE = ' - Canadian Dental Care Plan - Canada.ca';
+    document.getElementById('alpha-view').textContent = IS_CG ? 'Common ground' : 'UX mockup (as proposed)';
+
+    var YES_NO = [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }];
+    var ORDER = ['terms', 'tax'];
+    var SECTIONS = {
+      terms: {
+        cardTitle: 'Terms and Conditions of use and Privacy Notice Statement',
+        desc: 'You must read the Terms and the Statement and tell us if you agree with them before you can fill out the application.',
+        uxLabel: 'Read and accept the Terms and Statement',
+        cgLabel: 'Read and accept the Terms and Statement',
+        required: true,
+        editContext: ' for terms and conditions and privacy notice statement',
+        uxError: 'You must read and accept the Terms and Statement to continue',
+        cgError: 'You must read and accept the Terms and Statement to continue',
+        pageTitle: 'Terms and conditions of use and privacy notice statement',
+        intro:
+          '<h2 class="spoke-sub">Before you begin</h2>' +
+          '<p>Read the terms and conditions of use, the privacy notice statement and how we share your information. Then tell us if you agree.</p>' +
+          '<details class="disclosure"><summary>Terms and Conditions of Use</summary>' +
+          '<p>This is where the full terms and conditions of use appear. They explain how to use the online application and your responsibilities when you submit it.</p></details>' +
+          '<details class="disclosure"><summary>Privacy Notice Statement</summary>' +
+          '<p>This is where the full privacy notice statement appears. It explains how the Government of Canada collects and uses the personal information in your application.</p></details>' +
+          '<details class="disclosure"><summary>Sharing your information</summary>' +
+          '<p>This is where we explain who we share your information with, such as Sun Life, which administers the plan.</p></details>',
+        fields: [{
+          type: 'checkgroup', legend: 'Your agreement',
+          items: [
+            { name: 'acceptTerms', label: 'I have read, understood and agree to the Terms and Conditions.', required: 'Select the box to agree to the Terms and Conditions' },
+            { name: 'acceptPrivacy', label: 'I have read, understood and agree with the Privacy Notice Statement.', required: 'Select the box to agree with the Privacy Notice Statement' },
+            { name: 'acceptSharing', label: 'I consent to the sharing of the personal information provided.', required: 'Select the box to consent to the sharing of your personal information' }
+          ]
+        }],
+        summary: function () {
+          return '<ul><li>I read the Terms and Conditions</li><li>I read the Privacy Notice Statement</li><li>I consent to the sharing of data</li></ul>';
+        },
+        fake: { acceptTerms: 'yes', acceptPrivacy: 'yes', acceptSharing: 'yes' }
+      },
+      tax: {
+        cardTitle: 'Tax filing',
+        desc: 'Your tax information is used to confirm that you are eligible for the Canadian Dental Care Plan.',
+        uxLabel: 'Confirm tax filing',
+        cgLabel: 'Answer the tax filing question',
+        required: true,
+        editContext: ' for tax filing',
+        uxError: 'You must confirm your tax filing information to continue',
+        cgError: 'You must answer the tax filing question to continue',
+        pageTitle: 'Tax filing',
+        intro: '',
+        fields: [{ type: 'radio', name: 'taxFiling', legend: 'Have you received your Notice of Assessment for your 2025 Canadian income tax return?', options: YES_NO, required: 'Select yes if you have received your Notice of Assessment for 2025' }],
+        summary: function (d) {
+          return d.taxFiling === 'no'
+            ? '<p>You have not received your Notice of Assessment for 2025.</p>'
+            : '<p>You have received your Notice of Assessment for 2025.</p>';
+        },
+        fake: { taxFiling: 'yes' }
+      }
+    };
+
+    /* ---------- State: in memory, mirrored to sessionStorage (keyed by view) ---------- */
+    function freshState() { return { sections: {} }; }
+    function loadState() {
+      try {
+        var raw = window.sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object' && parsed.sections && typeof parsed.sections === 'object') return parsed;
+        }
+      } catch (e) { /* sessionStorage unavailable: memory only */ }
+      return freshState();
+    }
+    function saveState() {
+      try { window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* memory only */ }
+    }
+    function clearState() {
+      state = freshState();
+      try { window.sessionStorage.removeItem(STORAGE_KEY); } catch (e) { /* memory only */ }
+    }
+    var state = loadState();
+
+    var NEXT_MODES = ['solid', 'outlined'];
+    var MODE_KEY = 'cdcp-proto-p7-cg-next-mode';
+    var nextMode = 'solid';
+    try { var storedMode = window.sessionStorage.getItem(MODE_KEY); if (NEXT_MODES.indexOf(storedMode) !== -1) nextMode = storedMode; } catch (e) { /* memory only */ }
+
+    function isDone(id) { return Object.prototype.hasOwnProperty.call(state.sections, id); }
+    // QA-only fixture: sessionStorage "cdcp-proto-p7-test-optional" = a section id marks that section optional, so the
+    // tests can prove that Next (validation and the Figma solid/outlined rule) only counts REQUIRED sections.
+    try {
+      var optionalFixture = window.sessionStorage.getItem('cdcp-proto-p7-test-optional');
+      if (optionalFixture && SECTIONS[optionalFixture]) SECTIONS[optionalFixture].required = false;
+    } catch (e) { /* no fixture */ }
+    function doneCount() { return ORDER.filter(isDone).length; }
+    function requiredIds() { return ORDER.filter(function (id) { return SECTIONS[id].required; }); }
+    function missing() { return requiredIds().filter(function (id) { return !isDone(id); }); }
+    function requiredComplete() { return missing().length === 0; }
+
+    /* ---------- Shared markup ---------- */
+    function heading(title) {
+      return '<p class="app-label">Canadian Dental Care Plan</p><h1 id="page-heading" tabindex="-1">' + esc(title) + '</h1>';
+    }
+    function errorSummary(items) {
+      var n = items.length;
+      return '<section class="error-summary" id="error-summary" tabindex="-1" aria-labelledby="error-summary-heading">' +
+        '<h2 id="error-summary-heading">The form could not be submitted because ' + n + (n === 1 ? ' error was' : ' errors were') + ' found</h2><ul>' +
+        items.map(function (it) {
+          return '<li><a href="#' + esc(it.target) + '" data-focus="' + esc(it.target) + '">' + esc(it.text) + '</a></li>';
+        }).join('') + '</ul></section>';
+    }
+    function badge(variant, icon, label, id) {
+      return '<span class="badge badge--' + variant + '" id="' + id + '">' + icon + '<span class="sr-only">Status: </span>' + label + '</span>';
+    }
+    function backLink(href, text) {
+      return '<a class="back-link" href="' + href + '">' + ICON.arrowLeft + '<span>' + esc(text) + '</span></a>';
+    }
+
+    function card(id, hasError) {
+      var s = SECTIONS[id];
+      var done = isDone(id);
+      var tagId = 'status-' + id, errId = 'error-' + id, linkId = 'link-' + id;
+      var label = IS_CG ? s.cgLabel : s.uxLabel;
+      // Figma: no tag before completion; common ground keeps "Not started" (a remaining difference).
+      var action = done ? badge('success', ICON.check, 'Complete', tagId) : IS_CG ? badge('default', ICON.circle, 'Not started', tagId) : '';
+      var described = [action ? tagId : '', hasError ? errId : ''].filter(Boolean).join(' ');
+      var describedAttr = described ? ' aria-describedby="' + described + '"' : '';
+      var body = done ? '<div class="card-answer">' + s.summary(state.sections[id]) + '</div>' : '<p class="card-desc">' + esc(s.desc) + '</p>';
+      var entry;
+      if (done) {
+        // Figma: pencil-square + "Edit answer". Common ground adds hidden context so the link names are unique.
+        entry = '<a class="edit-link" id="' + linkId + '" href="#/' + id + '"' + describedAttr + '>' + ICON.pencilSquare +
+          '<span>Edit answer' + (IS_CG ? '<span class="sr-only">' + esc(s.editContext) + '</span>' : '') + '</span></a>';
+      } else if (IS_CG) {
+        entry = '<a class="entry-link" id="' + linkId + '" href="#/' + id + '"' + describedAttr + '><span>' + esc(label) + '</span>' + ICON.arrowRight + '</a>';
+      } else {
+        entry = '<a class="ux-btn" id="' + linkId + '" href="#/' + id + '"' + describedAttr + '>' + esc(label) + '</a>';
+      }
+      var err = hasError ? '<p class="card-error" id="' + errId + '">' + ICON.warning + '<span>Select <strong>' + esc(label) + '</strong> and complete the fields.</span></p>' : '';
+      return '<div class="card-wrap">' + err +
+        '<div class="card' + (hasError ? ' card--error' : '') + '" id="card-' + id + '">' +
+        '<div class="card-header"><h2 class="card-title">' + esc(s.cardTitle) + '</h2><div class="card-action">' + action + '</div></div>' +
+        body +
+        '<div class="card-divider"></div>' +
+        '<div class="card-entry">' + entry + '</div>' +
+        '</div></div>';
+    }
+
+    function hubErrorSummary(items) {
+      return '<section class="error-summary error-summary--hub" id="error-summary" tabindex="-1" aria-labelledby="error-summary-heading">' +
+        '<h2 id="error-summary-heading">There is a problem</h2><ol>' +
+        items.map(function (it) {
+          return '<li><a href="#' + esc(it.target) + '" data-focus="' + esc(it.target) + '">' + esc(it.text) + '</a></li>';
+        }).join('') + '</ol></section>';
+    }
+
+    function nextInner(icon) {
+      return '<span class="nav-card__text"><span class="nav-card__small">Next<span class="sr-only">: </span></span><span class="nav-card__large">Your application</span></span>' + icon;
+    }
+
+    /* ---------- Form fields (from P1) ---------- */
+    function describedBy() {
+      var ids = Array.prototype.filter.call(arguments, Boolean).join(' ');
+      return ids ? ' aria-describedby="' + ids + '"' : '';
+    }
+    function errorText(id, msg) {
+      return '<p class="input-error" id="' + id + '">' + ICON.error + '<span>' + esc(msg) + '</span></p>';
+    }
+    function renderField(f, vals, errs) {
+      if (f.type === 'radio') {
+        var err = errs[f.name], errId = err ? 'f-' + f.name + '-error' : '';
+        return '<fieldset class="field' + (err ? ' field--error' : '') + '"><legend class="field-legend">' + esc(f.legend) + ' <span class="required">(required)</span></legend>' +
+          (err ? errorText(errId, err) : '') + '<div class="choices">' +
+          f.options.map(function (o, i) {
+            var id = 'f-' + f.name + '-' + i;
+            return '<div class="choice"><input type="radio" id="' + id + '" name="' + f.name + '" value="' + esc(o.value) + '"' +
+              (vals[f.name] === o.value ? ' checked' : '') + (err ? ' aria-invalid="true"' : '') + describedBy(errId) +
+              '><label for="' + id + '">' + esc(o.label) + '</label></div>';
+          }).join('') + '</div></fieldset>';
+      }
+      return '<fieldset class="field"><legend class="field-legend">' + esc(f.legend) + ' <span class="required">(required)</span></legend><div class="choices">' +
+        f.items.map(function (it) {
+          var e = errs[it.name], eId = e ? 'f-' + it.name + '-error' : '';
+          return '<div class="choice-wrap' + (e ? ' field--error' : '') + '">' + (e ? errorText(eId, e) : '') +
+            '<div class="choice"><input type="checkbox" id="f-' + it.name + '" name="' + it.name + '" value="yes"' + (vals[it.name] === 'yes' ? ' checked' : '') +
+            (e ? ' aria-invalid="true"' : '') + describedBy(eId) + '><label for="f-' + it.name + '">' + esc(it.label) + '</label></div></div>';
+        }).join('') + '</div></fieldset>';
+    }
+    function validate(fields, form) {
+      var fd = new FormData(form);
+      var data = {}, errors = [];
+      function get(name) { var v = fd.get(name); return v == null ? '' : String(v).trim(); }
+      fields.forEach(function (f) {
+        if (f.type === 'radio') {
+          var v = get(f.name); data[f.name] = v;
+          if (!v) errors.push({ name: f.name, target: 'f-' + f.name + '-0', text: f.required });
+        } else {
+          f.items.forEach(function (it) {
+            var c = get(it.name) === 'yes' ? 'yes' : '';
+            data[it.name] = c;
+            if (!c) errors.push({ name: it.name, target: 'f-' + it.name, text: it.required });
+          });
+        }
+      });
+      return { data: data, errors: errors };
+    }
+
+    /* ---------- Pages ---------- */
+    function hubView(opts) {
+      var errIds = opts.hubErrors || [];
+      var html = heading('Before you start your application');
+      html += '<p class="hub-intro">Complete all sections.</p>';
+      html += '<p class="hub-count" id="hub-count">' + doneCount() + ' of ' + ORDER.length + ' sections completed.</p>';
+      // Figma order: label, H1, intro, counter, error summary, cards.
+      if (errIds.length) html += hubErrorSummary(errIds.map(function (id) { return { target: 'link-' + id, text: IS_CG ? SECTIONS[id].cgError : SECTIONS[id].uxError }; }));
+      html += '<div class="cards">' + ORDER.map(function (id) { return card(id, errIds.indexOf(id) !== -1); }).join('') + '</div>';
+      // Figma rule: Next is outlined until all REQUIRED sections are complete, then solid navy (#26374A).
+      // Optional sections don't count. Common ground: always solid, unless the toggle is set to the Figma rule.
+      var solidNext = requiredComplete() || (IS_CG && nextMode === 'solid');
+      var nextCls = 'nav-card' + (solidNext ? ' nav-card--primary' : '');
+      var nextIcon = ICON.chevronMuted;
+      html += IS_CG
+        ? '<form class="hub-next" data-form="hub" novalidate><button type="submit" class="' + nextCls + '" id="next">' + nextInner(nextIcon) + '</button></form>'
+        : '<div class="hub-next"><a class="' + nextCls + '" id="next" href="#/end">' + nextInner(nextIcon) + '</a></div>';
+      return { title: 'Before you start your application', html: html, error: errIds.length > 0 };
+    }
+
+    function spokeView(id, opts) {
+      var s = SECTIONS[id];
+      var vals = opts.values || state.sections[id] || {};
+      var errs = opts.errors || [];
+      var map = {};
+      errs.forEach(function (e) { map[e.name] = e.text; });
+      var html = errs.length ? errorSummary(errs) : '';
+      html += heading(s.pageTitle) + s.intro;
+      html += '<form data-form="spoke" novalidate>' + s.fields.map(function (f) { return renderField(f, vals, map); }).join('') +
+        '<div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">Save</button>' + backLink('#/hub', 'Back') + '</div></form>';
+      return { title: s.pageTitle, html: html, error: errs.length > 0 };
+    }
+
+    function endView() {
+      var html = heading('Your application') +
+        '<p>This comparison covers the ‘Before you start’ page only.</p>' +
+        '<p>' + backLink('#/hub', 'Back to Before you start') + '</p>';
+      return { title: 'Your application', html: html, error: false };
+    }
+
+    /* ---------- Router ---------- */
+    var app = document.getElementById('app');
+    var current = null;
+    var currentOpts = {};
+    var lastSeq = 0;
+    var ROUTES = { '#/hub': 'hub', '#/terms': 'terms', '#/tax': 'tax', '#/end': 'end' };
+
+    function render(name, opts) {
+      opts = opts || {};
+      var v = name === 'hub' ? hubView(opts) : name === 'end' ? endView() : spokeView(name, opts);
+      app.innerHTML = v.html;
+      document.title = (v.error ? 'Error: ' : '') + v.title + SITE;
+      current = name;
+      currentOpts = opts;
+      notifyParent({ type: 'p7-status', view: view, seq: lastSeq, route: name, done: doneCount(), errors: !!(opts.hubErrors && opts.hubErrors.length) });
+      // ResizeObserver can be throttled in a background iframe, so also report the height after each render.
+      if (EMBEDDED) setTimeout(reportHeight, 0);
+    }
+    // Embedded in the comparison page: report the content height so the iframe never scrolls inside.
+    function reportHeight() {
+      var h = Math.ceil(document.body.getBoundingClientRect().height);
+      if (h !== lastHeight) { lastHeight = h; notifyParent({ type: 'p7-height', view: view, height: h }); }
+    }
+    function focusHeading() {
+      var h = document.getElementById('page-heading');
+      if (!EMBEDDED) window.scrollTo(0, 0);
+      if (h) h.focus({ preventScroll: !EMBEDDED });
+    }
+    function focusErrorSummary() {
+      var s = document.getElementById('error-summary');
+      if (s) { s.scrollIntoView({ block: 'start' }); s.focus({ preventScroll: true }); }
+    }
+    function onRouteChange(initial) {
+      var name = ROUTES[window.location.hash];
+      if (!name) { history.replaceState(null, '', '#/hub'); name = 'hub'; }
+      render(name);
+      if (!initial) focusHeading();
+    }
+    function go(hash) {
+      if (window.location.hash === hash) onRouteChange(false);
+      else window.location.hash = hash;
+    }
+    window.addEventListener('hashchange', function () { onRouteChange(false); });
+
+    // UX view (Figma): Next with missing required sections shows the error summary and the card-level errors.
+    if (!IS_CG) {
+      app.addEventListener('click', function (e) {
+        var next = e.target.closest ? e.target.closest('#next') : null;
+        if (!next) return;
+        var miss = missing();
+        if (requiredComplete()) return;
+        e.preventDefault();
+        render('hub', { hubErrors: miss });
+        focusErrorSummary();
+      });
+    }
+
+    app.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      var kind = form.getAttribute('data-form');
+      if (kind === 'hub') {
+        var miss = missing();
+        if (requiredComplete()) { go('#/end'); return; }
+        render('hub', { hubErrors: miss });
+        focusErrorSummary();
+        return;
+      }
+      if (kind === 'spoke') {
+        var s = SECTIONS[current];
+        var result = validate(s.fields, form);
+        if (result.errors.length) {
+          render(current, { errors: result.errors, values: result.data });
+          focusErrorSummary();
+          return;
+        }
+        state.sections[current] = result.data;
+        saveState();
+        go('#/hub');
+      }
+    });
+
+    /* ---------- Prototype controls ---------- */
+    document.getElementById('pc-reset').addEventListener('click', function () {
+      clearState();
+      document.getElementById('pc-details').open = false;
+      go('#/hub');
+    });
+    var pcNextMode = document.getElementById('pc-next-mode');
+    if (!IS_CG) pcNextMode.parentNode.removeChild(pcNextMode);
+    else {
+      syncModeRadios();
+      pcNextMode.addEventListener('change', function (e) {
+        if (e.target && e.target.name === 'pc-next-mode') setNextMode(e.target.value, true);
+      });
+    }
+
+    /* ---------- Common ground Next styling (open question, toggled for the meeting) ---------- */
+    function syncModeRadios() {
+      var r = document.getElementById(nextMode === 'outlined' ? 'pc-next-outlined' : 'pc-next-solid');
+      if (r) r.checked = true;
+    }
+    function setNextMode(mode, fromHere) {
+      if (!IS_CG || NEXT_MODES.indexOf(mode) === -1) return;
+      nextMode = mode;
+      try { window.sessionStorage.setItem(MODE_KEY, mode); } catch (e) { /* memory only */ }
+      syncModeRadios();
+      if (current === 'hub') render('hub', currentOpts);
+      if (fromHere) notifyParent({ type: 'p7-next-mode', view: view, mode: mode });
+    }
+
+    /* ---------- Comparison page bridge (only when embedded) ---------- */
+    function notifyParent(msg) {
+      if (EMBEDDED) window.parent.postMessage(msg, '*');
+    }
+    // Sets a scenario without moving focus or scrolling: the person is using the toolbar in the parent page.
+    function applyScenario(key) {
+      clearState();
+      if (key === 'one' || key === 'all') state.sections.terms = JSON.parse(JSON.stringify(SECTIONS.terms.fake));
+      if (key === 'all') state.sections.tax = JSON.parse(JSON.stringify(SECTIONS.tax.fake));
+      saveState();
+      history.replaceState(null, '', '#/hub');
+      render('hub', key === 'next-missing' ? { hubErrors: missing() } : {});
+    }
+    if (EMBEDDED) {
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent) return;
+        var d = e.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'p7-set-next-mode' && IS_CG && NEXT_MODES.indexOf(d.mode) !== -1) { setNextMode(d.mode, false); return; }
+        if (d.type !== 'p7-set-state' || typeof d.seq !== 'number' || SCENARIOS.indexOf(d.state) === -1) return;
+        lastSeq = d.seq;
+        applyScenario(d.state);
+      });
+      var lastHeight = 0;
+      if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
+      window.addEventListener('load', reportHeight);
+    }
+
+    onRouteChange(true);
+  }
+
+  /* =====================================================================
+     Comparison page (no query string)
+     ===================================================================== */
+  function initCompare() {
+    document.title = 'Before you start: UX mockup vs common ground - Canadian Dental Care Plan prototype';
+    var base = window.location.href.split('#')[0].split('?')[0];
+    var frames = { ux: document.getElementById('frame-ux'), cg: document.getElementById('frame-cg') };
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('.tbtn[data-state]'));
+    var statusEl = document.getElementById('toolbar-status');
+    var modeRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="cmp-next-mode"]'));
+    var LABELS = { 'not-started': 'Not started', one: 'One section completed', all: 'All sections completed', 'next-missing': 'Next pressed with sections missing' };
+    var EXPECT = {
+      'not-started': { ux: { route: 'hub', done: 0, errors: false }, cg: { route: 'hub', done: 0, errors: false } },
+      one: { ux: { route: 'hub', done: 1, errors: false }, cg: { route: 'hub', done: 1, errors: false } },
+      all: { ux: { route: 'hub', done: 2, errors: false }, cg: { route: 'hub', done: 2, errors: false } },
+      'next-missing': { ux: { route: 'hub', done: 0, errors: true }, cg: { route: 'hub', done: 0, errors: true } }
+    };
+    var seq = 0, pressed = null, loaded = { ux: false, cg: false };
+
+    function setPressed(key) {
+      pressed = key;
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-state') === key)); });
+      statusEl.textContent = key ? 'Both panels show: ' + LABELS[key] + '.' : 'The panels no longer match one state.';
+    }
+    function send(state) {
+      seq++;
+      ['ux', 'cg'].forEach(function (v) {
+        if (frames[v].contentWindow) frames[v].contentWindow.postMessage({ type: 'p7-set-state', state: state, seq: seq }, '*');
+      });
+    }
+    function choose(key, msgState) {
+      setPressed(key);
+      if (loaded.ux && loaded.cg) send(msgState || key);
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { choose(b.getAttribute('data-state')); });
+    });
+    document.getElementById('reset-both').addEventListener('click', function () { choose('not-started', 'reset'); });
+
+    function currentMode() {
+      var r = modeRadios.filter(function (x) { return x.checked; })[0];
+      return r ? r.value : 'solid';
+    }
+    function sendMode() {
+      if (loaded.cg && frames.cg.contentWindow) frames.cg.contentWindow.postMessage({ type: 'p7-set-next-mode', mode: currentMode() }, '*');
+    }
+    modeRadios.forEach(function (r) { r.addEventListener('change', sendMode); });
+
+    window.addEventListener('message', function (e) {
+      var v = e.source === frames.ux.contentWindow ? 'ux' : e.source === frames.cg.contentWindow ? 'cg' : null;
+      var d = e.data;
+      if (!v || !d || typeof d !== 'object' || d.view !== v) return;
+      if (d.type === 'p7-height' && typeof d.height === 'number' && d.height > 0) {
+        var edge = frames[v].offsetHeight - frames[v].clientHeight;
+        frames[v].style.height = (Math.max(400, Math.min(d.height, 20000)) + edge) + 'px';
+      } else if (d.type === 'p7-next-mode' && v === 'cg') {
+        modeRadios.forEach(function (r) { r.checked = r.value === d.mode; });
+      } else if (d.type === 'p7-status' && seq > 0 && d.seq === seq && pressed) {
+        var x = EXPECT[pressed][v];
+        if (d.route !== x.route || d.done !== x.done || d.errors !== x.errors) setPressed(null);
+      }
+    });
+
+    ['ux', 'cg'].forEach(function (v) {
+      frames[v].addEventListener('load', function () {
+        loaded[v] = true;
+        if (v === 'cg') sendMode();
+        // Start every session from a clean "Not started" state in both panels.
+        if (loaded.ux && loaded.cg) send(pressed === null && seq === 0 ? (setPressed('not-started'), 'reset') : (pressed || 'reset'));
+      });
+      frames[v].src = base + '?view=' + v;
+    });
+  }
+})();
+</script>
+
+
+</body></html>
