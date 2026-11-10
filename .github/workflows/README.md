@@ -79,16 +79,16 @@ dependency automation, and report-upload workflows do not repeat these checks.
 [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts for
 every push to `main` or `release/v*`. The push trigger has no `paths` filter
 because GitHub would drop a push that creates a release branch from an
-unchanged `main` before any job runs. The `detect-changes` job enables frontend
-testing and publishing only when the push changes at least one of the paths in
-its `dorny/paths-filter` list (frontend sources, root workspace configuration,
-`.dockerignore`, this workflow, and the local actions it uses). Other pushes
-finish after the lightweight gate and change-detection jobs. Update that list
-when adding or removing a local action used by the workflow.
+unchanged `main` before any job runs. For `main` pushes, the `detect-changes` job
+enables frontend testing and publishing only when the push changes at least one
+of the paths in its `dorny/paths-filter` list (frontend sources, root workspace
+configuration, `.dockerignore`, this workflow, and the local actions it uses).
+Other `main` pushes finish after the lightweight gate and change-detection jobs.
+Update that list when adding or removing a local action used by the workflow.
 
-Manual dispatches and reusable calls bypass path-based change detection. A push
-that creates a `release/v*` branch also enables frontend jobs, even when the
-branch has no changes relative to its starting point. Publishing still
+Manual dispatches, reusable calls, and all `release/v*` pushes bypass path-based
+change detection. Release pushes enable frontend jobs even when the branch
+matches `main`, including branch creation and force-pushes. Publishing still
 requires a `main` or `release/v*` ref and successful version resolution and tests.
 Version resolution runs as the first step of the image-build job, after frontend
 tests and formatting succeed, before checkout or authentication.

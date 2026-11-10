@@ -76,7 +76,7 @@ jobs:
       - name: Publish change-detection output
         id: changes
         run: |
-          echo "frontend=${{ github.event_name != 'push' || (github.event.created == true && startsWith(github.ref, 'refs/heads/release/v')) || steps.filter.outputs.frontend == 'true' }}" | tee -a "$GITHUB_OUTPUT"
+          echo "frontend=${{ github.event_name != 'push' || startsWith(github.ref, 'refs/heads/release/v') || steps.filter.outputs.frontend == 'true' }}" | tee -a "$GITHUB_OUTPUT"
 
   test-frontend:
     permissions:
