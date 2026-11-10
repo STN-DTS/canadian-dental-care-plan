@@ -342,7 +342,17 @@ export function enrichRequestSpan(span: Span, method: string, result: Instrument
   }
 
   const captured = context.active().getValue(APP_ERROR_CAPTURE_KEY) as AppErrorCapture | undefined;
-  recordError(span, error ?? captured?.error, signal);
+  const requestError = error ?? captured?.error;
+
+  if (statusCode >= 400 && statusCode < 500) {
+    const correlationId = getCorrelationId(requestError);
+
+    if (correlationId !== undefined && !(signal ?? captured?.signal)?.aborted) {
+      span.setAttribute('correlationId', correlationId);
+    }
+  } else {
+    recordError(span, requestError, signal);
+  }
 }
 
 type AppErrorCapture = { error?: AppError; signal?: AbortSignal };

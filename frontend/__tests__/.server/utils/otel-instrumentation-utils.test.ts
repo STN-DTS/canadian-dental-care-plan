@@ -28,13 +28,15 @@ describe('React Router AppError capture', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it.each([
-    { phase: 'loader', wrapped: false },
-    { phase: 'action', wrapped: false },
-    { phase: 'loader', wrapped: true },
-    { phase: 'action', wrapped: true },
-  ] as const)('records the unchanged $phase AppError with wrapped=$wrapped despite React Router filtering result.error', async ({ phase, wrapped }) => {
+    { phase: 'loader', wrapped: false, status: 500 },
+    { phase: 'action', wrapped: false, status: 500 },
+    { phase: 'loader', wrapped: true, status: 500 },
+    { phase: 'action', wrapped: true, status: 500 },
+    { phase: 'loader', wrapped: true, status: 404 },
+    { phase: 'action', wrapped: true, status: 404 },
+  ] as const)('records the unchanged $phase AppError with wrapped=$wrapped and status=$status despite React Router filtering result.error', async ({ phase, wrapped, status }) => {
     const error = Object.assign(new AppError(sensitiveCanaries.join(', '), undefined, { correlationId: 'AB-123456' }), { stack: `Synthetic stack: ${sensitiveCanaries.join(', ')}` });
-    const thrown = wrapped ? data(error, { status: 500 }) : error;
+    const thrown = wrapped ? data(error, { status }) : error;
     const build = mock<ServerBuild>();
     build.routes = {
       test: {
@@ -86,16 +88,21 @@ describe('React Router AppError capture', () => {
       }
 
       expect(getAppError(result.errors?.test)).toBe(error);
-      expect(result.statusCode).toBe(500);
+      expect(result.statusCode).toBe(status);
       expect(getCorrelationId(JSON.parse(JSON.stringify(result.errors?.test)))).toBe(error.correlationId);
       enrichRequestSpan(requestSpan, 'GET', { status: 'success', error: undefined, statusCode: result.statusCode, meta: undefined });
     });
 
     expect(results).toEqual([{ status: 'success', error: undefined }]);
 
-    for (const span of [handlerSpan, requestSpan]) {
+    for (const { span, failed } of [
+      { span: handlerSpan, failed: true },
+      { span: requestSpan, failed: status >= 500 },
+    ]) {
       expect(span.setAttribute).toHaveBeenCalledWith('correlationId', error.correlationId);
-      expect(span.recordException).toHaveBeenCalledExactlyOnceWith({ name: 'AppError', code: error.errorCode });
+      expect(span.recordException.mock.calls).toEqual(failed ? [[{ name: 'AppError', code: error.errorCode }]] : []);
+      expect(span.setStatus.mock.calls).toEqual(failed ? [[{ code: SpanStatusCode.ERROR, message: 'internal_error' }]] : []);
+      expect(span.setAttribute.mock.calls.filter(([key]) => key === 'error.type')).toEqual(failed ? [['error.type', 'AppError']] : []);
       const recorded = JSON.stringify([span.recordException.mock.calls, span.setAttribute.mock.calls, span.setAttributes.mock.calls, span.setStatus.mock.calls]);
 
       for (const canary of sensitiveCanaries) {
@@ -192,6 +199,26 @@ describe('React Router AppError capture', () => {
 });
 
 describe('span error correlation', () => {
+  it.each([400, 404, 499])('preserves the request correlation ID without failure details for status %s', (statusCode) => {
+    const span = mock<Span>();
+    const error = data(new AppError('Synthetic failure', undefined, { correlationId: 'AB-123456' }), { status: statusCode });
+    enrichRequestSpan(span, 'GET', { status: 'error', statusCode, meta: undefined, error: error as unknown as Error });
+    expect(span.setAttribute).toHaveBeenCalledWith('http.response.status_code', statusCode);
+    expect(span.setAttribute).toHaveBeenCalledWith('correlationId', 'AB-123456');
+    expect(span.setAttribute).not.toHaveBeenCalledWith('error.type', expect.anything());
+    expect(span.recordException).not.toHaveBeenCalled();
+    expect(span.setStatus).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, new Error('Synthetic failure'), { name: 'AppError', correlationId: '' }, { name: 'AppError', correlationId: '   ' }])('does not add placeholder IDs or failure details to 4xx requests without a valid ID: %j', (error) => {
+    const span = mock<Span>();
+    enrichRequestSpan(span, 'GET', error === undefined ? { status: 'success', statusCode: 404, meta: undefined, error: undefined } : { status: 'error', statusCode: 404, meta: undefined, error: error as Error });
+    expect(span.setAttribute).not.toHaveBeenCalledWith('correlationId', expect.anything());
+    expect(span.setAttribute).not.toHaveBeenCalledWith('error.type', expect.anything());
+    expect(span.recordException).not.toHaveBeenCalled();
+    expect(span.setStatus).not.toHaveBeenCalled();
+  });
+
   it.each(['direct', 'data', 'response'] as const)('records only safe AppError exception fields on request and handler spans for %s errors', async (shape) => {
     const { context, span } = createSpanContext();
     const error = Object.assign(new AppError(sensitiveCanaries.join(', '), undefined, { correlationId: 'AB-123456' }), { stack: `Synthetic stack: ${sensitiveCanaries.join(', ')}` });
@@ -227,14 +254,14 @@ describe('span error correlation', () => {
     expect(span.setStatus).not.toHaveBeenCalled();
   });
 
-  it('does not tag aborted requests or failing handlers', async () => {
+  it.each([404, 500])('does not tag aborted requests or failing handlers for status %s', async (statusCode) => {
     const { context, span } = createSpanContext();
     const controller = new AbortController();
     controller.abort();
     const error = new AppError('Synthetic failure');
     recordError(span, error, controller.signal);
     await otelSpan(context, 'loader', {}, vi.fn().mockResolvedValue({ status: 'error', error }), undefined, controller.signal);
-    enrichRequestSpan(span, 'GET', { status: 'error', statusCode: 500, meta: undefined, error: error as unknown as Error }, controller.signal);
+    enrichRequestSpan(span, 'GET', { status: 'error', statusCode, meta: undefined, error: error as unknown as Error }, controller.signal);
     expect(span.setAttribute).not.toHaveBeenCalledWith('correlationId', expect.anything());
     expect(span.recordException).not.toHaveBeenCalled();
     expect(span.end).toHaveBeenCalledOnce();
