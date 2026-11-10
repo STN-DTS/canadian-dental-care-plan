@@ -12,7 +12,7 @@ add an environment suffix, such as `-dev`. Production resource names have no suf
 gitops/
 ├── nonprod/                # Nonproduction manifests
 │   ├── base/               # Shared nonproduction components
-│   └── overlays/           # Eleven nonproduction environments
+│   └── overlays/           # Nonproduction environments
 └── prod/                   # Independent production manifests
   ├── kustomization.yaml
   ├── deployments.yaml    # Production workloads
@@ -35,20 +35,19 @@ The [migration plan](../.github/plans/gitops-nonprod-prod-split.md) describes th
 
 ## Environment features
 
-| Environment                                       | Tier | Frontend | Redis | OAuth Proxy | Fluentd Logging | HPA (Auto-scaling) | Error Pages (404) | Maintenance Page | Reloader | Squid Proxy |
-| ------------------------------------------------- | ---- | -------- | ----- | ----------- | --------------- | ------------------ | ----------------- | ---------------- | -------- | ----------- |
-| [Dev](nonprod/overlays/dev/README.md)             | np   | ✅       | ❌    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Int1](nonprod/overlays/int1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Int2](nonprod/overlays/int2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Otto](nonprod/overlays/otto/README.md)           | np   | ✅       | ✅    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Perf](nonprod/overlays/perf/README.md)           | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ❌                | ❌               | ❌       | ❌          |
-| [Prod](prod/README.md)                            | prod | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ✅               | ✅       | ❌          |
-| [Prototype](nonprod/overlays/prototype/README.md) | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [Shared](nonprod/overlays/shared/README.md)       | np   | ❌       | ❌    | ❌          | ❌              | ❌                 | ❌                | ✅               | ✅       | ✅          |
-| [Staging](nonprod/overlays/staging/README.md)     | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ❌               | ❌       | ❌          |
-| [Training](nonprod/overlays/training/README.md)   | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
-| [UAT1](nonprod/overlays/uat1/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
-| [UAT2](nonprod/overlays/uat2/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
+| Environment                                     | Tier | Frontend | Redis | OAuth Proxy | Fluentd Logging | HPA (Auto-scaling) | Error Pages (404) | Maintenance Page | Reloader | Squid Proxy |
+| ----------------------------------------------- | ---- | -------- | ----- | ----------- | --------------- | ------------------ | ----------------- | ---------------- | -------- | ----------- |
+| [Dev](nonprod/overlays/dev/README.md)           | np   | ✅       | ❌    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Int1](nonprod/overlays/int1/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Int2](nonprod/overlays/int2/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Otto](nonprod/overlays/otto/README.md)         | np   | ✅       | ✅    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Perf](nonprod/overlays/perf/README.md)         | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ❌                | ❌               | ❌       | ❌          |
+| [Prod](prod/README.md)                          | prod | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ✅               | ✅       | ❌          |
+| [Shared](nonprod/overlays/shared/README.md)     | np   | ❌       | ❌    | ❌          | ❌              | ❌                 | ❌                | ✅               | ✅       | ✅          |
+| [Staging](nonprod/overlays/staging/README.md)   | np   | ✅       | ✅    | ✅          | ✅              | ✅                 | ✅                | ❌               | ❌       | ❌          |
+| [Training](nonprod/overlays/training/README.md) | np   | ✅       | ❌    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [UAT1](nonprod/overlays/uat1/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
+| [UAT2](nonprod/overlays/uat2/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ✅               | ❌       | ❌          |
 
 > **np** = nonprod
 

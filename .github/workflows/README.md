@@ -135,7 +135,7 @@ Change-detection filters are generated from these directories, so adding an
 overlay does not require editing the workflow's target list or apply steps.
 
 This workflow replaces TeamCity's **Synchronize all environments** job, which
-already watches `gitops/nonprod/**` on the default branch and applies all eleven
+already watches `gitops/nonprod/**` on the default branch and applies all
 overlays, including `shared`, using `kubectl apply --kustomize ... --force`.
 TeamCity is paused for this CI handoff; this is not a new manifest source-path
 cutover.
