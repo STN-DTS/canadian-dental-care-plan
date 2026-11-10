@@ -18,9 +18,9 @@ export function useNProgress(delay = 500) {
   // Configure NProgress once per hook instance
   useEffect(() => {
     NProgress.configure({
-      barSelector: '.nprogress-bar',
+      barSelector: '.bar',
       showSpinner: false,
-      template: '<div class="nprogress-bar" aria-hidden="true"><div class="peg"></div></div>',
+      template: '<div class="bar" aria-hidden="true"><div class="peg"></div></div>',
       // You can add more options here like minimum, easing, speed, etc.
     });
   }, []);
