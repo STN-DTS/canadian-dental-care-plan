@@ -25,7 +25,7 @@
     pointer-events: none;
   }
 
-  #nprogress .bar {
+  #nprogress .nprogress-bar {
     background: #991b1b;
 
     position: fixed;
