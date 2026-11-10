@@ -15,6 +15,7 @@
     "dev": "cross-env NODE_ENV=development tsx --conditions development --env-file-if-exists=./.env --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./app/instrumentation/telemetry.server.ts ./app/.server/express-server/server.ts",
     "preview": "pnpm run build && cross-env NODE_ENV=production SESSION_COOKIE_SECURE=false node --env-file-if-exists=./.env --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./build/server/telemetry.js ./build/server/server.js",
     "start": "cross-env NODE_ENV=production node --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./build/server/telemetry.js ./build/server/server.js",
+    "start:test-errors": "cross-env NODE_ENV=production CDCP_ERROR_TEST_HARNESS=true node --experimental-loader=@opentelemetry/instrumentation/hook.mjs --import ./build/server/telemetry.js --import ./e2e/fixtures/error-harness.ts ./build/server/server.js",
     "check": "run-s --continue-on-error -l typecheck lint",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

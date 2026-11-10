@@ -8,6 +8,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Banner } from '~/components/banner';
 import { PublicBreadcrumbs } from '~/components/breadcrumbs';
 import { BrowserCompatibilityBanner } from '~/components/browser-compatibility-banner';
+import { CorrelationDetail } from '~/components/correlation-detail';
 import { InlineLink } from '~/components/inline-link';
 import { PageDetails } from '~/components/page-details';
 import { PageHeaderBrand } from '~/components/page-header-brand';
@@ -145,6 +146,7 @@ export function BilingualNotFoundError({ error }: BilingualNotFoundErrorProps) {
                 <Trans t={en} i18nKey={($) => $.publicNotFound.returnCdcp} components={{ englishCdcpLink: <InlineLink to={en(($) => $.publicNotFound.cdcpLink)} className="external-link" newTabIndicator target="_blank" /> }} />
               </li>
             </ul>
+            <CorrelationDetail error={error} lng="en" />
           </div>
           <div id="french" lang="fr">
             <PageTitle className="my-8">
@@ -157,6 +159,7 @@ export function BilingualNotFoundError({ error }: BilingualNotFoundErrorProps) {
                 <Trans t={fr} i18nKey={($) => $.publicNotFound.returnCdcp} components={{ frenchCdcpLink: <InlineLink to={fr(($) => $.publicNotFound.cdcpLink)} className="external-link" newTabIndicator target="_blank" /> }} />
               </li>
             </ul>
+            <CorrelationDetail error={error} lng="fr" />
           </div>
         </div>
       </main>
@@ -204,6 +207,7 @@ export function NotFoundError({ error }: NotFoundErrorProps) {
             <Trans ns={'gcweb'} i18nKey={($) => $.publicNotFound.unilingualReturnCdcp} components={{ cdcpLink }} />
           </li>
         </ul>
+        <CorrelationDetail error={error} />
         <PageDetails />
       </main>
       <PageFooter />
@@ -263,6 +267,7 @@ export function BilingualServerError({ error }: BilingualServerErrorProps) {
                 <Trans t={en} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
               </li>
             </ul>
+            <CorrelationDetail error={error} lng="en" />
           </div>
           <div id="french" lang="fr">
             <PageTitle className="my-8">
@@ -276,6 +281,7 @@ export function BilingualServerError({ error }: BilingualServerErrorProps) {
                 <Trans t={fr} i18nKey={($) => $.serverError.option02} components={{ home: <InlineLink to="/" /> }} />
               </li>
             </ul>
+            <CorrelationDetail error={error} lng="fr" />
           </div>
         </div>
       </main>
@@ -328,6 +334,7 @@ export function ServerError({ error }: ServerErrorProps) {
             <Trans ns={'gcweb'} i18nKey={($) => $.serverError.option02} components={{ home }} />
           </li>
         </ul>
+        <CorrelationDetail error={error} />
         <PageDetails />
       </main>
       <PageFooter />

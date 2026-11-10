@@ -107,6 +107,7 @@ const ns = {
     cdcpLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires.html",
   },
   serverError: {
+    correlationId: "<strong>Identifiant de corrélation\u00A0:</strong> <span>{{correlationId}}</span>",
     documentTitle: "Erreur interne du serveur",
     pageTitle: "Nous éprouvons des difficultés avec cette page",
     pageSubtitle: "(Erreur 500)",

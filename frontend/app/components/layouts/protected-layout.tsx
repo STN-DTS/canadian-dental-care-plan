@@ -12,6 +12,7 @@ import { Banner } from '~/components/banner';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { BrowserCompatibilityBanner } from '~/components/browser-compatibility-banner';
 import { ButtonLink } from '~/components/buttons';
+import { CorrelationDetail } from '~/components/correlation-detail';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/dropdown-menu';
 import { InlineLink } from '~/components/inline-link';
 import { PageDetails } from '~/components/page-details';
@@ -220,6 +221,7 @@ export function NotFoundError({ error }: NotFoundErrorProps) {
             <Trans ns={'gcweb'} i18nKey={($) => $.protectedNotFound.pageLink} components={{ dashboard }} />
           </li>
         </ul>
+        <CorrelationDetail error={error} />
         <PageDetails />
       </main>
       <PageFooter />
@@ -262,6 +264,7 @@ export function ServerError({ error }: ServerErrorProps) {
             <Trans ns={'gcweb'} i18nKey={($) => $.serverError.option02} components={{ home }} />
           </li>
         </ul>
+        <CorrelationDetail error={error} />
         <PageDetails />
       </main>
       <PageFooter />
