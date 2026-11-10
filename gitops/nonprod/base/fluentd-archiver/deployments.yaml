@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: fluentd-archiver
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:

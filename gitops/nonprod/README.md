@@ -16,6 +16,22 @@ The old `gitops/base/` and `gitops/overlays/` directories no longer exist.
 TeamCity already uses `gitops/nonprod/overlays/{environment}`, so the move
 to GitHub deployment does not change the manifest paths.
 
+## Fluentd archiver rollouts
+
+Perf and staging use the single-instance `base/fluentd-archiver` Deployment.
+Its `audit-logs` PVC uses `ReadWriteOnce`, which allows read-write mounts from
+one node. The Deployment uses `Recreate` so the old pod stops before Kubernetes
+creates its replacement. A rolling update can stall when the replacement lands
+on another node and cannot attach the disk while the old pod still holds it.
+
+Archiving pauses while the replacement starts and the disk reattaches.
+The strategy preserves the PVC and its access mode. It does not provide high
+availability or guarantee lossless forwarding. After an approved rollout, verify
+frontend Fluentd buffering and eventual archive delivery across the pause.
+
+Production uses separate manifests. The equivalent release work is tracked in
+[release issue #5537](https://github.com/STN-DTS/canadian-dental-care-plan/issues/5537).
+
 ## Redis startup workaround
 
 Overlays that use `base/redis` run `base/redis/configs/start-redis.sh` before the
