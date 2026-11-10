@@ -1,12 +1,31 @@
 <!doctype html>
+<!--
+  CDCP prototype P7: "UX mockup vs common ground" (Before you start your application).
+  One self-contained file, three entry points selected by the query string:
+  - ?view=ux : the UX team's Figma (CDCP 2027) for this hub. Not-started sections: title, description, divider and a
+               solid navy button-styled link. Completed: green "Complete" pill, the answer summary replaces the
+               description, then a pencil-square "Edit answer" link (the button disappears). Next with missing sections:
+               "There is a problem" summary (numbered links) under the counter, a warning line above each missing card
+               and a red card border. Next is outlined until the REQUIRED sections are complete, then solid navy #26374A.
+               Pill green: Figma's #289f58 has 3.4:1 contrast with white text, so production's green-700 is used.
+  - ?view=cg : "Common ground" adopts all of that. Remaining differences: the not-started entry is a prominent text
+               link (not a button-styled link), "Answer the tax filing question", a "Not started" tag, hidden context on
+               "Edit answer", and each summary link focuses the card's link. Next styling is an open question, switchable
+               with a radio group ("Always solid" by default, or the Figma rule).
+  - no query : the comparison page: what we agree on, what's still different, a state toolbar and the Next toggle
+               (driving both iframes through postMessage), then a detailed table.
+  Both views share the same spokes (Terms, Tax filing) and end page. State is per view, in sessionStorage keyed by
+  view, with an in-memory fallback. Prototype controls stay outside <main>.
+-->
 <html lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Before you start: UX mockup vs common ground - Canadian Dental Care Plan prototype</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com/" />
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <title>Before you start your application - Canadian Dental Care Plan - Canada.ca</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Optional web fonts: if offline, the font stacks below fall back to system fonts. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;500;700&display=swap" />
     <style>
       :root {
         --font-heading: 'Lato', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -1124,244 +1143,338 @@
     </style>
   </head>
   <body>
-    <template id="tpl-app"></template>
-
-    <a class="skip-link" href="#main-content" data-focus="main-content">Skip to main content</a>
-    <header class="site-header">
-      <div class="brand">
-        <div class="cmp-container brand-inner">
-          <span class="fip">
-            <svg class="fip-flag" viewBox="0 0 40 20" aria-hidden="true" focusable="false">
-              <rect x="0" y="0" width="10" height="20" fill="#ea2d37"></rect>
-              <rect x="30" y="0" width="10" height="20" fill="#ea2d37"></rect>
-              <path fill="#ea2d37" d="M20 3.2l1.4 2.7 1.7-.9-.5 3.9 2.3-2.2.5 1.4 2.4-.4-.8 2.5 1.1.5-3.6 3 .5 1.5-3.4-.6V18h-.9v-3.4l-3.4.6.5-1.5-3.6-3 1.1-.5-.8-2.5 2.4.4.5-1.4 2.3 2.2-.5-3.9 1.7.9z"></path>
-            </svg>
-            <span class="fip-text"><span>Government of Canada</span><span lang="fr">Gouvernement du Canada</span></span>
-          </span>
-          <span class="cmp-proto-tag">Canadian Dental Care Plan prototype, for discussion</span>
+    <template id="tpl-app">
+      <a class="skip-link" href="#main-content" data-focus="main-content">Skip to main content</a>
+      <header class="site-header">
+        <div class="alpha-banner">
+          <div class="container">
+            <p><span class="alpha-tag">Alpha</span> This is a prototype environment. No data is kept. View: <span id="alpha-view">UX mockup (as proposed)</span>.</p>
+          </div>
         </div>
-      </div>
-    </header>
-
-    <main id="main-content" class="cmp-main" tabindex="-1">
-      <div class="cmp-titlebar">
-        <div class="cmp-container"><h1>Before you start: UX mockup vs common ground</h1></div>
-      </div>
-      <div class="cmp-container">
-        <div class="cmp-intro">
-          <p>Both panels show the same page. The common ground version adopts the Figma patterns and keeps only the changes listed under “What’s still different”.</p>
-          <p>
-            Pick a state to show it in both panels, or click through each panel yourself. Open a view on its own: <a href="cdcp-renewal-2027-ux-common-ground.html?view=ux">UX mockup (as proposed)</a> or
-            <a href="cdcp-renewal-2027-ux-common-ground.html?view=cg">Common ground</a>.
-          </p>
+        <div class="brand">
+          <div class="brand-inner container">
+            <a class="fip" href="https://www.canada.ca/en.html" target="_blank" rel="noopener">
+              <svg class="fip-flag" viewBox="0 0 40 20" aria-hidden="true" focusable="false">
+                <rect x="0" y="0" width="10" height="20" fill="#ea2d37" />
+                <rect x="30" y="0" width="10" height="20" fill="#ea2d37" />
+                <path fill="#ea2d37" d="M20 3.2l1.4 2.7 1.7-.9-.5 3.9 2.3-2.2.5 1.4 2.4-.4-.8 2.5 1.1.5-3.6 3 .5 1.5-3.4-.6V18h-.9v-3.4l-3.4.6.5-1.5-3.6-3 1.1-.5-.8-2.5 2.4.4.5-1.4 2.3 2.2-.5-3.9 1.7.9z" />
+              </svg>
+              <span class="fip-text"><span>Government of Canada</span><span lang="fr">Gouvernement du Canada</span></span
+              ><span class="sr-only"> (opens in a new tab)</span>
+            </a>
+            <a class="lang-link" href="https://www.canada.ca/fr/services/prestations/dentaire/regime-canadien-soins-dentaires.html" lang="fr" hreflang="fr" target="_blank" rel="noopener"
+              >Français<span class="sr-only" lang="en"> (opens in a new tab)</span></a
+            >
+          </div>
         </div>
-
-        <div class="cmp-summary">
-          <section class="cmp-box" aria-labelledby="agree-heading">
-            <h2 id="agree-heading">Where we already agree</h2>
-            <ul id="agree-list">
-              <li>“Complete” badge on finished sections</li>
-              <li>Answer summary replaces the description</li>
-              <li>“Edit answer” link with a pencil icon</li>
-              <li>“There is a problem” error summary</li>
-              <li>Card-level error with a red border</li>
-              <li>Next is never disabled</li>
-              <li>The “N of 2 sections completed” counter</li>
-              <li>Card layout</li>
-              <li>Descriptions that explain why each section is needed</li>
-              <li>Circle-check icon removed</li>
-              <li>Previous and Next cards on later hubs</li>
-            </ul>
-          </section>
-          <section class="cmp-box" aria-labelledby="diff-heading">
-            <h2 id="diff-heading">What’s still different</h2>
-            <ol id="diff-list">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <div class="container">
+            <ol>
               <li>
-                <strong>Not-started section entry:</strong> solid navy button-styled link vs a prominent text link with an arrow. The main accessibility concern (Space key, screen-reader and voice-control lists, solid navy means Save on the spokes). Figma
-                already uses a link once a section is complete, so a link here makes both states consistent.
+                <a href="https://www.canada.ca/en.html" target="_blank" rel="noopener">Canada.ca<span class="sr-only"> (opens in a new tab)</span></a>
               </li>
-              <li><strong>Tax filing entry wording:</strong> “Confirm tax filing” vs “Answer the tax filing question”. This changes the error text too.</li>
-              <li><strong>“Not started” tag:</strong> none vs a tag.</li>
-              <li><strong>Next styling:</strong> open question, use the toggle.</li>
+              <li>
+                <a href="https://www.canada.ca/en/services/benefits.html" target="_blank" rel="noopener">Benefits<span class="sr-only"> (opens in a new tab)</span></a>
+              </li>
+              <li>
+                <a href="https://www.canada.ca/en/services/benefits/dental.html" target="_blank" rel="noopener">Dental coverage<span class="sr-only"> (opens in a new tab)</span></a>
+              </li>
+              <li>
+                <a href="https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html" target="_blank" rel="noopener">Canadian Dental Care Plan<span class="sr-only"> (opens in a new tab)</span></a>
+              </li>
             </ol>
-          </section>
-        </div>
-
-        <div class="toolbar">
-          <div class="toolbar-group" role="group" aria-labelledby="toolbar-label">
-            <span class="toolbar-label" id="toolbar-label">Show both panels:</span>
-            <button type="button" class="tbtn" data-state="not-started" aria-pressed="true">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>Not started
-            </button>
-            <button type="button" class="tbtn" data-state="one" aria-pressed="false">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>One section
-              completed
-            </button>
-            <button type="button" class="tbtn" data-state="all" aria-pressed="false">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>All sections
-              completed
-            </button>
-            <button type="button" class="tbtn" data-state="next-missing" aria-pressed="false">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>Next pressed with
-              sections missing
-            </button>
           </div>
-          <button type="button" class="tbtn tbtn--reset" id="reset-both">Reset both</button>
-          <fieldset class="toolbar-radios" id="cmp-next-mode">
-            <legend class="toolbar-label">Common ground Next button</legend>
-            <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-solid" value="solid" checked="" /><label for="cmp-next-solid">Always solid (recommended)</label></div>
-            <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-outlined" value="outlined" /><label for="cmp-next-outlined">Outlined until required sections are complete, then solid (Figma)</label></div>
-          </fieldset>
-        </div>
-        <p class="toolbar-status" id="toolbar-status" role="status">Both panels show: Not started.</p>
+        </nav>
+      </header>
 
-        <div class="panels">
-          <section class="panel" aria-labelledby="label-ux">
-            <h2 class="panel-label" id="label-ux">UX mockup (as proposed) <small>Clickable copy of the Figma</small></h2>
-            <p class="panel-note" id="ux-note">Based on the UX team’s Figma (CDCP 2027).</p>
-            <iframe id="frame-ux" title="UX mockup (as proposed): Before you start your application" src="cdcp-renewal-2027-ux-common-ground.html?view=ux" style="height: 1396px"></iframe>
-          </section>
-          <section class="panel" aria-labelledby="label-cg">
-            <h2 class="panel-label" id="label-cg">Common ground <small>Figma patterns, plus the changes below</small></h2>
-            <iframe id="frame-cg" title="Common ground: Before you start your application" src="cdcp-renewal-2027-ux-common-ground.html?view=cg" style="height: 1364px"></iframe>
-          </section>
+      <main id="main-content" tabindex="-1">
+        <div class="container">
+          <div class="page-col" id="app"></div>
         </div>
+      </main>
 
-        <section class="changes" aria-labelledby="changes-heading">
-          <h2 id="changes-heading">What changed and why</h2>
-          <div class="table-scroll" tabindex="0" role="region" aria-labelledby="changes-heading">
-            <table>
-              <caption>
-                Rows marked “Same” come first, then the differences, the open question and a note.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Element</th>
-                  <th scope="col">UX mockup</th>
-                  <th scope="col">Common ground</th>
-                  <th scope="col">Why</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="row--same">
-                  <th scope="row">Descriptions <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Each not-started card explains why the section is needed.</td>
-                  <td>Same.</td>
-                  <td>People know why we ask before they start.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Circle-check icon <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Removed.</td>
-                  <td>Same.</td>
-                  <td>It made unfinished sections look finished.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">“Complete” badge <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Green “Complete” pill with a check, top-right.</td>
-                  <td>Same.</td>
-                  <td>The status is text, so it doesn’t rely on colour or an icon.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Completed card <span class="row-tag row-tag--same">Same</span></th>
-                  <td>The answer summary replaces the description.</td>
-                  <td>Same.</td>
-                  <td>People can check their answer without opening the section.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">“Edit answer” link <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Divider, then a pencil icon and an underlined “Edit answer” link. The button is gone.</td>
-                  <td>Same, plus hidden context for screen readers (“Edit answer for tax filing”).</td>
-                  <td>Several links named only “Edit answer” sound identical in a screen-reader links list.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Error summary <span class="row-tag row-tag--same">Same</span></th>
-                  <td>“There is a problem” with numbered links, under the counter.</td>
-                  <td>Same. Each link moves focus to the card’s link.</td>
-                  <td>The error is announced and each message leads to the fix.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Card-level error <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Red border, and a warning line above the missing card naming the action to select.</td>
-                  <td>Same.</td>
-                  <td>People scrolling the cards see what’s missing in place. WCAG 3.3.1 is met by the summary; this is a usability extra.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Next never disabled <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Next stays enabled.</td>
-                  <td>Same.</td>
-                  <td>No unexplained disabled state. The error summary explains what’s missing.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Counter <span class="row-tag row-tag--same">Same</span></th>
-                  <td>“N of 2 sections completed.”</td>
-                  <td>Same.</td>
-                  <td>Shows overall progress at a glance.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Card layout <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Title, description or answer, divider, then the action.</td>
-                  <td>Same.</td>
-                  <td>A familiar structure that is easy to scan.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Previous / Next <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Later hubs add an outlined “Previous” card with a left chevron, to the left of Next. Not on this hub.</td>
-                  <td>Same.</td>
-                  <td>Consistent navigation between hubs.</td>
-                </tr>
-                <tr class="row--same">
-                  <th scope="row">Icons <span class="row-tag row-tag--same">Same</span></th>
-                  <td>Muted blue chevron circle in Next, check in the badge, pencil on “Edit answer”, warning triangle on card errors.</td>
-                  <td>Same, plus an arrow on the not-started entry link. All decorative and hidden from screen readers.</td>
-                  <td>Icons support the text. They never carry meaning on their own.</td>
-                </tr>
-                <tr class="row--diff">
-                  <th scope="row">Not-started section entry <span class="row-tag row-tag--diff">Different</span></th>
-                  <td>Solid navy button-styled link.</td>
-                  <td>A prominent bold, underlined link with an arrow, in the same place.</td>
-                  <td>
-                    The main accessibility concern. Links go to a page; buttons act. A link dressed as a button breaks that: Space does nothing, and screen-reader and voice-control users look in the wrong list. Solid navy also means Save on the spokes.
-                    Figma already uses a link once complete, so this makes both states consistent.
-                  </td>
-                </tr>
-                <tr class="row--diff">
-                  <th scope="row">Tax filing entry wording <span class="row-tag row-tag--diff">Different</span></th>
-                  <td>“Confirm tax filing”</td>
-                  <td>“Answer the tax filing question”</td>
-                  <td>Name the task, not a one-click result. This changes the error text too.</td>
-                </tr>
-                <tr class="row--diff">
-                  <th scope="row">“Not started” tag <span class="row-tag row-tag--diff">Different</span></th>
-                  <td>None.</td>
-                  <td>“Not started” tag before a section is done.</td>
-                  <td>Every section shows its status as text, not only finished ones. A small difference.</td>
-                </tr>
-                <tr class="row--open">
-                  <th scope="row">Next button <span class="row-tag row-tag--open">Open question</span></th>
-                  <td>Outlined until required sections are complete, then solid navy. Optional sections don’t count.</td>
-                  <td>Solid navy always (recommended). The toggle shows the Figma rule.</td>
-                  <td>One solid primary action per page, and a stable button is easier to find. To decide in the meeting.</td>
-                </tr>
-                <tr class="row--note">
-                  <th scope="row">Figma detail to check <span class="row-tag row-tag--note">Note</span></th>
-                  <td colspan="3">In the Figma error state the counter reads “0 of 2” while Terms shows Complete; probably a static-mockup slip.</td>
-                </tr>
-              </tbody>
-            </table>
+      <footer class="site-footer">
+        <div class="footer-main">
+          <div class="container">
+            <h2>Service Canada</h2>
+            <ul>
+              <li>
+                <a href="https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html" target="_blank" rel="noopener">Contact us<span class="sr-only"> (opens in a new tab)</span></a>
+              </li>
+            </ul>
           </div>
-        </section>
-      </div>
-    </main>
-
-    <footer class="site-footer">
-      <div class="footer-sub">
-        <div class="cmp-container footer-sub-inner">
-          <p class="pc-note">Prototype for a design discussion. No data is kept.</p>
-          <p class="wordmark"><span aria-hidden="true">Canada</span><span class="sr-only">Symbol of the Government of Canada</span></p>
         </div>
-      </div>
-    </footer>
-    <template id="tpl-compare"></template>
+        <div class="footer-sub">
+          <div class="footer-sub-inner container">
+            <nav aria-label="About this site">
+              <ul>
+                <li>
+                  <a href="https://www.canada.ca/en/transparency/terms.html" target="_blank" rel="noopener">Terms and conditions<span class="sr-only"> (opens in a new tab)</span></a>
+                </li>
+                <li>
+                  <a href="https://www.canada.ca/en/transparency/privacy.html" target="_blank" rel="noopener">Privacy<span class="sr-only"> (opens in a new tab)</span></a>
+                </li>
+              </ul>
+            </nav>
+            <p class="wordmark"><span aria-hidden="true">Canada</span><span class="sr-only">Symbol of the Government of Canada</span></p>
+          </div>
+        </div>
+      </footer>
+
+      <aside class="proto-controls" aria-label="Prototype controls">
+        <div class="container">
+          <details id="pc-details">
+            <summary>Prototype controls (not part of the design)</summary>
+            <div class="pc-body">
+              <button type="button" id="pc-reset">Reset this view</button>
+              <fieldset class="pc-radios" id="pc-next-mode">
+                <legend>Common ground Next button</legend>
+                <div><input type="radio" name="pc-next-mode" id="pc-next-solid" value="solid" /><label for="pc-next-solid">Always solid (recommended)</label></div>
+                <div><input type="radio" name="pc-next-mode" id="pc-next-outlined" value="outlined" /><label for="pc-next-outlined">Outlined until required sections are complete, then solid (Figma)</label></div>
+              </fieldset>
+              <p class="pc-note">State is kept in memory and in this tab's sessionStorage only.</p>
+            </div>
+          </details>
+        </div>
+      </aside>
+    </template>
+
+    <template id="tpl-compare">
+      <a class="skip-link" href="#main-content" data-focus="main-content">Skip to main content</a>
+      <header class="site-header">
+        <div class="brand">
+          <div class="cmp-container brand-inner">
+            <span class="fip">
+              <svg class="fip-flag" viewBox="0 0 40 20" aria-hidden="true" focusable="false">
+                <rect x="0" y="0" width="10" height="20" fill="#ea2d37" />
+                <rect x="30" y="0" width="10" height="20" fill="#ea2d37" />
+                <path fill="#ea2d37" d="M20 3.2l1.4 2.7 1.7-.9-.5 3.9 2.3-2.2.5 1.4 2.4-.4-.8 2.5 1.1.5-3.6 3 .5 1.5-3.4-.6V18h-.9v-3.4l-3.4.6.5-1.5-3.6-3 1.1-.5-.8-2.5 2.4.4.5-1.4 2.3 2.2-.5-3.9 1.7.9z" />
+              </svg>
+              <span class="fip-text"><span>Government of Canada</span><span lang="fr">Gouvernement du Canada</span></span>
+            </span>
+            <span class="cmp-proto-tag">Canadian Dental Care Plan prototype, for discussion</span>
+          </div>
+        </div>
+      </header>
+
+      <main id="main-content" class="cmp-main" tabindex="-1">
+        <div class="cmp-titlebar">
+          <div class="cmp-container"><h1>Before you start: UX mockup vs common ground</h1></div>
+        </div>
+        <div class="cmp-container">
+          <div class="cmp-intro">
+            <p>Both panels show the same page. The common ground version adopts the Figma patterns and keeps only the changes listed under “What’s still different”.</p>
+            <p>Pick a state to show it in both panels, or click through each panel yourself. Open a view on its own: <a href="?view=ux">UX mockup (as proposed)</a> or <a href="?view=cg">Common ground</a>.</p>
+            <p id="download-note" hidden>
+              To run it on your own computer, <a id="download-link" href="" download="cdcp-renewal-2027-ux-common-ground.html">download this prototype (HTML file)</a> and open it in any browser. Don’t use your browser’s “Save page as”: it saves a snapshot
+              that doesn’t work.
+            </p>
+          </div>
+
+          <div class="cmp-summary">
+            <section class="cmp-box" aria-labelledby="agree-heading">
+              <h2 id="agree-heading">Where we already agree</h2>
+              <ul id="agree-list">
+                <li>“Complete” badge on finished sections</li>
+                <li>Answer summary replaces the description</li>
+                <li>“Edit answer” link with a pencil icon</li>
+                <li>“There is a problem” error summary</li>
+                <li>Card-level error with a red border</li>
+                <li>Next is never disabled</li>
+                <li>The “N of 2 sections completed” counter</li>
+                <li>Card layout</li>
+                <li>Descriptions that explain why each section is needed</li>
+                <li>Circle-check icon removed</li>
+                <li>Previous and Next cards on later hubs</li>
+              </ul>
+            </section>
+            <section class="cmp-box" aria-labelledby="diff-heading">
+              <h2 id="diff-heading">What’s still different</h2>
+              <ol id="diff-list">
+                <li>
+                  <strong>Not-started section entry:</strong> solid navy button-styled link vs a prominent text link with an arrow. The main accessibility concern (Space key, screen-reader and voice-control lists, solid navy means Save on the spokes).
+                  Figma already uses a link once a section is complete, so a link here makes both states consistent.
+                </li>
+                <li><strong>Tax filing entry wording:</strong> “Confirm tax filing” vs “Answer the tax filing question”. This changes the error text too.</li>
+                <li><strong>“Not started” tag:</strong> none vs a tag.</li>
+                <li><strong>Next styling:</strong> open question, use the toggle.</li>
+              </ol>
+            </section>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-group" role="group" aria-labelledby="toolbar-label">
+              <span class="toolbar-label" id="toolbar-label">Show both panels:</span>
+              <button type="button" class="tbtn" data-state="not-started" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" /></svg>Not started
+              </button>
+              <button type="button" class="tbtn" data-state="one" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" /></svg>One section completed
+              </button>
+              <button type="button" class="tbtn" data-state="all" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" /></svg>All sections completed
+              </button>
+              <button type="button" class="tbtn" data-state="next-missing" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" /></svg>Next pressed with
+                sections missing
+              </button>
+            </div>
+            <button type="button" class="tbtn tbtn--reset" id="reset-both">Reset both</button>
+            <fieldset class="toolbar-radios" id="cmp-next-mode">
+              <legend class="toolbar-label">Common ground Next button</legend>
+              <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-solid" value="solid" checked /><label for="cmp-next-solid">Always solid (recommended)</label></div>
+              <div class="tradio"><input type="radio" name="cmp-next-mode" id="cmp-next-outlined" value="outlined" /><label for="cmp-next-outlined">Outlined until required sections are complete, then solid (Figma)</label></div>
+            </fieldset>
+          </div>
+          <p class="toolbar-status" id="toolbar-status" role="status"></p>
+
+          <div class="panels">
+            <section class="panel" aria-labelledby="label-ux">
+              <h2 class="panel-label" id="label-ux">UX mockup (as proposed) <small>Clickable copy of the Figma</small></h2>
+              <p class="panel-note" id="ux-note">Based on the UX team’s Figma (CDCP 2027).</p>
+              <iframe id="frame-ux" title="UX mockup (as proposed): Before you start your application"></iframe>
+            </section>
+            <section class="panel" aria-labelledby="label-cg">
+              <h2 class="panel-label" id="label-cg">Common ground <small>Figma patterns, plus the changes below</small></h2>
+              <iframe id="frame-cg" title="Common ground: Before you start your application"></iframe>
+            </section>
+          </div>
+
+          <section class="changes" aria-labelledby="changes-heading">
+            <h2 id="changes-heading">What changed and why</h2>
+            <div class="table-scroll" tabindex="0" role="region" aria-labelledby="changes-heading">
+              <table>
+                <caption>
+                  Rows marked “Same” come first, then the differences, the open question and a note.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Element</th>
+                    <th scope="col">UX mockup</th>
+                    <th scope="col">Common ground</th>
+                    <th scope="col">Why</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="row--same">
+                    <th scope="row">Descriptions <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Each not-started card explains why the section is needed.</td>
+                    <td>Same.</td>
+                    <td>People know why we ask before they start.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Circle-check icon <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Removed.</td>
+                    <td>Same.</td>
+                    <td>It made unfinished sections look finished.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">“Complete” badge <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Green “Complete” pill with a check, top-right.</td>
+                    <td>Same.</td>
+                    <td>The status is text, so it doesn’t rely on colour or an icon.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Completed card <span class="row-tag row-tag--same">Same</span></th>
+                    <td>The answer summary replaces the description.</td>
+                    <td>Same.</td>
+                    <td>People can check their answer without opening the section.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">“Edit answer” link <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Divider, then a pencil icon and an underlined “Edit answer” link. The button is gone.</td>
+                    <td>Same, plus hidden context for screen readers (“Edit answer for tax filing”).</td>
+                    <td>Several links named only “Edit answer” sound identical in a screen-reader links list.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Error summary <span class="row-tag row-tag--same">Same</span></th>
+                    <td>“There is a problem” with numbered links, under the counter.</td>
+                    <td>Same. Each link moves focus to the card’s link.</td>
+                    <td>The error is announced and each message leads to the fix.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Card-level error <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Red border, and a warning line above the missing card naming the action to select.</td>
+                    <td>Same.</td>
+                    <td>People scrolling the cards see what’s missing in place. WCAG 3.3.1 is met by the summary; this is a usability extra.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Next never disabled <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Next stays enabled.</td>
+                    <td>Same.</td>
+                    <td>No unexplained disabled state. The error summary explains what’s missing.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Counter <span class="row-tag row-tag--same">Same</span></th>
+                    <td>“N of 2 sections completed.”</td>
+                    <td>Same.</td>
+                    <td>Shows overall progress at a glance.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Card layout <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Title, description or answer, divider, then the action.</td>
+                    <td>Same.</td>
+                    <td>A familiar structure that is easy to scan.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Previous / Next <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Later hubs add an outlined “Previous” card with a left chevron, to the left of Next. Not on this hub.</td>
+                    <td>Same.</td>
+                    <td>Consistent navigation between hubs.</td>
+                  </tr>
+                  <tr class="row--same">
+                    <th scope="row">Icons <span class="row-tag row-tag--same">Same</span></th>
+                    <td>Muted blue chevron circle in Next, check in the badge, pencil on “Edit answer”, warning triangle on card errors.</td>
+                    <td>Same, plus an arrow on the not-started entry link. All decorative and hidden from screen readers.</td>
+                    <td>Icons support the text. They never carry meaning on their own.</td>
+                  </tr>
+                  <tr class="row--diff">
+                    <th scope="row">Not-started section entry <span class="row-tag row-tag--diff">Different</span></th>
+                    <td>Solid navy button-styled link.</td>
+                    <td>A prominent bold, underlined link with an arrow, in the same place.</td>
+                    <td>
+                      The main accessibility concern. Links go to a page; buttons act. A link dressed as a button breaks that: Space does nothing, and screen-reader and voice-control users look in the wrong list. Solid navy also means Save on the spokes.
+                      Figma already uses a link once complete, so this makes both states consistent.
+                    </td>
+                  </tr>
+                  <tr class="row--diff">
+                    <th scope="row">Tax filing entry wording <span class="row-tag row-tag--diff">Different</span></th>
+                    <td>“Confirm tax filing”</td>
+                    <td>“Answer the tax filing question”</td>
+                    <td>Name the task, not a one-click result. This changes the error text too.</td>
+                  </tr>
+                  <tr class="row--diff">
+                    <th scope="row">“Not started” tag <span class="row-tag row-tag--diff">Different</span></th>
+                    <td>None.</td>
+                    <td>“Not started” tag before a section is done.</td>
+                    <td>Every section shows its status as text, not only finished ones. A small difference.</td>
+                  </tr>
+                  <tr class="row--open">
+                    <th scope="row">Next button <span class="row-tag row-tag--open">Open question</span></th>
+                    <td>Outlined until required sections are complete, then solid navy. Optional sections don’t count.</td>
+                    <td>Solid navy always (recommended). The toggle shows the Figma rule.</td>
+                    <td>One solid primary action per page, and a stable button is easier to find. To decide in the meeting.</td>
+                  </tr>
+                  <tr class="row--note">
+                    <th scope="row">Figma detail to check <span class="row-tag row-tag--note">Note</span></th>
+                    <td colspan="3">In the Figma error state the counter reads “0 of 2” while Terms shows Complete; probably a static-mockup slip.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-sub">
+          <div class="cmp-container footer-sub-inner">
+            <p class="pc-note">Prototype for a design discussion. No data is kept.</p>
+            <p class="wordmark"><span aria-hidden="true">Canada</span><span class="sr-only">Symbol of the Government of Canada</span></p>
+          </div>
+        </div>
+      </footer>
+    </template>
 
     <script>
       (function () {
@@ -1970,6 +2083,16 @@
         function initCompare() {
           document.title = 'Before you start: UX mockup vs common ground - Canadian Dental Care Plan prototype';
           var base = window.location.href.split('#')[0].split('?')[0];
+          // Offer the original source for local use when the page is hosted; a downloaded copy works from file://.
+          if (window.location.protocol !== 'file:') {
+            var dl = document.getElementById('download-link');
+            var fileName = decodeURIComponent(base.split('/').pop() || '');
+            dl.href = base;
+            if (/\.html?$/i.test(fileName)) {
+              dl.setAttribute('download', fileName);
+            }
+            document.getElementById('download-note').hidden = false;
+          }
           var frames = { ux: document.getElementById('frame-ux'), cg: document.getElementById('frame-cg') };
           var buttons = Array.prototype.slice.call(document.querySelectorAll('.tbtn[data-state]'));
           var statusEl = document.getElementById('toolbar-status');
