@@ -98,7 +98,7 @@ catalog:
   i18next-http-backend: 4.0.10
   inversify: 8.3.0
   isbot: 5.2.2
-  jose: 6.2.15
+  jose: 6.2.16
   jsdom: 31.0.0
   libphonenumber-js: 1.13.15
   logform: 2.7.0

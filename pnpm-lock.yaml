@@ -394,8 +394,8 @@ catalogs:
       specifier: 5.2.2
       version: 5.2.2
     jose:
-      specifier: 6.2.15
-      version: 6.2.15
+      specifier: 6.2.16
+      version: 6.2.16
     jsdom:
       specifier: 31.0.0
       version: 31.0.0
@@ -724,7 +724,7 @@ importers:
         version: 5.2.2
       jose:
         specifier: 'catalog:'
-        version: 6.2.15
+        version: 6.2.16
       libphonenumber-js:
         specifier: 'catalog:'
         version: 1.13.15
@@ -4321,8 +4321,8 @@ packages:
     resolution: {integrity: sha512-9FzQjJ7MATs1tSpnco1K6ayiYE3figslrXA72G2HQ/n76RzvYlofyi5QM+iX4YRs/pu3yzxlVQSST23+dMDknw==}
     engines: {node: '>= 0.6.0'}
 
-  jose@6.2.15:
-    resolution: {integrity: sha512-qdF6ewcZARtef63fJ9AKKZPgxw+t7USH6HLXYcD4CrdmSvDp79rpJSPFEKc90QBeGS63u1KQtN2MZQHC0yDIzA==}
+  jose@6.2.16:
+    resolution: {integrity: sha512-4LSJpbuBuPdGrONCdZUy0xnxtLf8eEz+EY0SMXdHQEBU7bgUHDVblU/JAjryv3wID9/LK7/YuwFwq+AQNfMscQ==}
 
   js-tokens@10.0.0:
     resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
@@ -9192,7 +9192,7 @@ snapshots:
 
   jmespath@0.16.0: {}
 
-  jose@6.2.15: {}
+  jose@6.2.16: {}
 
   js-tokens@10.0.0: {}
 
