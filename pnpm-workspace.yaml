@@ -96,7 +96,7 @@ catalog:
   filesize: 11.0.30
   i18next: 27.0.1
   i18next-http-backend: 4.0.10
-  inversify: 8.2.4
+  inversify: 8.3.0
   isbot: 5.2.2
   jose: 6.2.15
   jsdom: 31.0.0
