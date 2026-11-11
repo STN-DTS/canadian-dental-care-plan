@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_LETTER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import getPdfByLetterIdJson from '~/.server/resources/cct/get-pdf-by-letter-id.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
@@ -89,6 +90,7 @@ export class DefaultLetterRepository implements LetterRepository {
     this.baseUrl = `${this.serverConfig.INTEROP_CCT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/client-letters/cct/v1`;
   }
 
+  @Traced()
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
     this.log.trace('Fetching letters');
 
@@ -127,6 +129,7 @@ export class DefaultLetterRepository implements LetterRepository {
     return letterEntities;
   }
 
+  @Traced()
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
     this.log.trace('Fetching letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
@@ -165,12 +168,14 @@ export class DefaultLetterRepository implements LetterRepository {
     return pdfEntity;
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.findLettersByClientId(this.serverConfig.HEALTH_PLACEHOLDER_REQUEST_VALUE);
   }
@@ -184,6 +189,7 @@ export class MockLetterRepository implements LetterRepository {
     this.log = createLogger('MockLetterRepository');
   }
 
+  @Traced()
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
     this.log.debug('Fetching mock letters');
 
@@ -199,6 +205,7 @@ export class MockLetterRepository implements LetterRepository {
     return await Promise.resolve(letterEntities);
   }
 
+  @Traced()
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
     this.log.debug('Fetching mock letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
@@ -208,12 +215,14 @@ export class MockLetterRepository implements LetterRepository {
     return await Promise.resolve(pdfEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

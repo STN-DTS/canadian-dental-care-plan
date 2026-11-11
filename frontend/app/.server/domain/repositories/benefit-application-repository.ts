@@ -7,6 +7,7 @@ import type { BenefitApplicationRequestEntity, BenefitApplicationResponseEntity 
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -43,6 +44,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
     this.httpClient = httpClient;
   }
 
+  @Traced()
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
     this.log.trace('Submitting benefit application');
 
@@ -90,6 +92,7 @@ export class MockBenefitApplicationRepository implements BenefitApplicationRepos
     this.log = createLogger('MockBenefitApplicationRepository');
   }
 
+  @Traced()
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
     this.log.debug('Creating mock benefit application');
 

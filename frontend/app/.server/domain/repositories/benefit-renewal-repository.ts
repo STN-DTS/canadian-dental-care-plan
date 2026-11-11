@@ -7,6 +7,7 @@ import type { BenefitRenewalRequestEntity, BenefitRenewalResponseEntity } from '
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -36,6 +37,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
     this.httpClient = httpClient;
   }
 
+  @Traced()
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
     this.log.trace('Submitting benefit renewal');
 
@@ -86,6 +88,7 @@ export class MockBenefitRenewalRepository implements BenefitRenewalRepository {
     this.log = createLogger('MockBenefitRenewalRepository');
   }
 
+  @Traced()
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
     this.log.debug('Creating mock benefit renewal');
 

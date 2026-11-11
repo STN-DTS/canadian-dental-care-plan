@@ -12,6 +12,7 @@ import type { GovernmentInsurancePlanRepository } from '~/.server/domain/reposit
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ProvincialGovernmentInsurancePlanService {
   listProvincialGovernmentInsurancePlans(): Promise<ReadonlyArray<ProvincialGovernmentInsurancePlanDto>>;
@@ -76,6 +77,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     this.log.debug('DefaultProvincialGovernmentInsurancePlanService initiated.');
   }
 
+  @Traced()
   async listProvincialGovernmentInsurancePlans(): Promise<ReadonlyArray<ProvincialGovernmentInsurancePlanDto>> {
     this.log.debug('Get all provincial government insurance plans');
     const governmentInsurancePlanEntities = await this.governmentInsurancePlanRepository.listAllGovernmentInsurancePlans();
@@ -85,6 +87,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     return provincialGovernmentInsurancePlanDtos;
   }
 
+  @Traced()
   async findProvincialGovernmentInsurancePlanById(id: string): Promise<Option.Option<ProvincialGovernmentInsurancePlanDto>> {
     this.log.debug('Finding provincial government insurance plan');
     const provincialGovernmentInsurancePlans = await this.listProvincialGovernmentInsurancePlans();
@@ -99,6 +102,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     return Option.some(provincialGovernmentInsurancePlanDto);
   }
 
+  @Traced()
   async getProvincialGovernmentInsurancePlanById(id: string): Promise<ProvincialGovernmentInsurancePlanDto> {
     this.log.debug('Get provincial government insurance plan');
     const provincialGovernmentInsurancePlanDtoOption = await this.findProvincialGovernmentInsurancePlanById(id);
@@ -113,6 +117,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     return provincialGovernmentInsurancePlanDto;
   }
 
+  @Traced()
   async listAndSortLocalizedProvincialGovernmentInsurancePlans(locale: AppLocale): Promise<ReadonlyArray<ProvincialGovernmentInsurancePlanLocalizedDto>> {
     this.log.debug('Get and sort all localized provincial government insurance plans', { [ATTR_CDCP_LOCALE]: locale });
     const provincialGovernmentInsurancePlanDtos = await this.listProvincialGovernmentInsurancePlans();
@@ -122,6 +127,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     return sortedProvincialGovernmentInsurancePlanLocalizedDtos;
   }
 
+  @Traced()
   async findLocalizedProvincialGovernmentInsurancePlanById(id: string, locale: AppLocale): Promise<Option.Option<ProvincialGovernmentInsurancePlanLocalizedDto>> {
     this.log.debug('Finding provincial government insurance plan', { [ATTR_CDCP_LOCALE]: locale });
     const provincialGovernmentInsurancePlanDto = await this.findProvincialGovernmentInsurancePlanById(id);
@@ -139,6 +145,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
     return Option.some(provincialGovernmentInsurancePlanLocalizedDto);
   }
 
+  @Traced()
   async getLocalizedProvincialGovernmentInsurancePlanById(id: string, locale: AppLocale): Promise<ProvincialGovernmentInsurancePlanLocalizedDto> {
     this.log.debug('Get localized provincial government insurance plan', { [ATTR_CDCP_LOCALE]: locale });
     const provincialGovernmentInsurancePlanDto = await this.getProvincialGovernmentInsurancePlanById(id);

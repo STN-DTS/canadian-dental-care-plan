@@ -7,6 +7,7 @@ import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_BUILD_DATE, ATTR_CDCP_BUILD_ID, ATTR_CDCP_BUILD_REVISION, ATTR_CDCP_BUILD_VERSION } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface BuildInfo {
   buildDate: string;
@@ -44,6 +45,7 @@ export class DefaultBuildInfoService implements BuildInfoService {
     this.log.debug('DefaultBuildInfoService initiated.');
   }
 
+  @Traced()
   getBuildInfo(): BuildInfo {
     this.log.debug('Getting application build info');
 

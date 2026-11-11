@@ -9,6 +9,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_PROXY_TLS_TIMEOUT_MS, ATTR_CDCP_PROXY_URL, ATTR_CDCP_RETRY_COUNT, ATTR_CDCP_RETRY_LIMIT } from '~/.server/logging/log-attributes';
 import type { InstrumentationService } from '~/.server/observability';
+import { Traced } from '~/.server/observability/decorator';
 import { getEnv } from '~/.server/utils/env-utils';
 import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -114,6 +115,7 @@ export class DefaultHttpClient implements HttpClient {
     this.instrumentationService = instrumentationService;
   }
 
+  @Traced()
   getFetchFn(options: FetchOptions): FetchFn {
     this.log.debug('Getting fetch function');
     const { proxyUrl, timeout } = options;
@@ -133,6 +135,7 @@ export class DefaultHttpClient implements HttpClient {
     return fetch;
   }
 
+  @Traced()
   async instrumentedFetch(metricPrefix: string, input: RequestInfo | URL, options: InstrumentedFetchOptions = {}): Promise<Response> {
     this.log.debug('Executing instrumented HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix });
     const { proxyUrl, timeout, retryOptions, ...init } = options;

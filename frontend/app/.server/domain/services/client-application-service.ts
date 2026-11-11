@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 /**
@@ -63,6 +64,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
     this.log.debug('DefaultClientApplicationService initiated.');
   }
 
+  @Traced()
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by basic info', { [ATTR_CDCP_USER_ID]: clientApplicationBasicInfoRequestDto.userId });
 
@@ -81,6 +83,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
     return Option.some(clientApplicationDto);
   }
 
+  @Traced()
   async findClientApplicationByBasicInfoAndSin(clientApplicationBasicInfoAndSinRequestDto: ClientApplicationBasicInfoAndSinRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     const { sin, ...basicInfoRequestDto } = clientApplicationBasicInfoAndSinRequestDto;
     const clientApplicationOption = await this.findClientApplicationByBasicInfo(basicInfoRequestDto);
@@ -103,6 +106,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
     return Option.some(clientApplication);
   }
 
+  @Traced()
   async findClientApplicationBySin(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by SIN', { [ATTR_CDCP_USER_ID]: clientApplicationSinRequestDto.userId });
 

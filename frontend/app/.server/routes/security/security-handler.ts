@@ -14,6 +14,7 @@ import type { ApplicantService, ClientApplicationService, ClientEligibilityServi
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_FEATURE_NAME, ATTR_CDCP_HTTP_ALLOWED_METHODS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
@@ -224,6 +225,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @throws {Response} Redirects to the login page if the session is invalid.
    * @returns {Promise<void>} Resolves if the session is valid.
    */
+  @Traced()
   async validateAuthSession({ requestUrl, session }: ValidateAuthSessionParams): Promise<void> {
     this.log.debug('Validating RAOIDC session', { [ATTR_SESSION_ID]: session.id });
     const result = await this.raoidcSessionValidator.validateRaoidcSession({ session });
@@ -245,6 +247,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @throws {Response} Throws a 404 Not Found response if the feature is not enabled.
    * @returns {void} Resolves if the feature is enabled.
    */
+  @Traced()
   validateFeatureEnabled(feature: FeatureName): void {
     this.log.debug('Validating feature', { [ATTR_CDCP_FEATURE_NAME]: feature });
 
@@ -263,6 +266,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @param invalidHCaptchaCallback - Callback function invoked if hCaptcha validation fails.
    * @returns {Promise<void>} Resolves after validation is complete.
    */
+  @Traced()
   async validateHCaptchaResponse({ formData, request, userId = 'anonymous' }: ValidateHCaptchaResponseParams, invalidHCaptchaCallback: InvalidHCaptchaCallback): Promise<void> {
     this.log.debug('Validating hCaptcha response');
 
@@ -287,6 +291,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     this.log.debug('hCaptcha response is valid');
   }
 
+  @Traced()
   validateRequestMethod({ allowedMethods, request }: ValidateRequestMethodParams): void {
     type AllowedMethods = ValidateRequestMethodParams['allowedMethods'][number];
     const { pathname } = new URL(request.url);
@@ -302,6 +307,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     this.log.debug('Request method is allowed', { [ATTR_HTTP_REQUEST_METHOD]: method, [ATTR_URL_PATH]: pathname, [ATTR_CDCP_HTTP_ALLOWED_METHODS]: [...allowedMethods] });
   }
 
+  @Traced()
   async requireClientApplication({ applicationYearId, params, requestUrl, session, options }: RequireClientApplicationParams): Promise<ClientApplicationDto> {
     this.log.debug('Requiring client application', { [ATTR_SESSION_ID]: session.id });
     const userInfoToken = Option.getOrUndefined(session.find('userInfoToken'));
@@ -329,6 +335,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     return Option.getOrThrow(clientApplicationOption);
   }
 
+  @Traced()
   async requireApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ApplicantDto> {
     this.log.debug('Requiring applicant', { [ATTR_SESSION_ID]: session.id });
 
@@ -365,6 +372,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     return applicant;
   }
 
+  @Traced()
   async requireProgramApplicant({ params, requestUrl, session }: RequireApplicantArgs): Promise<ProgramApplicantDto> {
     this.log.debug('Requiring program applicant', { [ATTR_SESSION_ID]: session.id });
 
@@ -401,6 +409,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     return programApplicant;
   }
 
+  @Traced()
   async requireEnrolledApplicant({ clientNumber, params, options = {} }: RequireEnrolledApplicantArgs): Promise<void> {
     this.log.debug('Requiring enrolled applicant');
 

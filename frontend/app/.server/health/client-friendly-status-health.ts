@@ -9,6 +9,7 @@ import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositori
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 @injectable()
 export class ClientFriendlyStatusHealthCheck implements HealthCheck {
@@ -49,6 +50,7 @@ export class ClientFriendlyStatusHealthCheck implements HealthCheck {
     this.log.debug('ClientFriendlyStatusHealthCheck initialization complete.');
   }
 
+  @Traced()
   async check(signal?: AbortSignal): Promise<void> {
     await this.clientFriendlyStatusRepository.checkHealth();
   }

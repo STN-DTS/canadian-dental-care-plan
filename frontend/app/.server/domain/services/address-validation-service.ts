@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface AddressValidationService {
   /**
@@ -43,6 +44,7 @@ export class DefaultAddressValidationService implements AddressValidationService
     this.log.debug('DefaultAddressValidationService initiated.');
   }
 
+  @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestDto: AddressCorrectionRequestDto): Promise<AddressCorrectionResultDto> {
     this.log.trace('Getting address correction results', { [ATTR_CDCP_USER_ID]: addressCorrectionRequestDto.userId });
     this.auditService.createAudit('address-validation.get-address-correction-result', { userId: addressCorrectionRequestDto.userId });

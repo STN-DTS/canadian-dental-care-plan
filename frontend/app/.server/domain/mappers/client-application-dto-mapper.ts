@@ -7,6 +7,7 @@ import type { ClientApplicationBasicInfoRequestDto, ClientApplicationDto, Client
 import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationEntity, ClientApplicationSinRequestEntity } from '~/.server/domain/entities';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 import { expectDefined } from '~/utils/assert-utils';
 
@@ -42,6 +43,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
     this.serverConfig = serverConfig;
   }
 
+  @Traced()
   mapProgramApplicantDtoToClientApplicationDto(args: MapProgramApplicantDtoToClientApplicationDtoArgs): ClientApplicationDto {
     const { programApplicantDto, applicationYearId, typeOfApplication } = args;
     return {
@@ -74,6 +76,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
     };
   }
 
+  @Traced()
   mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): ClientApplicationBasicInfoRequestEntity {
     return {
       Applicant: {
@@ -99,6 +102,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
     };
   }
 
+  @Traced()
   mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): ClientApplicationSinRequestEntity {
     return {
       Applicant: {
@@ -114,6 +118,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
     };
   }
 
+  @Traced()
   mapClientApplicationEntityToClientApplicationDto(clientApplicationEntity: ClientApplicationEntity): ClientApplicationDto {
     const applicant = clientApplicationEntity.BenefitApplication.Applicant;
     const clientId = expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected applicant.ClientIdentification.IdentificationID with Client ID to be defined');

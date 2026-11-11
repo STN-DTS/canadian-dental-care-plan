@@ -76,6 +76,13 @@ Add or update focused tests with behavior changes. Keep Vitest unit tests in
 The frontend `node` and `jsdom` projects also participate in the root
 `pnpm test` command. Use Playwright for end-to-end tests.
 
+The [shared test setup](__tests__/setup-test-env.ts) loads the
+[`@Traced()` manual mock](app/.server/observability/decorator/__mocks__/index.ts)
+by default. It returns a no-op decorator, so ordinary unit tests do not create
+method spans. Tests that verify tracing use
+`vi.unmock(import('~/.server/observability/decorator'))` to restore the real
+implementation.
+
 For bug fixes, add a regression test that reproduces the failure and confirms
 the corrected behavior.
 

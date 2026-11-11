@@ -8,6 +8,7 @@ import type { LanguageDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { moveToTop } from '~/.server/utils/collection-utils';
 
 /**
@@ -91,6 +92,7 @@ export class DefaultLanguageService implements LanguageService {
    *
    * @returns An array of Language DTOs.
    */
+  @Traced()
   listLanguages(): ReadonlyArray<LanguageDto> {
     this.log.debug('Get all languages');
     this.log.trace('Returning languages', { [ATTR_CDCP_REFERENCE_COUNT]: this.languageDtos.length });
@@ -104,6 +106,7 @@ export class DefaultLanguageService implements LanguageService {
    * @returns The Language DTO corresponding to the specified ID.
    * @throws {LanguageNotFoundException} If no language is found with the specified ID.
    */
+  @Traced()
   getLanguageById(id: string): LanguageDto {
     this.log.debug('Get language');
     const languageDto = this.languageDtos.find((dto) => dto.id === id);
@@ -122,6 +125,7 @@ export class DefaultLanguageService implements LanguageService {
    * @param locale - The desired locale (e.g., 'en' or 'fr').
    * @returns An array of localized Language DTOs.
    */
+  @Traced()
   listAndSortLocalizedLanguages(locale: AppLocale): ReadonlyArray<LanguageLocalizedDto> {
     this.log.debug('Get and sort all localized languages', { [ATTR_CDCP_LOCALE]: locale });
     const languageDtos = this.listLanguages();
@@ -139,6 +143,7 @@ export class DefaultLanguageService implements LanguageService {
    * @returns The localized Language DTO corresponding to the specified ID.
    * @throws {LanguageNotFoundException} If no language is found with the specified ID.
    */
+  @Traced()
   getLocalizedLanguageById(id: string, locale: AppLocale): LanguageLocalizedDto {
     this.log.debug('Get localized language', { [ATTR_CDCP_LOCALE]: locale });
     const languageDto = this.getLanguageById(id);

@@ -3,6 +3,7 @@ import { injectable } from 'inversify';
 import type { CoverageDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing coverage information.
@@ -31,6 +32,7 @@ export class DefaultCoverageService implements CoverageService {
     this.log = createLogger('DefaultCoverageService');
   }
 
+  @Traced()
   getCoverage(date: Temporal.PlainDate): CoverageDto {
     this.log.trace('Finding coverage for a date');
     // Subtract one year if month is less than July
@@ -45,6 +47,7 @@ export class DefaultCoverageService implements CoverageService {
     };
   }
 
+  @Traced()
   getCurrentCoverage(): CoverageDto {
     this.log.trace('Finding current coverage');
     return this.getCoverage(Temporal.Now.plainDateISO('UTC'));

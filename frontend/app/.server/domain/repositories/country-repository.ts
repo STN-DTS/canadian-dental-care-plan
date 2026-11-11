@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import countryJsonDataSource from '~/.server/resources/power-platform/country.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -57,6 +58,7 @@ export class DefaultCountryRepository implements CountryRepository {
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
   }
 
+  @Traced()
   async listAllCountries(): Promise<ReadonlyArray<CountryEntity>> {
     this.log.trace('Fetching all countries');
 
@@ -90,6 +92,7 @@ export class DefaultCountryRepository implements CountryRepository {
     return countryEntities;
   }
 
+  @Traced()
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country');
 
@@ -105,12 +108,14 @@ export class DefaultCountryRepository implements CountryRepository {
     return Option.some(countryEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllCountries();
   }
@@ -124,6 +129,7 @@ export class MockCountryRepository implements CountryRepository {
     this.log = createLogger('MockCountryRepository');
   }
 
+  @Traced()
   async listAllCountries(): Promise<ReadonlyArray<CountryEntity>> {
     this.log.debug('Fetching all countries');
     const countryEntities = countryJsonDataSource.value;
@@ -137,6 +143,7 @@ export class MockCountryRepository implements CountryRepository {
     return await Promise.resolve(countryEntities);
   }
 
+  @Traced()
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country');
 
@@ -151,12 +158,14 @@ export class MockCountryRepository implements CountryRepository {
     return await Promise.resolve(Option.some(countryEntity));
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

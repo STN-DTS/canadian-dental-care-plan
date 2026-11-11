@@ -8,6 +8,7 @@ import type { AuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { randomString } from '~/utils/string-utils';
 
 export interface VerificationCodeService {
@@ -52,6 +53,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
     this.log.debug('DefaultVerificationCodeService initiated.');
   }
 
+  @Traced()
   createVerificationCode(userId: string): string {
     this.log.trace('Creating verification code', { [ATTR_CDCP_USER_ID]: userId });
     this.auditService.createAudit('verification-code.post', { userId });
@@ -62,6 +64,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
     return verificationCode;
   }
 
+  @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): Promise<void> {
     this.log.trace('Sending verification code email', { [ATTR_CDCP_USER_ID]: verificationCodeEmailRequestDto.userId });
 
@@ -84,6 +87,7 @@ export class StubVerificationCodeService extends DefaultVerificationCodeService 
     super(verificationCodeDtoMapper, verificationCodeRepository, auditService);
   }
 
+  @Traced()
   createVerificationCode(userId: string): string {
     this.log.trace('Creating stub verification code', { [ATTR_CDCP_USER_ID]: userId });
 

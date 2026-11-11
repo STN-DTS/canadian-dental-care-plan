@@ -2,6 +2,7 @@ import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
+import { Traced } from '~/.server/observability/decorator';
 import type { AddressValidator, AddressValidatorErrorMessages } from '~/.server/routes/validators/address-validator';
 import { DefaultAddressValidator } from '~/.server/routes/validators/address-validator';
 
@@ -26,6 +27,7 @@ export class DefaultAddressValidatorFactory {
     this.serverConfig = serverConfig;
   }
 
+  @Traced()
   createAddressValidator(errorMessages: AddressValidatorErrorMessages): AddressValidator {
     return new DefaultAddressValidator(errorMessages, this.serverConfig);
   }

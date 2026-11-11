@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { LetterDto } from '~/.server/domain/dtos';
 import type { LetterEntity, PdfEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface LetterDtoMapper {
   mapLetterEntitiesToLetterDtos(letterEntities: ReadonlyArray<LetterEntity>): ReadonlyArray<LetterDto>;
@@ -10,6 +11,7 @@ export interface LetterDtoMapper {
 
 @injectable()
 export class DefaultLetterDtoMapper implements LetterDtoMapper {
+  @Traced()
   mapLetterEntitiesToLetterDtos(letterEntities: ReadonlyArray<LetterEntity>): ReadonlyArray<LetterDto> {
     return letterEntities.map((letterEntity) => this.mapLetterEntityToLetterDto(letterEntity));
   }
@@ -22,6 +24,7 @@ export class DefaultLetterDtoMapper implements LetterDtoMapper {
     };
   }
 
+  @Traced()
   mapPdfEntityToString(pdfEntity: PdfEntity): string {
     return pdfEntity.documentBytes;
   }

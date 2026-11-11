@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
 import type { DynatraceDtoMapper } from '~/.server/web/mappers';
 import type { DynatraceRepository } from '~/.server/web/repositories';
@@ -58,6 +59,7 @@ export class DefaultDynatraceService implements DynatraceService {
     this.log.debug('DefaultDynatraceService initiated.');
   }
 
+  @Traced()
   async findDynatraceRumScript(userId = 'anonymous'): Promise<DynatraceRumScriptDto | null> {
     this.log.trace('Finding Dynatrace RUM script', { [ATTR_CDCP_USER_ID]: userId });
 

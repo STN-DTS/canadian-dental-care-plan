@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 
 import type { MaritalStatusDto, MaritalStatusLocalizedDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between MaritalStatusDto, MaritalStatusLocalizedDto, and LanguageEntity objects.
@@ -27,6 +28,7 @@ export interface MaritalStatusDtoMapper {
 
 @injectable()
 export class DefaultMaritalStatusDtoMapper implements MaritalStatusDtoMapper {
+  @Traced()
   mapMaritalStatusDtoToMaritalStatusLocalizedDto(maritalStatusDto: MaritalStatusDto, locale: AppLocale): MaritalStatusLocalizedDto {
     const { nameEn, nameFr, ...rest } = maritalStatusDto;
     return {
@@ -35,6 +37,7 @@ export class DefaultMaritalStatusDtoMapper implements MaritalStatusDtoMapper {
     };
   }
 
+  @Traced()
   mapMaritalStatusDtosToMaritalStatusLocalizedDtos(maritalStatusDtos: ReadonlyArray<MaritalStatusDto>, locale: AppLocale): ReadonlyArray<MaritalStatusLocalizedDto> {
     return maritalStatusDtos.map((dto) => this.mapMaritalStatusDtoToMaritalStatusLocalizedDto(dto, locale));
   }

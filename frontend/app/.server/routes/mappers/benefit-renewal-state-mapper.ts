@@ -17,6 +17,7 @@ import type {
   ClientContactInformationDto,
   ClientPartnerInformationDto,
 } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 import { checkValidAndVerifiedEmailAddress, isEmailAddressRequired, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type {
   BaseApplicationAddressDeclaredChangeState,
@@ -167,6 +168,7 @@ interface ToPartnerInformationArgs {
 
 @injectable()
 export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapper {
+  @Traced()
   mapBenefitRenewalAdultStateToBenefitRenewalDto(
     {
       channelCode,
@@ -253,6 +255,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     };
   }
 
+  @Traced()
   mapBenefitRenewalFamilyStateToBenefitRenewalDto(
     {
       channelCode,
@@ -345,6 +348,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     };
   }
 
+  @Traced()
   mapBenefitRenewalChildStateToBenefitRenewalDto(
     {
       channelCode,

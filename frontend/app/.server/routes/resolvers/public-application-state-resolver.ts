@@ -24,6 +24,7 @@ import type {
 } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { isEmail } from '~/utils/string-utils';
 
@@ -207,6 +208,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     this.sunLifeCommunicationMethodService = sunLifeCommunicationMethodService;
   }
 
+  @Traced()
   resolveCommunicationPreferencesValue(
     state: SetRequired<PickDeep<PublicApplicationState, 'communicationPreferences' | 'clientApplication.communicationPreferences'>, 'communicationPreferences'>,
     locale: AppLocale,
@@ -243,6 +245,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
+  @Traced()
   resolvePhoneNumberValue(state: SetRequired<PickDeep<PublicApplicationState, 'phoneNumber' | 'clientApplication.contactInformation.phoneNumber' | 'clientApplication.contactInformation.phoneNumberAlt'>, 'phoneNumber'>): {
     hasChanged: boolean;
     primary: string;
@@ -271,6 +274,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
+  @Traced()
   async resolveMailingAddressValue(
     state: SetRequired<
       PickDeep<
@@ -321,6 +325,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
+  @Traced()
   async resolveHomeAddressValue(
     state: SetRequired<
       PickDeep<
@@ -372,6 +377,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
+  @Traced()
   resolveEmailValue(state: PickDeep<PublicApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 
@@ -379,6 +385,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     return hasValidEmailInState ? state.email : state.clientApplication?.contactInformation.email;
   }
 
+  @Traced()
   async resolveDentalBenefitsValue(
     state: SetRequired<PickDeep<PublicApplicationState, 'dentalBenefits' | 'clientApplication.dentalBenefits'>, 'dentalBenefits'>,
     locale: AppLocale,
@@ -442,6 +449,7 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
+  @Traced()
   async resolveChildDentalBenefitsValue(
     childState: Required<Pick<PublicApplicationState['children'][number], 'dentalBenefits'>>,
     childClientApplication: Pick<NonNullable<PublicApplicationState['clientApplication']>['children'][number], 'dentalBenefits'> | undefined,

@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { DocumentUploadReasonDto, DocumentUploadReasonLocalizedDto } from '~/.server/domain/dtos';
 import type { DocumentUploadReasonEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface DocumentUploadReasonDtoMapper {
   mapDocumentUploadReasonDtoToDocumentUploadReasonLocalizedDto(documentUploadReasonDto: DocumentUploadReasonDto, locale: AppLocale): DocumentUploadReasonLocalizedDto;
@@ -12,6 +13,7 @@ export interface DocumentUploadReasonDtoMapper {
 
 @injectable()
 export class DefaultDocumentUploadReasonDtoMapper implements DocumentUploadReasonDtoMapper {
+  @Traced()
   mapDocumentUploadReasonDtoToDocumentUploadReasonLocalizedDto(documentUploadReasonDto: DocumentUploadReasonDto, locale: AppLocale): DocumentUploadReasonLocalizedDto {
     const { nameEn, nameFr, ...rest } = documentUploadReasonDto;
     return {
@@ -20,10 +22,12 @@ export class DefaultDocumentUploadReasonDtoMapper implements DocumentUploadReaso
     };
   }
 
+  @Traced()
   mapDocumentUploadReasonDtosToDocumentUploadReasonLocalizedDtos(documentUploadReasonDtos: ReadonlyArray<DocumentUploadReasonDto>, locale: AppLocale): ReadonlyArray<DocumentUploadReasonLocalizedDto> {
     return documentUploadReasonDtos.map((dto) => this.mapDocumentUploadReasonDtoToDocumentUploadReasonLocalizedDto(dto, locale));
   }
 
+  @Traced()
   mapDocumentUploadReasonEntityToDocumentUploadReasonDto(documentUploadReasonEntity: DocumentUploadReasonEntity): DocumentUploadReasonDto {
     const id = documentUploadReasonEntity.esdc_documentuploadreasonid;
     const nameEn = documentUploadReasonEntity.esdc_nameenglish;
@@ -31,6 +35,7 @@ export class DefaultDocumentUploadReasonDtoMapper implements DocumentUploadReaso
     return { id, nameEn, nameFr };
   }
 
+  @Traced()
   mapDocumentUploadReasonEntitiesToDocumentUploadReasonDtos(documentUploadReasonEntities: ReadonlyArray<DocumentUploadReasonEntity>): ReadonlyArray<DocumentUploadReasonDto> {
     return documentUploadReasonEntities.map((entity) => this.mapDocumentUploadReasonEntityToDocumentUploadReasonDto(entity));
   }

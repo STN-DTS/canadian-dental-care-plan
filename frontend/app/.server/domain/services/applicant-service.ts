@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Provides applicant lookups that support records without program-assigned or
@@ -48,6 +49,7 @@ export class DefaultApplicantService implements ApplicantService {
     this.log.debug('DefaultApplicantService initiated.');
   }
 
+  @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>> {
     this.log.trace('Finding applicant by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
     this.auditService.createAudit('applicant.basic-info.get', { userId: request.userId });
@@ -65,6 +67,7 @@ export class DefaultApplicantService implements ApplicantService {
     return Option.some(applicantDto);
   }
 
+  @Traced()
   async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>> {
     const { userId } = request;
     this.log.trace('Finding applicant by SIN', { [ATTR_CDCP_USER_ID]: userId });

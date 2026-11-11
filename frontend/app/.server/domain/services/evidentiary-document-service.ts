@@ -7,6 +7,7 @@ import type { EvidentiaryDocumentRepository } from '~/.server/domain/repositorie
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * A service that provides access to evidentiary document data.
@@ -50,6 +51,7 @@ export class DefaultEvidentiaryDocumentService implements EvidentiaryDocumentSer
     this.evidentiaryDocumentDtoMapper = evidentiaryDocumentDtoMapper;
   }
 
+  @Traced()
   async listEvidentiaryDocuments(listEvidentiaryDocumentsRequest: ListEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentDto>> {
     this.log.debug('Getting evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId });
 
@@ -62,6 +64,7 @@ export class DefaultEvidentiaryDocumentService implements EvidentiaryDocumentSer
     return evidentiaryDocumentDtos;
   }
 
+  @Traced()
   async listLocalizedEvidentiaryDocuments(listEvidentiaryDocumentsRequest: ListEvidentiaryDocumentsRequest, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentLocalizedDto>> {
     this.log.debug('Getting localized evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId, [ATTR_CDCP_LOCALE]: locale });
 
@@ -72,6 +75,7 @@ export class DefaultEvidentiaryDocumentService implements EvidentiaryDocumentSer
     return localizedEvidentiaryDocumentDtos;
   }
 
+  @Traced()
   async createEvidentiaryDocumentMetadata(createEvidentiaryDocumentMetadataRequest: CreateEvidentiaryDocumentMetadataRequest): Promise<CreateEvidentiaryDocumentMetadataResponseDto> {
     this.log.debug('Uploading evidentiary document metadata', { [ATTR_CDCP_USER_ID]: createEvidentiaryDocumentMetadataRequest.userId });
 

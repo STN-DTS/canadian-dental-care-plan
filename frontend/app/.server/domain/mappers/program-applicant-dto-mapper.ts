@@ -4,6 +4,7 @@ import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinReque
 import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, FindApplicantBySinRequestEntity } from '~/.server/domain/entities';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { expectDefined } from '~/utils/assert-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
@@ -32,6 +33,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     this.log = createLogger('DefaultProgramApplicantDtoMapper');
   }
 
+  @Traced()
   mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindProgramApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
     return {
       Applicant: {
@@ -52,6 +54,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     };
   }
 
+  @Traced()
   mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindProgramApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
     return {
       Applicant: {
@@ -62,6 +65,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     };
   }
 
+  @Traced()
   mapApplicantResponseEntityToProgramApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ProgramApplicantDto {
     const applicant = applicantResponseEntity.BenefitApplication.Applicant;
     const clientId = expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined');

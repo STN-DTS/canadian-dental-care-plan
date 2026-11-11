@@ -9,6 +9,7 @@ import { TYPES } from '~/.server/constants';
 import type { FetchFn, HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 import type { ClientMetadata, IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import * as raoidcUtils from '~/.server/utils/raoidc-utils';
@@ -131,6 +132,7 @@ export class DefaultRaoidcService implements RaoidcService {
     this.log.debug('DefaultRaoidcService initiated.');
   }
 
+  @Traced()
   async generateSigninRequest(redirectUri: string): Promise<SigninRequest> {
     this.log.debug('Generating OIDC signin request');
     const { AUTH_RAOIDC_BASE_URL } = this.serverConfig;
@@ -145,12 +147,14 @@ export class DefaultRaoidcService implements RaoidcService {
     return { authUrl, codeVerifier, state };
   }
 
+  @Traced()
   generateSignoutRequest({ sessionId, locale }: GenerateSignoutRequestArgs): string {
     this.log.debug('Generating OIDC signout request');
     const { AUTH_LOGOUT_REDIRECT_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;
     return expandTemplate(AUTH_LOGOUT_REDIRECT_URL, { clientId: AUTH_RAOIDC_CLIENT_ID, sharedSessionId: sessionId, uiLocales: locale });
   }
 
+  @Traced()
   async handleCallback({ requestUrl, codeVerifier, expectedState, redirectUri }: HandleCallbackArgs): Promise<HandleCallbackResult> {
     this.log.debug('Handling OIDC callback');
     const { AUTH_JWT_PRIVATE_KEY, AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;

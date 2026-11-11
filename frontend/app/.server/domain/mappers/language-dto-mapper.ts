@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 
 import type { LanguageDto, LanguageLocalizedDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between LanguageDto, LanguageLocalizedDto, and LanguageEntity objects.
@@ -27,6 +28,7 @@ export interface LanguageDtoMapper {
 
 @injectable()
 export class DefaultLanguageDtoMapper implements LanguageDtoMapper {
+  @Traced()
   mapLanguageDtoToLanguageLocalizedDto(languageDto: LanguageDto, locale: AppLocale): LanguageLocalizedDto {
     const { nameEn, nameFr, ...rest } = languageDto;
     return {
@@ -35,6 +37,7 @@ export class DefaultLanguageDtoMapper implements LanguageDtoMapper {
     };
   }
 
+  @Traced()
   mapLanguageDtosToLanguageLocalizedDtos(languageDtos: ReadonlyArray<LanguageDto>, locale: AppLocale): ReadonlyArray<LanguageLocalizedDto> {
     return languageDtos.map((dto) => this.mapLanguageDtoToLanguageLocalizedDto(dto, locale));
   }

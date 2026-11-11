@@ -11,6 +11,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { secondsToMilliseconds } from '~/utils/units-utils';
 
 /**
@@ -67,6 +68,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     this.log.debug('DefaultClientEligibilityService initiated.');
   }
 
+  @Traced()
   async listClientEligibilitiesByClientNumbers(clientNumbers: ReadonlyArray<string>): Promise<ReadonlyMap<string, ClientEligibilityDto>> {
     this.log.trace('Getting client eligibility');
 

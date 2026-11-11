@@ -10,6 +10,7 @@ import type { ApplicationYearRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ApplicationYearService {
   /**
@@ -73,6 +74,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     this.log.debug('DefaultApplicationYearService initiated.');
   }
 
+  @Traced()
   getIntakeApplicationYear(date: string): ApplicationYearResultDto {
     this.log.trace('Finding intake application year results');
 
@@ -83,6 +85,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     return intakeApplicationYearResultDto;
   }
 
+  @Traced()
   getRenewalApplicationYear(date: string): ApplicationYearResultDto {
     this.log.trace('Finding renewal application year results');
 

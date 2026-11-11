@@ -4,6 +4,7 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { ClientEligibilityDto, ClientEligibilityRequestDto } from '~/.server/domain/dtos/client-eligibility-dto';
 import type { ClientEligibilityEntity, ClientEligibilityRequestEntity } from '~/.server/domain/entities/client-eligibility-entity';
+import { Traced } from '~/.server/observability/decorator';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 import { expectDefined } from '~/utils/assert-utils';
 
@@ -22,6 +23,7 @@ export class DefaultClientEligibilityDtoMapper implements ClientEligibilityDtoMa
     this.serverConfig = serverConfig;
   }
 
+  @Traced()
   mapClientEligibilityEntityToClientEligibilityDto(clientEligibilityEntity: ClientEligibilityEntity): ClientEligibilityDto {
     const applicant = clientEligibilityEntity.Applicant;
 
@@ -55,6 +57,7 @@ export class DefaultClientEligibilityDtoMapper implements ClientEligibilityDtoMa
     };
   }
 
+  @Traced()
   mapClientEligibilityRequestDtoToClientEligibilityRequestEntity(clientEligibilityRequestDto: ClientEligibilityRequestDto): ClientEligibilityRequestEntity {
     return clientEligibilityRequestDto.map((dto) => ({
       Applicant: {

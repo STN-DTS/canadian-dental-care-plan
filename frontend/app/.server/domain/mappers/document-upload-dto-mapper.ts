@@ -4,6 +4,7 @@ import { TYPES } from '~/.server/constants';
 import type { DocumentScanRequestDto, DocumentUploadErrorDto, DocumentUploadRequestDto } from '~/.server/domain/dtos';
 import type { DocumentScanRequestEntity, DocumentUploadErrorEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { EvidentiaryDocumentTypeService } from '~/.server/domain/services';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface DocumentUploadDtoMapper {
   mapDocumentScanRequestDtoToEntity(documentScanRequestDto: DocumentScanRequestDto): DocumentScanRequestEntity;
@@ -19,6 +20,7 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
     this.evidentiaryDocumentTypeService = evidentiaryDocumentTypeService;
   }
 
+  @Traced()
   mapDocumentScanRequestDtoToEntity(documentScanRequestDto: DocumentScanRequestDto): DocumentScanRequestEntity {
     return {
       filename: documentScanRequestDto.fileName,
@@ -26,6 +28,7 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
     };
   }
 
+  @Traced()
   mapDocumentUploadErrorEntityToDto(documentUploadErrorEntity: DocumentUploadErrorEntity): DocumentUploadErrorDto {
     return {
       errorCode: documentUploadErrorEntity.ErrorCode,
@@ -33,6 +36,7 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
     };
   }
 
+  @Traced()
   async mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadRequestEntity> {
     const evidentiaryDocumentType = await this.evidentiaryDocumentTypeService.getEvidentiaryDocumentTypeById(documentUploadRequestDto.evidentiaryDocumentTypeId);
     return {

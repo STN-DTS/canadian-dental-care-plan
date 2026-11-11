@@ -12,6 +12,7 @@ import type { LetterTypeRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing letter type data.
@@ -98,6 +99,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     this.log.debug('DefaultLetterTypeService initiated.');
   }
 
+  @Traced()
   async listLetterTypes(): Promise<ReadonlyArray<LetterTypeDto>> {
     this.log.trace('Getting all letter types');
     const letterTypeEntities = await this.letterTypeRepository.listAllLetterTypes();
@@ -107,6 +109,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     return letterTypeDtos;
   }
 
+  @Traced()
   async getLetterTypeById(id: string): Promise<LetterTypeDto> {
     this.log.trace('Getting letter type');
 
@@ -123,6 +126,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     return letterTypeDto;
   }
 
+  @Traced()
   async listLocalizedLetterTypes(locale: AppLocale): Promise<ReadonlyArray<LetterTypeLocalizedDto>> {
     this.log.trace('Getting all localized letter types', { [ATTR_CDCP_LOCALE]: locale });
     const letterTypeDtos = await this.listLetterTypes();
@@ -131,6 +135,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
     return localizedLetterTypeDtos;
   }
 
+  @Traced()
   async getLocalizedLetterTypeById(id: string, locale: AppLocale): Promise<LetterTypeLocalizedDto> {
     this.log.trace('Getting localized letter type', { [ATTR_CDCP_LOCALE]: locale });
     const letterTypeDto = await this.getLetterTypeById(id);

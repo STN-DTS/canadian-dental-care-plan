@@ -7,6 +7,7 @@ import type { ClientEligibilityEntity, ClientEligibilityRequestEntity } from '~/
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import clientEligibilityJsonDataSource from '~/.server/resources/power-platform/client-eligibility.json';
 
 export interface ClientEligibilityRepository {
@@ -37,6 +38,7 @@ export class DefaultClientEligibilityRepository implements ClientEligibilityRepo
     this.httpClient = httpClient;
   }
 
+  @Traced()
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
     this.log.trace('Fetching client eligibility');
 
@@ -70,6 +72,7 @@ export class MockClientEligibilityRepository implements ClientEligibilityReposit
   constructor() {
     this.log = createLogger('MockClientEligibilityRepository');
   }
+  @Traced()
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
     this.log.debug('Fetching mock client eligibility');
 

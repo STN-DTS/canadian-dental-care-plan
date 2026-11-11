@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { ProvincialGovernmentInsurancePlanDto, ProvincialGovernmentInsurancePlanLocalizedDto } from '~/.server/domain/dtos';
 import type { GovernmentInsurancePlanEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ProvincialGovernmentInsurancePlanDtoMapper {
   mapProvincialGovernmentInsurancePlanDtoToProvincialGovernmentInsurancePlanLocalizedDto(provincialGovernmentInsurancePlanDto: ProvincialGovernmentInsurancePlanDto, locale: AppLocale): ProvincialGovernmentInsurancePlanLocalizedDto;
@@ -15,6 +16,7 @@ export interface ProvincialGovernmentInsurancePlanDtoMapper {
 
 @injectable()
 export class DefaultProvincialGovernmentInsurancePlanDtoMapper implements ProvincialGovernmentInsurancePlanDtoMapper {
+  @Traced()
   mapProvincialGovernmentInsurancePlanDtoToProvincialGovernmentInsurancePlanLocalizedDto(provincialGovernmentInsurancePlanDto: ProvincialGovernmentInsurancePlanDto, locale: AppLocale): ProvincialGovernmentInsurancePlanLocalizedDto {
     const { nameEn, nameFr, ...rest } = provincialGovernmentInsurancePlanDto;
     return {
@@ -23,6 +25,7 @@ export class DefaultProvincialGovernmentInsurancePlanDtoMapper implements Provin
     };
   }
 
+  @Traced()
   mapProvincialGovernmentInsurancePlanDtosToProvincialGovernmentInsurancePlanLocalizedDtos(
     provincialGovernmentInsurancePlanDtos: ReadonlyArray<ProvincialGovernmentInsurancePlanDto>,
     locale: AppLocale,
@@ -30,6 +33,7 @@ export class DefaultProvincialGovernmentInsurancePlanDtoMapper implements Provin
     return provincialGovernmentInsurancePlanDtos.map((dto) => this.mapProvincialGovernmentInsurancePlanDtoToProvincialGovernmentInsurancePlanLocalizedDto(dto, locale));
   }
 
+  @Traced()
   mapGovernmentInsurancePlanEntityToProvincialGovernmentInsurancePlanDto(provincialGovernmentInsurancePlanEntity: GovernmentInsurancePlanEntity): ProvincialGovernmentInsurancePlanDto {
     const id = provincialGovernmentInsurancePlanEntity.esdc_governmentinsuranceplanid;
     const nameEn = provincialGovernmentInsurancePlanEntity.esdc_nameenglish;
@@ -38,6 +42,7 @@ export class DefaultProvincialGovernmentInsurancePlanDtoMapper implements Provin
     return { id, nameEn, nameFr, provinceTerritoryStateId };
   }
 
+  @Traced()
   mapGovernmentInsurancePlanEntitiesToProvincialGovernmentInsurancePlanDtos(provincialGovernmentInsurancePlanEntities: GovernmentInsurancePlanEntity[]): ProvincialGovernmentInsurancePlanDto[] {
     return provincialGovernmentInsurancePlanEntities.map((entity) => this.mapGovernmentInsurancePlanEntityToProvincialGovernmentInsurancePlanDto(entity));
   }

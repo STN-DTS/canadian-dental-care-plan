@@ -7,6 +7,7 @@ import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import type { HCaptchaVerifyRequestEntity, HCaptchaVerifyResponseEntity } from '~/.server/web/entities';
 
 export interface HCaptchaRepository {
@@ -49,6 +50,7 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     this.baseUrl = this.serverConfig.HCAPTCHA_VERIFY_URL;
   }
 
+  @Traced()
   async verifyHCaptchaResponse({ hCaptchaResponse, ipAddress }: HCaptchaVerifyRequestEntity): Promise<HCaptchaVerifyResponseEntity> {
     this.log.trace('Verifying hCaptcha response');
 
@@ -80,12 +82,14 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     return hCaptchaVerifyResponseEntity;
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.verifyHCaptchaResponse({ hCaptchaResponse: this.serverConfig.HEALTH_PLACEHOLDER_REQUEST_VALUE });
   }

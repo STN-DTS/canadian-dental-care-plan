@@ -24,6 +24,7 @@ import type {
 } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { isEmail } from '~/utils/string-utils';
 
@@ -207,6 +208,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     this.sunLifeCommunicationMethodService = sunLifeCommunicationMethodService;
   }
 
+  @Traced()
   resolveCommunicationPreferencesValue(
     state: SetRequired<PickDeep<ProtectedApplicationState, 'communicationPreferences' | 'clientApplication.communicationPreferences'>, 'communicationPreferences'>,
     locale: AppLocale,
@@ -243,6 +245,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
+  @Traced()
   resolvePhoneNumberValue(state: SetRequired<PickDeep<ProtectedApplicationState, 'phoneNumber' | 'clientApplication.contactInformation.phoneNumber' | 'clientApplication.contactInformation.phoneNumberAlt'>, 'phoneNumber'>): {
     hasChanged: boolean;
     primary: string;
@@ -271,6 +274,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
+  @Traced()
   async resolveMailingAddressValue(
     state: SetRequired<
       PickDeep<
@@ -322,6 +326,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
+  @Traced()
   async resolveHomeAddressValue(
     state: SetRequired<
       PickDeep<
@@ -373,6 +378,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
+  @Traced()
   resolveEmailValue(state: PickDeep<ProtectedApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 
@@ -380,6 +386,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     return hasValidEmailInState ? state.email : state.clientApplication?.contactInformation.email;
   }
 
+  @Traced()
   async resolveDentalBenefitsValue(
     state: SetRequired<PickDeep<ProtectedApplicationState, 'dentalBenefits' | 'clientApplication.dentalBenefits'>, 'dentalBenefits'>,
     locale: AppLocale,
@@ -443,6 +450,7 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
+  @Traced()
   async resolveChildDentalBenefitsValue(
     childState: Required<Pick<ProtectedApplicationState['children'][number], 'dentalBenefits'>>,
     childClientApplication: Pick<NonNullable<ProtectedApplicationState['clientApplication']>['children'][number], 'dentalBenefits'> | undefined,

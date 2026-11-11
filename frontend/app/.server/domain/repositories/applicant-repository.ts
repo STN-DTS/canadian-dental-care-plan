@@ -8,6 +8,7 @@ import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, Fi
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -72,6 +73,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     this.baseUrl = `${this.serverConfig.INTEROP_APPLICANT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1`;
   }
 
+  @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by basic info');
 
@@ -114,6 +116,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     throw new Error(`Failed to 'POST' for applicant. Status:  ${response.status}, Status Text: ${response.statusText}`);
   }
 
+  @Traced()
   async findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by SIN');
 
@@ -156,12 +159,14 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     throw new Error(`Failed to 'POST' for applicant. Status:  ${response.status}, Status Text: ${response.statusText}`);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.findApplicantBySin({
       Applicant: {
@@ -283,6 +288,7 @@ export class MockApplicantRepository implements ApplicantRepository {
     this.log = createLogger('MockApplicantRepository');
   }
 
+  @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.debug('Fetching mock applicant by basic info');
 
@@ -311,6 +317,7 @@ export class MockApplicantRepository implements ApplicantRepository {
     return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 
+  @Traced()
   async findApplicantBySin(applicantRequestEntity: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.debug('Fetching mock applicant by SIN');
 
@@ -327,6 +334,7 @@ export class MockApplicantRepository implements ApplicantRepository {
     return await Promise.resolve(Option.some(applicantResponseEntity));
   }
 
+  @Traced()
   mapToApplicantResponseEntity(applicantEntity: (typeof this.mockApplicantDb)[number]): ApplicantResponseEntity {
     const clientIdentification: { IdentificationID: string; IdentificationCategoryText: 'Client ID' | 'Client Number' }[] = [];
 
@@ -417,12 +425,14 @@ export class MockApplicantRepository implements ApplicantRepository {
     };
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

@@ -4,6 +4,7 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface TokenRolesExtractor {
   extract(jwt?: string): Promise<string[]>;
@@ -23,6 +24,7 @@ export class DefaultTokenRolesExtractor implements TokenRolesExtractor {
     this.jwksUrl = jwksUrl;
   }
 
+  @Traced()
   async extract(jwt?: string): Promise<string[]> {
     this.log.trace('Extracting roles from token');
 

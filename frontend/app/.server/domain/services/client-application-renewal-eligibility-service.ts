@@ -8,6 +8,7 @@ import type { AuditService, ClientApplicationService, ProgramApplicantService } 
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 /**
@@ -53,6 +54,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     this.log.debug('DefaultClientApplicationRenewalEligibilityService initiated.');
   }
 
+  @Traced()
   async getClientApplicationRenewalEligibilityByBasicInfoAndSin(request: ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto): Promise<ClientApplicationRenewalEligibilityDto> {
     this.log.trace('Getting renewal eligibility by basic info and SIN', { [ATTR_CDCP_USER_ID]: request.userId });
 
@@ -112,6 +114,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);
   }
 
+  @Traced()
   async getClientApplicationRenewalEligibilityBySin(request: ClientApplicationRenewalEligibilitySinRequestDto): Promise<ClientApplicationRenewalEligibilityDto> {
     this.log.trace('Getting renewal eligibility by SIN', { [ATTR_CDCP_USER_ID]: request.userId });
 

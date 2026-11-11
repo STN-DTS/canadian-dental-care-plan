@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { FederalGovernmentInsurancePlanDto, FederalGovernmentInsurancePlanLocalizedDto } from '~/.server/domain/dtos';
 import type { GovernmentInsurancePlanEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface FederalGovernmentInsurancePlanDtoMapper {
   mapFederalGovernmentInsurancePlanDtoToFederalGovernmentInsurancePlanLocalizedDto(federalGovernmentInsuranceDto: FederalGovernmentInsurancePlanDto, locale: AppLocale): FederalGovernmentInsurancePlanLocalizedDto;
@@ -12,6 +13,7 @@ export interface FederalGovernmentInsurancePlanDtoMapper {
 
 @injectable()
 export class DefaultFederalGovernmentInsurancePlanDtoMapper implements FederalGovernmentInsurancePlanDtoMapper {
+  @Traced()
   mapFederalGovernmentInsurancePlanDtoToFederalGovernmentInsurancePlanLocalizedDto(federalGovernmentInsuranceDto: FederalGovernmentInsurancePlanDto, locale: AppLocale): FederalGovernmentInsurancePlanLocalizedDto {
     const { nameEn, nameFr, ...rest } = federalGovernmentInsuranceDto;
     return {
@@ -20,10 +22,12 @@ export class DefaultFederalGovernmentInsurancePlanDtoMapper implements FederalGo
     };
   }
 
+  @Traced()
   mapFederalGovernmentInsurancePlanDtosToFederalGovernmentInsurancePlanLocalizedDtos(federalGovernmentInsurancePlanDtos: ReadonlyArray<FederalGovernmentInsurancePlanDto>, locale: AppLocale): ReadonlyArray<FederalGovernmentInsurancePlanLocalizedDto> {
     return federalGovernmentInsurancePlanDtos.map((dto) => this.mapFederalGovernmentInsurancePlanDtoToFederalGovernmentInsurancePlanLocalizedDto(dto, locale));
   }
 
+  @Traced()
   mapGovernmentInsurancePlanEntityToFederalGovernmentInsurancePlanDto(federalGovernmentInsurancePlanEntity: GovernmentInsurancePlanEntity): FederalGovernmentInsurancePlanDto {
     const id = federalGovernmentInsurancePlanEntity.esdc_governmentinsuranceplanid;
     const nameEn = federalGovernmentInsurancePlanEntity.esdc_nameenglish;
@@ -31,6 +35,7 @@ export class DefaultFederalGovernmentInsurancePlanDtoMapper implements FederalGo
     return { id, nameEn, nameFr };
   }
 
+  @Traced()
   mapGovernmentInsurancePlanEntitiesToFederalGovernmentInsurancePlanDtos(federalGovernmentInsurancePlanEntities: GovernmentInsurancePlanEntity[]): FederalGovernmentInsurancePlanDto[] {
     return federalGovernmentInsurancePlanEntities.map((entity) => this.mapGovernmentInsurancePlanEntityToFederalGovernmentInsurancePlanDto(entity));
   }

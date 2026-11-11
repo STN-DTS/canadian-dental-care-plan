@@ -3,6 +3,7 @@ import { injectable } from 'inversify';
 import type { ApplicationYearResultEntity } from '~/.server/domain/entities';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 
 // TODO this repository will return static values until the Power Platform and Interop APIs are available for querying
 // specific values related to application years.
@@ -32,6 +33,7 @@ export class DefaultApplicationYearRepository implements ApplicationYearReposito
     this.log = createLogger('DefaultApplicationYearRepository');
   }
 
+  @Traced()
   getIntakeApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving intake application year entity');
 
@@ -53,6 +55,7 @@ export class DefaultApplicationYearRepository implements ApplicationYearReposito
     return applicationYearResultEntity;
   }
 
+  @Traced()
   getRenewalApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving renewal application year entity');
 
@@ -83,6 +86,7 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
     this.log = createLogger('MockApplicationYearRepository');
   }
 
+  @Traced()
   getIntakeApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving intake application year entity');
 
@@ -104,6 +108,7 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
     return applicationYearResultEntity;
   }
 
+  @Traced()
   getRenewalApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving renewal application year entity');
 

@@ -15,6 +15,7 @@ import type {
   BenefitRenewalTypeOfApplicationDto,
 } from '~/.server/domain/dtos';
 import type { BenefitRenewalRequestEntity, BenefitRenewalResponseEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 import { expectDefined } from '~/utils/assert-utils';
 import { parseDateString } from '~/utils/date-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
@@ -80,6 +81,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     this.serverConfig = serverConfig;
   }
 
+  @Traced()
   mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto: BenefitRenewalDto): BenefitRenewalRequestEntity {
     const { BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED, BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC } = this.serverConfig;
     const applicationChannelCode = benefitRenewalDto.applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC;
@@ -367,6 +369,7 @@ export class DefaultBenefitRenewalDtoMapper implements BenefitRenewalDtoMapper {
     return APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY;
   }
 
+  @Traced()
   mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity: BenefitRenewalResponseEntity): string {
     const applicationCode = benefitRenewalResponseEntity.BenefitApplication.BenefitApplicationIdentification[0]?.IdentificationID;
     return expectDefined(applicationCode, 'Expected applicationCode to be defined');

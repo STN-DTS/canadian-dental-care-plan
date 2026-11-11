@@ -10,6 +10,7 @@ import type { AuditService } from '~/.server/domain/services/audit-service';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /** Provides lookups restricted to applicants with a program-assigned type. */
 export interface ProgramApplicantService {
@@ -47,6 +48,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
     this.auditService = auditService;
   }
 
+  @Traced()
   async findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option.Option<ProgramApplicantDto>> {
     this.auditService.createAudit('program-applicant.basic-info.get', { userId: request.userId });
 
@@ -69,6 +71,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
     return Option.some(this.programApplicantDtoMapper.mapApplicantResponseEntityToProgramApplicantDto(applicantEntity));
   }
 
+  @Traced()
   async findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option.Option<ProgramApplicantDto>> {
     this.auditService.createAudit('program-applicant.personal-information.get', { userId: request.userId });
 

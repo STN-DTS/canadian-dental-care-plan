@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 
 import type { RecordSourceDto, RecordSourceLocalizedDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between RecordSourceDto and RecordSourceLocalizedDto.
@@ -21,6 +22,7 @@ export interface RecordSourceDtoMapper {
 
 @injectable()
 export class DefaultRecordSourceDtoMapper implements RecordSourceDtoMapper {
+  @Traced()
   mapRecordSourceDtoToRecordSourceLocalizedDto(recordSourceDto: RecordSourceDto, locale: AppLocale): RecordSourceLocalizedDto {
     const { nameEn, nameFr, ...rest } = recordSourceDto;
     return {
@@ -29,6 +31,7 @@ export class DefaultRecordSourceDtoMapper implements RecordSourceDtoMapper {
     };
   }
 
+  @Traced()
   mapRecordSourceDtosToRecordSourceLocalizedDtos(recordSourceDtos: ReadonlyArray<RecordSourceDto>, locale: AppLocale): ReadonlyArray<RecordSourceLocalizedDto> {
     return recordSourceDtos.map((dto) => this.mapRecordSourceDtoToRecordSourceLocalizedDto(dto, locale));
   }

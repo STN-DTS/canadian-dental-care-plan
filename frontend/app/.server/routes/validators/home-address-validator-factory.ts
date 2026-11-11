@@ -5,6 +5,7 @@ import type { Memoized, Options } from 'micro-memoize';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import type { AddressValidatorFactory } from '~/.server/routes/validators/';
 import { DefaultHomeAddressValidator } from '~/.server/routes/validators/home-address-validator';
 import type { HomeAddressValidator } from '~/.server/routes/validators/home-address-validator';
@@ -47,6 +48,7 @@ export class DefaultHomeAddressValidatorFactory implements HomeAddressValidatorF
    * Memoizes the creation of home address validators to reduce the number of times i18next files are read.
    * Each locale will have its own memoized validator.
    */
+  @Traced()
   createHomeAddressValidator(locale: AppLocale): HomeAddressValidator {
     return new DefaultHomeAddressValidator(locale, this.addressValidatorFactory);
   }

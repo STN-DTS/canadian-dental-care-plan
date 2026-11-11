@@ -11,6 +11,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_DOCUMENT_OUTCOME, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface DocumentUploadService {
   /**
@@ -51,6 +52,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     this.log.debug('DefaultDocumentUploadService initiated.');
   }
 
+  @Traced()
   async uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto> {
     this.log.trace('Uploading document', { [ATTR_CDCP_USER_ID]: documentUploadRequestDto.userId });
 
@@ -82,6 +84,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     }
   }
 
+  @Traced()
   async scanDocument(documentScanRequestDto: DocumentScanRequestDto): Promise<DocumentScanResponseDto> {
     this.log.trace('Scanning document', { [ATTR_CDCP_USER_ID]: documentScanRequestDto.userId });
 

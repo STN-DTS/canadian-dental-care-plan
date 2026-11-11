@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import clientFriendlyStatusJsonDataSource from '~/.server/resources/power-platform/client-friendly-status.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -57,6 +58,7 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
   }
 
+  @Traced()
   async listAllClientFriendlyStatuses(): Promise<ReadonlyArray<ClientFriendlyStatusEntity>> {
     this.log.trace('Fetching all client friendly statuses');
 
@@ -89,6 +91,7 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     return clientFriendlyStatusEntities;
   }
 
+  @Traced()
   async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status');
 
@@ -104,12 +107,14 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     return Option.some(clientFriendlyStatusEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllClientFriendlyStatuses();
   }
@@ -123,6 +128,7 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     this.log = createLogger('MockClientFriendlyStatusRepository');
   }
 
+  @Traced()
   async listAllClientFriendlyStatuses(): Promise<ReadonlyArray<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching all client friendly statuses');
     const clientFriendlyStatusEntities = clientFriendlyStatusJsonDataSource.value;
@@ -136,6 +142,7 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     return await Promise.resolve(clientFriendlyStatusEntities);
   }
 
+  @Traced()
   async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status');
 
@@ -150,12 +157,14 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     return await Promise.resolve(Option.some(clientFriendlyStatusEntity));
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

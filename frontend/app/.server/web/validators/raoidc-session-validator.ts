@@ -8,6 +8,7 @@ import { TYPES } from '~/.server/constants';
 import type { FetchFn, HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { validateSession } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 
@@ -51,6 +52,7 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
     this.fetchFn = httpClient.getFetchFn({ proxyUrl: serverConfig.HTTP_PROXY_URL });
   }
 
+  @Traced()
   async validateRaoidcSession({ session }: ValidateRaoidcSessionParams): Promise<ValidateRaoidcSessionResult> {
     this.log.debug('Performing RAOIDC session validation', { [ATTR_SESSION_ID]: session.id });
     const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;

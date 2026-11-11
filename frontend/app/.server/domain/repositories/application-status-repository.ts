@@ -7,6 +7,7 @@ import type { ApplicationStatusBasicInfoRequestEntity, ApplicationStatusEntity, 
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import clientFriendlyStatusDataSource from '~/.server/resources/power-platform/client-friendly-status.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
@@ -73,6 +74,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     this.baseUrl = `${this.serverConfig.INTEROP_STATUS_CHECK_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/status-check/v1`;
   }
 
+  @Traced()
   async getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity: ApplicationStatusBasicInfoRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.trace('Fetching application status by basic info');
 
@@ -110,6 +112,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     return applicationStatusEntity;
   }
 
+  @Traced()
   async getApplicationStatusBySin(applicationStatusSinRequestEntity: ApplicationStatusSinRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.trace('Fetching application status by SIN');
 
@@ -147,12 +150,14 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     return applicationStatusEntity;
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.getApplicationStatusBySin({
       BenefitApplication: {
@@ -196,6 +201,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     this.log = createLogger('MockApplicationStatusRepository');
   }
 
+  @Traced()
   async getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity: ApplicationStatusBasicInfoRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.debug('Fetching mock application status by basic info');
 
@@ -218,6 +224,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     return await Promise.resolve(applicationStatusEntity);
   }
 
+  @Traced()
   async getApplicationStatusBySin(applicationStatusSinRequestEntity: ApplicationStatusSinRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.debug('Fetching mock application status by SIN');
 
@@ -240,12 +247,14 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     return await Promise.resolve(applicationStatusEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

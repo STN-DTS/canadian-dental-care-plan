@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LETTERS_SORT_ORDER, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface LetterService {
   /**
@@ -47,6 +48,7 @@ export class DefaultLetterService implements LetterService {
     this.log.debug('DefaultLetterService initiated.');
   }
 
+  @Traced()
   async findLettersByClientId({ clientId, userId, sortOrder = 'desc' }: LettersRequestDto): Promise<ReadonlyArray<LetterDto>> {
     this.log.trace('Finding letters', { [ATTR_CDCP_USER_ID]: userId, [ATTR_CDCP_LETTERS_SORT_ORDER]: sortOrder });
 
@@ -63,6 +65,7 @@ export class DefaultLetterService implements LetterService {
     return sortedLetterDtos;
   }
 
+  @Traced()
   async getPdfByLetterId({ letterId, userId }: PdfRequestDto): Promise<string> {
     this.log.trace('Finding letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId, [ATTR_CDCP_USER_ID]: userId });
 

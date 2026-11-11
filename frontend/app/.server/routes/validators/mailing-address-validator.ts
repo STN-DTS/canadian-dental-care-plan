@@ -1,3 +1,4 @@
+import { Traced } from '~/.server/observability/decorator';
 import type { Address, AddressValidatorErrorMessages, AddressValidatorFactory } from '~/.server/routes/validators/';
 import type { InvalidResult, ValidResult } from '~/.server/routes/validators/types-validator';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -23,6 +24,7 @@ export class DefaultMailingAddressValidator implements MailingAddressValidator {
     this.addressValidatorFactory = addressValidatorFactory;
   }
 
+  @Traced()
   async validateMailingAddress(data: Partial<Address>): Promise<InvalidResult<Address> | ValidResult<Address>> {
     const errorMessages = await this.buildMailingAddressSchemaErrorMessages();
     const addressValidator = this.addressValidatorFactory.createAddressValidator(errorMessages);

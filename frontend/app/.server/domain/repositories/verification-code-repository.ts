@@ -8,6 +8,7 @@ import type { VerificationCodeEmailRequestEntity, VerificationCodeEmailResponseE
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -51,6 +52,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/notifications/email-txt-notifications/v1`;
   }
 
+  @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
     this.log.trace('Sending verification code email');
 
@@ -82,12 +84,14 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     return verificationCodeEmailResponseEntity;
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     this.log.trace('Checking health for verification code repository');
 
@@ -123,6 +127,7 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
     this.log = createLogger('MockVerificationCodeRepository');
   }
 
+  @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
     this.log.trace('Generating mock verification code email');
 
@@ -146,12 +151,14 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
     return await Promise.resolve(verificationCodeEmailResponseEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

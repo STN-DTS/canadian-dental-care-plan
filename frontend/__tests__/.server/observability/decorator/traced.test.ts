@@ -1,8 +1,10 @@
 import { SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { Traced } from '~/.server/observability/decorator';
+
+vi.unmock(import('~/.server/observability/decorator'));
 
 class TestService {
   @Traced()
@@ -20,14 +22,9 @@ class TestService {
     return 'named';
   }
 
-  @Traced({ name: 'explicit-name', op: 'custom-op' })
+  @Traced({ name: 'explicit-name' })
   explicitNamedSpan() {
     return 'explicit';
-  }
-
-  @Traced({ op: 'database' })
-  opOnlySpan() {
-    return 'op only';
   }
 
   @Traced({ kind: SpanKind.PRODUCER })
@@ -205,25 +202,9 @@ describe('Traced', () => {
       expect(spans).toHaveLength(1);
       expect(spans[0]?.name).toEqual('explicit-name');
     });
-
-    it('auto-generates name when only op is provided', () => {
-      service.opOnlySpan();
-
-      const spans = traceExporter.getFinishedSpans();
-      expect(spans).toHaveLength(1);
-      expect(spans[0]?.name).toEqual('TestService.opOnlySpan');
-    });
   });
 
   describe('span options', () => {
-    it('sets op as span attribute', () => {
-      service.explicitNamedSpan();
-
-      const spans = traceExporter.getFinishedSpans();
-      expect(spans).toHaveLength(1);
-      expect(spans[0]?.attributes['code.op']).toEqual('custom-op');
-    });
-
     it('sets span kind', () => {
       service.producerSpan();
 
@@ -232,13 +213,12 @@ describe('Traced', () => {
       expect(spans[0]?.kind).toEqual(SpanKind.PRODUCER);
     });
 
-    it('sets code.function and code.namespace attributes', () => {
+    it('sets code.function.name attribute', () => {
       service.syncMethod();
 
       const spans = traceExporter.getFinishedSpans();
       expect(spans).toHaveLength(1);
-      expect(spans[0]?.attributes['code.function']).toEqual('syncMethod');
-      expect(spans[0]?.attributes['code.namespace']).toEqual('TestService');
+      expect(spans[0]?.attributes['code.function.name']).toEqual('TestService.syncMethod');
     });
   });
 

@@ -1,6 +1,7 @@
 import * as z from 'zod';
 
 import type { ServerConfig } from '~/.server/configs';
+import { Traced } from '~/.server/observability/decorator';
 import type { InvalidResult, ValidResult } from '~/.server/routes/validators/types-validator';
 import { formatPostalCode, isValidCanadianPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
@@ -72,6 +73,7 @@ export class DefaultAddressValidator {
    * Validates address data. Returns validation success and either parsed data or errors.
    * @param data - Partial address input data to validate.
    */
+  @Traced()
   validateAddress(data: Partial<Address>): InvalidResult<Address> | ValidResult<Address> {
     const addressSchema = this.buildAddressSchema();
     const parsedDataResult = addressSchema.safeParse(data);

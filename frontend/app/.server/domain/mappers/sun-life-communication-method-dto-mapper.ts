@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 
 import type { SunLifeCommunicationMethodDto, SunLifeCommunicationMethodLocalizedDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between SunLifeCommunicationMethodDto, SunLifeCommunicationMethodLocalizedDto, and LanguageEntity objects.
@@ -27,6 +28,7 @@ export interface SunLifeCommunicationMethodDtoMapper {
 
 @injectable()
 export class DefaultSunLifeCommunicationMethodDtoMapper implements SunLifeCommunicationMethodDtoMapper {
+  @Traced()
   mapSunLifeCommunicationMethodDtoToSunLifeCommunicationMethodLocalizedDto(sunLifeCommunicationMethodDto: SunLifeCommunicationMethodDto, locale: AppLocale): SunLifeCommunicationMethodLocalizedDto {
     const { nameEn, nameFr, ...rest } = sunLifeCommunicationMethodDto;
     return {
@@ -35,6 +37,7 @@ export class DefaultSunLifeCommunicationMethodDtoMapper implements SunLifeCommun
     };
   }
 
+  @Traced()
   mapSunLifeCommunicationMethodDtosToSunLifeCommunicationMethodLocalizedDtos(sunLifeCommunicationMethodDtos: ReadonlyArray<SunLifeCommunicationMethodDto>, locale: AppLocale): ReadonlyArray<SunLifeCommunicationMethodLocalizedDto> {
     return sunLifeCommunicationMethodDtos.map((dto) => this.mapSunLifeCommunicationMethodDtoToSunLifeCommunicationMethodLocalizedDto(dto, locale));
   }

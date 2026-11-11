@@ -7,6 +7,7 @@ import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationEntity, 
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import clientApplicationItaJsonDataSource from '~/.server/resources/power-platform/client-application-ita.json';
 import clientApplicationJsonDataSource from '~/.server/resources/power-platform/client-application.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
@@ -47,6 +48,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
     this.httpClient = httpClient;
   }
 
+  @Traced()
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.trace('Fetching client application by basic info');
 
@@ -82,6 +84,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
     throw new Error(`Failed to 'POST' for client application data by basic info. Status: ${response.status}, Status Text: ${response.statusText}`);
   }
 
+  @Traced()
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.trace('Fetching client application by SIN');
 
@@ -243,6 +246,7 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
     this.log = createLogger('MockClientApplicationRepository');
   }
 
+  @Traced()
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.debug('Fetching mock client application by basic info');
 
@@ -294,6 +298,7 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
     return await Promise.resolve(Option.some(clientApplicationEntity));
   }
 
+  @Traced()
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.debug('Fetching mock client application by SIN');
 

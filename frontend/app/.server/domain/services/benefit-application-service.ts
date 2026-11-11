@@ -12,6 +12,7 @@ import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging';
 import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -67,6 +68,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     this.log.debug('DefaultBenefitApplicationService initiated.');
   }
 
+  @Traced()
   async createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
     this.log.trace('Creating public benefit application', { [ATTR_CDCP_USER_ID]: benefitApplicationRequestDto.userId });
 
@@ -103,6 +105,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     }
   }
 
+  @Traced()
   async createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
     this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId });
 

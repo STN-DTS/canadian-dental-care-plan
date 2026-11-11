@@ -9,6 +9,7 @@ import type { CountryRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 @injectable()
 export class CountryHealthCheck implements HealthCheck {
@@ -49,6 +50,7 @@ export class CountryHealthCheck implements HealthCheck {
     this.log.debug('CountryHealthCheck initialization complete.');
   }
 
+  @Traced()
   async check(signal?: AbortSignal): Promise<void> {
     await this.countryRepository.checkHealth();
   }

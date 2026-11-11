@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import documentUploadReasonJsonDataSource from '~/.server/resources/power-platform/document-upload-reason.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -60,6 +61,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
   }
 
+  @Traced()
   async listAllDocumentUploadReasons(): Promise<ReadonlyArray<DocumentUploadReasonEntity>> {
     this.log.trace('Fetching all document upload reasons');
 
@@ -93,6 +95,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     return documentUploadReasonEntities;
   }
 
+  @Traced()
   async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
     this.log.debug('Fetching document upload reason');
 
@@ -108,12 +111,14 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     return Option.some(documentEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllDocumentUploadReasons();
   }
@@ -127,6 +132,7 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
     this.log = createLogger('MockDocumentUploadReasonRepository');
   }
 
+  @Traced()
   async listAllDocumentUploadReasons(): Promise<ReadonlyArray<DocumentUploadReasonEntity>> {
     this.log.debug('Fetching all document upload reasons');
     const documentUploadReasonEntities = documentUploadReasonJsonDataSource.value;
@@ -140,6 +146,7 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
     return await Promise.resolve(documentUploadReasonEntities);
   }
 
+  @Traced()
   async findDocumentUploadReasonById(id: string): Promise<Option.Option<DocumentUploadReasonEntity>> {
     this.log.debug('Fetching document upload reason');
 
@@ -154,12 +161,14 @@ export class MockDocumentUploadReasonRepository implements DocumentUploadReasonR
     return await Promise.resolve(Option.some(documentEntity));
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

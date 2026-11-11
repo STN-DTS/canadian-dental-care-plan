@@ -6,6 +6,7 @@ import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_HCAPTCHA_MAX_SCORE, ATTR_CDCP_HCAPTCHA_SCORE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import type { HCaptchaVerifyRequestDto } from '~/.server/web/dtos';
 import type { HCaptchaService } from '~/.server/web/services';
 
@@ -59,6 +60,7 @@ export class DefaultHCaptchaValidator implements HCaptchaValidator {
     this.hCaptchaService = hCaptchaService;
   }
 
+  @Traced()
   async validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId = 'anonymous' }: ValidateHCaptchaResponseParams): Promise<ValidateHCaptchaResponseResult> {
     this.log.debug('Starting hCaptcha response validation', { [ATTR_CDCP_USER_ID]: userId });
 

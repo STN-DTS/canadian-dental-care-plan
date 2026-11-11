@@ -6,6 +6,7 @@ import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { expandTemplate } from '~/utils/string-utils';
 
 export interface DynatraceRepository {
@@ -29,6 +30,7 @@ export class DefaultDynatraceRepository implements DynatraceRepository {
     this.httpClient = httpClient;
   }
 
+  @Traced()
   async findDynatraceRumScript(): Promise<string | null> {
     this.log.trace('Fetching Dynatrace RUM script.');
 

@@ -7,6 +7,7 @@ import type { ClientApplicationDtoMapper } from '~/.server/domain/mappers/client
 import type { ClientEligibilityService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 import { isChildOrYouth } from '~/.server/routes/helpers/base-application-route-helpers';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
 
@@ -49,6 +50,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     this.serverConfig = serverConfig;
   }
 
+  @Traced()
   async mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicantDto: ProgramApplicantDto, applicationYear: { applicationYearId: string; taxYear: string }): Promise<ClientApplicationRenewalEligibilityDto> {
     this.log.trace('Mapping program applicant to renewal eligibility');
 
@@ -64,6 +66,7 @@ export class DefaultClientApplicationRenewalEligibilityDtoMapper implements Clie
     return await this.mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(clientApplicationDto, applicationYear, 'New');
   }
 
+  @Traced()
   async mapClientApplicationDtoToClientApplicationRenewalEligibilityDto(
     clientApplicationDto: ClientApplicationDto,
     applicationYear: { taxYear: string },

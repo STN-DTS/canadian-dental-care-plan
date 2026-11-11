@@ -5,6 +5,7 @@
  */
 import type { Span, SpanOptions } from '@opentelemetry/api';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
+import { ATTR_CODE_FUNCTION_NAME } from '@opentelemetry/semantic-conventions';
 
 /**
  * Records an exception and sets the span's error status without ending the span.
@@ -155,7 +156,6 @@ function invoke<T>(fn: AnyFunction, thisObj: unknown, args: unknown[], onDone: (
 
 export interface TracedOptions extends SpanOptions {
   name?: string;
-  op?: string;
 }
 
 /**
@@ -212,7 +212,7 @@ export function Traced(nameOrOptions?: string | TracedOptions, maybeOptions?: Tr
     const wrappedFunction = function (this: unknown, ...args: unknown[]) {
       const tracer = trace.getTracer('default');
 
-      const { name: _name, op, ...otelSpanOptions } = spanOptions;
+      const { name: _name, ...otelSpanOptions } = spanOptions;
       void _name;
 
       return tracer.startActiveSpan(
@@ -220,10 +220,8 @@ export function Traced(nameOrOptions?: string | TracedOptions, maybeOptions?: Tr
         {
           ...otelSpanOptions,
           attributes: {
-            'code.function': methodName,
-            'code.namespace': className,
+            [ATTR_CODE_FUNCTION_NAME]: `${className}.${methodName}`,
             ...otelSpanOptions.attributes,
-            ...(op ? { 'code.op': op } : {}),
           },
         },
         (span) => {

@@ -91,6 +91,32 @@ podman volume import <volume-name> <volume-name>.tar
 
 ## Application instrumentation
 
+### Class method spans
+
+Public instance methods in `app/.server/` use the existing
+[`@Traced()` decorator](../../app/.server/observability/decorator/traced.ts).
+This includes default and mock implementations. Logging and tracing internals,
+constructors, accessors, static methods, and private or protected helpers remain
+undecorated.
+
+Span names use `ClassName.methodName`. The `code.namespace` and `code.function`
+attributes identify the class and method. Arguments and return values are not
+attached as attributes. The decorator records thrown or rejected errors as
+exception events and sets the span status to error without replacing the error.
+Exception messages and stacks retain the decorator's existing behavior.
+
+Synchronous spans finish when the method returns. Asynchronous spans finish
+when the returned promise settles. Method spans use the active OpenTelemetry
+context, so repository and mapper spans nest under their calling service spans.
+
+Existing memoization wraps the decorated method. Cache hits do not execute the
+method and therefore do not create its span. Cached values, cache settings,
+and method signatures are unchanged.
+
+The [application tracing tests](../../__tests__/.server/observability/application-tracing.test.ts)
+check method coverage and export spans from real service, repository, and mapper
+invocations with a mocked HTTP client.
+
 ### Application error correlation IDs
 
 Error pages display an existing `AppError.correlationId`, for example

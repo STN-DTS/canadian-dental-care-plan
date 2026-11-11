@@ -8,6 +8,7 @@ import type { MaritalStatusDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing marital status data.
@@ -81,12 +82,14 @@ export class DefaultMaritalStatusService implements MaritalStatusService {
     ];
   }
 
+  @Traced()
   listMaritalStatuses(): ReadonlyArray<MaritalStatusDto> {
     this.log.debug('Get all marital statuses');
     this.log.trace('Returning marital statuses', { [ATTR_CDCP_REFERENCE_COUNT]: this.maritalStatusDtos.length });
     return this.maritalStatusDtos;
   }
 
+  @Traced()
   getMaritalStatusById(id: string): MaritalStatusDto {
     this.log.debug('Get marital status');
     const maritalStatusDto = this.maritalStatusDtos.find((dto) => dto.id === id);
@@ -99,6 +102,7 @@ export class DefaultMaritalStatusService implements MaritalStatusService {
     return maritalStatusDto;
   }
 
+  @Traced()
   listLocalizedMaritalStatuses(locale: AppLocale): ReadonlyArray<MaritalStatusLocalizedDto> {
     this.log.debug('Get all localized marital statuses', { [ATTR_CDCP_LOCALE]: locale });
     const maritalStatusDtos = this.listMaritalStatuses();
@@ -107,6 +111,7 @@ export class DefaultMaritalStatusService implements MaritalStatusService {
     return localizedMaritalStatusDtos;
   }
 
+  @Traced()
   getLocalizedMaritalStatusById(id: string, locale: AppLocale): MaritalStatusLocalizedDto {
     this.log.debug('Get localized marital status', { [ATTR_CDCP_LOCALE]: locale });
     const maritalStatusDto = this.getMaritalStatusById(id);

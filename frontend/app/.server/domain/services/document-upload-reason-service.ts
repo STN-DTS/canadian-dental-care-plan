@@ -12,6 +12,7 @@ import type { DocumentUploadReasonRepository } from '~/.server/domain/repositori
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing document upload reason data.
@@ -98,6 +99,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     this.log.debug('DefaultDocumentUploadReasonService initiated.');
   }
 
+  @Traced()
   async listDocumentUploadReasons(): Promise<ReadonlyArray<DocumentUploadReasonDto>> {
     this.log.trace('Getting all document upload reasons');
     const documentUploadReasonEntities = await this.documentUploadReasonRepository.listAllDocumentUploadReasons();
@@ -106,6 +108,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     return documentUploadReasonDtos;
   }
 
+  @Traced()
   async getDocumentUploadReasonById(id: string): Promise<DocumentUploadReasonDto> {
     this.log.trace('Getting document upload reason');
 
@@ -120,6 +123,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     return documentUploadReasonDto;
   }
 
+  @Traced()
   async listLocalizedDocumentUploadReasons(locale: AppLocale): Promise<ReadonlyArray<DocumentUploadReasonLocalizedDto>> {
     this.log.trace('Getting all localized document upload reasons', { [ATTR_CDCP_LOCALE]: locale });
     const documentUploadReasonDtos = await this.listDocumentUploadReasons();
@@ -128,6 +132,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
     return localizedDocumentUploadReasonDtos;
   }
 
+  @Traced()
   async getLocalizedDocumentUploadReasonById(id: string, locale: AppLocale): Promise<DocumentUploadReasonLocalizedDto> {
     this.log.trace('Getting localized document upload reason', { [ATTR_CDCP_LOCALE]: locale });
     const documentUploadReasonDto = await this.getDocumentUploadReasonById(id);

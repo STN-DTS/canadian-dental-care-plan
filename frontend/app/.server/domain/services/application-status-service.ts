@@ -9,6 +9,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * A service that provides access to application status data.
@@ -54,6 +55,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
     this.log.debug('DefaultApplicationStatusService initiated.');
   }
 
+  @Traced()
   async findApplicationStatusIdByBasicInfo(applicationStatusBasicInfoRequestDto: ApplicationStatusBasicInfoRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by basic info', { [ATTR_CDCP_USER_ID]: applicationStatusBasicInfoRequestDto.userId });
 
@@ -67,6 +69,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
     return applicationStatusId;
   }
 
+  @Traced()
   async findApplicationStatusIdBySin(applicationStatusSinRequestDto: ApplicationStatusSinRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by SIN', { [ATTR_CDCP_USER_ID]: applicationStatusSinRequestDto.userId });
 

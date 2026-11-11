@@ -5,6 +5,7 @@ import { afterEach, vi } from 'vitest';
 
 vi.mock(import('react-i18next'));
 vi.mock(import('~/.server/logging'));
+vi.mock(import('~/.server/observability/decorator'));
 
 afterEach(() => {
   cleanup();

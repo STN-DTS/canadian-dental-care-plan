@@ -2,6 +2,7 @@ import { invariant } from '@dts-stn/invariant';
 import { injectable } from 'inversify';
 
 import type { BenefitApplicationApplicantInformationDto, BenefitApplicationCommunicationPreferencesDto, BenefitApplicationDto, BenefitApplicationEmailDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 import { checkValidAndVerifiedEmailAddress, isEmailAddressRequired } from '~/.server/routes/helpers/base-application-route-helpers';
 import type {
   BaseApplicationAddressDeclaredChangeState,
@@ -131,6 +132,7 @@ export interface BenefitApplicationStateMapper {
 
 @injectable()
 export class DefaultBenefitApplicationStateMapper implements BenefitApplicationStateMapper {
+  @Traced()
   mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationAdultState.applicantInformation.dateOfBirth, applicationAdultState.applicationYear);
 
@@ -174,6 +176,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     };
   }
 
+  @Traced()
   mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationFamilyState.applicantInformation.dateOfBirth, applicationFamilyState.applicationYear);
 
@@ -216,6 +219,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     };
   }
 
+  @Traced()
   mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId: string = 'anonymous'): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationChildrenState.applicantInformation.dateOfBirth, applicationChildrenState.applicationYear);
 

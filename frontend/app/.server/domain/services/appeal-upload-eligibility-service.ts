@@ -7,6 +7,7 @@ import type { AppealUploadEligibilityDtoMapper } from '~/.server/domain/mappers'
 import type { AppealUploadEligibilityRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for determining appeal document upload eligibility.
@@ -33,6 +34,7 @@ export class DefaultAppealUploadEligibilityService implements AppealUploadEligib
     this.appealUploadEligibilityRepository = appealUploadEligibilityRepository;
   }
 
+  @Traced()
   async findAppealUploadEligibility(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityDto>> {
     this.log.trace('Getting appeal upload eligibility');
 

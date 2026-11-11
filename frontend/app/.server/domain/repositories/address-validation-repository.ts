@@ -8,6 +8,7 @@ import type { AddressCorrectionRequestEntity, AddressCorrectionResultEntity } fr
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface AddressValidationRepository {
   /**
@@ -50,6 +51,7 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/address/validation/v1`;
   }
 
+  @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestEntity: AddressCorrectionRequestEntity): Promise<AddressCorrectionResultEntity> {
     this.log.trace('Requesting address correction');
     const { address, city, postalCode, provinceCode } = addressCorrectionRequestEntity;
@@ -81,12 +83,14 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
     return addressCorrectionResults;
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.getAddressCorrectionResult({ address: '111 WELLINGTON ST', city: 'Ottawa', postalCode: 'K1A0A4', provinceCode: 'ON' });
   }
@@ -100,6 +104,7 @@ export class MockAddressValidationRepository implements AddressValidationReposit
     this.log = createLogger('MockAddressValidationRepository');
   }
 
+  @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestEntity: AddressCorrectionRequestEntity): Promise<AddressCorrectionResultEntity> {
     this.log.debug('Generating mock address correction');
     const statusCode = this.mockStatusCodeFromProvinceCode(addressCorrectionRequestEntity.provinceCode);
@@ -139,12 +144,14 @@ export class MockAddressValidationRepository implements AddressValidationReposit
     return 'Valid';
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

@@ -5,6 +5,7 @@ import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, Fi
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_CLIENT_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import { expectDefined } from '~/utils/assert-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
@@ -33,6 +34,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     this.log = createLogger('DefaultApplicantDtoMapper');
   }
 
+  @Traced()
   mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
     return {
       Applicant: {
@@ -53,6 +55,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     };
   }
 
+  @Traced()
   mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
     return {
       Applicant: {
@@ -63,6 +66,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     };
   }
 
+  @Traced()
   mapApplicantResponseEntityToApplicantDto(applicantResponseEntity: ApplicantResponseEntity): ApplicantDto {
     const applicant = applicantResponseEntity.BenefitApplication.Applicant;
     const clientId = expectDefined(applicant.ClientIdentification.find((id) => id.IdentificationCategoryText === 'Client ID')?.IdentificationID, 'Expected clientId to be defined');

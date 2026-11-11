@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { ProvinceTerritoryStateDto, ProvinceTerritoryStateLocalizedDto } from '~/.server/domain/dtos';
 import type { ProvinceTerritoryStateEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ProvinceTerritoryStateDtoMapper {
   mapProvinceTerritoryStateDtoToProvinceTerritoryStateLocalizedDto(provinceTerritoryStateDto: ProvinceTerritoryStateDto, locale: AppLocale): ProvinceTerritoryStateLocalizedDto;
@@ -12,6 +13,7 @@ export interface ProvinceTerritoryStateDtoMapper {
 
 @injectable()
 export class DefaultProvinceTerritoryStateDtoMapper implements ProvinceTerritoryStateDtoMapper {
+  @Traced()
   mapProvinceTerritoryStateDtoToProvinceTerritoryStateLocalizedDto(provinceTerritoryStateDto: ProvinceTerritoryStateDto, locale: AppLocale): ProvinceTerritoryStateLocalizedDto {
     const { nameEn, nameFr, ...rest } = provinceTerritoryStateDto;
     return {
@@ -20,10 +22,12 @@ export class DefaultProvinceTerritoryStateDtoMapper implements ProvinceTerritory
     };
   }
 
+  @Traced()
   mapProvinceTerritoryStateDtosToProvinceTerritoryStateLocalizedDtos(provinceTerritoryStateDtos: ReadonlyArray<ProvinceTerritoryStateDto>, locale: AppLocale): ReadonlyArray<ProvinceTerritoryStateLocalizedDto> {
     return provinceTerritoryStateDtos.map((dto) => this.mapProvinceTerritoryStateDtoToProvinceTerritoryStateLocalizedDto(dto, locale));
   }
 
+  @Traced()
   mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(provinceTerritoryStateEntity: ProvinceTerritoryStateEntity): ProvinceTerritoryStateDto {
     const id = provinceTerritoryStateEntity.esdc_provinceterritorystateid;
     const countryId = provinceTerritoryStateEntity._esdc_countryid_value;
@@ -33,6 +37,7 @@ export class DefaultProvinceTerritoryStateDtoMapper implements ProvinceTerritory
     return { id, countryId, nameEn, nameFr, abbr };
   }
 
+  @Traced()
   mapProvinceTerritoryStateEntitiesToProvinceTerritoryStateDtos(provinceTerritoryStateEntities: ProvinceTerritoryStateEntity[]): ProvinceTerritoryStateDto[] {
     return provinceTerritoryStateEntities.map((entity) => this.mapProvinceTerritoryStateEntityToProvinceTerritoryStateDto(entity));
   }

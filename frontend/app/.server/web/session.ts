@@ -8,6 +8,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 // Session attributes are currently incubating OpenTelemetry conventions.
 import { ATTR_CDCP_SESSION_KEY, ATTR_CDCP_SESSION_KEY_EXISTS } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
@@ -196,6 +197,7 @@ export class ExpressSession implements Session {
     return this.session.id;
   }
 
+  @Traced()
   has(key: SessionKey): boolean {
     const sanitizedKey = this.sanitizeKey(key);
 
@@ -208,6 +210,7 @@ export class ExpressSession implements Session {
     return exists;
   }
 
+  @Traced()
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     if (!this.has(key)) {
       this.log.trace('Session key not found', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
@@ -220,6 +223,7 @@ export class ExpressSession implements Session {
     return Option.some(value);
   }
 
+  @Traced()
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     const value = this.find(key);
 
@@ -232,6 +236,7 @@ export class ExpressSession implements Session {
     return unwrappedValue;
   }
 
+  @Traced()
   set<K extends SessionKey>(key: K, value: SessionTypeMap[K]): void {
     const sanitizedKey = this.sanitizeKey(key);
     this.assertNotReservedKey(sanitizedKey);
@@ -239,6 +244,7 @@ export class ExpressSession implements Session {
     this.log.trace('Session value set', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
   }
 
+  @Traced()
   unset(key: SessionKey): boolean {
     if (!this.has(key)) {
       this.log.debug('Cannot unset missing session key', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
@@ -252,6 +258,7 @@ export class ExpressSession implements Session {
     return true;
   }
 
+  @Traced()
   async destroy(): Promise<void> {
     const id = this.id; // Capture ID before destruction for logging
     this.log.debug('Destroying session', { [ATTR_SESSION_ID]: id });
@@ -267,6 +274,7 @@ export class ExpressSession implements Session {
     });
   }
 
+  @Traced()
   async save(): Promise<void> {
     this.log.debug('Saving session', { [ATTR_SESSION_ID]: this.id });
     return await new Promise((resolve, reject) => {
@@ -281,6 +289,7 @@ export class ExpressSession implements Session {
     });
   }
 
+  @Traced()
   async regenerate(): Promise<void> {
     const originalId = this.id;
     this.log.debug('Regenerating session', { [ATTR_SESSION_ID]: originalId });
@@ -328,41 +337,49 @@ export class NoopSession implements Session {
     throw new Error('No session available in stateless context');
   }
 
+  @Traced()
   has(key: SessionKey): boolean {
     this.log.warn('Called "has" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
   }
 
+  @Traced()
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     this.log.warn('Called "find" on NoopSession; returning None', { [ATTR_CDCP_SESSION_KEY]: key });
     return Option.none();
   }
 
+  @Traced()
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     throw new Error('No session available in stateless context');
   }
 
+  @Traced()
   set<K extends SessionKey>(key: K, value: SessionTypeMap[K]): void {
     throw new Error('No session available in stateless context');
   }
 
+  @Traced()
   unset(key: SessionKey): boolean {
     this.log.warn('Called "unset" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
   }
 
+  @Traced()
   async destroy(): Promise<void> {
     this.log.warn('Called "destroy" on NoopSession. No operation is performed.');
     // No operation; no session to destroy in a stateless context.
     return await Promise.resolve();
   }
 
+  @Traced()
   async save(): Promise<void> {
     this.log.warn('Called "save" on NoopSession. No operation is performed.');
     // No operation; no session to save in a stateless context.
     return await Promise.resolve();
   }
 
+  @Traced()
   async regenerate(): Promise<void> {
     this.log.warn('Called "regenerate" on NoopSession. No operation is performed.');
     // No operation; no session to regenerate in a stateless context.

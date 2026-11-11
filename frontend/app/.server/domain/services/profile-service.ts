@@ -8,6 +8,7 @@ import type { AuditService } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ProfileService {
   /**
@@ -78,6 +79,7 @@ export class DefaultProfileService implements ProfileService {
     this.log.debug('DefaultProfileService initiated.');
   }
 
+  @Traced()
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating communication preferences', { [ATTR_CDCP_USER_ID]: userId });
 
@@ -89,6 +91,7 @@ export class DefaultProfileService implements ProfileService {
     this.log.trace('Successfully updated communication preferences');
   }
 
+  @Traced()
   async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating phone numbers', { [ATTR_CDCP_USER_ID]: userId });
 
@@ -100,6 +103,7 @@ export class DefaultProfileService implements ProfileService {
     this.log.trace('Successfully updated phone numbers');
   }
 
+  @Traced()
   async updateDentalBenefits(updateDentalBenefitsRequestDto: UpdateDentalBenefitsRequestDto): Promise<void> {
     this.log.trace('Updating dental benefits');
 
@@ -109,6 +113,7 @@ export class DefaultProfileService implements ProfileService {
     this.log.trace('Successfully updated dental benefits');
   }
 
+  @Traced()
   async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating email address', { [ATTR_CDCP_USER_ID]: userId });
 
@@ -120,6 +125,7 @@ export class DefaultProfileService implements ProfileService {
     this.log.trace('Successfully updated email address');
   }
 
+  @Traced()
   async updateAddresses(updateAddressRequestDto: UpdateAddressRequestDto): Promise<void> {
     this.log.trace('Updating mailing and home addresses');
 

@@ -12,6 +12,7 @@ import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositori
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing client friendly status data.
@@ -91,6 +92,7 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
     this.log.debug('DefaultClientFriendlyStatusService initiated.');
   }
 
+  @Traced()
   async getClientFriendlyStatusById(id: string): Promise<ClientFriendlyStatusDto> {
     this.log.debug('Get client friendly status');
 
@@ -105,6 +107,7 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
     return clientFriendlyStatusDto;
   }
 
+  @Traced()
   async getLocalizedClientFriendlyStatusById(id: string, locale: AppLocale): Promise<ClientFriendlyStatusLocalizedDto> {
     this.log.debug('Get localized client friendly status', { [ATTR_CDCP_LOCALE]: locale });
     const clientFriendlyStatusDto = await this.getClientFriendlyStatusById(id);

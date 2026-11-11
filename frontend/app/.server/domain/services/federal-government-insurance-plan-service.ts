@@ -12,6 +12,7 @@ import type { GovernmentInsurancePlanRepository } from '~/.server/domain/reposit
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing federal government insurance plan data.
@@ -125,6 +126,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     this.log.debug('DefaultFederalGovernmentInsurancePlanService initiated.');
   }
 
+  @Traced()
   async listFederalGovernmentInsurancePlans(): Promise<ReadonlyArray<FederalGovernmentInsurancePlanDto>> {
     this.log.debug('Get all federal government insurance plans');
     const governmentInsurancePlanEntities = await this.governmentInsurancePlanRepository.listAllGovernmentInsurancePlans();
@@ -134,6 +136,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     return federalGovernmentInsurancePlanDtos;
   }
 
+  @Traced()
   async findFederalGovernmentInsurancePlanById(id: string): Promise<Option.Option<FederalGovernmentInsurancePlanDto>> {
     this.log.debug('Finding federal government insurance plan');
     const federalGovernmentInsurancePlans = await this.listFederalGovernmentInsurancePlans();
@@ -148,6 +151,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     return Option.some(federalGovernmentInsurancePlanDto);
   }
 
+  @Traced()
   async getFederalGovernmentInsurancePlanById(id: string): Promise<FederalGovernmentInsurancePlanDto> {
     this.log.debug('Get federal government insurance plan');
     const federalGovernmentInsurancePlanDtoOption = await this.findFederalGovernmentInsurancePlanById(id);
@@ -162,6 +166,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     return federalGovernmentInsurancePlanDto;
   }
 
+  @Traced()
   async listAndSortLocalizedFederalGovernmentInsurancePlans(locale: AppLocale): Promise<ReadonlyArray<FederalGovernmentInsurancePlanLocalizedDto>> {
     this.log.debug('Get and sort all localized federal government insurance plans', { [ATTR_CDCP_LOCALE]: locale });
     const federalGovernmentInsurancePlanDtos = await this.listFederalGovernmentInsurancePlans();
@@ -171,6 +176,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     return sortedFederalGovernmentInsurancePlanLocalizedDtos;
   }
 
+  @Traced()
   async findLocalizedFederalGovernmentInsurancePlanById(id: string, locale: AppLocale): Promise<Option.Option<FederalGovernmentInsurancePlanLocalizedDto>> {
     this.log.debug('Finding federal government insurance plan', { [ATTR_CDCP_LOCALE]: locale });
     const federalGovernmentInsurancePlanDto = await this.findFederalGovernmentInsurancePlanById(id);
@@ -186,6 +192,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
     return Option.some(federalGovernmentInsurancePlanLocalizedDto);
   }
 
+  @Traced()
   async getLocalizedFederalGovernmentInsurancePlanById(id: string, locale: AppLocale): Promise<FederalGovernmentInsurancePlanLocalizedDto> {
     this.log.debug('Get localized federal government insurance plan', { [ATTR_CDCP_LOCALE]: locale });
     const federalGovernmentInsurancePlanDto = await this.getFederalGovernmentInsurancePlanById(id);

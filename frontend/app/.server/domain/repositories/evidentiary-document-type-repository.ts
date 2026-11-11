@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import evidentiaryDocumentTypeJsonDataSource from '~/.server/resources/power-platform/evidentiary-document-type.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -60,6 +61,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
   }
 
+  @Traced()
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
     this.log.trace('Fetching all evidentiary document types');
 
@@ -92,6 +94,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     return documentTypeEntities;
   }
 
+  @Traced()
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type');
 
@@ -107,12 +110,14 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     return Option.some(documentEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllEvidentiaryDocumentTypes();
   }
@@ -126,6 +131,7 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     this.log = createLogger('MockEvidentiaryDocumentTypeRepository');
   }
 
+  @Traced()
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching all evidentiary document types');
     const documentTypeEntities = evidentiaryDocumentTypeJsonDataSource.value;
@@ -139,6 +145,7 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     return await Promise.resolve(documentTypeEntities);
   }
 
+  @Traced()
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type');
 
@@ -153,12 +160,14 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     return await Promise.resolve(Option.some(documentEntity));
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

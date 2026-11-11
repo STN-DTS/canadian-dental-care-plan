@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import letterTypeJsonDataSource from '~/.server/resources/power-platform/letter-type.json';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 
@@ -57,6 +58,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1/`;
   }
 
+  @Traced()
   async listAllLetterTypes(): Promise<ReadonlyArray<LetterTypeEntity>> {
     this.log.trace('Fetching all letter types');
 
@@ -91,6 +93,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     return letterTypeEntities;
   }
 
+  @Traced()
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type');
 
@@ -106,12 +109,14 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     return Option.some(letterTypeEntity);
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllLetterTypes();
   }
@@ -125,6 +130,7 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     this.log = createLogger('MockLetterTypeRepository');
   }
 
+  @Traced()
   async listAllLetterTypes(): Promise<ReadonlyArray<LetterTypeEntity>> {
     this.log.debug('Fetching all letter types');
     const letterTypeEntities = letterTypeJsonDataSource.value;
@@ -133,6 +139,7 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     return await Promise.resolve(letterTypeEntities);
   }
 
+  @Traced()
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type');
 
@@ -147,12 +154,14 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     return await Promise.resolve(Option.some(letterTypeEntity));
   }
 
+  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
+  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

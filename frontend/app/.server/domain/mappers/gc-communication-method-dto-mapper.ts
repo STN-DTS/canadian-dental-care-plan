@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 
 import type { GCCommunicationMethodDto, GCCommunicationMethodLocalizedDto } from '~/.server/domain/dtos';
+import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between GCCommunicationMethodDto, GCCommunicationMethodLocalizedDto, and LanguageEntity objects.
@@ -27,6 +28,7 @@ export interface GCCommunicationMethodDtoMapper {
 
 @injectable()
 export class DefaultGCCommunicationMethodDtoMapper implements GCCommunicationMethodDtoMapper {
+  @Traced()
   mapGCCommunicationMethodDtoToGCCommunicationMethodLocalizedDto(gcCommunicationMethodDto: GCCommunicationMethodDto, locale: AppLocale): GCCommunicationMethodLocalizedDto {
     const { nameEn, nameFr, ...rest } = gcCommunicationMethodDto;
     return {
@@ -35,6 +37,7 @@ export class DefaultGCCommunicationMethodDtoMapper implements GCCommunicationMet
     };
   }
 
+  @Traced()
   mapGCCommunicationMethodDtosToGCCommunicationMethodLocalizedDtos(gcCommunicationMethodDtos: ReadonlyArray<GCCommunicationMethodDto>, locale: AppLocale): ReadonlyArray<GCCommunicationMethodLocalizedDto> {
     return gcCommunicationMethodDtos.map((dto) => this.mapGCCommunicationMethodDtoToGCCommunicationMethodLocalizedDto(dto, locale));
   }

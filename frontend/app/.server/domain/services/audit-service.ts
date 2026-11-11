@@ -6,6 +6,7 @@ import type { AuditDetails } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUDIT_EVENT_ID, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface AuditService {
   /**
@@ -30,6 +31,7 @@ export class DefaultAuditService implements AuditService {
     this.log.debug('DefaultAuditService initiated.');
   }
 
+  @Traced()
   createAudit(eventId: string, auditDetails?: AuditDetails): void {
     if (typeof eventId !== 'string' || !/^[a-z][a-z0-9.-]{0,127}$/.test(eventId)) {
       this.log.error('Audit record rejected because its action identifier is invalid', { [ATTR_ERROR_TYPE]: 'audit_event_invalid' });

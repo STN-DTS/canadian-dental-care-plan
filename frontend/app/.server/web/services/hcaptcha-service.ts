@@ -5,6 +5,7 @@ import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { Traced } from '~/.server/observability/decorator';
 import type { HCaptchaVerifyRequestDto, HCaptchaVerifyResponseDto } from '~/.server/web/dtos';
 import type { HCaptchaDtoMapper } from '~/.server/web/mappers';
 import type { HCaptchaRepository } from '~/.server/web/repositories';
@@ -33,6 +34,7 @@ export class DefaultHCaptchaService implements HCaptchaService {
     this.auditService = auditService;
   }
 
+  @Traced()
   async verifyHCaptchaResponse(hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto): Promise<HCaptchaVerifyResponseDto> {
     this.log.trace('Verifying hCaptcha response', { [ATTR_CDCP_USER_ID]: hCaptchaVerifyRequestDto.userId });
 

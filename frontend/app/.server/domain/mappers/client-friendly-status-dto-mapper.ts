@@ -2,6 +2,7 @@ import { injectable } from 'inversify';
 
 import type { ClientFriendlyStatusDto, ClientFriendlyStatusLocalizedDto } from '~/.server/domain/dtos';
 import type { ClientFriendlyStatusEntity } from '~/.server/domain/entities';
+import { Traced } from '~/.server/observability/decorator';
 
 export interface ClientFriendlyStatusDtoMapper {
   mapClientFriendlyStatusDtoToClientFriendlyStatusLocalizedDto(clientFriendlyStatusDto: ClientFriendlyStatusDto, locale: AppLocale): ClientFriendlyStatusLocalizedDto;
@@ -10,6 +11,7 @@ export interface ClientFriendlyStatusDtoMapper {
 
 @injectable()
 export class DefaultClientFriendlyStatusDtoMapper implements ClientFriendlyStatusDtoMapper {
+  @Traced()
   mapClientFriendlyStatusDtoToClientFriendlyStatusLocalizedDto(clientFriendlyStatusDto: ClientFriendlyStatusDto, locale: AppLocale): ClientFriendlyStatusLocalizedDto {
     const { nameEn, nameFr, ...rest } = clientFriendlyStatusDto;
     return {
@@ -18,6 +20,7 @@ export class DefaultClientFriendlyStatusDtoMapper implements ClientFriendlyStatu
     };
   }
 
+  @Traced()
   mapClientFriendlyStatusEntityToClientFriendlyStatusDto(clientFriendlyStatusEntity: ClientFriendlyStatusEntity): ClientFriendlyStatusDto {
     const id = clientFriendlyStatusEntity.esdc_clientfriendlystatusid;
     const nameEn = clientFriendlyStatusEntity.esdc_descriptionenglish;
