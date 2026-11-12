@@ -35,17 +35,17 @@ catalog:
   '@hcaptcha/react-hcaptcha': 2.2.0
   '@opentelemetry/api': 1.10.0
   '@opentelemetry/auto-instrumentations-node': 0.83.0
-  '@opentelemetry/core': 3.1.0
-  '@opentelemetry/exporter-logs-otlp-proto': 0.301.0
-  '@opentelemetry/exporter-metrics-otlp-proto': 0.301.0
-  '@opentelemetry/exporter-trace-otlp-proto': 0.301.0
-  '@opentelemetry/instrumentation': 0.301.0
-  '@opentelemetry/otlp-exporter-base': 0.301.0
-  '@opentelemetry/resources': 3.1.0
-  '@opentelemetry/sdk-logs': 3.1.0
-  '@opentelemetry/sdk-metrics': 3.1.0
-  '@opentelemetry/sdk-node': 0.301.0
-  '@opentelemetry/sdk-trace': 3.1.0
+  '@opentelemetry/core': 3.1.1
+  '@opentelemetry/exporter-logs-otlp-proto': 0.301.1
+  '@opentelemetry/exporter-metrics-otlp-proto': 0.301.1
+  '@opentelemetry/exporter-trace-otlp-proto': 0.301.1
+  '@opentelemetry/instrumentation': 0.301.1
+  '@opentelemetry/otlp-exporter-base': 0.301.1
+  '@opentelemetry/resources': 3.1.1
+  '@opentelemetry/sdk-logs': 3.1.1
+  '@opentelemetry/sdk-metrics': 3.1.1
+  '@opentelemetry/sdk-node': 0.301.1
+  '@opentelemetry/sdk-trace': 3.1.1
   '@opentelemetry/semantic-conventions': 1.45.0
   '@opentelemetry/winston-transport': 0.35.0
   '@oslojs/crypto': 1.0.1
