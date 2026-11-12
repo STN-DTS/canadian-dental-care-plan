@@ -50,7 +50,7 @@ describe('requestLoggerMiddleware', () => {
             headers: { connection: 'close' },
           });
           await result.text();
-          const method = status >= 500 ? logger.error : status >= 400 ? logger.warn : logger.http;
+          const method = status >= 500 ? logger.error : logger.http;
           expect(method).toHaveBeenCalledWith(
             'HTTP request completed',
             expect.objectContaining({
@@ -64,13 +64,14 @@ describe('requestLoggerMiddleware', () => {
         }),
       );
 
-      expect(logger.http).toHaveBeenCalledTimes(3);
-      expect(logger.warn).toHaveBeenCalledTimes(3);
+      expect(logger.http).toHaveBeenCalledTimes(6);
+      expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledTimes(2);
 
       await expect(fetch(`http://127.0.0.1:${address.port}/abort`, { headers: { connection: 'close' } })).rejects.toThrow();
-      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledTimes(3));
-      expect(logger.error).toHaveBeenLastCalledWith('HTTP request completed', {
+      await vi.waitFor(() => expect(logger.http).toHaveBeenCalledTimes(7));
+      expect(logger.error).toHaveBeenCalledTimes(2);
+      expect(logger.http).toHaveBeenLastCalledWith('HTTP response incomplete', {
         [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
         [ATTR_HTTP_REQUEST_METHOD]: 'GET',
         [ATTR_URL_PATH]: '/abort',
@@ -79,9 +80,9 @@ describe('requestLoggerMiddleware', () => {
 
       const readiness = await fetch(`http://127.0.0.1:${address.port}/api/readyz`, { headers: { connection: 'close' } });
       expect(await readiness.text()).toBe('ready');
-      expect(logger.http).toHaveBeenCalledTimes(3);
-      expect(logger.warn).toHaveBeenCalledTimes(3);
-      expect(logger.error).toHaveBeenCalledTimes(3);
+      expect(logger.http).toHaveBeenCalledTimes(7);
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledTimes(2);
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));

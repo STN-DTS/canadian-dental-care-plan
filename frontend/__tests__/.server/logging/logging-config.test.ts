@@ -42,6 +42,6 @@ describe('logging configuration', () => {
     const { defaultsConfig } = await import('~/.server/logging/logging-config');
     const { getLevelsConfig } = await import('~/.server/logging/winston-levels-config');
 
-    expect(() => getLevelsConfig({ ...defaultsConfig, LOG_LEVEL: 'audit' })).not.toThrow();
+    expect(getLevelsConfig({ ...defaultsConfig, LOG_LEVEL: 'audit' }).levels.audit).toBe(0);
   });
 });

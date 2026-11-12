@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE, ATTR_EXCEPTION_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import express from 'express';
 import type { Request, Response } from 'express';
 import { once } from 'node:events';
@@ -6,8 +7,40 @@ import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { createGlobalErrorHandler } from '~/.server/express-server/request-handlers';
+import { createLogger } from '~/.server/logging';
+
+const logger = vi.mocked(createLogger).mock.results[0]?.value;
+
+if (!logger) {
+  throw new Error('Expected the request handler logger to be initialized');
+}
 
 describe('globalErrorHandler', () => {
+  it('logs only the admitted exception type, not the exception message', () => {
+    const error = new Error('Sensitive exception message');
+    const response = mock<Response>({ headersSent: true });
+
+    createGlobalErrorHandler()(error, mock<Request>({ path: '/error' }), response, vi.fn());
+
+    expect(logger.error).toHaveBeenCalledWith('Unhandled Express request error', {
+      [ATTR_ERROR_TYPE]: 'express_request_failed',
+      [ATTR_EXCEPTION_TYPE]: 'Error',
+      [ATTR_URL_PATH]: '/error',
+    });
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain(error.message);
+  });
+
+  it('omits exception types that are not admitted', () => {
+    class CustomError extends Error {}
+
+    createGlobalErrorHandler()(new CustomError('Sensitive custom error'), mock<Request>({ path: '/error' }), mock<Response>({ headersSent: true }), vi.fn());
+
+    expect(logger.error).toHaveBeenLastCalledWith('Unhandled Express request error', {
+      [ATTR_ERROR_TYPE]: 'express_request_failed',
+      [ATTR_URL_PATH]: '/error',
+    });
+  });
+
   it.each([
     { existingStatus: 200, expectedStatus: 500, page: '500.html' },
     { existingStatus: 302, expectedStatus: 500, page: '500.html' },
@@ -82,9 +115,14 @@ describe('globalErrorHandler', () => {
       }
     });
 
-    createGlobalErrorHandler()(new Error('Unexpected request failure'), mock<Request>(), response, vi.fn());
+    createGlobalErrorHandler()(new Error('Unexpected request failure'), mock<Request>({ path: '/error' }), response, vi.fn());
 
     expect(response.status).toHaveBeenLastCalledWith(500);
     expect(response.send).toHaveBeenCalledExactlyOnceWith('Internal Server Error');
+    expect(logger.error).toHaveBeenLastCalledWith('Could not send request error page', {
+      [ATTR_ERROR_TYPE]: 'error_page_dispatch_failed',
+      [ATTR_EXCEPTION_TYPE]: 'Error',
+      [ATTR_URL_PATH]: '/error',
+    });
   });
 });

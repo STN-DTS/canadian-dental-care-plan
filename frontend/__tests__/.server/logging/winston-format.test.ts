@@ -1,8 +1,19 @@
+import { SeverityNumber } from '@opentelemetry/api';
 import type { Format, TransformableInfo } from 'logform';
 import { LEVEL, MESSAGE } from 'triple-beam';
 import { describe, expect, it } from 'vitest';
 
-import { formatPrintf, formatUrlPaths } from '~/.server/logging/winston-format';
+import { addDynatraceLogLevel, addOtelSeverity, formatPrintf, formatUrlPaths } from '~/.server/logging/winston-format';
+
+const expectedLevelMappings = [
+  { level: 'trace', severityNumber: SeverityNumber.TRACE, logLevel: 'TRACE' },
+  { level: 'debug', severityNumber: SeverityNumber.DEBUG, logLevel: 'DEBUG' },
+  { level: 'http', severityNumber: SeverityNumber.DEBUG4, logLevel: 'DEBUG' },
+  { level: 'info', severityNumber: SeverityNumber.INFO, logLevel: 'INFO' },
+  { level: 'audit', severityNumber: SeverityNumber.INFO, logLevel: 'INFO' },
+  { level: 'warn', severityNumber: SeverityNumber.WARN, logLevel: 'WARN' },
+  { level: 'error', severityNumber: SeverityNumber.ERROR, logLevel: 'ERROR' },
+];
 
 function createInfo(values: Partial<TransformableInfo> = {}): TransformableInfo {
   const info: TransformableInfo = {
@@ -31,6 +42,97 @@ function print(info: Partial<TransformableInfo>): string {
   const ansiEscapePattern = new RegExp(`${String.fromCodePoint(27)}${String.raw`\[[0-?]*[ -/]*[@-~]`}`, 'g');
   return String(output[MESSAGE]).replaceAll(ansiEscapePattern, '');
 }
+
+describe('addOtelSeverity', () => {
+  it.each(expectedLevelMappings)('maps $level using the canonical level', ({ level, severityNumber }) => {
+    const info = createInfo({ level, message: 'Test message', severityNumber: SeverityNumber.UNSPECIFIED, label: 'Test' });
+    info.level = 'FORMATTED';
+
+    expect(transformInfo(addOtelSeverity(), info)).toBe(info);
+    expect(info).toEqual({
+      [LEVEL]: level,
+      level: 'FORMATTED',
+      message: 'Test message',
+      severityNumber,
+      label: 'Test',
+    });
+  });
+
+  it.each([undefined, ''])('preserves the record when the canonical level is %s', (level) => {
+    const info = createInfo({ level: 'info', severityNumber: SeverityNumber.ERROR });
+
+    if (level === undefined) {
+      delete info[LEVEL];
+    } else {
+      info[LEVEL] = level;
+    }
+
+    const original = { ...info };
+
+    expect(transformInfo(addOtelSeverity(), info)).toBe(info);
+    expect(info).toEqual(original);
+  });
+
+  it.each(['unknown', 'toString'])('preserves the record for the unsupported level %s', (level) => {
+    const info = createInfo({ level, severityNumber: SeverityNumber.ERROR });
+    const original = { ...info };
+
+    expect(transformInfo(addOtelSeverity(), info)).toBe(info);
+    expect(info).toEqual(original);
+  });
+
+  it.each(['unknown', 'toString'])('does not add severityNumber for the unsupported level %s', (level) => {
+    const info = createInfo({ level });
+
+    expect(transformInfo(addOtelSeverity(), info)).not.toHaveProperty('severityNumber');
+  });
+});
+
+describe('addDynatraceLogLevel', () => {
+  it.each(expectedLevelMappings)('maps $level without changing OpenTelemetry severity', ({ level, logLevel }) => {
+    const info = createInfo({ level, message: 'Test message', logLevel: 'existing', severityNumber: SeverityNumber.ERROR, label: 'Test' });
+    info.level = 'FORMATTED';
+
+    expect(transformInfo(addDynatraceLogLevel(), info)).toBe(info);
+    expect(info).toEqual({
+      [LEVEL]: level,
+      level: 'FORMATTED',
+      message: 'Test message',
+      logLevel,
+      severityNumber: SeverityNumber.ERROR,
+      label: 'Test',
+    });
+  });
+
+  it.each([undefined, ''])('preserves the record when the canonical level is %s', (level) => {
+    const info = createInfo({ level: 'info', logLevel: 'existing', severityNumber: SeverityNumber.ERROR });
+
+    if (level === undefined) {
+      delete info[LEVEL];
+    } else {
+      info[LEVEL] = level;
+    }
+
+    const original = { ...info };
+
+    expect(transformInfo(addDynatraceLogLevel(), info)).toBe(info);
+    expect(info).toEqual(original);
+  });
+
+  it.each(['unknown', 'toString'])('preserves the record for the unsupported level %s', (level) => {
+    const info = createInfo({ level, logLevel: 'existing', severityNumber: SeverityNumber.ERROR });
+    const original = { ...info };
+
+    expect(transformInfo(addDynatraceLogLevel(), info)).toBe(info);
+    expect(info).toEqual(original);
+  });
+
+  it.each(['unknown', 'toString'])('does not add logLevel for the unsupported level %s', (level) => {
+    const info = createInfo({ level });
+
+    expect(transformInfo(addDynatraceLogLevel(), info)).not.toHaveProperty('logLevel');
+  });
+});
 
 describe('formatUrlPaths', () => {
   it('preserves application paths and redacts backend client identifiers', () => {

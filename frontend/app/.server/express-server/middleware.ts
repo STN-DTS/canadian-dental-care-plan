@@ -83,10 +83,11 @@ export function createSecurityHeadersMiddleware(): RequestHandler {
 
 /**
  * Creates named request-logger middleware with structured completion records and status-based severity.
+ * Final 1xx-4xx and incomplete responses log at Winston `http`, 5xx at ERROR.
  *
  * The cdcp.http.request.completed event contains method, the application request path, status when sent,
  * response time in milliseconds and declared response content length in bytes when available.
- * Incomplete responses carry a fixed error type. Health readiness requests are excluded.
+ * Incomplete responses carry a fixed error type; they usually mean the client disconnected. Health readiness requests are excluded.
  */
 export function createRequestLoggerMiddleware(_isProduction: boolean): RequestHandler {
   const log = createLogger('express/middleware/requestLoggerMiddleware');
@@ -118,11 +119,14 @@ export function createRequestLoggerMiddleware(_isProduction: boolean): RequestHa
         ...(incomplete ? { [ATTR_ERROR_TYPE]: 'http_response_incomplete' } : res.statusCode >= 400 ? { [ATTR_ERROR_TYPE]: String(res.statusCode) } : {}),
       };
 
-      if (incomplete || res.statusCode >= 500) {
+      // Incomplete responses are usually client disconnects (navigation, cancelled asset downloads).
+      // Server-side stream and handler failures are logged at ERROR by the layer that handles them.
+      if (incomplete) {
+        log.http('HTTP response incomplete', attributes);
+      } else if (res.statusCode >= 500) {
         log.error('HTTP request completed', attributes);
-      } else if (res.statusCode >= 400) {
-        log.warn('HTTP request completed', attributes);
       } else {
+        // Inbound 4xx are expected client outcomes (form validation, not found) and share the success level.
         log.http('HTTP request completed', attributes);
       }
     })(request, response, next);

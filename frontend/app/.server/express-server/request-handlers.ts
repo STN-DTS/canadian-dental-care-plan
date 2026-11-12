@@ -1,14 +1,38 @@
-import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
+import { ATTR_ERROR_TYPE, ATTR_EXCEPTION_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import type { ErrorRequestHandler } from 'express';
 import path from 'node:path';
+import { types } from 'node:util';
 
 import { createLogger } from '~/.server/logging';
 
 const log = createLogger('express/request-handlers');
+const exceptionTypes = new Map<object, string>([
+  [Error.prototype, 'Error'],
+  [EvalError.prototype, 'EvalError'],
+  [RangeError.prototype, 'RangeError'],
+  [ReferenceError.prototype, 'ReferenceError'],
+  [SyntaxError.prototype, 'SyntaxError'],
+  [TypeError.prototype, 'TypeError'],
+  [URIError.prototype, 'URIError'],
+  [AggregateError.prototype, 'AggregateError'],
+]);
+
+function getExceptionType(error: unknown): string | undefined {
+  if (!types.isNativeError(error)) {
+    return undefined;
+  }
+
+  return exceptionTypes.get(Object.getPrototypeOf(error));
+}
 
 export function createGlobalErrorHandler(): ErrorRequestHandler {
   return function globalErrorHandler(error, request, response, next) {
-    log.error('Unhandled Express request error', { [ATTR_ERROR_TYPE]: 'express_request_failed', [ATTR_URL_PATH]: request.path });
+    const exceptionType = getExceptionType(error);
+    log.error('Unhandled Express request error', {
+      [ATTR_ERROR_TYPE]: 'express_request_failed',
+      ...(exceptionType && { [ATTR_EXCEPTION_TYPE]: exceptionType }),
+      [ATTR_URL_PATH]: request.path,
+    });
 
     if (response.headersSent) {
       return next(error);
@@ -23,7 +47,12 @@ export function createGlobalErrorHandler(): ErrorRequestHandler {
 
     response.status(response.statusCode < 400 ? 500 : response.statusCode).sendFile(errorFilePath, (dispatchError: unknown) => {
       if (dispatchError) {
-        log.error('Could not send request error page', { [ATTR_ERROR_TYPE]: 'error_page_dispatch_failed', [ATTR_URL_PATH]: request.path });
+        const dispatchExceptionType = getExceptionType(dispatchError);
+        log.error('Could not send request error page', {
+          [ATTR_ERROR_TYPE]: 'error_page_dispatch_failed',
+          ...(dispatchExceptionType && { [ATTR_EXCEPTION_TYPE]: dispatchExceptionType }),
+          [ATTR_URL_PATH]: request.path,
+        });
         response.status(500).send('Internal Server Error');
       }
     });

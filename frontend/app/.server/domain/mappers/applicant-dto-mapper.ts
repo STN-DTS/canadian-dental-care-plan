@@ -80,7 +80,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     const isHomeAddressDefined = homeAddress !== undefined && !!homeAddress.AddressStreet.StreetName && !!homeAddress.AddressCityName && !!homeAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isHomeAddressDefined) {
-      this.log.warn('Home address is missing required fields; omitting home address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
+      this.log.debug('Home address is missing required fields; omitting home address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
     }
 
     const mailingAddress = personContactInformation?.Address.find((address) => address.AddressCategoryCode.ReferenceDataName === 'Mailing');
@@ -88,7 +88,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     const isMailingAddressDefined = mailingAddress !== undefined && !!mailingAddress.AddressStreet.StreetName && !!mailingAddress.AddressCityName && !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isMailingAddressDefined) {
-      this.log.warn('Mailing address is missing required fields; omitting mailing address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
+      this.log.debug('Mailing address is missing required fields; omitting mailing address from response', { [ATTR_CDCP_CLIENT_ID]: clientId });
     }
 
     return {

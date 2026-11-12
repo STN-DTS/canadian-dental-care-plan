@@ -77,7 +77,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     const isHomeAddressDefined = homeAddress !== undefined && !!homeAddress.AddressStreet.StreetName && !!homeAddress.AddressCityName && !!homeAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isHomeAddressDefined) {
-      this.log.warn('Home address is missing required fields; omitting home address from response');
+      this.log.debug('Home address is missing required fields; omitting home address from response');
     }
 
     const mailingAddress = personContactInformation?.Address.find((address) => address.AddressCategoryCode.ReferenceDataName === 'Mailing');

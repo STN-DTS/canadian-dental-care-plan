@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 
 import type { ApplicantResponseEntity } from '~/.server/domain/entities';
 import { DefaultProgramApplicantDtoMapper } from '~/.server/domain/mappers/program-applicant-dto-mapper';
+import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 
 describe('DefaultProgramApplicantDtoMapper', () => {
   const mapper = new DefaultProgramApplicantDtoMapper();
@@ -36,7 +39,11 @@ describe('DefaultProgramApplicantDtoMapper', () => {
   };
 
   it('maps a complete program applicant', () => {
-    expect(mapper.mapApplicantResponseEntityToProgramApplicantDto(entity)).toMatchObject({
+    const logger = mock<Logger>();
+    vi.mocked(createLogger).mockReturnValue(logger);
+    const testMapper = new DefaultProgramApplicantDtoMapper();
+
+    expect(testMapper.mapApplicantResponseEntityToProgramApplicantDto(entity)).toMatchObject({
       applicantType: 'SomeCategory',
       clientId: '12345',
       clientNumber: '67890',
@@ -48,6 +55,8 @@ describe('DefaultProgramApplicantDtoMapper', () => {
         },
       },
     });
+    expect(logger.debug).toHaveBeenCalledWith('Home address is missing required fields; omitting home address from response');
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('rejects an applicant without an applicant category', () => {

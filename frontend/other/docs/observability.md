@@ -324,7 +324,7 @@ attributes and named imports from the registry for custom keys:
 ```typescript
 import { ATTR_CDCP_CLIENT_ID } from '~/.server/logging/log-attributes';
 
-log.warn('Home address is missing required fields; omitting home address from response', {
+log.debug('Home address is missing required fields; omitting home address from response', {
   [ATTR_CDCP_CLIENT_ID]: clientId,
 });
 ```
@@ -348,21 +348,28 @@ to server application logging, not the self-contained telemetry preload.
 
 `createRequestLoggerMiddleware` owns the canonical completion event and retains
 the application `request.path` without its query string. It uses
-Winston `http` for final HTTP 1xx-3xx responses, which exports as
+Winston `http` for final HTTP 1xx-4xx responses, which exports as
 `SeverityNumber.DEBUG4` (8), below ordinary INFO (9). Winston's `http` priority
-also sits below `info`, so production `LOG_LEVEL=info` drops successful
+also sits below `info`, so production `LOG_LEVEL=info` drops these
 completions before console or OpenTelemetry delivery. Use `LOG_LEVEL=http`,
 `debug` or `trace` to include them during a scoped investigation.
 
-Inbound 4xx remains WARN (13); incomplete responses and inbound 5xx remain
-ERROR (17), and are retained at INFO. Audit and ordinary application INFO
+Inbound 4xx responses are expected client outcomes, such as form validation
+errors returned by actions, so they share the `http` level and keep
+`error.type` set to the status code. Inbound 5xx remains ERROR (17) and is
+retained at INFO. Incomplete responses keep `error.type=http_response_incomplete`
+and the same event name, but use the message `HTTP response incomplete` and
+log at `http` because they usually mean the client disconnected, for
+example by navigating away during an asset download (Traefik records 499).
+Server-side stream and handler failures are logged at ERROR by the layer that
+handles them, so the completion event does not duplicate them. Audit and ordinary application INFO
 records remain severity 9. This filtering does not change request handling,
 metrics, spans or completion ownership.
 
 React Router's `handleError` logs recognized 4xx route errors at DEBUG.
 This includes POST requests to routes without an action, which return 405.
-The request completion event remains at WARN, so production keeps the rejection
-without a duplicate ERROR diagnostic. Route errors with 5xx status and
+The request completion event logs it at `http`, so production `LOG_LEVEL=info`
+drops the rejection without a duplicate ERROR diagnostic. Route errors with 5xx status and
 unclassified errors remain at ERROR. Aborted requests remain excluded from
 the error hook. Its request failure counter and log attributes are unchanged.
 

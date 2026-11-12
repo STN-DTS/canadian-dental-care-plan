@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 
 import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { ApplicantResponseEntity } from '~/.server/domain/entities';
 import { DefaultApplicantDtoMapper } from '~/.server/domain/mappers/applicant-dto-mapper';
+import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 
 describe('DefaultApplicantDtoMapper', () => {
   describe('mapApplicantResponseEntityToApplicantDto', () => {
@@ -138,6 +141,9 @@ describe('DefaultApplicantDtoMapper', () => {
     });
 
     it('should map an uncategorized applicant with sparse contact information', () => {
+      const logger = mock<Logger>();
+      vi.mocked(createLogger).mockReturnValue(logger);
+      const sparseMapper = new DefaultApplicantDtoMapper();
       const sparseEntity: ApplicantResponseEntity = {
         BenefitApplication: {
           Applicant: {
@@ -180,7 +186,7 @@ describe('DefaultApplicantDtoMapper', () => {
         },
       };
 
-      expect(mapper.mapApplicantResponseEntityToApplicantDto(sparseEntity)).toEqual<ApplicantDto>({
+      expect(sparseMapper.mapApplicantResponseEntityToApplicantDto(sparseEntity)).toEqual<ApplicantDto>({
         applicantType: undefined,
         clientId: 'b2060828-c6a7-f111-aaad-7c1e5240aa47',
         clientNumber: '22014908272',
@@ -202,6 +208,9 @@ describe('DefaultApplicantDtoMapper', () => {
         maritalStatus: undefined,
         socialInsuranceNumber: '794459701',
       });
+      expect(logger.debug).toHaveBeenCalledWith('Home address is missing required fields; omitting home address from response', { 'cdcp.client.id': 'b2060828-c6a7-f111-aaad-7c1e5240aa47' });
+      expect(logger.debug).toHaveBeenCalledWith('Mailing address is missing required fields; omitting mailing address from response', { 'cdcp.client.id': 'b2060828-c6a7-f111-aaad-7c1e5240aa47' });
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
     it('should throw error when clientId is not found', () => {

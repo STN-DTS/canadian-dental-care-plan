@@ -4,7 +4,8 @@ import { LEVEL, MESSAGE, SPLAT } from 'triple-beam';
 import { format } from 'winston';
 import type { Logform } from 'winston';
 
-import { maxLogLevelNameLength } from '~/.server/logging/log-levels';
+import { dynatraceLogLevelMapping, maxLogLevelNameLength, otelSeverityNumberMapping } from '~/.server/logging/log-levels';
+import type { LogLevel } from '~/.server/logging/log-levels';
 import { URL_PATH_ATTRIBUTE_KEYS, UrlPathRedactor } from '~/instrumentation/url-path-redactor';
 
 export function formatUrlPaths(): Logform.Format {
@@ -44,9 +45,60 @@ export function formatLevels(options?: FormatLevelsOptions): Logform.Format {
   const { padMaxLength = maxLogLevelNameLength } = options ?? {};
 
   return format((info) => {
-    const level = info.level.toUpperCase().padStart(padMaxLength);
+    const level = info[LEVEL]?.toUpperCase().padStart(padMaxLength);
+
+    if (!level) {
+      return info;
+    }
+
     // Assign formatted level
     info.level = level;
+    return info;
+  })();
+}
+
+/**
+ * Sets `info.severityNumber` from Winston's canonical `LEVEL` symbol, not the
+ * potentially formatted `info.level` display value.
+ *
+ * Mapped levels overwrite `info.severityNumber`. Missing, empty or unsupported
+ * canonical levels leave the entire record unchanged; no fallback is assigned.
+ *
+ * @returns A formatter that updates and returns the original log record.
+ */
+export function addOtelSeverity(): Logform.Format {
+  return format((info) => {
+    const level = info[LEVEL];
+
+    if (!level || !Object.hasOwn(otelSeverityNumberMapping, level)) {
+      return info;
+    }
+
+    info.severityNumber = otelSeverityNumberMapping[level as LogLevel];
+    return info;
+  })();
+}
+
+/**
+ * Sets `info.logLevel` to the Dynatrace label for Winston's canonical `LEVEL`
+ * symbol. The application `http` level maps to `DEBUG`; `audit` maps to `INFO`.
+ *
+ * Mapped levels overwrite `info.logLevel`. Missing, empty or unsupported
+ * canonical levels leave the entire record unchanged; no fallback is assigned.
+ * This formatter does not modify `info.severityNumber` or either Winston level
+ * field.
+ *
+ * @returns A formatter that updates and returns the original log record.
+ */
+export function addDynatraceLogLevel(): Logform.Format {
+  return format((info) => {
+    const level = info[LEVEL];
+
+    if (!level || !Object.hasOwn(dynatraceLogLevelMapping, level)) {
+      return info;
+    }
+
+    info.logLevel = dynatraceLogLevelMapping[level as LogLevel];
     return info;
   })();
 }

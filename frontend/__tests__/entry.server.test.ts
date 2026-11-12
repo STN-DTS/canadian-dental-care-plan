@@ -131,7 +131,7 @@ describe('handleError', () => {
           const response = await fetch(`http://127.0.0.1:${address.port}${path}`, { method: 'POST', headers: { connection: 'close' } });
           await response.text();
           expect(response.status).toBe(405);
-          expect(logger.warn).toHaveBeenCalledWith(
+          expect(logger.http).toHaveBeenCalledWith(
             'HTTP request completed',
             expect.objectContaining({
               [ATTR_OTEL_EVENT_NAME]: 'cdcp.http.request.completed',
@@ -144,7 +144,8 @@ describe('handleError', () => {
         }),
       );
 
-      expect(logger.warn).toHaveBeenCalledTimes(6);
+      expect(logger.http).toHaveBeenCalledTimes(6);
+      expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalledTimes(6);
       expect(logger.error).not.toHaveBeenCalled();
       expect(counter.add).toHaveBeenCalledTimes(6);
@@ -164,7 +165,8 @@ describe('handleError', () => {
       );
 
       expect(logger.error).toHaveBeenCalledTimes(4);
-      expect(logger.warn).toHaveBeenCalledTimes(6);
+      expect(logger.http).toHaveBeenCalledTimes(6);
+      expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalledTimes(6);
       expect(counter.add).toHaveBeenCalledTimes(8);
     } finally {

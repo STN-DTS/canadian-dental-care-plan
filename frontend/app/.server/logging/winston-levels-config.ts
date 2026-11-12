@@ -1,6 +1,7 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 
+import { winstonLogLevel } from '~/.server/logging/log-levels';
 import type { LogLevel } from '~/.server/logging/log-levels';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
 
@@ -25,15 +26,7 @@ export function getLevelsConfig(config: LoggingConfig): LevelsConfig {
   }
 
   levelsConfig = {
-    levels: {
-      audit: 0, // Highest priority - for security and compliance events
-      error: 1, // Application errors requiring immediate attention
-      warn: 2, // Warning conditions
-      info: 3, // Informational messages
-      http: 4, // Verbose successful HTTP request completion
-      debug: 5, // Detailed debug information
-      trace: 6, // Fine-grained debug information
-    },
+    levels: winstonLogLevel,
     colors: {
       audit: 'grey',
       error: 'red',

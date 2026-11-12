@@ -1,4 +1,3 @@
-import { SeverityNumber } from '@opentelemetry/api';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { ExportResultCode } from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
@@ -27,15 +26,8 @@ import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-p
 import { UrlPathRedactor } from '~/instrumentation/url-path-redactor';
 
 /**
- * Type representing a valid log level string for Winston.
- * This type is a union of all possible log levels.
- *
- * Keep this union in sync with the `LogLevel` union in `app/.server/logging/log-levels.ts`.
- * Every log level must have a matching entry in {@link winstonSeverityMapping} for correct
- * OpenTelemetry severity mapping.
+ * Maps Winston level names to OpenTelemetry severity numbers for log export.
  */
-type WinstonLogLevel = 'audit' | 'debug' | 'error' | 'http' | 'info' | 'trace' | 'warn';
-
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
 }
@@ -119,17 +111,6 @@ function getLogRecordProcessor(): LogRecordProcessor | undefined {
   });
 }
 
-// Mapping of Winston log levels to OpenTelemetry severity numbers.
-export const winstonSeverityMapping: Record<WinstonLogLevel, number> = {
-  trace: SeverityNumber.TRACE,
-  debug: SeverityNumber.DEBUG,
-  http: SeverityNumber.DEBUG4,
-  info: SeverityNumber.INFO,
-  audit: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-};
-
 const attributeRedactor = new AttributeRedactor();
 const queryParamsRedactor = new QueryParamsRedactor();
 const urlPathRedactor = new UrlPathRedactor();
@@ -139,10 +120,7 @@ const disableLogSending = logRecordProcessor === undefined;
 const sdk = new NodeSDK({
   instrumentations: [
     getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-winston': {
-        disableLogSending: disableLogSending,
-        severityMapping: winstonSeverityMapping,
-      },
+      '@opentelemetry/instrumentation-winston': { disableLogSending: disableLogSending },
     }),
   ],
 

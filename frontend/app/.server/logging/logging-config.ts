@@ -55,9 +55,7 @@ export const defaultsConfig = {
  * ensure the application always has valid logging configuration.
  */
 const loggingConfigSchema = z.object({
-  LOG_LEVEL: z
-    .enum(logLevels) // Ensures the log level is one of the predefined levels
-    .default(defaultsConfig.LOG_LEVEL),
+  LOG_LEVEL: z.enum(logLevels).default(defaultsConfig.LOG_LEVEL),
 
   AUDIT_LOG_ENABLED: z
     .string() // Validates AUDIT_LOG_ENABLED as a string
