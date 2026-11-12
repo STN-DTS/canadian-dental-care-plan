@@ -78,7 +78,7 @@ RUN pnpm --filter @cdcp-rcsd/frontend --prod deploy /home/node/deploy
 # application code.
 # ---------------------------------------------------------------------------- #
 
-FROM gcr.io/distroless/nodejs26-debian13@sha256:e2a8b92ece0f4447203399a40bd1abc12547052b32e004cf0a28002c1cd12be3
+FROM gcr.io/distroless/nodejs26-debian13@sha256:b7141f720ffac6df9069d40ca8bd82c51ab5cdb21f1456b119382883e2971f53
 
 ARG BUILD_DATE="1970-01-01T00:00:00.000Z"
 ARG BUILD_ID="000000"
