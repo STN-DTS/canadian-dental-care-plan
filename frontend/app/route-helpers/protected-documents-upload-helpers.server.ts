@@ -48,8 +48,8 @@ export async function validateDocumentContents(files: DocumentUploadSchemaOutput
         }
 
         return { id, success: true };
-      } catch {
-        log.error('Unexpected file content validation failure', { [ATTR_ERROR_TYPE]: 'file_content_validation_failed' });
+      } catch (error) {
+        log.error(error, { [ATTR_ERROR_TYPE]: 'file_content_validation_failed' });
         return { id, error: t(($) => $.upload.errorMessage.contentValidationError, { filename: file.name }) };
       }
     }),

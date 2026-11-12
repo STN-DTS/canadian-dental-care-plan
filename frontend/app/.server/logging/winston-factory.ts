@@ -20,17 +20,14 @@ import { createConsoleTransport, createDailyRotateFileTransport } from '~/.serve
 export function createWinstonInstance(config: LoggingConfig): w.Logger {
   const levelsConfig = getLevelsConfig(config);
 
+  // Severity fields only serve production log backends; they are noise in local console output.
+  const severityFormats = process.env.NODE_ENV === 'production' ? [addDynatraceLogLevel(), addOtelSeverity()] : [];
+
   // Create and configure the main logger instance
   const winstonInstance = winston.createLogger({
     level: config.LOG_LEVEL,
     levels: levelsConfig.levels,
-    format: format.combine(
-      format.timestamp(), // Adds a timestamp to each log entry
-      format.errors({ stack: true }), // Captures and formats error stack traces
-      addOtelSeverity(), // Adds OpenTelemetry severity information
-      addDynatraceLogLevel(), // Adds Dynatrace log level information
-      formatUrlPaths(), // Formats URL paths and redacts sensitive information
-    ),
+    format: format.combine(format.timestamp(), format.errors({ stack: true, cause: true }), ...severityFormats, formatUrlPaths()),
     transports: [createConsoleTransport(config)],
     exitOnError: false,
   });

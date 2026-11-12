@@ -120,6 +120,9 @@ const disableLogSending = logRecordProcessor === undefined;
 const sdk = new NodeSDK({
   instrumentations: [
     getNodeAutoInstrumentations({
+      // Express 5 routes through the `router` package, so this would duplicate express layer spans as
+      // "middleware - patched"; see https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3881
+      '@opentelemetry/instrumentation-router': { enabled: false },
       '@opentelemetry/instrumentation-winston': { disableLogSending: disableLogSending },
     }),
   ],

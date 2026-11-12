@@ -16,8 +16,7 @@ import { getLevelsConfig } from '~/.server/logging/winston-levels-config';
 export function createConsoleTransport(config: LoggingConfig): w.transports.ConsoleTransportInstance {
   // Dev format for non-production environments
   let consoleFormat = format.combine(
-    // Development format: colorized output with timestamp, error stack, and meta information
-    format.errors({ stack: true }),
+    // Development format: colorized output with timestamp, and meta information
     formatLevels(),
     formatLabels(),
     format.colorize({

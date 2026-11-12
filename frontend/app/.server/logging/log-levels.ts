@@ -17,32 +17,44 @@ export type LogLevel = (typeof logLevels)[number];
  * Winston emits the configured level and all levels with numerically smaller
  * priorities. For example, `LOG_LEVEL=info` includes audit, error, warn and
  * info, but filters out http, debug and trace.
+ *
+ * `audit` is deliberately 0, above `error`, so audit records are always emitted,
+ * even at `LOG_LEVEL=warn` or `LOG_LEVEL=error`. It also keeps the audit file
+ * transport (`level: 'audit'`) from receiving any other level.
  */
 export const winstonLogLevel = {
   trace: 6,
   debug: 5,
   http: 4,
   info: 3,
-  audit: 2,
-  warn: 1,
-  error: 0,
+  warn: 2,
+  error: 1,
+  audit: 0,
 } as const satisfies Record<LogLevel, number>;
 
 /**
- * OpenTelemetry `SeverityNumber` used when exporting each application log level.
+ * An OpenTelemetry severity number paired with its `SeverityNumber` enum name.
+ */
+type OtelSeverity = {
+  [K in keyof typeof SeverityNumber]: { number: (typeof SeverityNumber)[K]; text: K };
+}[keyof typeof SeverityNumber];
+
+/**
+ * OpenTelemetry severity number and normalized severity text for each
+ * application log level, written to log records by `addOtelSeverity`.
  *
  * This mapping is independent of Winston priorities: `http` uses `DEBUG4` (8),
  * while `audit` and `info` both use `INFO` (9).
  */
 export const otelSeverityNumberMapping = {
-  trace: SeverityNumber.TRACE,
-  debug: SeverityNumber.DEBUG,
-  http: SeverityNumber.DEBUG4,
-  info: SeverityNumber.INFO,
-  audit: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-} as const satisfies Record<LogLevel, SeverityNumber>;
+  trace: { number: SeverityNumber.TRACE, text: 'TRACE' },
+  debug: { number: SeverityNumber.DEBUG, text: 'DEBUG' },
+  http: { number: SeverityNumber.DEBUG4, text: 'DEBUG4' },
+  info: { number: SeverityNumber.INFO, text: 'INFO' },
+  warn: { number: SeverityNumber.WARN, text: 'WARN' },
+  error: { number: SeverityNumber.ERROR, text: 'ERROR' },
+  audit: { number: SeverityNumber.INFO, text: 'INFO' },
+} as const satisfies Record<LogLevel, OtelSeverity>;
 
 /**
  * Dynatrace's normalized `loglevel` labels.
@@ -60,9 +72,9 @@ export const dynatraceLogLevelMapping = {
   debug: 'DEBUG',
   http: 'DEBUG',
   info: 'INFO',
-  audit: 'INFO',
   warn: 'WARN',
   error: 'ERROR',
+  audit: 'INFO',
 } as const satisfies Record<LogLevel, DynatraceLogLevel>;
 
 /** Longest configured level name, used to align formatted log output. */

@@ -75,7 +75,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      throw new AppError('Request to create benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throw new AppError('Request to create public benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (benefitApplicationRequestDto.applicationChannelCode !== 'public') {
@@ -97,7 +97,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       return applicationCode;
     } catch (error) {
       if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
-        this.log.error('Upstream rate limit received; engaging application killswitch', { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
+        this.log.error(error, { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }
 
@@ -108,6 +108,12 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   @Traced()
   async createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
     this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId });
+
+    const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
+
+    if (killswitchEngaged) {
+      throw new AppError('Request to create protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
 
     if (protectedBenefitApplicationRequestDto.applicationChannelCode !== 'protected') {
       throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);

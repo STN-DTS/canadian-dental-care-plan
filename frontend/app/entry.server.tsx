@@ -131,7 +131,7 @@ export default async function handleRequest(request: Request, responseStatusCode
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            log.error('Error while rendering React element', { [ATTR_ERROR_TYPE]: 'react_stream_render_failed' });
+            log.error(_error, { [ATTR_ERROR_TYPE]: 'react_stream_render_failed' });
           }
         },
         nonce,

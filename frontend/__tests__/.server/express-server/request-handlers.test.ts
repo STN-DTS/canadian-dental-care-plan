@@ -16,26 +16,27 @@ if (!logger) {
 }
 
 describe('globalErrorHandler', () => {
-  it('logs only the admitted exception type, not the exception message', () => {
+  it('logs the exception with its admitted exception type', () => {
     const error = new Error('Sensitive exception message');
     const response = mock<Response>({ headersSent: true });
 
     createGlobalErrorHandler()(error, mock<Request>({ path: '/error' }), response, vi.fn());
 
-    expect(logger.error).toHaveBeenCalledWith('Unhandled Express request error', {
+    expect(logger.error).toHaveBeenCalledWith(error, {
       [ATTR_ERROR_TYPE]: 'express_request_failed',
       [ATTR_EXCEPTION_TYPE]: 'Error',
       [ATTR_URL_PATH]: '/error',
     });
-    expect(JSON.stringify(logger.error.mock.calls)).not.toContain(error.message);
   });
 
   it('omits exception types that are not admitted', () => {
     class CustomError extends Error {}
 
-    createGlobalErrorHandler()(new CustomError('Sensitive custom error'), mock<Request>({ path: '/error' }), mock<Response>({ headersSent: true }), vi.fn());
+    const error = new CustomError('Custom error');
 
-    expect(logger.error).toHaveBeenLastCalledWith('Unhandled Express request error', {
+    createGlobalErrorHandler()(error, mock<Request>({ path: '/error' }), mock<Response>({ headersSent: true }), vi.fn());
+
+    expect(logger.error).toHaveBeenLastCalledWith(error, {
       [ATTR_ERROR_TYPE]: 'express_request_failed',
       [ATTR_URL_PATH]: '/error',
     });

@@ -33,6 +33,6 @@ export interface Logger {
  * - More complex messages with metadata for structured logging.
  */
 interface LeveledLogMethod {
-  (message: string, ...meta: unknown[]): void;
+  (message: unknown, ...meta: unknown[]): void;
   (message: unknown): void;
 }

@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { addDynatraceLogLevel, addOtelSeverity, formatPrintf, formatUrlPaths } from '~/.server/logging/winston-format';
 
 const expectedLevelMappings = [
-  { level: 'trace', severityNumber: SeverityNumber.TRACE, logLevel: 'TRACE' },
-  { level: 'debug', severityNumber: SeverityNumber.DEBUG, logLevel: 'DEBUG' },
-  { level: 'http', severityNumber: SeverityNumber.DEBUG4, logLevel: 'DEBUG' },
-  { level: 'info', severityNumber: SeverityNumber.INFO, logLevel: 'INFO' },
-  { level: 'audit', severityNumber: SeverityNumber.INFO, logLevel: 'INFO' },
-  { level: 'warn', severityNumber: SeverityNumber.WARN, logLevel: 'WARN' },
-  { level: 'error', severityNumber: SeverityNumber.ERROR, logLevel: 'ERROR' },
+  { level: 'trace', severityNumber: SeverityNumber.TRACE, severityText: 'TRACE', logLevel: 'TRACE' },
+  { level: 'debug', severityNumber: SeverityNumber.DEBUG, severityText: 'DEBUG', logLevel: 'DEBUG' },
+  { level: 'http', severityNumber: SeverityNumber.DEBUG4, severityText: 'DEBUG4', logLevel: 'DEBUG' },
+  { level: 'info', severityNumber: SeverityNumber.INFO, severityText: 'INFO', logLevel: 'INFO' },
+  { level: 'audit', severityNumber: SeverityNumber.INFO, severityText: 'INFO', logLevel: 'INFO' },
+  { level: 'warn', severityNumber: SeverityNumber.WARN, severityText: 'WARN', logLevel: 'WARN' },
+  { level: 'error', severityNumber: SeverityNumber.ERROR, severityText: 'ERROR', logLevel: 'ERROR' },
 ];
 
 function createInfo(values: Partial<TransformableInfo> = {}): TransformableInfo {
@@ -44,7 +44,7 @@ function print(info: Partial<TransformableInfo>): string {
 }
 
 describe('addOtelSeverity', () => {
-  it.each(expectedLevelMappings)('maps $level using the canonical level', ({ level, severityNumber }) => {
+  it.each(expectedLevelMappings)('maps $level using the canonical level', ({ level, severityNumber, severityText }) => {
     const info = createInfo({ level, message: 'Test message', severityNumber: SeverityNumber.UNSPECIFIED, label: 'Test' });
     info.level = 'FORMATTED';
 
@@ -54,6 +54,7 @@ describe('addOtelSeverity', () => {
       level: 'FORMATTED',
       message: 'Test message',
       severityNumber,
+      severityText,
       label: 'Test',
     });
   });
@@ -81,10 +82,12 @@ describe('addOtelSeverity', () => {
     expect(info).toEqual(original);
   });
 
-  it.each(['unknown', 'toString'])('does not add severityNumber for the unsupported level %s', (level) => {
+  it.each(['unknown', 'toString'])('does not add severity fields for the unsupported level %s', (level) => {
     const info = createInfo({ level });
+    const transformed = transformInfo(addOtelSeverity(), info);
 
-    expect(transformInfo(addOtelSeverity(), info)).not.toHaveProperty('severityNumber');
+    expect(transformed).not.toHaveProperty('severityNumber');
+    expect(transformed).not.toHaveProperty('severityText');
   });
 });
 

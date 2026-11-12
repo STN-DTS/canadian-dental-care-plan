@@ -1,5 +1,5 @@
 import type { TransformableInfo } from 'logform';
-import { MESSAGE, SPLAT } from 'triple-beam';
+import { LEVEL, MESSAGE, SPLAT } from 'triple-beam';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Logger } from '~/.server/logging/logger';
@@ -50,6 +50,40 @@ describe('DefaultLogger', () => {
     } finally {
       winston.close();
       vi.unstubAllEnvs();
+    }
+  });
+
+  it.each([
+    { name: 'without metadata', meta: undefined },
+    { name: 'with metadata', meta: { 'error.type': 'synthetic_failure' } },
+  ])('passes an Error to the errors format as the message $name', async ({ meta }) => {
+    const winston = createWinstonInstance({ ...defaultsConfig, LOG_LEVEL: 'info', AUDIT_LOG_ENABLED: false });
+    const transport = winston.transports[0];
+
+    if (!transport) {
+      throw new Error('Expected a console transport');
+    }
+
+    try {
+      const entries: TransformableInfo[] = [];
+      transport.on('logged', (info: TransformableInfo) => entries.push(info));
+      const logger: Logger = new DefaultLogger(winston, 'error-event');
+      const error = new Error('Synthetic failure');
+
+      if (meta) {
+        logger.error(error, meta);
+      } else {
+        logger.error(error);
+      }
+
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      const errorEntries = entries.filter((info) => info[LEVEL] === 'error');
+      expect(errorEntries).toHaveLength(1);
+      expect(errorEntries[0]).toMatchObject({ message: 'Synthetic failure', stack: error.stack, ...meta });
+      expect(String(errorEntries[0]?.[MESSAGE])).toContain(String(error.stack).split('\n')[1]?.trim());
+      expect(Object.keys(error)).toEqual([]);
+    } finally {
+      winston.close();
     }
   });
 

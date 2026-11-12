@@ -58,11 +58,15 @@ export function formatLevels(options?: FormatLevelsOptions): Logform.Format {
 }
 
 /**
- * Sets `info.severityNumber` from Winston's canonical `LEVEL` symbol, not the
- * potentially formatted `info.level` display value.
+ * Sets `info.severityNumber` and `info.severityText` from Winston's canonical
+ * `LEVEL` symbol, not the potentially formatted `info.level` display value.
  *
- * Mapped levels overwrite `info.severityNumber`. Missing, empty or unsupported
- * canonical levels leave the entire record unchanged; no fallback is assigned.
+ * Values come from `otelSeverityNumberMapping`, so `http` becomes `8`/`DEBUG4`
+ * and `audit` becomes `9`/`INFO`. Every sink, including the OpenTelemetry
+ * exporter, receives them as record fields.
+ *
+ * Mapped levels overwrite both fields. Missing, empty or unsupported canonical
+ * levels leave the entire record unchanged; no fallback is assigned.
  *
  * @returns A formatter that updates and returns the original log record.
  */
@@ -74,7 +78,9 @@ export function addOtelSeverity(): Logform.Format {
       return info;
     }
 
-    info.severityNumber = otelSeverityNumberMapping[level as LogLevel];
+    const severity = otelSeverityNumberMapping[level as LogLevel];
+    info.severityNumber = severity.number;
+    info.severityText = severity.text;
     return info;
   })();
 }
@@ -85,8 +91,8 @@ export function addOtelSeverity(): Logform.Format {
  *
  * Mapped levels overwrite `info.logLevel`. Missing, empty or unsupported
  * canonical levels leave the entire record unchanged; no fallback is assigned.
- * This formatter does not modify `info.severityNumber` or either Winston level
- * field.
+ * This formatter does not modify `info.severityNumber`, `info.severityText` or
+ * either Winston level field.
  *
  * @returns A formatter that updates and returns the original log record.
  */

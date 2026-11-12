@@ -292,6 +292,19 @@ The [ESM instrumentation test](../../__tests__/instrumentation/telemetry-esm.ser
 starts a real server with the preload. It checks that HTTP and Express spans are
 still emitted.
 
+### Router instrumentation is disabled
+
+Express 5 dispatches through the `router` package, so the default
+`@opentelemetry/instrumentation-router` wraps the same layers that
+`@opentelemetry/instrumentation-express` already wrapped. Every middleware then
+gets an extra `middleware - patched` span, and request handlers are recorded
+twice. The SDK disables router instrumentation, even when
+`OTEL_NODE_ENABLED_INSTRUMENTATIONS` lists it, and keeps the Express spans. The
+ESM instrumentation test verifies that no router spans are exported. Revisit
+this setting when
+[opentelemetry-js-contrib#3881](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3881)
+is fixed.
+
 ## Winston log export
 
 The frontend runtime includes `@opentelemetry/winston-transport`. Winston

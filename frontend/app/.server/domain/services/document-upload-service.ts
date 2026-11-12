@@ -72,12 +72,12 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
       return { status: 'success', documentFileName: responseEntity.DocumentFileName };
     } catch (error) {
       if (error instanceof DocumentUploadException) {
-        this.log.error('Technical document upload failure', {
+        this.log.error(error, {
           [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
           [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
         });
       } else {
-        this.log.error('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
+        this.log.error(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       }
 
       return { status: 'error', error: error };

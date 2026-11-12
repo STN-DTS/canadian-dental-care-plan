@@ -98,8 +98,9 @@ describe('DefaultAuditService', () => {
     new DefaultAuditService().createAudit(eventId);
 
     expect(logger.audit).not.toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalledExactlyOnceWith('Audit record rejected because its action identifier is invalid', {
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ message: 'Audit record rejected because its action identifier is invalid' }), {
       [ATTR_ERROR_TYPE]: 'audit_event_invalid',
     });
+    expect(logger.error.mock.calls[0]?.[0]).toBeInstanceOf(Error);
   });
 });

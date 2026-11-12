@@ -92,7 +92,7 @@ function createRedisClient(config: RedisStandaloneClientServerConfig): RedisClie
     })
     .on('error', (error: unknown) => {
       const code = operationalErrorCode(error);
-      log.error('Standalone Redis client error', { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_STANDALONE_HOST, [ATTR_SERVER_PORT]: config.REDIS_STANDALONE_PORT });
+      log.error(error, { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_STANDALONE_HOST, [ATTR_SERVER_PORT]: config.REDIS_STANDALONE_PORT });
     });
 
   return client as RedisClientType;
@@ -161,7 +161,7 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
     })
     .on('error', (error: unknown) => {
       const code = operationalErrorCode(error);
-      log.error('Redis Sentinel client error', { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
+      log.error(error, { [ATTR_ERROR_TYPE]: redisErrorType(error), ...(code && { [ATTR_CDCP_ERROR_CODE]: code }), [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
     });
 
   return sentinel as RedisSentinelType;

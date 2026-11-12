@@ -1,7 +1,6 @@
 import { ATTR_ERROR_TYPE, ATTR_EXCEPTION_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import type { ErrorRequestHandler } from 'express';
 import path from 'node:path';
-import { types } from 'node:util';
 
 import { createLogger } from '~/.server/logging';
 
@@ -18,7 +17,7 @@ const exceptionTypes = new Map<object, string>([
 ]);
 
 function getExceptionType(error: unknown): string | undefined {
-  if (!types.isNativeError(error)) {
+  if (!Error.isError(error)) {
     return undefined;
   }
 
@@ -28,7 +27,7 @@ function getExceptionType(error: unknown): string | undefined {
 export function createGlobalErrorHandler(): ErrorRequestHandler {
   return function globalErrorHandler(error, request, response, next) {
     const exceptionType = getExceptionType(error);
-    log.error('Unhandled Express request error', {
+    log.error(error, {
       [ATTR_ERROR_TYPE]: 'express_request_failed',
       ...(exceptionType && { [ATTR_EXCEPTION_TYPE]: exceptionType }),
       [ATTR_URL_PATH]: request.path,

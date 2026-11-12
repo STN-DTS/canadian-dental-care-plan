@@ -83,6 +83,7 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
   const untracedMethods = new Set([
     'DefaultAddressValidationRepository.checkHealth',
     'DefaultApplicantRepository.checkHealth',
+    'DefaultAuditService.createAudit',
     'DefaultApplicationStatusRepository.checkHealth',
     'DefaultClientFriendlyStatusRepository.checkHealth',
     'DefaultClientFriendlyStatusRepository.findClientFriendlyStatusById',

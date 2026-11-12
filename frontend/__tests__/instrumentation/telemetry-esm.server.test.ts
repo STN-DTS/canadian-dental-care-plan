@@ -105,7 +105,7 @@ test.each(['console', 'otlp'])(
             OTEL_USE_CONSOLE_EXPORTERS: sink === 'console' ? 'true' : 'false',
             OTEL_API_KEY: 'local-synthetic-trace-key',
             OTEL_TRACES_ENDPOINT: `http://127.0.0.1:${address.port}/v1/traces`,
-            OTEL_NODE_ENABLED_INSTRUMENTATIONS: 'http,express,undici',
+            OTEL_NODE_ENABLED_INSTRUMENTATIONS: 'http,express,router,undici',
             OTEL_NODE_RESOURCE_DETECTORS: 'none',
           },
           timeout: 20_000,
@@ -117,6 +117,9 @@ test.each(['console', 'otlp'])(
       expect(exported).toContain('@opentelemetry/instrumentation-http');
       expect(exported).toContain('@opentelemetry/instrumentation-express');
       expect(exported).toContain('@opentelemetry/instrumentation-undici');
+      expect(exported).toContain('middleware - backendHandler');
+      expect(exported).not.toContain('@opentelemetry/instrumentation-router');
+      expect(exported).not.toContain('middleware - patched');
       expect(exported).toContain('GET /otel-smoke');
       expect(exported).toContain('token=%5BREDACTED%5D');
       expect(exported).toContain('[REDACTED]');

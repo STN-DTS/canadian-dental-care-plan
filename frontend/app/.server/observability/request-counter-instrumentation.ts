@@ -161,8 +161,8 @@ function requestCounter(log: Logger, context: ReadonlyContext, request: Readonly
       [ATTR_CDCP_ROUTE_ID]: routeId,
       [ATTR_CDCP_OPERATION_NAME]: metricPrefix,
     });
-  } catch {
+  } catch (error: unknown) {
     // Never let a metrics failure surface to the caller; log and move on.
-    log.error('Error during request counting', { [ATTR_ERROR_TYPE]: 'request_counting_failed' });
+    log.error(error, { [ATTR_ERROR_TYPE]: 'request_counting_failed' });
   }
 }

@@ -55,7 +55,7 @@ function purgeExpiredSessions(memoryStore: MemoryStore): void {
 
   memoryStore.all((error, sessions) => {
     if (error) {
-      log.error('Unable to read memory session store', { [ATTR_ERROR_TYPE]: 'session_store_read_failed' });
+      log.error(error, { [ATTR_ERROR_TYPE]: 'session_store_read_failed' });
     }
 
     if (sessions) {

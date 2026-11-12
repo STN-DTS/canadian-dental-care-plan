@@ -2,6 +2,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { deleteSingleton } from '~/.server/utils/instance-registry';
 
+async function transformInfoRecord(environment: string) {
+  vi.stubEnv('NODE_ENV', environment);
+  const { LEVEL } = await import('triple-beam');
+  const { defaultsConfig } = await import('~/.server/logging/logging-config');
+  const { createWinstonInstance } = await import('~/.server/logging/winston-factory');
+  const winston = createWinstonInstance({ ...defaultsConfig, AUDIT_LOG_ENABLED: false });
+  const info = winston.format.transform({ level: 'info', message: 'Test', [LEVEL]: 'info' });
+
+  winston.close();
+  return info;
+}
+
 afterEach(() => {
   deleteSingleton('loggingConfig');
   vi.unstubAllEnvs();
@@ -38,10 +50,25 @@ describe('logging configuration', () => {
     expect(() => getLoggingConfig()).toThrow();
   });
 
-  it('accepts audit even though its Winston priority is zero', async () => {
+  it.each(['warn', 'error'] as const)('still emits audit records at LOG_LEVEL=%s', async (level) => {
     const { defaultsConfig } = await import('~/.server/logging/logging-config');
-    const { getLevelsConfig } = await import('~/.server/logging/winston-levels-config');
+    const { createWinstonInstance } = await import('~/.server/logging/winston-factory');
+    const winston = createWinstonInstance({ ...defaultsConfig, LOG_LEVEL: level, AUDIT_LOG_ENABLED: false });
 
-    expect(getLevelsConfig({ ...defaultsConfig, LOG_LEVEL: 'audit' }).levels.audit).toBe(0);
+    expect(winston.isLevelEnabled('audit')).toBe(true);
+    expect(winston.isLevelEnabled('info')).toBe(false);
+    winston.close();
+  });
+
+  it('adds severity fields in production', async () => {
+    expect(await transformInfoRecord('production')).toEqual(expect.objectContaining({ severityNumber: 9, severityText: 'INFO', logLevel: 'INFO' }));
+  });
+
+  it.each(['development', 'test'])('omits severity fields when NODE_ENV=%s', async (environment) => {
+    const info = await transformInfoRecord(environment);
+
+    expect(info).not.toHaveProperty('severityNumber');
+    expect(info).not.toHaveProperty('severityText');
+    expect(info).not.toHaveProperty('logLevel');
   });
 });

@@ -107,7 +107,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Technical document upload failure', {
+      expect(logger.error).toHaveBeenCalledWith(error, {
         [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
         [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
       });
@@ -122,7 +122,7 @@ describe('DefaultDocumentUploadService', () => {
       expect(result).toEqual({ status: 'error', error });
       expect(result.status === 'error' && result.error).toBe(error);
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
+      expect(logger.error).toHaveBeenCalledWith(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
     });
 
     it('should absorb request mapping failures without submitting the file', async () => {
@@ -131,7 +131,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
+      expect(logger.error).toHaveBeenCalledWith(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       expect(repository.uploadDocument).not.toHaveBeenCalled();
     });
 
@@ -144,7 +144,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
+      expect(logger.error).toHaveBeenCalledWith(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
     });
 
     it('should not submit an unaudited upload if auditing fails', async () => {
@@ -155,7 +155,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
-      expect(logger.error).toHaveBeenCalledWith('Unexpected document upload error', { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
+      expect(logger.error).toHaveBeenCalledWith(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       expect(mapper.mapDocumentUploadRequestDtoToEntity).not.toHaveBeenCalled();
       expect(repository.uploadDocument).not.toHaveBeenCalled();
     });

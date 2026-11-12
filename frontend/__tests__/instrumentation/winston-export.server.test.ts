@@ -15,7 +15,7 @@ const frontendDirectory = fileURLToPath(new URL('../../', import.meta.url));
 const logRecordSchema = z.object({
   hrTime: z.tuple([z.number(), z.number()]),
   hrTimeObserved: z.tuple([z.number(), z.number()]),
-  severityNumber: z.number(),
+  severityNumber: z.number().optional(),
   severityText: z.string(),
   body: z.string(),
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
@@ -169,6 +169,7 @@ test('the application preload preserves event schemas, severity and privacy thro
 
           winston.level = 'error';
           logger.info('Suppressed ordinary diagnostic');
+          winston.level = 'audit';
           const auditService = new DefaultAuditService();
           trace.getTracer('winston-export-test').startActiveSpan('Synthetic audit context', span => {
             auditService.createAudit('auth.session-created', {
@@ -182,7 +183,6 @@ test('the application preload preserves event schemas, severity and privacy thro
             });
             span.end();
           });
-          winston.level = 'audit';
           auditService.createAudit('pdf.get', { userId: 'audit-actor-001', letterId: 'audit-letter-001' });
           const finished = once(winston, 'finish');
           winston.end();
@@ -272,16 +272,17 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(output).not.toContain('%j');
     }
 
-    for (const [message, severityNumber, severityText] of [
-      ['Synthetic trace diagnostic', 1, 'trace'],
-      ['Synthetic debug diagnostic', 5, 'debug'],
-      ['Synthetic dependency request finished', 9, 'info'],
-      ['Synthetic HTTP request completed', 8, 'http'],
-      ['Synthetic warning diagnostic', 13, 'warn'],
-      ['Synthetic Redis connection failed', 17, 'error'],
+    for (const [message, level, severityNumber, severityText] of [
+      ['Synthetic trace diagnostic', 'trace', 1, 'TRACE'],
+      ['Synthetic debug diagnostic', 'debug', 5, 'DEBUG'],
+      ['Synthetic dependency request finished', 'info', 9, 'INFO'],
+      ['Synthetic HTTP request completed', 'http', 8, 'DEBUG4'],
+      ['Synthetic warning diagnostic', 'warn', 13, 'WARN'],
+      ['Synthetic Redis connection failed', 'error', 17, 'ERROR'],
     ] as const) {
       const record = records.find((entry) => entry.body === message);
-      expect(record).toMatchObject({ severityNumber, severityText });
+      expect(record?.severityText).toBe(level);
+      expect(record?.attributes).toMatchObject({ severityNumber, severityText });
       expect(record?.eventName).toBeUndefined();
     }
 
@@ -291,26 +292,28 @@ test('the application preload preserves event schemas, severity and privacy thro
     }
 
     const completions = records.filter((record) => record.eventName === 'cdcp.http.request.completed');
-    expect(completions).toHaveLength(5);
-    expect(completions.map((record) => record.attributes['http.response.status_code'])).toEqual(expect.arrayContaining([200, 302, 404, 503]));
+    // At the info level, only the 503 completion is emitted; 1xx-4xx and aborted completions use http.
+    expect(completions).toHaveLength(3);
+    expect(completions.map((record) => record.attributes['http.response.status_code'])).toEqual(expect.arrayContaining([200, 302, 503]));
 
     for (const record of completions) {
       const attributes = record.attributes;
       const status = Number(attributes['http.response.status_code']);
-      expect(attributes['url.path']).toBe(Number.isNaN(status) ? '/abort' : `/status/${status}`);
+      expect(attributes['url.path']).toBe(`/status/${status}`);
       expect(attributes['otel.event.name']).toBeUndefined();
-      expect(record.severityNumber).toBe(Number.isNaN(status) || status >= 500 ? 17 : status >= 400 ? 13 : 8);
-      expect(record.severityText).toBe(Number.isNaN(status) || status >= 500 ? 'error' : status >= 400 ? 'warn' : 'http');
+      expect(record.severityText).toBe(status >= 500 ? 'error' : 'http');
+      expect(attributes['severityNumber']).toBe(status >= 500 ? 17 : 8);
+      expect(attributes['severityText']).toBe(status >= 500 ? 'ERROR' : 'DEBUG4');
       expect(attributes['http.request.method']).toBe(status < 400 ? 'POST' : 'GET');
     }
 
     const consoleCompletions = consoleRecords.filter((record) => record['otel.event.name'] === 'cdcp.http.request.completed');
-    expect(consoleCompletions).toHaveLength(5);
+    expect(consoleCompletions).toHaveLength(3);
 
     for (const record of consoleCompletions) {
       const status = Number(record['http.response.status_code']);
       expect(record['http.request.method']).toBe(status < 400 ? 'POST' : 'GET');
-      expect(record['url.path']).toBe(Number.isNaN(status) ? '/abort' : `/status/${status}`);
+      expect(record['url.path']).toBe(`/status/${status}`);
     }
 
     const auditRecords = records.filter((record) => record.eventName === 'cdcp.audit.recorded');
@@ -320,14 +323,15 @@ test('the application preload preserves event schemas, severity and privacy thro
       const attributes = record.attributes;
       const timestamp = BigInt(record.hrTime[0]) * 1_000_000_000n + BigInt(record.hrTime[1]);
       const observedTimestamp = BigInt(record.hrTimeObserved[0]) * 1_000_000_000n + BigInt(record.hrTimeObserved[1]);
-      expect(record.severityNumber).toBe(9);
       expect(record.severityText).toBe('audit');
+      expect(attributes['severityNumber']).toBe(9);
+      expect(attributes['severityText']).toBe('INFO');
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
       expect(attributes['cdcp.user.id']).toBe('audit-actor-001');
       expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
       expect(Object.keys(attributes)).toEqual(expect.arrayContaining(['cdcp.audit.event_id', 'cdcp.user.id']));
-      expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'timestamp'].includes(key))).toEqual([]);
+      expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'logLevel', 'severityNumber', 'severityText', 'timestamp'].includes(key))).toEqual([]);
     }
 
     const actorRecord = auditRecords.find((record) => record.attributes['cdcp.audit.event_id'] === 'auth.session-created');
@@ -345,7 +349,11 @@ test('the application preload preserves event schemas, severity and privacy thro
         expect(record['cdcp.user.id']).toBe('audit-actor-001');
         expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
         expect(typeof record.timestamp).toBe('string');
-        expect(Object.keys(record).every((key) => ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'trace_id', 'span_id', 'trace_flags'].includes(key))).toBe(true);
+        expect(
+          Object.keys(record).every((key) =>
+            ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'logLevel', 'severityNumber', 'severityText', 'trace_id', 'span_id', 'trace_flags'].includes(key),
+          ),
+        ).toBe(true);
       }
     }
 
