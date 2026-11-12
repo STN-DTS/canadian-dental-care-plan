@@ -4,7 +4,6 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { BenefitApplicationChildDto, BenefitApplicationContactInformationDto, BenefitApplicationDto, BenefitApplicationPartnerInformationDto, BenefitApplicationTypeOfApplicationDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationRequestEntity, BenefitApplicationResponseEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 import { expectDefined } from '~/utils/assert-utils';
 import { parseDateString } from '~/utils/date-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
@@ -38,7 +37,6 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     this.serverConfig = serverConfig;
   }
 
-  @Traced()
   mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto: BenefitApplicationDto): BenefitApplicationRequestEntity {
     const { BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED, BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC } = this.serverConfig;
     const applicationChannelCode = benefitApplicationDto.applicationChannelCode === 'protected' ? BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED : BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC;
@@ -280,7 +278,6 @@ export class DefaultBenefitApplicationDtoMapper implements BenefitApplicationDto
     return APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY;
   }
 
-  @Traced()
   mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity: BenefitApplicationResponseEntity): string {
     const applicationCode = benefitApplicationResponseEntity.BenefitApplication.BenefitApplicationIdentification[0]?.IdentificationID;
     return expectDefined(applicationCode, 'Expected applicationCode to be defined');

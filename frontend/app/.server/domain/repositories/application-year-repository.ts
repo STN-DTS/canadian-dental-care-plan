@@ -86,7 +86,6 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
     this.log = createLogger('MockApplicationYearRepository');
   }
 
-  @Traced()
   getIntakeApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving intake application year entity');
 
@@ -108,7 +107,6 @@ export class MockApplicationYearRepository implements ApplicationYearRepository 
     return applicationYearResultEntity;
   }
 
-  @Traced()
   getRenewalApplicationYear(date: string): ApplicationYearResultEntity {
     this.log.trace('Retrieving renewal application year entity');
 

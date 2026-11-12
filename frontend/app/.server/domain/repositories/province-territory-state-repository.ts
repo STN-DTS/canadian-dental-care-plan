@@ -100,7 +100,6 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
     return provinceTerritoryStateEntities;
   }
 
-  @Traced()
   async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching provinces, territories, and states');
 
@@ -116,7 +115,6 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
     return Option.some(provinceTerritoryEntity);
   }
 
-  @Traced()
   async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching provinces, territories, and states');
 
@@ -132,14 +130,12 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
     return Option.some(provinceTerritoryEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllProvinceTerritoryStates();
   }
@@ -153,7 +149,6 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     this.log = createLogger('MockProvinceTerritoryStateRepository');
   }
 
-  @Traced()
   async listAllProvinceTerritoryStates(): Promise<ProvinceTerritoryStateEntity[]> {
     this.log.debug('Fetching all province territory states');
     const provinceTerritoryStateEntities = provinceTerritoryStateJsonDataSource.value.flatMap((e) => e.esdc_ProvinceTerritoryState_Countryid_esd);
@@ -167,7 +162,6 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     return await Promise.resolve(provinceTerritoryStateEntities);
   }
 
-  @Traced()
   async findProvinceTerritoryStateById(id: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching province territory state');
 
@@ -182,7 +176,6 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     return await Promise.resolve(Option.some(provinceTerritoryStateEntity));
   }
 
-  @Traced()
   async findProvinceTerritoryStateByCode(code: string): Promise<Option.Option<ProvinceTerritoryStateEntity>> {
     this.log.debug('Fetching province territory state');
 
@@ -197,14 +190,12 @@ export class MockProvinceTerritoryStateRepository implements ProvinceTerritorySt
     return await Promise.resolve(Option.some(provinceTerritoryStateEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

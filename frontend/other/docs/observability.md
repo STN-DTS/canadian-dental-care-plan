@@ -95,27 +95,55 @@ podman volume import <volume-name> <volume-name>.tar
 
 Public instance methods in `app/.server/` use the existing
 [`@Traced()` decorator](../../app/.server/observability/decorator/traced.ts).
-This includes default and mock implementations. Logging and tracing internals,
-constructors, accessors, static methods, and private or protected helpers remain
-undecorated.
+The following helpers are deliberately untraced:
 
-Span names use `ClassName.methodName`. The `code.namespace` and `code.function`
-attributes identify the class and method. Arguments and return values are not
+- Container lookups in `DefaultAppContainerProvider`.
+- All DTO mappers under `domain/mappers/` and `web/mappers/`.
+- Reference-data services for application years, client-friendly statuses,
+  countries, document upload reasons, evidentiary document types, federal and
+  provincial government insurance plans, GC and Sun Life communication methods,
+  languages, letter types, marital statuses, provinces/territories/states, and
+  record sources.
+- Bearer-token resolution, build-info retrieval, and Redis command wrappers.
+- In-memory `has`, `find`, `get`, `set`, and `unset` methods in `ExpressSession`
+  and `NoopSession`. Their `save`, `destroy`, and `regenerate` lifecycle methods
+  remain traced.
+- Phone/email field selection in public and protected application-state resolvers.
+  Their other methods remain traced because they localize values or coordinate
+  address and dental-benefit lookups.
+- All `Mock*Repository` methods.
+- Repository metadata, `find*` methods that search a `listAll*` result, and
+  health checks that only delegate or are unimplemented. Health checks that
+  perform their own I/O, such as `DefaultVerificationCodeRepository.checkHealth`,
+  remain traced.
+
+These helpers do not create method spans. Any traced business service or repository
+they call still runs under the active parent span. Mapping, lookup, localization,
+memoization, logging, and error propagation are unchanged.
+
+Logging and tracing internals, constructors, accessors, static methods, and private
+or protected helpers also remain undecorated.
+
+Span names use `ClassName.methodName`. The `code.function.name` attribute
+identifies the same class and method. Arguments and return values are not
 attached as attributes. The decorator records thrown or rejected errors as
 exception events and sets the span status to error without replacing the error.
 Exception messages and stacks retain the decorator's existing behavior.
 
 Synchronous spans finish when the method returns. Asynchronous spans finish
 when the returned promise settles. Method spans use the active OpenTelemetry
-context, so repository and mapper spans nest under their calling service spans.
+context, so repository spans nest under the active calling span even when an
+untraced lookup service or mapper sits between them.
 
 Existing memoization wraps the decorated method. Cache hits do not execute the
 method and therefore do not create its span. Cached values, cache settings,
 and method signatures are unchanged.
 
 The [application tracing tests](../../__tests__/.server/observability/application-tracing.test.ts)
-check method coverage and export spans from real service, repository, and mapper
-invocations with a mocked HTTP client.
+enforce these tracing boundaries and verify exported repository spans, the absence
+of helper spans, retained session lifecycle spans, parent context, cache behavior,
+and error propagation using real lookups, mappers, resolvers, and session wrappers
+with mocked HTTP clients and session-store callbacks.
 
 ### Application error correlation IDs
 

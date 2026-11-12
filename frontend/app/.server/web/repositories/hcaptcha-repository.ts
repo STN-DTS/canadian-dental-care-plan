@@ -82,14 +82,12 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     return hCaptchaVerifyResponseEntity;
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.verifyHCaptchaResponse({ hCaptchaResponse: this.serverConfig.HEALTH_PLACEHOLDER_REQUEST_VALUE });
   }

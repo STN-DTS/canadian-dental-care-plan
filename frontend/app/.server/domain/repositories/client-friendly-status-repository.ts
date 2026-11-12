@@ -91,7 +91,6 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     return clientFriendlyStatusEntities;
   }
 
-  @Traced()
   async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status');
 
@@ -107,14 +106,12 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
     return Option.some(clientFriendlyStatusEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllClientFriendlyStatuses();
   }
@@ -128,7 +125,6 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     this.log = createLogger('MockClientFriendlyStatusRepository');
   }
 
-  @Traced()
   async listAllClientFriendlyStatuses(): Promise<ReadonlyArray<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching all client friendly statuses');
     const clientFriendlyStatusEntities = clientFriendlyStatusJsonDataSource.value;
@@ -142,7 +138,6 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     return await Promise.resolve(clientFriendlyStatusEntities);
   }
 
-  @Traced()
   async findClientFriendlyStatusById(id: string): Promise<Option.Option<ClientFriendlyStatusEntity>> {
     this.log.debug('Fetching client friendly status');
 
@@ -157,14 +152,12 @@ export class MockClientFriendlyStatusRepository implements ClientFriendlyStatusR
     return await Promise.resolve(Option.some(clientFriendlyStatusEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

@@ -84,7 +84,6 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
     return verificationCodeEmailResponseEntity;
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
@@ -127,7 +126,6 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
     this.log = createLogger('MockVerificationCodeRepository');
   }
 
-  @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
     this.log.trace('Generating mock verification code email');
 
@@ -151,14 +149,12 @@ export class MockVerificationCodeRepository implements VerificationCodeRepositor
     return await Promise.resolve(verificationCodeEmailResponseEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

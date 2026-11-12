@@ -12,7 +12,6 @@ import type { EvidentiaryDocumentTypeRepository } from '~/.server/domain/reposit
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 /**
@@ -117,7 +116,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     this.log.debug('DefaultEvidentiaryDocumentTypeService initiated.');
   }
 
-  @Traced()
   async listEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>> {
     this.log.trace('Getting all evidentiary document types');
     const evidentiaryDocumentTypeEntities = await this.evidentiaryDocumentTypeRepository.listAllEvidentiaryDocumentTypes();
@@ -126,7 +124,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return evidentiaryDocumentTypeDtos;
   }
 
-  @Traced()
   async listEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus): Promise<ReadonlyArray<EvidentiaryDocumentTypeDto>> {
     this.log.trace('Getting evidentiary document types');
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
@@ -135,7 +132,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return filteredEvidentiaryDocumentTypeDtos;
   }
 
-  @Traced()
   async getEvidentiaryDocumentTypeById(id: string): Promise<EvidentiaryDocumentTypeDto> {
     this.log.trace('Getting evidentiary document type');
 
@@ -150,7 +146,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return evidentiaryDocumentTypeDto;
   }
 
-  @Traced()
   async listLocalizedEvidentiaryDocumentTypes(locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
     this.log.trace('Getting all localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypes();
@@ -159,7 +154,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return localizedEvidentiaryDocumentTypeDtos;
   }
 
-  @Traced()
   async listLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
     this.log.trace('Getting localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDtos = await this.listEvidentiaryDocumentTypesByStatus(status);
@@ -168,7 +162,6 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     return localizedEvidentiaryDocumentTypeDtos;
   }
 
-  @Traced()
   async getLocalizedEvidentiaryDocumentTypeById(id: string, locale: AppLocale): Promise<EvidentiaryDocumentTypeLocalizedDto> {
     this.log.trace('Getting localized evidentiary document type', { [ATTR_CDCP_LOCALE]: locale });
     const evidentiaryDocumentTypeDto = await this.getEvidentiaryDocumentTypeById(id);

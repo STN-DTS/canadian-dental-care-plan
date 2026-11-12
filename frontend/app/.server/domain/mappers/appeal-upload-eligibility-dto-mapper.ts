@@ -2,7 +2,6 @@ import { injectable } from 'inversify';
 
 import type { AppealUploadEligibilityDto } from '~/.server/domain/dtos';
 import type { AppealUploadEligibilityResponseEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 
 export interface AppealUploadEligibilityDtoMapper {
   /**
@@ -18,7 +17,6 @@ export interface AppealUploadEligibilityDtoMapper {
 
 @injectable()
 export class DefaultAppealUploadEligibilityDtoMapper implements AppealUploadEligibilityDtoMapper {
-  @Traced()
   mapAppealUploadEligibilityResponseEntityToAppealUploadEligibilityDto(entity: AppealUploadEligibilityResponseEntity): AppealUploadEligibilityDto {
     return {
       clientId: entity.esdc_clientid,

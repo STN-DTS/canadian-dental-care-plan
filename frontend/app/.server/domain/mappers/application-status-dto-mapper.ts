@@ -3,7 +3,6 @@ import { injectable } from 'inversify';
 
 import type { ApplicationStatusBasicInfoRequestDto, ApplicationStatusSinRequestDto } from '~/.server/domain/dtos';
 import type { ApplicationStatusBasicInfoRequestEntity, ApplicationStatusEntity, ApplicationStatusSinRequestEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 import { sanitizeSin } from '~/utils/sin-utils';
 
 export interface ApplicationStatusDtoMapper {
@@ -14,13 +13,11 @@ export interface ApplicationStatusDtoMapper {
 
 @injectable()
 export class DefaultApplicationStatusDtoMapper implements ApplicationStatusDtoMapper {
-  @Traced()
   mapApplicationStatusEntityToApplicationStatusId(applicationStatusEntity: ApplicationStatusEntity): Option.Option<string> {
     const applicationStatusId = applicationStatusEntity.BenefitApplication.BenefitApplicationStatus[0]?.ReferenceDataID;
     return applicationStatusId ? Option.some(applicationStatusId) : Option.none();
   }
 
-  @Traced()
   mapApplicationStatusBasicInfoRequestDtoToApplicationStatusBasicInfoRequestEntity(applicationStatusBasicInfoRequestDto: ApplicationStatusBasicInfoRequestDto): ApplicationStatusBasicInfoRequestEntity {
     return {
       BenefitApplication: {
@@ -44,7 +41,6 @@ export class DefaultApplicationStatusDtoMapper implements ApplicationStatusDtoMa
     };
   }
 
-  @Traced()
   mapApplicationStatusSinRequestDtoToApplicationStatusSinRequestEntity(applicationStatusSinRequestDto: ApplicationStatusSinRequestDto): ApplicationStatusSinRequestEntity {
     return {
       BenefitApplication: {

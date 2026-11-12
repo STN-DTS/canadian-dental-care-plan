@@ -8,7 +8,6 @@ import type { SunLifeCommunicationMethodDtoMapper } from '~/.server/domain/mappe
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing SunLife communication method data.
@@ -70,14 +69,12 @@ export class DefaultSunLifeCommunicationMethodService implements SunLifeCommunic
     ];
   }
 
-  @Traced()
   listSunLifeCommunicationMethods(): ReadonlyArray<SunLifeCommunicationMethodDto> {
     this.log.debug('Get all SunLife communication methods');
     this.log.trace('Returning SunLife communication methods', { [ATTR_CDCP_REFERENCE_COUNT]: this.sunLifeCommunicationMethodDtos.length });
     return this.sunLifeCommunicationMethodDtos;
   }
 
-  @Traced()
   getSunLifeCommunicationMethodById(id: string): SunLifeCommunicationMethodDto {
     this.log.debug('Get SunLife communication method');
     const sunLifeCommunicationMethodDto = this.sunLifeCommunicationMethodDtos.find((dto) => dto.id === id);
@@ -90,7 +87,6 @@ export class DefaultSunLifeCommunicationMethodService implements SunLifeCommunic
     return sunLifeCommunicationMethodDto;
   }
 
-  @Traced()
   listLocalizedSunLifeCommunicationMethods(locale: AppLocale): ReadonlyArray<SunLifeCommunicationMethodLocalizedDto> {
     this.log.debug('Get all localized SunLife communication methods', { [ATTR_CDCP_LOCALE]: locale });
     const sunLifeCommunicationMethodDtos = this.listSunLifeCommunicationMethods();
@@ -99,7 +95,6 @@ export class DefaultSunLifeCommunicationMethodService implements SunLifeCommunic
     return localizedSunLifeCommunicationMethodDtos;
   }
 
-  @Traced()
   getLocalizedSunLifeCommunicationMethodById(id: string, locale: AppLocale): SunLifeCommunicationMethodLocalizedDto {
     this.log.debug('Get localized SunLife communication method', { [ATTR_CDCP_LOCALE]: locale });
     const sunLifeCommunicationMethodDto = this.getSunLifeCommunicationMethodById(id);

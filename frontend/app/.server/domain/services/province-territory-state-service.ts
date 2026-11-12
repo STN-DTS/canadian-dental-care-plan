@@ -12,7 +12,6 @@ import type { ProvinceTerritoryStateRepository } from '~/.server/domain/reposito
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing province territory state data.
@@ -134,7 +133,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     this.log.debug('DefaultProvinceTerritoryStateService initiated.');
   }
 
-  @Traced()
   async listProvinceTerritoryStates(): Promise<ReadonlyArray<ProvinceTerritoryStateDto>> {
     this.log.debug('Get all province territory states');
     const provinceTerritoryStateEntities = await this.provinceTerritoryStateRepository.listAllProvinceTerritoryStates();
@@ -143,7 +141,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return provinceTerritoryStateDtos;
   }
 
-  @Traced()
   async getProvinceTerritoryStateById(id: string): Promise<ProvinceTerritoryStateDto> {
     this.log.debug('Get province territory state');
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateById(id);
@@ -157,7 +154,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return provinceTerritoryStateDto;
   }
 
-  @Traced()
   async getProvinceTerritoryStateByCode(code: string): Promise<ProvinceTerritoryStateDto> {
     this.log.debug('Get province territory state');
     const provinceTerritoryStateEntity = await this.provinceTerritoryStateRepository.findProvinceTerritoryStateByCode(code);
@@ -171,7 +167,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return provinceTerritoryStateDto;
   }
 
-  @Traced()
   async listAndSortLocalizedProvinceTerritoryStates(locale: AppLocale): Promise<ReadonlyArray<ProvinceTerritoryStateLocalizedDto>> {
     this.log.debug('Get and sort all localized province territory states', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDtos = await this.listProvinceTerritoryStates();
@@ -181,7 +176,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return sortedLocalizedProvinceTerritoryStateDtos;
   }
 
-  @Traced()
   async listAndSortLocalizedProvinceTerritoryStatesByCountryId(countryId: string, locale: AppLocale): Promise<ReadonlyArray<ProvinceTerritoryStateLocalizedDto>> {
     this.log.debug('Get and sort all localized province territory states', { [ATTR_CDCP_LOCALE]: locale });
     const filterByCountryIdPredicate = (dto: ProvinceTerritoryStateDto) => dto.countryId === countryId;
@@ -193,7 +187,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return sortedLocalizedProvinceTerritoryStateDtos;
   }
 
-  @Traced()
   async getLocalizedProvinceTerritoryStateById(id: string, locale: AppLocale): Promise<ProvinceTerritoryStateLocalizedDto> {
     this.log.debug('Get localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDto = await this.getProvinceTerritoryStateById(id);
@@ -202,7 +195,6 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
     return localizedProvinceTerritoryStateDto;
   }
 
-  @Traced()
   async getLocalizedProvinceTerritoryStateByCode(code: string, locale: AppLocale): Promise<ProvinceTerritoryStateLocalizedDto> {
     this.log.debug('Get localized province territory state', { [ATTR_CDCP_LOCALE]: locale });
     const provinceTerritoryStateDto = await this.getProvinceTerritoryStateByCode(code);

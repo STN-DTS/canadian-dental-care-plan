@@ -1,7 +1,5 @@
 import { injectable } from 'inversify';
 
-import { Traced } from '~/.server/observability/decorator';
-
 /**
  * A strategy for resolving bearer tokens from requests.
  */
@@ -13,7 +11,6 @@ export interface BearerTokenResolver {
 export class DefaultBearerTokenResolver implements BearerTokenResolver {
   readonly BEARER_TOKEN_HEADER_NAME = 'authorization';
 
-  @Traced()
   resolve(request: Pick<Request, 'headers'>): string | undefined {
     const authorization = request.headers.get(this.BEARER_TOKEN_HEADER_NAME) ?? '';
     const [scheme, token] = authorization.split(/\s+/, 2);

@@ -12,7 +12,6 @@ import type { CountryRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 import { moveToTop } from '~/.server/utils/collection-utils';
 
 /**
@@ -123,7 +122,6 @@ export class DefaultCountryService implements CountryService {
    *
    * @returns An array of Country DTOs.
    */
-  @Traced()
   async listCountries(): Promise<ReadonlyArray<CountryDto>> {
     this.log.debug('Get all countries');
     const countryEntities = await this.countryRepository.listAllCountries();
@@ -139,7 +137,6 @@ export class DefaultCountryService implements CountryService {
    * @returns The Country DTO corresponding to the specified ID.
    * @throws {CountryNotFoundException} If no country is found with the specified ID.
    */
-  @Traced()
   async getCountryById(id: string): Promise<CountryDto> {
     this.log.debug('Get country');
     const countryEntity = await this.countryRepository.findCountryById(id);
@@ -159,7 +156,6 @@ export class DefaultCountryService implements CountryService {
    * @param locale - The desired locale (e.g., 'en' or 'fr').
    * @returns An array of localized Country DTOs.
    */
-  @Traced()
   async listAndSortLocalizedCountries(locale: AppLocale): Promise<ReadonlyArray<CountryLocalizedDto>> {
     this.log.debug('Get and sort all localized countries', { [ATTR_CDCP_LOCALE]: locale });
     const countryDtos = await this.listCountries();
@@ -177,7 +173,6 @@ export class DefaultCountryService implements CountryService {
    * @returns The localized Country DTO corresponding to the specified ID.
    * @throws {CountryNotFoundException} If no country is found with the specified ID.
    */
-  @Traced()
   async getLocalizedCountryById(id: string, locale: AppLocale): Promise<CountryLocalizedDto> {
     this.log.debug('Get localized country', { [ATTR_CDCP_LOCALE]: locale });
     const countryDto = await this.getCountryById(id);

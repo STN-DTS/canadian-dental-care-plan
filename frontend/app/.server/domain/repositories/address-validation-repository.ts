@@ -83,14 +83,12 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
     return addressCorrectionResults;
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.getAddressCorrectionResult({ address: '111 WELLINGTON ST', city: 'Ottawa', postalCode: 'K1A0A4', provinceCode: 'ON' });
   }
@@ -104,7 +102,6 @@ export class MockAddressValidationRepository implements AddressValidationReposit
     this.log = createLogger('MockAddressValidationRepository');
   }
 
-  @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestEntity: AddressCorrectionRequestEntity): Promise<AddressCorrectionResultEntity> {
     this.log.debug('Generating mock address correction');
     const statusCode = this.mockStatusCodeFromProvinceCode(addressCorrectionRequestEntity.provinceCode);
@@ -144,14 +141,12 @@ export class MockAddressValidationRepository implements AddressValidationReposit
     return 'Valid';
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

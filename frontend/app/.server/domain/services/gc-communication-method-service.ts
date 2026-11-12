@@ -8,7 +8,6 @@ import type { GCCommunicationMethodDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing GC communication method data.
@@ -70,14 +69,12 @@ export class DefaultGCCommunicationMethodService implements GCCommunicationMetho
     ];
   }
 
-  @Traced()
   listGCCommunicationMethods(): ReadonlyArray<GCCommunicationMethodDto> {
     this.log.debug('Get all GC communication methods');
     this.log.trace('Returning GC communication methods', { [ATTR_CDCP_REFERENCE_COUNT]: this.gcCommunicationMethodDtos.length });
     return this.gcCommunicationMethodDtos;
   }
 
-  @Traced()
   getGCCommunicationMethodById(id: string): GCCommunicationMethodDto {
     this.log.debug('Get GC communication method');
     const gcCommunicationMethodDto = this.gcCommunicationMethodDtos.find((dto) => dto.id === id);
@@ -90,7 +87,6 @@ export class DefaultGCCommunicationMethodService implements GCCommunicationMetho
     return gcCommunicationMethodDto;
   }
 
-  @Traced()
   listLocalizedGCCommunicationMethods(locale: AppLocale): ReadonlyArray<GCCommunicationMethodLocalizedDto> {
     this.log.debug('Get all localized GC communication methods', { [ATTR_CDCP_LOCALE]: locale });
     const gcCommunicationMethodDtos = this.listGCCommunicationMethods();
@@ -99,7 +95,6 @@ export class DefaultGCCommunicationMethodService implements GCCommunicationMetho
     return localizedGCCommunicationMethodDtos;
   }
 
-  @Traced()
   getLocalizedGCCommunicationMethodById(id: string, locale: AppLocale): GCCommunicationMethodLocalizedDto {
     this.log.debug('Get localized GC communication method', { [ATTR_CDCP_LOCALE]: locale });
     const gcCommunicationMethodDto = this.getGCCommunicationMethodById(id);

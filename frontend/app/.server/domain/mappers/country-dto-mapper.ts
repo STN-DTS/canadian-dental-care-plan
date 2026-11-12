@@ -2,7 +2,6 @@ import { injectable } from 'inversify';
 
 import type { CountryDto, CountryLocalizedDto } from '~/.server/domain/dtos';
 import type { CountryEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Interface defining methods for mapping between CountryDto, CountryLocalizedDto, and CountryEntity objects.
@@ -45,7 +44,6 @@ export interface CountryDtoMapper {
 
 @injectable()
 export class DefaultCountryDtoMapper implements CountryDtoMapper {
-  @Traced()
   mapCountryDtoToCountryLocalizedDto(countryDto: CountryDto, locale: AppLocale): CountryLocalizedDto {
     const { nameEn, nameFr, ...rest } = countryDto;
     return {
@@ -54,12 +52,10 @@ export class DefaultCountryDtoMapper implements CountryDtoMapper {
     };
   }
 
-  @Traced()
   mapCountryDtosToCountryLocalizedDtos(countryDtos: ReadonlyArray<CountryDto>, locale: AppLocale): ReadonlyArray<CountryLocalizedDto> {
     return countryDtos.map((dto) => this.mapCountryDtoToCountryLocalizedDto(dto, locale));
   }
 
-  @Traced()
   mapCountryEntityToCountryDto(countryEntity: CountryEntity): CountryDto {
     const id = countryEntity.esdc_countryid.toString();
     const nameEn = countryEntity.esdc_nameenglish;
@@ -67,7 +63,6 @@ export class DefaultCountryDtoMapper implements CountryDtoMapper {
     return { id, nameEn, nameFr };
   }
 
-  @Traced()
   mapCountryEntitiesToCountryDtos(countryEntities: ReadonlyArray<CountryEntity>): ReadonlyArray<CountryDto> {
     return countryEntities.map((entity) => this.mapCountryEntityToCountryDto(entity));
   }

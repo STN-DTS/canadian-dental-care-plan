@@ -116,7 +116,6 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     return Option.some(appealUploadEligibilityResponseEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
@@ -132,7 +131,6 @@ export class MockAppealUploadEligibilityRepository implements AppealUploadEligib
     this.log = createLogger('MockAppealUploadEligibilityRepository');
   }
 
-  @Traced()
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching mock appeal upload eligibility');
 
@@ -146,14 +144,12 @@ export class MockAppealUploadEligibilityRepository implements AppealUploadEligib
     return await Promise.resolve(Option.some(appealUploadEligibilityResponseEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

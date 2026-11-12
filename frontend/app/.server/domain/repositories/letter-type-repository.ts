@@ -93,7 +93,6 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     return letterTypeEntities;
   }
 
-  @Traced()
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type');
 
@@ -109,14 +108,12 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
     return Option.some(letterTypeEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllLetterTypes();
   }
@@ -130,7 +127,6 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     this.log = createLogger('MockLetterTypeRepository');
   }
 
-  @Traced()
   async listAllLetterTypes(): Promise<ReadonlyArray<LetterTypeEntity>> {
     this.log.debug('Fetching all letter types');
     const letterTypeEntities = letterTypeJsonDataSource.value;
@@ -139,7 +135,6 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     return await Promise.resolve(letterTypeEntities);
   }
 
-  @Traced()
   async findLetterTypeById(id: string): Promise<Option.Option<LetterTypeEntity>> {
     this.log.debug('Fetching letter type');
 
@@ -154,14 +149,12 @@ export class MockLetterTypeRepository implements LetterTypeRepository {
     return await Promise.resolve(Option.some(letterTypeEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

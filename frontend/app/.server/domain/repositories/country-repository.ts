@@ -92,7 +92,6 @@ export class DefaultCountryRepository implements CountryRepository {
     return countryEntities;
   }
 
-  @Traced()
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country');
 
@@ -108,14 +107,12 @@ export class DefaultCountryRepository implements CountryRepository {
     return Option.some(countryEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllCountries();
   }
@@ -129,7 +126,6 @@ export class MockCountryRepository implements CountryRepository {
     this.log = createLogger('MockCountryRepository');
   }
 
-  @Traced()
   async listAllCountries(): Promise<ReadonlyArray<CountryEntity>> {
     this.log.debug('Fetching all countries');
     const countryEntities = countryJsonDataSource.value;
@@ -143,7 +139,6 @@ export class MockCountryRepository implements CountryRepository {
     return await Promise.resolve(countryEntities);
   }
 
-  @Traced()
   async findCountryById(id: string): Promise<Option.Option<CountryEntity>> {
     this.log.debug('Fetching country');
 
@@ -158,14 +153,12 @@ export class MockCountryRepository implements CountryRepository {
     return await Promise.resolve(Option.some(countryEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

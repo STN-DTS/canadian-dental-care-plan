@@ -5,7 +5,6 @@ import { getRedisClient } from '~/.server/data/redis-client';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_DELETED_COUNT, ATTR_CDCP_CACHE_HIT, ATTR_CDCP_CACHE_KEY, ATTR_CDCP_CACHE_TTL_SECONDS } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * The RedisService is a service module for interacting with a Redis server. It
@@ -44,7 +43,6 @@ export class DefaultRedisService implements RedisService {
     this.log = createLogger('DefaultRedisService');
   }
 
-  @Traced()
   async get<T>(key: string): Promise<T | null> {
     const redisClient = await getRedisClient();
     const value = await redisClient.get(key);
@@ -52,7 +50,6 @@ export class DefaultRedisService implements RedisService {
     return value ? JSON.parse(value) : null;
   }
 
-  @Traced()
   async set(key: string, value: unknown, ttlSecs: number): Promise<'OK'> {
     const redisClient = await getRedisClient();
     const result = await redisClient.setEx(key, ttlSecs, JSON.stringify(value));
@@ -60,7 +57,6 @@ export class DefaultRedisService implements RedisService {
     return result;
   }
 
-  @Traced()
   async del(key: string): Promise<number> {
     const redisClient = await getRedisClient();
     const result = await redisClient.del(key);
@@ -68,7 +64,6 @@ export class DefaultRedisService implements RedisService {
     return result;
   }
 
-  @Traced()
   async ping(): Promise<'PONG'> {
     const redisClient = await getRedisClient();
     await redisClient.ping();
@@ -76,7 +71,6 @@ export class DefaultRedisService implements RedisService {
     return 'PONG';
   }
 
-  @Traced()
   async ttl(key: string): Promise<number> {
     const redisClient = await getRedisClient();
     const ttl = await redisClient.ttl(key);

@@ -246,7 +246,6 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
     this.log = createLogger('MockClientApplicationRepository');
   }
 
-  @Traced()
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.debug('Fetching mock client application by basic info');
 
@@ -298,7 +297,6 @@ export class MockClientApplicationRepository implements ClientApplicationReposit
     return await Promise.resolve(Option.some(clientApplicationEntity));
   }
 
-  @Traced()
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.debug('Fetching mock client application by SIN');
 

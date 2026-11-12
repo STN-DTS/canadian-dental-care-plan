@@ -88,7 +88,6 @@ export class MockBenefitRenewalRepository implements BenefitRenewalRepository {
     this.log = createLogger('MockBenefitRenewalRepository');
   }
 
-  @Traced()
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
     this.log.debug('Creating mock benefit renewal');
 

@@ -245,7 +245,6 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
-  @Traced()
   resolvePhoneNumberValue(state: SetRequired<PickDeep<ProtectedApplicationState, 'phoneNumber' | 'clientApplication.contactInformation.phoneNumber' | 'clientApplication.contactInformation.phoneNumberAlt'>, 'phoneNumber'>): {
     hasChanged: boolean;
     primary: string;
@@ -378,7 +377,6 @@ export class DefaultProtectedApplicationStateResolver implements ProtectedApplic
     };
   }
 
-  @Traced()
   resolveEmailValue(state: PickDeep<ProtectedApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 

@@ -167,14 +167,12 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     return scanResponseSchema.parse(await response.json());
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.scanDocument({ filename: '', binary: '' });
   }
@@ -188,7 +186,6 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
     this.log = createLogger('MockDocumentUploadRepository');
   }
 
-  @Traced()
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
     this.log.debug('Uploading mock document');
 
@@ -219,7 +216,6 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
     });
   }
 
-  @Traced()
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
     this.log.debug('Scanning mock document');
 
@@ -251,12 +247,10 @@ export class MockDocumentUploadRepository implements DocumentUploadRepository {
     return await Promise.resolve({ DataId: 'mock-data-id-12345', Error: null });
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return { mockEnabled: 'true' };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

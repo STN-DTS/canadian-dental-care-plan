@@ -94,7 +94,6 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     return documentTypeEntities;
   }
 
-  @Traced()
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type');
 
@@ -110,14 +109,12 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     return Option.some(documentEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllEvidentiaryDocumentTypes();
   }
@@ -131,7 +128,6 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     this.log = createLogger('MockEvidentiaryDocumentTypeRepository');
   }
 
-  @Traced()
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching all evidentiary document types');
     const documentTypeEntities = evidentiaryDocumentTypeJsonDataSource.value;
@@ -145,7 +141,6 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     return await Promise.resolve(documentTypeEntities);
   }
 
-  @Traced()
   async findEvidentiaryDocumentTypeById(id: string): Promise<Option.Option<EvidentiaryDocumentTypeEntity>> {
     this.log.debug('Fetching evidentiary document type');
 
@@ -160,14 +155,12 @@ export class MockEvidentiaryDocumentTypeRepository implements EvidentiaryDocumen
     return await Promise.resolve(Option.some(documentEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

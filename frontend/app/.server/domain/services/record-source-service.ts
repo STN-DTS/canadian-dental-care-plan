@@ -7,7 +7,6 @@ import type { RecordSourceDtoMapper } from '~/.server/domain/mappers';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
-import { Traced } from '~/.server/observability/decorator';
 
 /**
  * Service interface for managing record source data.
@@ -53,14 +52,12 @@ export class DefaultRecordSourceService implements RecordSourceService {
     ];
   }
 
-  @Traced()
   listRecordSources(): ReadonlyArray<RecordSourceDto> {
     this.log.debug('Get all record sources');
     this.log.trace('Returning record sources', { [ATTR_CDCP_REFERENCE_COUNT]: this.recordSourceDtos.length });
     return this.recordSourceDtos;
   }
 
-  @Traced()
   getRecordSourceById(id: string): RecordSourceDto {
     this.log.debug('Get record source');
     const recordSourceDto = this.recordSourceDtos.find((dto) => dto.id === id);
@@ -73,7 +70,6 @@ export class DefaultRecordSourceService implements RecordSourceService {
     return recordSourceDto;
   }
 
-  @Traced()
   listLocalizedRecordSources(locale: AppLocale): ReadonlyArray<RecordSourceLocalizedDto> {
     this.log.debug('Get all localized record sources', { [ATTR_CDCP_LOCALE]: locale });
     const recordSourceDtos = this.listRecordSources();
@@ -82,7 +78,6 @@ export class DefaultRecordSourceService implements RecordSourceService {
     return localizedRecordSourceDtos;
   }
 
-  @Traced()
   getLocalizedRecordSourceById(id: string, locale: AppLocale): RecordSourceLocalizedDto {
     this.log.debug('Get localized record source', { [ATTR_CDCP_LOCALE]: locale });
     const recordSourceDto = this.getRecordSourceById(id);

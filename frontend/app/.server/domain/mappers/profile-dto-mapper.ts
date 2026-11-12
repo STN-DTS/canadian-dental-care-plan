@@ -3,7 +3,6 @@ import { isDeepStrictEqual } from 'node:util';
 
 import type { UpdateAddressRequestDto, UpdateCommunicationPreferenceRequestDto, UpdateDentalBenefitsRequestDto, UpdateEmailAddressRequestDto, UpdatePhoneNumbersRequestDto } from '~/.server/domain/dtos';
 import type { UpdateAddressRequestEntity, UpdateCommunicationPreferenceRequestEntity, UpdateDentalBenefitsRequestEntity, UpdateEmailAddressRequestEntity, UpdatePhoneNumbersRequestEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 import { normalizeAddressField } from '~/.server/utils/address-utils';
 
 export interface ProfileDtoMapper {
@@ -16,7 +15,6 @@ export interface ProfileDtoMapper {
 
 @injectable()
 export class DefaultProfileDtoMapper implements ProfileDtoMapper {
-  @Traced()
   mapUpdateDentalBenefitsRequestDtoToUpdateDentalBenefitsRequestEntity(updateDentalBenefitsRequestDto: UpdateDentalBenefitsRequestDto): UpdateDentalBenefitsRequestEntity {
     return {
       BenefitApplication: {
@@ -44,7 +42,6 @@ export class DefaultProfileDtoMapper implements ProfileDtoMapper {
     };
   }
 
-  @Traced()
   mapUpdateEmailAddressRequestDtoToUpdateEmailAddressRequestEntity(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto): UpdateEmailAddressRequestEntity {
     return {
       BenefitApplication: {
@@ -72,7 +69,6 @@ export class DefaultProfileDtoMapper implements ProfileDtoMapper {
     };
   }
 
-  @Traced()
   mapUpdatePhoneNumbersRequestDtoToUpdatePhoneNumbersRequestEntity(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto): UpdatePhoneNumbersRequestEntity {
     return {
       BenefitApplication: {
@@ -106,7 +102,6 @@ export class DefaultProfileDtoMapper implements ProfileDtoMapper {
     };
   }
 
-  @Traced()
   mapUpdateAddressRequestDtoToUpdateAddressRequestEntity(updateAddressRequestDto: UpdateAddressRequestDto): UpdateAddressRequestEntity {
     const { clientId, mailingAddress, homeAddress } = updateAddressRequestDto;
     return {
@@ -148,7 +143,6 @@ export class DefaultProfileDtoMapper implements ProfileDtoMapper {
     };
   }
 
-  @Traced()
   mapUpdateAddressRequestDtoToMailingSameAsHomeIndicator({ mailingAddress, homeAddress }: Pick<UpdateAddressRequestDto, 'mailingAddress' | 'homeAddress'>): boolean {
     type Address = typeof mailingAddress;
 
@@ -171,7 +165,6 @@ export class DefaultProfileDtoMapper implements ProfileDtoMapper {
     return isDeepStrictEqual(val1, val2);
   }
 
-  @Traced()
   mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto): UpdateCommunicationPreferenceRequestEntity {
     return {
       BenefitApplication: {

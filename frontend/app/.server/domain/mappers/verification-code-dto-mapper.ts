@@ -4,7 +4,6 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { VerificationCodeEmailRequestDto } from '~/.server/domain/dtos';
 import type { VerificationCodeEmailRequestEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 
 export interface VerificationCodeDtoMapper {
   mapVerificationCodeEmailRequestDtoToVerificationCodeEmailRequestEntity(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): VerificationCodeEmailRequestEntity;
@@ -18,7 +17,6 @@ export class DefaultVerificationCodeDtoMapper implements VerificationCodeDtoMapp
     this.serverConfig = serverConfig;
   }
 
-  @Traced()
   mapVerificationCodeEmailRequestDtoToVerificationCodeEmailRequestEntity(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): VerificationCodeEmailRequestEntity {
     return {
       email_address: verificationCodeEmailRequestDto.email,

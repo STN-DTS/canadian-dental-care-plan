@@ -92,7 +92,6 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
     return governmentInsurancePlanEntities;
   }
 
-  @Traced()
   async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
     this.log.debug('Fetching government insurance plan');
 
@@ -108,14 +107,12 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
     return Option.some(governmentInsurancePlanEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.listAllGovernmentInsurancePlans();
   }
@@ -129,7 +126,6 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
     this.log = createLogger('MockGovernmentInsurancePlanRepository');
   }
 
-  @Traced()
   async listAllGovernmentInsurancePlans(): Promise<GovernmentInsurancePlanEntity[]> {
     this.log.debug('Fetching all government insurance plans');
     const governmentInsurancePlanEntities = governmentInsurancePlanJsonDataSource.value;
@@ -143,7 +139,6 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
     return await Promise.resolve(governmentInsurancePlanEntities);
   }
 
-  @Traced()
   async findGovernmentInsurancePlanById(id: string): Promise<Option.Option<GovernmentInsurancePlanEntity>> {
     this.log.debug('Fetching government insurance plan');
 
@@ -158,14 +153,12 @@ export class MockGovernmentInsurancePlanRepository implements GovernmentInsuranc
     return await Promise.resolve(Option.some(governmentInsurancePlanEntity));
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

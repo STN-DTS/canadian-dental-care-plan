@@ -230,12 +230,10 @@ export class DefaultProfileRepository implements ProfileRepository {
     }
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     throw new Error('Method not implemented.');
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await Promise.reject(new Error('Method not implemented.'));
   }
@@ -249,7 +247,6 @@ export class MockProfileRepository implements ProfileRepository {
     this.log = createLogger('MockProfileRepository');
   }
 
-  @Traced()
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity: UpdateCommunicationPreferenceRequestEntity): Promise<void> {
     this.log.debug('Mock updating communication preferences');
 
@@ -257,7 +254,6 @@ export class MockProfileRepository implements ProfileRepository {
     return await Promise.resolve();
   }
 
-  @Traced()
   async updatePhoneNumbers(updatePhoneNumbersRequestEntity: UpdatePhoneNumbersRequestEntity): Promise<void> {
     this.log.debug('Mock updating phone numbers');
 
@@ -265,7 +261,6 @@ export class MockProfileRepository implements ProfileRepository {
     return await Promise.resolve();
   }
 
-  @Traced()
   async updateDentalBenefits(updateDentalBenefitsRequestEntity: UpdateDentalBenefitsRequestEntity): Promise<void> {
     this.log.debug('Mock updating dental benefits');
 
@@ -273,7 +268,6 @@ export class MockProfileRepository implements ProfileRepository {
     return await Promise.resolve();
   }
 
-  @Traced()
   async updateEmailAddress(updateEmailAddressRequestEntity: UpdateEmailAddressRequestEntity): Promise<void> {
     this.log.debug('Mock updating email address');
 
@@ -281,7 +275,6 @@ export class MockProfileRepository implements ProfileRepository {
     return await Promise.resolve();
   }
 
-  @Traced()
   async updateAddresses(updateAddressRequestEntity: UpdateAddressRequestEntity): Promise<void> {
     this.log.debug('Mock updating mailing and home addresses');
 
@@ -289,14 +282,12 @@ export class MockProfileRepository implements ProfileRepository {
     return await Promise.resolve();
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

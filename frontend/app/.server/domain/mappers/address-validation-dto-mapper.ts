@@ -4,7 +4,6 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { AddressCorrectionRequestDto, AddressCorrectionResultDto, AddressCorrectionStatus } from '~/.server/domain/dtos';
 import type { AddressCorrectionResultEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 import { formatPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
 
 export interface AddressValidationDtoMapper {
@@ -20,7 +19,6 @@ export class DefaultAddressValidationDtoMapper implements AddressValidationDtoMa
     this.serverConfig = serverConfig;
   }
 
-  @Traced()
   mapAddressCorrectionResultEntityToAddressCorrectionResultDto(addressCorrectionResultEntity: AddressCorrectionResultEntity): AddressCorrectionResultDto {
     const correctionResults = addressCorrectionResultEntity['wsaddr:CorrectionResults'];
     return {
@@ -32,7 +30,6 @@ export class DefaultAddressValidationDtoMapper implements AddressValidationDtoMa
     };
   }
 
-  @Traced()
   mapAddressCorrectionRequestDtoToAddressCorrectionResultDto(addressCorrectionRequestDto: AddressCorrectionRequestDto, status: AddressCorrectionStatus): AddressCorrectionResultDto {
     return {
       address: addressCorrectionRequestDto.address.toUpperCase(),

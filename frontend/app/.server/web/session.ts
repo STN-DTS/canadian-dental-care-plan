@@ -197,7 +197,6 @@ export class ExpressSession implements Session {
     return this.session.id;
   }
 
-  @Traced()
   has(key: SessionKey): boolean {
     const sanitizedKey = this.sanitizeKey(key);
 
@@ -210,7 +209,6 @@ export class ExpressSession implements Session {
     return exists;
   }
 
-  @Traced()
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     if (!this.has(key)) {
       this.log.trace('Session key not found', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
@@ -223,7 +221,6 @@ export class ExpressSession implements Session {
     return Option.some(value);
   }
 
-  @Traced()
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     const value = this.find(key);
 
@@ -236,7 +233,6 @@ export class ExpressSession implements Session {
     return unwrappedValue;
   }
 
-  @Traced()
   set<K extends SessionKey>(key: K, value: SessionTypeMap[K]): void {
     const sanitizedKey = this.sanitizeKey(key);
     this.assertNotReservedKey(sanitizedKey);
@@ -244,7 +240,6 @@ export class ExpressSession implements Session {
     this.log.trace('Session value set', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
   }
 
-  @Traced()
   unset(key: SessionKey): boolean {
     if (!this.has(key)) {
       this.log.debug('Cannot unset missing session key', { [ATTR_SESSION_ID]: this.id, [ATTR_CDCP_SESSION_KEY]: key });
@@ -337,29 +332,24 @@ export class NoopSession implements Session {
     throw new Error('No session available in stateless context');
   }
 
-  @Traced()
   has(key: SessionKey): boolean {
     this.log.warn('Called "has" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
   }
 
-  @Traced()
   find<K extends SessionKey>(key: K): Option.Option<SessionTypeMap[K]> {
     this.log.warn('Called "find" on NoopSession; returning None', { [ATTR_CDCP_SESSION_KEY]: key });
     return Option.none();
   }
 
-  @Traced()
   get<K extends SessionKey>(key: K): SessionTypeMap[K] {
     throw new Error('No session available in stateless context');
   }
 
-  @Traced()
   set<K extends SessionKey>(key: K, value: SessionTypeMap[K]): void {
     throw new Error('No session available in stateless context');
   }
 
-  @Traced()
   unset(key: SessionKey): boolean {
     this.log.warn('Called "unset" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;

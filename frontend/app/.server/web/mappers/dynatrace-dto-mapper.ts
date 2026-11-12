@@ -2,7 +2,6 @@ import { XMLParser } from 'fast-xml-parser';
 import { injectable } from 'inversify';
 import * as z from 'zod';
 
-import { Traced } from '~/.server/observability/decorator';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
 
 export interface DynatraceDtoMapper {
@@ -17,7 +16,6 @@ export interface DynatraceDtoMapper {
 
 @injectable()
 export class DefaultDynatraceDtoMapper implements DynatraceDtoMapper {
-  @Traced()
   mapDynatraceRumScriptToDynatraceRumScriptDto(dynatraceRumScript: string): DynatraceRumScriptDto | null {
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', allowBooleanAttributes: true });
     const xmlParsedScript = parser.parse(dynatraceRumScript);

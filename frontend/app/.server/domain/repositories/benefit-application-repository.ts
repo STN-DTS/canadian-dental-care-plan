@@ -92,7 +92,6 @@ export class MockBenefitApplicationRepository implements BenefitApplicationRepos
     this.log = createLogger('MockBenefitApplicationRepository');
   }
 
-  @Traced()
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
     this.log.debug('Creating mock benefit application');
 

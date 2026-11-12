@@ -72,7 +72,6 @@ export class MockClientEligibilityRepository implements ClientEligibilityReposit
   constructor() {
     this.log = createLogger('MockClientEligibilityRepository');
   }
-  @Traced()
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
     this.log.debug('Fetching mock client eligibility');
 

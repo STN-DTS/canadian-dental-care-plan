@@ -2,7 +2,6 @@ import { injectable } from 'inversify';
 
 import type { EvidentiaryDocumentTypeDto, EvidentiaryDocumentTypeLocalizedDto } from '~/.server/domain/dtos';
 import type { EvidentiaryDocumentTypeEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 export interface EvidentiaryDocumentTypeDtoMapper {
@@ -14,7 +13,6 @@ export interface EvidentiaryDocumentTypeDtoMapper {
 
 @injectable()
 export class DefaultEvidentiaryDocumentTypeDtoMapper implements EvidentiaryDocumentTypeDtoMapper {
-  @Traced()
   mapEvidentiaryDocumentTypeDtoToEvidentiaryDocumentTypeLocalizedDto(evidentiaryDocumentTypeDto: EvidentiaryDocumentTypeDto, locale: AppLocale): EvidentiaryDocumentTypeLocalizedDto {
     const { nameEn, nameFr, ...rest } = evidentiaryDocumentTypeDto;
     return {
@@ -23,12 +21,10 @@ export class DefaultEvidentiaryDocumentTypeDtoMapper implements EvidentiaryDocum
     };
   }
 
-  @Traced()
   mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos: ReadonlyArray<EvidentiaryDocumentTypeDto>, locale: AppLocale): ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto> {
     return evidentiaryDocumentTypeDtos.map((dto) => this.mapEvidentiaryDocumentTypeDtoToEvidentiaryDocumentTypeLocalizedDto(dto, locale));
   }
 
-  @Traced()
   mapEvidentiaryDocumentTypeEntityToEvidentiaryDocumentTypeDto(evidentiaryDocumentTypeEntity: EvidentiaryDocumentTypeEntity): EvidentiaryDocumentTypeDto {
     return {
       id: evidentiaryDocumentTypeEntity.esdc_evidentiarydocumenttypeid,
@@ -39,7 +35,6 @@ export class DefaultEvidentiaryDocumentTypeDtoMapper implements EvidentiaryDocum
     };
   }
 
-  @Traced()
   mapEvidentiaryDocumentTypeEntitiesToEvidentiaryDocumentTypeDtos(EvidentiaryDocumentTypeEntities: ReadonlyArray<EvidentiaryDocumentTypeEntity>): ReadonlyArray<EvidentiaryDocumentTypeDto> {
     return EvidentiaryDocumentTypeEntities.map((entity) => this.mapEvidentiaryDocumentTypeEntityToEvidentiaryDocumentTypeDto(entity));
   }

@@ -245,7 +245,6 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
-  @Traced()
   resolvePhoneNumberValue(state: SetRequired<PickDeep<PublicApplicationState, 'phoneNumber' | 'clientApplication.contactInformation.phoneNumber' | 'clientApplication.contactInformation.phoneNumberAlt'>, 'phoneNumber'>): {
     hasChanged: boolean;
     primary: string;
@@ -377,7 +376,6 @@ export class DefaultPublicApplicationStateResolver implements PublicApplicationS
     };
   }
 
-  @Traced()
   resolveEmailValue(state: PickDeep<PublicApplicationState, 'email' | 'emailVerified' | 'clientApplication.contactInformation.email'>): string | undefined {
     this.log.debug('Resolving email value');
 

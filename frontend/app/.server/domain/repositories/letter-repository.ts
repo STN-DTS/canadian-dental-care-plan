@@ -168,14 +168,12 @@ export class DefaultLetterRepository implements LetterRepository {
     return pdfEntity;
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       baseUrl: this.baseUrl,
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     await this.findLettersByClientId(this.serverConfig.HEALTH_PLACEHOLDER_REQUEST_VALUE);
   }
@@ -189,7 +187,6 @@ export class MockLetterRepository implements LetterRepository {
     this.log = createLogger('MockLetterRepository');
   }
 
-  @Traced()
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
     this.log.debug('Fetching mock letters');
 
@@ -205,7 +202,6 @@ export class MockLetterRepository implements LetterRepository {
     return await Promise.resolve(letterEntities);
   }
 
-  @Traced()
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
     this.log.debug('Fetching mock letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
@@ -215,14 +211,12 @@ export class MockLetterRepository implements LetterRepository {
     return await Promise.resolve(pdfEntity);
   }
 
-  @Traced()
   getMetadata(): Record<string, string> {
     return {
       mockEnabled: 'true',
     };
   }
 
-  @Traced()
   async checkHealth(): Promise<void> {
     return await Promise.resolve();
   }

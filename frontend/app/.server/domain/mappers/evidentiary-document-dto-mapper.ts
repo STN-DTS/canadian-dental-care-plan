@@ -2,7 +2,6 @@ import { injectable } from 'inversify';
 
 import type { CreateEvidentiaryDocumentMetadataDto, CreateEvidentiaryDocumentMetadataResponseDto, EvidentiaryDocumentDto, EvidentiaryDocumentLocalizedDto } from '~/.server/domain/dtos';
 import type { CreateEvidentiaryDocumentMetadataResponseEntity, EvidentiaryDocumentEntity, UploadEvidentiaryDocumentMetadataEntity } from '~/.server/domain/entities';
-import { Traced } from '~/.server/observability/decorator';
 
 export interface EvidentiaryDocumentDtoMapper {
   mapEvidentiaryDocumentDtoToEvidentiaryDocumentLocalizedDto(evidentiaryDocumentDto: EvidentiaryDocumentDto, locale: AppLocale): EvidentiaryDocumentLocalizedDto;
@@ -17,7 +16,6 @@ export interface EvidentiaryDocumentDtoMapper {
 
 @injectable()
 export class DefaultEvidentiaryDocumentDtoMapper implements EvidentiaryDocumentDtoMapper {
-  @Traced()
   mapEvidentiaryDocumentDtoToEvidentiaryDocumentLocalizedDto(evidentiaryDocumentDto: EvidentiaryDocumentDto, locale: AppLocale): EvidentiaryDocumentLocalizedDto {
     const { documentType, ...rest } = evidentiaryDocumentDto;
     return {
@@ -29,12 +27,10 @@ export class DefaultEvidentiaryDocumentDtoMapper implements EvidentiaryDocumentD
     };
   }
 
-  @Traced()
   mapEvidentiaryDocumentDtosToEvidentiaryDocumentLocalizedDtos(evidentiaryDocumentDtos: ReadonlyArray<EvidentiaryDocumentDto>, locale: AppLocale): ReadonlyArray<EvidentiaryDocumentLocalizedDto> {
     return evidentiaryDocumentDtos.map((dto) => this.mapEvidentiaryDocumentDtoToEvidentiaryDocumentLocalizedDto(dto, locale));
   }
 
-  @Traced()
   mapEvidentiaryDocumentEntityToEvidentiaryDocumentDto(evidentiaryDocumentEntity: EvidentiaryDocumentEntity): EvidentiaryDocumentDto {
     return {
       id: evidentiaryDocumentEntity.id,
@@ -49,12 +45,10 @@ export class DefaultEvidentiaryDocumentDtoMapper implements EvidentiaryDocumentD
     };
   }
 
-  @Traced()
   mapEvidentiaryDocumentEntitiesToEvidentiaryDocumentDtos(evidentiaryDocumentEntities: ReadonlyArray<EvidentiaryDocumentEntity>): ReadonlyArray<EvidentiaryDocumentDto> {
     return evidentiaryDocumentEntities.map((entity) => this.mapEvidentiaryDocumentEntityToEvidentiaryDocumentDto(entity));
   }
 
-  @Traced()
   mapCreateEvidentiaryDocumentMetadataDtoToEntity(uploadDto: CreateEvidentiaryDocumentMetadataDto): UploadEvidentiaryDocumentMetadataEntity {
     return {
       fileName: uploadDto.fileName,
@@ -66,12 +60,10 @@ export class DefaultEvidentiaryDocumentDtoMapper implements EvidentiaryDocumentD
     };
   }
 
-  @Traced()
   mapCreateEvidentiaryDocumentMetadataDtosToEntities(uploadDtos: ReadonlyArray<CreateEvidentiaryDocumentMetadataDto>): ReadonlyArray<UploadEvidentiaryDocumentMetadataEntity> {
     return uploadDtos.map((dto) => this.mapCreateEvidentiaryDocumentMetadataDtoToEntity(dto));
   }
 
-  @Traced()
   mapCreateEvidentiaryDocumentMetadataResponseEntityToDto(responseEntity: CreateEvidentiaryDocumentMetadataResponseEntity): CreateEvidentiaryDocumentMetadataResponseDto {
     return {
       evidentiaryDocuments: responseEntity.esdc_evidentiarydocuments.map((doc) => ({
