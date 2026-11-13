@@ -103,6 +103,7 @@ test.each(['console', 'otlp'])(
             PATH: process.env.PATH,
             NODE_ENV: 'test',
             OTEL_USE_CONSOLE_EXPORTERS: sink === 'console' ? 'true' : 'false',
+            OTEL_BSP_SCHEDULE_DELAY: '60000',
             OTEL_API_KEY: 'local-synthetic-trace-key',
             OTEL_TRACES_ENDPOINT: `http://127.0.0.1:${address.port}/v1/traces`,
             OTEL_NODE_ENABLED_INSTRUMENTATIONS: 'http,express,router,undici',
@@ -136,6 +137,9 @@ test.each(['console', 'otlp'])(
 
       expect(exported).toContain('/dental-care/appeal-upload-eligible/pp/v1/esdc_clients([REDACTED])');
       expect(exported).toContain('/dental-care/doc-metadata/pp/v1/esdc_clients([REDACTED])');
+      expect(exported).not.toContain('/v1/traces');
+
+      expect(payloads).toHaveLength(sink === 'otlp' ? 1 : 0);
       expect(stdout).toContain('Shutting down OpenTelemetry instrumentation');
     } finally {
       await new Promise<void>((resolve, reject) => {

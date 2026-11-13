@@ -10,8 +10,8 @@ import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
 import { AggregationTemporality, ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import type { SpanExporter } from '@opentelemetry/sdk-trace';
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
+import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace';
+import { BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_ERROR_TYPE, ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
@@ -80,6 +80,21 @@ function getTraceExporter(): SpanExporter {
   };
 }
 
+/**
+ * Builds the trace processor chain with immediate console or batched OTLP export.
+ *
+ * @returns A processor that redacts query parameters, URL paths, and sensitive attributes before export.
+ */
+function getSpanProcessor(): SpanProcessor {
+  const exporter = getTraceExporter();
+  const processor = process.env.OTEL_USE_CONSOLE_EXPORTERS === 'true' ? new SimpleSpanProcessor({ exporter }) : new BatchSpanProcessor({ exporter });
+  const attributeProcessor = new RedactAttributesSpanProcessor(processor, attributeRedactor);
+  const urlPathProcessor = new RedactAttributesSpanProcessor(attributeProcessor, urlPathRedactor);
+  const queryParamsProcessor = new RedactQueryParamsSpanProcessor(urlPathProcessor, queryParamsRedactor);
+
+  return queryParamsProcessor;
+}
+
 function toNumber(str?: string): number | undefined {
   const num = Number.parseInt(str ?? '');
   return Number.isNaN(num) ? undefined : num;
@@ -141,20 +156,7 @@ const sdk = new NodeSDK({
     }),
   ],
   logRecordProcessors: logRecordProcessor ? [new RedactQueryParamsLogRecordProcessor(queryParamsRedactor), new RedactAttributesLogRecordProcessor(urlPathRedactor), new RedactAttributesLogRecordProcessor(attributeRedactor), logRecordProcessor] : undefined,
-  spanProcessors: [
-    new RedactQueryParamsSpanProcessor(
-      new RedactAttributesSpanProcessor(
-        new RedactAttributesSpanProcessor(
-          new SimpleSpanProcessor({
-            exporter: getTraceExporter(),
-          }),
-          attributeRedactor,
-        ),
-        urlPathRedactor,
-      ),
-      queryParamsRedactor,
-    ),
-  ],
+  spanProcessors: [getSpanProcessor()],
 });
 
 try {

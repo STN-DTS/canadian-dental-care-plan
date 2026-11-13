@@ -292,6 +292,30 @@ The [ESM instrumentation test](../../__tests__/instrumentation/telemetry-esm.ser
 starts a real server with the preload. It checks that HTTP and Express spans are
 still emitted.
 
+### Trace export
+
+OTLP trace export uses `BatchSpanProcessor` to send completed spans in batches
+instead of one HTTP request per span. The existing query, URL-path, and attribute
+redactors run before spans enter the export queue. Console trace export keeps
+`SimpleSpanProcessor` so local spans appear as soon as they end.
+
+Batching uses the OpenTelemetry SDK defaults. Standard `OTEL_BSP_*` environment
+variables control the export interval, queue size, batch size, and export timeout.
+The existing SDK shutdown hook flushes pending spans on Node's `beforeExit` event.
+Abrupt process termination does not guarantee delivery of queued spans.
+
+The [ESM instrumentation test](../../__tests__/instrumentation/telemetry-esm.server.test.ts)
+captures the real OTLP requests with a loopback collector. It verifies that the
+smoke scenario arrives in one export request at shutdown, retains redaction and
+incoming trace context, and contains no spans for the export endpoint.
+
+OpenTelemetry's exporter suppresses its own tracing. This does not establish
+whether Dynatrace OneAgent independently records the transport calls. If OTLP
+requests still appear in live traces, inspect OneAgent's outbound-request
+capture configuration for the exporter endpoints. Batching reduces export
+requests but does not itself configure OneAgent exclusions. Avoid excluding
+application dependency calls that happen to use the same host.
+
 ### Router instrumentation is disabled
 
 Express 5 dispatches through the `router` package, so the default
