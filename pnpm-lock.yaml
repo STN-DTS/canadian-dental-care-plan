@@ -415,8 +415,8 @@ catalogs:
       specifier: 4.1.2
       version: 4.1.2
     minimatch:
-      specifier: 11.0.5
-      version: 11.0.5
+      specifier: 11.0.6
+      version: 11.0.6
     moderndash:
       specifier: 4.0.2
       version: 4.0.2
@@ -742,7 +742,7 @@ importers:
         version: 4.1.2
       minimatch:
         specifier: 'catalog:'
-        version: 11.0.5
+        version: 11.0.6
       moderndash:
         specifier: 'catalog:'
         version: 4.0.2
@@ -4636,8 +4636,8 @@ packages:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
 
-  minimatch@11.0.5:
-    resolution: {integrity: sha512-snPlVppFcYWfLLFQGhDxUyBcHNtMlWmn3jtj7pEaO+DP8pqL0IvAzXhMYmn1z9ASNtgmwLBdFxSf4tMUB0OTKA==}
+  minimatch@11.0.6:
+    resolution: {integrity: sha512-6NZbDPQIRnsJFjJ9wbd5659OKaTHCqpPHdldE3WwArjxr5wLxHIwnx4eTGcPebpVBZZQbITvQQIx8K0VGXoT3Q==}
     engines: {node: 20 || >=22}
 
   minimatch@9.0.9:
@@ -9476,7 +9476,7 @@ snapshots:
     dependencies:
       brace-expansion: 5.0.12
 
-  minimatch@11.0.5:
+  minimatch@11.0.6:
     dependencies:
       '@isaacs/nonrecursive-glob-match': 1.1.0
       brace-expansion: 5.0.12
