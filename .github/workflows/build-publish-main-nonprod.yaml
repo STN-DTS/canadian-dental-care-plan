@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Validates frontend changes on main and release/v* pushes, or on manual and
+# Validates frontend changes on main pushes, or on manual and
 # reusable runs. Scans, publishes, and signs OCI images in nonprod ACR.
 
 name: build-publish-main-nonprod
@@ -18,9 +18,6 @@ on:
   push:
     branches:
       - main
-      - release/v*
-  # No push path filter: it would drop release branch creation pushes before
-  # detect-changes can enable their first build.
   workflow_call: {}
   workflow_dispatch:
     inputs:
@@ -76,13 +73,13 @@ jobs:
       - name: Publish change-detection output
         id: changes
         run: |
-          echo "frontend=${{ github.event_name != 'push' || startsWith(github.ref, 'refs/heads/release/v') || steps.filter.outputs.frontend == 'true' }}" | tee -a "$GITHUB_OUTPUT"
+          echo "frontend=${{ github.event_name != 'push' || steps.filter.outputs.frontend == 'true' }}" | tee -a "$GITHUB_OUTPUT"
 
   test-frontend:
     permissions:
       contents: read
       packages: read
-    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' }}
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && github.ref == 'refs/heads/main' }}
     needs:
       - check-repository
       - detect-changes
@@ -117,7 +114,7 @@ jobs:
         run: pnpm --filter @cdcp-rcsd/frontend exec playwright install chromium --with-deps
       - name: Run end-to-end tests
         id: e2e
-        run: pnpm --filter @cdcp-rcsd/frontend run ${{ github.ref == 'refs/heads/main' && 'test:e2e:smoke' || 'test:e2e' }}
+        run: pnpm --filter @cdcp-rcsd/frontend run test:e2e:smoke
       - name: Upload Playwright HTML report
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -132,7 +129,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/v')) }}
+    if: ${{ needs.detect-changes.outputs.frontend-changed == 'true' && github.ref == 'refs/heads/main' }}
     runs-on: arc-runners-dshp-dev
     needs:
       - check-repository
@@ -146,17 +143,12 @@ jobs:
         id: version
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
-          REF_NAME: ${{ github.ref_name }}
           RUN_NUMBER: ${{ github.run_number }}
           SOURCE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
 
-          if [[ "$REF_NAME" == release/* ]]; then
-            version=${REF_NAME#release/v}
-          else
-            version=${INPUT_VERSION:-0.0.0}
-          fi
+          version=${INPUT_VERSION:-0.0.0}
 
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
             echo "Invalid version; expected X.Y.Z with an optional hyphenated suffix containing only letters, numbers, dots, or hyphens." >&2
@@ -164,17 +156,15 @@ jobs:
           fi
 
           build_number=$(printf '%05x' "$RUN_NUMBER")
-          rc_label=$(printf '%03d' "$RUN_NUMBER")
           short_sha=${SOURCE_SHA:0:8}
           main_tag="${version}-${short_sha}-${build_number}"
-          release_tag="${version}-RC${rc_label}-${short_sha}"
-          if (( ${#main_tag} > 128 || ${#release_tag} > 128 )); then
+          if (( ${#main_tag} > 128 )); then
             echo "Version is too long; generated Docker tags must not exceed 128 characters." >&2
             exit 1
           fi
 
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
-          printf 'Resolved build version: %s\nMain image tag: %s\nRelease image tag: %s\n' "$version" "$main_tag" "$release_tag"
+          printf 'Resolved build version: %s\nMain image tag: %s\n' "$version" "$main_tag"
       - name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -212,8 +202,6 @@ jobs:
           BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
           BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
           IMAGE_VERSION: ${{ steps.build-vars.outputs.image-version }}
-          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
-          REF_NAME: ${{ github.ref_name }}
           SHORT_SHA: ${{ steps.build-vars.outputs.short-sha }}
         run: |
           set -euo pipefail
@@ -228,14 +216,9 @@ jobs:
             --build-arg BUILD_VERSION="$IMAGE_VERSION" \
             --tag "$IMAGE_NAME:$BUILD_REVISION"
 
-          if [[ "$REF_NAME" == main ]]; then
-            echo "Creating main image aliases..."
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA"
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA-$BUILD_NUMBER"
-          elif [[ "$REF_NAME" == release/* ]]; then
-            echo "Creating the release candidate image alias..."
-            docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$RC_LABEL-$SHORT_SHA"
-          fi
+          echo "Creating main image aliases..."
+          docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA"
+          docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-$SHORT_SHA-$BUILD_NUMBER"
           echo "Frontend image build and tagging completed."
       - name: Scan frontend OCI image
         uses: ./.github/actions/aqua-scan
@@ -282,34 +265,6 @@ jobs:
               "$IMAGE_NAME" "${GITHUB_SHA:0:8}" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA"
             printf '\nVerified image digest: `%s`\n' "$IMAGE_DIGEST"
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Promote verified frontend release aliases
-        if: ${{ success() && startsWith(github.ref, 'refs/heads/release/v') }}
-        env:
-          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
-          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
-          IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
-          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
-        run: |
-          set -euo pipefail
-
-          {
-            echo "## Promoted verified release tags"
-            echo
-            echo "| Application | Tag | Image | Source commit |"
-            echo "| --- | --- | --- | --- |"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          for image_tag in "${BUILD_VERSION}-RC${RC_LABEL}" "${BUILD_VERSION}-RC"; do
-            image_ref="${IMAGE_NAME}:${image_tag}"
-            printf 'Publishing verified release alias: %s\n' "$image_ref"
-            docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "$image_ref"
-            docker push "$image_ref"
-            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
-              "$image_tag" "$image_ref" "${GITHUB_SHA:0:8}" \
-              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
-          done
-          printf '\nVerified image digest: `%s`\n' "$IMAGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"
-          echo "Verified release aliases published."
       - name: Restart dev and int1 deployments
         if: ${{ github.ref_name == 'main' }}
         env:

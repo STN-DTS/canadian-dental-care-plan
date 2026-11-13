@@ -4,23 +4,24 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 
 ## Workflow summary
 
-| Workflow                                                                             | Triggers                                                            | Purpose                                                                                                                                                  |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable              | Check formatting, root types, root lint, and root unit tests for every PR. Run frontend tests and build an unpublished image when relevant files change. |
-| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main` or `release/v*`; manual; reusable                  | Test, scan, publish, and sign nonprod images. Main promotes `latest` and restarts dev/int1 deployments; release branches promote RC aliases.             |
-| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main` | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                                         |
-| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main` | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
-| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                         | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
-| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                         | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                          | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
-| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                             | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
+| Workflow                                                                             | Triggers                                                                     | Purpose                                                                                                                                                  |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pr-checks.yaml](pr-checks.yaml)                                                     | PRs targeting `main` or `release/**`; manual; reusable                       | Check formatting, root types, root lint, and root unit tests for every PR. Run frontend tests and build an unpublished image when relevant files change. |
+| [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml)                   | Pushes to `main`; manual; reusable, all restricted to `main`                 | Test, scan, publish, and sign nonprod images. Promote `latest` and restart dev/int1 deployments.                                                         |
+| [build-publish-release-nonprod.yaml](build-publish-release-nonprod.yaml)             | Pushes to `release/v*`; manual; reusable, all restricted to release branches | Test, scan, publish, and sign nonprod release candidate images. Promote RC aliases without restarting dev/int1 deployments.                              |
+| [gitops-main-nonprod.yaml](gitops-main-nonprod.yaml)                                 | GitOps pushes to `main`; manual; reusable, all restricted to `main`          | Monitor `gitops/nonprod` on `main` and apply selected Kustomizations to the nonprod AKS cluster.                                                         |
+| [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`          | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
+| [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                  | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
+| [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                  | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                   | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
+| [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                      | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
 must select a release-tag ref; branch refs are rejected. Pushing a matching tag
 triggers both nonprod and PROD publication.
 
-Frontend jobs in PR and nonprod branch workflows use change detection. Publishing
-from the nonprod branch workflow is restricted to `main` and `release/v*` refs.
+Frontend jobs in PR and the main nonprod workflow use change detection. The
+release nonprod workflow always tests and publishes eligible `release/v*` runs.
 
 PR checks run repository-wide formatting, root TypeScript checking, root
 linting, and the Vitest `root` project in the `check-workspace` job after
@@ -29,8 +30,8 @@ PR jobs use their job IDs as check names, preserving the required
 `build-frontend` and `test-frontend` checks. The workspace job runs for all changes,
 including documentation, GitOps, and infrastructure. Frontend testing runs
 separately. Publishing workflows do not repeat root typechecking or linting.
-The nonprod branch workflow checks frontend formatting in `test-frontend`
-and uses the push path filters below.
+Both nonprod branch workflows check frontend formatting in `test-frontend`.
+The main workflow uses the push path filters below.
 
 In both tag publishing workflows, `test-frontend` depends on `check-repository`,
 and `build-frontend` depends on both jobs. The test job validates the release tag
@@ -51,7 +52,7 @@ and caches the pnpm store by lockfile. The optional `install` input defaults to
 dependencies. Existing callers omit this input and continue to install dependencies.
 Setup policy and the upstream action pin are maintained in one place.
 Changes to the composite action also enable frontend validation in PR checks
-and trigger the nonprod branch workflow.
+and trigger frontend jobs in the main nonprod workflow.
 The SharePoint report-upload job uses the same composite action to install the
 workspace-pinned Microsoft 365 CLI from the root lockfile.
 Workflows check out the repository before setting up Node.js; `workflow_run`
@@ -77,19 +78,27 @@ dependency automation, and report-upload workflows do not repeat these checks.
 ### Nonprod branch guards
 
 [build-publish-main-nonprod.yaml](build-publish-main-nonprod.yaml) starts for
-every push to `main` or `release/v*`. The push trigger has no `paths` filter
-because GitHub would drop a push that creates a release branch from an
-unchanged `main` before any job runs. For `main` pushes, the `detect-changes` job
+every push to `main`. For these pushes, the `detect-changes` job
 enables frontend testing and publishing only when the push changes at least one
 of the paths in its `dorny/paths-filter` list (frontend sources, root workspace
 configuration, `.dockerignore`, this workflow, and the local actions it uses).
 Other `main` pushes finish after the lightweight gate and change-detection jobs.
 Update that list when adding or removing a local action used by the workflow.
 
-Manual dispatches, reusable calls, and all `release/v*` pushes bypass path-based
-change detection. Release pushes enable frontend jobs even when the branch
-matches `main`, including branch creation and force-pushes. Publishing still
-requires a `main` or `release/v*` ref and successful version resolution and tests.
+Manual dispatches and reusable calls bypass path-based change detection.
+Frontend testing and publishing require a `main` ref. Main runs smoke E2E tests
+and uses the manual `version` input or defaults to `0.0.0` for image metadata.
+
+[build-publish-release-nonprod.yaml](build-publish-release-nonprod.yaml) starts
+for every push to `release/v*`, with no push path filter or change-detection job.
+Release pushes enable frontend jobs even when no files changed, including branch
+creation and force-pushes. Manual dispatches and reusable calls also require a
+`release/v*` branch ref. Release runs full E2E tests and derives the image
+version from the branch name. It publishes RC aliases after signing and
+verification, without promoting `latest` or restarting dev/int1 deployments.
+The new workflow has its own run-number sequence, which supplies the RC label.
+
+Both workflows require successful version resolution and tests before publishing.
 Version resolution runs as the first step of the image-build job, after frontend
 tests and formatting succeed, before checkout or authentication.
 All jobs remain dependent on the non-fork `check-repository` gate.
@@ -208,6 +217,7 @@ Run dispatch-enabled workflows from the Actions UI or GitHub CLI:
 ```bash
 gh workflow run nightly-e2e.yaml
 gh workflow run build-publish-main-nonprod.yaml --ref main -f version=1.2.3
+gh workflow run build-publish-release-nonprod.yaml --ref release/v1.2.3
 gh workflow run gitops-main-nonprod.yaml --ref main
 gh workflow run gitops-main-prod.yaml --ref main
 gh workflow run build-publish-tag-prod.yaml --ref v1.2.3

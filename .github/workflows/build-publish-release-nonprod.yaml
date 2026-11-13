@@ -1,0 +1,240 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Validates release/v* branches on pushes, manual runs, and reusable calls.
+# Scans, publishes, and signs release candidate OCI images in nonprod ACR.
+
+name: build-publish-release-nonprod
+run-name: Build, test, and publish nonprod release candidate images
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+
+on:
+  push:
+    branches:
+      - release/v*
+  # Branch creation and pushes with no frontend changes still build a candidate.
+  workflow_call: {}
+  workflow_dispatch: {}
+
+env:
+  CI: true
+
+jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+  test-frontend:
+    permissions:
+      contents: read
+      packages: read
+    if: ${{ startsWith(github.ref, 'refs/heads/release/v') }}
+    needs: check-repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup pnpm, Node.js, and dependencies
+        uses: ./.github/actions/setup-pnpm
+      - name: Check formatting
+        run: pnpm exec oxfmt --check frontend
+      - name: Run typecheck
+        run: pnpm --filter @cdcp-rcsd/frontend run typecheck
+      - name: Run lint
+        run: pnpm --filter @cdcp-rcsd/frontend run lint
+      - name: Run unit tests with coverage
+        id: vitest
+        run: pnpm run test:unit:coverage --coverage.reportOnFailure --project frontend
+      - name: Upload Vitest coverage
+        if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.vitest.outcome == 'success' || steps.vitest.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          if-no-files-found: warn
+          name: vitest-coverage-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: frontend/coverage/
+          retention-days: 7
+      - name: Build frontend
+        run: pnpm --filter @cdcp-rcsd/frontend run build
+      - name: Install Playwright browsers
+        run: pnpm --filter @cdcp-rcsd/frontend exec playwright install chromium --with-deps
+      - name: Run end-to-end tests
+        id: e2e
+        run: pnpm --filter @cdcp-rcsd/frontend run test:e2e
+      - name: Upload Playwright HTML report
+        if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          if-no-files-found: warn
+          name: playwright-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7
+  build-frontend:
+    permissions:
+      contents: read
+      security-events: write
+    if: ${{ startsWith(github.ref, 'refs/heads/release/v') }}
+    runs-on: arc-runners-dshp-dev
+    needs:
+      - check-repository
+      - test-frontend
+    env:
+      IMAGE_NAME: ${{ vars.NONPROD_ACR_DOMAIN }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+      PUBLIC_KEY_PATH: .github/actions/sign-container-image/nonprod-cosign-v1.pub
+    steps:
+      - name: Resolve and validate build version
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          version=${REF_NAME#release/v}
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid version; expected X.Y.Z with an optional hyphenated suffix containing only letters, numbers, dots, or hyphens." >&2
+            exit 1
+          fi
+
+          rc_label=$(printf '%03d' "$RUN_NUMBER")
+          short_sha=${SOURCE_SHA:0:8}
+          release_tag="${version}-RC${rc_label}-${short_sha}"
+          if (( ${#release_tag} > 128 )); then
+            echo "Version is too long; generated Docker tags must not exceed 128 characters." >&2
+            exit 1
+          fi
+
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'Resolved build version: %s\nRelease image tag: %s\n' "$version" "$release_tag"
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify image signing configuration
+        run: |
+          set -euo pipefail
+          echo "Checking the image signing public key..."
+          if [[ ! -s "$PUBLIC_KEY_PATH" ]]; then
+            echo "::error::Image signing public key is missing or empty." >&2
+            exit 1
+          fi
+          echo "Image signing public key is available."
+      - name: Authenticate to Azure and setup ACR credentials
+        id: acr-login
+        uses: ./.github/actions/azure-acr-login
+        with:
+          acr-domain: ${{ vars.NONPROD_ACR_DOMAIN }}
+          azure-client-id-vault-selector: canada-dental-care-plan/data/SPN SPN_ID
+          azure-client-secret-vault-selector: canada-dental-care-plan/data/SPN SPN_PASSWORD
+          azure-subscription-id: ${{ vars.NONPROD_AZURE_SUBSCRIPTION_ID }}
+          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
+      - name: Generate dynamic build variables
+        id: build-vars
+        uses: ./.github/actions/generate-build-vars
+        with:
+          version: ${{ steps.version.outputs.version }}
+      - name: Build frontend OCI image
+        env:
+          BUILD_DATE: ${{ steps.build-vars.outputs.build-date }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          IMAGE_VERSION: ${{ steps.build-vars.outputs.image-version }}
+          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
+          SHORT_SHA: ${{ steps.build-vars.outputs.short-sha }}
+        run: |
+          set -euo pipefail
+
+          printf 'Building frontend image: %s:%s\n' "$IMAGE_NAME" "$BUILD_REVISION"
+          docker build \
+            --progress plain \
+            --file frontend/dockerfile . \
+            --build-arg BUILD_DATE="$BUILD_DATE" \
+            --build-arg BUILD_ID="$BUILD_NUMBER" \
+            --build-arg BUILD_REVISION="$SHORT_SHA" \
+            --build-arg BUILD_VERSION="$IMAGE_VERSION" \
+            --tag "$IMAGE_NAME:$BUILD_REVISION"
+
+          echo "Creating the release candidate image alias..."
+          docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$RC_LABEL-$SHORT_SHA"
+          echo "Frontend image build and tagging completed."
+      - name: Scan frontend OCI image
+        uses: ./.github/actions/aqua-scan
+        with:
+          artifact-prefix: cdcp-frontend
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-revision }}
+          scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
+      - name: Push frontend OCI image to registry
+        id: push
+        uses: ./.github/actions/push-container-image
+        with:
+          additional-image-refs: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.image-version }}-${{ steps.build-vars.outputs.short-sha }}
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-revision }}
+      - name: Sign and verify frontend OCI image
+        uses: ./.github/actions/sign-container-image
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.image-digest }}
+          public-key-path: ${{ env.PUBLIC_KEY_PATH }}
+          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
+      - name: Promote verified frontend release aliases
+        if: ${{ success() && startsWith(github.ref, 'refs/heads/release/v') }}
+        env:
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.image-digest }}
+          RC_LABEL: ${{ steps.build-vars.outputs.rc-label }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Promoted verified release tags"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for image_tag in "${BUILD_VERSION}-RC${RC_LABEL}" "${BUILD_VERSION}-RC"; do
+            image_ref="${IMAGE_NAME}:${image_tag}"
+            printf 'Publishing verified release alias: %s\n' "$image_ref"
+            docker tag "${IMAGE_NAME}:${BUILD_REVISION}" "$image_ref"
+            docker push "$image_ref"
+            printf '| CDCP frontend | `%s` | `%s` | [`%s`](%s/%s/commit/%s) |\n' \
+              "$image_tag" "$image_ref" "${GITHUB_SHA:0:8}" \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          done
+          printf '\nVerified image digest: `%s`\n' "$IMAGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "Verified release aliases published."
+      - name: Clean up Azure and registry credentials
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          echo "Cleaning up temporary Azure and registry credentials..."
+          if [[ -n "${AZURE_CONFIG_DIR:-}" ]]; then
+            rm -rf -- "$AZURE_CONFIG_DIR"
+          fi
+          if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+            rm -rf -- "$DOCKER_CONFIG"
+          fi
+          echo "Credential cleanup completed."
