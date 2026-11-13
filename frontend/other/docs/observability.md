@@ -91,6 +91,18 @@ podman volume import <volume-name> <volume-name>.tar
 
 ## Application instrumentation
 
+### Route middleware spans
+
+React Router middleware spans use `middleware {functionName}`, for example
+`middleware authMiddleware`. Anonymous middleware uses
+`middleware {routeId}[{index}]`, with a zero-based index that resets for each
+request. Span names contain no request parameter values.
+
+The existing route template, route ID, middleware name, and execution index
+attributes remain available for filtering. Loader and action span names are
+unchanged. Middleware durations include downstream middleware and handlers
+awaited through `next()`, so overlapping bars are not separate sequential costs.
+
 ### Class method spans
 
 Public instance methods in `app/.server/` use the existing

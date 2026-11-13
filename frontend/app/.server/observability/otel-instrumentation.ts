@@ -40,10 +40,12 @@ import {
  *
  *   - a top-level `SERVER` span per request (named `{method} {path}`, later renamed to
  *     `{method} {route}` once the route is matched), and
- *   - `INTERNAL` child spans per route middleware, loader, and action (named `{phase} {pattern}`).
+ *   - `INTERNAL` child spans named `middleware {middlewareName}` or `{phase} {pattern}`
+ *     for loaders and actions.
  *
  * Middleware spans additionally carry their execution order and name, tracked via a per-request
- * counter established by {@link withMiddlewareCounter}.
+ * counter established by {@link withMiddlewareCounter}. Anonymous middleware uses
+ * `middleware {routeId}[{index}]` as its span name.
  *
  * @returns The React Router server instrumentation to register with the runtime.
  */
@@ -82,7 +84,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
         async middleware(handler, { context, pattern, url, request, params }) {
           const index = nextMiddlewareIndex(id);
           const middlewareName = getMiddlewareName(id, index);
-          const name = `middleware ${middlewareName ?? id}`;
+          const name = middlewareName ? `middleware ${middlewareName}` : `middleware ${id}[${index}]`;
           const spanOptions: SpanOptions = {
             kind: SpanKind.INTERNAL,
             attributes: {
@@ -91,7 +93,7 @@ export function createOtelInstrumentation(): ServerInstrumentation {
               ...(name ? { [ATTR_RR_MIDDLEWARE_NAME]: name } : {}),
             },
           };
-          await otelSpan(context, `middleware ${pattern}`, spanOptions, handler);
+          await otelSpan(context, name, spanOptions, handler);
         },
         // INTERNAL span per route loader.
         async loader(handler, { context, pattern, url, request, params }) {

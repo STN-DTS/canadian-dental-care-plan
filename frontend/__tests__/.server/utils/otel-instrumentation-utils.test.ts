@@ -1,8 +1,9 @@
 import { RouterContextProvider, createStaticHandler, data } from 'react-router';
-import type { InstrumentationHandlerResult, ServerBuild } from 'react-router';
+import type { InstrumentationHandlerResult, MiddlewareFunction, ServerBuild } from 'react-router';
 
 import { ROOT_CONTEXT, SpanStatusCode, context as otelContext, trace } from '@opentelemetry/api';
 import type { Context, Span } from '@opentelemetry/api';
+import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -11,12 +12,28 @@ import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
-import { enrichRequestSpan, instrumentAppErrors, otelSpan, recordError, withAppErrorCapture } from '~/.server/utils/otel-instrumentation-utils';
+import { createOtelInstrumentation } from '~/.server/observability/otel-instrumentation';
+import { deleteSingleton, setSingleton } from '~/.server/utils/instance-registry';
+import { enrichRequestSpan, instrumentAppErrors, otelSpan, recordError, withAppErrorCapture, withMiddlewareCounter } from '~/.server/utils/otel-instrumentation-utils';
 import type { Session } from '~/.server/web/session';
 import { AppError } from '~/errors/app-error';
 import { getAppError, getCorrelationId } from '~/errors/error-predicates';
 
 const sensitiveCanaries = ['900000000', 'person@example.test', 'token=synthetic-secret'];
+const namedAndAnonymousMiddleware = [
+  async function authMiddleware(_args, next) {
+    await next();
+  },
+  async function localeMiddleware(_args, next) {
+    await next();
+  },
+  async (_args, next) => {
+    await next();
+  },
+  async (_args, next) => {
+    await next();
+  },
+] satisfies MiddlewareFunction[];
 
 describe('React Router AppError capture', () => {
   beforeEach(() => {
@@ -26,6 +43,57 @@ describe('React Router AppError capture', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it('exports distinct middleware names with route metadata and request-local anonymous indices', async () => {
+    const middleware = namedAndAnonymousMiddleware;
+    const build = mock<ServerBuild>();
+    build.routes = { test: { id: 'test', path: '/:lang/example/:id', module: { default: () => null, middleware, loader: () => 'ok' } } };
+    const route = instrumentAppErrors(build).routes.test;
+    setSingleton('serverBuild', build);
+    const exporter = new InMemorySpanExporter();
+    const provider = new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] });
+    const tracer = provider.getTracer('middleware-test');
+    const { context, instrumentationService } = createSpanContext();
+    instrumentationService.startActiveSpan.mockImplementation((name, options, callback) => tracer.startActiveSpan(name, options, callback));
+    const router = createStaticHandler([{ id: 'test', path: '/:lang/example/:id', middleware, loader: route?.module.loader }], { instrumentations: [createOtelInstrumentation()] });
+
+    const querySpans = async (id: string) => {
+      const request = new Request(`http://localhost/en/example/${id}`);
+      const response = await withMiddlewareCounter(
+        async () =>
+          await router.query(request, {
+            requestContext: context,
+            generateMiddlewareResponse: async (query) => {
+              await query(request);
+              return new Response('ok');
+            },
+          }),
+      );
+      expect(response).toBeInstanceOf(Response);
+      await provider.forceFlush();
+      const spans = exporter.getFinishedSpans().filter((span) => span.attributes['react_router.middleware.index'] !== undefined);
+      exporter.reset();
+      return spans;
+    };
+
+    try {
+      const firstRequestSpans = await querySpans('first');
+      const secondRequestSpans = await querySpans('second');
+
+      for (const spans of [firstRequestSpans, secondRequestSpans]) {
+        expect(spans.map((span) => span.name).toSorted()).toEqual(['middleware authMiddleware', 'middleware localeMiddleware', 'middleware test[2]', 'middleware test[3]']);
+        expect(new Set(spans.map((span) => span.attributes['react_router.middleware.index']))).toEqual(new Set([0, 1, 2, 3]));
+
+        for (const span of spans) {
+          expect(span.attributes['http.route']).toBe('/:lang/example/:id');
+          expect(span.attributes['react_router.route.id']).toBe('test');
+        }
+      }
+    } finally {
+      await provider.shutdown();
+      deleteSingleton('serverBuild');
+    }
+  });
 
   it.each([
     { phase: 'loader', wrapped: false, status: 500 },
@@ -277,7 +345,7 @@ function createSpanContext() {
   const context = new RouterContextProvider();
   context.set(appContext, { appContainer, session: mock<Session>() });
 
-  return { context, span };
+  return { context, span, instrumentationService };
 }
 
 describe('otelSpan', () => {
