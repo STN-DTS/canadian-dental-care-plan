@@ -3,7 +3,7 @@ import { redirect, useFetcher } from 'react-router';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from 'react-i18next';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { loadPublicApplicationFullChildState } from '~/.server/routes/helpers/public-application-full-child-route-helpers';
 import { clearPublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';

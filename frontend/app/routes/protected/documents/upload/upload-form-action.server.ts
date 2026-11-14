@@ -6,7 +6,7 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import type { TFunction } from 'i18next';
 import * as z from 'zod';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import {
   ATTR_CDCP_DOCUMENT_UPLOAD_ATTEMPT_NUMBER,

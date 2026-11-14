@@ -2,7 +2,7 @@ import { subtle } from 'node:crypto';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 
 import type { Route } from './+types/jwks';

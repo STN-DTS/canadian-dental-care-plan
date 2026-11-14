@@ -4,7 +4,7 @@ import { invariant } from '@dts-stn/invariant';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getEligibilityStatus } from '~/.server/routes/helpers/base-application-route-helpers';
 import { clearPublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import { loadPublicApplicationSimplifiedChildState } from '~/.server/routes/helpers/public-application-simplified-child-route-helpers';

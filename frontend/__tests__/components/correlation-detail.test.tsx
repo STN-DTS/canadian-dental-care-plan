@@ -24,7 +24,7 @@ describe('CorrelationDetail', () => {
 
     expect(screen.getByText(lng === 'en' ? 'Correlation ID:' : 'Identifiant de corrélation :')).toBeVisible();
     expect(screen.getByText(error.correlationId)).toHaveClass('select-text');
-    expect(view.container).not.toHaveTextContent(error.msg);
+    expect(view.container).not.toHaveTextContent(error.message);
     expect(view.container).not.toHaveTextContent(error.errorCode);
     expect(view.container.querySelector('[tabindex], button, a')).toBeNull();
 

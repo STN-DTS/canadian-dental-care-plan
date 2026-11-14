@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { clearStatusState, getStatusStateIdFromUrl, loadStatusState } from '~/.server/routes/helpers/status-route-helpers';
 import { getContextualAlertType } from '~/.server/utils/application-code-utils';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';

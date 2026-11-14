@@ -3,7 +3,7 @@ import { redirect, useFetcher } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getEligibilityStatus } from '~/.server/routes/helpers/base-application-route-helpers';
 import { loadProtectedApplicationRenewalAdultState } from '~/.server/routes/helpers/protected-application-renewal-adult-route-helpers';
 import { clearProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';

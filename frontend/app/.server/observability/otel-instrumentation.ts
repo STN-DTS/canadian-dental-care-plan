@@ -18,6 +18,7 @@ import type { InstrumentationServerHandlerResult, ServerInstrumentation } from '
 import { SpanKind } from '@opentelemetry/api';
 import type { SpanOptions } from '@opentelemetry/api';
 
+import { getCorrelationId } from '~/.server/context/correlation-context';
 import { createLogger } from '~/.server/logging';
 import {
   ATTR_RR_MIDDLEWARE_INDEX,
@@ -29,7 +30,6 @@ import {
   nextMiddlewareIndex,
   normalizeMethod,
   otelSpan,
-  withAppErrorCapture,
   withMiddlewareCounter,
 } from '~/.server/utils/otel-instrumentation-utils';
 
@@ -69,12 +69,11 @@ export function createOtelInstrumentation(): ServerInstrumentation {
           const method = normalizeMethod(request.method);
           const pathname = new URL(request.url).pathname;
           const spanOptions: SpanOptions = { kind: SpanKind.SERVER, attributes: buildRequestAttributes(request) };
-          await withAppErrorCapture(
-            async () =>
-              await otelSpan(context, `${request.method} ${pathname}`, spanOptions, instrumentedHandler, (span, result) => {
-                enrichRequestSpan(span, method, result as InstrumentationServerHandlerResult);
-              }),
-          );
+          await otelSpan(context, `${request.method} ${pathname}`, spanOptions, instrumentedHandler, (span, result) => {
+            enrichRequestSpan(span, method, result as InstrumentationServerHandlerResult, {
+              correlationId: getCorrelationId(context),
+            });
+          });
         },
       });
     },

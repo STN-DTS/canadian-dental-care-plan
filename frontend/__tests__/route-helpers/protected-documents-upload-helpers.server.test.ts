@@ -4,7 +4,7 @@ import { mock, mockFn } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { getAppContext } from '~/.server/context';
+import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
 import type { DocumentUploadService } from '~/.server/domain/services';
@@ -14,7 +14,7 @@ import type { DocumentUploadSchemaOutput } from '~/route-helpers/protected-docum
 import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-utils';
 
-vi.mock(import('~/.server/context'));
+vi.mock(import('~/.server/context/app-context'));
 vi.mock(import('~/.server/context/applicant-context'));
 vi.mock(import('~/.server/context/user-context'));
 vi.mock(import('~/.server/utils/locale-utils'), () => ({ getFixedT: vi.fn() }));

@@ -1,7 +1,7 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import { HttpStatusCodes } from '~/constants/http-status-codes';

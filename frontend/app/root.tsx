@@ -6,7 +6,7 @@ import { config as fontAwesomeConfig } from '@fortawesome/fontawesome-svg-core';
 import { useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { ClientEnv } from '~/components/client-env';
 import { BilingualNotFoundError, BilingualServerError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
@@ -16,6 +16,7 @@ import { ZodConfig } from '~/components/zod-config';
 import { useNonce } from '~/hooks/use-nonce';
 import { useNProgress } from '~/hooks/use-nprogress';
 import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
+import { correlationMiddleware } from '~/middlewares/correlation.server';
 import * as adobeAnalytics from '~/utils/adobe-analytics.client';
 import { ClientHintCheck, getHints } from '~/utils/client-hints';
 import { isAppLocale } from '~/utils/locale-utils';
@@ -30,7 +31,8 @@ import tailwindStyleSheet from '~/tailwind.css?url';
 // see: https://docs.fontawesome.com/web/dig-deeper/security#content-security-policy
 fontAwesomeConfig.autoAddCss = false;
 
-export const middleware: Route.MiddlewareFunction[] = [contextStorageMiddleware];
+// Apply context storage and correlation ID middleware to all routes
+export const middleware: Route.MiddlewareFunction[] = [contextStorageMiddleware, correlationMiddleware];
 
 export const links: Route.LinksFunction = () => [
   { rel: 'stylesheet', href: indexStyleSheet }, //

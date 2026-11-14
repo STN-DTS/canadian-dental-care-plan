@@ -51,16 +51,14 @@ describe('error extraction', () => {
 
 describe('AppError', () => {
   it('should create a AppError with default values', () => {
-    vi.mocked(randomString).mockReturnValueOnce('AB');
-    vi.mocked(randomString).mockReturnValueOnce('123456');
-
     const error = new AppError('Something went wrong');
+    expect(error).toBeInstanceOf(Error);
     expect(error.errorCode).toEqual('UNC-0000');
-    expect(error.correlationId).toEqual('AB-123456');
-    expect(error.msg).toEqual('Something went wrong');
+    expect(error.correlationId).toEqual('');
+    expect(error.message).toEqual('Something went wrong');
     expect(error.stack).toBeDefined();
-    expect(getCorrelationId(JSON.parse(JSON.stringify(error)))).toEqual(error.correlationId);
-    expect(randomString).toHaveBeenCalledTimes(2);
+    expect(getCorrelationId(JSON.parse(JSON.stringify(error)))).toBeUndefined();
+    expect(randomString).not.toHaveBeenCalled();
   });
 
   it('should create a AppError with custom values', () => {
@@ -71,7 +69,7 @@ describe('AppError', () => {
 
     expect(error.errorCode).toEqual(ErrorCodes.TEST_ERROR_CODE);
     expect(error.correlationId).toEqual(correlationId);
-    expect(error.msg).toEqual(message);
+    expect(error.message).toEqual(message);
     expect(error.stack).toBeDefined();
     expect(getCorrelationId(JSON.parse(JSON.stringify(error)))).toEqual(correlationId);
     expect(randomString).not.toHaveBeenCalled();
@@ -80,9 +78,6 @@ describe('AppError', () => {
 
 describe('isAppError', () => {
   it('should return true for a AppError', () => {
-    vi.mocked(randomString).mockReturnValueOnce('AB');
-    vi.mocked(randomString).mockReturnValueOnce('123456');
-
     expect(isAppError(new AppError('Something went wrong'))).toEqual(true);
   });
 

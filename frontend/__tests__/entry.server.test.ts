@@ -11,7 +11,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { createRequestLoggerMiddleware } from '~/.server/express-server/middleware';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -37,18 +37,19 @@ beforeEach(() => {
 });
 
 describe('handleError', () => {
-  it.each([400, 404, 405, 429, 499])('keeps a %s route rejection at DEBUG without changing its metric', (status) => {
+  it.each([400, 404, 405, 429, 499])('logs a %s route rejection at ERROR without changing its metric', (status) => {
     const { logger, counter, instrumentationService, context } = createErrorContext();
     const request = new Request('http://localhost/index.php?token=synthetic-secret', { method: 'POST' });
 
-    handleError({ status, statusText: 'Client rejection', internal: true, data: 'synthetic-secret' }, { request, context, params: {} });
+    const error = { status, statusText: 'Client rejection', internal: true, data: 'synthetic-secret' };
+    handleError(error, { request, context, params: {} });
 
-    expect(logger.debug).toHaveBeenCalledExactlyOnceWith('React Router request failed', {
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(error, {
       [ATTR_ERROR_TYPE]: 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: 'POST',
       [ATTR_URL_PATH]: '/index.php',
     });
-    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.debug).not.toHaveBeenCalled();
     expect(instrumentationService.createCounter).toHaveBeenCalledExactlyOnceWith('http.server.requests.failed');
     expect(counter.add).toHaveBeenCalledExactlyOnceWith(1);
   });
@@ -65,7 +66,7 @@ describe('handleError', () => {
 
     handleError(error, { request, context, params: {} });
 
-    expect(logger.error).toHaveBeenCalledExactlyOnceWith('React Router request failed', {
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(error, {
       [ATTR_ERROR_TYPE]: 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: 'GET',
       [ATTR_URL_PATH]: '/',
@@ -85,7 +86,7 @@ describe('handleError', () => {
     expect(counter.add).not.toHaveBeenCalled();
   });
 
-  it('keeps missing-action document and data POSTs at 405 with one WARN completion and no ERROR diagnostic', async () => {
+  it('keeps missing-action POSTs at 405 while logging their original errors at ERROR', async () => {
     const { logger, counter, context } = createErrorContext();
     const build: ServerBuild = {
       entry: { module: { default: (_request, status, headers) => new Response(null, { status, headers }), handleError } },
@@ -146,8 +147,8 @@ describe('handleError', () => {
 
       expect(logger.http).toHaveBeenCalledTimes(6);
       expect(logger.warn).not.toHaveBeenCalled();
-      expect(logger.debug).toHaveBeenCalledTimes(6);
-      expect(logger.error).not.toHaveBeenCalled();
+      expect(logger.debug).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledTimes(6);
       expect(counter.add).toHaveBeenCalledTimes(6);
 
       await Promise.all(
@@ -155,7 +156,7 @@ describe('handleError', () => {
           const response = await fetch(`http://127.0.0.1:${address.port}${path}`, { headers: { connection: 'close' } });
           await response.text();
           expect(response.status).toBe(500);
-          expect(logger.error).toHaveBeenCalledWith('React Router request failed', {
+          expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'synthetic-secret' }), {
             [ATTR_HTTP_REQUEST_METHOD]: 'GET',
             [ATTR_URL_PATH]: path,
             [ATTR_ERROR_TYPE]: 'react_router_request_failed',
@@ -164,10 +165,10 @@ describe('handleError', () => {
         }),
       );
 
-      expect(logger.error).toHaveBeenCalledTimes(4);
+      expect(logger.error).toHaveBeenCalledTimes(10);
       expect(logger.http).toHaveBeenCalledTimes(6);
       expect(logger.warn).not.toHaveBeenCalled();
-      expect(logger.debug).toHaveBeenCalledTimes(6);
+      expect(logger.debug).not.toHaveBeenCalled();
       expect(counter.add).toHaveBeenCalledTimes(8);
     } finally {
       await new Promise<void>((resolve, reject) => {

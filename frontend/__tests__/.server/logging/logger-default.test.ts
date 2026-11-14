@@ -6,6 +6,7 @@ import type { Logger } from '~/.server/logging/logger';
 import { DefaultLogger } from '~/.server/logging/logger-default';
 import { defaultsConfig } from '~/.server/logging/logging-config';
 import { createWinstonInstance } from '~/.server/logging/winston-factory';
+import { AppError } from '~/errors/app-error';
 
 describe('DefaultLogger', () => {
   it.each(['development', 'production'])('retains a fixed message and typed structured fields in %s console output', async (environment) => {
@@ -68,7 +69,7 @@ describe('DefaultLogger', () => {
       const entries: TransformableInfo[] = [];
       transport.on('logged', (info: TransformableInfo) => entries.push(info));
       const logger: Logger = new DefaultLogger(winston, 'error-event');
-      const error = new Error('Synthetic failure');
+      const error = new AppError('Synthetic failure');
 
       if (meta) {
         logger.error(error, meta);
@@ -79,9 +80,16 @@ describe('DefaultLogger', () => {
       await new Promise<void>((resolve) => setImmediate(resolve));
       const errorEntries = entries.filter((info) => info[LEVEL] === 'error');
       expect(errorEntries).toHaveLength(1);
-      expect(errorEntries[0]).toMatchObject({ message: 'Synthetic failure', stack: error.stack, ...meta });
+      expect(errorEntries[0]).toMatchObject({
+        correlationId: error.correlationId,
+        errorCode: error.errorCode,
+        httpStatusCode: error.httpStatusCode,
+        message: 'Synthetic failure',
+        name: error.name,
+        stack: error.stack,
+        ...meta,
+      });
       expect(String(errorEntries[0]?.[MESSAGE])).toContain(String(error.stack).split('\n')[1]?.trim());
-      expect(Object.keys(error)).toEqual([]);
     } finally {
       winston.close();
     }

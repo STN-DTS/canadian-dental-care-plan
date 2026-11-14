@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { PublicApplicationApplicantInformationState, PublicApplicationInputModelState } from '~/.server/routes/helpers/public-application-route-helpers';

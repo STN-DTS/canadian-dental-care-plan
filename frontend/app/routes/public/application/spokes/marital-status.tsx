@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { isSinReserved, maritalStatusHasPartner } from '~/.server/routes/helpers/base-application-route-helpers';
 import type { ApplicationFlow, PublicApplicationPartnerInformationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getPublicApplicantSin, getPublicApplicationState, getPublicChildrenSins, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';

@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { applicantContext, programApplicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { SecurityHandler } from '~/.server/routes/security';

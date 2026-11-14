@@ -3,7 +3,7 @@ import { redirect, useFetcher } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getAgeCategoryFromDateString } from '~/.server/routes/helpers/base-application-route-helpers';
 import { clearPublicApplicationState, getSingleChildState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';

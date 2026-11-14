@@ -1,9 +1,10 @@
 import { RouterContextProvider } from 'react-router';
 
+import { Option } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '~/errors/app-error';
-import { contextStorageMiddleware, getContext, getRequest, getUrl } from '~/middlewares/context-storage.server';
+import { contextStorageMiddleware, findContext, getContext, getRequest, getUrl } from '~/middlewares/context-storage.server';
 
 function createMiddlewareArgs(urlValue = 'https://localhost:3000/en/protected/profile?return=documents'): Parameters<typeof contextStorageMiddleware>[0] {
   const context = new RouterContextProvider();
@@ -92,6 +93,21 @@ describe('contextStorageMiddleware', () => {
   });
 });
 
+describe('findContext', () => {
+  it('returns undefined outside middleware context', () => {
+    expect(findContext()).toEqual(Option.none());
+  });
+
+  it('returns the current context inside middleware context', async () => {
+    const args = createMiddlewareArgs();
+
+    await contextStorageMiddleware(args, async () => {
+      expect(findContext()).toEqual(Option.some(args.context));
+      return await Promise.resolve(new Response(null, { status: 204 }));
+    });
+  });
+});
+
 describe('context storage getters', () => {
   it.each([
     ['getContext', getContext],
@@ -102,7 +118,7 @@ describe('context storage getters', () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect(error).toMatchObject({
-      msg: `${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`,
+      message: `${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`,
     });
   });
 });

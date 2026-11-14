@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import type { SecurityHandler } from '~/.server/routes/security';
 import type { Session } from '~/.server/web/session';
 import { createFeatureMiddleware } from '~/middlewares/feature.server';

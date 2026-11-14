@@ -6,7 +6,7 @@ import { mock } from 'vitest-mock-extended';
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { applicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';

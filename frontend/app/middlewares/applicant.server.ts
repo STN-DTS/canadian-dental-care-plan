@@ -1,7 +1,7 @@
 import type { MiddlewareFunction } from 'react-router';
 
 import { TYPES } from '~/.server/constants/';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { applicantContext, programApplicantContext } from '~/.server/context/applicant-context';
 
 /**

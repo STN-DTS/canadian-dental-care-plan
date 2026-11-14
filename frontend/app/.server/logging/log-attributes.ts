@@ -82,6 +82,9 @@ export const ATTR_CDCP_CLIENT_ID = 'cdcp.client.id';
 /** string: service name from the fixed dependency-injection registration set. */
 export const ATTR_CDCP_CONTAINER_SERVICE_NAME = 'cdcp.container.service.name';
 
+/** string: correlation ID for the current request; never the client number or SIN. */
+export const ATTR_CDCP_CORRELATION_ID = 'cdcp.correlation_id';
+
 /** string: key operation, `encrypt`, `decrypt`, `sign` or `verify`; never key material. */
 export const ATTR_CDCP_CRYPTO_KEY_USAGE = 'cdcp.crypto.key_usage';
 

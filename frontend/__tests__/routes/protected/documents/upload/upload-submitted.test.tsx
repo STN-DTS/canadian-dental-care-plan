@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
-import type { AppContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
+import type { AppContext } from '~/.server/context/app-context';
 import { getUser } from '~/.server/context/user-context';
 import type { AuditService, DocumentUploadService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import enDocuments from '~/.server/locales/en/documents';

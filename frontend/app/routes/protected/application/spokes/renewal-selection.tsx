@@ -4,7 +4,7 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import {
   getContextualAgeCategoryFromDate,
   getProtectedApplicationState,

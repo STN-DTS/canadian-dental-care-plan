@@ -3,7 +3,7 @@ import { Outlet, redirect } from 'react-router';
 import { Option } from 'effect';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getPathById } from '~/utils/route-utils';
 

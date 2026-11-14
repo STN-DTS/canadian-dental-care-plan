@@ -2,39 +2,35 @@ import { HttpStatusCodes } from '~/constants/http-status-codes';
 import type { HttpStatusCode } from '~/constants/http-status-codes';
 import type { ErrorCode } from '~/errors/error-codes';
 import { ErrorCodes } from '~/errors/error-codes';
-import { randomString } from '~/utils/string-utils';
 
-type AppErrorOptions = {
+export type AppErrorOptions = ErrorOptions & {
+  /**
+   * The correlation ID associated with this error.
+   */
   correlationId?: string;
+
+  /**
+   * The HTTP status code associated with this error.
+   */
   httpStatusCode?: HttpStatusCode;
 };
 
 /**
  * A generic, top-level error that all application errors should extend.
- * This class *does not* extend Error because React Router will sanitize all Errors when sending them to the client.
+ * Carries an error code, correlation ID, and HTTP status code alongside the standard message, stack, and cause.
  */
-export class AppError {
+export class AppError extends Error {
   public readonly name = 'AppError';
 
   public readonly errorCode: ErrorCode;
   public readonly correlationId: string;
-  public readonly stack?: string;
   public readonly httpStatusCode: HttpStatusCode;
 
-  // note: this is intentionally named `msg` instead
-  // of `message` to workaround an issue with winston
-  // always logging this as the log message when a
-  // message is supplied to `log.error(message, error)`
-  public readonly msg: string;
-
   public constructor(msg: string, errorCode: ErrorCode = ErrorCodes.UNCAUGHT_ERROR, opts?: AppErrorOptions) {
+    super(msg, { cause: opts?.cause });
     this.errorCode = errorCode;
-    this.msg = msg;
-
-    this.correlationId = opts?.correlationId ?? generateCorrelationId();
+    this.correlationId = opts?.correlationId ?? '';
     this.httpStatusCode = opts?.httpStatusCode ?? HttpStatusCodes.INTERNAL_SERVER_ERROR;
-
-    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -46,13 +42,4 @@ export class AppError {
  */
 export function isAppError(error: unknown): error is AppError {
   return typeof error === 'object' && error !== null && 'name' in error && error.name === 'AppError';
-}
-
-/**
- * Generates a random correlation ID.
- */
-function generateCorrelationId() {
-  const prefix = randomString(2).toUpperCase();
-  const suffix = randomString(6).toUpperCase();
-  return `${prefix}-${suffix}`;
 }

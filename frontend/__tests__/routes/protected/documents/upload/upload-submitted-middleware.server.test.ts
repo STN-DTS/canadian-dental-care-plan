@@ -3,8 +3,8 @@ import { RouterContextProvider, replace } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { appContext } from '~/.server/context';
-import type { AppContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
+import type { AppContext } from '~/.server/context/app-context';
 import { getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { Session } from '~/.server/web/session';
 import { middleware } from '~/routes/protected/documents/upload/upload-submitted-middleware.server';

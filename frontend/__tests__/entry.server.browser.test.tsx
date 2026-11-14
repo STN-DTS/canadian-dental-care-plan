@@ -13,7 +13,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import en from '~/.server/locales/en/gcweb';
 import { createLogger } from '~/.server/logging';
 import { DefaultLogger } from '~/.server/logging/logger-default';
@@ -33,9 +33,9 @@ describe('server error diagnostics', () => {
   it.each([
     { error: new Error('synthetic-sensitive-message'), level: 'error' },
     { error: { secret: 'synthetic-sensitive-message' }, level: 'error' },
-    { error: { status: 404, statusText: 'Not Found', internal: false, data: 'synthetic-sensitive-message' }, level: 'debug' },
+    { error: { status: 404, statusText: 'Not Found', internal: false, data: 'synthetic-sensitive-message' }, level: 'error' },
     { error: { status: 500, statusText: 'Internal Server Error', internal: false, data: 'synthetic-sensitive-message' }, level: 'error' },
-  ] as const)('preserves safe request diagnostics at $level for $error', ({ error, level }) => {
+  ] as const)('passes the original error first at $level for $error', ({ error, level }) => {
     const log = mock<ReturnType<typeof createLogger>>();
     vi.mocked(createLogger).mockReturnValue(log);
     const instrumentationService = mock<InstrumentationService>();
@@ -47,7 +47,7 @@ describe('server error diagnostics', () => {
 
     try {
       handleError(error, { ...mock<LoaderFunctionArgs>(), request: new Request('http://localhost/en?token=synthetic-sensitive-query'), context, params: {} });
-      expect(log[level]).toHaveBeenCalledExactlyOnceWith('React Router request failed', {
+      expect(log[level]).toHaveBeenCalledExactlyOnceWith(error, {
         'error.type': 'react_router_request_failed',
         'http.request.method': 'GET',
         'url.path': '/en',
@@ -58,7 +58,7 @@ describe('server error diagnostics', () => {
     }
   });
 
-  it.each(['production', 'development'])('emits the displayed ID in %s diagnostics without sensitive details', async (environment) => {
+  it.each(['production', 'development'])('preserves AppError and ordinary Error details in %s diagnostics', async (environment) => {
     vi.stubEnv('NODE_ENV', environment);
     const winston = createWinstonInstance({ ...defaultsConfig, LOG_LEVEL: 'error', AUDIT_LOG_ENABLED: false });
     const records: string[] = [];
@@ -78,7 +78,7 @@ describe('server error diagnostics', () => {
     context.set(appContext, { appContainer, session: mock<Session>() });
     const i18n = createInstance();
     await i18n.init({ lng: 'en', resources: { en: { gcweb: en } } });
-    const error = new AppError('Synthetic SIN 900000000, person@example.test, token=synthetic-secret', undefined, { correlationId: 'AB-123456' });
+    const error = new AppError('Synthetic application failure', undefined, { correlationId: 'AB-123456' });
 
     try {
       const html = renderToStaticMarkup(
@@ -90,11 +90,18 @@ describe('server error diagnostics', () => {
       await new Promise<void>((resolve) => setImmediate(resolve));
       expect(html).toContain(error.correlationId);
       expect(records.join('')).toContain(error.correlationId);
-      expect(records.join('')).not.toContain('900000000');
-      expect(records.join('')).not.toContain('person@example.test');
-      expect(records.join('')).not.toContain('synthetic-secret');
+      expect(records.join('')).toContain(error.message);
+      expect(records.join('')).toContain('entry.server.browser.test.tsx');
       expect(instrumentationService.createCounter).toHaveBeenCalledWith('http.server.requests.failed');
       expect(instrumentationService.createCounter('http.server.requests.failed').add).toHaveBeenCalledWith(1);
+
+      const dependencyError = new Error('Synthetic dependency failure');
+      records.length = 0;
+      handleError(dependencyError, { ...mock<LoaderFunctionArgs>(), request: new Request('http://localhost/en'), context, params: {} });
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(records.join('')).toContain(dependencyError.message);
+      expect(records.join('')).toContain('entry.server.browser.test.tsx');
+      expect(records.join('')).not.toContain('React Router request failed');
 
       const controller = new AbortController();
       controller.abort();

@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { getLocale } from '~/.server/utils/locale-utils';
 import { KillswitchDialog } from '~/components/killswitch-dialog';

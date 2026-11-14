@@ -5,6 +5,7 @@ import { faFile, faFileArchive, faFileAudio, faFileCode, faFileImage, faFileText
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Slot } from '@radix-ui/react-slot';
 
+import { generateId } from '~/utils/id-utils';
 import { cn } from '~/utils/tw-utils';
 
 const ROOT_NAME = 'FileUpload';
@@ -68,7 +69,7 @@ function createStore(listeners: Set<() => void>, files: Map<string, File>, inval
         const nextFiles = new Map(state.files);
 
         for (const file of action.files) {
-          nextFiles.set(crypto.randomUUID(), file);
+          nextFiles.set(generateId(), file);
         }
 
         const fileList = [...nextFiles].map(([id, file]) => ({ id, file }));

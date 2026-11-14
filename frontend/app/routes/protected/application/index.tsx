@@ -6,7 +6,7 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { isWithinRenewalPeriod, startProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';

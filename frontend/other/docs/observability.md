@@ -170,11 +170,14 @@ pages show the same ID in both sections. Not-found pages show it only when
 their supplied error carries an AppError ID. Missing or blank IDs produce no
 detail. Rendering and serialization never generate replacement IDs.
 
-The existing `entry.server/handleError` diagnostic event emits `correlationId`
-as a structured field with a fixed `Application error` message and error code;
-it does not serialize the AppError message or stack. Aborted requests remain
-suppressed. Ordinary errors without an AppError ID cannot be looked up by
-this occurrence ID.
+The existing `entry.server/handleError` diagnostic passes the original error
+as the first argument to `log.error`, including for client errors. Native
+`Error` messages and stacks reach the configured log sinks, so they must not
+contain applicant information, tokens, or other sensitive values.
+AppError diagnostics retain `correlationId` and the error code as structured
+fields. AppError is not a native `Error`; its message and stack are not
+serialized by this call. Aborted requests remain suppressed. Ordinary errors
+without an AppError ID cannot be looked up by this occurrence ID.
 
 Use the existing log store and select the frontend service and relevant time
 window. A synthetic Loki example (adjust the existing service label as needed):

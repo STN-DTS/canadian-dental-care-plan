@@ -2,7 +2,7 @@ import { createContext } from 'react-router';
 import type { RouterContextProvider } from 'react-router';
 
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
-import { AppError } from '~/errors/app-error';
+import { throwAppError } from '~/.server/utils/error-utils';
 
 type ClientApplicationContext = ClientApplicationDto;
 
@@ -22,7 +22,7 @@ export function getClientApplication(context: Readonly<RouterContextProvider>): 
   const clientApplication = context.get(clientApplicationContext);
 
   if (!clientApplication) {
-    throw new AppError('Client application context is not available. Ensure that the client application has been set in the context.');
+    throwAppError('Client application context is not available. Ensure that the client application has been set in the context.');
   }
 
   return clientApplication;

@@ -10,7 +10,7 @@ import { TYPES } from '~/.server/constants';
  * Handler for /auth/logout{?locale=(en|fr)} requests
  *
  */
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
 import type { IdToken } from '~/.server/utils/raoidc-utils';

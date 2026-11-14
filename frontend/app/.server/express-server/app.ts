@@ -7,12 +7,11 @@ import type { ServerBuild } from 'react-router';
 
 import express from 'express';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getAppContext } from '~/.server/express-server/app-context';
 import { createLogger } from '~/.server/logging';
 import { getEnv } from '~/.server/utils/env-utils';
 import { hasSingleton, setSingleton, singleton } from '~/.server/utils/instance-registry';
-import { instrumentAppErrors } from '~/.server/utils/otel-instrumentation-utils';
 import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build-utils';
 
 const log = createLogger('app');
@@ -38,7 +37,7 @@ const reactRouterMiddleware = createRequestHandler({
 
     // Register the build before deriving the route tree used by request
     // instrumentation to resolve paths with `matchRoutes`.
-    setSingleton('serverBuild', instrumentAppErrors(serverBuild));
+    setSingleton('serverBuild', serverBuild);
 
     // Convert the flat server route manifest into a hierarchical matcher tree.
     const serverRoutes = createServerRoutes(serverBuild.routes);

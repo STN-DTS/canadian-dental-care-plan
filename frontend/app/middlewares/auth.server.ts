@@ -3,7 +3,7 @@ import type { MiddlewareFunction } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { userContext } from '~/.server/context/user-context';
 
 /**

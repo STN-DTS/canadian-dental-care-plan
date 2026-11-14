@@ -1,5 +1,5 @@
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 
 import type { Route } from './+types/buildinfo';
 

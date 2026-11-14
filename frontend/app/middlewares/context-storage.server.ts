@@ -1,8 +1,9 @@
 import type { MiddlewareFunction, RouterContextProvider } from 'react-router';
 
+import { Option } from 'effect';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import { AppError } from '~/errors/app-error';
+import { throwAppError } from '~/.server/utils/error-utils';
 
 /** Request-scoped routing values preserved for the current middleware chain. */
 type ContextStorage = Readonly<{
@@ -17,7 +18,7 @@ function getStore(getterName: string): ContextStorage {
   const store = contextStorage.getStore();
 
   if (!store) {
-    throw new AppError(`${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`);
+    throwAppError(`${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`);
   }
 
   return store;
@@ -33,6 +34,14 @@ function getStore(getterName: string): ContextStorage {
 export const contextStorageMiddleware: MiddlewareFunction<Response> = async ({ context, request, url }, next) => {
   return await contextStorage.run({ context, request, url }, async () => await next());
 };
+
+/**
+ * Returns the current request's `RouterContextProvider`, or `undefined` when
+ * called outside an active request scope.
+ */
+export function findContext(): Option.Option<Readonly<RouterContextProvider>> {
+  return Option.fromUndefinedOr(contextStorage.getStore()?.context);
+}
 
 /**
  * Returns the current request's `RouterContextProvider`.

@@ -13,7 +13,8 @@ import type { Logger } from '~/.server/logging';
 import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging';
 import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
-import { AppError, isAppError } from '~/errors/app-error';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 export interface BenefitApplicationService {
@@ -75,11 +76,11 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      throw new AppError('Request to create public benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Request to create public benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (benefitApplicationRequestDto.applicationChannelCode !== 'public') {
-      throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
+      throwAppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
     this.auditService.createAudit('application-submit.post', { userId: benefitApplicationRequestDto.userId });
@@ -112,11 +113,11 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      throw new AppError('Request to create protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Request to create protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
     }
 
     if (protectedBenefitApplicationRequestDto.applicationChannelCode !== 'protected') {
-      throw new AppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
+      throwAppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
     }
 
     this.auditService.createAudit('protected-application-submit.post', { userId: protectedBenefitApplicationRequestDto.userId });

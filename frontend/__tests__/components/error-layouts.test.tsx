@@ -60,7 +60,7 @@ describe('error layouts', () => {
       expect(within(element).getByText(label)).toBeVisible();
     }
 
-    expect(view.container).not.toHaveTextContent(appError.msg);
+    expect(view.container).not.toHaveTextContent(appError.message);
     expect(view.container).not.toHaveTextContent(appError.errorCode);
     view.rerender(
       <I18nextProvider i18n={i18n}>

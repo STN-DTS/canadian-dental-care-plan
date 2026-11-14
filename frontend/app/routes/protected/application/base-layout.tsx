@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import { getLocale } from '~/.server/utils/locale-utils';
 import { KillswitchDialog } from '~/components/killswitch-dialog';

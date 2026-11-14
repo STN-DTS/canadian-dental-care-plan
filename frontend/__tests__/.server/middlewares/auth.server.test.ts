@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { userContext } from '~/.server/context/user-context';
 import type { SecurityHandler } from '~/.server/routes/security';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';

@@ -3,7 +3,7 @@ import type { RenderToPipeableStreamOptions } from 'react-dom/server';
 
 import { createReadableStreamFromReadable } from '@react-router/node';
 import type { ActionFunctionArgs, EntryContext, HandleErrorFunction, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
-import { ServerRouter, isRouteErrorResponse } from 'react-router';
+import { ServerRouter } from 'react-router';
 
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { isbot } from 'isbot';
@@ -11,7 +11,7 @@ import { PassThrough } from 'node:stream';
 import { I18nextProvider } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_RENDER_HANDLER } from '~/.server/logging/log-attributes';
 import { createOtelInstrumentation } from '~/.server/observability/otel-instrumentation';
@@ -21,7 +21,6 @@ import { getLocale, initI18n } from '~/.server/utils/locale-utils';
 import { ClientEnvProvider } from '~/components/client-env-context';
 import { NonceProvider } from '~/components/nonce-context';
 import { isAppError } from '~/errors/app-error';
-import { getCorrelationId } from '~/errors/error-predicates';
 import { getNamespaces } from '~/utils/locale-utils';
 import { randomHexString } from '~/utils/string-utils';
 
@@ -47,15 +46,14 @@ export function handleError(error: unknown, { context, request }: Parameters<Han
   const log = createLogger('entry.server/handleError');
 
   if (!request.signal.aborted) {
-    const isClientError = isRouteErrorResponse(error) && error.status >= 400 && error.status < 500;
     const applicationError = isAppError(error) ? error : undefined;
-    log[isClientError ? 'debug' : 'error'](applicationError ? 'Application error' : 'React Router request failed', {
+    log.error(error, {
       [ATTR_ERROR_TYPE]: applicationError ? 'AppError' : 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: request.method,
       [ATTR_URL_PATH]: new URL(request.url).pathname,
       ...(applicationError
         ? {
-            correlationId: getCorrelationId(applicationError),
+            correlationId: applicationError.correlationId,
             errorCode: applicationError.errorCode,
             'org.event.category': 'application',
           }

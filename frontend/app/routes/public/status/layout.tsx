@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getLocale } from '~/.server/utils/locale-utils';
 import { PublicLayout } from '~/components/layouts/public-layout';
 import SessionTimeout from '~/components/session-timeout';

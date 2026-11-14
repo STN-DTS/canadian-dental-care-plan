@@ -7,7 +7,7 @@ import { subtle } from 'node:crypto';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import type { MockName } from '~/.server/utils/env-utils';

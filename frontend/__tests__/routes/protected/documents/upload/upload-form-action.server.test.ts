@@ -3,8 +3,8 @@ import { RouterContextProvider } from 'react-router';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { appContext } from '~/.server/context';
-import type { AppContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
+import type { AppContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { finishDocumentUploadState, getDocumentUploadStateIdFromUrl, getDocumentUploadSubmittedUrl, loadDocumentUploadState, recordDocumentUploadAttempt, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';

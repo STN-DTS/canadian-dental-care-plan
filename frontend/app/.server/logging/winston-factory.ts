@@ -4,9 +4,9 @@ import winston, { format } from 'winston';
 
 import { ATTR_CDCP_LOG_AUDIT_FILE_PATH, ATTR_CDCP_LOG_LEVEL } from '~/.server/logging/log-attributes';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
-import { addDynatraceLogLevel, addOtelSeverity, formatUrlPaths } from '~/.server/logging/winston-format';
 import 'winston-daily-rotate-file';
 
+import { addDynatraceLogLevel, addOtelSeverity, formatUrlPaths } from '~/.server/logging/winston-format';
 import { getLevelsConfig } from '~/.server/logging/winston-levels-config';
 import { createConsoleTransport, createDailyRotateFileTransport } from '~/.server/logging/winston-transport-factory';
 
@@ -27,7 +27,7 @@ export function createWinstonInstance(config: LoggingConfig): w.Logger {
   const winstonInstance = winston.createLogger({
     level: config.LOG_LEVEL,
     levels: levelsConfig.levels,
-    format: format.combine(format.timestamp(), format.errors({ stack: true, cause: true }), ...severityFormats, formatUrlPaths()),
+    format: format.combine(format.timestamp(), ...severityFormats, formatUrlPaths(), format.errors({ stack: true, cause: true })),
     transports: [createConsoleTransport(config)],
     exitOnError: false,
   });

@@ -55,7 +55,7 @@ Set access, retention, integrity, and deletion controls for each approved record
 
 ## Sources
 
-Organization policy supplies the exact HTTP severity mapping, reserved sublevels, government-identifier prohibition, exception-message allowlist, and unsampled security and audit routing. Category fields and vocabularies require a separate application or destination policy. External sources support these decisions but do not mandate all of them.
+Organization policy supplies the exact HTTP severity mapping, reserved sublevels, government-identifier prohibition, exception-data privacy controls, and unsampled security and audit routing. Category fields and vocabularies require a separate application or destination policy. External sources support these decisions but do not mandate all of them.
 
 Canonical completion ownership is also local operational policy. OpenTelemetry does not require a completion event for every request or job, an application outcome attribute, or a custom reason field on every diagnostic.
 

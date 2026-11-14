@@ -528,9 +528,6 @@ catalogs:
     winston-daily-rotate-file:
       specifier: 5.0.0
       version: 5.0.0
-    winston-error-format:
-      specifier: 3.0.2
-      version: 3.0.2
     zod:
       specifier: 4.6.7
       version: 4.6.7
@@ -818,9 +815,6 @@ importers:
       winston-daily-rotate-file:
         specifier: 'catalog:'
         version: 5.0.0(winston@3.19.0)
-      winston-error-format:
-        specifier: 'catalog:'
-        version: 3.0.2(winston@3.19.0)
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -3768,10 +3762,6 @@ packages:
     resolution: {integrity: sha512-oJFNDJg3kTPwAD1cNn2+WmUq4wFoo09npc3Ydf1D7ED4smRiWrsKnaLxykrTWgyGEcusc87P5dxlAleol9kpkg==}
     engines: {node: '>=20.19.0'}
 
-  error-serializer@8.0.2:
-    resolution: {integrity: sha512-RRcjjxGK4ccr/+t0R3QJUKK8XCD8iCqhBxr7xgI9Ale0kdxwp+Q/xjLcjjVdXpBmoELu73ZQ1vIbKtT/yh/ThA==}
-    engines: {node: '>=18.18.0'}
-
   es-define-property@1.0.1:
     resolution: {integrity: sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g==}
     engines: {node: '>= 0.4'}
@@ -4244,10 +4234,6 @@ packages:
     resolution: {integrity: sha512-eljcgEDlEns/7AXFosB5K/2nCM4P7FQPkGc/DWLy5rmFEWvZayGrik1d9/QIY5nJ4f9YsVvBkA6kJpHn9rISdQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     hasBin: true
-
-  is-error-instance@3.0.1:
-    resolution: {integrity: sha512-nEw1ptjtbmXRkHOFrLvpHywsv+jMUZdtqI2BAC/XxMd24vUY5gXhvOprH0Bh4xA2gqQCQsEkr7aaxsgvxYRjnQ==}
-    engines: {node: '>=18.18.0'}
 
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
@@ -4741,10 +4727,6 @@ packages:
   node-releases@2.0.63:
     resolution: {integrity: sha512-6li2QanLsAXpIH2R6j77MzRyvOyrvdTqlKtO4CgBdHGNvN99ZZfyxszHc5o5+IZBWD5u6Hzwg83JoGXmqZNG9Q==}
     engines: {node: '>=18'}
-
-  normalize-exception@4.0.1:
-    resolution: {integrity: sha512-2fUwKMZLYvHIHZN4a6Bt2FYEea6mDwQcTVCffRvQ1bJHndQRRrNhq8+WQiLolOzJ7bJl59SCURGSwCLvQv/X7w==}
-    engines: {node: '>=18.18.0'}
 
   npm-normalize-package-bin@6.0.0:
     resolution: {integrity: sha512-tdt4aFn9QamlhdN3HV2D2ccpBwO5/fyjjbXUxYA6uBjyekMZcZvDq0aSj9t5Jo+tih6AYFnt/cuIRn9013e0Uw==}
@@ -5252,10 +5234,6 @@ packages:
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
-  safe-json-value@3.0.1:
-    resolution: {integrity: sha512-SLpLoERUlSefVk6ZuUFhj42IoQGIjGBEAeb7cEkPUGbsj7NrxJ/AjqYiSRDdYP5GMMAEzqJlJuoHzoW6cVvYtw==}
-    engines: {node: '>=18.18.0'}
-
   safe-stable-stringify@2.5.0:
     resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
     engines: {node: '>=10'}
@@ -5286,10 +5264,6 @@ packages:
   serve-static@2.2.1:
     resolution: {integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==}
     engines: {node: '>= 18'}
-
-  set-error-class@3.0.1:
-    resolution: {integrity: sha512-VEsI0yEUMEnXmSkhfj+EwzNC1om7zGy2IdymNyi4FfGzmoxvXXIB1Nv09+DfRgsd7fS+u+FwTqCTSRhhNMcx8w==}
-    engines: {node: '>=18.18.0'}
 
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
@@ -5823,12 +5797,6 @@ packages:
     engines: {node: '>=8'}
     peerDependencies:
       winston: ^3
-
-  winston-error-format@3.0.2:
-    resolution: {integrity: sha512-etrCMqUmD3tLa4NDH0QifjqOrSegNIb9PTQ93vVenFOFsg9TCweWMYLVEk+ODObtf390y7ssNX2QfMKjJjXr+w==}
-    engines: {node: '>=18.18.0'}
-    peerDependencies:
-      winston: ^3.17.0
 
   winston-transport@4.9.0:
     resolution: {integrity: sha512-8drMJ4rkgaPo1Me4zD/3WLfI/zPdA9o2IipKODunnGDcuqbHwjsbB79ylv04LCGGzU0xQ6vTznOMpQGaLhhm6A==}
@@ -8630,14 +8598,6 @@ snapshots:
 
   entities@9.0.0: {}
 
-  error-serializer@8.0.2:
-    dependencies:
-      is-error-instance: 3.0.1
-      is-plain-obj: 4.1.0
-      normalize-exception: 4.0.1
-      safe-json-value: 3.0.1
-      set-error-class: 3.0.1
-
   es-define-property@1.0.1: {}
 
   es-errors@1.3.0: {}
@@ -9187,8 +9147,6 @@ snapshots:
 
   is-docker@3.0.0: {}
 
-  is-error-instance@3.0.1: {}
-
   is-extglob@2.1.1: {}
 
   is-fullwidth-code-point@3.0.0: {}
@@ -9586,11 +9544,6 @@ snapshots:
   node-forge@1.4.3: {}
 
   node-releases@2.0.63: {}
-
-  normalize-exception@4.0.1:
-    dependencies:
-      is-error-instance: 3.0.1
-      is-plain-obj: 4.1.0
 
   npm-normalize-package-bin@6.0.0: {}
 
@@ -10125,11 +10078,6 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  safe-json-value@3.0.1:
-    dependencies:
-      is-plain-obj: 4.1.0
-      normalize-exception: 4.0.1
-
   safe-stable-stringify@2.5.0: {}
 
   safer-buffer@2.1.2: {}
@@ -10168,10 +10116,6 @@ snapshots:
       send: 1.2.1
     transitivePeerDependencies:
       - supports-color
-
-  set-error-class@3.0.1:
-    dependencies:
-      normalize-exception: 4.0.1
 
   setprototypeof@1.2.0: {}
 
@@ -10631,17 +10575,6 @@ snapshots:
       triple-beam: 1.4.1
       winston: 3.19.0
       winston-transport: 4.9.0
-
-  winston-error-format@3.0.2(winston@3.19.0):
-    dependencies:
-      error-serializer: 8.0.2
-      is-error-instance: 3.0.1
-      is-plain-obj: 4.1.0
-      logform: 2.7.0
-      normalize-exception: 4.0.1
-      safe-json-value: 3.0.1
-      triple-beam: 1.4.1
-      winston: 3.19.0
 
   winston-transport@4.9.0:
     dependencies:

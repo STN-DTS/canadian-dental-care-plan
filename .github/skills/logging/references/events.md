@@ -56,7 +56,7 @@ Native `Timestamp`, `EventName`, severity, resource, scope, and trace context be
 | `http.request.resend_count` | Nonnegative integer ordinal of an HTTP resending attempt, including redirects. Not a total retry count for a job or operation.                                                           |
 | `error.type`                | Predictable low-cardinality failure classification. Use a documented fixed code or an allowlisted canonical exception class. Omit on success and expected non-error outcomes.            |
 | `exception.type`            | Admitted canonical class name of an actual exception. Do not put a reason code in this field.                                                                                            |
-| `exception.message`         | Optional message from a first-party error type declared safe.                                                                                                                            |
+| `exception.message`         | Optional diagnostic message, including generic and library errors, with prohibited data removed or redacted.                                                                             |
 | `exception.stacktrace`      | Optional bounded sanitized stack.                                                                                                                                                        |
 
 This is a selection, not a universal required schema. HTTP attributes describe HTTP operations, not arbitrary helpers. Domain conventions may supply other appropriate fields. Standard status or identity attributes do not override privacy restrictions.

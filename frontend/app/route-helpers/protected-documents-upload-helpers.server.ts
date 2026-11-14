@@ -2,7 +2,7 @@ import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { Get } from 'type-fest';
 
 import { TYPES } from '~/.server/constants';
-import { getAppContext } from '~/.server/context';
+import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';

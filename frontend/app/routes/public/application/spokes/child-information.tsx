@@ -7,7 +7,7 @@ import { invariant } from '@dts-stn/invariant';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { isChildOrYouth, isSinReserved } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getPublicApplicantSin, getPublicApplicationState, getPublicChildrenSins, getPublicPartnerSin, getSingleChildState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { PublicApplicationChildInformationState, PublicApplicationChildSinState } from '~/.server/routes/helpers/public-application-route-helpers';

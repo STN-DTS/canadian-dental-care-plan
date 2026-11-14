@@ -30,9 +30,11 @@ State every added, removed, renamed, or redefined field and its specific reason 
 
 Use `error.type` for predictable low-cardinality failure classification, with a documented fixed code or an allowlisted canonical exception class. Use `exception.type` only for the admitted canonical class of an actual exception. Do not derive either from arbitrary error properties or duplicate the classification in a custom reason field. Stack frames are optional, not mandatory at every ERROR.
 
-Admit exception messages only for first-party error types whose message contract is declared safe and tested. Library exceptions and generic errors do not qualify. Omit their messages; classify the failure with a fixed `error.type` rather than placing a substitute code in `exception.message`.
+Exception messages from first-party, library, and generic errors are permitted for debugging. Do not omit a message solely because the exception is a generic `Error` or comes from a library. Preserve useful non-sensitive messages and stack frames; remove or redact prohibited data before emission. This permission does not authorize arbitrary custom properties or serialization of request, response, or other whole objects. Keep `error.type` a separate low-cardinality classification rather than deriving it from the message.
 
-The serializer must remove unsafe stack first lines, nested cause messages, captured locals, arguments, URLs, response content, and custom properties. Review file paths and code locations before retaining frames. Bound stack length and cause depth.
+For example, `new Error('Connection timed out')` may retain its message and safe stack frames. An exception containing an authorization token must have that token removed or redacted before logging, including in its stack first line and nested causes.
+
+The serializer must remove unsafe stack first lines, sensitive data in nested cause messages, captured locals, arguments, URLs, response content, and undeclared custom properties. Review file paths and code locations before retaining frames. Bound message and stack length and cause depth.
 
 Pass an exception instance only when the validated serializer runs before every output path. Otherwise project approved exception fields. Do not stringify the exception or fall back to printing the original object.
 

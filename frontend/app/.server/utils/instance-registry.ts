@@ -13,7 +13,7 @@ import type { Logger } from 'winston';
 import type { RedisClient } from '~/.server/data';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
 import type { ServerEnv } from '~/.server/utils/env-utils';
-import { AppError } from '~/errors/app-error';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 import type { ClientEnv } from '~/utils/env-utils';
 
@@ -60,7 +60,7 @@ export function singleton<N extends InstanceName, T extends InstanceTypeMap[N]>(
 
   if (!registry.has(instanceName)) {
     if (!factory) {
-      throw new AppError(`Instance [${instanceName}] not found and factory not provided`, ErrorCodes.NO_FACTORY_PROVIDED);
+      throwAppError(`Instance [${instanceName}] not found and factory not provided`, ErrorCodes.NO_FACTORY_PROVIDED);
     }
 
     registry.set(instanceName, factory());

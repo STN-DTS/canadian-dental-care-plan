@@ -1,6 +1,6 @@
 import { replace } from 'react-router';
 
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getDocumentUploadSubmittedUrl, loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 
 import type { Route } from './+types/upload-form';

@@ -11,7 +11,8 @@ import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_PROXY_TLS_TIMEOUT_MS, ATTR_CDCP_PRO
 import type { InstrumentationService } from '~/.server/observability';
 import { Traced } from '~/.server/observability/decorator';
 import { getEnv } from '~/.server/utils/env-utils';
-import { AppError, isAppError } from '~/errors/app-error';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 /**
@@ -195,7 +196,7 @@ export class DefaultHttpClient implements HttpClient {
     // Retry on this status regardless of body content
     if (conditions.length === 0) {
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
-      throw new AppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_NO_CONDITIONS);
+      throwAppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_NO_CONDITIONS);
     }
 
     // Retry only if the body matches one of the configured retry conditions (string or regex)
@@ -203,7 +204,7 @@ export class DefaultHttpClient implements HttpClient {
 
     if (matchedCondition) {
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
-      throw new AppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; matched condition: [${matchedCondition}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_CONDITION_MATCHED);
+      throwAppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; matched condition: [${matchedCondition}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_CONDITION_MATCHED);
     }
 
     // Response matched a retriable status but not a retriable body - treat as successful

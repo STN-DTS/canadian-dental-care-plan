@@ -5,7 +5,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
 import type { ServerConfig } from '~/.server/configs';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import type { RedisService } from '~/.server/data/redis-service';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';

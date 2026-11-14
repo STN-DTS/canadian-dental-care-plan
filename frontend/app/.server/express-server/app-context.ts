@@ -1,7 +1,7 @@
 import type express from 'express';
 
 import { appContainer } from '~/.server/app-container';
-import type { AppContext } from '~/.server/context';
+import type { AppContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
 

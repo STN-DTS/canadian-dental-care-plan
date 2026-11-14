@@ -8,7 +8,7 @@ import type { PickDeep } from 'type-fest';
 import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context';
+import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
