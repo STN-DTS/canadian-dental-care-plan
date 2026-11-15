@@ -207,7 +207,7 @@ audit:
   ignorePrune: true
 
 overrides:
-  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.2.1
+  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.2.2
 
 minimumReleaseAgeExclude:
   - '@azure/msal-common@16.16.1'

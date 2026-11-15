@@ -536,7 +536,7 @@ catalogs:
       version: 4.6.7
 
 overrides:
-  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.2.1
+  '@azure/msal-node@>=5.0.0-beta.0 <7.1.0': 7.2.2
 
 importers:
 
@@ -919,8 +919,8 @@ packages:
     resolution: {integrity: sha512-lwdLb1B9Q5nEhPLVIKe78XH5wFMN15fCiDkY7ylPDSWZuWcD93G3jpJajrKhO3CQld8SLKz0sHiOi24mxdvtsg==}
     engines: {node: '>=0.8.0'}
 
-  '@azure/msal-common@16.16.1':
-    resolution: {integrity: sha512-dSKdL9h/iercb4GumsKFh+wVvLe1ohuDPiviklgnQVHnY2FYNUlbQJ3E1Qd37vkof9CfraK9BQpCW1hoOg0znQ==}
+  '@azure/msal-common@16.16.2':
+    resolution: {integrity: sha512-IVoPgAup0hnpzwC8esxPxrrnDDVe0n3mmK+UU3JRmKWySKxBQrl+a30tTP3okmJ9Wc7dh+IgoNaUXkCxb2DBSg==}
     engines: {node: '>=0.8.0'}
 
   '@azure/msal-node-extensions@5.5.4':
@@ -930,8 +930,8 @@ packages:
   '@azure/msal-node-runtime@0.20.7':
     resolution: {integrity: sha512-IH1Ps+tei0oshkP9k7wLj2rUURxSB0PI1f5dQJZ4hwhqh5pHZ+5QEeT/QQe35c7I0f1h2omsqAo+iM220sGOyw==}
 
-  '@azure/msal-node@7.2.1':
-    resolution: {integrity: sha512-6mntsfCNq7H1eAPSZik74jT3C5at4nRqiVk7OC+D5Hy3Pe3s76uwE4+J0xvDvlVPmoX2kasf3mSwUmzeq9rW/A==}
+  '@azure/msal-node@7.2.2':
+    resolution: {integrity: sha512-MjsAHC+KUSXYYC8P57lVXy5IgSeO+PraXzLLHZI6hcX7nx/hCokY6gTPm2JcKLI3W88mu7ozjObBVGKExZUhww==}
     engines: {node: '>=20'}
 
   '@babel/code-frame@7.29.7':
@@ -5924,7 +5924,7 @@ snapshots:
   '@azure/msal-common@16.15.0':
     optional: true
 
-  '@azure/msal-common@16.16.1': {}
+  '@azure/msal-common@16.16.2': {}
 
   '@azure/msal-node-extensions@5.5.4':
     dependencies:
@@ -5936,9 +5936,9 @@ snapshots:
   '@azure/msal-node-runtime@0.20.7':
     optional: true
 
-  '@azure/msal-node@7.2.1':
+  '@azure/msal-node@7.2.2':
     dependencies:
-      '@azure/msal-common': 16.16.1
+      '@azure/msal-common': 16.16.2
       jsonwebtoken: 9.0.3
 
   '@babel/code-frame@7.29.7':
@@ -7195,8 +7195,8 @@ snapshots:
 
   '@pnp/cli-microsoft365@12.0.0(@types/node@26.6.6)(debug@4.4.3)(swiper@12.2.0)':
     dependencies:
-      '@azure/msal-common': 16.16.1
-      '@azure/msal-node': 7.2.1
+      '@azure/msal-common': 16.16.2
+      '@azure/msal-node': 7.2.2
       '@inquirer/confirm': 6.3.5(@types/node@26.6.6)
       '@inquirer/input': 5.1.9(@types/node@26.6.6)
       '@inquirer/select': 5.2.8(@types/node@26.6.6)
