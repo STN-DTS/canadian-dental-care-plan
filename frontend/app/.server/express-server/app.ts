@@ -10,6 +10,7 @@ import express from 'express';
 import { appContext } from '~/.server/context/app-context';
 import { getAppContext } from '~/.server/express-server/app-context';
 import { createLogger } from '~/.server/logging';
+import { withAppErrorResponses } from '~/.server/utils/app-error-boundary';
 import { getEnv } from '~/.server/utils/env-utils';
 import { hasSingleton, setSingleton, singleton } from '~/.server/utils/instance-registry';
 import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build-utils';
@@ -30,7 +31,7 @@ const reactRouterMiddleware = createRequestHandler({
     // the derived route tree for every request.
     if (registeredBuild === serverBuild) {
       log.trace('Server build already registered, returning existing build');
-      return serverBuild;
+      return withAppErrorResponses(serverBuild, singleton('agnosticRoutes'));
     }
 
     log.debug('Registering server build and creating agnostic routes');
@@ -46,9 +47,10 @@ const reactRouterMiddleware = createRequestHandler({
     // used by request instrumentation to resolve paths with `matchRoutes`. The
     // agnostic route tree is registered as a singleton so that it can be reused
     // across requests.
-    setSingleton('agnosticRoutes', createAgnosticRoutes(serverRoutes));
+    const agnosticRoutes = createAgnosticRoutes(serverRoutes);
+    setSingleton('agnosticRoutes', agnosticRoutes);
 
-    return serverBuild;
+    return withAppErrorResponses(serverBuild, agnosticRoutes);
   },
   mode: getEnv().NODE_ENV,
   getLoadContext: (req) => {

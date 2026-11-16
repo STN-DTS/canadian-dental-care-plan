@@ -1,128 +1,90 @@
-import { test as base, expect } from '@playwright/test';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
+/**
+ * Production-build E2E coverage for AppError correlation details.
+ *
+ * The status-check mock fails like an interop API 429 for the reserved
+ * application code, so the error passes through the real route, service,
+ * correlation middleware, route-error adapter, and handleError. Users see only
+ * the correlation ID; the server log keeps the full error for that ID. Root,
+ * plain Error, 404, and resource-route cases live in app-error-boundary.test.ts.
+ */
+import { expect, test } from './fixtures/error-correlation';
+import { statusCheckerCopy } from './pages/status-checker-page';
+import type { StatusCheckerLocale } from './pages/status-checker-page';
+import { findHandleErrorRecord } from './utils/server-log';
 
-import config from '../playwright.config';
+const failingStatusCheck = { code: '999429', sin: '800000002' };
+const errorCode = 'XAPI-0002';
+const privateDetails = ['Too Many Requests', 'Status: 429', 'MockApplicationStatusRepository'];
 
-const test = base.extend<{}, { diagnostics: string[] }>({
-  diagnostics: [
-    async ({ playwright }, use) => {
-      const records: string[] = [];
-      const readiness = await playwright.request.newContext();
-      const serverConfig = Array.isArray(config.webServer) ? config.webServer[0] : config.webServer;
-      const server = spawn('pnpm', ['run', 'start:test-errors'], {
-        cwd: process.cwd(),
-        detached: true,
-        env: { ...process.env, ...serverConfig?.env, PORT: '3011', AUDIT_LOG_ENABLED: 'false', LOG_LEVEL: 'error', OTEL_SDK_DISABLED: 'true' },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-      server.stdout.on('data', (chunk: Buffer) => records.push(chunk.toString()));
-      server.stderr.on('data', (chunk: Buffer) => records.push(chunk.toString()));
+function expectOnlyPublicErrorDetails(body: string, correlationId: string) {
+  expect(correlationId).not.toBe('');
+  expect(body).toContain(correlationId);
+  expect(body).toContain(errorCode);
 
-      try {
-        await expect
-          .poll(
-            async () => {
-              try {
-                await readiness.get('http://localhost:3011/');
-                return true;
-              } catch {
-                if (server.exitCode !== null) {
-                  throw new Error(`Synthetic server exited: ${records.join('')}`);
-                }
+  for (const detail of privateDetails) {
+    expect(body).not.toContain(detail);
+  }
+}
 
-                return false;
-              }
-            },
-            { timeout: 30_000 },
-          )
-          .toBe(true);
-        await use(records);
-      } finally {
-        await readiness.dispose();
+for (const locale of Object.keys(statusCheckerCopy) as StatusCheckerLocale[]) {
+  test.describe(`failed status check (${locale})`, () => {
+    test.use({ statusLocale: locale });
 
-        if (server.pid && server.exitCode === null) {
-          const exit = once(server, 'exit');
-          process.kill(-server.pid, 'SIGTERM');
-          await exit;
-        }
-      }
-    },
-    { scope: 'worker', auto: true },
-  ],
-});
+    test('shows the correlation ID that the server logged with the full error', async ({ statusCheckerPage }) => {
+      await statusCheckerPage.checkStatus(failingStatusCheck);
+      const correlationId = await statusCheckerPage.readCorrelationId();
 
-for (const path of ['/en/application', '/fr/demande', '/en/protected/application', '/fr/protege/demande']) {
-  test(`production SSR preserves localized selectable IDs at ${path}`, async ({ page, request }) => {
-    const response = await request.get(`${path}?synthetic=direct`);
-    expect(response.status()).toBe(500);
-    expect(await response.text()).toContain('AB-123456');
-    await page.goto(`${path}?synthetic=direct`);
-    await page.waitForFunction(() => (window as unknown as { __reactRouterDataRouter?: { state: { initialized: boolean } } }).__reactRouterDataRouter?.state.initialized === true);
-    await expect(page.locator('main .select-text')).toHaveText('AB-123456');
-    await expect(page.locator('main strong').filter({ hasText: path.startsWith('/fr') ? 'Identifiant de corrélation' : 'Correlation ID:' })).toBeVisible();
-    await expect(page.locator('main')).not.toContainText('Synthetic application failure');
-    await expect(page.locator('main')).not.toContainText('TST-0000');
-    const selection = await page.locator('main .select-text').evaluate((element) => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      const selected = window.getSelection();
-      selected?.removeAllRanges();
-      selected?.addRange(range);
-      return { text: selected?.toString(), userSelect: getComputedStyle(element).userSelect, tabIndex: (element as HTMLElement).tabIndex };
+      await expect(statusCheckerPage.correlationDetail).toHaveText(`${statusCheckerPage.copy.correlationIdLabel} ${correlationId}`);
+
+      await Promise.all([errorCode, ...privateDetails].map(async (detail) => await expect(statusCheckerPage.main).not.toContainText(detail)));
+
+      await expect
+        .poll(async () => await findHandleErrorRecord(correlationId))
+        .toMatchObject({
+          errorCode,
+          message: expect.stringContaining('Status: 429'),
+          stack: expect.stringContaining('MockApplicationStatusRepository.getApplicationStatusBySin'),
+        });
     });
-    expect(selection).toEqual({ text: 'AB-123456', userSelect: 'text', tabIndex: -1 });
+
+    test('has no detectable accessibility violations on the error page', async ({ statusCheckerPage, checkAccessibility }) => {
+      await statusCheckerPage.checkStatus(failingStatusCheck);
+      await statusCheckerPage.readCorrelationId();
+
+      await checkAccessibility(`status-check-error-${locale}`);
+    });
   });
 }
 
-test('production client navigation preserves bilingual IDs and sanitized diagnostics', async ({ page, request, diagnostics }) => {
-  const bilingualResponse = await request.get('/');
-  expect(bilingualResponse.status()).toBe(500);
-  const bilingualHtml = await bilingualResponse.text();
-  expect(bilingualHtml).toContain('Correlation ID:');
-  expect(bilingualHtml).toContain('Identifiant de corrélation');
-  expect(bilingualHtml).toContain('AB-123456');
+test('the .data action response carries only public error details', async ({ statusCheckerPage }) => {
+  const response = await statusCheckerPage.postToDataEndpoint(failingStatusCheck);
 
-  await page.goto('/en/application?synthetic=not-found');
-  await expect(page.getByText('(Error 404)')).toBeVisible();
-  await expect(page.locator('main .select-text')).toHaveText('AB-123456');
+  expectOnlyPublicErrorDetails(response.body, response.correlationId);
+});
 
-  await page.goto('/en/application?synthetic=generic');
-  await expect(page.locator('main .select-text')).toHaveCount(0);
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
 
-  await page.goto('/en/application?synthetic=direct');
-  await page.waitForFunction(() => (window as unknown as { __reactRouterDataRouter?: { state: { initialized: boolean } } }).__reactRouterDataRouter?.state.initialized === true);
-  let documentRequests = 0;
-  page.on('request', (event) => {
-    if (event.isNavigationRequest()) {
-      documentRequests++;
-    }
+  test('the server-rendered error page includes the correlation ID but no private details', async ({ page, statusCheckerPage }) => {
+    const documentResponse = page.waitForResponse((response) => response.request().method() === 'POST' && response.request().isNavigationRequest());
+    await statusCheckerPage.checkStatus(failingStatusCheck);
+
+    const response = await documentResponse;
+    expect(response.status()).toBe(500);
+    expectOnlyPublicErrorDetails(await response.text(), (await response.headerValue('x-correlation-id')) ?? '');
   });
-  const recovery = page.locator('main a[href="/"]');
-  await recovery.focus();
-  await expect(recovery).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('#english .select-text')).toHaveText('AB-123456');
-  await expect(page.locator('#french .select-text')).toHaveText('AB-123456');
-  await expect(page.locator('#english strong')).toHaveText('Correlation ID:');
-  await expect(page.locator('#french strong')).toHaveText('Identifiant de corrélation\u00A0:');
-  expect(documentRequests).toBe(0);
-  await page.screenshot({ path: 'test-results/error-correlation-desktop.png', fullPage: true });
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.screenshot({ path: 'test-results/error-correlation-mobile.png', fullPage: true });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
 
-  const applicationRecords = diagnostics
-    .join('')
-    .split('\n')
-    .filter((line) => line.startsWith('{'))
-    .map((line) => JSON.parse(line) as Record<string, unknown>)
-    .filter((record) => record.label === 'entry.server/handleError' && record.message === 'Application error');
-  expect(applicationRecords.length).toBeGreaterThan(0);
+test.describe('on a mobile viewport', () => {
+  test.use({ viewport: { width: 375, height: 812 } });
 
-  for (const record of applicationRecords) {
-    expect(record.correlationId).toBe('AB-123456');
-    expect(record).not.toHaveProperty('msg');
-    expect(record).not.toHaveProperty('stack');
-  }
+  test('the correlation ID is selectable and the error page does not scroll horizontally', async ({ page, statusCheckerPage }) => {
+    await statusCheckerPage.checkStatus(failingStatusCheck);
+    const correlationId = await statusCheckerPage.readCorrelationId();
+
+    await expect(statusCheckerPage.correlationId).toHaveCSS('user-select', 'text');
+    await statusCheckerPage.correlationId.selectText();
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(correlationId);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
 });

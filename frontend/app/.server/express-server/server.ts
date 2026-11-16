@@ -101,6 +101,10 @@ log.info('Registering global error handler');
 app.use(createGlobalErrorHandler());
 
 log.info('Server initialization completed successfully');
-app.listen(port, () => {
+const server = app.listen(port, () => {
   log.info(`Listening on http://localhost:${port}/`, { [ATTR_CDCP_SERVER_LISTEN_TARGET]: port });
+});
+server.on('error', (error: Error) => {
+  log.error(error);
+  process.exit(1);
 });

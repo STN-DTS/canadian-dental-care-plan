@@ -174,6 +174,12 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
   }
 }
 
+/**
+ * Application code that makes the mock fail like the interop API answering 429, so tests can exercise the
+ * real AppError path (correlation ID on the error page, full error in the server logs).
+ */
+export const MOCK_TOO_MANY_REQUESTS_APPLICATION_CODE = '999429';
+
 @injectable()
 export class MockApplicationStatusRepository implements ApplicationStatusRepository {
   /**
@@ -204,6 +210,10 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
 
     const applicationCode = expectDefined(applicationStatusBasicInfoRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
 
+    if (applicationCode === MOCK_TOO_MANY_REQUESTS_APPLICATION_CODE) {
+      throwAppError('Failed to POST to /status_fnlndob. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
+
     const statusCode = this.MOCK_APPLICATION_CODES_TO_STATUS_CODES_MAP[applicationCode];
 
     const applicationStatusEntity: ApplicationStatusEntity = {
@@ -225,6 +235,10 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     this.log.debug('Fetching mock application status by SIN');
 
     const applicationCode = expectDefined(applicationStatusSinRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
+
+    if (applicationCode === MOCK_TOO_MANY_REQUESTS_APPLICATION_CODE) {
+      throwAppError('Failed to POST to /status. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+    }
 
     const statusCode = this.MOCK_APPLICATION_CODES_TO_STATUS_CODES_MAP[applicationCode];
 

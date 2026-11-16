@@ -3,7 +3,7 @@ import type { RenderToPipeableStreamOptions } from 'react-dom/server';
 
 import { createReadableStreamFromReadable } from '@react-router/node';
 import type { ActionFunctionArgs, EntryContext, HandleErrorFunction, LoaderFunctionArgs, RouterContextProvider } from 'react-router';
-import { ServerRouter } from 'react-router';
+import { ServerRouter, isRouteErrorResponse } from 'react-router';
 
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { isbot } from 'isbot';
@@ -46,8 +46,14 @@ export function handleError(error: unknown, { context, request }: Parameters<Han
   const log = createLogger('entry.server/handleError');
 
   if (!request.signal.aborted) {
-    const applicationError = isAppError(error) ? error : undefined;
-    log.error(error, {
+    let originalError = error;
+
+    if (isRouteErrorResponse(error) && 'error' in error && error.error instanceof Error && isAppError(error.error)) {
+      originalError = error.error;
+    }
+
+    const applicationError = isAppError(originalError) ? originalError : undefined;
+    log.error(originalError, {
       [ATTR_ERROR_TYPE]: applicationError ? 'AppError' : 'react_router_request_failed',
       [ATTR_HTTP_REQUEST_METHOD]: request.method,
       [ATTR_URL_PATH]: new URL(request.url).pathname,
