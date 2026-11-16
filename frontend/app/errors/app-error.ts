@@ -1,7 +1,6 @@
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import type { HttpStatusCode } from '~/constants/http-status-codes';
 import type { ErrorCode } from '~/errors/error-codes';
-import { ErrorCodes } from '~/errors/error-codes';
 
 export type AppErrorOptions = ErrorOptions & {
   /**
@@ -26,7 +25,7 @@ export class AppError extends Error {
   public readonly correlationId: string;
   public readonly httpStatusCode: HttpStatusCode;
 
-  public constructor(msg: string, errorCode: ErrorCode = ErrorCodes.UNCAUGHT_ERROR, opts?: AppErrorOptions) {
+  public constructor(msg: string, errorCode: ErrorCode, opts?: AppErrorOptions) {
     super(msg, { cause: opts?.cause });
     this.errorCode = errorCode;
     this.correlationId = opts?.correlationId ?? '';

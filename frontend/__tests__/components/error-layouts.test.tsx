@@ -13,6 +13,7 @@ import fr from '~/.server/locales/fr/gcweb';
 import { NotFoundError as ProtectedNotFoundError, ServerError as ProtectedServerError } from '~/components/layouts/protected-layout';
 import { BilingualNotFoundError, BilingualServerError, NotFoundError, ServerError } from '~/components/layouts/public-layout';
 import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getCorrelationId } from '~/errors/error-predicates';
 import { ErrorBoundary as PublicErrorBoundary } from '~/routes/localized-layout';
 import { ErrorBoundary as ProtectedErrorBoundary } from '~/routes/protected/layout';
@@ -37,7 +38,7 @@ describe('error layouts', () => {
   it.each(layouts.flatMap((Layout) => ['en', 'fr'].flatMap((lng) => ['direct', 'wrapped'].map((shape) => ({ Layout, lng, shape })))))('renders $Layout.name in $lng with a $shape ID', async ({ Layout, lng, shape }) => {
     const i18n = createInstance();
     await i18n.init({ lng, resources: { en: { gcweb: en }, fr: { gcweb: fr } } });
-    const appError = new AppError('Never expose this message', undefined, { correlationId: 'AB-123456' });
+    const appError = new AppError('Never expose this message', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
     const error = shape === 'direct' ? appError : { status: 404, statusText: 'Not Found', internal: false, data: JSON.parse(JSON.stringify(appError)) };
     const view = render(
       <I18nextProvider i18n={i18n}>
@@ -89,7 +90,7 @@ describe('error layouts', () => {
   it('preserves the ID through real client navigation and action-error wrapping', async () => {
     const i18n = createInstance();
     await i18n.init({ lng: 'en', resources: { en: { gcweb: en } } });
-    const error = new AppError('Synthetic failure', undefined, { correlationId: 'AB-123456' });
+    const error = new AppError('Synthetic failure', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
     const seen: unknown[] = [];
     const Stub = createRoutesStub([
       { path: '/', Component: () => <Link to="/failure">Navigate</Link> },
@@ -150,7 +151,7 @@ describe('error layouts', () => {
   it.each(['public', 'protected', 'bilingual'])('preserves %s boundary page selection for direct and wrapped errors', async (layout) => {
     const i18n = createInstance();
     await i18n.init({ lng: 'en', resources: { en: { gcweb: en }, fr: { gcweb: fr } } });
-    const appError = new AppError('Synthetic failure', undefined, { correlationId: 'AB-123456', httpStatusCode: 404 });
+    const appError = new AppError('Synthetic failure', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456', httpStatusCode: 404 });
     const boundary = (error: unknown) =>
       layout === 'protected' ? (
         <ProtectedErrorBoundary {...mock<Parameters<typeof ProtectedErrorBoundary>[0]>()} error={error} />

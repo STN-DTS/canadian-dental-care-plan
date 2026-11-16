@@ -7,6 +7,7 @@ import { DefaultLogger } from '~/.server/logging/logger-default';
 import { defaultsConfig } from '~/.server/logging/logging-config';
 import { createWinstonInstance } from '~/.server/logging/winston-factory';
 import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 describe('DefaultLogger', () => {
   it.each(['development', 'production'])('retains a fixed message and typed structured fields in %s console output', async (environment) => {
@@ -69,7 +70,7 @@ describe('DefaultLogger', () => {
       const entries: TransformableInfo[] = [];
       transport.on('logged', (info: TransformableInfo) => entries.push(info));
       const logger: Logger = new DefaultLogger(winston, 'error-event');
-      const error = new AppError('Synthetic failure');
+      const error = new AppError('Synthetic failure', ErrorCodes.UNCAUGHT_ERROR);
 
       if (meta) {
         logger.error(error, meta);

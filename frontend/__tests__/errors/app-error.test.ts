@@ -51,7 +51,7 @@ describe('error extraction', () => {
 
 describe('AppError', () => {
   it('should create a AppError with default values', () => {
-    const error = new AppError('Something went wrong');
+    const error = new AppError('Something went wrong', ErrorCodes.UNCAUGHT_ERROR);
     expect(error).toBeInstanceOf(Error);
     expect(error.errorCode).toEqual('UNC-0000');
     expect(error.correlationId).toEqual('');
@@ -78,7 +78,7 @@ describe('AppError', () => {
 
 describe('isAppError', () => {
   it('should return true for a AppError', () => {
-    expect(isAppError(new AppError('Something went wrong'))).toEqual(true);
+    expect(isAppError(new AppError('Something went wrong', ErrorCodes.UNCAUGHT_ERROR))).toEqual(true);
   });
 
   it('should return false for a regular Error', () => {

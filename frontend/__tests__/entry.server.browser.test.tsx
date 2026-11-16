@@ -24,6 +24,7 @@ import type { Session } from '~/.server/web/session';
 import { CorrelationDetail } from '~/components/correlation-detail';
 import { handleError } from '~/entry.server';
 import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 vi.unmock('react-i18next');
 
@@ -78,7 +79,7 @@ describe('server error diagnostics', () => {
     context.set(appContext, { appContainer, session: mock<Session>() });
     const i18n = createInstance();
     await i18n.init({ lng: 'en', resources: { en: { gcweb: en } } });
-    const error = new AppError('Synthetic application failure', undefined, { correlationId: 'AB-123456' });
+    const error = new AppError('Synthetic application failure', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
 
     try {
       const html = renderToStaticMarkup(
