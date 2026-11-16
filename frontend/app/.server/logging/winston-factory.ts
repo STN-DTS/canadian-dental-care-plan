@@ -6,7 +6,7 @@ import { ATTR_CDCP_LOG_AUDIT_FILE_PATH, ATTR_CDCP_LOG_LEVEL } from '~/.server/lo
 import type { LoggingConfig } from '~/.server/logging/logging-config';
 import 'winston-daily-rotate-file';
 
-import { addDynatraceLogLevel, addOtelSeverity, formatUrlPaths } from '~/.server/logging/winston-format';
+import { formatUrlPaths } from '~/.server/logging/winston-format';
 import { getLevelsConfig } from '~/.server/logging/winston-levels-config';
 import { createConsoleTransport, createDailyRotateFileTransport } from '~/.server/logging/winston-transport-factory';
 
@@ -20,14 +20,11 @@ import { createConsoleTransport, createDailyRotateFileTransport } from '~/.serve
 export function createWinstonInstance(config: LoggingConfig): w.Logger {
   const levelsConfig = getLevelsConfig(config);
 
-  // Severity fields only serve production log backends; they are noise in local console output.
-  const severityFormats = process.env.NODE_ENV === 'production' ? [addDynatraceLogLevel(), addOtelSeverity()] : [];
-
   // Create and configure the main logger instance
   const winstonInstance = winston.createLogger({
     level: config.LOG_LEVEL,
     levels: levelsConfig.levels,
-    format: format.combine(format.timestamp(), ...severityFormats, formatUrlPaths(), format.errors({ stack: true, cause: true })),
+    format: format.combine(format.timestamp(), format.errors({ stack: true, cause: true }), formatUrlPaths()),
     transports: [createConsoleTransport(config)],
     exitOnError: false,
   });

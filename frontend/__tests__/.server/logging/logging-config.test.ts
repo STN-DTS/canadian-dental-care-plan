@@ -60,10 +60,6 @@ describe('logging configuration', () => {
     winston.close();
   });
 
-  it('adds severity fields in production', async () => {
-    expect(await transformInfoRecord('production')).toEqual(expect.objectContaining({ severityNumber: 9, severityText: 'INFO', logLevel: 'INFO' }));
-  });
-
   it.each(['development', 'test'])('omits severity fields when NODE_ENV=%s', async (environment) => {
     const info = await transformInfoRecord(environment);
 

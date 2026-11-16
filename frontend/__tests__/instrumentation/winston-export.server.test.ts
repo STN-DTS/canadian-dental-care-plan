@@ -1,3 +1,4 @@
+import { SeverityNumber } from '@opentelemetry/api';
 import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
@@ -272,17 +273,16 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(output).not.toContain('%j');
     }
 
-    for (const [message, level, severityNumber, severityText] of [
-      ['Synthetic trace diagnostic', 'trace', 1, 'TRACE'],
-      ['Synthetic debug diagnostic', 'debug', 5, 'DEBUG'],
-      ['Synthetic dependency request finished', 'info', 9, 'INFO'],
-      ['Synthetic HTTP request completed', 'http', 8, 'DEBUG4'],
-      ['Synthetic warning diagnostic', 'warn', 13, 'WARN'],
-      ['Synthetic Redis connection failed', 'error', 17, 'ERROR'],
+    for (const [message, level, severityNumber] of [
+      ['Synthetic trace diagnostic', 'trace', SeverityNumber.TRACE],
+      ['Synthetic debug diagnostic', 'debug', SeverityNumber.DEBUG],
+      ['Synthetic dependency request finished', 'info', SeverityNumber.INFO],
+      ['Synthetic HTTP request completed', 'http', SeverityNumber.DEBUG3],
+      ['Synthetic warning diagnostic', 'warn', SeverityNumber.WARN],
+      ['Synthetic Redis connection failed', 'error', SeverityNumber.ERROR],
     ] as const) {
       const record = records.find((entry) => entry.body === message);
-      expect(record?.severityText).toBe(level);
-      expect(record?.attributes).toMatchObject({ severityNumber, severityText });
+      expect(record).toMatchObject({ severityNumber, severityText: level });
       expect(record?.eventName).toBeUndefined();
     }
 
@@ -302,8 +302,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(attributes['url.path']).toBe(`/status/${status}`);
       expect(attributes['otel.event.name']).toBeUndefined();
       expect(record.severityText).toBe(status >= 500 ? 'error' : 'http');
-      expect(attributes['severityNumber']).toBe(status >= 500 ? 17 : 8);
-      expect(attributes['severityText']).toBe(status >= 500 ? 'ERROR' : 'DEBUG4');
+      expect(record.severityNumber).toBe(status >= 500 ? SeverityNumber.ERROR : SeverityNumber.DEBUG3);
       expect(attributes['http.request.method']).toBe(status < 400 ? 'POST' : 'GET');
     }
 
@@ -324,14 +323,12 @@ test('the application preload preserves event schemas, severity and privacy thro
       const timestamp = BigInt(record.hrTime[0]) * 1_000_000_000n + BigInt(record.hrTime[1]);
       const observedTimestamp = BigInt(record.hrTimeObserved[0]) * 1_000_000_000n + BigInt(record.hrTimeObserved[1]);
       expect(record.severityText).toBe('audit');
-      expect(attributes['severityNumber']).toBe(9);
-      expect(attributes['severityText']).toBe('INFO');
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
       expect(attributes['cdcp.user.id']).toBe('audit-actor-001');
       expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
       expect(Object.keys(attributes)).toEqual(expect.arrayContaining(['cdcp.audit.event_id', 'cdcp.user.id']));
-      expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'logLevel', 'severityNumber', 'severityText', 'timestamp'].includes(key))).toEqual([]);
+      expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'timestamp'].includes(key))).toEqual([]);
     }
 
     const actorRecord = auditRecords.find((record) => record.attributes['cdcp.audit.event_id'] === 'auth.session-created');
@@ -349,11 +346,7 @@ test('the application preload preserves event schemas, severity and privacy thro
         expect(record['cdcp.user.id']).toBe('audit-actor-001');
         expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
         expect(typeof record.timestamp).toBe('string');
-        expect(
-          Object.keys(record).every((key) =>
-            ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'logLevel', 'severityNumber', 'severityText', 'trace_id', 'span_id', 'trace_flags'].includes(key),
-          ),
-        ).toBe(true);
+        expect(Object.keys(record).every((key) => ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'trace_id', 'span_id', 'trace_flags'].includes(key))).toBe(true);
       }
     }
 
