@@ -1,5 +1,3 @@
-import { SeverityNumber } from '@opentelemetry/api';
-
 /**
  * Supported application log level names. `LogLevel` and `LOG_LEVEL` validation
  * derive from this tuple; Winston priority and telemetry severity use separate maps.
@@ -31,30 +29,6 @@ export const winstonLogLevel = {
   error: 1,
   audit: 0,
 } as const satisfies Record<LogLevel, number>;
-
-/**
- * An OpenTelemetry severity number paired with its `SeverityNumber` enum name.
- */
-type OtelSeverity = {
-  [K in keyof typeof SeverityNumber]: { number: (typeof SeverityNumber)[K]; text: K };
-}[keyof typeof SeverityNumber];
-
-/**
- * OpenTelemetry severity number and normalized severity text for each
- * application log level, written to log records by `addOtelSeverity`.
- *
- * This mapping is independent of Winston priorities: `http` uses `DEBUG4` (8),
- * while `audit` and `info` both use `INFO` (9).
- */
-export const otelSeverityNumberMapping = {
-  trace: { number: SeverityNumber.TRACE, text: 'TRACE' },
-  debug: { number: SeverityNumber.DEBUG, text: 'DEBUG' },
-  http: { number: SeverityNumber.DEBUG4, text: 'DEBUG4' },
-  info: { number: SeverityNumber.INFO, text: 'INFO' },
-  warn: { number: SeverityNumber.WARN, text: 'WARN' },
-  error: { number: SeverityNumber.ERROR, text: 'ERROR' },
-  audit: { number: SeverityNumber.INFO, text: 'INFO' },
-} as const satisfies Record<LogLevel, OtelSeverity>;
 
 /**
  * Dynatrace's normalized `loglevel` labels.

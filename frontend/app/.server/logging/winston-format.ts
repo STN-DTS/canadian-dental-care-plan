@@ -4,7 +4,7 @@ import { LEVEL, MESSAGE, SPLAT } from 'triple-beam';
 import { format } from 'winston';
 import type { Logform } from 'winston';
 
-import { dynatraceLogLevelMapping, maxLogLevelNameLength, otelSeverityNumberMapping } from '~/.server/logging/log-levels';
+import { dynatraceLogLevelMapping, maxLogLevelNameLength } from '~/.server/logging/log-levels';
 import type { LogLevel } from '~/.server/logging/log-levels';
 import { URL_PATH_ATTRIBUTE_KEYS, UrlPathRedactor } from '~/instrumentation/url-path-redactor';
 
@@ -53,34 +53,6 @@ export function formatLevels(options?: FormatLevelsOptions): Logform.Format {
 
     // Assign formatted level
     info.level = level;
-    return info;
-  })();
-}
-
-/**
- * Sets `info.severityNumber` and `info.severityText` from Winston's canonical
- * `LEVEL` symbol, not the potentially formatted `info.level` display value.
- *
- * Values come from `otelSeverityNumberMapping`, so `http` becomes `8`/`DEBUG4`
- * and `audit` becomes `9`/`INFO`. Every sink, including the OpenTelemetry
- * exporter, receives them as record fields.
- *
- * Mapped levels overwrite both fields. Missing, empty or unsupported canonical
- * levels leave the entire record unchanged; no fallback is assigned.
- *
- * @returns A formatter that updates and returns the original log record.
- */
-export function addOtelSeverity(): Logform.Format {
-  return format((info) => {
-    const level = info[LEVEL];
-
-    if (!level || !Object.hasOwn(otelSeverityNumberMapping, level)) {
-      return info;
-    }
-
-    const severity = otelSeverityNumberMapping[level as LogLevel];
-    info.severityNumber = severity.number;
-    info.severityText = severity.text;
     return info;
   })();
 }

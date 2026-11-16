@@ -1,3 +1,4 @@
+import { SeverityNumber } from '@opentelemetry/api';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { ExportResultCode } from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
@@ -15,6 +16,7 @@ import { BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor } from '@o
 import { ATTR_ERROR_TYPE, ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
+import type { LogLevel } from '~/.server/logging/log-levels';
 import { AttributeRedactor } from '~/instrumentation/attribute-redactor';
 import { ATTR_CDCP_ERROR_CODE } from '~/instrumentation/log-attributes';
 import { operationalErrorCode, operationalErrorType } from '~/instrumentation/operational-error-type';
@@ -26,8 +28,18 @@ import { RedactQueryParamsSpanProcessor } from '~/instrumentation/redact-query-p
 import { UrlPathRedactor } from '~/instrumentation/url-path-redactor';
 
 /**
- * Maps Winston level names to OpenTelemetry severity numbers for log export.
+ * Mapping of Winston log levels to OpenTelemetry severity numbers.
  */
+const winstonSeverityMapping = {
+  trace: SeverityNumber.TRACE,
+  debug: SeverityNumber.DEBUG,
+  http: SeverityNumber.DEBUG4,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+  audit: SeverityNumber.INFO,
+} as const satisfies Record<LogLevel, SeverityNumber>;
+
 function getEnvValue(defaultValue: string, envVar?: string): string {
   return envVar && envVar !== '' ? envVar : defaultValue;
 }
@@ -138,7 +150,7 @@ const sdk = new NodeSDK({
       // Express 5 routes through the `router` package, so this would duplicate express layer spans as
       // "middleware - patched"; see https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3881
       '@opentelemetry/instrumentation-router': { enabled: false },
-      '@opentelemetry/instrumentation-winston': { disableLogSending: disableLogSending },
+      '@opentelemetry/instrumentation-winston': { disableLogSending, severityMapping: winstonSeverityMapping },
     }),
   ],
 

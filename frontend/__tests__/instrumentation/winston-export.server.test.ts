@@ -277,7 +277,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       ['Synthetic trace diagnostic', 'trace', SeverityNumber.TRACE],
       ['Synthetic debug diagnostic', 'debug', SeverityNumber.DEBUG],
       ['Synthetic dependency request finished', 'info', SeverityNumber.INFO],
-      ['Synthetic HTTP request completed', 'http', SeverityNumber.DEBUG3],
+      ['Synthetic HTTP request completed', 'http', SeverityNumber.DEBUG4],
       ['Synthetic warning diagnostic', 'warn', SeverityNumber.WARN],
       ['Synthetic Redis connection failed', 'error', SeverityNumber.ERROR],
     ] as const) {
@@ -302,7 +302,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(attributes['url.path']).toBe(`/status/${status}`);
       expect(attributes['otel.event.name']).toBeUndefined();
       expect(record.severityText).toBe(status >= 500 ? 'error' : 'http');
-      expect(record.severityNumber).toBe(status >= 500 ? SeverityNumber.ERROR : SeverityNumber.DEBUG3);
+      expect(record.severityNumber).toBe(status >= 500 ? SeverityNumber.ERROR : SeverityNumber.DEBUG4);
       expect(attributes['http.request.method']).toBe(status < 400 ? 'POST' : 'GET');
     }
 
@@ -323,6 +323,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       const timestamp = BigInt(record.hrTime[0]) * 1_000_000_000n + BigInt(record.hrTime[1]);
       const observedTimestamp = BigInt(record.hrTimeObserved[0]) * 1_000_000_000n + BigInt(record.hrTimeObserved[1]);
       expect(record.severityText).toBe('audit');
+      expect(record.severityNumber).toBe(SeverityNumber.INFO);
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
       expect(attributes['cdcp.user.id']).toBe('audit-actor-001');
