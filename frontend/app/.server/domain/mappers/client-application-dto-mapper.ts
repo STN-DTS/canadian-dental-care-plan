@@ -8,6 +8,8 @@ import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationEntity, 
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { isValidCoverageCopayTierCode } from '~/.server/utils/coverage-utils';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
 
 interface MapProgramApplicantDtoToClientApplicationDtoArgs {
@@ -175,7 +177,7 @@ export class DefaultClientApplicationDtoMapper implements ClientApplicationDtoMa
       !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID; // CountryCode is required for mailing address
 
     if (!isMailingAddressDefined) {
-      throw new Error(`Mailing address for client ${clientId} is missing required fields`);
+      throwAppError('Client application response address lacks fields.', ErrorCodes.API_CLIENT_APPLICATION_MAILING_ADDRESS_INCOMPLETE);
     }
 
     const contactInformation = {

@@ -98,7 +98,7 @@ describe('Session', () => {
 
       it('should throw an error if key does not exist', () => {
         const session = new ExpressSession(mockRequest);
-        expect(() => session.get('key' as SessionKey)).toThrowError("Key 'key' not found in session [mockSessionId]");
+        expect(() => session.get('key' as SessionKey)).toThrowError('Required active-session key absent.');
       });
 
       it('should sanitize the key', () => {

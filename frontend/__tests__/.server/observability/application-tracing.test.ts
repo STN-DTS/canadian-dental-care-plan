@@ -326,7 +326,7 @@ describe('application method spans', () => {
         expect(session.get('authReturnUrl')).toBe('/en/apply');
         expect(session.unset('authReturnUrl')).toBe(true);
         expect(Option.isNone(session.find('authReturnUrl'))).toBe(true);
-        expect(() => session.get('authReturnUrl')).toThrowError("Key 'authReturnUrl' not found in session [synthetic-session]");
+        expect(() => session.get('authReturnUrl')).toThrowError('Required active-session key absent.');
         expect(trace.getActiveSpan()).toBe(span);
       } finally {
         span.end();

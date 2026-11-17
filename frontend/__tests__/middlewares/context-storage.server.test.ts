@@ -4,6 +4,7 @@ import { Option } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 import { contextStorageMiddleware, findContext, getContext, getRequest, getUrl } from '~/middlewares/context-storage.server';
 
 function createMiddlewareArgs(urlValue = 'https://localhost:3000/en/protected/profile?return=documents'): Parameters<typeof contextStorageMiddleware>[0] {
@@ -113,12 +114,10 @@ describe('context storage getters', () => {
     ['getContext', getContext],
     ['getRequest', getRequest],
     ['getUrl', getUrl],
-  ])('%s fails fast outside middleware context', (getterName, getter) => {
+  ])('%s fails fast outside middleware context', (_getterName, getter) => {
     const error = getThrownError(() => getter());
 
     expect(error).toBeInstanceOf(AppError);
-    expect(error).toMatchObject({
-      message: `${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`,
-    });
+    expect(error).toMatchObject({ errorCode: ErrorCodes.PLT_CTX_REQUEST_STORE_UNAVAILABLE, message: 'Request context is unavailable.' });
   });
 });

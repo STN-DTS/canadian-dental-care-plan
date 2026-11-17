@@ -101,10 +101,10 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to POST to /status_fnlndob. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to POST to /status_fnlndob. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_STATUS_FIND_BY_BASIC_INFO_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to 'POST' for application status by basic info. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Basic-info status lookup failed.', ErrorCodes.API_STATUS_FIND_BY_BASIC_INFO_FAILED);
     }
 
     const applicationStatusEntity = (await response.json()) as ApplicationStatusEntity;
@@ -139,10 +139,10 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to POST to /status. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to POST to /status. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_STATUS_FIND_BY_SIN_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to 'POST' for application status by sin. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('SIN status lookup failed.', ErrorCodes.API_STATUS_FIND_BY_SIN_FAILED);
     }
 
     const applicationStatusEntity = (await response.json()) as ApplicationStatusEntity;
@@ -211,7 +211,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     const applicationCode = expectDefined(applicationStatusBasicInfoRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
 
     if (applicationCode === MOCK_TOO_MANY_REQUESTS_APPLICATION_CODE) {
-      throwAppError('Failed to POST to /status_fnlndob. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST to /status_fnlndob. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_STATUS_FIND_BY_BASIC_INFO_RATE_LIMITED);
     }
 
     const statusCode = this.MOCK_APPLICATION_CODES_TO_STATUS_CODES_MAP[applicationCode];
@@ -237,7 +237,7 @@ export class MockApplicationStatusRepository implements ApplicationStatusReposit
     const applicationCode = expectDefined(applicationStatusSinRequestEntity.BenefitApplication.Applicant.ClientIdentification[0]?.IdentificationID, 'Expected applicationCode to be defined');
 
     if (applicationCode === MOCK_TOO_MANY_REQUESTS_APPLICATION_CODE) {
-      throwAppError('Failed to POST to /status. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST to /status. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_STATUS_FIND_BY_SIN_RATE_LIMITED);
     }
 
     const statusCode = this.MOCK_APPLICATION_CODES_TO_STATUS_CODES_MAP[applicationCode];

@@ -70,7 +70,7 @@ describe('DefaultLogger', () => {
       const entries: TransformableInfo[] = [];
       transport.on('logged', (info: TransformableInfo) => entries.push(info));
       const logger: Logger = new DefaultLogger(winston, 'error-event');
-      const error = new AppError('Synthetic failure', ErrorCodes.UNCAUGHT_ERROR);
+      const error = new AppError('Synthetic failure', ErrorCodes.DEV_TEST_ERROR);
 
       if (meta) {
         logger.error(error, meta);

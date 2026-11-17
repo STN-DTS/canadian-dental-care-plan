@@ -179,6 +179,34 @@ fields. `AppError` extends `Error`, so its message and stack are retained.
 Aborted requests remain suppressed. Ordinary errors without an AppError ID
 cannot be looked up by this occurrence ID.
 
+### AppError code taxonomy
+
+Error codes use `DOMAIN-SUBDOMAIN-NNNN`. The domain identifies the capability:
+`API` for external API operations, `APP` for application state and submission,
+`AUTH` for OIDC authentication, `PLT` for platform behavior, and `DEV` for
+test-only failures. Subdomains identify the operation group; the four-digit
+suffix is a stable allocation, not an HTTP status.
+
+The shipped two-segment codes have been retired. Their replacements are:
+
+| Retired code | Replacement                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `UNC-0000`   | Operation-specific `PLT-CTX` codes for request context failures; tests use `DEV-TEST-0001`.                 |
+| `VAL-0001`   | Operation-specific `APP-SUBM` channel-validation codes.                                                     |
+| `XAPI-0001`  | Removed; it had no production construction.                                                                 |
+| `XAPI-0002`  | Operation-specific `API` codes for upstream 429 responses; local kill-switch refusals use `APP-SUBM` codes. |
+| `XAPI-0003`  | `API-HTTP-0001` for retryable responses without body conditions.                                            |
+| `XAPI-0004`  | `API-HTTP-0002` for retryable responses with a matched condition.                                           |
+| `INST-0001`  | `PLT-INST-0001`.                                                                                            |
+| `RTE-0001`   | `PLT-RTE-0001`.                                                                                             |
+| `DEV-0001`   | `DEV-TEST-0001`.                                                                                            |
+
+The SIN status lookup now uses `API-STATUS-0002`; the basic-info status lookup
+uses `API-STATUS-0001`. Benefit services recognize upstream rate-limit codes
+when handling failures. Historical log records keep their original code, so
+queries spanning the migration must account for both old and replacement
+values.
+
 The current exception pipeline is not a general-purpose sanitizer: messages
 and stacks can include downstream response content, and trace exception
 events are not covered by the span-attribute redactors. Native `Error` causes
@@ -242,7 +270,7 @@ The last command runs `pnpm run start` against the production build created by
 the preceding command. Playwright starts and stops the server on the fixed port
 `3100` and never reuses an existing server on that port. The suite uses the
 status checker with the existing `status-check` mock: application code `999429`
-makes `MockApplicationStatusRepository` throw the same `XAPI-0002` `AppError` as
+makes `MockApplicationStatusRepository` throw the same `API-STATUS-0002` `AppError` as
 an interop API 429, so the error passes through the real route, service,
 correlation middleware, adapter, and `handleError`. hCaptcha is disabled
 because it has no mock. The server's output, including the Winston JSON logs

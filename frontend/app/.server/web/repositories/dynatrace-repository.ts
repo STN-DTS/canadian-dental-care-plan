@@ -7,6 +7,8 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expandTemplate } from '~/utils/string-utils';
 
 export interface DynatraceRepository {
@@ -47,7 +49,7 @@ export class DefaultDynatraceRepository implements DynatraceRepository {
     if (!response.ok) {
       // Drain the response without exporting its body.
       await response.text();
-      throw new Error(`Failed to 'GET' the Dynatrace RUM Script. Status:  ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('RUM script retrieval failed.', ErrorCodes.API_RUM_SCRIPT_FIND_FAILED);
     }
 
     const script = await response.text();

@@ -118,10 +118,10 @@ export class DefaultLetterRepository implements LetterRepository {
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to GET /GetDocInfoByClientId. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to GET /GetDocInfoByClientId. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_LTR_FIND_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to find letters. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Letter lookup failed.', ErrorCodes.API_LTR_FIND_FAILED);
     }
 
     const letterEntities = (await response.json()) as ReadonlyArray<LetterEntity>;
@@ -157,10 +157,10 @@ export class DefaultLetterRepository implements LetterRepository {
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to GET /GetPdfByLetterId. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to GET /GetPdfByLetterId. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_LTR_PDF_GET_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to get PDF. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('PDF retrieval failed.', ErrorCodes.API_LTR_PDF_GET_FAILED);
     }
 
     const pdfEntity = (await response.json()) as PdfEntity;

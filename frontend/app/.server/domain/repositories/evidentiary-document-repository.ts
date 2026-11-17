@@ -10,7 +10,9 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 /**
  * A repository that provides access to evidentiary document data.
@@ -95,7 +97,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch evidentiary documents. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Evidentiary document lookup failed.', ErrorCodes.API_DOC_EVIDENTIARY_FIND_FAILED);
     }
 
     const documentResponseEntity = (await response.json()) as EvidentiaryDocumentResponseEntity;
@@ -142,7 +144,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to upload evidentiary document metadata. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Evidentiary document metadata upload failed.', ErrorCodes.API_DOC_EVIDENTIARY_METADATA_CREATE_FAILED);
     }
 
     const uploadResponse = (await response.json()) as CreateEvidentiaryDocumentMetadataResponseEntity;

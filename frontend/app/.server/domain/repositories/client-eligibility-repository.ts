@@ -9,6 +9,8 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import clientEligibilityJsonDataSource from '~/.server/resources/power-platform/client-eligibility.json';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ClientEligibilityRepository {
   /**
@@ -61,7 +63,7 @@ export class DefaultClientEligibilityRepository implements ClientEligibilityRepo
 
     await response.text();
 
-    throw new Error(`Failed to 'POST' for client eligibility by client numbers. Status: ${response.status}, Status Text: ${response.statusText}`);
+    throwAppError('Client eligibility lookup failed.', ErrorCodes.API_CLIENT_ELIGIBILITY_LIST_FAILED);
   }
 }
 

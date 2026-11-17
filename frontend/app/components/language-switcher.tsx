@@ -23,7 +23,7 @@ export function LanguageSwitcher({ children, ...props }: LanguageSwitcherProps) 
   const currentRoute = matches.at(-1);
 
   if (!currentRoute) {
-    throw new AppError(`No current route found (this should never happen)`, ErrorCodes.ROUTE_NOT_FOUND);
+    throw new AppError('No current route found.', ErrorCodes.PLT_RTE_CURRENT_NOT_FOUND);
   }
 
   const routeId = currentRoute.id.replace(/-(en|fr)$/, '');

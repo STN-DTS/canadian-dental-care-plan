@@ -3,6 +3,7 @@ import type { RouterContextProvider } from 'react-router';
 
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 type ClientApplicationContext = ClientApplicationDto;
 
@@ -22,7 +23,7 @@ export function getClientApplication(context: Readonly<RouterContextProvider>): 
   const clientApplication = context.get(clientApplicationContext);
 
   if (!clientApplication) {
-    throwAppError('Client application context is not available. Ensure that the client application has been set in the context.');
+    throwAppError('Client application context is not available. Ensure that the client application has been set in the context.', ErrorCodes.PLT_CTX_CLIENT_APPLICATION_UNAVAILABLE);
   }
 
   return clientApplication;

@@ -8,6 +8,7 @@ import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.
 import type { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import { DefaultDocumentUploadRepository, MockDocumentUploadRepository } from '~/.server/domain/repositories';
 import type { HttpClient } from '~/.server/http';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
 
 const uploadRequest = {
@@ -235,7 +236,10 @@ describe('DefaultDocumentUploadRepository', () => {
   it.each([302, 401, 403, 404, 429, 500, 502, 503, 504])('throws for scan HTTP %i even with a valid rejection payload', async (status) => {
     httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DataId: null, Error: { ErrorCode: '400', ErrorMessage: 'File not safe' } }, { status }));
 
-    await expect(repository.scanDocument(scanRequest)).rejects.toThrow(`Failed to 'POST' for document scan. Status: ${status}`);
+    await expect(repository.scanDocument(scanRequest)).rejects.toMatchObject({
+      errorCode: ErrorCodes.API_DOC_SCAN_FAILED,
+      message: 'Scan call failed, preserving scan catch.',
+    });
   });
 
   it.each([

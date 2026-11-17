@@ -11,6 +11,8 @@ import { createLogger } from '~/.server/logging';
  * Utility functions to help with RAOIDC requests.
  */
 import { ATTR_CDCP_AUTH_SESSION_VALID } from '~/.server/logging/log-attributes';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 /**
  * An OIDC ID token.
@@ -157,7 +159,7 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
     : await fetch(discoveryUrl);
 
   if (discoveryResponse.status !== 200) {
-    throw new Error('Error fetching server metadata: non-200 status');
+    throwAppError('Discovery document fetch non-200.', ErrorCodes.AUTH_OIDC_SERVER_METADATA_FETCH_FAILED);
   }
 
   const serverMetadata = (await discoveryResponse.json()) as ServerMetadata;
@@ -172,7 +174,7 @@ export async function fetchServerMetadata(authServerUrl: string, fetchFn?: Fetch
     : await fetch(serverMetadata.jwks_uri);
 
   if (jwksResponse.status !== 200) {
-    throw new Error('Error fetching server jwks: non-200 status');
+    throwAppError('JWKS fetch non-200.', ErrorCodes.AUTH_OIDC_JWKS_FETCH_FAILED);
   }
 
   const jwkSet = (await jwksResponse.json()) as JWKSet;
@@ -243,7 +245,7 @@ export async function fetchAccessToken(serverMetadata: ServerMetadata, serverJwk
     : await fetch(serverMetadata.token_endpoint, fetchOptions);
 
   if (response.status !== 200) {
-    throw new Error('Error fetching server metadata: non-200 status');
+    throwAppError('Token endpoint non-200.', ErrorCodes.AUTH_OIDC_ACCESS_TOKEN_FETCH_FAILED);
   }
 
   const tokenEndpointResponse = (await response.json()) as TokenEndpointResponse;
@@ -278,7 +280,7 @@ export async function fetchUserInfo(userinfoUri: string, serverJwks: JWKSet, acc
     : await fetch(userinfoUri, fetchOptions);
 
   if (response.status !== 200) {
-    throw new Error('Error fetching user info: non-200 status');
+    throwAppError('Userinfo endpoint non-200.', ErrorCodes.AUTH_OIDC_USER_INFO_FETCH_FAILED);
   }
 
   const userInfoResponse = (await response.json()) as UserinfoResponse;
@@ -313,7 +315,7 @@ export async function validateSession(authUrl: string, clientId: string, session
     : await fetch(validateUrl);
 
   if (response.status !== 200) {
-    throw new Error('Error validating session: non-200 status');
+    throwAppError('Session validation endpoint non-200.', ErrorCodes.AUTH_OIDC_SESSION_VALIDATION_FAILED);
   }
 
   // RAOIDC will return simply 'true' or 'false'
@@ -427,11 +429,11 @@ function validateAuthorizationToken(tokenEndpointResponse: TokenEndpointResponse
   const log = createLogger('raoidc-utils/validateAuthorizationToken');
 
   if (!tokenEndpointResponse.access_token) {
-    throw new Error('Authorization token is missing access_token claim');
+    throwAppError('Token response lacks access_token.', ErrorCodes.AUTH_OIDC_ACCESS_TOKEN_CLAIM_MISSING);
   }
 
   if (!tokenEndpointResponse.id_token) {
-    throw new Error('Authorization token is missing id_token claim');
+    throwAppError('Token response lacks id_token.', ErrorCodes.AUTH_OIDC_ID_TOKEN_CLAIM_MISSING);
   }
 
   log.debug('Authorization token successfully validated');
@@ -441,7 +443,7 @@ function validateUserInfoTokenResponse(userInfoResponse: UserinfoResponse) {
   const log = createLogger('raoidc-utils/validateUserInfoTokenResponse');
 
   if (!userInfoResponse.userinfo_token) {
-    throw new Error('Userinfo token is missing userinfo_token claim');
+    throwAppError('Userinfo response lacks userinfo_token.', ErrorCodes.AUTH_OIDC_USER_INFO_TOKEN_CLAIM_MISSING);
   }
 
   log.debug('Userinfo token successfully validated');
@@ -454,7 +456,7 @@ function validateJwkSet(jwkSet: JWKSet) {
   const log = createLogger('raoidc-utils/validateJwkSet');
 
   if (jwkSet.keys.length === 0) {
-    throw new Error('JWK set has no keys');
+    throwAppError('JWK set has no keys.', ErrorCodes.AUTH_OIDC_JWK_SET_EMPTY);
   }
 
   log.debug('JWK set successfully validated');
@@ -468,23 +470,23 @@ function validateServerMetadata(serverMetadata: ServerMetadata) {
   log.debug('Validating server metadata');
 
   if (!serverMetadata.issuer) {
-    throw new Error('Server metadata has no declared issuer');
+    throwAppError('Metadata lacks issuer.', ErrorCodes.AUTH_OIDC_METADATA_ISSUER_MISSING);
   }
 
   if (!serverMetadata.authorization_endpoint) {
-    throw new Error('Server metadata has no authorization endpoint');
+    throwAppError('Metadata lacks authorization endpoint.', ErrorCodes.AUTH_OIDC_METADATA_AUTHORIZATION_ENDPOINT_MISSING);
   }
 
   if (!serverMetadata.token_endpoint) {
-    throw new Error('Server metadata has no token endpoint');
+    throwAppError('Metadata lacks token endpoint.', ErrorCodes.AUTH_OIDC_METADATA_TOKEN_ENDPOINT_MISSING);
   }
 
   if (!serverMetadata.userinfo_endpoint) {
-    throw new Error('Server metadata has no userinfo endpoint');
+    throwAppError('Metadata lacks userinfo endpoint.', ErrorCodes.AUTH_OIDC_METADATA_USER_INFO_ENDPOINT_MISSING);
   }
 
   if (!serverMetadata.jwks_uri) {
-    throw new Error('Server metadata has no jwks endpoint');
+    throwAppError('Metadata lacks JWKS endpoint.', ErrorCodes.AUTH_OIDC_METADATA_JWKS_ENDPOINT_MISSING);
   }
 
   log.debug('OIDC server metadata successfully validated');
@@ -498,7 +500,7 @@ async function verifyJwt<Payload = JWTPayload>(jwt: string, jwks: JWKSet) {
   const key = jwks.keys.find((jwk) => jwk.kid === kid);
 
   if (!key) {
-    throw new Error('No matching JWK was found to verify JWT');
+    throwAppError('No JWK matches JWT key ID.', ErrorCodes.AUTH_OIDC_JWT_KEY_NOT_FOUND);
   }
 
   const jwk = await importJWK(key, alg);

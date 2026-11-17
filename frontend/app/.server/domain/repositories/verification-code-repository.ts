@@ -73,10 +73,10 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to POST to /notifications/email. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to POST to /notifications/email. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_VERIFY_CODE_EMAIL_SEND_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to 'POST' email notification. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Verification email send failed.', ErrorCodes.API_VERIFY_CODE_EMAIL_SEND_FAILED);
     }
 
     const verificationCodeEmailResponseEntity = (await response.json()) as VerificationCodeEmailResponseEntity;
@@ -110,10 +110,10 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to GET /notifications. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to GET /notifications. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_VERIFY_CODE_HEALTH_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to 'GET' email notifications. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Notification health check failed.', ErrorCodes.API_VERIFY_CODE_HEALTH_FAILED);
     }
   }
 }

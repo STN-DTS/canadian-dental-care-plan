@@ -67,10 +67,10 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
 
       if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
         // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to POST to /benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+        throwAppError('Failed to POST to /benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_RATE_LIMITED);
       }
 
-      throw new Error(`Failed to 'POST' for benefit renewal data. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Renewal submission failed.', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED);
     }
 
     const data = (await response.json()) as BenefitRenewalResponseEntity;

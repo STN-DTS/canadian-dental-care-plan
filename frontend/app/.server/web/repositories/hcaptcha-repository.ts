@@ -8,7 +8,9 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
 import type { HCaptchaVerifyRequestEntity, HCaptchaVerifyResponseEntity } from '~/.server/web/entities';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface HCaptchaRepository {
   /**
@@ -68,7 +70,7 @@ export class DefaultHCaptchaRepository implements HCaptchaRepository {
     const response = await this.httpClient.instrumentedFetch('http.client.hcaptcha.posts', request);
 
     if (!response.ok) {
-      throw new Error(`Failed to verify hCaptcha: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('hCaptcha verification call failed.', ErrorCodes.API_CAPTCHA_VERIFY_FAILED);
     }
 
     const hCaptchaVerifyResponseEntity = (await response.json()) as HCaptchaVerifyResponseEntity;

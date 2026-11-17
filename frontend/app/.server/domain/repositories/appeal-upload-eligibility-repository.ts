@@ -9,7 +9,9 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import appealUploadEligibilityJsonDataSource from '~/.server/resources/power-platform/appeal-upload-eligibility.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 /**
  * A repository that determines whether a client is eligible to upload appeal documents.
@@ -107,7 +109,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch appeal upload eligibility. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Appeal upload eligibility lookup failed.', ErrorCodes.API_DOC_APPEAL_UPLOAD_ELIGIBILITY_FIND_FAILED);
     }
 
     const appealUploadEligibilityResponseEntity = (await response.json()) as AppealUploadEligibilityResponseEntity;

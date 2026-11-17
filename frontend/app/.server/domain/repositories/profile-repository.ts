@@ -8,7 +8,9 @@ import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ProfileRepository {
   /**
@@ -110,7 +112,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     if (!response.ok) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for update benefit application communication preferences. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Communication preferences update failed.', ErrorCodes.API_PROF_COMMUNICATION_PREFERENCES_UPDATE_FAILED);
     }
   }
 
@@ -139,7 +141,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     if (!response.ok) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for update benefit application phone numbers. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Phone numbers update failed.', ErrorCodes.API_PROF_PHONE_NUMBERS_UPDATE_FAILED);
     }
   }
 
@@ -168,7 +170,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     if (!response.ok) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for update benefit application email address. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Email address update failed.', ErrorCodes.API_PROF_EMAIL_ADDRESS_UPDATE_FAILED);
     }
   }
 
@@ -197,7 +199,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     if (!response.ok) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for update benefit application dental benefits. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Dental benefits update failed.', ErrorCodes.API_PROF_DENTAL_BENEFITS_UPDATE_FAILED);
     }
   }
 
@@ -226,7 +228,7 @@ export class DefaultProfileRepository implements ProfileRepository {
     if (!response.ok) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for update benefit application mailing and home addresses. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Mailing and home addresses update failed.', ErrorCodes.API_PROF_ADDRESSES_UPDATE_FAILED);
     }
   }
 

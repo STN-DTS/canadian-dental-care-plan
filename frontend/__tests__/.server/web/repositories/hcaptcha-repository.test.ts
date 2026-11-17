@@ -8,6 +8,7 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { DefaultHCaptchaRepository } from '~/.server/web/repositories/hcaptcha-repository';
+import { ErrorCodes } from '~/errors/error-codes';
 
 const mockLogger = mock<Logger>();
 const mockServerConfig = mock<Pick<ServerConfig, 'HCAPTCHA_SECRET_KEY' | 'HCAPTCHA_SITE_KEY' | 'HCAPTCHA_VERIFY_URL' | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'>>();
@@ -43,7 +44,7 @@ describe('DefaultHCaptchaRepository', () => {
         hCaptchaResponse: 'synthetic-response-token',
         ipAddress: '192.0.2.10',
       }),
-    ).rejects.toThrow('Failed to verify hCaptcha');
+    ).rejects.toMatchObject({ errorCode: ErrorCodes.API_CAPTCHA_VERIFY_FAILED, message: 'hCaptcha verification call failed.' });
 
     const request = mockHttpClient.instrumentedFetch.mock.calls[0]?.[1];
 

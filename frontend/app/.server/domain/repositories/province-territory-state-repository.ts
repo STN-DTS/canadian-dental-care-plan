@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import provinceTerritoryStateJsonDataSource from '~/.server/resources/power-platform/province-territory-state.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ProvinceTerritoryStateRepository {
   /**
@@ -90,7 +92,7 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch provinces, territories, and states. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Province, territory, and state list failed.', ErrorCodes.API_REFDATA_PROVINCE_TERRITORY_STATE_LIST_FAILED);
     }
 
     const countriesWithprovinceTerritoryStates = (await response.json()) as CountriesWithProvinceTerritoryStates;

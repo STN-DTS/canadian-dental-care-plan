@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import documentUploadReasonJsonDataSource from '~/.server/resources/power-platform/document-upload-reason.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface DocumentUploadReasonRepository {
   /**
@@ -85,7 +87,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch document upload reasons. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Document upload reason list failed.', ErrorCodes.API_REFDATA_DOCUMENT_UPLOAD_REASON_LIST_FAILED);
     }
 
     const documentResponseEntity = (await response.json()) as DocumentUploadReasonResponseEntity;

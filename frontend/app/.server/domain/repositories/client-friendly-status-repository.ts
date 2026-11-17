@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import clientFriendlyStatusJsonDataSource from '~/.server/resources/power-platform/client-friendly-status.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ClientFriendlyStatusRepository {
   /**
@@ -81,7 +83,7 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch client friendly statuses. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Client-friendly status list failed.', ErrorCodes.API_REFDATA_CLIENT_FRIENDLY_STATUS_LIST_FAILED);
     }
 
     const clientFriendlyStatusResponseEntity = (await response.json()) as ClientFriendlyStatusResponseEntity;

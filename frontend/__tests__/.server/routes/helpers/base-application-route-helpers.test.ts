@@ -49,7 +49,7 @@ describe('base-application-route-helpers', () => {
     });
 
     it('throws for a negative age', () => {
-      expect(() => getAgeCategoryFromAge(-1)).toThrowError('Invalid age [-1]');
+      expect(() => getAgeCategoryFromAge(-1)).toThrowError('Age outside every age category.');
     });
   });
 

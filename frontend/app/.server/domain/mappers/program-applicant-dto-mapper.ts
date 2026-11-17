@@ -4,6 +4,8 @@ import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinReque
 import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, FindApplicantBySinRequestEntity } from '~/.server/domain/entities';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
 import { sanitizeSin } from '~/utils/sin-utils';
 
@@ -80,7 +82,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     const isMailingAddressDefined = mailingAddress !== undefined && !!mailingAddress.AddressStreet.StreetName && !!mailingAddress.AddressCityName && !!mailingAddress.AddressCountry.CountryCode.ReferenceDataID;
 
     if (!isMailingAddressDefined) {
-      throw new Error(`Mailing address for client ${clientId} is missing required fields`);
+      throwAppError('Applicant response address lacks fields.', ErrorCodes.API_APPLICANT_MAILING_ADDRESS_INCOMPLETE);
     }
 
     return {

@@ -1,5 +1,6 @@
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import type { HttpStatusCode } from '~/constants/http-status-codes';
+import { isErrorCode } from '~/errors/error-codes';
 import type { ErrorCode } from '~/errors/error-codes';
 
 export type AppErrorOptions = ErrorOptions & {
@@ -33,12 +34,33 @@ export class AppError extends Error {
   }
 }
 
+export type AppErrorPayload = {
+  name: 'AppError';
+  errorCode: ErrorCode;
+  correlationId: string;
+};
+
 /**
  * Type guard to check if an error is a AppError.
  *
- * Note: this function does not use `instanceof` because the type
- *       information is lost when shipped to the client
+ * Serialized payloads are validated separately from actual Error instances.
  */
 export function isAppError(error: unknown): error is AppError {
-  return typeof error === 'object' && error !== null && 'name' in error && error.name === 'AppError';
+  return (
+    error instanceof Error &&
+    error.name === 'AppError' &&
+    'errorCode' in error &&
+    isErrorCode(error.errorCode) &&
+    'correlationId' in error &&
+    typeof error.correlationId === 'string' &&
+    'httpStatusCode' in error &&
+    typeof error.httpStatusCode === 'number' &&
+    Number.isInteger(error.httpStatusCode) &&
+    error.httpStatusCode >= 400 &&
+    error.httpStatusCode <= 599
+  );
+}
+
+export function isAppErrorPayload(value: unknown): value is AppErrorPayload {
+  return typeof value === 'object' && value !== null && 'name' in value && value.name === 'AppError' && 'errorCode' in value && isErrorCode(value.errorCode) && 'correlationId' in value && typeof value.correlationId === 'string';
 }

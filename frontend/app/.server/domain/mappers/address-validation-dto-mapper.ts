@@ -4,7 +4,9 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { AddressCorrectionRequestDto, AddressCorrectionResultDto, AddressCorrectionStatus } from '~/.server/domain/dtos';
 import type { AddressCorrectionResultEntity } from '~/.server/domain/entities';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { formatPostalCode, isValidPostalCode } from '~/.server/utils/postal-zip-code-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface AddressValidationDtoMapper {
   mapAddressCorrectionResultEntityToAddressCorrectionResultDto(addressCorrectionResultEntity: AddressCorrectionResultEntity): AddressCorrectionResultDto;
@@ -63,7 +65,7 @@ export class DefaultAddressValidationDtoMapper implements AddressValidationDtoMa
       }
 
       default: {
-        throw new Error(`Unknown correction result status: [${statusCode}]`);
+        throwAppError('Unknown correction result status.', ErrorCodes.API_ADDR_CORRECTION_STATUS_UNKNOWN);
       }
     }
   }

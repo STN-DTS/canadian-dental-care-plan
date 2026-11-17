@@ -19,6 +19,8 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getContextualAgeCategoryFromDate } from '~/.server/routes/helpers/public-application-route-helpers';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { isEmpty } from '~/utils/string-utils';
 
 export interface ApplicationAdultState {
@@ -137,7 +139,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     const ageCategory = getContextualAgeCategoryFromDate(applicationAdultState.applicantInformation.dateOfBirth, applicationAdultState.applicationYear);
 
     if (ageCategory === 'youth' && applicationAdultState.livingIndependently === undefined) {
-      throw new Error('Expected livingIndependently to be defined');
+      throwAppError('Adult application lacks livingIndependently.', ErrorCodes.APP_INTAKE_ADULT_LIVING_INDEPENDENTLY_MISSING);
     }
 
     invariant(applicationAdultState.dentalBenefits, 'Expected dentalBenefits to be defined for an adult application');
@@ -181,7 +183,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     const ageCategory = getContextualAgeCategoryFromDate(applicationFamilyState.applicantInformation.dateOfBirth, applicationFamilyState.applicationYear);
 
     if (ageCategory === 'youth' && applicationFamilyState.livingIndependently === undefined) {
-      throw new Error('Expected livingIndependently to be defined');
+      throwAppError('Family application lacks livingIndependently.', ErrorCodes.APP_INTAKE_FAMILY_LIVING_INDEPENDENTLY_MISSING);
     }
 
     invariant(applicationFamilyState.dentalBenefits, 'Expected dentalBenefits to be defined for a family application');
@@ -224,7 +226,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     const ageCategory = getContextualAgeCategoryFromDate(applicationChildrenState.applicantInformation.dateOfBirth, applicationChildrenState.applicationYear);
 
     if (ageCategory === 'youth' && applicationChildrenState.livingIndependently === undefined) {
-      throw new Error('Expected livingIndependently to be defined');
+      throwAppError('Children application lacks livingIndependently.', ErrorCodes.APP_INTAKE_CHILDREN_LIVING_INDEPENDENTLY_MISSING);
     }
 
     return {
@@ -382,7 +384,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
 
     if (!result.success) {
-      throw new Error('Expected a valid and verified email for protected application channel');
+      throwAppError('Protected application lacks verified email.', ErrorCodes.APP_INTAKE_PROTECTED_EMAIL_UNVERIFIED);
     }
 
     return { value: result.email, verified: result.emailVerified };
@@ -416,7 +418,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
 
     if (!result.success) {
-      throw new Error('Expected a valid and verified email for public application channel when at least one communication method requires email');
+      throwAppError('Public application needs verified email.', ErrorCodes.APP_INTAKE_PUBLIC_EMAIL_UNVERIFIED);
     }
 
     return { value: result.email, verified: result.emailVerified };

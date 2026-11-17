@@ -17,6 +17,8 @@ import { DefinitionList, DefinitionListItem } from '~/components/definition-list
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/components/dialog';
 import { InlineLink } from '~/components/inline-link';
 import { PrintButton } from '~/components/print-button';
+import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 import { useApplicationFlowStorage } from '~/hooks';
 import { pageIds } from '~/page-ids';
 import { formatClientNumber, formatSubmissionApplicationCode } from '~/utils/application-code-utils';
@@ -53,7 +55,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     !state.submissionInfo ||
     state.children.some((child) => !child.information || !child.dentalInsurance || child.dentalBenefits?.hasChanged !== true)
   ) {
-    throw new Error(`Incomplete application "${state.id}" state!`);
+    throw new AppError('Public full-children confirmation incomplete.', ErrorCodes.APP_INTAKE_PUBLIC_FULL_CHILDREN_CONFIRMATION_INCOMPLETE);
   }
 
   const env = appContainer.get(TYPES.ClientConfig);

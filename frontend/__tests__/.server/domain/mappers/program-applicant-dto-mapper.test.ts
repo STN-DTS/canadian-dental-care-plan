@@ -76,6 +76,6 @@ describe('DefaultProgramApplicantDtoMapper', () => {
       },
     };
 
-    expect(() => mapper.mapApplicantResponseEntityToProgramApplicantDto(missingMailingAddressEntity)).toThrow('Mailing address for client 12345 is missing required fields');
+    expect(() => mapper.mapApplicantResponseEntityToProgramApplicantDto(missingMailingAddressEntity)).toThrow('Applicant response address lacks fields.');
   });
 });

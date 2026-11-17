@@ -16,7 +16,7 @@ describe('CorrelationDetail', () => {
   it.each(['en', 'fr'])('renders the existing ID in %s and preserves it on rerender', async (lng) => {
     const i18n = createInstance();
     await i18n.init({ lng, resources: { en: { gcweb: en }, fr: { gcweb: fr } } });
-    const error = new AppError('Never display this message', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
+    const error = new AppError('Never display this message', ErrorCodes.DEV_TEST_ERROR, { correlationId: 'AB-123456' });
     const view = render(
       <I18nextProvider i18n={i18n}>
         <CorrelationDetail error={error} />
@@ -40,7 +40,7 @@ describe('CorrelationDetail', () => {
   it('forces both languages independently of the active language', async () => {
     const i18n = createInstance();
     await i18n.init({ lng: 'fr', resources: { en: { gcweb: en }, fr: { gcweb: fr } } });
-    const error = new AppError('Synthetic failure', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
+    const error = new AppError('Synthetic failure', ErrorCodes.DEV_TEST_ERROR, { correlationId: 'AB-123456' });
     render(
       <I18nextProvider i18n={i18n}>
         <CorrelationDetail error={error} lng="en" />

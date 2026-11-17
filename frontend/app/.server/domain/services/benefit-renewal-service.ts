@@ -14,8 +14,8 @@ import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging
 import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
-import { isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import { isUpstreamRateLimitedError } from '~/errors/error-predicates';
 
 export interface BenefitRenewalService {
   /**
@@ -76,11 +76,11 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      throwAppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_KILLSWITCH_ENGAGED);
     }
 
     if (benefitRenewalDto.applicationChannelCode !== 'public') {
-      throwAppError(`Invalid application channel code [${benefitRenewalDto.applicationChannelCode}]`, ErrorCodes.INVALID_REQUEST);
+      throwAppError('Invalid renewal application channel.', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_CHANNEL_INVALID);
     }
 
     this.auditService.createAudit('benefit-renewal-submit.post', { userId: benefitRenewalDto.userId });
@@ -97,7 +97,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       });
       return applicationCode;
     } catch (error) {
-      if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
+      if (isUpstreamRateLimitedError(error)) {
         this.log.error(error, { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }
@@ -113,11 +113,11 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
     if (killswitchEngaged) {
-      throwAppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_KILLSWITCH_ENGAGED);
     }
 
     if (benefitRenewalDto.applicationChannelCode !== 'protected') {
-      throwAppError('Invalid application channel code', ErrorCodes.INVALID_REQUEST);
+      throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_CHANNEL_INVALID);
     }
 
     this.auditService.createAudit('protected-renewal-submit.post', { userId: benefitRenewalDto.userId });
@@ -134,7 +134,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       });
       return applicationCode;
     } catch (error) {
-      if (isAppError(error) && error.errorCode === ErrorCodes.XAPI_TOO_MANY_REQUESTS) {
+      if (isUpstreamRateLimitedError(error)) {
         this.log.error(error, { [ATTR_ERROR_TYPE]: 'upstream_rate_limited' });
         await this.redisService?.set(KILLSWITCH_KEY, true, this.serverConfig.APPLICATION_KILLSWITCH_TTL_SECONDS);
       }

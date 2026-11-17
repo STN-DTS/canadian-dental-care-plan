@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import evidentiaryDocumentTypeJsonDataSource from '~/.server/resources/power-platform/evidentiary-document-type.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface EvidentiaryDocumentTypeRepository {
   /**
@@ -84,7 +86,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch evidentiary evidentiary document types. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Evidentiary document type list failed.', ErrorCodes.API_REFDATA_EVIDENTIARY_DOCUMENT_TYPE_LIST_FAILED);
     }
 
     const documentResponseEntity = (await response.json()) as EvidentiaryDocumentTypeResponseEntity;

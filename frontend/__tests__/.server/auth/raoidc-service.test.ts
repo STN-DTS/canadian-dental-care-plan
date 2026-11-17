@@ -15,6 +15,7 @@ import type { HttpClient } from '~/.server/http';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 import type { IdToken, JWKSet, ServerMetadata, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { fetchAccessToken, fetchServerMetadata, fetchUserInfo, generateAuthorizationRequest, generateCodeChallenge, generateRandomState } from '~/.server/utils/raoidc-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expandTemplate } from '~/utils/string-utils';
 
 vi.mock(import('node:crypto'), async () => {
@@ -22,9 +23,13 @@ vi.mock(import('node:crypto'), async () => {
   return await mockDeep();
 });
 
-vi.mock(import('react-router'), () => ({
-  redirect: vi.fn<typeof redirect>().mockImplementation((to) => new Response(`MockedRedirect(${to})`)),
-}));
+vi.mock(import('react-router'), async (importOriginal) => {
+  const { createContext } = await importOriginal();
+  return {
+    createContext,
+    redirect: vi.fn<typeof redirect>().mockImplementation((to) => new Response(`MockedRedirect(${to})`)),
+  };
+});
 
 vi.mock(import('micro-memoize'));
 vi.mock(import('~/.server/utils/crypto-utils'));
@@ -142,7 +147,10 @@ describe('DefaultRaoidcService', () => {
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Unexpected error: mock_error');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toMatchObject({
+        errorCode: ErrorCodes.AUTH_OIDC_CALLBACK_PROVIDER_ERROR,
+        message: 'Provider error parameter in callback.',
+      });
     });
 
     it('should handle a callback with missing authorization code', async () => {
@@ -151,7 +159,10 @@ describe('DefaultRaoidcService', () => {
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('Missing authorization code in response');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toMatchObject({
+        errorCode: ErrorCodes.AUTH_OIDC_CALLBACK_CODE_MISSING,
+        message: 'Callback lacks authorization code.',
+      });
     });
 
     it('should handle a callback with state mismatch', async () => {
@@ -160,7 +171,10 @@ describe('DefaultRaoidcService', () => {
       const expectedState = 'mock_state';
       const redirectUri = 'mock_redirect_uri';
 
-      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toThrowError('CSRF error: incoming state [wrong_state] does not match expected state [mock_state]');
+      await expect(service.handleCallback({ requestUrl: mockRequestUrl, codeVerifier, expectedState, redirectUri })).rejects.toMatchObject({
+        errorCode: ErrorCodes.AUTH_OIDC_CALLBACK_STATE_MISMATCH,
+        message: 'Callback state differs from expected state.',
+      });
     });
   });
 });

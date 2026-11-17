@@ -79,7 +79,7 @@ describe('server error diagnostics', () => {
     context.set(appContext, { appContainer, session: mock<Session>() });
     const i18n = createInstance();
     await i18n.init({ lng: 'en', resources: { en: { gcweb: en } } });
-    const error = new AppError('Synthetic application failure', ErrorCodes.UNCAUGHT_ERROR, { correlationId: 'AB-123456' });
+    const error = new AppError('Synthetic application failure', ErrorCodes.DEV_TEST_ERROR, { correlationId: 'AB-123456' });
 
     try {
       const html = renderToStaticMarkup(

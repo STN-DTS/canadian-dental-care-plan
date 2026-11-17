@@ -5,7 +5,9 @@ import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos'
 import type { DeclaredChange } from '~/.server/routes/helpers/declared-change-type';
 import { getCoveragePeriodFromTaxYear } from '~/.server/utils/coverage-utils';
 import { getEnv } from '~/.server/utils/env-utils';
+import { throwAppError } from '~/.server/utils/error-utils';
 import type { EligibilityType } from '~/components/eligibility';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getAgeFromDateString } from '~/utils/date-utils';
 import { formatSin, isValidSin } from '~/utils/sin-utils';
 import { isEmail } from '~/utils/string-utils';
@@ -239,7 +241,7 @@ export function getAgeCategoryFromAge(age: number): AgeCategory {
     return 'children';
   }
 
-  throw new Error(`Invalid age [${age}]`);
+  throwAppError('Age outside every age category.', ErrorCodes.APP_STATE_AGE_CATEGORY_INVALID_AGE);
 }
 
 /**

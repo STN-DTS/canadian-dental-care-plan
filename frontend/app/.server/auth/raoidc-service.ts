@@ -11,8 +11,10 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
+import { throwAppError } from '~/.server/utils/error-utils';
 import type { ClientMetadata, IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import * as raoidcUtils from '~/.server/utils/raoidc-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { expandTemplate } from '~/utils/string-utils';
 
 export interface RaoidcService {
@@ -165,15 +167,15 @@ export class DefaultRaoidcService implements RaoidcService {
     const state = searchParams.get('state');
 
     if (error) {
-      throw new Error(`Unexpected error: ${error}`);
+      throwAppError('Provider error parameter in callback.', ErrorCodes.AUTH_OIDC_CALLBACK_PROVIDER_ERROR);
     }
 
     if (!authCode) {
-      throw new Error('Missing authorization code in response');
+      throwAppError('Callback lacks authorization code.', ErrorCodes.AUTH_OIDC_CALLBACK_CODE_MISSING);
     }
 
     if (state !== expectedState) {
-      throw new Error(`CSRF error: incoming state [${state}] does not match expected state [${expectedState}]`);
+      throwAppError('Callback state differs from expected state.', ErrorCodes.AUTH_OIDC_CALLBACK_STATE_MISMATCH);
     }
 
     const privateDecryptionKey = await generateCryptoKey(Redacted.value(AUTH_JWT_PRIVATE_KEY), 'decrypt');

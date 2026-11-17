@@ -16,13 +16,10 @@ import { trace } from '@opentelemetry/api';
 
 import { ATTR_CDCP_CORRELATION_ID } from '~/.server/logging/log-attributes';
 import { recordError } from '~/.server/utils/otel-instrumentation-utils';
+import { isAppError } from '~/errors/app-error';
+import type { AppError } from '~/errors/app-error';
 
-type ServerAppError = Error & {
-  name: 'AppError';
-  correlationId: string;
-  errorCode: string;
-  httpStatusCode: number;
-};
+type ServerAppError = AppError;
 
 type HandlerArgs = Pick<LoaderFunctionArgs, 'request' | 'url'>;
 
@@ -169,17 +166,5 @@ function toRouteErrorResponse(error: ServerAppError): ErrorResponse {
  * @returns True if the error is a ServerAppError, false otherwise.
  */
 function isServerAppError(error: unknown): error is ServerAppError {
-  return (
-    error instanceof Error &&
-    error.name === 'AppError' &&
-    'correlationId' in error &&
-    typeof error.correlationId === 'string' &&
-    'errorCode' in error &&
-    typeof error.errorCode === 'string' &&
-    'httpStatusCode' in error &&
-    typeof error.httpStatusCode === 'number' &&
-    Number.isInteger(error.httpStatusCode) &&
-    error.httpStatusCode >= 400 &&
-    error.httpStatusCode <= 599
-  );
+  return isAppError(error);
 }

@@ -196,7 +196,7 @@ export class DefaultHttpClient implements HttpClient {
     // Retry on this status regardless of body content
     if (conditions.length === 0) {
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
-      throwAppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_NO_CONDITIONS);
+      throwAppError('HTTP response matched a retryable status without body conditions.', ErrorCodes.API_HTTP_RETRY_NO_CONDITIONS);
     }
 
     // Retry only if the body matches one of the configured retry conditions (string or regex)
@@ -204,7 +204,7 @@ export class DefaultHttpClient implements HttpClient {
 
     if (matchedCondition) {
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
-      throwAppError(`Retryable response thrown with http status: [${response.status} ${response.statusText}]; matched condition: [${matchedCondition}]; response body: [${body}]`, ErrorCodes.XAPI_RETRY_CONDITION_MATCHED);
+      throwAppError('HTTP response matched a retry condition.', ErrorCodes.API_HTTP_RETRY_CONDITION_MATCHED);
     }
 
     // Response matched a retriable status but not a retriable body - treat as successful

@@ -26,19 +26,19 @@ describe('DefaultDynatraceDtoMapper', () => {
   it('should throw error when src attribute is invalid', () => {
     const invalidXml = '<script src="invalid.js" data-dtconfig="some-config"></script>';
 
-    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('Mapping validation failed for Dynatrace RUM Script');
+    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('RUM script validation failed.');
   });
 
   it('should throw error when data-dtconfig attribute is missing', () => {
     const invalidXml = '<script src="/app.js"></script>';
 
-    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('Mapping validation failed for Dynatrace RUM Script');
+    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('RUM script validation failed.');
   });
 
   it('should throw error when src attribute is missing', () => {
     const invalidXml = '<script data-dtconfig="some-config"></script>';
 
-    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('Mapping validation failed for Dynatrace RUM Script');
+    expect(() => mapper.mapDynatraceRumScriptToDynatraceRumScriptDto(invalidXml)).toThrow('RUM script validation failed.');
   });
 
   it('should map XML with src containing underscores', () => {

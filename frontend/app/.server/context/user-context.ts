@@ -2,6 +2,7 @@ import { createContext } from 'react-router';
 import type { RouterContextProvider } from 'react-router';
 
 import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getContext } from '~/middlewares/context-storage.server';
 
 export type UserContext = {
@@ -29,7 +30,7 @@ export function getUser(context?: Readonly<RouterContextProvider>): UserContext 
   const user = ctx.get(userContext);
 
   if (!user) {
-    throwAppError('User context is not available. Ensure that the user has been set in the context.');
+    throwAppError('User context is not available. Ensure that the user has been set in the context.', ErrorCodes.PLT_CTX_USER_UNAVAILABLE);
   }
 
   return user;

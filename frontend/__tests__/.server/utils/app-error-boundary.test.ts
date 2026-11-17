@@ -50,11 +50,11 @@ const publicError = {
   status: 503,
   statusText: '',
   internal: false,
-  data: { name: 'AppError', errorCode: ErrorCodes.TEST_ERROR_CODE, correlationId: 'AB-123456' },
+  data: { name: 'AppError', errorCode: ErrorCodes.DEV_TEST_ERROR, correlationId: 'AB-123456' },
 };
 
 function createAppError(): AppError {
-  const error = new AppError('synthetic-private-message', ErrorCodes.TEST_ERROR_CODE, {
+  const error = new AppError('synthetic-private-message', ErrorCodes.DEV_TEST_ERROR, {
     correlationId: 'AB-123456',
     httpStatusCode: HttpStatusCodes.SERVICE_UNAVAILABLE,
     cause: new Error('synthetic-private-cause'),
@@ -182,7 +182,7 @@ describe('withAppErrorResponses', () => {
       [ATTR_HTTP_REQUEST_METHOD]: request.method,
       [ATTR_URL_PATH]: request.path,
       correlationId: 'AB-123456',
-      errorCode: ErrorCodes.TEST_ERROR_CODE,
+      errorCode: ErrorCodes.DEV_TEST_ERROR,
       'org.event.category': 'application',
     });
     expect(server.counter.add).toHaveBeenCalledExactlyOnceWith(1);
@@ -308,7 +308,7 @@ describe('withAppErrorResponses', () => {
     class IndependentlyBundledAppError extends Error {
       override name = 'AppError' as const;
       correlationId = 'AB-123456';
-      errorCode = ErrorCodes.TEST_ERROR_CODE;
+      errorCode = ErrorCodes.DEV_TEST_ERROR;
       httpStatusCode = HttpStatusCodes.SERVICE_UNAVAILABLE;
     }
     const error = new IndependentlyBundledAppError('synthetic-private-message');
@@ -325,10 +325,10 @@ describe('withAppErrorResponses', () => {
     { description: 'ordinary errors', error: new Error('synthetic-private-message') },
     { description: 'other thrown objects', error: { custom: 'unrelated' } },
     { description: 'malformed AppErrors', error: Object.assign(new Error('malformed'), { name: 'AppError' }) },
-    { description: 'AppErrors with a non-error status', error: new AppError('invalid status', ErrorCodes.TEST_ERROR_CODE, { httpStatusCode: HttpStatusCodes.NO_CONTENT }) },
+    { description: 'AppErrors with a non-error status', error: new AppError('invalid status', ErrorCodes.DEV_TEST_ERROR, { httpStatusCode: HttpStatusCodes.NO_CONTENT }) },
     ...[399, 600, 500.5, NaN].map((httpStatusCode) => ({
       description: `AppErrors with HTTP status ${httpStatusCode}`,
-      error: Object.assign(new AppError('invalid status', ErrorCodes.TEST_ERROR_CODE), { httpStatusCode }),
+      error: Object.assign(new AppError('invalid status', ErrorCodes.DEV_TEST_ERROR), { httpStatusCode }),
     })),
   ])('passes $description through unchanged', async ({ error }) => {
     const server = createServer({ phase: 'loader', error });

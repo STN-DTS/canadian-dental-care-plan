@@ -78,10 +78,10 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-      throwAppError('Failed to POST for benefit application. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST for benefit application. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_BASIC_INFO_RATE_LIMITED);
     }
 
-    throw new Error(`Failed to 'POST' for client application data by basic info. Status: ${response.status}, Status Text: ${response.statusText}`);
+    throwAppError('Basic-info client application lookup failed.', ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_BASIC_INFO_FAILED);
   }
 
   @Traced()
@@ -114,10 +114,10 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-      throwAppError('Failed to POST to /retrieve-benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST to /retrieve-benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_SIN_RATE_LIMITED);
     }
 
-    throw new Error(`Failed to 'POST' for client application data by sin. Status: ${response.status}, Status Text: ${response.statusText}`);
+    throwAppError('SIN client application lookup failed.', ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_SIN_FAILED);
   }
 }
 

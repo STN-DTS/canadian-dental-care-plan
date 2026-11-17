@@ -32,6 +32,8 @@ import type {
   BaseApplicationTermsAndConditionsState,
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { isEmpty } from '~/utils/string-utils';
 
 export interface BenefitRenewalAdultState {
@@ -193,11 +195,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const userId = options?.userId ?? 'anonymous';
 
     if (communicationPreferences === undefined) {
-      throw new Error('Expected communicationPreferences to be defined');
+      throwAppError('Adult renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_ADULT_COMMUNICATION_PREFERENCES_MISSING);
     }
 
     if (clientApplication === undefined) {
-      throw new Error('Expected clientApplication to be defined');
+      throwAppError('Adult renewal lacks client application.', ErrorCodes.APP_RENEWAL_ADULT_CLIENT_APPLICATION_MISSING);
     }
 
     const emailAddress = this.toEmailAddress({
@@ -281,11 +283,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const userId = options?.userId ?? 'anonymous';
 
     if (communicationPreferences === undefined) {
-      throw new Error('Expected communicationPreferences to be defined');
+      throwAppError('Family renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_FAMILY_COMMUNICATION_PREFERENCES_MISSING);
     }
 
     if (clientApplication === undefined) {
-      throw new Error('Expected clientApplication to be defined');
+      throwAppError('Family renewal lacks client application.', ErrorCodes.APP_RENEWAL_FAMILY_CLIENT_APPLICATION_MISSING);
     }
 
     invariant(children.length > 0, 'Expected children to be non-empty for a family renewal');
@@ -372,11 +374,11 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const userId = options?.userId ?? 'anonymous';
 
     if (communicationPreferences === undefined) {
-      throw new Error('Expected communicationPreferences to be defined');
+      throwAppError('Child renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_CHILD_COMMUNICATION_PREFERENCES_MISSING);
     }
 
     if (clientApplication === undefined) {
-      throw new Error('Expected clientApplication to be defined');
+      throwAppError('Child renewal lacks client application.', ErrorCodes.APP_RENEWAL_CHILD_CLIENT_APPLICATION_MISSING);
     }
 
     invariant(children.length > 0, 'Expected children to be non-empty for a child renewal');
@@ -471,7 +473,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       invariant(renewedChild.information, 'Expected renewedChild.information to be defined');
 
       if (renewedChild.dentalInsurance === undefined) {
-        throw new Error('Expected renewedChild.dentalInsurance to be defined');
+        throwAppError('Renewed child lacks dental insurance.', ErrorCodes.APP_RENEWAL_RENEWED_CHILD_DENTAL_INSURANCE_MISSING);
       }
 
       return {
@@ -642,7 +644,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
 
     if (!result.success) {
-      throw new Error('Expected a valid and verified email for protected application channel');
+      throwAppError('Protected renewal lacks verified email.', ErrorCodes.APP_RENEWAL_PROTECTED_EMAIL_UNVERIFIED);
     }
 
     return { value: result.email, verified: result.emailVerified };
@@ -671,7 +673,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     const result = checkValidAndVerifiedEmailAddress({ email, emailVerified });
 
     if (!result.success) {
-      throw new Error('Expected a valid and verified email for public application channel when communication preferences have changed and require an email');
+      throwAppError('Public renewal needs verified email.', ErrorCodes.APP_RENEWAL_PUBLIC_EMAIL_UNVERIFIED);
     }
 
     return { value: result.email, verified: result.emailVerified };

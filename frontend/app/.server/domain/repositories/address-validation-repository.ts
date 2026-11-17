@@ -9,6 +9,8 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface AddressValidationRepository {
   /**
@@ -74,7 +76,7 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to correct address. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Correction call failed or mock outage.', ErrorCodes.API_ADDR_CORRECTION_FAILED);
     }
 
     const addressCorrectionResults = (await response.json()) as AddressCorrectionResultEntity;
@@ -124,7 +126,7 @@ export class MockAddressValidationRepository implements AddressValidationReposit
   protected mockStatusCodeFromProvinceCode(provinceCode: string) {
     // Newfoundland and Labrador
     if (provinceCode === 'NL') {
-      throw new Error('Address validation service is currently unavailable');
+      throwAppError('Correction call failed or mock outage.', ErrorCodes.API_ADDR_CORRECTION_FAILED);
     }
 
     // Ontario

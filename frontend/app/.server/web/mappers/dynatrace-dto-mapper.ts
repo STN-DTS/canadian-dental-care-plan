@@ -2,7 +2,9 @@ import { XMLParser } from 'fast-xml-parser';
 import { injectable } from 'inversify';
 import * as z from 'zod';
 
+import { throwAppError } from '~/.server/utils/error-utils';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface DynatraceDtoMapper {
   /**
@@ -31,7 +33,7 @@ export class DefaultDynatraceDtoMapper implements DynatraceDtoMapper {
     const validatedScript = scriptSchema.safeParse(xmlParsedScript);
 
     if (!validatedScript.success) {
-      throw new Error(`Mapping validation failed for Dynatrace RUM Script: [${dynatraceRumScript}]`);
+      throwAppError('RUM script validation failed.', ErrorCodes.API_RUM_SCRIPT_INVALID);
     }
 
     const { script } = validatedScript.data;

@@ -4,6 +4,7 @@ import { Option } from 'effect';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 
 /** Request-scoped routing values preserved for the current middleware chain. */
 type ContextStorage = Readonly<{
@@ -18,7 +19,7 @@ function getStore(getterName: string): ContextStorage {
   const store = contextStorage.getStore();
 
   if (!store) {
-    throwAppError(`${getterName}() is only available while handling a request. Register contextStorageMiddleware on a parent route and call ${getterName}() from route middleware, loaders, or actions.`);
+    throwAppError('Request context is unavailable.', ErrorCodes.PLT_CTX_REQUEST_STORE_UNAVAILABLE);
   }
 
   return store;

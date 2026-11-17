@@ -110,10 +110,10 @@ export class DefaultApplicantRepository implements ApplicantRepository {
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-      throwAppError('Failed to POST to /applicant. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST to /applicant. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_APPLICANT_FIND_BY_BASIC_INFO_RATE_LIMITED);
     }
 
-    throw new Error(`Failed to 'POST' for applicant. Status:  ${response.status}, Status Text: ${response.statusText}`);
+    throwAppError('Basic-info applicant lookup failed.', ErrorCodes.API_APPLICANT_FIND_BY_BASIC_INFO_FAILED);
   }
 
   @Traced()
@@ -153,10 +153,10 @@ export class DefaultApplicantRepository implements ApplicantRepository {
 
     if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
       // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-      throwAppError('Failed to POST to /applicant. Status: 429, Status Text: Too Many Requests', ErrorCodes.XAPI_TOO_MANY_REQUESTS);
+      throwAppError('Failed to POST to /applicant. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_APPLICANT_FIND_BY_SIN_RATE_LIMITED);
     }
 
-    throw new Error(`Failed to 'POST' for applicant. Status:  ${response.status}, Status Text: ${response.statusText}`);
+    throwAppError('SIN applicant lookup failed.', ErrorCodes.API_APPLICANT_FIND_BY_SIN_FAILED);
   }
 
   getMetadata(): Record<string, string> {

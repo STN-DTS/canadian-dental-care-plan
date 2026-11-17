@@ -13,7 +13,9 @@ import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.serv
 import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { StatusState, StatusStateSessionKey } from '~/.server/routes/helpers/status-route-helpers';
+import { throwAppError } from '~/.server/utils/error-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { isEmpty } from '~/utils/string-utils';
 
 /**
@@ -187,7 +189,7 @@ export class ExpressSession implements Session {
   private get session(): Request['session'] {
     // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!this.req.session) {
-      throw new Error('req.session object is undefined. Session might have been destroyed.');
+      throwAppError('Express session missing or destroyed.', ErrorCodes.PLT_SESS_EXPRESS_SESSION_UNAVAILABLE);
     }
 
     return this.req.session;
@@ -225,7 +227,7 @@ export class ExpressSession implements Session {
     const value = this.find(key);
 
     if (Option.isNone(value)) {
-      throw new Error(`Key '${key}' not found in session [${this.id}]`);
+      throwAppError('Required active-session key absent.', ErrorCodes.PLT_SESS_KEY_NOT_FOUND);
     }
 
     const unwrappedValue = Option.getOrThrow(value);

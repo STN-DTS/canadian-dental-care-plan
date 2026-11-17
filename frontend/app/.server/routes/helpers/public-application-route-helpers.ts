@@ -29,9 +29,11 @@ import type {
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';
 import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url-utils';
 import type { Session } from '~/.server/web/session';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getAgeFromDateString, parseDateString, parseDateTimeString } from '~/utils/date-utils';
 import { generateId } from '~/utils/id-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -153,7 +155,7 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
   const channelCode = state.channelCode as string | undefined;
 
   if (channelCode !== undefined && channelCode !== 'public') {
-    throw new Error(`Invalid channelCode in session state; expected 'public' but got [${channelCode}]`);
+    throwAppError('Public session state has another channel.', ErrorCodes.APP_STATE_PUBLIC_CHANNEL_MISMATCH);
   }
 
   return {

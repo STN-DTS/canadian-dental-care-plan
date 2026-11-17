@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import governmentInsurancePlanJsonDataSource from '~/.server/resources/power-platform/government-insurance-plan.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface GovernmentInsurancePlanRepository {
   /**
@@ -82,7 +84,7 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch government insurance plans. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Government insurance plan list failed.', ErrorCodes.API_REFDATA_GOVERNMENT_INSURANCE_PLAN_LIST_FAILED);
     }
 
     const governmentInsurancePlanResponseEntity = (await response.json()) as GovernmentInsurancePlanResponseEntity;

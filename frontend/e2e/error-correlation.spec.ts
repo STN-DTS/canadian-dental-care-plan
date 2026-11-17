@@ -13,7 +13,7 @@ import type { StatusCheckerLocale } from './pages/status-checker-page';
 import { findHandleErrorRecord } from './utils/server-log';
 
 const failingStatusCheck = { code: '999429', sin: '800000002' };
-const errorCode = 'XAPI-0002';
+const errorCode = 'API-STATUS-0002';
 const privateDetails = ['Too Many Requests', 'Status: 429', 'MockApplicationStatusRepository'];
 
 function expectOnlyPublicErrorDetails(body: string, correlationId: string) {

@@ -60,7 +60,7 @@ export function singleton<N extends InstanceName, T extends InstanceTypeMap[N]>(
 
   if (!registry.has(instanceName)) {
     if (!factory) {
-      throwAppError(`Instance [${instanceName}] not found and factory not provided`, ErrorCodes.NO_FACTORY_PROVIDED);
+      throwAppError('A required service instance is unavailable.', ErrorCodes.PLT_INST_NO_FACTORY_PROVIDED);
     }
 
     registry.set(instanceName, factory());

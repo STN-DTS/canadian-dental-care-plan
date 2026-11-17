@@ -38,9 +38,11 @@ import type {
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';
 import { getCdcpWebsiteApplyUrl } from '~/.server/utils/url-utils';
 import type { Session } from '~/.server/web/session';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getAgeFromDateString, parseDateString, parseDateTimeString } from '~/utils/date-utils';
 import { generateId } from '~/utils/id-utils';
 import { getPathById } from '~/utils/route-utils';
@@ -161,7 +163,7 @@ export function getProtectedApplicationState({ params, session }: LoadStateArgs)
   const channelCode = state.channelCode as string | undefined;
 
   if (channelCode !== undefined && channelCode !== 'protected') {
-    throw new Error(`Invalid channelCode in session state; expected 'protected' but got [${channelCode}]`);
+    throwAppError('Protected session state has another channel.', ErrorCodes.APP_STATE_PROTECTED_CHANNEL_MISMATCH);
   }
 
   return {
@@ -251,7 +253,7 @@ export function startProtectedApplicationState({ applicationYear, clientApplicat
 
   // For renewal applications, client application data is required to initialize the state
   if (context === 'renewal' && !clientApplication) {
-    throw new Error('Client application data is required to start a renewal application');
+    throwAppError('Renewal start lacks client application.', ErrorCodes.APP_RENEWAL_PROTECTED_CLIENT_APPLICATION_MISSING);
   }
 
   // Create the initial state object

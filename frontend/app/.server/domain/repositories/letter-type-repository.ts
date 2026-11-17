@@ -10,7 +10,9 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import letterTypeJsonDataSource from '~/.server/resources/power-platform/letter-type.json';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 
 export interface LetterTypeRepository {
   /**
@@ -83,7 +85,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
 
     if (!response.ok) {
       await response.text();
-      throw new Error(`Failed to fetch letter types. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Letter type list failed.', ErrorCodes.API_REFDATA_LETTER_TYPE_LIST_FAILED);
     }
 
     const letterTypeResponseEntity = (await response.json()) as LetterTypeResponseEntity;

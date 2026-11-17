@@ -7,6 +7,7 @@ import type { ServerConfig } from '~/.server/configs';
 import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationSinRequestEntity } from '~/.server/domain/entities';
 import { DefaultClientApplicationRepository, MockClientApplicationRepository } from '~/.server/domain/repositories';
 import type { HttpClient } from '~/.server/http';
+import { ErrorCodes } from '~/errors/error-codes';
 
 const clientApplicationJsonDataSource = vi.hoisted(() => ({
   BenefitApplication: {
@@ -132,7 +133,10 @@ describe('DefaultClientApplicationRepository', () => {
         },
       };
 
-      await expect(repository.findClientApplicationByBasicInfo(requestEntity)).rejects.toThrow("Failed to 'POST' for client application data by basic info. Status: 500, Status Text: Internal Server Error");
+      await expect(repository.findClientApplicationByBasicInfo(requestEntity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_BASIC_INFO_FAILED,
+        message: 'Basic-info client application lookup failed.',
+      });
     });
   });
 
@@ -203,7 +207,10 @@ describe('DefaultClientApplicationRepository', () => {
         },
       };
 
-      await expect(repository.findClientApplicationBySin(requestEntity)).rejects.toThrow("Failed to 'POST' for client application data by sin. Status: 400, Status Text: Bad Request");
+      await expect(repository.findClientApplicationBySin(requestEntity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_CLIENT_APPLICATION_FIND_BY_SIN_FAILED,
+        message: 'SIN client application lookup failed.',
+      });
     });
   });
 });

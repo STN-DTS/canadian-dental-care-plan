@@ -3,6 +3,7 @@ import type { RouterContextProvider } from 'react-router';
 
 import type { ApplicantDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { ErrorCodes } from '~/errors/error-codes';
 import { getContext } from '~/middlewares/context-storage.server';
 
 type ApplicantContext = ApplicantDto;
@@ -24,7 +25,7 @@ export function getApplicant(context?: Readonly<RouterContextProvider>): Applica
   const applicant = ctx.get(applicantContext);
 
   if (!applicant) {
-    throwAppError('Applicant context is not available. Ensure that the applicant has been set in the context.');
+    throwAppError('Applicant context is not available. Ensure that the applicant has been set in the context.', ErrorCodes.PLT_CTX_APPLICANT_UNAVAILABLE);
   }
 
   return applicant;
@@ -49,7 +50,7 @@ export function getProgramApplicant(context?: Readonly<RouterContextProvider>): 
   const programApplicant = ctx.get(programApplicantContext);
 
   if (!programApplicant) {
-    throwAppError('Program applicant context is not available. Ensure that the program applicant has been set in the context.');
+    throwAppError('Program applicant context is not available. Ensure that the program applicant has been set in the context.', ErrorCodes.PLT_CTX_PROGRAM_APPLICANT_UNAVAILABLE);
   }
 
   return programApplicant;

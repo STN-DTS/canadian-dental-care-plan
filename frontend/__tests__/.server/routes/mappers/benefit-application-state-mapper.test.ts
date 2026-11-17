@@ -578,7 +578,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
         // livingIndependently undefined for youth
       };
 
-      expect(() => mapper.mapApplicationChildrenStateToBenefitApplicationDto(state)).toThrow('Expected livingIndependently to be defined');
+      expect(() => mapper.mapApplicationChildrenStateToBenefitApplicationDto(state)).toThrow('Children application lacks livingIndependently.');
     });
 
     it('maps multiple children with dentalBenefits and dentalInsurance', () => {
@@ -757,7 +757,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
       vi.mocked(checkValidAndVerifiedEmailAddress).mockReturnValueOnce({ success: false, email: undefined, emailVerified: undefined });
 
-      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Expected a valid and verified email for protected application channel');
+      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Protected application lacks verified email.');
     });
   });
 
@@ -843,7 +843,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       vi.mocked(isEmailAddressRequired).mockReturnValueOnce(true);
       vi.mocked(checkValidAndVerifiedEmailAddress).mockReturnValueOnce({ success: false, email: undefined, emailVerified: undefined });
 
-      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Expected a valid and verified email for public application channel when at least one communication method requires email');
+      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Public application needs verified email.');
     });
   });
 
@@ -1022,7 +1022,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       });
       setupMocks({ ageCategory: 'youth' });
 
-      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Expected livingIndependently to be defined');
+      expect(() => mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toThrow('Adult application lacks livingIndependently.');
     });
 
     it('maps adult application for youth applicant with livingIndependently defined', () => {
@@ -1046,7 +1046,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       });
       setupMocks({ ageCategory: 'youth' });
 
-      expect(() => mapper.mapApplicationFamilyStateToBenefitApplicationDto(state)).toThrow('Expected livingIndependently to be defined');
+      expect(() => mapper.mapApplicationFamilyStateToBenefitApplicationDto(state)).toThrow('Family application lacks livingIndependently.');
     });
 
     it('maps family application for youth applicant with livingIndependently defined', () => {
@@ -1071,7 +1071,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       });
       setupMocks({ ageCategory: 'youth' });
 
-      expect(() => mapper.mapApplicationChildrenStateToBenefitApplicationDto(state)).toThrow('Expected livingIndependently to be defined');
+      expect(() => mapper.mapApplicationChildrenStateToBenefitApplicationDto(state)).toThrow('Children application lacks livingIndependently.');
     });
 
     it('maps children application for youth applicant with livingIndependently defined as false', () => {

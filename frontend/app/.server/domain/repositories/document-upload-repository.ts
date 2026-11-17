@@ -12,7 +12,9 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_DOCUMENT_OUTCOME } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 import { base64ToArrayBuffer, detectEicarContent } from '~/utils/file-utils';
 
 const errorSchema = z.object({ ErrorCode: z.string(), ErrorMessage: z.string() });
@@ -161,7 +163,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
       await response.text();
 
-      throw new Error(`Failed to 'POST' for document scan. Status: ${response.status}, Status Text: ${response.statusText}`);
+      throwAppError('Scan call failed, preserving scan catch.', ErrorCodes.API_DOC_SCAN_FAILED);
     }
 
     return scanResponseSchema.parse(await response.json());

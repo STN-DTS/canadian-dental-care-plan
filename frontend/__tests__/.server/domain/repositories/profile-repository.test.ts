@@ -7,6 +7,7 @@ import type { ServerConfig } from '~/.server/configs';
 import type { UpdateAddressRequestEntity, UpdateCommunicationPreferenceRequestEntity, UpdateDentalBenefitsRequestEntity, UpdateEmailAddressRequestEntity, UpdatePhoneNumbersRequestEntity } from '~/.server/domain/entities';
 import { DefaultProfileRepository } from '~/.server/domain/repositories/profile-repository';
 import type { HttpClient } from '~/.server/http';
+import { ErrorCodes } from '~/errors/error-codes';
 
 describe('DefaultProfileRepository', () => {
   let serverConfigMock: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
@@ -110,7 +111,10 @@ describe('DefaultProfileRepository', () => {
         },
       };
 
-      await expect(repository.updateCommunicationPreferences(entity)).rejects.toThrow("Failed to 'POST' for update benefit application communication preferences. Status: 500, Status Text: Internal Server Error");
+      await expect(repository.updateCommunicationPreferences(entity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_PROF_COMMUNICATION_PREFERENCES_UPDATE_FAILED,
+        message: 'Communication preferences update failed.',
+      });
     });
   });
 
@@ -204,7 +208,10 @@ describe('DefaultProfileRepository', () => {
         },
       };
 
-      await expect(repository.updatePhoneNumbers(entity)).rejects.toThrow("Failed to 'POST' for update benefit application phone numbers. Status: 500, Status Text: Internal Server Error");
+      await expect(repository.updatePhoneNumbers(entity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_PROF_PHONE_NUMBERS_UPDATE_FAILED,
+        message: 'Phone numbers update failed.',
+      });
     });
   });
 
@@ -286,7 +293,10 @@ describe('DefaultProfileRepository', () => {
         },
       };
 
-      await expect(repository.updateEmailAddress(entity)).rejects.toThrow("Failed to 'POST' for update benefit application email address. Status: 500, Status Text: Internal Server Error");
+      await expect(repository.updateEmailAddress(entity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_PROF_EMAIL_ADDRESS_UPDATE_FAILED,
+        message: 'Email address update failed.',
+      });
     });
   });
 
@@ -360,7 +370,10 @@ describe('DefaultProfileRepository', () => {
         },
       };
 
-      await expect(repository.updateDentalBenefits(entity)).rejects.toThrow("Failed to 'POST' for update benefit application dental benefits. Status: 500, Status Text: Internal Server Error");
+      await expect(repository.updateDentalBenefits(entity)).rejects.toMatchObject({
+        errorCode: ErrorCodes.API_PROF_DENTAL_BENEFITS_UPDATE_FAILED,
+        message: 'Dental benefits update failed.',
+      });
     });
   });
 
@@ -516,6 +529,9 @@ describe('DefaultProfileRepository', () => {
         },
       },
     };
-    await expect(repository.updateAddresses(entity)).rejects.toThrow("Failed to 'POST' for update benefit application mailing and home addresses. Status: 500, Status Text: Internal Server Error");
+    await expect(repository.updateAddresses(entity)).rejects.toMatchObject({
+      errorCode: ErrorCodes.API_PROF_ADDRESSES_UPDATE_FAILED,
+      message: 'Mailing and home addresses update failed.',
+    });
   });
 });
