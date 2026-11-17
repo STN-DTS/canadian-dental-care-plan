@@ -1,13 +1,23 @@
 import { Redacted } from 'effect';
+import { Container } from 'inversify';
+import { inspect } from 'node:util';
 import { Response } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
 import type { ServerConfig } from '~/.server/configs';
+import { TYPES } from '~/.server/constants';
+import { createRepositoriesContainerModule } from '~/.server/container-modules/repositories-container-module';
 import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import { DefaultDocumentUploadRepository, MockDocumentUploadRepository } from '~/.server/domain/repositories';
+import type { DocumentUploadRepositoryConfig } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
+import { DocumentUploadRepositoryDefaultConfig } from '~/.server/domain/repositories/configs/document-upload-repository-default-config';
 import type { HttpClient } from '~/.server/http';
+import { DefaultHttpClient } from '~/.server/http/http-client';
+import type { InstrumentationService } from '~/.server/observability';
+import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
 
@@ -26,6 +36,7 @@ const uploadRequest = {
 const scanRequest = { filename: uploadRequest.filename, binary: uploadRequest.binary } satisfies DocumentScanRequestEntity;
 
 const serverConfig = {
+  INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default',
   HTTP_PROXY_URL: 'http://proxy.example.test',
   INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
   INTEROP_API_BASE_URI: 'https://interop.example.test',
@@ -34,27 +45,56 @@ const serverConfig = {
   EWDU_PROGRAM_ACTIVITY_ID: 'activity-id',
   INTEROP_API_MAX_RETRIES: 3,
   INTEROP_API_BACKOFF_MS: 100,
-} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_BASE_URI' | 'EWDU_ENCAPSULATION_USERNAME' | 'EWDU_ENCAPSULATION_PASSWORD' | 'EWDU_PROGRAM_ACTIVITY_ID' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+  INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER: 'https://identity.example.test/organization',
+  INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID: Redacted.make('client-id'),
+  INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET: Redacted.make(' secret +&= value '),
+  INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE: 'documents.write documents.scan',
+} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'> & Extract<DocumentUploadRepositoryConfig, { INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default' }>;
 
 describe('DefaultDocumentUploadRepository', () => {
   const httpClientMock = mock<HttpClient>();
+  const appIdentityClient = mock<AppIdentityClient>();
   let repository: DefaultDocumentUploadRepository;
 
   beforeEach(() => {
     httpClientMock.instrumentedFetch.mockReset();
-    repository = new DefaultDocumentUploadRepository(serverConfig, httpClientMock);
+    appIdentityClient.getAccessToken.mockReset().mockResolvedValue(Redacted.make('access-token'));
+    repository = new DefaultDocumentUploadRepository(new DocumentUploadRepositoryDefaultConfig(serverConfig), httpClientMock, appIdentityClient);
   });
+
+  function createRepositoryWithHttpClient(retries: number) {
+    const fetch = vi.fn();
+    const httpClient = new DefaultHttpClient(mock<InstrumentationService>());
+    vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetch);
+
+    const config = new DocumentUploadRepositoryDefaultConfig({ ...serverConfig, INTEROP_API_MAX_RETRIES: retries, INTEROP_API_BACKOFF_MS: 0 });
+    return { fetch, repository: new DefaultDocumentUploadRepository(config, httpClient, appIdentityClient) };
+  }
 
   it('posts once to SPOUploadDocument and returns an accepted response', async () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DocumentFileName: 'document.txt', Error: null }));
 
     await expect(repository.uploadDocument(uploadRequest)).resolves.toEqual({ DocumentFileName: 'document.txt', Error: null });
+    expect(appIdentityClient.getAccessToken).toHaveBeenCalledExactlyOnceWith({
+      issuer: new URL(serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER),
+      clientId: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID,
+      clientSecret: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET,
+      scope: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE,
+    });
+    const identityRequest = expectDefined(appIdentityClient.getAccessToken.mock.calls[0]?.[0], 'Expected identity request');
+    expect(Redacted.isRedacted(identityRequest.clientId)).toBe(true);
+    expect(Redacted.isRedacted(identityRequest.clientSecret)).toBe(true);
+    expect(Redacted.value(identityRequest.clientId)).toBe('client-id');
+    expect(Redacted.value(identityRequest.clientSecret)).toBe(' secret +&= value ');
+    expect(JSON.stringify(identityRequest)).not.toContain('client-id');
+    expect(JSON.stringify(identityRequest)).not.toContain('secret +&= value');
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.spo-upload-document.posts', 'https://interop.example.test/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument', {
-      proxyUrl: serverConfig.HTTP_PROXY_URL,
+      proxyUrl: new URL(serverConfig.HTTP_PROXY_URL).href,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Ocp-Apim-Subscription-Key': 'subscription-key',
+        Authorization: 'Bearer access-token',
       },
       body: JSON.stringify({
         ...uploadRequest,
@@ -64,6 +104,24 @@ describe('DefaultDocumentUploadRepository', () => {
       }),
       retryOptions: { retries: 0, retryConditions: {} },
     });
+  });
+
+  it('uses the document upload endpoint and subscription key overrides', async () => {
+    const config = new DocumentUploadRepositoryDefaultConfig({
+      ...serverConfig,
+      INTEROP_DOCUMENT_UPLOAD_BASE_URI: 'https://upload.example.test/root/',
+      INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY: Redacted.make('upload-key'),
+    });
+    const overridden = new DefaultDocumentUploadRepository(config, httpClientMock, appIdentityClient);
+    httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DocumentFileName: 'document.txt', Error: null }));
+
+    await overridden.uploadDocument(uploadRequest);
+
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      'https://upload.example.test/root/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument',
+      expect.objectContaining({ headers: expect.objectContaining({ 'Ocp-Apim-Subscription-Key': 'upload-key' }) }),
+    );
   });
 
   it('returns a valid service rejection without translating it to a transport failure', async () => {
@@ -101,15 +159,18 @@ describe('DefaultDocumentUploadRepository', () => {
     } satisfies Partial<DocumentUploadException>);
   });
 
-  it('classifies fetch rejection as a network failure', async () => {
-    const cause = new Error('socket closed');
+  it('classifies fetch rejection without exposing transport details', async () => {
+    const cause = new Error('synthetic-bearer-canary');
     httpClientMock.instrumentedFetch.mockRejectedValue(cause);
 
-    await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
+    const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
+
+    expect(inspect(error)).not.toContain('synthetic-bearer-canary');
+    expect(error).toMatchObject({
       name: 'DocumentUploadException',
       kind: 'network',
       httpStatus: undefined,
-      cause,
+      cause: expect.any(Error),
     } satisfies Partial<DocumentUploadException>);
   });
 
@@ -163,6 +224,18 @@ describe('DefaultDocumentUploadRepository', () => {
     } satisfies Partial<DocumentUploadException>);
   });
 
+  it('does not retain an invalid upload response in the failure cause', async () => {
+    httpClientMock.instrumentedFetch.mockResolvedValue(new Response('["abc","TOKEN",!]'));
+
+    const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
+
+    expect(inspect(error)).not.toContain('TOKEN');
+    expect(error).toMatchObject({
+      kind: 'invalid-response',
+      cause: expect.any(Error),
+    });
+  });
+
   it.each([
     ['empty response', new Response(null, { status: 204 })],
     ['empty filename', Response.json({ DocumentFileName: '', Error: null })],
@@ -179,16 +252,23 @@ describe('DefaultDocumentUploadRepository', () => {
     } satisfies Partial<DocumentUploadException>);
   });
 
-  it('posts only scan fields and credentials with the configured scan retry policy', async () => {
+  it('posts only scan fields and credentials with the configured retry policy', async () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DataId: 'scan-123', Error: null }));
 
     await expect(repository.scanDocument(scanRequest)).resolves.toEqual({ DataId: 'scan-123', Error: null });
+    expect(appIdentityClient.getAccessToken).toHaveBeenCalledExactlyOnceWith({
+      issuer: new URL(serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER),
+      clientId: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID,
+      clientSecret: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET,
+      scope: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE,
+    });
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.scan.posts', 'https://interop.example.test/client-correspondence/document-upload/cct/v1/api/Scan', {
-      proxyUrl: serverConfig.HTTP_PROXY_URL,
+      proxyUrl: new URL(serverConfig.HTTP_PROXY_URL).href,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Ocp-Apim-Subscription-Key': 'subscription-key',
+        Authorization: 'Bearer access-token',
       },
       body: JSON.stringify({
         ...scanRequest,
@@ -202,6 +282,51 @@ describe('DefaultDocumentUploadRepository', () => {
         retryConditions: { 502: [], 503: [], 504: [] },
       },
     });
+  });
+
+  it.each(['HTTP error', 'network error'] as const)('does not retry an upload POST after %s', async (failure) => {
+    const { fetch, repository: realHttpRepository } = createRepositoryWithHttpClient(2);
+
+    if (failure === 'HTTP error') {
+      fetch.mockResolvedValue(new Response(null, { status: 503 }));
+    } else {
+      fetch.mockRejectedValue(new Error('Network failure'));
+    }
+
+    await expect(realHttpRepository.uploadDocument(uploadRequest)).rejects.toThrow();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it.each([502, 503, 504])('retries a scan after HTTP %i', async (status) => {
+    const { fetch, repository: realHttpRepository } = createRepositoryWithHttpClient(1);
+    fetch.mockResolvedValueOnce(new Response(null, { status })).mockResolvedValueOnce(Response.json({ DataId: 'scan-123', Error: null }));
+
+    await expect(realHttpRepository.scanDocument(scanRequest)).resolves.toEqual({ DataId: 'scan-123', Error: null });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a scan after a network error', async () => {
+    const { fetch, repository: realHttpRepository } = createRepositoryWithHttpClient(1);
+    fetch.mockRejectedValueOnce(new Error('Network failure')).mockResolvedValueOnce(Response.json({ DataId: 'scan-123', Error: null }));
+
+    await expect(realHttpRepository.scanDocument(scanRequest)).resolves.toEqual({ DataId: 'scan-123', Error: null });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([0, 2])('limits scan retries to the configured count of %i', async (retries) => {
+    const { fetch, repository: realHttpRepository } = createRepositoryWithHttpClient(retries);
+    fetch.mockResolvedValue(new Response(null, { status: 503 }));
+
+    await expect(realHttpRepository.scanDocument(scanRequest)).rejects.toThrow();
+    expect(fetch).toHaveBeenCalledTimes(retries + 1);
+  });
+
+  it('does not retry a scan for an unconfigured HTTP status', async () => {
+    const { fetch, repository: realHttpRepository } = createRepositoryWithHttpClient(2);
+    fetch.mockResolvedValue(new Response(null, { status: 500 }));
+
+    await expect(realHttpRepository.scanDocument(scanRequest)).rejects.toMatchObject({ errorCode: ErrorCodes.API_DOC_SCAN_FAILED });
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it.each([
@@ -257,12 +382,68 @@ describe('DefaultDocumentUploadRepository', () => {
     await expect(repository.scanDocument(scanRequest)).rejects.toThrow();
   });
 
-  it('propagates scan transport failures', async () => {
-    const error = new Error('scan connection failed');
-    httpClientMock.instrumentedFetch.mockRejectedValue(error);
+  it('does not expose an invalid scan response in the failure', async () => {
+    httpClientMock.instrumentedFetch.mockResolvedValue(new Response('["abc","TOKEN",!]'));
 
-    await expect(repository.scanDocument(scanRequest)).rejects.toBe(error);
+    const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
+
+    expect(inspect(error)).not.toContain('TOKEN');
+    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.API_DOC_SCAN_FAILED });
+  });
+
+  it('reports scan transport failures without exposing their details', async () => {
+    httpClientMock.instrumentedFetch.mockRejectedValue(new Error('synthetic-bearer-canary'));
+
+    const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
+
+    expect(inspect(error)).not.toContain('synthetic-bearer-canary');
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toHaveProperty('errorCode', ErrorCodes.API_DOC_SCAN_FAILED);
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledOnce();
+  });
+
+  it('preserves the identity error code without exposing its details during scans', async () => {
+    appIdentityClient.getAccessToken.mockRejectedValue(new AppError('synthetic-sensitive-error', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED));
+
+    const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
+
+    expect(inspect(error)).not.toContain('synthetic-sensitive-error');
+    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED });
+    expect(httpClientMock.instrumentedFetch).not.toHaveBeenCalled();
+  });
+
+  it('authenticates health checks through scan', async () => {
+    httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DataId: 'health-scan', Error: null }));
+
+    await repository.checkHealth();
+
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
+      'http.client.document-scan-api.scan.posts',
+      expect.stringContaining('/Scan'),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer access-token' }) }),
+    );
+  });
+
+  it('wraps token failures as per-file technical errors without sending an upload', async () => {
+    appIdentityClient.getAccessToken.mockRejectedValue(new AppError('synthetic-sensitive-error', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED));
+
+    const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
+
+    expect(error).toMatchObject({
+      name: 'DocumentUploadException',
+      kind: 'network',
+      cause: expect.objectContaining({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED }),
+    } satisfies Partial<DocumentUploadException>);
+    expect(inspect(error)).not.toContain('synthetic-sensitive-error');
+    expect(httpClientMock.instrumentedFetch).not.toHaveBeenCalled();
+  });
+
+  it('does not send scans or health checks when a token is unavailable', async () => {
+    appIdentityClient.getAccessToken.mockRejectedValue(new Error('App identity token acquisition failed.'));
+
+    await expect(repository.scanDocument(scanRequest)).rejects.toThrow('App identity');
+    await expect(repository.checkHealth()).rejects.toThrow('App identity');
+    expect(httpClientMock.instrumentedFetch).not.toHaveBeenCalled();
   });
 });
 
@@ -311,5 +492,36 @@ describe('MockDocumentUploadRepository', () => {
         ErrorMessage: 'Failed to decode binary content of the document.',
       },
     });
+  });
+});
+
+describe('document upload repository bindings', () => {
+  it('reports a mismatched provider with an application error code', () => {
+    expect(() => new DocumentUploadRepositoryDefaultConfig({ ...serverConfig, INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'mock' })).toThrow(expect.objectContaining({ name: 'AppError', errorCode: ErrorCodes.PLT_CONFIG_DOCUMENT_UPLOAD_PROVIDER_INVALID }));
+  });
+
+  it('resolves the default repository with its configuration', () => {
+    const container = new Container();
+    container.load(createRepositoriesContainerModule({ ENABLED_MOCKS: [], INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default' }));
+    container.bind(TYPES.ServerConfig).toConstantValue(
+      mock<ServerConfig>({
+        ...serverConfig,
+        ENABLED_MOCKS: [],
+        INTEROP_DOCUMENT_UPLOAD_BASE_URI: serverConfig.INTEROP_API_BASE_URI,
+        INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY: serverConfig.INTEROP_API_SUBSCRIPTION_KEY,
+      }),
+    );
+    container.bind(TYPES.HttpClient).toConstantValue(mock<HttpClient>());
+    container.bind(TYPES.AppIdentityClient).toConstantValue(mock<AppIdentityClient>());
+
+    expect(container.get(TYPES.DocumentUploadRepository)).toBeInstanceOf(DefaultDocumentUploadRepository);
+    expect(container.get(TYPES.DocumentUploadRepository).getMetadata().baseUrl).toBe('https://interop.example.test/client-correspondence/document-upload/cct/v1/api');
+  });
+
+  it('resolves the mock without default repository credentials', () => {
+    const container = new Container();
+    container.load(createRepositoriesContainerModule({ ENABLED_MOCKS: [], INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'mock' }));
+
+    expect(container.get(TYPES.DocumentUploadRepository)).toBeInstanceOf(MockDocumentUploadRepository);
   });
 });

@@ -159,10 +159,11 @@ accessibility, and error-handling patterns before adding new abstractions.
 
 ## Mock integrations
 
-Local development and end-to-end tests use mock integrations configured through
-`frontend/.env`. `ENABLED_FEATURES` controls optional journeys such as status, letters,
-hCaptcha, and document upload. `ENABLED_MOCKS` controls mocked external
-services.
+Local development uses mock integrations configured through `frontend/.env`.
+Playwright configures its own mock integrations. `ENABLED_FEATURES` controls
+optional journeys such as status, letters, hCaptcha, and document upload.
+`ENABLED_MOCKS` controls mocked external services other than document upload.
+`INTEROP_DOCUMENT_UPLOAD_PROVIDER` selects the document upload provider.
 
 Check [Authentication.md](other/docs/Authentication.md) before changing local
 authentication. Keep mock values local and use environment variables for all

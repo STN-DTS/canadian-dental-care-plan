@@ -2,6 +2,7 @@ import type { HealthCheck } from '@dts-stn/health-checks';
 import type { Newable } from 'inversify';
 
 import type { BearerTokenResolver, TokenRolesExtractor } from '~/.server/auth';
+import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
 import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ClientConfig, ServerConfig } from '~/.server/configs';
 import type { BuildInfoService } from '~/.server/core';
@@ -60,6 +61,7 @@ import type {
   ProvinceTerritoryStateRepository,
   VerificationCodeRepository,
 } from '~/.server/domain/repositories';
+import type { DocumentUploadRepositoryDefaultConfig } from '~/.server/domain/repositories/configs/document-upload-repository-default-config';
 import type {
   AddressValidationService,
   AppealUploadEligibilityService,
@@ -163,6 +165,7 @@ export const TYPES = assignServiceIdentifiers({
   AppealUploadEligibilityDtoMapper: serviceId<AppealUploadEligibilityDtoMapper>(),
   AppealUploadEligibilityRepository: serviceId<AppealUploadEligibilityRepository>(),
   AppealUploadEligibilityService: serviceId<AppealUploadEligibilityService>(),
+  AppIdentityClient: serviceId<AppIdentityClient>(),
   ApplicantDtoMapper: serviceId<ApplicantDtoMapper>(),
   ApplicantRepository: serviceId<ApplicantRepository>(),
   ApplicantService: serviceId<ApplicantService>(),
@@ -204,6 +207,7 @@ export const TYPES = assignServiceIdentifiers({
   DocumentUploadReasonRepository: serviceId<DocumentUploadReasonRepository>(),
   DocumentUploadReasonService: serviceId<DocumentUploadReasonService>(),
   DocumentUploadRepository: serviceId<DocumentUploadRepository>(),
+  DocumentUploadRepositoryDefaultConfig: serviceId<DocumentUploadRepositoryDefaultConfig>(),
   DocumentUploadService: serviceId<DocumentUploadService>(),
   DynatraceDtoMapper: serviceId<DynatraceDtoMapper>(),
   DynatraceRepository: serviceId<DynatraceRepository>(),

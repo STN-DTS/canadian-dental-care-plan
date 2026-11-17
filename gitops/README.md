@@ -66,6 +66,18 @@ references. Production uses unsuffixed names.
 Workloads with `secret.reloader.stakater.com/auto: 'true'` restart when their
 referenced Secrets change.
 
+Document-upload OAuth uses the same Entra issuer in every environment. Select
+the frontend `ExternalSecret` credentials for the Interop environment and
+stream used by the document-upload endpoint, including any endpoint override.
+Stream 1 credentials are mapped for int1 (int), staging and uat1 (uat), perf
+(prf), and production (prd). Dev and training use the mock provider.
+
+Int2, uat2, and otto use UAT streams 3, 2, and 4 respectively; matching OAuth
+credentials have not been configured. The default provider also requires an
+EWDU encapsulation password at startup, even when document upload is disabled;
+only uat1 currently maps one. Before rollout, configure the missing credentials
+and confirm that `vault-backend` can read the referenced Vault paths.
+
 Nonproduction overlays use strategic merge patches in `patches/` to add
 oauth2-proxy and Fluentd sidecars and override images and resources.
 Base components define ConfigMap generators. Overlays use `behavior: merge`

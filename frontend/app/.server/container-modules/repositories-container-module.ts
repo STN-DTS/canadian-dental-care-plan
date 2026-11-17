@@ -47,6 +47,7 @@ import {
   MockProvinceTerritoryStateRepository,
   MockVerificationCodeRepository,
 } from '~/.server/domain/repositories';
+import { DocumentUploadRepositoryDefaultConfig } from '~/.server/domain/repositories/configs/document-upload-repository-default-config';
 import type { MockName } from '~/.server/utils/env-utils';
 import { DefaultDynatraceRepository, DefaultHCaptchaRepository } from '~/.server/web/repositories';
 
@@ -77,7 +78,7 @@ function isMockEnabled(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS'>, mockNa
 /**
  * Defines the container module for repository bindings.
  */
-export function createRepositoriesContainerModule(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS'>): ContainerModule {
+export function createRepositoriesContainerModule(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS' | 'INTEROP_DOCUMENT_UPLOAD_PROVIDER'>): ContainerModule {
   // oxfmt-ignore
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationRepository).to(DefaultAddressValidationRepository).when(isMockEnabled(serverConfig, 'wsaddress', false));
@@ -113,9 +114,12 @@ export function createRepositoriesContainerModule(serverConfig: Pick<ServerConfi
     options.bind(TYPES.CountryRepository).to(DefaultCountryRepository).when(isMockEnabled(serverConfig, 'code-tables', false));
     options.bind(TYPES.CountryRepository).to(MockCountryRepository).when(isMockEnabled(serverConfig, 'code-tables', true));
 
+    // Document Upload Repository configuration based on INTEROP_DOCUMENT_UPLOAD_PROVIDER
+    options.bind(TYPES.DocumentUploadRepositoryDefaultConfig).to(DocumentUploadRepositoryDefaultConfig).when(() => serverConfig.INTEROP_DOCUMENT_UPLOAD_PROVIDER === 'default');
 
-    options.bind(TYPES.DocumentUploadRepository).to(DefaultDocumentUploadRepository).when(isMockEnabled(serverConfig, 'document-upload', false));
-    options.bind(TYPES.DocumentUploadRepository).to(MockDocumentUploadRepository).when(isMockEnabled(serverConfig, 'document-upload', true));
+    // Bind the appropriate Document Upload Repository implementation based on INTEROP_DOCUMENT_UPLOAD_PROVIDER
+    options.bind(TYPES.DocumentUploadRepository).to(DefaultDocumentUploadRepository).when(() => serverConfig.INTEROP_DOCUMENT_UPLOAD_PROVIDER === 'default');
+    options.bind(TYPES.DocumentUploadRepository).to(MockDocumentUploadRepository).when(() => serverConfig.INTEROP_DOCUMENT_UPLOAD_PROVIDER === 'mock');
 
     options.bind(TYPES.DocumentUploadReasonRepository).to(DefaultDocumentUploadReasonRepository).when(isMockEnabled(serverConfig, 'code-tables', false));
     options.bind(TYPES.DocumentUploadReasonRepository).to(MockDocumentUploadReasonRepository).when(isMockEnabled(serverConfig, 'code-tables', true));

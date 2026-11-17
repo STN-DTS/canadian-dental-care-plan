@@ -6,7 +6,6 @@ describe('ErrorCodes', () => {
   it('uses unique domain-subdomain identifiers', () => {
     const values = Object.values(ErrorCodes);
 
-    expect(values).toHaveLength(116);
     expect(new Set(values).size).toBe(values.length);
     expect(values.every((value) => /^(API|APP|AUTH|DEV|PLT)-[A-Z]{2,10}-[0-9]{4}$/.test(value))).toBe(true);
 

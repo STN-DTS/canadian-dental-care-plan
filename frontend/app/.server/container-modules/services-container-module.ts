@@ -1,6 +1,7 @@
 import { ContainerModule } from 'inversify';
 import type { BindingConstraints } from 'inversify';
 
+import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
 import { DefaultRaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -66,6 +67,7 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationService).to(DefaultAddressValidationService);
     options.bind(TYPES.AppealUploadEligibilityService).to(DefaultAppealUploadEligibilityService);
+    options.bind(TYPES.AppIdentityClient).to(OpenIdAppIdentityClient).inSingletonScope();
     options.bind(TYPES.ApplicantService).to(DefaultApplicantService);
     options.bind(TYPES.ApplicationStatusService).to(DefaultApplicationStatusService);
     options.bind(TYPES.ApplicationYearService).to(DefaultApplicationYearService);

@@ -380,7 +380,7 @@ The implementation uses these files:
 - [`uploaded-document-upload-item.tsx`](../../app/routes/protected/documents/upload/components/uploaded-document-upload-item.tsx), [`use-hints.ts`](../../app/hooks/use-hints.ts), [`date-utils.ts`](../../app/utils/date-utils.ts), and [`date-time-display.tsx`](../../app/components/date-time-display.tsx): read-only successful rows with retained ISO timestamps and full localized inline date-time and tooltip text in the resolved timezone.
 - [`remove-file-dialog.tsx`](../../app/routes/protected/documents/upload/components/remove-file-dialog.tsx) and [`unsaved-changes-dialog.tsx`](../../app/routes/protected/documents/upload/components/unsaved-changes-dialog.tsx): removal and navigation confirmation.
 - [`document-upload-service.ts`](../../app/.server/domain/services/document-upload-service.ts): centralizes EWDU upload and scan outcome classification and technical failure logging.
-- [`document-upload-repository.ts`](../../app/.server/domain/repositories/document-upload-repository.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.
+- [`document-upload-repository-default.ts`](../../app/.server/domain/repositories/document-upload-repository-default.ts): EWDU HTTP URLs, headers, credentials, retries, and response handling.
 - [`document-upload-dto.ts`](../../app/.server/domain/dtos/document-upload-dto.ts): scan and upload DTO contracts.
 - [`document-upload-dto-mapper.ts`](../../app/.server/domain/mappers/document-upload-dto-mapper.ts): maps CDCP DTOs to EWDU request fields and resolves document-type codes.
 - [`evidentiary-document-repository.ts`](../../app/.server/domain/repositories/evidentiary-document-repository.ts): Power Platform document-list retrieval and metadata adapter methods. The upload route does not invoke its metadata POST operation.
@@ -388,38 +388,64 @@ The implementation uses these files:
 - [`env-utils.ts`](../../app/.server/utils/env-utils.ts) and [`env-utils.ts`](../../app/utils/env-utils.ts): server integration settings and shared upload-limit configuration.
 - [`application-routes-reference.md`](./application-routes-reference.md): protected document route list.
 
-Inversify selects `DefaultDocumentUploadRepository` unless the `document-upload` mock is enabled. The mock checks for EICAR content and invalid binary data inside `uploadDocument()`, as EWDU does during its combined scan-and-upload request. EICAR returns the confirmed `400` and `File not safe` payload to test the security message. The mock rejects `mock-upload-failure.txt` to test recovery from other upload failures. Other mock response codes do not describe production EWDU responses.
+Inversify selects the document upload repository using `INTEROP_DOCUMENT_UPLOAD_PROVIDER`. The mock checks for EICAR content and invalid binary data inside `uploadDocument()`, as EWDU does during its combined scan-and-upload request. EICAR returns the confirmed `400` and `File not safe` payload to test the security message. The mock rejects `mock-upload-failure.txt` to test recovery from other upload failures. Other mock response codes do not describe production EWDU responses.
 
 ## Configuration, security, and operations
 
 ### Runtime settings
 
-| Setting                                   | Purpose                                            | Current default or source                                               |
-| ----------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| `INTEROP_API_BASE_URI`                    | Base URI for EWDU and Power Platform Interop APIs  | Required; environment-specific                                          |
-| `INTEROP_API_SUBSCRIPTION_KEY`            | Subscription key used by both adapters             | Required; secret                                                        |
-| `INTEROP_API_MAX_RETRIES`                 | Retry count for configured transient HTTP failures | `3`                                                                     |
-| `INTEROP_API_BACKOFF_MS`                  | Retry backoff                                      | `100` ms                                                                |
-| `HTTP_PROXY_URL`                          | Optional proxy used by the HTTP client             | Environment-specific                                                    |
-| `EWDU_ENCAPSULATION_USERNAME`             | Credential added to EWDU request bodies            | `CDCP`                                                                  |
-| `EWDU_ENCAPSULATION_PASSWORD`             | Credential added to EWDU request bodies            | Optional schema value; deployment secret                                |
-| `EWDU_PROGRAM_ACTIVITY_ID`                | EWDU program activity identifier                   | `CDCP`                                                                  |
-| `RECORD_SOURCE_API`                       | Upload-method override mapping for API source      | `775170002`                                                             |
-| `RECORD_SOURCE_MSCA`                      | Upload-method override mapping for MSCA source     | `775170004`                                                             |
-| `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` | Browser and server extension allow-list            | `.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff` |
-| `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`        | Browser and server per-file size limit             | `5`                                                                     |
-| `DOCUMENT_UPLOAD_MAX_FILE_COUNT`          | Browser and server batch limit                     | `10`                                                                    |
+| Setting                                       | Purpose                                            | Current default or source                                               |
+| --------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| `INTEROP_API_BASE_URI`                        | Base URI for EWDU and Power Platform Interop APIs  | Required; environment-specific                                          |
+| `INTEROP_API_SUBSCRIPTION_KEY`                | Subscription key used by both adapters             | Required; secret                                                        |
+| `INTEROP_API_MAX_RETRIES`                     | Retry count for configured transient HTTP failures | `3`                                                                     |
+| `INTEROP_API_BACKOFF_MS`                      | Retry backoff                                      | `100` ms                                                                |
+| `INTEROP_DOCUMENT_UPLOAD_PROVIDER`            | Document upload repository provider                | `default`; set to `mock` for mocked uploads                             |
+| `INTEROP_DOCUMENT_UPLOAD_BASE_URI`            | EWDU Interop base URI override                     | `INTEROP_API_BASE_URI`                                                  |
+| `INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY`    | EWDU subscription key override                     | `INTEROP_API_SUBSCRIPTION_KEY`; secret                                  |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER`        | HTTPS OAuth issuer URL                             | Required for real EWDU requests; no default                             |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID`     | Application client ID                              | Required for real EWDU requests; no default                             |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET` | Application client secret                          | Required for real EWDU requests; secret                                 |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE`         | Resource scope granted to the client               | Required for real EWDU requests; provider-specific                      |
+| `HTTP_PROXY_URL`                              | Optional proxy used by the HTTP client             | Environment-specific                                                    |
+| `EWDU_ENCAPSULATION_USERNAME`                 | Credential added to EWDU request bodies            | `CDCP`                                                                  |
+| `EWDU_ENCAPSULATION_PASSWORD`                 | Credential added to EWDU request bodies            | Required for the default provider; deployment secret                    |
+| `EWDU_PROGRAM_ACTIVITY_ID`                    | EWDU program activity identifier                   | `CDCP`                                                                  |
+| `RECORD_SOURCE_API`                           | Upload-method override mapping for API source      | `775170002`                                                             |
+| `RECORD_SOURCE_MSCA`                          | Upload-method override mapping for MSCA source     | `775170004`                                                             |
+| `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS`     | Browser and server extension allow-list            | `.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff` |
+| `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`            | Browser and server per-file size limit             | `5`                                                                     |
+| `DOCUMENT_UPLOAD_MAX_FILE_COUNT`              | Browser and server batch limit                     | `10`                                                                    |
 
 The browser and server read upload limits from separate configuration values. Update both during deployment so the displayed limits match those the server enforces.
 
-DTS uses the shared Interop API subscription key for EWDU requests and Power Platform document-list GET requests. Power Platform manages its background-ingestion credentials and retries outside the DTS upload flow. Keep the EWDU username, password, and program activity ID in server-side deployment configuration. Do not expose them through client environment variables.
+DTS uses the shared Interop API settings for EWDU unless the document upload overrides are set. Power Platform document-list GET requests use their own configured settings. Power Platform manages its background-ingestion credentials and retries outside the DTS upload flow. Keep the EWDU username, password, and program activity ID in server-side deployment configuration. Do not expose them through client environment variables.
+
+`INTEROP_DOCUMENT_UPLOAD_PROVIDER` defaults to `default`. Set it to `mock` for mocked document uploads. The `document-upload` value is not valid in `ENABLED_MOCKS`. Startup validates the OAuth settings and EWDU password for `default`, even when the upload feature is disabled. The `mock` provider does not require these credentials.
+
+Real EWDU `SPOUploadDocument` and `Scan` requests also send `Authorization: Bearer <access token>`. Health checks use the authenticated `Scan` operation. Other repositories do not use OAuth automatically.
+
+`AppIdentityClient` is the provider-independent interface. Inversify binds it to the singleton `OpenIdAppIdentityClient`, which uses `openid-client` for issuer-based discovery and the client-credentials grant with `client_secret_post`. The issuer must use HTTPS and cannot include credentials, a query, or a fragment. Supply the issuer URL, not the discovery-document URL, so the library validates the discovered issuer before sending credentials to its token endpoint.
+
+For Entra, an example issuer is `https://login.microsoftonline.com/<tenant-id>/v2.0`, with a resource scope such as `api://<resource>/.default`. Other OAuth providers use their own issuer, client credentials, and resource scope. The implementation does not construct provider-specific URLs.
+
+`AppIdentityClient.getAccessToken` accepts an issuer URL, redacted client ID and secret, and a scope string. It returns a redacted access token. The repository owns the app identity environment configuration and passes explicit arguments. The client rejects blank credentials or scope and requires an HTTPS issuer without credentials, query, fragment, or a discovery-document path.
+
+Discovery runs lazily on the first token acquisition. Successful discovery configurations stay cached across token refreshes until eviction. Failed discovery is not cached, so the next call can recover. Discovery and token requests do not use `HTTP_PROXY_URL`. They have a 10-second timeout, reject redirects, and do not retry. The identity client and EWDU repository suppress transport tracing because raw errors can contain credentials. Request metrics remain enabled.
+
+The singleton client owns two in-memory Effect caches per application process, each bounded to 100 identities. Discovery configurations and tokens use the same immutable identity key containing the canonical issuer URL, exact client ID, exact client secret, and exact scope. Credentials in retained keys and access tokens use `Redacted` values. Equivalent arguments share pending acquisition and cached tokens, while changing any identity argument isolates both caches. The client snapshots arguments before asynchronous work.
+
+Validity starts at the token request, after discovery, and refresh occurs early by the smaller of 60 seconds or 10% of the token lifetime. The client rejects responses that arrive after that deadline, never serves stale tokens after refresh failure, and allows the next call to retry a failed acquisition. Other repositories can opt in by injecting `AppIdentityClient` and supplying their own arguments.
 
 ### Retry behavior
 
 | Operation                   | Retryable statuses currently configured |
 | --------------------------- | --------------------------------------- |
 | EWDU `SPOUploadDocument`    | None; POST retries are disabled         |
+| EWDU `Scan`                 | 502, 503, 504                           |
 | Power Platform document GET | 502                                     |
+
+`Scan` retries network failures and the configured HTTP statuses using `INTEROP_API_MAX_RETRIES` and `INTEROP_API_BACKOFF_MS`. Health checks use the same policy.
 
 `SPOUploadDocument` does not retry HTTP requests. If EWDU saves a file but DTS loses the response, another request could save it twice. DTS reports a generic upload error because it cannot confirm the outcome.
 
@@ -431,7 +457,8 @@ User-initiated retries submit only pending files. Power Platform manages its own
 - The server validates the CSRF token before processing the multipart request.
 - The server gets the client number from the authenticated applicant context, not from the upload form.
 - The server sends file bytes to downstream services as base64 JSON. The application and repository do not log them.
-- The repository uses an Interop API subscription key and EWDU encapsulation credentials.
+- The repository uses an Interop API subscription key, an app identity bearer token, and EWDU encapsulation credentials.
+- OAuth client secrets and access tokens remain server-only. The identity request, cache key credentials, and cached tokens use `Redacted` values. OAuth and EWDU errors omit raw transport and parsing details that can contain credentials or response bodies. The service does not log secrets, tokens, or credential forms.
 - The frontend does not trust browser validation; the server repeats all upload validation.
 
 ### Upload metrics events

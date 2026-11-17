@@ -66,7 +66,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         error: (issue) => (issue.input === undefined ? t(($) => $.myself.form.errorMessage.sinRequired) : undefined),
       })
       .trim()
-      .min(1)
+      .nonempty()
       .refine(
         isValidSin,
         t(($) => $.myself.form.errorMessage.sinValid),
@@ -77,7 +77,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         error: (issue) => (issue.input === undefined ? t(($) => $.myself.form.errorMessage.applicationCodeRequired) : undefined),
       })
       .trim()
-      .min(1)
+      .nonempty()
       .refine(
         isValidCodeOrNumber,
         t(($) => $.myself.form.errorMessage.applicationCodeValid),

@@ -86,6 +86,7 @@
     "moderndash": "catalog:",
     "morgan": "catalog:",
     "nprogress": "catalog:",
+    "openid-client": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",

@@ -13,13 +13,20 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { mock } from 'vitest-mock-extended';
 
 import { DefaultAppContainerProvider } from '~/.server/app-container-provider';
+import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
+import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
+import type { DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import { DefaultCountryDtoMapper } from '~/.server/domain/mappers/country-dto-mapper';
 import { DefaultLanguageDtoMapper } from '~/.server/domain/mappers/language-dto-mapper';
+import { DefaultDocumentUploadRepository } from '~/.server/domain/repositories';
+import { DocumentUploadRepositoryDefaultConfig } from '~/.server/domain/repositories/configs/document-upload-repository-default-config';
 import { DefaultCountryRepository, MockCountryRepository } from '~/.server/domain/repositories/country-repository';
 import type { FederalGovernmentInsurancePlanService, GCCommunicationMethodService, LanguageService, ProvinceTerritoryStateService, ProvincialGovernmentInsurancePlanService, SunLifeCommunicationMethodService } from '~/.server/domain/services';
 import { DefaultCountryService } from '~/.server/domain/services/country-service';
 import { DefaultLanguageService } from '~/.server/domain/services/language-service';
 import type { HttpClient } from '~/.server/http';
+import { DefaultHttpClient } from '~/.server/http/http-client';
+import type { InstrumentationService } from '~/.server/observability';
 import { DefaultProtectedApplicationStateResolver } from '~/.server/routes/resolvers/protected-application-state-resolver';
 import { DefaultPublicApplicationStateResolver } from '~/.server/routes/resolvers/public-application-state-resolver';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
@@ -63,6 +70,7 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
   const untracedFiles = new Set([
     'app-container-provider.ts',
     'auth/bearer-token-resolver.ts',
+    'auth/openid-app-identity-client.ts',
     'core/build-info-service.ts',
     'data/redis-service.ts',
     'domain/services/application-year-service.ts',
@@ -132,7 +140,7 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
     const { program, errors } = parseSync(file, source);
     expect({ file, errors }).toEqual({ file, errors: [] });
     const shouldRemainUntraced = untracedFiles.has(file) || /^(domain|web)\/mappers\/.*-dto-mapper\.ts$/.test(file);
-    const isRepository = /^(domain|web)\/repositories\/.*-repository\.ts$/.test(file);
+    const isRepository = /^(domain|web)\/repositories\/.*-repository(?:-(?:default|mock))?\.ts$/.test(file);
     const untracedMethodStarts = new Set<number>();
 
     const hasTracedImport = program.body.some(
@@ -209,6 +217,85 @@ describe('application method spans', () => {
     trace.disable();
     context.disable();
     propagation.disable();
+  });
+
+  it('does not export credentials from identity transport failures', async () => {
+    const secret = 'synthetic-oauth-secret-canary';
+    const issuer = new URL('https://identity.example.test/tenant');
+    const instrumentation = mock<InstrumentationService>();
+    const httpClient = new DefaultHttpClient(instrumentation);
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ issuer: issuer.href, token_endpoint: 'https://identity.example.test/token' }))
+      .mockRejectedValueOnce(new Error(secret));
+    vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetch);
+    const client = new OpenIdAppIdentityClient(httpClient);
+
+    await trace.getTracer('application-tracing-test').startActiveSpan('test.request', async (span) => {
+      try {
+        await expect(client.getAccessToken({ issuer, clientId: Redacted.make('client'), clientSecret: Redacted.make(secret), scope: 'test.scope' })).rejects.toThrow();
+      } finally {
+        span.end();
+      }
+    });
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans.some((span) => span.name === 'test.request')).toBe(true);
+    expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain(secret);
+    expect(instrumentation.countHttpStatus).toHaveBeenCalledWith('http.client.app-identity.token.posts', 500);
+  });
+
+  it.each(['upload', 'scan'] as const)('does not export bearer tokens from %s transport failures', async (operation) => {
+    const token = 'synthetic-bearer-canary';
+    const instrumentation = mock<InstrumentationService>();
+    const httpClient = new DefaultHttpClient(instrumentation);
+    const fetch = vi.fn().mockRejectedValue(new Error(token));
+    vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetch);
+    const identity = mock<AppIdentityClient>();
+    identity.getAccessToken.mockResolvedValue(Redacted.make(token));
+    const config = new DocumentUploadRepositoryDefaultConfig({
+      INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default',
+      INTEROP_API_BASE_URI: 'https://interop.example.test',
+      INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
+      INTEROP_API_MAX_RETRIES: 0,
+      INTEROP_API_BACKOFF_MS: 0,
+      HTTP_PROXY_URL: undefined,
+      EWDU_ENCAPSULATION_PASSWORD: Redacted.make('password'),
+      EWDU_ENCAPSULATION_USERNAME: 'username',
+      EWDU_PROGRAM_ACTIVITY_ID: 'activity',
+      INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID: Redacted.make('client'),
+      INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET: Redacted.make('secret'),
+      INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER: 'https://identity.example.test',
+      INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE: 'test.scope',
+    });
+    const repository = new DefaultDocumentUploadRepository(config, httpClient, identity);
+    const document = {
+      filename: 'document.txt',
+      binary: 'dGVzdA==',
+      subjectPersonIdentificationID: 'client',
+      documentCategoryText: 'receipt',
+      originalDocumentCreationDate: '2026-10-06',
+      originalDocumentLastModifiedDate: '2026-10-06',
+      transactionEntryUserID: 'user',
+      persist: true,
+      commit: true,
+    } satisfies DocumentUploadRequestEntity;
+
+    await trace.getTracer('application-tracing-test').startActiveSpan('test.request', async (span) => {
+      try {
+        await expect(operation === 'upload' ? repository.uploadDocument(document) : repository.scanDocument(document)).rejects.toThrow();
+      } finally {
+        span.end();
+      }
+    });
+
+    const spans = exporter.getFinishedSpans();
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.objectContaining({ Authorization: `Bearer ${token}` }) }));
+    expect(spans.some((span) => span.name === 'test.request')).toBe(true);
+    expect(spans.some((span) => span.name === `DefaultDocumentUploadRepository.${operation === 'upload' ? 'uploadDocument' : 'scanDocument'}` && span.status.code === SpanStatusCode.ERROR)).toBe(true);
+    expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain(token);
+    expect(instrumentation.countHttpStatus).toHaveBeenCalledWith(`http.client.document-scan-api.${operation === 'upload' ? 'spo-upload-document' : 'scan'}.posts`, 500);
   });
 
   it('preserves the parent span without creating container, in-memory lookup, or mapper spans', async () => {

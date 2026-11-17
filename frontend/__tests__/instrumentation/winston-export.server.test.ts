@@ -23,6 +23,26 @@ const logRecordSchema = z.object({
   eventName: z.string().optional(),
   spanContext: z.object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number() }).optional(),
 });
+const documentFailureRecordSchema = logRecordSchema.extend({
+  body: z.literal('Document upload failed: network'),
+  attributes: z.record(
+    z.string(),
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.strictObject({ name: z.literal('Error'), message: z.literal('Document upload request failed.'), stack: z.string() }),
+      z.strictObject({
+        name: z.literal('AppError'),
+        message: z.literal('Document upload request failed.'),
+        stack: z.string(),
+        errorCode: z.literal('AUTH-OIDC-0020'),
+        correlationId: z.string(),
+        httpStatusCode: z.literal(500),
+      }),
+    ]),
+  ),
+});
 
 test('the application preload preserves event schemas, severity and privacy through its real log sinks', async () => {
   const auditDirectory = await mkdtemp(join(tmpdir(), 'cdcp-audit-export-'));
@@ -63,13 +83,19 @@ test('the application preload preserves event schemas, severity and privacy thro
           import assert from 'node:assert/strict';
           import { logs, trace } from '@opentelemetry/api';
           import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
+          import { Redacted } from 'effect';
           import express from 'express';
           import { once } from 'node:events';
+          import { DocumentUploadRepositoryDefaultConfig } from './app/.server/domain/repositories/configs/document-upload-repository-default-config.ts';
+          import { DefaultDocumentUploadRepository } from './app/.server/domain/repositories/document-upload-repository-default.ts';
           import { DefaultAuditService } from './app/.server/domain/services/audit-service.ts';
+          import { DefaultDocumentUploadService } from './app/.server/domain/services/document-upload-service.ts';
           import { createRequestLoggerMiddleware } from './app/.server/express-server/middleware.ts';
           import { DefaultLogger } from './app/.server/logging/logger-default.ts';
           import { singleton } from './app/.server/utils/instance-registry.ts';
           import { redisErrorType } from './app/.server/data/redis-error-type.ts';
+          import { AppError } from './app/errors/app-error.ts';
+          import { ErrorCodes } from './app/errors/error-codes.ts';
           import { operationalErrorCode } from './app/instrumentation/operational-error-type.ts';
           import { ATTR_CDCP_ERROR_CODE } from './app/instrumentation/log-attributes.ts';
           import { maskApplicationConfirmationCode } from './app/.server/logging/mask-application-confirmation-code.ts';
@@ -129,6 +155,72 @@ test('the application preload preserves event schemas, severity and privacy thro
             'cdcp.application.confirmation_code': maskApplicationConfirmationCode('12345678'),
             'url.path': '/en/application/confirmation',
           });
+
+          const token = 'document-token-canary';
+          const transportError = Object.assign(new Error('document-person@example.invalid 999999997 ' + token, {
+            cause: new Error('document-nested-token-canary'),
+          }), {
+            details: 'document-person@example.invalid 999999997 ' + token,
+          });
+          const documentConfig = new DocumentUploadRepositoryDefaultConfig({
+            INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default',
+            INTEROP_API_BASE_URI: 'https://interop.example.test',
+            INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
+            INTEROP_API_MAX_RETRIES: 0,
+            INTEROP_API_BACKOFF_MS: 0,
+            EWDU_ENCAPSULATION_PASSWORD: Redacted.make('password'),
+            EWDU_ENCAPSULATION_USERNAME: 'username',
+            EWDU_PROGRAM_ACTIVITY_ID: 'activity',
+            INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID: Redacted.make('client'),
+            INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET: Redacted.make('secret'),
+            INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER: 'https://identity.example.test',
+            INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE: 'test.scope',
+          });
+          let failDocumentIdentity = false;
+          const documentRepository = new DefaultDocumentUploadRepository(
+            documentConfig,
+            { instrumentedFetch: async (_metric, _url, options) => {
+              assert.equal(options.headers.Authorization, 'Bearer ' + token);
+              throw transportError;
+            } },
+            { getAccessToken: async () => {
+              if (failDocumentIdentity) {
+                throw new AppError('document-identity-token-canary', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED, {
+                  cause: new Error('document-nested-token-canary'),
+                });
+              }
+              return Redacted.make(token);
+            } },
+          );
+          const documentService = new DefaultDocumentUploadService(
+            { mapDocumentUploadRequestDtoToEntity: async () => ({
+              filename: 'document.txt', binary: 'dGVzdA==',
+              subjectPersonIdentificationID: 'client', documentCategoryText: 'receipt',
+              originalDocumentCreationDate: '2026-10-06', originalDocumentLastModifiedDate: '2026-10-06',
+              transactionEntryUserID: 'user', persist: true, commit: true,
+            }) },
+            documentRepository,
+            { createAudit() {} },
+          );
+          winston.level = 'trace';
+          const documentResult = await documentService.uploadDocument({ userId: 'user' });
+          assert.equal(documentResult.status, 'error');
+          failDocumentIdentity = true;
+          assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
+
+          process.env.NODE_ENV = 'development';
+          const developmentWinston = createWinstonInstance({
+            LOG_LEVEL: 'error',
+            AUDIT_LOG_ENABLED: false,
+          });
+          const developmentLogger = new DefaultLogger(developmentWinston, 'document-upload-dev-test');
+          developmentLogger.error(documentResult.error, { 'error.type': 'document_upload_network' });
+          const developmentFinished = once(developmentWinston, 'finish');
+          developmentWinston.end();
+          await developmentFinished;
+          developmentWinston.close();
+          process.env.NODE_ENV = 'production';
+
           winston.level = 'trace';
           logger.trace('Synthetic trace diagnostic');
           logger.debug('Synthetic debug diagnostic');
@@ -210,10 +302,11 @@ test('the application preload preserves event schemas, severity and privacy thro
 
     const exported = Buffer.concat(payloads).toString('utf8');
     const recordPrefix = 'OTEL_TEST_RECORD:';
+    expect(stdout).not.toContain('document-token-canary');
     const records = stdout
       .split('\n')
       .filter((line) => line.startsWith(recordPrefix))
-      .map((line) => logRecordSchema.parse(JSON.parse(line.slice(recordPrefix.length))));
+      .map((line) => z.union([logRecordSchema, documentFailureRecordSchema]).parse(JSON.parse(line.slice(recordPrefix.length))));
     const files = (await readdir(auditDirectory)).filter((file) => file.endsWith('.log'));
     expect(files).toHaveLength(1);
     const auditFile = join(auditDirectory, files[0]!);
@@ -239,6 +332,14 @@ test('the application preload preserves event schemas, severity and privacy thro
     expect(exported).not.toContain('local-synthetic-key');
     expect(consoleOutput).toContain('Synthetic dependency request finished');
     expect(consoleOutput).toContain('Synthetic HTTP request completed');
+    expect(consoleRecords).toContainEqual(expect.objectContaining({ message: 'Document upload failed: network', 'error.type': 'document_upload_network' }));
+    const documentFailures = records.filter((record) => record.body === 'Document upload failed: network');
+    expect(documentFailures).toHaveLength(3);
+
+    for (const record of documentFailures) {
+      expect(Object.keys(record.attributes).sort()).toEqual(['cause', 'error.type', 'exception.message', 'exception.stacktrace', 'exception.type', 'kind', 'label', 'timestamp'].sort());
+      expect(record).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { 'error.type': 'document_upload_network', kind: 'network' } });
+    }
 
     for (const output of [exported, consoleOutput]) {
       expect(output).toContain('Synthetic Redis connection failed');
@@ -264,7 +365,20 @@ test('the application preload preserves event schemas, severity and privacy thro
     }
 
     for (const output of [exported, stdout, stderr, auditOutput]) {
-      for (const canary of ['999999998', '999999999', 'sink-person', 'sink-token-canary', 'query-token-canary', 'nested-audit-canary', 'arbitrary-error-canary']) {
+      for (const canary of [
+        '999999997',
+        '999999998',
+        '999999999',
+        'document-person',
+        'document-token-canary',
+        'document-identity-token-canary',
+        'document-nested-token-canary',
+        'sink-person',
+        'sink-token-canary',
+        'query-token-canary',
+        'nested-audit-canary',
+        'arbitrary-error-canary',
+      ]) {
         expect(output).not.toContain(canary);
       }
 

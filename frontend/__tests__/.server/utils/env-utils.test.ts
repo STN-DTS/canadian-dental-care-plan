@@ -26,6 +26,12 @@ describe('getEnv secret values', () => {
     vi.stubEnv('GC_NOTIFY_API_KEY', 'notify-key');
     vi.stubEnv('INTEROP_APPLICANT_API_SUBSCRIPTION_KEY', '  applicant-key  ');
     vi.stubEnv('INTEROP_CCT_API_SUBSCRIPTION_KEY', '  ');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_PROVIDER', 'mock');
+    vi.stubEnv('ENABLED_MOCKS', '');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', '');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID', '');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET', '');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE', '');
   });
 
   afterEach(() => {
@@ -46,4 +52,100 @@ describe('getEnv secret values', () => {
     expect(Redacted.isRedacted(config.AUTH_JWT_PRIVATE_KEY)).toBe(true);
     expect(Redacted.isRedacted(config.GC_NOTIFY_API_KEY)).toBe(true);
   });
+
+  it('uses the mock document upload provider independently of other service mocks', () => {
+    vi.stubEnv('ENABLED_MOCKS', 'cct,code-tables');
+
+    const config = getEnv();
+    expect(config.INTEROP_DOCUMENT_UPLOAD_PROVIDER).toBe('mock');
+    expect(config.ENABLED_MOCKS).toEqual(['cct', 'code-tables']);
+  });
+
+  it('rejects document-upload in ENABLED_MOCKS', () => {
+    vi.stubEnv('ENABLED_MOCKS', 'cct,document-upload');
+
+    expect(() => getEnv()).toThrow('ENABLED_MOCKS');
+  });
+
+  it('uses the default document upload provider independently of other service mocks', () => {
+    configureDefault();
+    vi.stubEnv('ENABLED_MOCKS', 'cct');
+
+    const config = getEnv();
+    expect(config.INTEROP_DOCUMENT_UPLOAD_PROVIDER).toBe('default');
+    expect(config.ENABLED_MOCKS).toEqual(['cct']);
+  });
+
+  it('defaults to the real provider when no provider is configured', () => {
+    configureDefault();
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_PROVIDER', '');
+
+    expect(getEnv().INTEROP_DOCUMENT_UPLOAD_PROVIDER).toBe('default');
+  });
+
+  it('rejects a missing EWDU password for the default provider', () => {
+    configureDefault();
+    vi.stubEnv('EWDU_ENCAPSULATION_PASSWORD', '');
+
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+
+  it('rejects a whitespace-only OAuth secret for the default provider', () => {
+    configureDefault();
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET', '   ');
+
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+
+  it.each(['INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', 'INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID', 'INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET', 'INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE'] as const)(
+    'rejects missing %s for the default provider at startup',
+    (key) => {
+      configureDefault();
+      vi.stubEnv(key, '');
+      expect(() => getEnv()).toThrow('Invalid application configuration');
+    },
+  );
+
+  it.each(['https://identity.example.test', 'https://identity.example.test/organization'])('accepts issuer %s and keeps the OAuth secret redacted without changing its value', (issuer) => {
+    configureDefault();
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', ` ${issuer} `);
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID', ' client-id ');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET', ' secret +&= ');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE', ' documents.write ');
+
+    const config = getEnv();
+    assert(config.INTEROP_DOCUMENT_UPLOAD_PROVIDER === 'default');
+    expect(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER).toBe(issuer);
+    expect(Redacted.value(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID)).toBe('client-id');
+    expect(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE).toBe('documents.write');
+    assert(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET);
+    expect(Redacted.isRedacted(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET)).toBe(true);
+    expect(Redacted.value(config.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET)).toBe(' secret +&= ');
+    expect(JSON.stringify(config)).not.toContain('secret +&=');
+  });
+
+  it.each([
+    '../identity',
+    'identity.example.test',
+    'http://identity.example.test',
+    'https://user:password@identity.example.test',
+    'https://identity.example.test?query=value',
+    'https://identity.example.test#fragment',
+    'https://identity.example.test?',
+    'https://identity.example.test#',
+    'https://identity.example.test/.well-known/openid-configuration',
+  ])('rejects unsafe or non-issuer URL %s', (issuer) => {
+    configureDefault();
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', issuer);
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
 });
+
+function configureDefault() {
+  vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_PROVIDER', 'default');
+  vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', 'https://identity.example.test');
+  vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID', 'client-id');
+  vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET', 'client-secret');
+  vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE', 'documents.write');
+  vi.stubEnv('EWDU_ENCAPSULATION_PASSWORD', 'password');
+}

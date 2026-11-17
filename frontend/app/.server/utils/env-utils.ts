@@ -2,6 +2,7 @@ import { DiagLogLevel } from '@opentelemetry/api';
 import { randomUUID } from 'node:crypto';
 import * as z from 'zod';
 
+import { documentUploadRepositoryConfigSchema } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import { singleton } from '~/.server/utils/instance-registry';
 import { stringToRedacted } from '~/.server/utils/zod-utils';
@@ -24,7 +25,7 @@ function tryOrElseFalse(fn: () => void) {
   }
 }
 
-const validMockNames = ['cct', 'code-tables', 'document-upload', 'evidentiary-document', 'gc-notify', 'power-platform', 'profile', 'raoidc', 'status-check', 'verification-code', 'wsaddress'] as const;
+const validMockNames = ['cct', 'code-tables', 'evidentiary-document', 'gc-notify', 'power-platform', 'profile', 'raoidc', 'status-check', 'verification-code', 'wsaddress'] as const;
 export type MockName = (typeof validMockNames)[number];
 
 // refiners
@@ -48,32 +49,32 @@ const toNumber = (val?: string) => (val ? Number.parseInt(val) : undefined);
  * Environment variables that will be available to server only.
  */
 // oxfmt-ignore
-const serverEnv = clientEnvSchema.extend({
+const baseServerEnvSchema  = clientEnvSchema.extend({
   NODE_ENV: z.enum(['production', 'development', 'test']),
 
   // applicant category codes
-  APPLICANT_CATEGORY_CODE_INDIVIDUAL: z.string().trim().min(1).default("775170000"),
-  APPLICANT_CATEGORY_CODE_FAMILY: z.string().trim().min(1).default("775170001"),
-  APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY: z.string().trim().min(1).default("775170002"),
+  APPLICANT_CATEGORY_CODE_INDIVIDUAL: z.string().trim().nonempty().default("775170000"),
+  APPLICANT_CATEGORY_CODE_FAMILY: z.string().trim().nonempty().default("775170001"),
+  APPLICANT_CATEGORY_CODE_DEPENDENT_ONLY: z.string().trim().nonempty().default("775170002"),
 
   // benefit application channel codes
-  BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC: z.string().trim().min(1).default("775170001"),
-  BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED: z.string().trim().min(1).default("775170004"),
+  BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC: z.string().trim().nonempty().default("775170001"),
+  BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED: z.string().trim().nonempty().default("775170004"),
 
   // province/territory lookup identifiers
-  ALBERTA_PROVINCE_ID: z.string().trim().min(1).default("3b17d494-35b3-eb11-8236-0022486d8d5f"),
-  BRITISH_COLUMBIA_PROVINCE_ID: z.string().trim().min(1).default("9c440baa-35b3-eb11-8236-0022486d8d5f"),
-  MANITOBA_PROVINCE_ID: z.string().trim().min(1).default("6d861c55-36b3-eb11-8236-0022486d8d5f"),
-  NEW_BRUNSWICK_PROVINCE_ID: z.string().trim().min(1).default("23dc27a2-36b3-eb11-8236-0022486d8d5f"),
-  NOVA_SCOTIA_PROVINCE_ID: z.string().trim().min(1).default("fc2243c9-36b3-eb11-8236-0022486d8d5f"),
-  ONTARIO_PROVINCE_ID: z.string().trim().min(1).default("daf4d05b-37b3-eb11-8236-0022486d8d5f"),
-  QUEBEC_PROVINCE_ID: z.string().trim().min(1).default("39449f70-37b3-eb11-8236-0022486d8d5f"),
-  SASKATCHEWAN_PROVINCE_ID: z.string().trim().min(1).default("5bc09caf-38b3-eb11-8236-0022486d8d5f"),
-  NEWFOUNDLAND_PROVINCE_ID: z.string().trim().min(1).default("5abc28c9-38b3-eb11-8236-0022486d8d5f"),
-  PRINCE_EDWARD_ISLAND_PROVINCE_ID: z.string().trim().min(1).default("3b8110df-38b3-eb11-8236-0022486d8d5f"),
-  NUNAVUT_PROVINCE_ID: z.string().trim().min(1).default("9936c08e-39b3-eb11-8236-0022486d8d5f"),
-  NORTHWEST_TERRITORIES_PROVINCE_ID: z.string().trim().min(1).default("6026aca2-39b3-eb11-8236-0022486d8d5f"),
-  YUKON_PROVINCE_ID: z.string().trim().min(1).default("8fef32b7-39b3-eb11-8236-0022486d8d5f"),
+  ALBERTA_PROVINCE_ID: z.string().trim().nonempty().default("3b17d494-35b3-eb11-8236-0022486d8d5f"),
+  BRITISH_COLUMBIA_PROVINCE_ID: z.string().trim().nonempty().default("9c440baa-35b3-eb11-8236-0022486d8d5f"),
+  MANITOBA_PROVINCE_ID: z.string().trim().nonempty().default("6d861c55-36b3-eb11-8236-0022486d8d5f"),
+  NEW_BRUNSWICK_PROVINCE_ID: z.string().trim().nonempty().default("23dc27a2-36b3-eb11-8236-0022486d8d5f"),
+  NOVA_SCOTIA_PROVINCE_ID: z.string().trim().nonempty().default("fc2243c9-36b3-eb11-8236-0022486d8d5f"),
+  ONTARIO_PROVINCE_ID: z.string().trim().nonempty().default("daf4d05b-37b3-eb11-8236-0022486d8d5f"),
+  QUEBEC_PROVINCE_ID: z.string().trim().nonempty().default("39449f70-37b3-eb11-8236-0022486d8d5f"),
+  SASKATCHEWAN_PROVINCE_ID: z.string().trim().nonempty().default("5bc09caf-38b3-eb11-8236-0022486d8d5f"),
+  NEWFOUNDLAND_PROVINCE_ID: z.string().trim().nonempty().default("5abc28c9-38b3-eb11-8236-0022486d8d5f"),
+  PRINCE_EDWARD_ISLAND_PROVINCE_ID: z.string().trim().nonempty().default("3b8110df-38b3-eb11-8236-0022486d8d5f"),
+  NUNAVUT_PROVINCE_ID: z.string().trim().nonempty().default("9936c08e-39b3-eb11-8236-0022486d8d5f"),
+  NORTHWEST_TERRITORIES_PROVINCE_ID: z.string().trim().nonempty().default("6026aca2-39b3-eb11-8236-0022486d8d5f"),
+  YUKON_PROVINCE_ID: z.string().trim().nonempty().default("8fef32b7-39b3-eb11-8236-0022486d8d5f"),
 
   // language codes
   ENGLISH_LANGUAGE_CODE: z.coerce.number().default(1033),
@@ -81,7 +82,7 @@ const serverEnv = clientEnvSchema.extend({
 
   // interop api settings
   INTEROP_API_BASE_URI: z.url(),
-  INTEROP_API_SUBSCRIPTION_KEY: z.string().trim().min(1).pipe(stringToRedacted),
+  INTEROP_API_SUBSCRIPTION_KEY: z.string().trim().nonempty().pipe(stringToRedacted),
   INTEROP_API_MAX_RETRIES: z.coerce.number().default(3),
   INTEROP_API_BACKOFF_MS: z.coerce.number().default(100),
   INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH: z.coerce.number().int().positive().default(30),
@@ -95,11 +96,6 @@ const serverEnv = clientEnvSchema.extend({
   INTEROP_STATUS_CHECK_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
   INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
 
-  // Enterprise Wide Document Upload settings
-  EWDU_ENCAPSULATION_USERNAME: z.string().default('CDCP'),
-  EWDU_ENCAPSULATION_PASSWORD: z.string().pipe(stringToRedacted).optional(),
-  EWDU_PROGRAM_ACTIVITY_ID: z.string().default('CDCP'),
-
   // simulation/testing date settings
   APPLICATION_CURRENT_DATE: z.string().optional(),
 
@@ -107,19 +103,19 @@ const serverEnv = clientEnvSchema.extend({
   AUTH_JWT_PRIVATE_KEY: z.string().refine(isValidPrivateKey).pipe(stringToRedacted),
   AUTH_JWT_PUBLIC_KEY: z.string().refine(isValidPublicKey),
   AUTH_LOGOUT_REDIRECT_URL: z.url(),
-  AUTH_RAOIDC_BASE_URL: z.string().trim().min(1),
-  AUTH_RAOIDC_CLIENT_ID: z.string().trim().min(1),
+  AUTH_RAOIDC_BASE_URL: z.string().trim().nonempty(),
+  AUTH_RAOIDC_CLIENT_ID: z.string().trim().nonempty(),
   AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS: z.coerce.number().default(10 * 60),
-  AUTH_RASCL_LOGOUT_URL: z.string().trim().min(1),
+  AUTH_RASCL_LOGOUT_URL: z.string().trim().nonempty(),
 
   // GC Notify settings (@see https://documentation.notification.canada.ca/en/)
-  GC_NOTIFY_API_KEY: z.string().trim().min(1).pipe(stringToRedacted),
-  GC_NOTIFY_ENGLISH_TEMPLATE_ID: z.string().trim().min(1).default('8b77428b-56a5-415c-9b48-ef1f10c128e7'),
-  GC_NOTIFY_FRENCH_TEMPLATE_ID: z.string().trim().min(1).default('2991903c-56f9-4c4e-af2e-db3ecf04b44c'),
+  GC_NOTIFY_API_KEY: z.string().trim().nonempty().pipe(stringToRedacted),
+  GC_NOTIFY_ENGLISH_TEMPLATE_ID: z.string().trim().nonempty().default('8b77428b-56a5-415c-9b48-ef1f10c128e7'),
+  GC_NOTIFY_FRENCH_TEMPLATE_ID: z.string().trim().nonempty().default('2991903c-56f9-4c4e-af2e-db3ecf04b44c'),
 
   // hCaptcha settings (@see https://docs.hcaptcha.com)
   HCAPTCHA_MAX_SCORE: z.coerce.number().default(0.79),
-  HCAPTCHA_SECRET_KEY: z.string().trim().min(1).default('0x0000000000000000000000000000000000000000').pipe(stringToRedacted),
+  HCAPTCHA_SECRET_KEY: z.string().trim().nonempty().default('0x0000000000000000000000000000000000000000').pipe(stringToRedacted),
   HCAPTCHA_VERIFY_URL: z.url().default('https://api.hcaptcha.com/siteverify'),
 
   // http proxy settings
@@ -129,28 +125,28 @@ const serverEnv = clientEnvSchema.extend({
   // session configuration
   SESSION_STORAGE_TYPE: z.enum(['memory', 'redis']).default('memory'),
   SESSION_EXPIRES_SECONDS: z.coerce.number().default(1200),
-  SESSION_COOKIE_NAME: z.string().trim().min(1).default('__CDCP||session'),
-  SESSION_COOKIE_DOMAIN: z.string().trim().min(1).optional(),
-  SESSION_COOKIE_PATH: z.string().trim().min(1).default('/'),
+  SESSION_COOKIE_NAME: z.string().trim().nonempty().default('__CDCP||session'),
+  SESSION_COOKIE_DOMAIN: z.string().trim().nonempty().optional(),
+  SESSION_COOKIE_PATH: z.string().trim().nonempty().default('/'),
   SESSION_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   SESSION_COOKIE_SECRET: z.string().trim().min(16).default(randomUUID()).pipe(stringToRedacted),
   SESSION_COOKIE_HTTP_ONLY: z.string().transform(toBoolean).default(true),
   SESSION_COOKIE_SECURE: z.string().transform(toBoolean).default(true),
-  SESSION_KEY_PREFIX: z.string().trim().min(1).default('SESSION:'),
+  SESSION_KEY_PREFIX: z.string().trim().nonempty().default('SESSION:'),
 
 
   // redis server configuration
   REDIS_SENTINEL_NAME: z.string().trim().transform(emptyToUndefined).optional(),
-  REDIS_SENTINEL_HOST: z.string().trim().min(1).default('localhost'),
+  REDIS_SENTINEL_HOST: z.string().trim().nonempty().default('localhost'),
   // Sentinels by default run listening for connections to TCP port 26379
   REDIS_SENTINEL_PORT: z.coerce.number().default(26_379),
-  REDIS_SENTINEL_USERNAME: z.string().trim().min(1).optional(),
-  REDIS_SENTINEL_PASSWORD: z.string().trim().min(1).pipe(stringToRedacted).optional(),
-  REDIS_STANDALONE_HOST: z.string().trim().min(1).default('localhost'),
+  REDIS_SENTINEL_USERNAME: z.string().trim().nonempty().optional(),
+  REDIS_SENTINEL_PASSWORD: z.string().trim().nonempty().pipe(stringToRedacted).optional(),
+  REDIS_STANDALONE_HOST: z.string().trim().nonempty().default('localhost'),
   // Redis by default run listening for connections to TCP port 6379
   REDIS_STANDALONE_PORT: z.coerce.number().default(6379),
-  REDIS_USERNAME: z.string().trim().min(1).optional(),
-  REDIS_PASSWORD: z.string().trim().min(1).pipe(stringToRedacted).optional(),
+  REDIS_USERNAME: z.string().trim().nonempty().optional(),
+  REDIS_PASSWORD: z.string().trim().nonempty().pipe(stringToRedacted).optional(),
   REDIS_COMMAND_TIMEOUT_SECONDS: z.string().transform(toNumber).default(1),
 
   // mocks settings
@@ -179,12 +175,12 @@ const serverEnv = clientEnvSchema.extend({
   // OpenTelemetry/Dynatrace settings
   OTEL_LOG_LEVEL: z.string().refine((val) => otelLogLevels.has(val)).default('info'),
   OTEL_API_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
-  OTEL_ENVIRONMENT: z.string().trim().min(1).default('localhost'),
+  OTEL_ENVIRONMENT: z.string().trim().nonempty().default('localhost'),
   OTEL_METRICS_ENDPOINT: z.string().trim().transform(emptyToUndefined).optional(),
   OTEL_METRICS_EXPORT_INTERVAL_MILLIS: z.coerce.number().default(60 * 1000),
   OTEL_METRICS_EXPORT_TIMEOUT_MILLIS: z.coerce.number().default(30 * 1000),
-  OTEL_SERVICE_NAME: z.string().trim().min(1).default('canadian-dental-care-plan'),
-  OTEL_SERVICE_VERSION: z.string().trim().min(1).default('0.0.0'),
+  OTEL_SERVICE_NAME: z.string().trim().nonempty().default('canadian-dental-care-plan'),
+  OTEL_SERVICE_VERSION: z.string().trim().nonempty().default('0.0.0'),
   OTEL_TRACES_ENDPOINT: z.string().trim().transform(emptyToUndefined).optional(),
   OTEL_USE_CONSOLE_EXPORTERS: z.string().transform(toBoolean).default(false),
 
@@ -223,9 +219,9 @@ const serverEnv = clientEnvSchema.extend({
   RENEWAL_PERIOD_END_DATE: z.iso.datetime().default('2026-06-02T03:59:59.999Z'),
 
   // CSRF token and cookie configuration
-  CSRF_TOKEN_COOKIE_NAME: z.string().trim().min(1).default('__CDCP||csrf'),
-  CSRF_TOKEN_COOKIE_SECRET: z.string().trim().min(1).pipe(stringToRedacted).optional(),
-  CSRF_TOKEN_SECRET: z.string().trim().min(1).pipe(stringToRedacted).optional(),
+  CSRF_TOKEN_COOKIE_NAME: z.string().trim().nonempty().default('__CDCP||csrf'),
+  CSRF_TOKEN_COOKIE_SECRET: z.string().trim().nonempty().pipe(stringToRedacted).optional(),
+  CSRF_TOKEN_SECRET: z.string().trim().nonempty().pipe(stringToRedacted).optional(),
 
   /**
    * Defines the duration (in seconds) the application killswitch remains active once engaged.
@@ -256,7 +252,9 @@ const serverEnv = clientEnvSchema.extend({
     message: 'RENEWAL_PERIOD_END_DATE must be greater than or equal to RENEWAL_PERIOD_START_DATE',
   });
 
-export type ServerEnv = z.infer<typeof serverEnv>;
+const serverEnvSchema = baseServerEnvSchema.and(documentUploadRepositoryConfigSchema);
+
+export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 /**
  * Retrieves and validates the server-side environment variables.
@@ -270,7 +268,7 @@ export type ServerEnv = z.infer<typeof serverEnv>;
 export function getEnv(): ServerEnv {
   return singleton('serverEnv', () => {
     const processed = preprocess(process.env);
-    const result = serverEnv.safeParse(processed);
+    const result = serverEnvSchema.safeParse(processed);
 
     if (!result.success) {
       throw new Error(`Invalid application configuration: ${result.error}`);

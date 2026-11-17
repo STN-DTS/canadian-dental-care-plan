@@ -195,7 +195,7 @@ function handleMockAuthorizeRequest({ context, url }: Pick<Route.LoaderArgs, 'co
   const isValidRedirectUri = (val: string): boolean => MOCK_AUTH_ALLOWED_REDIRECTS.includes(val);
 
   const searchParamsSchema = z.object({
-    clientId: z.string().min(1).max(64),
+    clientId: z.string().nonempty().max(64),
     codeChallenge: z.string().min(43).max(128),
     codeChallengeMethod: z.enum(['S256']),
     nonce: z.string().min(8).max(64),

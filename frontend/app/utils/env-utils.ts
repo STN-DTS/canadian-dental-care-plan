@@ -33,7 +33,7 @@ export const clientEnvSchema = z.object({
 
   ENABLED_FEATURES: z.string().transform(emptyToUndefined).transform(csvToArray).refine(areValidFeatureNames).default([]),
 
-  TIME_ZONE: z.string().trim().min(1).refine(isValidTimeZone).default('Canada/Eastern'),
+  TIME_ZONE: z.string().trim().nonempty().refine(isValidTimeZone).default('Canada/Eastern'),
 
   I18NEXT_DEBUG: z.string().transform(toBoolean).default(false),
 
@@ -46,27 +46,27 @@ export const clientEnvSchema = z.object({
   HEADER_LOGO_URL_FR: z.url().default('https://canada.ca/fr'),
 
   // hCaptcha settings (@see https://docs.hcaptcha.com/#test-key-set-enterprise-account-safe-end-user)
-  HCAPTCHA_SITE_KEY: z.string().trim().min(1).default('20000000-ffff-ffff-ffff-000000000002'),
+  HCAPTCHA_SITE_KEY: z.string().trim().nonempty().default('20000000-ffff-ffff-ffff-000000000002'),
 
   SESSION_TIMEOUT_SECONDS: z.coerce.number().min(0).default(19 * 60),
   SESSION_TIMEOUT_PROMPT_SECONDS: z.coerce.number().min(0).default(5 * 60),
 
   // lookup identifiers
-  CANADA_COUNTRY_ID: z.string().trim().min(1).default('0cf5389e-97ae-eb11-8236-000d3af4bfc3'),
-  USA_COUNTRY_ID: z.string().trim().min(1).default('fcf7389e-97ae-eb11-8236-000d3af4bfc3'),
-  COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: z.string().trim().min(1).default('775170000'),
-  COMMUNICATION_METHOD_SUNLIFE_MAIL_ID: z.string().trim().min(1).default('775170002'),
-  COMMUNICATION_METHOD_GC_DIGITAL_ID: z.string().trim().min(1).default('775170000'),
-  COMMUNICATION_METHOD_GC_MAIL_ID: z.string().trim().min(1).default('775170002'),
-  CLIENT_STATUS_SUCCESS_ID: z.string().trim().min(1).default('51af5170-614e-ee11-be6f-000d3a09d640'),
-  INVALID_CLIENT_FRIENDLY_STATUS: z.string().trim().min(1).default('504fba6e-604e-ee11-be6f-000d3a09d640'),
+  CANADA_COUNTRY_ID: z.string().trim().nonempty().default('0cf5389e-97ae-eb11-8236-000d3af4bfc3'),
+  USA_COUNTRY_ID: z.string().trim().nonempty().default('fcf7389e-97ae-eb11-8236-000d3af4bfc3'),
+  COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID: z.string().trim().nonempty().default('775170000'),
+  COMMUNICATION_METHOD_SUNLIFE_MAIL_ID: z.string().trim().nonempty().default('775170002'),
+  COMMUNICATION_METHOD_GC_DIGITAL_ID: z.string().trim().nonempty().default('775170000'),
+  COMMUNICATION_METHOD_GC_MAIL_ID: z.string().trim().nonempty().default('775170002'),
+  CLIENT_STATUS_SUCCESS_ID: z.string().trim().nonempty().default('51af5170-614e-ee11-be6f-000d3a09d640'),
+  INVALID_CLIENT_FRIENDLY_STATUS: z.string().trim().nonempty().default('504fba6e-604e-ee11-be6f-000d3a09d640'),
   INVALID_LETTER_TYPE_IDS: z.string().trim().transform(csvToArray).default(['775170000']),
-  MARITAL_STATUS_CODE_SINGLE: z.string().trim().min(1).default("775170000"),
-  MARITAL_STATUS_CODE_MARRIED: z.string().trim().min(1).default("775170001"),
-  MARITAL_STATUS_CODE_COMMON_LAW: z.string().trim().min(1).default("775170002"),
-  MARITAL_STATUS_CODE_SEPARATED: z.string().trim().min(1).default("775170003"),
-  MARITAL_STATUS_CODE_DIVORCED: z.string().trim().min(1).default("775170004"),
-  MARITAL_STATUS_CODE_WIDOWED: z.string().trim().min(1).default("775170005"),
+  MARITAL_STATUS_CODE_SINGLE: z.string().trim().nonempty().default("775170000"),
+  MARITAL_STATUS_CODE_MARRIED: z.string().trim().nonempty().default("775170001"),
+  MARITAL_STATUS_CODE_COMMON_LAW: z.string().trim().nonempty().default("775170002"),
+  MARITAL_STATUS_CODE_SEPARATED: z.string().trim().nonempty().default("775170003"),
+  MARITAL_STATUS_CODE_DIVORCED: z.string().trim().nonempty().default("775170004"),
+  MARITAL_STATUS_CODE_WIDOWED: z.string().trim().nonempty().default("775170005"),
 
   // CDCP Survey URLs
   CDCP_SURVEY_LINK_EN: z.url().default('https://forms-formulaires.alpha.canada.ca/en/id/cmdsycga6008qx701dw5x5n9c'),
@@ -79,27 +79,27 @@ export const clientEnvSchema = z.object({
   DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: z.string().trim().toLowerCase().default('.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff')
     .transform(csvToArray)
     .transform((val) => [...new Set(val)]) // remove duplicates
-    .pipe(z.array(z.string().refine(isValidExtension)).min(1)),
+    .pipe(z.array(z.string().refine(isValidExtension)).nonempty()),
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
   DOCUMENT_UPLOAD_MAX_FILE_COUNT: z.coerce.number().positive().default(10),
-  RECORD_SOURCE_API: z.string().trim().min(1).default('775170002'),
-  RECORD_SOURCE_MSCA: z.string().trim().min(1).default('775170004'),
+  RECORD_SOURCE_API: z.string().trim().nonempty().default('775170002'),
+  RECORD_SOURCE_MSCA: z.string().trim().nonempty().default('775170004'),
 
   // Eligibility Status Codes
-  ELIGIBILITY_STATUS_CODE_ELIGIBLE: z.string().trim().min(1).default('775170000'),
-  ELIGIBILITY_STATUS_CODE_INELIGIBLE: z.string().trim().min(1).default('775170001'),
+  ELIGIBILITY_STATUS_CODE_ELIGIBLE: z.string().trim().nonempty().default('775170000'),
+  ELIGIBILITY_STATUS_CODE_INELIGIBLE: z.string().trim().nonempty().default('775170001'),
 
   // Enrollment Status Codes
-  ENROLLMENT_STATUS_CODE_ENROLLED: z.string().trim().min(1).default('775170000'),
+  ENROLLMENT_STATUS_CODE_ENROLLED: z.string().trim().nonempty().default('775170000'),
 
   // Coverage Category Codes
-  COVERAGE_CATEGORY_CODE_COPAY_TIER: z.string().trim().min(1).default('Co-Pay Tier'),
-  COVERAGE_CATEGORY_CODE_COPAY_TIER_TPC: z.string().trim().min(1).default('Co-Pay Tier (TPC)'),
+  COVERAGE_CATEGORY_CODE_COPAY_TIER: z.string().trim().nonempty().default('Co-Pay Tier'),
+  COVERAGE_CATEGORY_CODE_COPAY_TIER_TPC: z.string().trim().nonempty().default('Co-Pay Tier (TPC)'),
 
   // Coverage Tier Codes
-  COVERAGE_TIER_CODE_TIER_1: z.string().trim().min(1).default('4f763da3-311c-ee11-8f6d-000d3a09d1b8'),
-  COVERAGE_TIER_CODE_TIER_2: z.string().trim().min(1).default('f2f62bcb-311c-ee11-8f6d-000d3a09d1b8'),
-  COVERAGE_TIER_CODE_TIER_3: z.string().trim().min(1).default('5984caeb-311c-ee11-8f6d-000d3a09d1b8'),
+  COVERAGE_TIER_CODE_TIER_1: z.string().trim().nonempty().default('4f763da3-311c-ee11-8f6d-000d3a09d1b8'),
+  COVERAGE_TIER_CODE_TIER_2: z.string().trim().nonempty().default('f2f62bcb-311c-ee11-8f6d-000d3a09d1b8'),
+  COVERAGE_TIER_CODE_TIER_3: z.string().trim().nonempty().default('5984caeb-311c-ee11-8f6d-000d3a09d1b8'),
 });
 
 export type ClientEnv = ReadonlyDeep<z.infer<typeof clientEnvSchema>>;

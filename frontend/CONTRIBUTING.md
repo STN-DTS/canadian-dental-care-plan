@@ -158,9 +158,10 @@ When adding a localized route:
 
 ## External services and mocks
 
-Local development and end-to-end tests use values from `.env`.
-`ENABLED_FEATURES` controls optional journeys. `ENABLED_MOCKS` controls mocked
-external services.
+Local development uses values from `.env`. Playwright configures mock values in
+`playwright.config.ts`. `ENABLED_FEATURES` controls optional journeys.
+`ENABLED_MOCKS` controls mocked external services other than document upload.
+`INTEROP_DOCUMENT_UPLOAD_PROVIDER` selects the document upload provider.
 
 Use mocks for local tests. Do not call real government or partner services from
 unit tests. Keep API endpoints, subscription keys, JWT keys, and other secrets

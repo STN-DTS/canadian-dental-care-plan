@@ -259,6 +259,7 @@ test.describe('validation, scanning and uploading', () => {
 
     try {
       await uploadPage.submit();
+      await expect.poll(() => requests.length).toBe(1);
       // The modal hides background controls from the accessibility tree while uploading.
       await expect(uploadPage.page.locator('#fileUploadTrigger')).toBeDisabled();
       await expect(uploadPage.page.locator('select')).toBeDisabled();

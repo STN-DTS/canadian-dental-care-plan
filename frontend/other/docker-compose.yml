@@ -22,6 +22,7 @@ services:
       - HCAPTCHA_SITE_KEY=10000000-ffff-ffff-ffff-000000000001
       - INTEROP_API_BASE_URI=https://api.example.com
       - INTEROP_API_SUBSCRIPTION_KEY=00000000000000000000000000000000
+      - INTEROP_DOCUMENT_UPLOAD_PROVIDER=mock
       - MOCK_AUTH_ALLOWED_REDIRECTS=http://localhost:3000/auth/callback/raoidc
 
   # Start a password-protected Redis instance on the default port.

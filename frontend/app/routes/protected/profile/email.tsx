@@ -119,7 +119,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       .string(t(($) => $.email.errorMessage.emailRequired))
       .trim()
       .toLowerCase()
-      .min(1)
+      .nonempty()
       .max(64)
       .refine(
         (val) => isEmail(val),

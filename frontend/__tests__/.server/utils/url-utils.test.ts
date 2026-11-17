@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Result } from 'effect';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEnv } from '~/.server/utils/env-utils';
-import { getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl } from '~/.server/utils/url-utils';
+import { InvalidIssuerError, getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl, validateOAuthIssuer } from '~/.server/utils/url-utils';
 
 // Mock the getEnv function
 vi.mock(import('~/.server/utils/env-utils'), () => ({
@@ -54,6 +55,76 @@ describe('CDCP Website URL functions', () => {
 
       const result = getCdcpWebsiteStatusUrl('en');
       expect(result).toBe('https://example.com/en/status');
+    });
+  });
+
+  describe('validateOAuthIssuer', () => {
+    it.each([
+      ['https://identity.example.test', 'https://identity.example.test/'],
+      ['https://identity.example.test/tenant/v2.0', 'https://identity.example.test/tenant/v2.0'],
+      ['HTTPS://IDENTITY.EXAMPLE.TEST:443/tenant%3Fpart%23section', 'https://identity.example.test/tenant%3Fpart%23section'],
+    ])('returns a parsed URL for issuer %s', (input, expected) => {
+      const result = validateOAuthIssuer(input);
+
+      assert(Result.isSuccess(result));
+      expect(result.success).toBeInstanceOf(URL);
+      expect(result.success.href).toBe(expected);
+    });
+
+    it.each([
+      ['http://localhost:3000/tenant', 'http://localhost:3000/tenant'],
+      ['http://127.0.0.1:8080/tenant', 'http://127.0.0.1:8080/tenant'],
+    ])('accepts %s when local HTTP is enabled', (input, expected) => {
+      const result = validateOAuthIssuer(input, { allowHttpLocalhost: true });
+
+      assert(Result.isSuccess(result));
+      expect(result.success.href).toBe(expected);
+    });
+
+    it('rejects local HTTP when it is explicitly disabled', () => {
+      const result = validateOAuthIssuer('http://localhost:3000', { allowHttpLocalhost: false });
+
+      assert(Result.isFailure(result));
+      expect(result.failure.reason).toContain('https');
+    });
+
+    it.each([
+      ['', 'Malformed'],
+      ['/relative', 'Malformed'],
+      ['https://', 'Malformed'],
+      ['http://identity.example.test', 'https'],
+      ['http://localhost:3000/tenant', 'https'],
+      ['http://127.0.0.1:8080/tenant', 'https'],
+      ['ftp://identity.example.test', 'https'],
+      ['https://identity.example.test?tenant=example', 'query'],
+      ['https://identity.example.test?', 'query'],
+      ['https://identity.example.test#section', 'fragment'],
+      ['https://identity.example.test#', 'fragment'],
+      ['https://user@identity.example.test', 'credentials'],
+      ['https://:password@identity.example.test', 'credentials'],
+      ['https://identity.example.test/.well-known/openid-configuration', 'discovery'],
+    ])('returns a structured failure for issuer %s', (input, reason) => {
+      const result = validateOAuthIssuer(input);
+
+      assert(Result.isFailure(result));
+      expect(result.failure).toBeInstanceOf(InvalidIssuerError);
+      expect(result.failure).toMatchObject({ input, reason: expect.stringContaining(reason) });
+    });
+
+    it.each([
+      ['http://identity.example.test', 'https'],
+      ['http://localhost.example.test', 'https'],
+      ['http://127.0.0.2:8080', 'https'],
+      ['ftp://localhost:3000', 'https'],
+      ['http://localhost:3000?', 'query'],
+      ['http://localhost:3000#', 'fragment'],
+      ['http://user:password@localhost:3000', 'credentials'],
+    ])('still rejects %s when local HTTP is enabled', (input, reason) => {
+      const result = validateOAuthIssuer(input, { allowHttpLocalhost: true });
+
+      assert(Result.isFailure(result));
+      expect(result.failure).toBeInstanceOf(InvalidIssuerError);
+      expect(result.failure).toMatchObject({ input, reason: expect.stringContaining(reason) });
     });
   });
 
