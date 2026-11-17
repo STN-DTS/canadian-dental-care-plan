@@ -133,7 +133,7 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
 
     const files = await getFiles(submission);
     const expected =
-      locale === 'en' ? `You can upload up to ${count} ${count === 1 ? 'file' : 'files'} at a time. Submit before uploading more.` : `Vous pouvez téléverser jusqu'à ${count} fichiers à la fois. Vous devez les soumettre avant d'en téleverser d'autres.`;
+      locale === 'en' ? `You can upload up to ${count} ${count === 1 ? 'file' : 'files'} at a time. Submit before uploading more.` : `Vous pouvez téléverser jusqu'à ${count} fichiers à la fois. Vous devez les soumettre avant d'en téléverser d'autres.`;
 
     await expect(validateFileSelection(selection)).resolves.toMatchObject({
       success: false,
