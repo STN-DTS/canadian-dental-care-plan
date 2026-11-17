@@ -3,7 +3,7 @@ const ns = {
   notEnrolled: "Il semble que vous n'êtes pas actuellement inscrit au Régime canadien de soins dentaires.",
   recentlyApplied: "Si vous avez récemment présenté une demande, il pourrait y avoir un court délai avant que vos informations apparaissent dans «\u00A0Mon dossier Service Canada\u00A0».",
   doYouQualifyHref: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html",
-  howToApply: "Si vous voulez présenter une demande, vous pouvez trouver si vous êtes admissible sur la page <cdcpLink>Êtes-vous admissible</cdcpLink>.",
+  howToApply: "Si vous voulez présenter une demande, consultez la page <cdcpLink>Êtes-vous admissible</cdcpLink> pour vérifier si vous êtes admissible.",
   contactUsHref: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html",
   otherEnquiry: "Pour toute autre question ou demande de renseignements, vous pouvez <contactLink>contacter le Régime canadien de soins dentaires</contactLink>.",
   backButton: "Retour au tableau de bord",
