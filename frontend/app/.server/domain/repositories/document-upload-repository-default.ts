@@ -33,7 +33,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
     this.config = config;
     this.httpClient = httpClient;
     this.appIdentityClient = appIdentityClient;
-    this.baseUrl = `${this.config.baseUri.href.replace(/\/+$/, '')}/client-correspondence/document-upload/cct/v1/api`;
+    this.baseUrl = `${this.config.baseUri.href.replace(/\/+$/, '')}/client-correspondence/document-upload/upload/v1/api`;
   }
 
   private getAccessTokenRequest(): GetAccessTokenRequest {

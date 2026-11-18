@@ -300,7 +300,7 @@ The upload request includes these fields:
 The repository sends the request to:
 
 ```text
-POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument
+POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument
 ```
 
 The successful response contains a nonempty `DocumentFileName`. A returned rejection contains an `ErrorCode` and `ErrorMessage`. EWDU's confirmed unsafe-file response is HTTP 400 with this payload:

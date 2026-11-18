@@ -87,7 +87,7 @@ describe('DefaultDocumentUploadRepository', () => {
     expect(Redacted.value(identityRequest.clientSecret)).toBe(' secret +&= value ');
     expect(JSON.stringify(identityRequest)).not.toContain('client-id');
     expect(JSON.stringify(identityRequest)).not.toContain('secret +&= value');
-    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.spo-upload-document.posts', 'https://interop.example.test/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument', {
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.spo-upload-document.posts', 'https://interop.example.test/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument', {
       proxyUrl: new URL(serverConfig.HTTP_PROXY_URL).href,
       method: 'POST',
       headers: {
@@ -118,7 +118,7 @@ describe('DefaultDocumentUploadRepository', () => {
 
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledWith(
       expect.any(String),
-      'https://upload.example.test/root/client-correspondence/document-upload/cct/v1/api/SPOUploadDocument',
+      'https://upload.example.test/root/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
       expect.objectContaining({ headers: expect.objectContaining({ 'Ocp-Apim-Subscription-Key': 'upload-key' }) }),
     );
   });
@@ -277,7 +277,7 @@ describe('DefaultDocumentUploadRepository', () => {
       clientSecret: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET,
       scope: serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE,
     });
-    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.scan.posts', 'https://interop.example.test/client-correspondence/document-upload/cct/v1/api/Scan', {
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.document-scan-api.scan.posts', 'https://interop.example.test/client-correspondence/document-upload/upload/v1/api/Scan', {
       proxyUrl: new URL(serverConfig.HTTP_PROXY_URL).href,
       method: 'POST',
       headers: {
@@ -534,7 +534,7 @@ describe('document upload repository bindings', () => {
     container.bind(TYPES.AppIdentityClient).toConstantValue(mock<AppIdentityClient>());
 
     expect(container.get(TYPES.DocumentUploadRepository)).toBeInstanceOf(DefaultDocumentUploadRepository);
-    expect(container.get(TYPES.DocumentUploadRepository).getMetadata().baseUrl).toBe('https://interop.example.test/client-correspondence/document-upload/cct/v1/api');
+    expect(container.get(TYPES.DocumentUploadRepository).getMetadata().baseUrl).toBe('https://interop.example.test/client-correspondence/document-upload/upload/v1/api');
   });
 
   it('resolves the mock without default repository credentials', () => {
