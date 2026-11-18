@@ -32,12 +32,13 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
     | 'INTEROP_API_BASE_URI'
     | 'INTEROP_BENEFIT_APPLICATION_PATHNAME'
     | 'INTEROP_API_SUBSCRIPTION_KEY'
-    | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI'
-    | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_BENEFIT_APPLICATION_BASE_URI'
+    | 'INTEROP_BENEFIT_APPLICATION_SUBSCRIPTION_KEY'
     | 'INTEROP_API_MAX_RETRIES'
     | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly benefitApplicationUrl: string;
 
   constructor(
@@ -48,8 +49,8 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
       | 'INTEROP_API_BASE_URI'
       | 'INTEROP_BENEFIT_APPLICATION_PATHNAME'
       | 'INTEROP_API_SUBSCRIPTION_KEY'
-      | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI'
-      | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_BENEFIT_APPLICATION_BASE_URI'
+      | 'INTEROP_BENEFIT_APPLICATION_SUBSCRIPTION_KEY'
       | 'INTEROP_API_MAX_RETRIES'
       | 'INTEROP_API_BACKOFF_MS'
     >,
@@ -58,7 +59,8 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
     this.log = createLogger('DefaultBenefitApplicationRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_BENEFIT_APPLICATION_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_APPLICATION_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_BENEFIT_APPLICATION_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_BENEFIT_APPLICATION_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
@@ -71,7 +73,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(benefitApplicationRequestEntity),
       retryOptions: {

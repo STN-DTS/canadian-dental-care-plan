@@ -45,20 +45,25 @@ export interface LetterTypeRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultLetterTypeRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_LETTER_TYPES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultLetterTypeRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_LETTER_TYPE_BASE_URI' | 'INTEROP_LETTER_TYPE_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_LETTER_TYPE_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultLetterTypeRepository implements LetterTypeRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultLetterTypeRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly letterTypesUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultLetterTypeRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultLetterTypeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.letterTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_LETTER_TYPES_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_LETTER_TYPE_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.letterTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_LETTER_TYPE_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_LETTER_TYPE_PATHNAME);
   }
 
   @Traced()
@@ -73,7 +78,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

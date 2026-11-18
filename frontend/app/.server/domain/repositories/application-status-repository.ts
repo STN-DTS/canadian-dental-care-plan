@@ -62,12 +62,13 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     | 'INTEROP_STATUS_CHECK_STATUS_PATHNAME'
     | 'INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME'
     | 'INTEROP_API_SUBSCRIPTION_KEY'
-    | 'INTEROP_STATUS_CHECK_API_BASE_URI'
-    | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_STATUS_CHECK_BASE_URI'
+    | 'INTEROP_STATUS_CHECK_SUBSCRIPTION_KEY'
     | 'INTEROP_API_MAX_RETRIES'
     | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly statusUrl: string;
   private readonly statusFnlndobUrl: string;
 
@@ -81,8 +82,8 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
       | 'INTEROP_STATUS_CHECK_STATUS_PATHNAME'
       | 'INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME'
       | 'INTEROP_API_SUBSCRIPTION_KEY'
-      | 'INTEROP_STATUS_CHECK_API_BASE_URI'
-      | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_STATUS_CHECK_BASE_URI'
+      | 'INTEROP_STATUS_CHECK_SUBSCRIPTION_KEY'
       | 'INTEROP_API_MAX_RETRIES'
       | 'INTEROP_API_BACKOFF_MS'
     >,
@@ -91,7 +92,8 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
     this.log = createLogger('DefaultApplicationStatusRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    const baseUri = this.serverConfig.INTEROP_STATUS_CHECK_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.subscriptionKey = this.serverConfig.INTEROP_STATUS_CHECK_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    const baseUri = this.serverConfig.INTEROP_STATUS_CHECK_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
     this.statusUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_STATUS_CHECK_STATUS_PATHNAME);
     this.statusFnlndobUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME);
   }
@@ -106,7 +108,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(applicationStatusBasicInfoRequestEntity),
       retryOptions: {
@@ -144,7 +146,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(applicationStatusSinRequestEntity),
       retryOptions: {

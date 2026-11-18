@@ -26,18 +26,26 @@ export interface BenefitRenewalRepository {
 @injectable()
 export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_RENEWAL_BASE_URI' | 'INTEROP_BENEFIT_RENEWAL_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_BENEFIT_RENEWAL_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+  >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly benefitApplicationUrl: string;
 
   constructor(
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_RENEWAL_BASE_URI' | 'INTEROP_BENEFIT_RENEWAL_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_BENEFIT_RENEWAL_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+    >,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultBenefitRenewalRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_APPLICATION_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_BENEFIT_RENEWAL_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_BENEFIT_RENEWAL_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_RENEWAL_PATHNAME);
   }
 
   @Traced()
@@ -52,7 +60,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(benefitRenewalRequest),
       retryOptions: {

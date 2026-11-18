@@ -62,13 +62,14 @@ export class DefaultLetterRepository implements LetterRepository {
     | 'INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME'
     | 'INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME'
     | 'INTEROP_API_SUBSCRIPTION_KEY'
-    | 'INTEROP_CCT_API_BASE_URI'
-    | 'INTEROP_CCT_API_SUBSCRIPTION_KEY'
-    | 'INTEROP_CCT_API_COMMUNITY'
+    | 'INTEROP_CCT_BASE_URI'
+    | 'INTEROP_CCT_SUBSCRIPTION_KEY'
+    | 'INTEROP_CCT_COMMUNITY'
     | 'INTEROP_API_MAX_RETRIES'
     | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly docInfoByClientIdUrl: string;
   private readonly pdfByLetterIdUrl: string;
 
@@ -82,9 +83,9 @@ export class DefaultLetterRepository implements LetterRepository {
       | 'INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME'
       | 'INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME'
       | 'INTEROP_API_SUBSCRIPTION_KEY'
-      | 'INTEROP_CCT_API_BASE_URI'
-      | 'INTEROP_CCT_API_SUBSCRIPTION_KEY'
-      | 'INTEROP_CCT_API_COMMUNITY'
+      | 'INTEROP_CCT_BASE_URI'
+      | 'INTEROP_CCT_SUBSCRIPTION_KEY'
+      | 'INTEROP_CCT_COMMUNITY'
       | 'INTEROP_API_MAX_RETRIES'
       | 'INTEROP_API_BACKOFF_MS'
     >,
@@ -93,7 +94,8 @@ export class DefaultLetterRepository implements LetterRepository {
     this.log = createLogger('DefaultLetterRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    const baseUri = this.serverConfig.INTEROP_CCT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.subscriptionKey = this.serverConfig.INTEROP_CCT_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    const baseUri = this.serverConfig.INTEROP_CCT_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
     this.docInfoByClientIdUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME);
     this.pdfByLetterIdUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME);
   }
@@ -109,8 +111,8 @@ export class DefaultLetterRepository implements LetterRepository {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
-        'cct-community': this.serverConfig.INTEROP_CCT_API_COMMUNITY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
+        'cct-community': this.serverConfig.INTEROP_CCT_COMMUNITY,
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
@@ -148,8 +150,8 @@ export class DefaultLetterRepository implements LetterRepository {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_CCT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
-        'cct-community': this.serverConfig.INTEROP_CCT_API_COMMUNITY,
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
+        'cct-community': this.serverConfig.INTEROP_CCT_COMMUNITY,
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

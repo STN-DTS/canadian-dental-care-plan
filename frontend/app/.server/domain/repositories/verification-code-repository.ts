@@ -42,21 +42,43 @@ export interface VerificationCodeRepository {
 @injectable()
 export class DefaultVerificationCodeRepository implements VerificationCodeRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_NOTIFICATIONS_EMAIL_PATHNAME' | 'INTEROP_NOTIFICATIONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    | 'GC_NOTIFY_API_KEY'
+    | 'HTTP_PROXY_URL'
+    | 'INTEROP_API_BASE_URI'
+    | 'INTEROP_VERIFICATION_CODE_BASE_URI'
+    | 'INTEROP_VERIFICATION_CODE_NOTIFICATIONS_EMAIL_PATHNAME'
+    | 'INTEROP_VERIFICATION_CODE_NOTIFICATIONS_PATHNAME'
+    | 'INTEROP_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_VERIFICATION_CODE_SUBSCRIPTION_KEY'
+  >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly notificationsEmailUrl: string;
   private readonly notificationsUrl: string;
 
   constructor(
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_NOTIFICATIONS_EMAIL_PATHNAME' | 'INTEROP_NOTIFICATIONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      | 'GC_NOTIFY_API_KEY'
+      | 'HTTP_PROXY_URL'
+      | 'INTEROP_API_BASE_URI'
+      | 'INTEROP_VERIFICATION_CODE_BASE_URI'
+      | 'INTEROP_VERIFICATION_CODE_NOTIFICATIONS_EMAIL_PATHNAME'
+      | 'INTEROP_VERIFICATION_CODE_NOTIFICATIONS_PATHNAME'
+      | 'INTEROP_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_VERIFICATION_CODE_SUBSCRIPTION_KEY'
+    >,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultVerificationCodeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    const baseUri = this.serverConfig.INTEROP_API_BASE_URI;
-    this.notificationsEmailUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_NOTIFICATIONS_EMAIL_PATHNAME);
-    this.notificationsUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_NOTIFICATIONS_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_VERIFICATION_CODE_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    const baseUri = this.serverConfig.INTEROP_VERIFICATION_CODE_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.notificationsEmailUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_VERIFICATION_CODE_NOTIFICATIONS_EMAIL_PATHNAME);
+    this.notificationsUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_VERIFICATION_CODE_NOTIFICATIONS_PATHNAME);
   }
 
   @Traced()
@@ -70,7 +92,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
       headers: {
         Authorization: `ApiKey-v1 ${Redacted.value(this.serverConfig.GC_NOTIFY_API_KEY)}`,
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(verificationCodeEmailRequestEntity),
     });
@@ -109,7 +131,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
       headers: {
         Authorization: `ApiKey-v1 ${Redacted.value(this.serverConfig.GC_NOTIFY_API_KEY)}`,
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
     });
 

@@ -43,7 +43,14 @@ export interface AppealUploadEligibilityRepository {
 
 type DefaultAppealUploadEligibilityRepositoryServerConfig = Pick<
   ServerConfig,
-  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_APPEAL_UPLOAD_ELIGIBILITY_BASE_URI'
+  | 'INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_APPEAL_UPLOAD_ELIGIBILITY_SUBSCRIPTION_KEY'
+  | 'INTEROP_API_MAX_RETRIES'
+  | 'INTEROP_API_BACKOFF_MS'
 >;
 
 @injectable()
@@ -51,6 +58,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
   private readonly log: Logger;
   private readonly serverConfig: DefaultAppealUploadEligibilityRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly appealUploadEligibilityUrl: string;
 
   /**
@@ -68,7 +76,8 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     this.log = createLogger('DefaultAppealUploadEligibilityRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.appealUploadEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_APPEAL_UPLOAD_ELIGIBILITY_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.appealUploadEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_APPEAL_UPLOAD_ELIGIBILITY_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME);
   }
 
   /**
@@ -95,7 +104,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

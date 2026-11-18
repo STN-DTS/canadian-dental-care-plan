@@ -24,8 +24,8 @@ describe('getEnv secret values', () => {
     vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', 'client-id');
     vi.stubEnv('AUTH_RASCL_LOGOUT_URL', 'https://auth.example.test/signout');
     vi.stubEnv('GC_NOTIFY_API_KEY', 'notify-key');
-    vi.stubEnv('INTEROP_APPLICANT_API_SUBSCRIPTION_KEY', '  applicant-key  ');
-    vi.stubEnv('INTEROP_CCT_API_SUBSCRIPTION_KEY', '  ');
+    vi.stubEnv('INTEROP_APPLICANT_SUBSCRIPTION_KEY', '  applicant-key  ');
+    vi.stubEnv('INTEROP_CCT_SUBSCRIPTION_KEY', '  ');
     vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_PROVIDER', 'mock');
     vi.stubEnv('ENABLED_MOCKS', '');
     vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER', '');
@@ -44,9 +44,9 @@ describe('getEnv secret values', () => {
 
     expect(Redacted.isRedacted(config.INTEROP_API_SUBSCRIPTION_KEY)).toBe(true);
     expect(Redacted.value(config.INTEROP_API_SUBSCRIPTION_KEY)).toBe('subscription-key');
-    assert(config.INTEROP_APPLICANT_API_SUBSCRIPTION_KEY);
-    expect(Redacted.value(config.INTEROP_APPLICANT_API_SUBSCRIPTION_KEY)).toBe('applicant-key');
-    expect(config.INTEROP_CCT_API_SUBSCRIPTION_KEY).toBeUndefined();
+    assert(config.INTEROP_APPLICANT_SUBSCRIPTION_KEY);
+    expect(Redacted.value(config.INTEROP_APPLICANT_SUBSCRIPTION_KEY)).toBe('applicant-key');
+    expect(config.INTEROP_CCT_SUBSCRIPTION_KEY).toBeUndefined();
     expect(Redacted.isRedacted(config.SESSION_COOKIE_SECRET)).toBe(true);
     expect(Redacted.isRedacted(config.HCAPTCHA_SECRET_KEY)).toBe(true);
     expect(Redacted.isRedacted(config.AUTH_JWT_PRIVATE_KEY)).toBe(true);

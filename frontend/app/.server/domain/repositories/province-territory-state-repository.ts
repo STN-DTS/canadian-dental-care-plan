@@ -52,20 +52,32 @@ export interface ProvinceTerritoryStateRepository {
   checkHealth(): Promise<void>;
 }
 
-export type DefaultProvinceTerritoryStateRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_COUNTRIES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+export type DefaultProvinceTerritoryStateRepositoryServerConfig = Pick<
+  ServerConfig,
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_PROVINCE_TERRITORY_STATE_BASE_URI'
+  | 'INTEROP_PROVINCE_TERRITORY_STATE_COUNTRIES_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_PROVINCE_TERRITORY_STATE_SUBSCRIPTION_KEY'
+  | 'INTEROP_API_MAX_RETRIES'
+  | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritoryStateRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultProvinceTerritoryStateRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly countriesUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultProvinceTerritoryStateRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultProvinceTerritoryStateRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.countriesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_COUNTRIES_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_PROVINCE_TERRITORY_STATE_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.countriesUrl = buildEndpointUrl(this.serverConfig.INTEROP_PROVINCE_TERRITORY_STATE_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_PROVINCE_TERRITORY_STATE_COUNTRIES_PATHNAME);
   }
 
   @Traced()
@@ -80,7 +92,7 @@ export class DefaultProvinceTerritoryStateRepository implements ProvinceTerritor
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

@@ -60,12 +60,13 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     | 'INTEROP_API_BASE_URI'
     | 'INTEROP_APPLICANT_PATHNAME'
     | 'INTEROP_API_SUBSCRIPTION_KEY'
-    | 'INTEROP_APPLICANT_API_BASE_URI'
-    | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_APPLICANT_BASE_URI'
+    | 'INTEROP_APPLICANT_SUBSCRIPTION_KEY'
     | 'INTEROP_API_MAX_RETRIES'
     | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly applicantUrl: string;
 
   constructor(
@@ -77,8 +78,8 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       | 'INTEROP_API_BASE_URI'
       | 'INTEROP_APPLICANT_PATHNAME'
       | 'INTEROP_API_SUBSCRIPTION_KEY'
-      | 'INTEROP_APPLICANT_API_BASE_URI'
-      | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_APPLICANT_BASE_URI'
+      | 'INTEROP_APPLICANT_SUBSCRIPTION_KEY'
       | 'INTEROP_API_MAX_RETRIES'
       | 'INTEROP_API_BACKOFF_MS'
     >,
@@ -87,7 +88,8 @@ export class DefaultApplicantRepository implements ApplicantRepository {
     this.log = createLogger('DefaultApplicantRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    const baseUri = this.serverConfig.INTEROP_APPLICANT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.subscriptionKey = this.serverConfig.INTEROP_APPLICANT_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    const baseUri = this.serverConfig.INTEROP_APPLICANT_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
     this.applicantUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_APPLICANT_PATHNAME);
   }
 
@@ -101,7 +103,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_APPLICANT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(request),
       retryOptions: {
@@ -144,7 +146,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_APPLICANT_API_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(request),
       retryOptions: {

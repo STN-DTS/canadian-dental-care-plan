@@ -40,15 +40,26 @@ export interface ClientApplicationRepository {
 @injectable()
 export class DefaultClientApplicationRepository implements ClientApplicationRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    'INTEROP_API_BASE_URI' | 'INTEROP_CLIENT_APPLICATION_BASE_URI' | 'INTEROP_CLIENT_APPLICATION_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_CLIENT_APPLICATION_SUBSCRIPTION_KEY'
+  >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly retrieveBenefitApplicationUrl: string;
 
-  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      'INTEROP_API_BASE_URI' | 'INTEROP_CLIENT_APPLICATION_BASE_URI' | 'INTEROP_CLIENT_APPLICATION_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_CLIENT_APPLICATION_SUBSCRIPTION_KEY'
+    >,
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+  ) {
     this.log = createLogger('DefaultClientApplicationRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.retrieveBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_CLIENT_APPLICATION_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.retrieveBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_CLIENT_APPLICATION_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_CLIENT_APPLICATION_RETRIEVE_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
@@ -61,7 +72,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(clientApplicationBasicInfoRequestEntity),
     });
@@ -97,7 +108,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(clientApplicationSinRequestEntity),
     });

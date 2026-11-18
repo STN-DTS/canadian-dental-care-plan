@@ -47,7 +47,14 @@ export interface GovernmentInsurancePlanRepository {
 
 export type DefaultGovernmentInsurancePlanRepositoryServerConfig = Pick<
   ServerConfig,
-  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_GOVERNMENT_INSURANCE_PLANS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_GOVERNMENT_INSURANCE_PLAN_BASE_URI'
+  | 'INTEROP_GOVERNMENT_INSURANCE_PLAN_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_GOVERNMENT_INSURANCE_PLAN_SUBSCRIPTION_KEY'
+  | 'INTEROP_API_MAX_RETRIES'
+  | 'INTEROP_API_BACKOFF_MS'
 >;
 
 @injectable()
@@ -55,13 +62,15 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
   private readonly log: Logger;
   private readonly serverConfig: DefaultGovernmentInsurancePlanRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly governmentInsurancePlansUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultGovernmentInsurancePlanRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultGovernmentInsurancePlanRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.governmentInsurancePlansUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_GOVERNMENT_INSURANCE_PLANS_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_GOVERNMENT_INSURANCE_PLAN_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.governmentInsurancePlansUrl = buildEndpointUrl(this.serverConfig.INTEROP_GOVERNMENT_INSURANCE_PLAN_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_GOVERNMENT_INSURANCE_PLAN_PATHNAME);
   }
 
   @Traced()
@@ -75,7 +84,7 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

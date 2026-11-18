@@ -55,13 +55,41 @@ describe('DefaultApplicationStatusRepository', () => {
       INTEROP_STATUS_CHECK_STATUS_PATHNAME: '/dental-care/status-check/v1/status',
       INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME: '/dental-care/status-check/v1/status_fnlndob',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
-      INTEROP_STATUS_CHECK_API_BASE_URI: undefined,
-      INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: undefined,
+      INTEROP_STATUS_CHECK_BASE_URI: undefined,
+      INTEROP_STATUS_CHECK_SUBSCRIPTION_KEY: undefined,
       INTEROP_API_MAX_RETRIES: 0,
       INTEROP_API_BACKOFF_MS: 0,
     } satisfies ConstructorParameters<typeof DefaultApplicationStatusRepository>[0];
     const repository = new DefaultApplicationStatusRepository(config, httpClient);
 
     await expect(lookup(repository)).rejects.toMatchObject({ errorCode });
+  });
+
+  it('uses the status check base URI and subscription key overrides', async () => {
+    const httpClient = mock<HttpClient>();
+    httpClient.instrumentedFetch.mockResolvedValue(Response.json({}));
+    const repository = new DefaultApplicationStatusRepository(
+      {
+        HEALTH_PLACEHOLDER_REQUEST_VALUE: '000001',
+        HTTP_PROXY_URL: undefined,
+        INTEROP_API_BASE_URI: 'https://api.example.com',
+        INTEROP_STATUS_CHECK_STATUS_PATHNAME: '/dental-care/status-check/v1/status',
+        INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME: '/dental-care/status-check/v1/status_fnlndob',
+        INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
+        INTEROP_STATUS_CHECK_BASE_URI: 'https://status.example.com/root',
+        INTEROP_STATUS_CHECK_SUBSCRIPTION_KEY: Redacted.make('STATUS_CHECK_KEY'),
+        INTEROP_API_MAX_RETRIES: 0,
+        INTEROP_API_BACKOFF_MS: 0,
+      },
+      httpClient,
+    );
+
+    await repository.getApplicationStatusBySin(requestFor('000001'));
+
+    expect(httpClient.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
+      expect.any(String),
+      'https://status.example.com/root/dental-care/status-check/v1/status',
+      expect.objectContaining({ headers: expect.objectContaining({ 'Ocp-Apim-Subscription-Key': 'STATUS_CHECK_KEY' }) }),
+    );
   });
 });

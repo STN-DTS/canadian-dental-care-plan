@@ -47,7 +47,14 @@ export interface EvidentiaryDocumentTypeRepository {
 
 type DefaultEvidentiaryDocumentTypeRepositoryServerConfig = Pick<
   ServerConfig,
-  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_EVIDENTIARY_DOCUMENT_TYPES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_EVIDENTIARY_DOCUMENT_TYPE_BASE_URI'
+  | 'INTEROP_EVIDENTIARY_DOCUMENT_TYPE_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_EVIDENTIARY_DOCUMENT_TYPE_SUBSCRIPTION_KEY'
+  | 'INTEROP_API_MAX_RETRIES'
+  | 'INTEROP_API_BACKOFF_MS'
 >;
 
 @injectable()
@@ -55,6 +62,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
   private readonly log: Logger;
   private readonly serverConfig: DefaultEvidentiaryDocumentTypeRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly evidentiaryDocumentTypesUrl: string;
 
   constructor(
@@ -64,7 +72,8 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     this.log = createLogger('DefaultEvidentiaryDocumentTypeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.evidentiaryDocumentTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENT_TYPES_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENT_TYPE_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.evidentiaryDocumentTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENT_TYPE_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENT_TYPE_PATHNAME);
   }
 
   @Traced()
@@ -77,7 +86,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,

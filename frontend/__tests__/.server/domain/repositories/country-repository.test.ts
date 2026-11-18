@@ -42,7 +42,7 @@ describe('DefaultCountryRepository', () => {
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
-      INTEROP_COUNTRIES_PATHNAME: '/dental-care/code-list/pp/v1/esdc_countries',
+      INTEROP_COUNTRY_PATHNAME: '/dental-care/code-list/pp/v1/esdc_countries',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
       INTEROP_API_MAX_RETRIES: 10,
       INTEROP_API_BACKOFF_MS: 3,
@@ -94,6 +94,21 @@ describe('DefaultCountryRepository', () => {
           },
         },
       },
+    );
+  });
+
+  it('uses the country base URI and subscription key overrides', async () => {
+    const httpClientMock = mock<HttpClient>();
+    httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ value: [] }));
+    const repository = new DefaultCountryRepository({ ...serverConfigMock, INTEROP_COUNTRY_BASE_URI: 'https://country.example.com/root/', INTEROP_COUNTRY_SUBSCRIPTION_KEY: Redacted.make('COUNTRY_KEY') }, httpClientMock);
+
+    await repository.listAllCountries();
+
+    expect(repository.getMetadata()).toEqual({ countriesUrl: 'https://country.example.com/root/dental-care/code-list/pp/v1/esdc_countries' });
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledExactlyOnceWith(
+      expect.any(String),
+      expect.objectContaining({ origin: 'https://country.example.com', pathname: '/root/dental-care/code-list/pp/v1/esdc_countries' }),
+      expect.objectContaining({ headers: { 'Ocp-Apim-Subscription-Key': 'COUNTRY_KEY' } }),
     );
   });
 

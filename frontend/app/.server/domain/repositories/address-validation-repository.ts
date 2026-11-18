@@ -40,7 +40,13 @@ export interface AddressValidationRepository {
 
 export type DefaultAddressValidationRepositoryServerConfig = Pick<
   ServerConfig,
-  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH'
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_ADDRESS_VALIDATION_BASE_URI'
+  | 'INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_ADDRESS_VALIDATION_SUBSCRIPTION_KEY'
+  | 'INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH'
 >;
 
 @injectable()
@@ -48,13 +54,15 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
   private readonly log: Logger;
   private readonly serverConfig: DefaultAddressValidationRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly addressValidationCorrectUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultAddressValidationRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultAddressValidationRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.addressValidationCorrectUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_ADDRESS_VALIDATION_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.addressValidationCorrectUrl = buildEndpointUrl(this.serverConfig.INTEROP_ADDRESS_VALIDATION_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME);
   }
 
   @Traced()
@@ -74,7 +82,7 @@ export class DefaultAddressValidationRepository implements AddressValidationRepo
       headers: {
         'Accept-Language': 'en-CA',
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
     });
 

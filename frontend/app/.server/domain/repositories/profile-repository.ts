@@ -70,13 +70,17 @@ export interface ProfileRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultProfileRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+type DefaultProfileRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_PROFILE_BASE_URI' | 'INTEROP_PROFILE_UPDATE_BENEFIT_APPLICATION_PATHNAME' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_PROFILE_SUBSCRIPTION_KEY'
+>;
 
 @injectable()
 export class DefaultProfileRepository implements ProfileRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultProfileRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly updateBenefitApplicationUrl: string;
 
   constructor(
@@ -87,7 +91,8 @@ export class DefaultProfileRepository implements ProfileRepository {
     this.log = createLogger('DefaultProfileRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.updateBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_PROFILE_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.updateBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_PROFILE_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_PROFILE_UPDATE_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
@@ -100,7 +105,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(updateCommunicationPreferenceRequestEntity),
       retryOptions: {
@@ -129,7 +134,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(updatePhoneNumbersRequestEntity),
       retryOptions: {
@@ -158,7 +163,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(updateEmailAddressRequestEntity),
       retryOptions: {
@@ -187,7 +192,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(updateDentalBenefitsRequestEntity),
       retryOptions: {
@@ -216,7 +221,7 @@ export class DefaultProfileRepository implements ProfileRepository {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(updateAddressRequestEntity),
       retryOptions: {

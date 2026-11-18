@@ -27,20 +27,25 @@ export interface ClientEligibilityRepository {
 @injectable()
 export class DefaultClientEligibilityRepository implements ClientEligibilityRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_APPLICANT_ELIGIBILITY_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    'INTEROP_API_BASE_URI' | 'INTEROP_CLIENT_ELIGIBILITY_BASE_URI' | 'INTEROP_CLIENT_ELIGIBILITY_APPLICANT_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_CLIENT_ELIGIBILITY_SUBSCRIPTION_KEY'
+  >;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly applicantEligibilityUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
-    serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_APPLICANT_ELIGIBILITY_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>,
+    serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_CLIENT_ELIGIBILITY_BASE_URI' | 'INTEROP_CLIENT_ELIGIBILITY_APPLICANT_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_CLIENT_ELIGIBILITY_SUBSCRIPTION_KEY'>,
     @inject(TYPES.HttpClient)
     httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultClientEligibilityRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.applicantEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_APPLICANT_ELIGIBILITY_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_CLIENT_ELIGIBILITY_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.applicantEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_CLIENT_ELIGIBILITY_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_CLIENT_ELIGIBILITY_APPLICANT_PATHNAME);
   }
 
   @Traced()
@@ -53,7 +58,7 @@ export class DefaultClientEligibilityRepository implements ClientEligibilityRepo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(clientEligibilityRequestEntity),
     });

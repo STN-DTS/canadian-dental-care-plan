@@ -45,13 +45,24 @@ export interface DocumentUploadReasonRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultDocumentUploadReasonRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_DOCUMENT_UPLOAD_REASONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultDocumentUploadReasonRepositoryServerConfig = Pick<
+  ServerConfig,
+  | 'HTTP_PROXY_URL'
+  | 'INTEROP_API_BASE_URI'
+  | 'INTEROP_DOCUMENT_UPLOAD_REASON_BASE_URI'
+  | 'INTEROP_DOCUMENT_UPLOAD_REASON_PATHNAME'
+  | 'INTEROP_API_SUBSCRIPTION_KEY'
+  | 'INTEROP_DOCUMENT_UPLOAD_REASON_SUBSCRIPTION_KEY'
+  | 'INTEROP_API_MAX_RETRIES'
+  | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultDocumentUploadReasonRepository implements DocumentUploadReasonRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultDocumentUploadReasonRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly subscriptionKey: Redacted.Redacted<string>;
   private readonly documentUploadReasonsUrl: string;
 
   constructor(
@@ -61,7 +72,8 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     this.log = createLogger('DefaultDocumentUploadReasonRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.documentUploadReasonsUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_DOCUMENT_UPLOAD_REASONS_PATHNAME);
+    this.subscriptionKey = this.serverConfig.INTEROP_DOCUMENT_UPLOAD_REASON_SUBSCRIPTION_KEY ?? this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
+    this.documentUploadReasonsUrl = buildEndpointUrl(this.serverConfig.INTEROP_DOCUMENT_UPLOAD_REASON_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_DOCUMENT_UPLOAD_REASON_PATHNAME);
   }
 
   @Traced()
@@ -75,7 +87,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',
       headers: {
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.serverConfig.INTEROP_API_SUBSCRIPTION_KEY),
+        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
