@@ -1,4 +1,4 @@
-import { SpanStatusCode, context, propagation, trace } from '@opentelemetry/api';
+import { SpanKind, SpanStatusCode, context, propagation, trace } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
 import { Option, Redacted } from 'effect';
@@ -7,7 +7,7 @@ import { Container } from 'inversify';
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Response } from 'undici';
+import { Headers, Response } from 'undici';
 import { Visitor, parseSync } from 'vite';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -26,6 +26,7 @@ import { DefaultCountryService } from '~/.server/domain/services/country-service
 import { DefaultLanguageService } from '~/.server/domain/services/language-service';
 import type { HttpClient } from '~/.server/http';
 import { DefaultHttpClient } from '~/.server/http/http-client';
+import type { FetchFn } from '~/.server/http/http-client';
 import type { InstrumentationService } from '~/.server/observability';
 import { DefaultProtectedApplicationStateResolver } from '~/.server/routes/resolvers/protected-application-state-resolver';
 import { DefaultPublicApplicationStateResolver } from '~/.server/routes/resolvers/public-application-state-resolver';
@@ -70,7 +71,6 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
   const untracedFiles = new Set([
     'app-container-provider.ts',
     'auth/bearer-token-resolver.ts',
-    'auth/openid-app-identity-client.ts',
     'core/build-info-service.ts',
     'data/redis-service.ts',
     'domain/services/application-year-service.ts',
@@ -148,13 +148,25 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
         statement.type === 'ImportDeclaration' &&
         statement.source.value === '~/.server/observability/decorator' &&
         statement.importKind !== 'type' &&
-        statement.specifiers.some((specifier) => specifier.type === 'ImportSpecifier' && specifier.imported.type === 'Identifier' && specifier.imported.name === 'Traced' && specifier.local.name === 'Traced' && specifier.importKind !== 'type'),
+        statement.specifiers.some(
+          (specifier) =>
+            specifier.type === 'ImportSpecifier' && specifier.imported.type === 'Identifier' && ['Traced', 'TracedHttpRequest'].includes(specifier.imported.name) && specifier.local.name === specifier.imported.name && specifier.importKind !== 'type',
+        ),
     );
 
     new Visitor({
       ClassDeclaration(declaration) {
         for (const member of declaration.body.body) {
-          if (member.type !== 'MethodDefinition' || member.key.type !== 'Identifier') {
+          if (member.type !== 'MethodDefinition') {
+            continue;
+          }
+
+          if (file === 'auth/openid-app-identity-client.ts' && declaration.id?.name === 'IdentityKey') {
+            untracedMethodStarts.add(member.start);
+            continue;
+          }
+
+          if (member.key.type !== 'Identifier') {
             continue;
           }
 
@@ -166,7 +178,8 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
         }
       },
       MethodDefinition(member) {
-        const decorators = member.decorators.filter((decorator) => decorator.expression.type === 'CallExpression' && decorator.expression.callee.type === 'Identifier' && decorator.expression.callee.name === 'Traced');
+        const expectedDecorator = file === 'http/http-client.ts' && member.key.type === 'Identifier' && member.key.name === 'instrumentedFetch' ? 'TracedHttpRequest' : 'Traced';
+        const decorators = member.decorators.filter((decorator) => decorator.expression.type === 'CallExpression' && decorator.expression.callee.type === 'Identifier' && decorator.expression.callee.name === expectedDecorator);
 
         if (shouldRemainUntraced || untracedMethodStarts.has(member.start)) {
           if (decorators.length !== 0) {
@@ -241,15 +254,70 @@ describe('application method spans', () => {
 
     const spans = exporter.getFinishedSpans();
     expect(spans.some((span) => span.name === 'test.request')).toBe(true);
+    const identity = spans.find((span) => span.name === 'OpenIdAppIdentityClient.getAccessToken');
+    const discovery = spans.find((span) => span.name === 'http.client.app-identity.discovery.gets');
+    const token = spans.find((span) => span.name === 'http.client.app-identity.token.posts');
+    expect(identity?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(discovery?.attributes).toEqual({ 'http.request.method': 'GET', 'http.response.status_code': 200 });
+    expect(token?.attributes).toEqual({ 'http.request.method': 'POST', 'error.type': 'http_request_failed' });
+    expect(token?.kind).toBe(SpanKind.CLIENT);
+    expect(token?.parentSpanContext?.spanId).toBe(identity?.spanContext().spanId);
     expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain(secret);
     expect(instrumentation.countHttpStatus).toHaveBeenCalledWith('http.client.app-identity.token.posts', 500);
+  });
+
+  it.each(['discovery', 'token'] as const)('identifies an HTTP rejection during OAuth %s without exposing its response body', async (stage) => {
+    const issuer = new URL('https://identity.example.test/tenant');
+    const client = new DefaultHttpClient(mock<InstrumentationService>());
+    const failure = Response.json({ error: 'invalid_client', error_description: 'oauth-response-canary' }, { status: stage === 'discovery' ? 404 : 401 });
+    const transport = vi.fn().mockResolvedValue(failure);
+
+    if (stage === 'token') {
+      transport.mockResolvedValueOnce(Response.json({ issuer: issuer.href, token_endpoint: 'https://identity.example.test/token' }));
+    }
+
+    vi.spyOn(client, 'getFetchFn').mockReturnValue(transport);
+    const identity = new OpenIdAppIdentityClient(client);
+
+    await expect(identity.getAccessToken({ issuer, clientId: Redacted.make('client-canary'), clientSecret: Redacted.make('secret-canary'), scope: 'test.scope' })).rejects.toThrow('App identity token acquisition failed.');
+
+    const spans = exporter.getFinishedSpans();
+    const dependency = spans.find((span) => span.name === `http.client.app-identity.${stage === 'discovery' ? 'discovery.gets' : 'token.posts'}`);
+    expect(dependency?.kind).toBe(SpanKind.CLIENT);
+    expect(dependency?.attributes).toEqual({ 'http.request.method': stage === 'discovery' ? 'GET' : 'POST', 'http.response.status_code': failure.status, 'error.type': String(failure.status) });
+    expect(dependency?.status.code).toBe(SpanStatusCode.ERROR);
+    expect(transport).toHaveBeenCalledTimes(stage === 'discovery' ? 1 : 2);
+    expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain('canary');
+  });
+
+  it('traces a cached token lookup without another HTTP request or exposing the token', async () => {
+    const issuer = new URL('https://identity.example.test/tenant');
+    const client = new DefaultHttpClient(mock<InstrumentationService>());
+    const transport = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ issuer: issuer.href, token_endpoint: 'https://identity.example.test/token' }))
+      .mockResolvedValueOnce(Response.json({ access_token: 'cached-token-canary', token_type: 'Bearer', expires_in: 3600 }));
+    vi.spyOn(client, 'getFetchFn').mockReturnValue(transport);
+    const identity = new OpenIdAppIdentityClient(client);
+    const request = { issuer, clientId: Redacted.make('client'), clientSecret: Redacted.make('secret'), scope: 'test.scope' };
+
+    await identity.getAccessToken(request);
+    const first = [...exporter.getFinishedSpans()];
+    expect(first.map((span) => span.name)).toEqual(['http.client.app-identity.discovery.gets', 'http.client.app-identity.token.posts', 'OpenIdAppIdentityClient.getAccessToken']);
+
+    await identity.getAccessToken(request);
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans.slice(first.length).map((span) => span.name)).toEqual(['OpenIdAppIdentityClient.getAccessToken']);
+    expect(transport).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain('cached-token-canary');
   });
 
   it.each(['upload', 'scan'] as const)('does not export bearer tokens from %s transport failures', async (operation) => {
     const token = 'synthetic-bearer-canary';
     const instrumentation = mock<InstrumentationService>();
     const httpClient = new DefaultHttpClient(instrumentation);
-    const fetch = vi.fn().mockRejectedValue(new Error(token));
+    const fetch = vi.fn<FetchFn>().mockRejectedValue(new Error(token));
     vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetch);
     const identity = mock<AppIdentityClient>();
     identity.getAccessToken.mockResolvedValue(Redacted.make(token));
@@ -291,9 +359,14 @@ describe('application method spans', () => {
 
     const spans = exporter.getFinishedSpans();
     expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.objectContaining({ Authorization: `Bearer ${token}` }) }));
+    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.any(Headers) }));
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get('authorization')).toBe(`Bearer ${token}`);
     expect(spans.some((span) => span.name === 'test.request')).toBe(true);
     expect(spans.some((span) => span.name === `DefaultDocumentUploadRepository.${operation === 'upload' ? 'uploadDocument' : 'scanDocument'}` && span.status.code === SpanStatusCode.ERROR)).toBe(true);
+    const dependency = spans.find((span) => span.name === `http.client.document-scan-api.${operation === 'upload' ? 'spo-upload-document' : 'scan'}.posts`);
+    expect(dependency?.kind).toBe(SpanKind.CLIENT);
+    expect(dependency?.attributes).toEqual({ 'http.request.method': 'POST', 'error.type': 'http_request_failed' });
+    expect(dependency?.status.code).toBe(SpanStatusCode.ERROR);
     expect(JSON.stringify(spans.map(({ attributes, events, status }) => ({ attributes, events, status })))).not.toContain(token);
     expect(instrumentation.countHttpStatus).toHaveBeenCalledWith(`http.client.document-scan-api.${operation === 'upload' ? 'spo-upload-document' : 'scan'}.posts`, 500);
   });

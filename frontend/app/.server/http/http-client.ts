@@ -9,7 +9,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_PROXY_TLS_TIMEOUT_MS, ATTR_CDCP_PROXY_URL, ATTR_CDCP_RETRY_COUNT, ATTR_CDCP_RETRY_LIMIT } from '~/.server/logging/log-attributes';
 import type { InstrumentationService } from '~/.server/observability';
-import { Traced } from '~/.server/observability/decorator';
+import { Traced, TracedHttpRequest } from '~/.server/observability/decorator';
 import { getEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { isAppError } from '~/errors/app-error';
@@ -96,9 +96,9 @@ export interface HttpClient {
   getFetchFn(options: FetchOptions): FetchFn;
 
   /**
-   * Makes an HTTP request with instrumentation support for metrics.
+   * Makes an HTTP request with status metrics and privacy-safe dependency tracing.
    *
-   * @param metricPrefix - The prefix used for instrumentation metrics.
+   * @param metricPrefix - A fixed, code-defined name used for metrics and the dependency span; never include request data.
    * @param input - The input for the HTTP request, which can be a URL or a `RequestInfo` object.
    * @param options - (Optional) Additional options for the request, including proxy settings, initialization options and retry configuration.
    * @returns A promise that resolves with the `Response` object from the HTTP request.
@@ -136,7 +136,7 @@ export class DefaultHttpClient implements HttpClient {
     return fetch;
   }
 
-  @Traced()
+  @TracedHttpRequest()
   async instrumentedFetch(metricPrefix: string, input: RequestInfo | URL, options: InstrumentedFetchOptions = {}): Promise<Response> {
     this.log.debug('Executing instrumented HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix });
     const { proxyUrl, timeout, retryOptions, ...init } = options;

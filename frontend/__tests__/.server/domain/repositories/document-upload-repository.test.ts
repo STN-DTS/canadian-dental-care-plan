@@ -10,7 +10,6 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createRepositoriesContainerModule } from '~/.server/container-modules/repositories-container-module';
 import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
-import type { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import { DefaultDocumentUploadRepository, MockDocumentUploadRepository } from '~/.server/domain/repositories';
 import type { DocumentUploadRepositoryConfig } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
 import { DocumentUploadRepositoryDefaultConfig } from '~/.server/domain/repositories/configs/document-upload-repository-default-config';
@@ -147,16 +146,35 @@ describe('DefaultDocumentUploadRepository', () => {
   });
 
   it.each([
+    ['identity', 'Document upload failed during authentication or request.'],
+    ['transport', 'Document upload failed during authentication or request.'],
+    ['HTTP', 'Document upload failed with HTTP 404.'],
+    ['invalid response', 'Document upload returned an invalid response (HTTP 200).'],
+  ] as const)('reports the upload-specific error code and message for a %s failure', async (failure, message) => {
+    if (failure === 'identity') {
+      appIdentityClient.getAccessToken.mockRejectedValue(new AppError('Identity failed', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED));
+    } else if (failure === 'transport') {
+      httpClientMock.instrumentedFetch.mockRejectedValue(new Error('Transport failed'));
+    } else {
+      httpClientMock.instrumentedFetch.mockResolvedValue(failure === 'HTTP' ? new Response(null, { status: 404 }) : Response.json({ unexpected: true }));
+    }
+
+    await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({ errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED, message });
+    expect(httpClientMock.instrumentedFetch).toHaveBeenCalledTimes(failure === 'identity' ? 0 : 1);
+  });
+
+  it.each([
     ['invalid JSON', new Response('{', { status: 400 })],
     ['unstructured error', Response.json({ message: 'Bad request' }, { status: 400 })],
   ])('reports an invalid response for HTTP 400 with %s', async (_name, response) => {
     httpClientMock.instrumentedFetch.mockResolvedValue(response);
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'invalid-response',
-      httpStatus: 400,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      message: 'Document upload returned an invalid response (HTTP 400).',
+      meta: { httpStatusCode: 400 },
+    });
   });
 
   it('classifies fetch rejection without exposing transport details', async () => {
@@ -166,22 +184,19 @@ describe('DefaultDocumentUploadRepository', () => {
     const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
 
     expect(inspect(error)).not.toContain('synthetic-bearer-canary');
-    expect(error).toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'network',
-      httpStatus: undefined,
-      cause: expect.any(Error),
-    } satisfies Partial<DocumentUploadException>);
+    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED });
+    expect(error).toHaveProperty('cause', undefined);
   });
 
   it.each([302, 401, 403, 404, 429, 500, 502, 503, 504])('throws for HTTP %i even with a valid rejection payload', async (status) => {
     httpClientMock.instrumentedFetch.mockResolvedValue(Response.json({ DocumentFileName: null, Error: { ErrorCode: '400', ErrorMessage: 'File not safe' } }, { status }));
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'http',
-      httpStatus: status,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      meta: { httpStatusCode: status },
+      message: `Document upload failed with HTTP ${status}.`,
+    });
   });
 
   it('cancels the body of a non-success HTTP response before reporting the HTTP failure', async () => {
@@ -190,10 +205,10 @@ describe('DefaultDocumentUploadRepository', () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(response);
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'http',
-      httpStatus: 503,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      meta: { httpStatusCode: 503 },
+    });
     expect(cancel).toHaveBeenCalledExactlyOnceWith();
     expect(response.bodyUsed).toBe(true);
   });
@@ -204,10 +219,10 @@ describe('DefaultDocumentUploadRepository', () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(response);
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'http',
-      httpStatus: 503,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      meta: { httpStatusCode: 503 },
+    });
     expect(cancel).toHaveBeenCalledExactlyOnceWith();
   });
 
@@ -218,10 +233,11 @@ describe('DefaultDocumentUploadRepository', () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(response);
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'invalid-response',
-      httpStatus: 200,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      message: 'Document upload returned an invalid response (HTTP 200).',
+      meta: { httpStatusCode: 200 },
+    });
   });
 
   it('does not retain an invalid upload response in the failure cause', async () => {
@@ -230,10 +246,8 @@ describe('DefaultDocumentUploadRepository', () => {
     const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
 
     expect(inspect(error)).not.toContain('TOKEN');
-    expect(error).toMatchObject({
-      kind: 'invalid-response',
-      cause: expect.any(Error),
-    });
+    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED });
+    expect(error).toHaveProperty('cause', undefined);
   });
 
   it.each([
@@ -246,10 +260,11 @@ describe('DefaultDocumentUploadRepository', () => {
     httpClientMock.instrumentedFetch.mockResolvedValue(response);
 
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'invalid-response',
-      httpStatus: response.status,
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      message: `Document upload returned an invalid response (HTTP ${response.status}).`,
+      meta: { httpStatusCode: response.status },
+    });
   });
 
   it('posts only scan fields and credentials with the configured retry policy', async () => {
@@ -382,33 +397,36 @@ describe('DefaultDocumentUploadRepository', () => {
     await expect(repository.scanDocument(scanRequest)).rejects.toThrow();
   });
 
-  it('does not expose an invalid scan response in the failure', async () => {
-    httpClientMock.instrumentedFetch.mockResolvedValue(new Response('["abc","TOKEN",!]'));
+  it('retains the scan transport error as the failure cause', async () => {
+    const cause = new Error('Synthetic transport failure');
+    httpClientMock.instrumentedFetch.mockRejectedValue(cause);
 
     const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
 
-    expect(inspect(error)).not.toContain('TOKEN');
-    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.API_DOC_SCAN_FAILED });
-  });
-
-  it('reports scan transport failures without exposing their details', async () => {
-    httpClientMock.instrumentedFetch.mockRejectedValue(new Error('synthetic-bearer-canary'));
-
-    const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
-
-    expect(inspect(error)).not.toContain('synthetic-bearer-canary');
+    expect(error).toMatchObject({
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_SCAN_FAILED,
+      message: 'Scan call failed, preserving scan catch.',
+      cause,
+    });
     expect(error).toBeInstanceOf(AppError);
-    expect(error).toHaveProperty('errorCode', ErrorCodes.API_DOC_SCAN_FAILED);
+    expect(error).toHaveProperty('cause', cause);
     expect(httpClientMock.instrumentedFetch).toHaveBeenCalledOnce();
   });
 
-  it('preserves the identity error code without exposing its details during scans', async () => {
-    appIdentityClient.getAccessToken.mockRejectedValue(new AppError('synthetic-sensitive-error', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED));
+  it('wraps scan identity failures with the scan error code and original cause', async () => {
+    const cause = new AppError('Identity request failed.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED);
+    appIdentityClient.getAccessToken.mockRejectedValue(cause);
 
-    const error = await repository.scanDocument(scanRequest).catch((cause: unknown) => cause);
+    const error = await repository.scanDocument(scanRequest).catch((error: unknown) => error);
 
-    expect(inspect(error)).not.toContain('synthetic-sensitive-error');
-    expect(error).toMatchObject({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED });
+    expect(error).toMatchObject({
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_SCAN_FAILED,
+      message: 'App identity token acquisition failed.',
+      cause,
+    });
+    expect(error).toHaveProperty('cause', cause);
     expect(httpClientMock.instrumentedFetch).not.toHaveBeenCalled();
   });
 
@@ -430,11 +448,12 @@ describe('DefaultDocumentUploadRepository', () => {
     const error = await repository.uploadDocument(uploadRequest).catch((cause: unknown) => cause);
 
     expect(error).toMatchObject({
-      name: 'DocumentUploadException',
-      kind: 'network',
-      cause: expect.objectContaining({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED }),
-    } satisfies Partial<DocumentUploadException>);
+      name: 'AppError',
+      errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
+      message: 'Document upload failed during authentication or request.',
+    });
     expect(inspect(error)).not.toContain('synthetic-sensitive-error');
+    expect(error).toHaveProperty('cause', undefined);
     expect(httpClientMock.instrumentedFetch).not.toHaveBeenCalled();
   });
 

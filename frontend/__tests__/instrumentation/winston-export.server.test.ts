@@ -1,4 +1,4 @@
-import { SeverityNumber } from '@opentelemetry/api';
+import { SeverityNumber, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
@@ -24,24 +24,8 @@ const logRecordSchema = z.object({
   spanContext: z.object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number() }).optional(),
 });
 const documentFailureRecordSchema = logRecordSchema.extend({
-  body: z.literal('Document upload failed: network'),
-  attributes: z.record(
-    z.string(),
-    z.union([
-      z.string(),
-      z.number(),
-      z.boolean(),
-      z.strictObject({ name: z.literal('Error'), message: z.literal('Document upload request failed.'), stack: z.string() }),
-      z.strictObject({
-        name: z.literal('AppError'),
-        message: z.literal('Document upload request failed.'),
-        stack: z.string(),
-        errorCode: z.literal('AUTH-OIDC-0020'),
-        correlationId: z.string(),
-        httpStatusCode: z.literal(500),
-      }),
-    ]),
-  ),
+  body: z.enum(['Document upload failed during authentication or request.', 'Document upload failed with HTTP 404.']),
+  attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.strictObject({ httpStatusCode: z.number() })])),
 });
 
 test('the application preload preserves event schemas, severity and privacy through its real log sinks', async () => {
@@ -81,16 +65,19 @@ test('the application preload preserves event schemas, severity and privacy thro
         '--eval',
         `
           import assert from 'node:assert/strict';
-          import { logs, trace } from '@opentelemetry/api';
+          import { context, logs, trace } from '@opentelemetry/api';
           import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-proto';
+          import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
           import { Redacted } from 'effect';
           import express from 'express';
           import { once } from 'node:events';
+          import { Headers } from 'undici';
           import { DocumentUploadRepositoryDefaultConfig } from './app/.server/domain/repositories/configs/document-upload-repository-default-config.ts';
           import { DefaultDocumentUploadRepository } from './app/.server/domain/repositories/document-upload-repository-default.ts';
           import { DefaultAuditService } from './app/.server/domain/services/audit-service.ts';
           import { DefaultDocumentUploadService } from './app/.server/domain/services/document-upload-service.ts';
           import { createRequestLoggerMiddleware } from './app/.server/express-server/middleware.ts';
+          import { DefaultHttpClient } from './app/.server/http/http-client.ts';
           import { DefaultLogger } from './app/.server/logging/logger-default.ts';
           import { singleton } from './app/.server/utils/instance-registry.ts';
           import { redisErrorType } from './app/.server/data/redis-error-type.ts';
@@ -107,6 +94,14 @@ test('the application preload preserves event schemas, severity and privacy thro
               console.log('OTEL_TEST_RECORD:' + JSON.stringify({ hrTime, hrTimeObserved, severityNumber, severityText, body, attributes, eventName, spanContext }));
             }
             exportLogs.call(this, records, resultCallback);
+          };
+          const exportSpans = OTLPTraceExporter.prototype.export;
+          OTLPTraceExporter.prototype.export = function (spans, resultCallback) {
+            for (const span of spans) {
+              const { name, kind, attributes, events, status } = span;
+              console.log('OTEL_TEST_SPAN:' + JSON.stringify({ name, kind, attributes, events, status, spanContext: span.spanContext() }));
+            }
+            exportSpans.call(this, spans, resultCallback);
           };
 
           const winston = createWinstonInstance({
@@ -157,7 +152,7 @@ test('the application preload preserves event schemas, severity and privacy thro
           });
 
           const token = 'document-token-canary';
-          const transportError = Object.assign(new Error('document-person@example.invalid 999999997 ' + token, {
+          const transportError = Object.assign(new Error('document-person@example.invalid 999999997 999 999 998 999-999-999\\r\\n' + token, {
             cause: new Error('document-nested-token-canary'),
           }), {
             details: 'document-person@example.invalid 999999997 ' + token,
@@ -177,12 +172,18 @@ test('the application preload preserves event schemas, severity and privacy thro
             INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE: 'test.scope',
           });
           let failDocumentIdentity = false;
+          let failDocumentHttp = false;
+          const documentHttpClient = new DefaultHttpClient({ countHttpStatus() {} });
+          documentHttpClient.getFetchFn = () => async (_url, init) => {
+            assert.equal(new Headers(init.headers).get('authorization'), 'Bearer ' + token);
+            if (failDocumentHttp) {
+              return new Response('document-response-body-canary', { status: 404 });
+            }
+            throw transportError;
+          };
           const documentRepository = new DefaultDocumentUploadRepository(
             documentConfig,
-            { instrumentedFetch: async (_metric, _url, options) => {
-              assert.equal(options.headers.Authorization, 'Bearer ' + token);
-              throw transportError;
-            } },
+            documentHttpClient,
             { getAccessToken: async () => {
               if (failDocumentIdentity) {
                 throw new AppError('document-identity-token-canary', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED, {
@@ -194,19 +195,35 @@ test('the application preload preserves event schemas, severity and privacy thro
           );
           const documentService = new DefaultDocumentUploadService(
             { mapDocumentUploadRequestDtoToEntity: async () => ({
-              filename: 'document.txt', binary: 'dGVzdA==',
+              filename: 'document-filename-canary.txt', binary: 'dGVzdA==',
               subjectPersonIdentificationID: 'client', documentCategoryText: 'receipt',
               originalDocumentCreationDate: '2026-10-06', originalDocumentLastModifiedDate: '2026-10-06',
               transactionEntryUserID: 'user', persist: true, commit: true,
+              unexpected: 'document-undeclared-field-canary',
             }) },
             documentRepository,
             { createAudit() {} },
           );
           winston.level = 'trace';
-          const documentResult = await documentService.uploadDocument({ userId: 'user' });
-          assert.equal(documentResult.status, 'error');
-          failDocumentIdentity = true;
-          assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
+          const documentResult = await trace.getTracer('winston-export-test').startActiveSpan(
+            'Synthetic upload context',
+            {},
+            trace.setSpanContext(context.active(), { traceId: '1'.repeat(32), spanId: '2'.repeat(16), traceFlags: 1, isRemote: true }),
+            async span => {
+              try {
+                const result = await documentService.uploadDocument({ userId: 'user' });
+                assert.equal(result.status, 'error');
+                failDocumentIdentity = true;
+                assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
+                failDocumentIdentity = false;
+                failDocumentHttp = true;
+                assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
+                return result;
+              } finally {
+                span.end();
+              }
+            },
+          );
 
           process.env.NODE_ENV = 'development';
           const developmentWinston = createWinstonInstance({
@@ -292,8 +309,9 @@ test('the application preload preserves event schemas, severity and privacy thro
           OTEL_NODE_RESOURCE_DETECTORS: 'none',
           OTEL_API_KEY: 'local-synthetic-key',
           OTEL_LOGS_ENDPOINT: `http://127.0.0.1:${address.port}/v1/logs`,
+          OTEL_TRACES_ENDPOINT: `http://127.0.0.1:${address.port}/v1/traces`,
           OTEL_LOGS_EXPORT_INTERVAL_MILLIS: '10',
-          OTEL_TRACES_SAMPLER: 'always_off',
+          OTEL_TRACES_SAMPLER: 'parentbased_always_off',
           AUDIT_TEST_DIRECTORY: auditDirectory,
         },
         timeout: 20_000,
@@ -307,6 +325,30 @@ test('the application preload preserves event schemas, severity and privacy thro
       .split('\n')
       .filter((line) => line.startsWith(recordPrefix))
       .map((line) => z.union([logRecordSchema, documentFailureRecordSchema]).parse(JSON.parse(line.slice(recordPrefix.length))));
+    const spanPrefix = 'OTEL_TEST_SPAN:';
+    const spanSchema = z.object({
+      name: z.string(),
+      kind: z.number(),
+      attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+      events: z.array(z.unknown()),
+      status: z.object({ code: z.number(), message: z.string().optional() }),
+      spanContext: z.object({ traceId: z.string(), spanId: z.string() }),
+    });
+    const spans = stdout
+      .split('\n')
+      .filter((line) => line.startsWith(spanPrefix))
+      .map((line) => spanSchema.parse(JSON.parse(line.slice(spanPrefix.length))));
+    const dependencies = spans.filter((span) => span.kind === SpanKind.CLIENT);
+    expect(dependencies).toHaveLength(2);
+    const uploadFailure = dependencies.find((span) => span.attributes['http.response.status_code'] === 404);
+    expect(uploadFailure).toMatchObject({
+      name: 'http.client.document-scan-api.spo-upload-document.posts',
+      attributes: { 'http.request.method': 'POST', 'http.response.status_code': 404, 'error.type': '404' },
+      events: [],
+      status: { code: SpanStatusCode.ERROR, message: 'HTTP 404' },
+    });
+    expect(Object.keys(uploadFailure?.attributes ?? {}).sort()).toEqual(['error.type', 'http.request.method', 'http.response.status_code']);
+    expect(dependencies.every((span) => span.spanContext.traceId === '1'.repeat(32))).toBe(true);
     const files = (await readdir(auditDirectory)).filter((file) => file.endsWith('.log'));
     expect(files).toHaveLength(1);
     const auditFile = join(auditDirectory, files[0]!);
@@ -332,13 +374,22 @@ test('the application preload preserves event schemas, severity and privacy thro
     expect(exported).not.toContain('local-synthetic-key');
     expect(consoleOutput).toContain('Synthetic dependency request finished');
     expect(consoleOutput).toContain('Synthetic HTTP request completed');
-    expect(consoleRecords).toContainEqual(expect.objectContaining({ message: 'Document upload failed: network', 'error.type': 'document_upload_network' }));
-    const documentFailures = records.filter((record) => record.body === 'Document upload failed: network');
+    expect(consoleRecords).toContainEqual(expect.objectContaining({ message: 'Document upload failed during authentication or request.', 'error.type': 'document_upload_failed' }));
+    const documentFailures = records.filter((record) => record.body === 'Document upload failed during authentication or request.');
     expect(documentFailures).toHaveLength(3);
+    const httpFailure = records.find((record) => record.body === 'Document upload failed with HTTP 404.');
+    expect(httpFailure).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { 'error.type': 'document_upload_failed', 'http.response.status_code': 500, errorCode: 'API-DOC-0005', meta: { httpStatusCode: 404 } } });
+    expect(Object.keys(httpFailure?.attributes ?? {}).sort()).toEqual(
+      ['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'http.response.status_code', 'httpStatusCode', 'label', 'meta', 'timestamp'].sort(),
+    );
 
     for (const record of documentFailures) {
-      expect(Object.keys(record.attributes).sort()).toEqual(['cause', 'error.type', 'exception.message', 'exception.stacktrace', 'exception.type', 'kind', 'label', 'timestamp'].sort());
-      expect(record).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { 'error.type': 'document_upload_network', kind: 'network' } });
+      expect(record).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { errorCode: 'API-DOC-0005' } });
+      expect(['document_upload_failed', 'document_upload_network']).toContain(record.attributes['error.type']);
+      expect([
+        ['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'httpStatusCode', 'label', 'timestamp'].sort(),
+        ['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'http.response.status_code', 'httpStatusCode', 'label', 'timestamp'].sort(),
+      ]).toContainEqual(Object.keys(record.attributes).sort());
     }
 
     for (const output of [exported, consoleOutput]) {
@@ -369,10 +420,15 @@ test('the application preload preserves event schemas, severity and privacy thro
         '999999997',
         '999999998',
         '999999999',
+        '999 999 998',
+        '999-999-999',
         'document-person',
         'document-token-canary',
         'document-identity-token-canary',
         'document-nested-token-canary',
+        'document-filename-canary',
+        'document-response-body-canary',
+        'document-undeclared-field-canary',
         'sink-person',
         'sink-token-canary',
         'query-token-canary',
@@ -384,8 +440,10 @@ test('the application preload preserves event schemas, severity and privacy thro
 
       expect(output).not.toContain('Suppressed ordinary diagnostic');
       expect(output).not.toContain('Suppressed successful HTTP diagnostic');
-      expect(output).not.toContain('%j');
     }
+
+    expect(stdout).not.toContain('%j');
+    expect(consoleOutput).not.toContain('%j');
 
     for (const [message, level, severityNumber] of [
       ['Synthetic trace diagnostic', 'trace', SeverityNumber.TRACE],

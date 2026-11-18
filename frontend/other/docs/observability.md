@@ -107,6 +107,7 @@ awaited through `next()`, so overlapping bars are not separate sequential costs.
 
 Public instance methods in `app/.server/` use the existing
 [`@Traced()` decorator](../../app/.server/observability/decorator/traced.ts).
+Outbound HTTP calls use the specialized decorator described below.
 The following helpers are deliberately untraced:
 
 - Container lookups in `DefaultAppContainerProvider`.
@@ -156,6 +157,60 @@ enforce these tracing boundaries and verify exported repository spans, the absen
 of helper spans, retained session lifecycle spans, parent context, cache behavior,
 and error propagation using real lookups, mappers, resolvers, and session wrappers
 with mocked HTTP clients and session-store callbacks.
+
+### Outbound HTTP dependency spans
+
+`DefaultHttpClient.instrumentedFetch` uses
+[`@TracedHttpRequest()`](../../app/.server/observability/decorator/traced-http-request.ts)
+instead of the generic method decorator. Every call uses the same privacy-safe
+defaults; no request flag is required. The fixed, code-defined `metricPrefix`
+becomes the CLIENT span name. Never include request data in that name.
+
+The span records only stable OpenTelemetry attributes:
+
+| Attribute                   | Source and bound                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| `http.request.method`       | Uppercased method from options or a `Request`, default GET; unrecognized methods become `_OTHER` |
+| `http.response.status_code` | Status from the returned response; absent when the call throws                                   |
+| `error.type`                | HTTP status string for 4xx/5xx, an allowlisted operational code, or fixed `http_request_failed`  |
+
+No URL, header, body, filename, token, raw exception message/stack, or arbitrary
+request attribute is attached. The span starts before nested transport tracing
+is suppressed, replacing the generic HTTP-client method and automatic transport
+spans for these calls. Trace headers are injected with the configured propagator
+before suppression, without mutating caller headers or consuming a request body.
+
+The span duration includes retries and backoff. It records the final returned
+response, not every attempt. A thrown request has no invented HTTP status,
+including when retryable responses exhaust the policy. Existing status metrics,
+retry diagnostics, proxy behavior, responses and thrown errors are unchanged.
+HTTP 4xx/5xx mark this dependency span as failed; response parsing and business
+classification remain the caller's responsibility.
+
+This decorator emits no logs or completion events and does not sanitize errors
+for callers. Callers must still sanitize raw transport errors before logging or
+allowing a generic method decorator to record them.
+For uploads, `logUploadAttempt` and `logFlowFinished` still own their respective
+batch and flow completion events. Express `requestLoggerMiddleware` owns inbound
+HTTP completion; the service still logs its handled technical failure once.
+
+`OpenIdAppIdentityClient.getAccessToken` retains an INTERNAL method span, including
+cache hits. A cache miss creates discovery/token CLIENT children as needed:
+`http.client.app-identity.discovery.gets` and
+`http.client.app-identity.token.posts`. EWDU uses
+`http.client.document-scan-api.spo-upload-document.posts` and
+`http.client.document-scan-api.scan.posts`. Identity cache keys, credentials and
+token values are not span attributes. The identity boundary sanitizes failures;
+upload and scan exception causes currently need sanitization before logging.
+
+The HTTP-client tests cover status boundaries, retry behavior, request preservation
+and concurrent trace isolation. The ESM smoke tests exercise a real downstream
+HTTP request with automatic instrumentation enabled, checking trace propagation
+and the absence of duplicate client spans through console and OTLP export.
+The Winston export test checks production JSON, development console, audit-file
+and local OTLP output with synthetic credential, personal-data and payload
+canaries. These local checks do not validate live Dynatrace/OneAgent ingestion
+or deployed gateway policies.
 
 ### Application error correlation IDs
 

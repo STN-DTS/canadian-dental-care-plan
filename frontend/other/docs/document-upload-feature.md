@@ -431,7 +431,7 @@ For Entra, an example issuer is `https://login.microsoftonline.com/<tenant-id>/v
 
 `AppIdentityClient.getAccessToken` accepts an issuer URL, redacted client ID and secret, and a scope string. It returns a redacted access token. The repository owns the app identity environment configuration and passes explicit arguments. The client rejects blank credentials or scope and requires an HTTPS issuer without credentials, query, fragment, or a discovery-document path.
 
-Discovery runs lazily on the first token acquisition. Successful discovery configurations stay cached across token refreshes until eviction. Failed discovery is not cached, so the next call can recover. Discovery and token requests do not use `HTTP_PROXY_URL`. They have a 10-second timeout, reject redirects, and do not retry. The identity client and EWDU repository suppress transport tracing because raw errors can contain credentials. Request metrics remain enabled.
+Discovery runs lazily on the first token acquisition. Successful discovery configurations stay cached across token refreshes until eviction. Failed discovery is not cached, so the next call can recover. Discovery and token requests do not use `HTTP_PROXY_URL`. They have a 10-second timeout, reject redirects, and do not retry. The shared HTTP client retains privacy-safe dependency spans while suppressing nested transport tracing; callers do not need a flag or their own suppression wrapper. Request metrics remain enabled. See [outbound HTTP dependency spans](./observability.md#outbound-http-dependency-spans).
 
 The singleton client owns two in-memory Effect caches per application process, each bounded to 100 identities. Discovery configurations and tokens use the same immutable identity key containing the canonical issuer URL, exact client ID, exact client secret, and exact scope. Credentials in retained keys and access tokens use `Redacted` values. Equivalent arguments share pending acquisition and cached tokens, while changing any identity argument isolates both caches. The client snapshots arguments before asynchronous work.
 
@@ -451,6 +451,37 @@ Validity starts at the token request, after discovery, and refresh occurs early 
 
 User-initiated retries submit only pending files. Power Platform manages its own background-ingestion retries. DTS has no cross-system transaction, rollback, or saved flow that users can resume after a reload. The form loader resets an open flow's metadata.
 
+### Diagnosing an upload failure after an OAuth rollout
+
+Follow the failing request's trace from `DefaultDocumentUploadRepository.uploadDocument`
+through `OpenIdAppIdentityClient.getAccessToken` to the dependency spans. A cached
+token needs no discovery/token HTTP call; the token-resolution method span still
+appears. No upload HTTP span means the failure happened before that HTTP call.
+
+| Failing dependency or outcome                                         | Check                                                                                                                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OAuth discovery                                                       | Issuer configuration and metadata availability; use the issuer, not a discovery-document URL                                                             |
+| OAuth token                                                           | Client-credentials configuration, scope, consent and provider availability                                                                               |
+| EWDU 404                                                              | Document-upload base URI/override, API suffix, deployed route and gateway policy; gateways can mask authorization failures as 404                        |
+| EWDU 401/403                                                          | Subscription-key policy and the issued token's intended resource and permissions, using approved provider tooling without exporting or logging the token |
+| No returned status, operational `error.type` or `http_request_failed` | Outbound connectivity, timeout, DNS, proxy and TLS; scan retry exhaustion also throws without a final returned status                                    |
+| HTTP 200 but repository failure                                       | Unexpected response shape or parsing failure; do not dump the response body                                                                              |
+
+An EWDU 404 proves that token acquisition returned before the upload call, not
+that the token was authorized for that API. Upload failures use
+`API-DOC-0005`; scan failures use `API-DOC-0002`, except when a scan
+propagates a more specific identity error code. Upload failure messages identify
+the stage and include the HTTP status when a response was received.
+
+Do not blindly replay a failed or timed-out upload POST: EWDU may already have
+saved the file. Compare deployed configuration through authorized configuration
+tools, not by adding environment dumps, headers, token claims or bodies to logs.
+
+If Dynatrace displays log severity as `NONE`, check the ingestion path and its
+severity mapping. Without `OTEL_LOGS_ENDPOINT`, the application does not send
+OTLP logs; stdout/platform ingestion must map the existing Winston `level`.
+Local tests do not establish how UAT's collector or OneAgent is configured.
+
 ### Security and privacy
 
 - Feature flag and authenticated-session checks run on page access and submission.
@@ -458,12 +489,16 @@ User-initiated retries submit only pending files. Power Platform manages its own
 - The server gets the client number from the authenticated applicant context, not from the upload form.
 - The server sends file bytes to downstream services as base64 JSON. The application and repository do not log them.
 - The repository uses an Interop API subscription key, an app identity bearer token, and EWDU encapsulation credentials.
-- OAuth client secrets and access tokens remain server-only. The identity request, cache key credentials, and cached tokens use `Redacted` values. OAuth and EWDU errors omit raw transport and parsing details that can contain credentials or response bodies. The service does not log secrets, tokens, or credential forms.
+- OAuth client secrets and access tokens remain server-only. The identity request, cache key credentials, and cached tokens use `Redacted` values. Upload and scan exception causes currently need sanitization before they can safely be logged; raw transport and parsing errors can contain credentials or response bodies.
 - The frontend does not trust browser validation; the server repeats all upload validation.
 
 ### Upload metrics events
 
 The server upload action writes two named log events for business counts. Both carry `cdcp.document_upload.flow.id` and `session.id`, and neither carries filenames, file contents, or client numbers. Counts are best-effort: a crash or an export failure can lose an event.
+
+The existing raw `session.id` field needs review by the logging/privacy owner.
+This tracing change preserves the existing log attribute set rather than silently
+removing or redefining that field.
 
 | Event (`otel.event.name`)                | When                                                                                  | Count attributes                                                                                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |

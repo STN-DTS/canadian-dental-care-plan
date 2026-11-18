@@ -1,3 +1,4 @@
+import { SpanKind } from '@opentelemetry/api';
 import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
@@ -5,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { gunzipSync } from 'node:zlib';
 import { expect, test } from 'vitest';
+import { z } from 'zod';
 
 const execFileAsync = promisify(execFile);
 const frontendDirectory = fileURLToPath(new URL('../../', import.meta.url));
@@ -50,14 +52,45 @@ test.each(['console', 'otlp'])(
         import { once } from 'node:events';
         import { context, trace } from '@opentelemetry/api';
         import { suppressTracing } from '@opentelemetry/core';
+        import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+        import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
         import express from 'express';
+        import { DefaultHttpClient } from './app/.server/http/http-client.ts';
+
+        for (const Exporter of [OTLPTraceExporter, ConsoleSpanExporter]) {
+          const exportSpans = Exporter.prototype.export;
+          Exporter.prototype.export = function (spans, callback) {
+            for (const span of spans) {
+              console.log('OTEL_SMOKE_SPAN:' + JSON.stringify({
+                name: span.name, kind: span.kind, scope: span.instrumentationScope.name,
+                attributes: span.attributes, traceId: span.spanContext().traceId,
+                spanId: span.spanContext().spanId, parentSpanId: span.parentSpanContext?.spanId,
+              }));
+            }
+            exportSpans.call(this, spans, callback);
+          };
+        }
 
         const app = express();
         const traceId = '11111111111111111111111111111111';
+        const client = new DefaultHttpClient({ countHttpStatus() {} });
+        let origin;
 
-        app.get('/otel-smoke', function smokeHandler(request, response) {
+        app.get('/otel-smoke', async function smokeHandler(request, response) {
           trace.getSpan(context.active())?.setAttribute('password', 'otel-attribute-secret');
+          const dependency = await client.instrumentedFetch('http.client.smoke.posts', origin + '/otel-dependency?token=client-query-canary', {
+            method: 'POST',
+            headers: { authorization: 'Bearer client-header-canary', connection: 'close' },
+            body: 'client-request-canary',
+          });
+          assert.equal(dependency.status, 404);
+          assert.equal(await dependency.text(), 'client-response-canary');
           response.json({ traceId: trace.getSpan(context.active())?.spanContext().traceId });
+        });
+        app.post('/otel-dependency', function dependencyHandler(request, response) {
+          assert.equal(request.headers.authorization, 'Bearer client-header-canary');
+          assert.equal(trace.getSpan(context.active())?.spanContext().traceId, traceId);
+          response.status(404).send('client-response-canary');
         });
         app.use(function backendHandler(request, response, next) {
           if (request.path.startsWith('/dental-care/')) {
@@ -73,8 +106,9 @@ test.each(['console', 'otlp'])(
         try {
           const address = server.address();
           assert.ok(address && typeof address !== 'string');
+          origin = 'http://127.0.0.1:' + address.port;
 
-          const response = await context.with(suppressTracing(context.active()), () => fetch('http://127.0.0.1:' + address.port + '/otel-smoke?token=otel-query-secret', {
+          const response = await context.with(suppressTracing(context.active()), () => fetch(origin + '/otel-smoke?token=otel-query-secret', {
             headers: {
               connection: 'close',
               traceparent: '00-' + traceId + '-2222222222222222-01',
@@ -102,6 +136,8 @@ test.each(['console', 'otlp'])(
           env: {
             PATH: process.env.PATH,
             NODE_ENV: 'test',
+            LOG_LEVEL: 'error',
+            AUDIT_LOG_ENABLED: 'false',
             OTEL_USE_CONSOLE_EXPORTERS: sink === 'console' ? 'true' : 'false',
             OTEL_BSP_SCHEDULE_DELAY: '60000',
             OTEL_API_KEY: 'local-synthetic-trace-key',
@@ -114,6 +150,28 @@ test.each(['console', 'otlp'])(
       );
 
       const exported = sink === 'console' ? stdout : Buffer.concat(payloads).toString('utf8');
+      const spanPrefix = 'OTEL_SMOKE_SPAN:';
+      const spanSchema = z.object({
+        name: z.string(),
+        kind: z.number(),
+        scope: z.string(),
+        attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+        traceId: z.string(),
+        spanId: z.string(),
+        parentSpanId: z.string().optional(),
+      });
+      const spans = stdout
+        .split('\n')
+        .filter((line) => line.startsWith(spanPrefix))
+        .map((line) => spanSchema.parse(JSON.parse(line.slice(spanPrefix.length))));
+      const clients = spans.filter((span) => span.kind === SpanKind.CLIENT);
+      expect(clients.filter((span) => span.scope === 'default').map((span) => span.name)).toEqual(['http.client.smoke.posts']);
+      expect(clients.filter((span) => span.scope === '@opentelemetry/instrumentation-undici').map((span) => span.name)).toEqual(['GET', 'GET']);
+      const dependency = clients.find((span) => span.name === 'http.client.smoke.posts');
+      expect(dependency?.attributes).toEqual({ 'http.request.method': 'POST', 'http.response.status_code': 404, 'error.type': '404' });
+      const downstream = spans.find((span) => span.kind === SpanKind.SERVER && span.name === 'POST /otel-dependency');
+      expect(downstream?.traceId).toBe('1'.repeat(32));
+      expect(downstream?.parentSpanId).toBe(dependency?.spanId);
       expect(stdout).toContain('PASS: HTTP response and incoming trace context');
       expect(exported).toContain('@opentelemetry/instrumentation-http');
       expect(exported).toContain('@opentelemetry/instrumentation-express');
@@ -133,6 +191,10 @@ test.each(['console', 'otlp'])(
         expect(output).not.toContain('path-token-canary');
         expect(output).not.toContain('00000000-0000-0000-0000-000000000001');
         expect(output).not.toContain('local-synthetic-trace-key');
+        expect(output).not.toContain('client-query-canary');
+        expect(output).not.toContain('client-header-canary');
+        expect(output).not.toContain('client-request-canary');
+        expect(output).not.toContain('client-response-canary');
       }
 
       expect(exported).toContain('/dental-care/appeal-upload-eligible/pp/v1/esdc_clients([REDACTED])');

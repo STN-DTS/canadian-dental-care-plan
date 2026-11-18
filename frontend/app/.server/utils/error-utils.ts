@@ -13,8 +13,10 @@ import type { ErrorCode } from '~/errors/error-codes';
  */
 export function createAppError(msg: string, errorCode: ErrorCode, opts?: AppErrorOptions): AppError {
   return new AppError(msg, errorCode, {
-    ...opts,
+    cause: opts?.cause,
     correlationId: opts?.correlationId ?? getCorrelationId(),
+    httpStatusCode: opts?.httpStatusCode,
+    meta: opts?.meta,
   });
 }
 

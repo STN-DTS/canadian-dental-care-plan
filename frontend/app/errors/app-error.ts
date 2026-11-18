@@ -1,5 +1,7 @@
-import { HttpStatusCodes } from '~/constants/http-status-codes';
+import type { Primitive } from 'type-fest';
+
 import type { HttpStatusCode } from '~/constants/http-status-codes';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { isErrorCode } from '~/errors/error-codes';
 import type { ErrorCode } from '~/errors/error-codes';
 
@@ -13,6 +15,11 @@ export type AppErrorOptions = ErrorOptions & {
    * The HTTP status code associated with this error.
    */
   httpStatusCode?: HttpStatusCode;
+
+  /**
+   * Additional metadata associated with this error.
+   */
+  meta?: Readonly<Record<string, Primitive>>;
 };
 
 /**
@@ -22,15 +29,32 @@ export type AppErrorOptions = ErrorOptions & {
 export class AppError extends Error {
   public readonly name = 'AppError';
 
+  /**
+   * The error code associated with this error.
+   */
   public readonly errorCode: ErrorCode;
+
+  /**
+   * The correlation ID associated with this error.
+   */
   public readonly correlationId: string;
+
+  /**
+   * The HTTP status code associated with this error.
+   */
   public readonly httpStatusCode: HttpStatusCode;
+
+  /**
+   * Additional metadata associated with this error.
+   */
+  public readonly meta?: Readonly<Record<string, Primitive>>;
 
   public constructor(msg: string, errorCode: ErrorCode, opts?: AppErrorOptions) {
     super(msg, { cause: opts?.cause });
     this.errorCode = errorCode;
     this.correlationId = opts?.correlationId ?? '';
     this.httpStatusCode = opts?.httpStatusCode ?? HttpStatusCodes.INTERNAL_SERVER_ERROR;
+    this.meta = opts?.meta;
   }
 }
 
@@ -61,6 +85,9 @@ export function isAppError(error: unknown): error is AppError {
   );
 }
 
+/**
+ * Type guard to check if a value is an AppErrorPayload.
+ */
 export function isAppErrorPayload(value: unknown): value is AppErrorPayload {
   return typeof value === 'object' && value !== null && 'name' in value && value.name === 'AppError' && 'errorCode' in value && isErrorCode(value.errorCode) && 'correlationId' in value && typeof value.correlationId === 'string';
 }

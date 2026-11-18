@@ -4,13 +4,14 @@ import { mock } from 'vitest-mock-extended';
 
 import type { DocumentScanRequestDto, DocumentUploadRequestDto } from '~/.server/domain/dtos';
 import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
-import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
 import type { DocumentUploadRepository } from '~/.server/domain/repositories';
 import { DefaultDocumentUploadService } from '~/.server/domain/services';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 const scanRequest: DocumentScanRequestDto = {
   fileName: 'document.txt',
@@ -98,18 +99,18 @@ describe('DefaultDocumentUploadService', () => {
     });
 
     it.each([
-      ['HTTP bad request', new DocumentUploadException('http', 400)],
-      ['HTTP service failure', new DocumentUploadException('http', 503)],
-      ['network failure', new DocumentUploadException('network')],
-      ['invalid response', new DocumentUploadException('invalid-response', 200)],
+      ['HTTP bad request', new AppError('Document upload failed with HTTP 400.', ErrorCodes.API_DOC_UPLOAD_FAILED, { httpStatusCode: 400 })],
+      ['HTTP service failure', new AppError('Document upload failed with HTTP 503.', ErrorCodes.API_DOC_UPLOAD_FAILED, { httpStatusCode: 503 })],
+      ['network failure', new AppError('Document upload failed during authentication or request.', ErrorCodes.API_DOC_UPLOAD_FAILED)],
+      ['invalid response', new AppError('Document upload returned an invalid response (HTTP 200).', ErrorCodes.API_DOC_UPLOAD_FAILED)],
     ])('should absorb and log a %s without retrying', async (_name, error) => {
       repository.uploadDocument.mockRejectedValue(error);
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'error', error });
 
       expect(logger.error).toHaveBeenCalledWith(error, {
-        [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
-        [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
+        [ATTR_ERROR_TYPE]: 'document_upload_failed',
+        [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatusCode,
       });
       expect(repository.uploadDocument).toHaveBeenCalledOnce();
     });

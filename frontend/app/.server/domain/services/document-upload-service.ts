@@ -4,7 +4,6 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '~/.server/constants';
 import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
 import type { DocumentUploadErrorEntity } from '~/.server/domain/entities';
-import { DocumentUploadException } from '~/.server/domain/exceptions/document-upload-exception';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
 import type { DocumentUploadRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
@@ -12,6 +11,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_DOCUMENT_OUTCOME, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { AppError } from '~/errors/app-error';
 
 export interface DocumentUploadService {
   /**
@@ -71,10 +71,10 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
       this.log.trace('Document uploaded successfully.');
       return { status: 'success', documentFileName: responseEntity.DocumentFileName };
     } catch (error) {
-      if (error instanceof DocumentUploadException) {
+      if (error instanceof AppError) {
         this.log.error(error, {
-          [ATTR_ERROR_TYPE]: `document_upload_${error.kind}`,
-          [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatus,
+          [ATTR_ERROR_TYPE]: 'document_upload_failed',
+          [ATTR_HTTP_RESPONSE_STATUS_CODE]: error.httpStatusCode,
         });
       } else {
         this.log.error(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });

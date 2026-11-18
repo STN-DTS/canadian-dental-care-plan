@@ -1,5 +1,3 @@
-import { context } from '@opentelemetry/api';
-import { suppressTracing } from '@opentelemetry/core';
 import { Cache, Effect, Equal, Exit, Hash, Redacted, Result } from 'effect';
 import { inject, injectable } from 'inversify';
 import { ClientSecretPost, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
@@ -8,6 +6,7 @@ import type { Configuration, CustomFetch } from 'openid-client';
 import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
 import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
+import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -83,6 +82,7 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
     );
   }
 
+  @Traced()
   async getAccessToken(request: GetAccessTokenRequest): Promise<Redacted.Redacted<string>> {
     const { issuer, clientId, clientSecret, scope } = request;
 
@@ -137,12 +137,10 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
   }
 
   private readonly fetch: CustomFetch = async (url, options) => {
-    const response = await context.with(suppressTracing(context.active()), async () => {
-      return await this.httpClient.instrumentedFetch(`http.client.app-identity.${options.method === 'GET' ? 'discovery.gets' : 'token.posts'}`, url, {
-        ...options,
-        redirect: 'error',
-        retryOptions: { retries: 0, retryConditions: {} },
-      });
+    const response = await this.httpClient.instrumentedFetch(`http.client.app-identity.${options.method === 'GET' ? 'discovery.gets' : 'token.posts'}`, url, {
+      ...options,
+      redirect: 'error',
+      retryOptions: { retries: 0, retryConditions: {} },
     });
 
     return new globalThis.Response(await response.arrayBuffer(), { status: response.status, statusText: response.statusText, headers: [...response.headers] });
