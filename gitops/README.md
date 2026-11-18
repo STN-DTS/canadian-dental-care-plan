@@ -84,6 +84,17 @@ Base components define ConfigMap generators. Overlays use `behavior: merge`
 to override their values. Production defines workloads and ConfigMap generators
 directly in `prod/`.
 
+Frontend pods with an `oauth-proxy` sidecar use the pod-template annotation
+`container.inject.dynatrace.com/oauth-proxy: 'false'` to exclude that container
+from Dynatrace injection. Other containers remain eligible for injection. The
+template change rolls affected frontend pods after deployment; verify the proxy
+exclusion and frontend instrumentation in the cluster.
+
+Where deployed, the OAuth proxy uses the digest-pinned v7.15.6 image. This
+upgrade changes CSRF cookie expiration validation and tightens skip-auth
+matching for ambiguous paths. Verify sign-in and health-probe bypass after
+deployment.
+
 Nonproduction uses `dtsrhpdevscedacr.azurecr.io`. Production uses
 `dtsrhpprodscedspokeacr.azurecr.io` with pinned image versions.
 
