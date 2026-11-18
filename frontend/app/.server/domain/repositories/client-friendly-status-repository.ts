@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import clientFriendlyStatusJsonDataSource from '~/.server/resources/power-platform/client-friendly-status.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,27 +45,30 @@ export interface ClientFriendlyStatusRepository {
   checkHealth(): Promise<void>;
 }
 
-export type DefaultClientFriendlyStatusRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+export type DefaultClientFriendlyStatusRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_CLIENT_FRIENDLY_STATUSES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStatusRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultClientFriendlyStatusRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly clientFriendlyStatusesUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultClientFriendlyStatusRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultClientFriendlyStatusRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
+    this.clientFriendlyStatusesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_CLIENT_FRIENDLY_STATUSES_PATHNAME);
   }
 
   @Traced()
   async listAllClientFriendlyStatuses(): Promise<ReadonlyArray<ClientFriendlyStatusEntity>> {
     this.log.trace('Fetching all client friendly statuses');
 
-    const url = new URL(`${this.baseUrl}/esdc_clientfriendlystatuses`);
+    const url = new URL(this.clientFriendlyStatusesUrl);
     url.searchParams.set('$select', 'esdc_clientfriendlystatusid,esdc_descriptionenglish,esdc_descriptionfrench');
     url.searchParams.set('$filter', 'statecode eq 0');
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.client-friendly-statuses.gets', url, {
@@ -110,7 +114,7 @@ export class DefaultClientFriendlyStatusRepository implements ClientFriendlyStat
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      clientFriendlyStatusesUrl: this.clientFriendlyStatusesUrl,
     };
   }
 

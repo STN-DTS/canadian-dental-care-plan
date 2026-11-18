@@ -11,6 +11,7 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl, expandPathParams } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -50,14 +51,18 @@ export interface EvidentiaryDocumentRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultEvidentiaryDocumentRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultEvidentiaryDocumentRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_EVIDENTIARY_DOCUMENTS_PATHNAME' | 'INTEROP_EVIDENTIARY_DOCUMENTS_UPLOAD_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocumentRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultEvidentiaryDocumentRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly evidentiaryDocumentsUrl: string;
+  private readonly evidentiaryDocumentsUploadUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig) serverConfig: DefaultEvidentiaryDocumentRepositoryServerConfig, //
@@ -66,14 +71,16 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
     this.log = createLogger('DefaultEvidentiaryDocumentRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/doc-metadata/pp/v1`;
+    const baseUri = this.serverConfig.INTEROP_API_BASE_URI;
+    this.evidentiaryDocumentsUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENTS_PATHNAME);
+    this.evidentiaryDocumentsUploadUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENTS_UPLOAD_PATHNAME);
   }
 
   @Traced()
   async findEvidentiaryDocuments(findEvidentiaryDocumentsRequest: FindEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentEntity>> {
     this.log.debug('Fetching evidentiary documents', { [ATTR_CDCP_USER_ID]: findEvidentiaryDocumentsRequest.userId });
 
-    const url = new URL(`${this.baseUrl}/esdc_evidentiarydocuments`);
+    const url = new URL(this.evidentiaryDocumentsUrl);
 
     url.searchParams.set('$select', 'esdc_filename,_esdc_documenttypeid_value,esdc_uploaddate,esdc_recordsource');
     url.searchParams.set('$expand', 'esdc_Clientid($select=esdc_firstname,esdc_lastname),esdc_DocumentTypeid($select=esdc_nameenglish,esdc_namefrench)');
@@ -111,7 +118,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
   async createEvidentiaryDocumentMetadata(createRequest: CreateEvidentiaryDocumentMetadataRepositoryRequest): Promise<CreateEvidentiaryDocumentMetadataResponseEntity> {
     this.log.debug('Uploading evidentiary document metadata', { [ATTR_CDCP_USER_ID]: createRequest.userId });
 
-    const url = new URL(`${this.baseUrl}/esdc_clients(${createRequest.clientId})/Microsoft.Dynamics.CRM.esdc_UploadEvidentiaryDocuments`);
+    const url = new URL(expandPathParams(this.evidentiaryDocumentsUploadUrl, { clientId: createRequest.clientId }));
 
     const requestBody = {
       Documents: createRequest.documents.map((doc) => ({
@@ -175,7 +182,8 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      evidentiaryDocumentsUrl: this.evidentiaryDocumentsUrl,
+      evidentiaryDocumentsUploadUrl: this.evidentiaryDocumentsUploadUrl,
     };
   }
 

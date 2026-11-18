@@ -9,6 +9,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -25,23 +26,25 @@ export interface BenefitRenewalRepository {
 @injectable()
 export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
   private readonly httpClient: HttpClient;
+  private readonly benefitApplicationUrl: string;
 
   constructor(
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultBenefitRenewalRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
+    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
   async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
     this.log.trace('Submitting benefit renewal');
 
-    const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/benefit-application`);
+    const url = new URL(this.benefitApplicationUrl);
     url.searchParams.set('scenario', 'RENEWAL');
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.benefit-application-renewal.posts', url, {

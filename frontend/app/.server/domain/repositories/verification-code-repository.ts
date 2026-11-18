@@ -10,6 +10,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -41,22 +42,28 @@ export interface VerificationCodeRepository {
 @injectable()
 export class DefaultVerificationCodeRepository implements VerificationCodeRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_NOTIFICATIONS_EMAIL_PATHNAME' | 'INTEROP_NOTIFICATIONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly notificationsEmailUrl: string;
+  private readonly notificationsUrl: string;
 
-  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'GC_NOTIFY_API_KEY' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_NOTIFICATIONS_EMAIL_PATHNAME' | 'INTEROP_NOTIFICATIONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY'>,
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+  ) {
     this.log = createLogger('DefaultVerificationCodeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/notifications/email-txt-notifications/v1`;
+    const baseUri = this.serverConfig.INTEROP_API_BASE_URI;
+    this.notificationsEmailUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_NOTIFICATIONS_EMAIL_PATHNAME);
+    this.notificationsUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_NOTIFICATIONS_PATHNAME);
   }
 
   @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestEntity: VerificationCodeEmailRequestEntity): Promise<VerificationCodeEmailResponseEntity> {
     this.log.trace('Sending verification code email');
 
-    const url = `${this.baseUrl}/notifications/email`;
+    const url = this.notificationsEmailUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.email-notifications.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -86,7 +93,8 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      notificationsEmailUrl: this.notificationsEmailUrl,
+      notificationsUrl: this.notificationsUrl,
     };
   }
 
@@ -94,7 +102,7 @@ export class DefaultVerificationCodeRepository implements VerificationCodeReposi
   async checkHealth(): Promise<void> {
     this.log.trace('Checking health for verification code repository');
 
-    const url = `${this.baseUrl}/notifications`;
+    const url = this.notificationsUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.email-notifications.gets', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'GET',

@@ -30,6 +30,10 @@ describe('UrlPathRedactor', () => {
     });
   });
 
+  test('redacts client keys on a relocated Interop pathname', () => {
+    expect(redactor.redactValue("https://backend.example.test/other/v2/esdc_clients('relocated-canary')/action")).toBe('https://backend.example.test/other/v2/esdc_clients([REDACTED])');
+  });
+
   test('handles a backend base-path prefix and preserves safe URL components', () => {
     expect(redactor.redactValue(`https://backend.example.test:8443/gateway${clientPath}?lang=en#section`)).toBe(`https://backend.example.test:8443/gateway${redactedClientPath}?lang=en#section`);
   });

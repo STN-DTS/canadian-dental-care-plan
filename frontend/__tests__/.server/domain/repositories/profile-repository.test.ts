@@ -10,11 +10,12 @@ import type { HttpClient } from '~/.server/http';
 import { ErrorCodes } from '~/errors/error-codes';
 
 describe('DefaultProfileRepository', () => {
-  let serverConfigMock: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+  let serverConfigMock: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
 
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
+      INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME: '/dental-care/applicant-information/dts/v1/update-benefit-application',
       HTTP_PROXY_URL: 'https://proxy.example.com',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
       INTEROP_API_MAX_RETRIES: 3,

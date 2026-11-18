@@ -160,6 +160,8 @@ test('the application preload preserves event schemas, severity and privacy thro
           const documentConfig = new DocumentUploadRepositoryDefaultConfig({
             INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default',
             INTEROP_API_BASE_URI: 'https://interop.example.test',
+            INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
+            INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/Scan',
             INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
             INTEROP_API_MAX_RETRIES: 0,
             INTEROP_API_BACKOFF_MS: 0,

@@ -9,6 +9,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -69,13 +70,14 @@ export interface ProfileRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultProfileRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+type DefaultProfileRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
 
 @injectable()
 export class DefaultProfileRepository implements ProfileRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultProfileRepositoryServerConfig;
   private readonly httpClient: HttpClient;
+  private readonly updateBenefitApplicationUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
@@ -85,13 +87,14 @@ export class DefaultProfileRepository implements ProfileRepository {
     this.log = createLogger('DefaultProfileRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
+    this.updateBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity: UpdateCommunicationPreferenceRequestEntity): Promise<void> {
     this.log.trace('Updating communication preferences');
 
-    const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
+    const url = this.updateBenefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.communication-preferences.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -120,7 +123,7 @@ export class DefaultProfileRepository implements ProfileRepository {
   async updatePhoneNumbers(updatePhoneNumbersRequestEntity: UpdatePhoneNumbersRequestEntity): Promise<void> {
     this.log.trace('Updating phone numbers');
 
-    const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
+    const url = this.updateBenefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.phone-numbers.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -149,7 +152,7 @@ export class DefaultProfileRepository implements ProfileRepository {
   async updateEmailAddress(updateEmailAddressRequestEntity: UpdateEmailAddressRequestEntity): Promise<void> {
     this.log.trace('Updating email address');
 
-    const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
+    const url = this.updateBenefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.email-address.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -178,7 +181,7 @@ export class DefaultProfileRepository implements ProfileRepository {
   async updateDentalBenefits(updateDentalBenefitsRequestEntity: UpdateDentalBenefitsRequestEntity): Promise<void> {
     this.log.trace('Updating dental benefits');
 
-    const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
+    const url = this.updateBenefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.dental-benefits.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -207,7 +210,7 @@ export class DefaultProfileRepository implements ProfileRepository {
   async updateAddresses(updateAddressRequestEntity: UpdateAddressRequestEntity): Promise<void> {
     this.log.trace('Updating mailing and home addresses');
 
-    const url = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/update-benefit-application`;
+    const url = this.updateBenefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.update-benefit-application.mailing-and-home-addresses.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',

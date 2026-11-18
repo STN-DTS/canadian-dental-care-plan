@@ -52,6 +52,7 @@ describe('DefaultProvinceTerritoryStateRepository', () => {
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
+      INTEROP_COUNTRIES_PATHNAME: '/dental-care/code-list/pp/v1/esdc_countries',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
       INTEROP_API_MAX_RETRIES: 10,
       INTEROP_API_BACKOFF_MS: 3,

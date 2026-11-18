@@ -11,6 +11,7 @@ import { Traced } from '~/.server/observability/decorator';
 import clientApplicationItaJsonDataSource from '~/.server/resources/power-platform/client-application-ita.json';
 import clientApplicationJsonDataSource from '~/.server/resources/power-platform/client-application.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
@@ -39,20 +40,22 @@ export interface ClientApplicationRepository {
 @injectable()
 export class DefaultClientApplicationRepository implements ClientApplicationRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
   private readonly httpClient: HttpClient;
+  private readonly retrieveBenefitApplicationUrl: string;
 
-  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultClientApplicationRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
+    this.retrieveBenefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.trace('Fetching client application by basic info');
 
-    const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/retrieve-benefit-application`);
+    const url = new URL(this.retrieveBenefitApplicationUrl);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.retrieve-benefit-application_by-basic-info.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -88,7 +91,7 @@ export class DefaultClientApplicationRepository implements ClientApplicationRepo
   async findClientApplicationBySin(clientApplicationSinRequestEntity: ClientApplicationSinRequestEntity): Promise<Option.Option<ClientApplicationEntity>> {
     this.log.trace('Fetching client application by SIN');
 
-    const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/retrieve-benefit-application`);
+    const url = new URL(this.retrieveBenefitApplicationUrl);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.retrieve-benefit-application_by-sin.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',

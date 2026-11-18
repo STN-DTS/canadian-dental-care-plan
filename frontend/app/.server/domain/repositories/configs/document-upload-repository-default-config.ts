@@ -25,8 +25,10 @@ export class DocumentUploadRepositoryDefaultConfig {
     this.oauthClientSecret = serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET;
     this.oauthIssuer = new URL(serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER);
     this.oauthScope = serverConfig.INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE;
+    this.scanPathname = serverConfig.INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME;
     this.scanRetryCount = serverConfig.INTEROP_API_MAX_RETRIES;
     this.scanRetryBackoffMs = serverConfig.INTEROP_API_BACKOFF_MS;
+    this.spoUploadDocumentPathname = serverConfig.INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME;
     this.subscriptionKey = serverConfig.INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY ?? serverConfig.INTEROP_API_SUBSCRIPTION_KEY;
   }
 
@@ -41,7 +43,9 @@ export class DocumentUploadRepositoryDefaultConfig {
   readonly oauthClientSecret: Redacted<string>;
   readonly oauthIssuer: URL;
   readonly oauthScope: string;
+  readonly scanPathname: string;
   readonly scanRetryCount: number;
   readonly scanRetryBackoffMs: number;
+  readonly spoUploadDocumentPathname: string;
   readonly subscriptionKey: Redacted<string>;
 }

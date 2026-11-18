@@ -45,6 +45,7 @@ function createCountryService() {
   const repository = new DefaultCountryRepository(
     {
       INTEROP_API_BASE_URI: 'https://api.example.test',
+      INTEROP_COUNTRIES_PATHNAME: '/dental-care/code-list/pp/v1/esdc_countries',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('synthetic-key'),
       INTEROP_API_MAX_RETRIES: 0,
       INTEROP_API_BACKOFF_MS: 0,
@@ -324,6 +325,8 @@ describe('application method spans', () => {
     const config = new DocumentUploadRepositoryDefaultConfig({
       INTEROP_DOCUMENT_UPLOAD_PROVIDER: 'default',
       INTEROP_API_BASE_URI: 'https://interop.example.test',
+      INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
+      INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/Scan',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
       INTEROP_API_MAX_RETRIES: 0,
       INTEROP_API_BACKOFF_MS: 0,
@@ -428,7 +431,7 @@ describe('application method spans', () => {
   it('keeps metadata and delegated health checks untraced while retaining repository I/O spans', async () => {
     const { repository, httpClient } = createCountryService();
 
-    expect(repository.getMetadata()).toEqual({ baseUrl: 'https://api.example.test/dental-care/code-list/pp/v1' });
+    expect(repository.getMetadata()).toEqual({ countriesUrl: 'https://api.example.test/dental-care/code-list/pp/v1/esdc_countries' });
     await expect(repository.checkHealth()).resolves.toBeUndefined();
     expect(httpClient.instrumentedFetch).toHaveBeenCalledOnce();
     await processor.forceFlush();

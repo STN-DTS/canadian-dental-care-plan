@@ -61,3 +61,22 @@ export const stringToRedacted = z.codec(
  * Parsing this codec exposes the original string; it does not redact raw input.
  */
 export const redactedString = z.invertCodec(stringToRedacted);
+
+/**
+ * Validates a configurable endpoint pathname that is appended to a configured base URI.
+ * A missing or blank value uses `defaultPathname`. Each name in `placeholders` must appear as `{name}`, and no other braces are allowed.
+ */
+export function endpointPathname(defaultPathname: string, placeholders: readonly string[] = []) {
+  return z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z
+      .string()
+      .trim()
+      .regex(/^\/[^?#\s]*$/, { error: 'Pathname must start with "/" and must not contain a query, fragment, or whitespace' })
+      .refine((pathname) => placeholders.every((name) => pathname.includes(`{${name}}`)), { error: `Pathname must contain ${placeholders.map((name) => `{${name}}`).join(', ')}` })
+      .refine((pathname) => !/[{}]/.test(placeholders.reduce((remaining, name) => remaining.replaceAll(`{${name}}`, ''), pathname)), {
+        error: placeholders.length === 0 ? 'Pathname must not contain placeholders' : `Pathname must not contain placeholders other than ${placeholders.map((name) => `{${name}}`).join(', ')}`,
+      })
+      .default(defaultPathname),
+  );
+}

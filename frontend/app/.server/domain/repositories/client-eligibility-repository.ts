@@ -10,6 +10,7 @@ import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import clientEligibilityJsonDataSource from '~/.server/resources/power-platform/client-eligibility.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ClientEligibilityRepository {
@@ -26,25 +27,27 @@ export interface ClientEligibilityRepository {
 @injectable()
 export class DefaultClientEligibilityRepository implements ClientEligibilityRepository {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  private readonly serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_APPLICANT_ELIGIBILITY_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
   private readonly httpClient: HttpClient;
+  private readonly applicantEligibilityUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
-    serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>,
+    serverConfig: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_APPLICANT_ELIGIBILITY_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>,
     @inject(TYPES.HttpClient)
     httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultClientEligibilityRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
+    this.applicantEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_APPLICANT_ELIGIBILITY_PATHNAME);
   }
 
   @Traced()
   async listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity: ClientEligibilityRequestEntity): Promise<ReadonlyArray<ClientEligibilityEntity>> {
     this.log.trace('Fetching client eligibility');
 
-    const url = new URL(`${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/applicant-eligibility`);
+    const url = new URL(this.applicantEligibilityUrl);
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant-eligibility_by-client-number.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',

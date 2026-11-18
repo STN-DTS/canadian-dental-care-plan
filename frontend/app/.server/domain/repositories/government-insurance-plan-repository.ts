@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import governmentInsurancePlanJsonDataSource from '~/.server/resources/power-platform/government-insurance-plan.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,27 +45,30 @@ export interface GovernmentInsurancePlanRepository {
   checkHealth(): Promise<void>;
 }
 
-export type DefaultGovernmentInsurancePlanRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+export type DefaultGovernmentInsurancePlanRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_GOVERNMENT_INSURANCE_PLANS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsurancePlanRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultGovernmentInsurancePlanRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly governmentInsurancePlansUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultGovernmentInsurancePlanRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultGovernmentInsurancePlanRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
+    this.governmentInsurancePlansUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_GOVERNMENT_INSURANCE_PLANS_PATHNAME);
   }
 
   @Traced()
   async listAllGovernmentInsurancePlans(): Promise<ReadonlyArray<GovernmentInsurancePlanEntity>> {
     this.log.trace('Fetching all government insurance plans');
 
-    const url = new URL(`${this.baseUrl}/esdc_governmentinsuranceplans`);
+    const url = new URL(this.governmentInsurancePlansUrl);
     url.searchParams.set('$select', 'esdc_governmentinsuranceplanid,esdc_nameenglish,esdc_namefrench,_esdc_provinceterritorystateid_value');
     url.searchParams.set('$filter', 'statecode eq 0');
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.government-insurance-plans.gets', url, {
@@ -111,7 +115,7 @@ export class DefaultGovernmentInsurancePlanRepository implements GovernmentInsur
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      governmentInsurancePlansUrl: this.governmentInsurancePlansUrl,
     };
   }
 

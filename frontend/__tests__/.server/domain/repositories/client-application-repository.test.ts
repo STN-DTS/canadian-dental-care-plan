@@ -40,11 +40,12 @@ vi.mock(import('~/.server/resources/power-platform/client-application-ita.json')
 }));
 
 describe('DefaultClientApplicationRepository', () => {
-  let serverConfigMock: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
+  let serverConfigMock: Pick<ServerConfig, 'INTEROP_API_BASE_URI' | 'INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME' | 'HTTP_PROXY_URL' | 'INTEROP_API_SUBSCRIPTION_KEY'>;
 
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
+      INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME: '/dental-care/applicant-information/dts/v1/retrieve-benefit-application',
       HTTP_PROXY_URL: 'https://proxy.example.com',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
     };

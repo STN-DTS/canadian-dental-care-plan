@@ -89,3 +89,19 @@ export function validateOAuthIssuer(input: string, options?: { readonly allowHtt
     ),
   );
 }
+
+/**
+ * Appends a configured endpoint pathname to a base URI, keeping any path prefix in the base URI.
+ * Placeholders such as `{clientId}` are kept so the result can be reported and later expanded with `expandPathParams`.
+ */
+export function buildEndpointUrl(baseUri: string | URL, pathname: string): string {
+  return `${baseUri.toString().replace(/\/+$/, '')}${pathname}`;
+}
+
+/**
+ * Replaces `{name}` placeholders in a URL template in a single pass; callers encode values as needed.
+ * Unknown placeholders are left unchanged.
+ */
+export function expandPathParams(urlTemplate: string, pathParams: Readonly<Record<string, string>>): string {
+  return urlTemplate.replaceAll(/\{(\w+)\}/g, (placeholder, name: string) => pathParams[name] ?? placeholder);
+}

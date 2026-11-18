@@ -2,7 +2,7 @@ import { Result } from 'effect';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEnv } from '~/.server/utils/env-utils';
-import { InvalidIssuerError, getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl, validateOAuthIssuer } from '~/.server/utils/url-utils';
+import { InvalidIssuerError, buildEndpointUrl, expandPathParams, getCdcpWebsiteApplyUrl, getCdcpWebsiteStatusUrl, getCdcpWebsiteUrl, validateOAuthIssuer } from '~/.server/utils/url-utils';
 
 // Mock the getEnv function
 vi.mock(import('~/.server/utils/env-utils'), () => ({
@@ -148,5 +148,21 @@ describe('CDCP Website URL functions', () => {
       const result = getCdcpWebsiteUrl('en');
       expect(result).toBe('https://example.com/en');
     });
+  });
+});
+
+describe('buildEndpointUrl', () => {
+  it('keeps the base URI path prefix and trims its trailing slashes', () => {
+    expect(buildEndpointUrl(new URL('https://api.example.test/uat/stream1/'), '/dental-care/status')).toBe('https://api.example.test/uat/stream1/dental-care/status');
+  });
+
+  it('keeps placeholders for later expansion', () => {
+    expect(buildEndpointUrl('https://api.example.test', '/clients({clientId})')).toBe('https://api.example.test/clients({clientId})');
+  });
+});
+
+describe('expandPathParams', () => {
+  it('replaces placeholders in a single pass and leaves unknown placeholders', () => {
+    expect(expandPathParams('https://api.example.test/clients({clientId})/{other}', { clientId: '{other}' })).toBe('https://api.example.test/clients({other})/{other}');
   });
 });

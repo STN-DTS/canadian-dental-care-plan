@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { documentUploadRepositoryConfigSchema } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import { singleton } from '~/.server/utils/instance-registry';
-import { stringToRedacted } from '~/.server/utils/zod-utils';
+import { endpointPathname, stringToRedacted } from '~/.server/utils/zod-utils';
 import { isValidDateTimeString } from '~/utils/date-utils';
 import type { ClientEnv } from '~/utils/env-utils';
 import { clientEnvSchema } from '~/utils/env-utils';
@@ -95,6 +95,29 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
   INTEROP_CCT_API_COMMUNITY: z.string().default('CDCP'),
   INTEROP_STATUS_CHECK_API_BASE_URI: z.string().trim().transform(emptyToUndefined).optional(),
   INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: z.string().trim().transform(emptyToUndefined).pipe(stringToRedacted.optional()).optional(),
+
+  // interop api endpoint pathnames, appended to the matching base URI
+  INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME: endpointPathname('/address/validation/v1/CAN/correct'),
+  INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME: endpointPathname("/dental-care/appeal-upload-eligible/pp/v1/esdc_clients(esdc_clientnumber='{clientNumber}')", ['clientNumber']),
+  INTEROP_APPLICANT_PATHNAME: endpointPathname('/dental-care/applicant-information/dts/v1/applicant'),
+  INTEROP_APPLICANT_ELIGIBILITY_PATHNAME: endpointPathname('/dental-care/applicant-information/dts/v1/applicant-eligibility'),
+  INTEROP_BENEFIT_APPLICATION_PATHNAME: endpointPathname('/dental-care/applicant-information/dts/v1/benefit-application'),
+  INTEROP_RETRIEVE_BENEFIT_APPLICATION_PATHNAME: endpointPathname('/dental-care/applicant-information/dts/v1/retrieve-benefit-application'),
+  INTEROP_UPDATE_BENEFIT_APPLICATION_PATHNAME: endpointPathname('/dental-care/applicant-information/dts/v1/update-benefit-application'),
+  INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME: endpointPathname('/dental-care/client-letters/cct/v1/GetDocInfoByClientId'),
+  INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME: endpointPathname('/dental-care/client-letters/cct/v1/GetPdfByLetterId'),
+  INTEROP_CLIENT_FRIENDLY_STATUSES_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_clientfriendlystatuses'),
+  INTEROP_COUNTRIES_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_countries'),
+  INTEROP_DOCUMENT_UPLOAD_REASONS_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_documentuploadreasons'),
+  INTEROP_EVIDENTIARY_DOCUMENT_TYPES_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_evidentiarydocumenttypes'),
+  INTEROP_GOVERNMENT_INSURANCE_PLANS_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_governmentinsuranceplans'),
+  INTEROP_LETTER_TYPES_PATHNAME: endpointPathname('/dental-care/code-list/pp/v1/esdc_cctlettertypes'),
+  INTEROP_EVIDENTIARY_DOCUMENTS_PATHNAME: endpointPathname('/dental-care/doc-metadata/pp/v1/esdc_evidentiarydocuments'),
+  INTEROP_EVIDENTIARY_DOCUMENTS_UPLOAD_PATHNAME: endpointPathname('/dental-care/doc-metadata/pp/v1/esdc_clients({clientId})/Microsoft.Dynamics.CRM.esdc_UploadEvidentiaryDocuments', ['clientId']),
+  INTEROP_NOTIFICATIONS_PATHNAME: endpointPathname('/notifications/email-txt-notifications/v1/notifications'),
+  INTEROP_NOTIFICATIONS_EMAIL_PATHNAME: endpointPathname('/notifications/email-txt-notifications/v1/notifications/email'),
+  INTEROP_STATUS_CHECK_STATUS_PATHNAME: endpointPathname('/dental-care/status-check/v1/status'),
+  INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME: endpointPathname('/dental-care/status-check/v1/status_fnlndob'),
 
   // simulation/testing date settings
   APPLICATION_CURRENT_DATE: z.string().optional(),

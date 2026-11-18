@@ -10,6 +10,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -54,30 +55,47 @@ export class DefaultApplicantRepository implements ApplicantRepository {
   private readonly log: Logger;
   private readonly serverConfig: Pick<
     ServerConfig,
-    'HEALTH_PLACEHOLDER_REQUEST_VALUE' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_APPLICANT_API_BASE_URI' | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+    | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
+    | 'HTTP_PROXY_URL'
+    | 'INTEROP_API_BASE_URI'
+    | 'INTEROP_APPLICANT_PATHNAME'
+    | 'INTEROP_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_APPLICANT_API_BASE_URI'
+    | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_API_MAX_RETRIES'
+    | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly applicantUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
     serverConfig: Pick<
       ServerConfig,
-      'HEALTH_PLACEHOLDER_REQUEST_VALUE' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_APPLICANT_API_BASE_URI' | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+      | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
+      | 'HTTP_PROXY_URL'
+      | 'INTEROP_API_BASE_URI'
+      | 'INTEROP_APPLICANT_PATHNAME'
+      | 'INTEROP_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_APPLICANT_API_BASE_URI'
+      | 'INTEROP_APPLICANT_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_API_MAX_RETRIES'
+      | 'INTEROP_API_BACKOFF_MS'
     >,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultApplicantRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_APPLICANT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1`;
+    const baseUri = this.serverConfig.INTEROP_APPLICANT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.applicantUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_APPLICANT_PATHNAME);
   }
 
   @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by basic info');
 
-    const url = `${this.baseUrl}/applicant`;
+    const url = this.applicantUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant_by-basic-info.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -120,7 +138,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
   async findApplicantBySin(request: FindApplicantBySinRequestEntity): Promise<Option.Option<ApplicantResponseEntity>> {
     this.log.trace('Fetching applicant by SIN');
 
-    const url = `${this.baseUrl}/applicant`;
+    const url = this.applicantUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.applicant_by-sin.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -161,7 +179,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      applicantUrl: this.applicantUrl,
     };
   }
 

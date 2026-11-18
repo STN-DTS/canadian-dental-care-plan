@@ -10,6 +10,7 @@ import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import clientFriendlyStatusDataSource from '~/.server/resources/power-platform/client-friendly-status.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 import { expectDefined } from '~/utils/assert-utils';
@@ -55,30 +56,51 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
   private readonly log: Logger;
   private readonly serverConfig: Pick<
     ServerConfig,
-    'HEALTH_PLACEHOLDER_REQUEST_VALUE' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_STATUS_CHECK_API_BASE_URI' | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+    | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
+    | 'HTTP_PROXY_URL'
+    | 'INTEROP_API_BASE_URI'
+    | 'INTEROP_STATUS_CHECK_STATUS_PATHNAME'
+    | 'INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME'
+    | 'INTEROP_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_STATUS_CHECK_API_BASE_URI'
+    | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_API_MAX_RETRIES'
+    | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly statusUrl: string;
+  private readonly statusFnlndobUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
     serverConfig: Pick<
       ServerConfig,
-      'HEALTH_PLACEHOLDER_REQUEST_VALUE' | 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_STATUS_CHECK_API_BASE_URI' | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+      | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
+      | 'HTTP_PROXY_URL'
+      | 'INTEROP_API_BASE_URI'
+      | 'INTEROP_STATUS_CHECK_STATUS_PATHNAME'
+      | 'INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME'
+      | 'INTEROP_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_STATUS_CHECK_API_BASE_URI'
+      | 'INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_API_MAX_RETRIES'
+      | 'INTEROP_API_BACKOFF_MS'
     >,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultApplicationStatusRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_STATUS_CHECK_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/status-check/v1`;
+    const baseUri = this.serverConfig.INTEROP_STATUS_CHECK_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.statusUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_STATUS_CHECK_STATUS_PATHNAME);
+    this.statusFnlndobUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME);
   }
 
   @Traced()
   async getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity: ApplicationStatusBasicInfoRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.trace('Fetching application status by basic info');
 
-    const url = `${this.baseUrl}/status_fnlndob`;
+    const url = this.statusFnlndobUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.status-fnlndob.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -116,7 +138,7 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
   async getApplicationStatusBySin(applicationStatusSinRequestEntity: ApplicationStatusSinRequestEntity): Promise<ApplicationStatusEntity> {
     this.log.trace('Fetching application status by SIN');
 
-    const url = `${this.baseUrl}/status`;
+    const url = this.statusUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.status.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',
@@ -152,7 +174,8 @@ export class DefaultApplicationStatusRepository implements ApplicationStatusRepo
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      statusUrl: this.statusUrl,
+      statusFnlndobUrl: this.statusFnlndobUrl,
     };
   }
 

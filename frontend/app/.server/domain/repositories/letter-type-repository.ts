@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import letterTypeJsonDataSource from '~/.server/resources/power-platform/letter-type.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,27 +45,27 @@ export interface LetterTypeRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultLetterTypeRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultLetterTypeRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_LETTER_TYPES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
 
 @injectable()
 export class DefaultLetterTypeRepository implements LetterTypeRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultLetterTypeRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly letterTypesUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultLetterTypeRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultLetterTypeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1/`;
+    this.letterTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_LETTER_TYPES_PATHNAME);
   }
 
   @Traced()
   async listAllLetterTypes(): Promise<ReadonlyArray<LetterTypeEntity>> {
     this.log.trace('Fetching all letter types');
 
-    const url = new URL(`${this.baseUrl}/esdc_cctlettertypes`);
+    const url = new URL(this.letterTypesUrl);
     url.searchParams.set('$select', 'esdc_portalnameenglish,esdc_portalnamefrench,_esdc_parentid_value,esdc_value');
     url.searchParams.set('$filter', 'esdc_displayonportal eq 1 and statecode eq 0');
     url.searchParams.set('$expand', 'esdc_ParentId($select=esdc_portalnameenglish,esdc_portalnamefrench)');
@@ -112,7 +113,7 @@ export class DefaultLetterTypeRepository implements LetterTypeRepository {
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      letterTypesUrl: this.letterTypesUrl,
     };
   }
 

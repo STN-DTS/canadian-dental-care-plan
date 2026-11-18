@@ -13,6 +13,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -26,14 +27,16 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   private readonly config: DocumentUploadRepositoryDefaultConfig;
   private readonly httpClient: HttpClient;
   private readonly appIdentityClient: AppIdentityClient;
-  private readonly baseUrl: string;
+  private readonly scanUrl: string;
+  private readonly spoUploadDocumentUrl: string;
 
   constructor(@inject(TYPES.DocumentUploadRepositoryDefaultConfig) config: DocumentUploadRepositoryDefaultConfig, @inject(TYPES.HttpClient) httpClient: HttpClient, @inject(TYPES.AppIdentityClient) appIdentityClient: AppIdentityClient) {
     this.log = createLogger('DefaultDocumentUploadRepository');
     this.config = config;
     this.httpClient = httpClient;
     this.appIdentityClient = appIdentityClient;
-    this.baseUrl = `${this.config.baseUri.href.replace(/\/+$/, '')}/client-correspondence/document-upload/upload/v1/api`;
+    this.scanUrl = buildEndpointUrl(this.config.baseUri, this.config.scanPathname);
+    this.spoUploadDocumentUrl = buildEndpointUrl(this.config.baseUri, this.config.spoUploadDocumentPathname);
   }
 
   private getAccessTokenRequest(): GetAccessTokenRequest {
@@ -58,7 +61,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   async uploadDocument(documentUploadRequestEntity: DocumentUploadRequestEntity): Promise<DocumentUploadResponseEntity> {
     this.log.trace('Uploading document');
 
-    const url = `${this.baseUrl}/SPOUploadDocument`;
+    const url = this.spoUploadDocumentUrl;
 
     const requestBody = this.addCredentialsToRequestBody(documentUploadRequestEntity);
 
@@ -104,7 +107,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
   async scanDocument(scanDocumentRequestEntity: DocumentScanRequestEntity): Promise<DocumentScanResponseEntity> {
     this.log.trace('Scanning document');
 
-    const url = `${this.baseUrl}/Scan`;
+    const url = this.scanUrl;
     let token: Redacted.Redacted<string>;
 
     try {
@@ -149,7 +152,8 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      scanUrl: this.scanUrl,
+      spoUploadDocumentUrl: this.spoUploadDocumentUrl,
     };
   }
 

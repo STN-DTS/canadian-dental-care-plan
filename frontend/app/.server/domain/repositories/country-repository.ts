@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import countryJsonDataSource from '~/.server/resources/power-platform/country.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,27 +45,27 @@ export interface CountryRepository {
   checkHealth(): Promise<void>;
 }
 
-export type DefaultCountryRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+export type DefaultCountryRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_COUNTRIES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
 
 @injectable()
 export class DefaultCountryRepository implements CountryRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultCountryRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly countriesUrl: string;
 
   constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultCountryRepositoryServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultCountryRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
+    this.countriesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_COUNTRIES_PATHNAME);
   }
 
   @Traced()
   async listAllCountries(): Promise<ReadonlyArray<CountryEntity>> {
     this.log.trace('Fetching all countries');
 
-    const url = new URL(`${this.baseUrl}/esdc_countries`);
+    const url = new URL(this.countriesUrl);
     url.searchParams.set('$select', 'esdc_countryid,esdc_nameenglish,esdc_namefrench,esdc_countrycodealpha3');
     url.searchParams.set('$filter', 'statecode eq 0 and esdc_enabledentalapplicationportal eq true');
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.countries.gets', url, {
@@ -111,7 +112,7 @@ export class DefaultCountryRepository implements CountryRepository {
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      countriesUrl: this.countriesUrl,
     };
   }
 

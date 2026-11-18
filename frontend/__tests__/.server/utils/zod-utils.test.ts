@@ -2,7 +2,7 @@ import { Redacted } from 'effect';
 import { assert, describe, expect, it } from 'vitest';
 import * as z from 'zod';
 
-import { stringToRedacted, transformFlattenedError } from '~/.server/utils/zod-utils';
+import { endpointPathname, stringToRedacted, transformFlattenedError } from '~/.server/utils/zod-utils';
 
 describe('transformFlattenedError', () => {
   it('should transform a flattened error object with multiple fields and multiple error messages', () => {
@@ -79,5 +79,32 @@ describe('stringToRedacted', () => {
 
   it('rejects invalid raw inputs', () => {
     expect(schema.safeParse({ name: 'Jane', token: 42 }).success).toBe(false);
+  });
+});
+
+describe('endpointPathname', () => {
+  const schema = endpointPathname('/default/{clientId}', ['clientId']);
+
+  it.each([undefined, '', '   '])('uses the default pathname for %j', (value) => {
+    expect(schema.parse(value)).toBe('/default/{clientId}');
+  });
+
+  it('trims a configured pathname', () => {
+    expect(schema.parse('  /relocated/{clientId}  ')).toBe('/relocated/{clientId}');
+  });
+
+  it.each(['relocated/{clientId}', '/relocated', '/relocated/{clientId}?x=1', '/relocated/{clientId}#x', '/relo cated/{clientId}', '/relocated/{clientId}/{clientIdd}', '/relocated/{clientId}/{client-id}', '/relocated/{clientId}/{'])(
+    'rejects %j',
+    (value) => {
+      expect(schema.safeParse(value).success).toBe(false);
+    },
+  );
+
+  it('requires every placeholder and rejects placeholders on a pathname without any', () => {
+    const twoPlaceholders = endpointPathname('/{a}/{b}', ['a', 'b']);
+
+    expect(twoPlaceholders.parse('/x/{b}/{a}')).toBe('/x/{b}/{a}');
+    expect(twoPlaceholders.safeParse('/x/{a}').success).toBe(false);
+    expect(endpointPathname('/default').safeParse('/x/{a}').success).toBe(false);
   });
 });

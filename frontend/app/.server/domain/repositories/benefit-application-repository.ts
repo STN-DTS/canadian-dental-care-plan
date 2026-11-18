@@ -9,6 +9,7 @@ import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -27,28 +28,44 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
   private readonly log: Logger;
   private readonly serverConfig: Pick<
     ServerConfig,
-    'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+    | 'HTTP_PROXY_URL'
+    | 'INTEROP_API_BASE_URI'
+    | 'INTEROP_BENEFIT_APPLICATION_PATHNAME'
+    | 'INTEROP_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI'
+    | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY'
+    | 'INTEROP_API_MAX_RETRIES'
+    | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
+  private readonly benefitApplicationUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
     serverConfig: Pick<
       ServerConfig,
-      'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI' | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+      | 'HTTP_PROXY_URL'
+      | 'INTEROP_API_BASE_URI'
+      | 'INTEROP_BENEFIT_APPLICATION_PATHNAME'
+      | 'INTEROP_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_BENEFIT_APPLICATION_API_BASE_URI'
+      | 'INTEROP_BENEFIT_APPLICATION_API_SUBSCRIPTION_KEY'
+      | 'INTEROP_API_MAX_RETRIES'
+      | 'INTEROP_API_BACKOFF_MS'
     >,
     @inject(TYPES.HttpClient) httpClient: HttpClient,
   ) {
     this.log = createLogger('DefaultBenefitApplicationRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
+    this.benefitApplicationUrl = buildEndpointUrl(this.serverConfig.INTEROP_BENEFIT_APPLICATION_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_BENEFIT_APPLICATION_PATHNAME);
   }
 
   @Traced()
   async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
     this.log.trace('Submitting benefit application');
 
-    const url = `${this.serverConfig.INTEROP_BENEFIT_APPLICATION_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/applicant-information/dts/v1/benefit-application`;
+    const url = this.benefitApplicationUrl;
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.benefit-application.posts', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
       method: 'POST',

@@ -52,6 +52,8 @@ describe('DefaultApplicationStatusRepository', () => {
       HEALTH_PLACEHOLDER_REQUEST_VALUE: '000001',
       HTTP_PROXY_URL: undefined,
       INTEROP_API_BASE_URI: 'https://api.example.com',
+      INTEROP_STATUS_CHECK_STATUS_PATHNAME: '/dental-care/status-check/v1/status',
+      INTEROP_STATUS_CHECK_STATUS_FNLNDOB_PATHNAME: '/dental-care/status-check/v1/status_fnlndob',
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
       INTEROP_STATUS_CHECK_API_BASE_URI: undefined,
       INTEROP_STATUS_CHECK_API_SUBSCRIPTION_KEY: undefined,

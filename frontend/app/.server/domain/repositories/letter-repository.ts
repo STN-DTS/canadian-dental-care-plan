@@ -11,6 +11,7 @@ import { ATTR_CDCP_LETTER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import getPdfByLetterIdJson from '~/.server/resources/cct/get-pdf-by-letter-id.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -58,6 +59,8 @@ export class DefaultLetterRepository implements LetterRepository {
     | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
     | 'HTTP_PROXY_URL'
     | 'INTEROP_API_BASE_URI'
+    | 'INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME'
+    | 'INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME'
     | 'INTEROP_API_SUBSCRIPTION_KEY'
     | 'INTEROP_CCT_API_BASE_URI'
     | 'INTEROP_CCT_API_SUBSCRIPTION_KEY'
@@ -66,7 +69,8 @@ export class DefaultLetterRepository implements LetterRepository {
     | 'INTEROP_API_BACKOFF_MS'
   >;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly docInfoByClientIdUrl: string;
+  private readonly pdfByLetterIdUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig)
@@ -75,6 +79,8 @@ export class DefaultLetterRepository implements LetterRepository {
       | 'HEALTH_PLACEHOLDER_REQUEST_VALUE'
       | 'HTTP_PROXY_URL'
       | 'INTEROP_API_BASE_URI'
+      | 'INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME'
+      | 'INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME'
       | 'INTEROP_API_SUBSCRIPTION_KEY'
       | 'INTEROP_CCT_API_BASE_URI'
       | 'INTEROP_CCT_API_SUBSCRIPTION_KEY'
@@ -87,14 +93,16 @@ export class DefaultLetterRepository implements LetterRepository {
     this.log = createLogger('DefaultLetterRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_CCT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI}/dental-care/client-letters/cct/v1`;
+    const baseUri = this.serverConfig.INTEROP_CCT_API_BASE_URI ?? this.serverConfig.INTEROP_API_BASE_URI;
+    this.docInfoByClientIdUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_CCT_GET_DOC_INFO_BY_CLIENT_ID_PATHNAME);
+    this.pdfByLetterIdUrl = buildEndpointUrl(baseUri, this.serverConfig.INTEROP_CCT_GET_PDF_BY_LETTER_ID_PATHNAME);
   }
 
   @Traced()
   async findLettersByClientId(clientId: string): Promise<ReadonlyArray<LetterEntity>> {
     this.log.trace('Fetching letters');
 
-    const url = new URL(`${this.baseUrl}/GetDocInfoByClientId`);
+    const url = new URL(this.docInfoByClientIdUrl);
     url.searchParams.set('clientid', clientId);
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.get-doc-info-by-client-id.gets', url, {
@@ -133,7 +141,7 @@ export class DefaultLetterRepository implements LetterRepository {
   async getPdfByLetterId(letterId: string): Promise<PdfEntity> {
     this.log.trace('Fetching letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId });
 
-    const url = new URL(`${this.baseUrl}/GetPdfByLetterId`);
+    const url = new URL(this.pdfByLetterIdUrl);
     url.searchParams.set('id', letterId);
 
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.get-pdf-by-client-id.gets', url, {
@@ -170,7 +178,8 @@ export class DefaultLetterRepository implements LetterRepository {
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      docInfoByClientIdUrl: this.docInfoByClientIdUrl,
+      pdfByLetterIdUrl: this.pdfByLetterIdUrl,
     };
   }
 

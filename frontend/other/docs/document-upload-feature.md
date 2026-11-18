@@ -303,6 +303,8 @@ The repository sends the request to:
 POST {INTEROP_DOCUMENT_UPLOAD_BASE_URI or INTEROP_API_BASE_URI}/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument
 ```
 
+The pathname is configurable with `INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME`. The scan pathname, `/client-correspondence/document-upload/upload/v1/api/Scan` by default, is configurable with `INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME`. Use these overrides when Interop moves an endpoint before the defaults change in code.
+
 The successful response contains a nonempty `DocumentFileName`. A returned rejection contains an `ErrorCode` and `ErrorMessage`. EWDU's confirmed unsafe-file response is HTTP 400 with this payload:
 
 ```json

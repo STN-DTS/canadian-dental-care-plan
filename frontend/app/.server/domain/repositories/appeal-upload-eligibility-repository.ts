@@ -10,6 +10,7 @@ import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import appealUploadEligibilityJsonDataSource from '~/.server/resources/power-platform/appeal-upload-eligibility.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl, expandPathParams } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -40,14 +41,17 @@ export interface AppealUploadEligibilityRepository {
    */
 }
 
-type DefaultAppealUploadEligibilityRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultAppealUploadEligibilityRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultAppealUploadEligibilityRepository implements AppealUploadEligibilityRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultAppealUploadEligibilityRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly appealUploadEligibilityUrl: string;
 
   /**
    * The list of application statuses that are considered as pending for appeal upload eligibility purposes.
@@ -64,7 +68,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
     this.log = createLogger('DefaultAppealUploadEligibilityRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/appeal-upload-eligible/pp/v1`;
+    this.appealUploadEligibilityUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_APPEAL_UPLOAD_ELIGIBILITY_PATHNAME);
   }
 
   /**
@@ -80,7 +84,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
   async findAppealUploadEligibilityByClientNumber(clientNumber: string): Promise<Option.Option<AppealUploadEligibilityResponseEntity>> {
     this.log.debug('Fetching appeal upload eligibility');
 
-    const url = new URL(`${this.baseUrl}/esdc_clients(esdc_clientnumber='${encodeURIComponent(clientNumber)}')`);
+    const url = new URL(expandPathParams(this.appealUploadEligibilityUrl, { clientNumber: encodeURIComponent(clientNumber) }));
     url.searchParams.set('$select', 'esdc_clientid,esdc_clientnumber,esdc_applicanttype,esdc_socialinsurancenumber,statecode,statuscode,esdc_suspendedon');
     url.searchParams.set(
       '$expand',
@@ -121,7 +125,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      appealUploadEligibilityUrl: this.appealUploadEligibilityUrl,
     };
   }
 }

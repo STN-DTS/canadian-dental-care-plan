@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import evidentiaryDocumentTypeJsonDataSource from '~/.server/resources/power-platform/evidentiary-document-type.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,14 +45,17 @@ export interface EvidentiaryDocumentTypeRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultEvidentiaryDocumentTypeRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultEvidentiaryDocumentTypeRepositoryServerConfig = Pick<
+  ServerConfig,
+  'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_EVIDENTIARY_DOCUMENT_TYPES_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'
+>;
 
 @injectable()
 export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocumentTypeRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultEvidentiaryDocumentTypeRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly evidentiaryDocumentTypesUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig) serverConfig: DefaultEvidentiaryDocumentTypeRepositoryServerConfig, //
@@ -60,14 +64,14 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
     this.log = createLogger('DefaultEvidentiaryDocumentTypeRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
+    this.evidentiaryDocumentTypesUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_EVIDENTIARY_DOCUMENT_TYPES_PATHNAME);
   }
 
   @Traced()
   async listAllEvidentiaryDocumentTypes(): Promise<ReadonlyArray<EvidentiaryDocumentTypeEntity>> {
     this.log.trace('Fetching all evidentiary document types');
 
-    const url = new URL(`${this.baseUrl}/esdc_evidentiarydocumenttypes`);
+    const url = new URL(this.evidentiaryDocumentTypesUrl);
     url.searchParams.set('$select', 'esdc_evidentiarydocumenttypeid,esdc_value,esdc_nameenglish,esdc_namefrench,statecode');
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.evidentiary-document-types.gets', url, {
       proxyUrl: this.serverConfig.HTTP_PROXY_URL,
@@ -113,7 +117,7 @@ export class DefaultEvidentiaryDocumentTypeRepository implements EvidentiaryDocu
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      evidentiaryDocumentTypesUrl: this.evidentiaryDocumentTypesUrl,
     };
   }
 

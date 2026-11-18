@@ -11,6 +11,7 @@ import { ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import documentUploadReasonJsonDataSource from '~/.server/resources/power-platform/document-upload-reason.json';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
@@ -44,14 +45,14 @@ export interface DocumentUploadReasonRepository {
   checkHealth(): Promise<void>;
 }
 
-type DefaultDocumentUploadReasonRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
+type DefaultDocumentUploadReasonRepositoryServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL' | 'INTEROP_API_BASE_URI' | 'INTEROP_DOCUMENT_UPLOAD_REASONS_PATHNAME' | 'INTEROP_API_SUBSCRIPTION_KEY' | 'INTEROP_API_MAX_RETRIES' | 'INTEROP_API_BACKOFF_MS'>;
 
 @injectable()
 export class DefaultDocumentUploadReasonRepository implements DocumentUploadReasonRepository {
   private readonly log: Logger;
   private readonly serverConfig: DefaultDocumentUploadReasonRepositoryServerConfig;
   private readonly httpClient: HttpClient;
-  private readonly baseUrl: string;
+  private readonly documentUploadReasonsUrl: string;
 
   constructor(
     @inject(TYPES.ServerConfig) serverConfig: DefaultDocumentUploadReasonRepositoryServerConfig, //
@@ -60,14 +61,14 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
     this.log = createLogger('DefaultDocumentUploadReasonRepository');
     this.serverConfig = serverConfig;
     this.httpClient = httpClient;
-    this.baseUrl = `${this.serverConfig.INTEROP_API_BASE_URI}/dental-care/code-list/pp/v1`;
+    this.documentUploadReasonsUrl = buildEndpointUrl(this.serverConfig.INTEROP_API_BASE_URI, this.serverConfig.INTEROP_DOCUMENT_UPLOAD_REASONS_PATHNAME);
   }
 
   @Traced()
   async listAllDocumentUploadReasons(): Promise<ReadonlyArray<DocumentUploadReasonEntity>> {
     this.log.trace('Fetching all document upload reasons');
 
-    const url = new URL(`${this.baseUrl}/esdc_documentuploadreasons`);
+    const url = new URL(this.documentUploadReasonsUrl);
     url.searchParams.set('$select', 'esdc_documentuploadreasonid,esdc_nameenglish,esdc_namefrench');
     url.searchParams.set('$filter', 'statecode eq 0');
     const response = await this.httpClient.instrumentedFetch('http.client.interop-api.document-upload-reasons.gets', url, {
@@ -114,7 +115,7 @@ export class DefaultDocumentUploadReasonRepository implements DocumentUploadReas
 
   getMetadata(): Record<string, string> {
     return {
-      baseUrl: this.baseUrl,
+      documentUploadReasonsUrl: this.documentUploadReasonsUrl,
     };
   }
 

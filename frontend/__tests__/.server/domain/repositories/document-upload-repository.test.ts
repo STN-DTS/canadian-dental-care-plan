@@ -39,6 +39,8 @@ const serverConfig = {
   HTTP_PROXY_URL: 'http://proxy.example.test',
   INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('subscription-key'),
   INTEROP_API_BASE_URI: 'https://interop.example.test',
+  INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
+  INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME: '/client-correspondence/document-upload/upload/v1/api/Scan',
   EWDU_ENCAPSULATION_USERNAME: 'username',
   EWDU_ENCAPSULATION_PASSWORD: Redacted.make('password'),
   EWDU_PROGRAM_ACTIVITY_ID: 'activity-id',
@@ -122,6 +124,23 @@ describe('DefaultDocumentUploadRepository', () => {
       'https://upload.example.test/root/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
       expect.objectContaining({ headers: expect.objectContaining({ 'Ocp-Apim-Subscription-Key': 'upload-key' }) }),
     );
+  });
+
+  it('uses configured upload and scan pathnames', async () => {
+    const config = new DocumentUploadRepositoryDefaultConfig({
+      ...serverConfig,
+      INTEROP_DOCUMENT_UPLOAD_BASE_URI: 'https://upload.example.test/root/',
+      INTEROP_DOCUMENT_UPLOAD_SPO_UPLOAD_DOCUMENT_PATHNAME: '/relocated/v2/SPOUploadDocument',
+      INTEROP_DOCUMENT_UPLOAD_SCAN_PATHNAME: '/relocated/v2/Scan',
+    });
+    const overridden = new DefaultDocumentUploadRepository(config, httpClientMock, appIdentityClient);
+    httpClientMock.instrumentedFetch.mockResolvedValueOnce(Response.json({ DocumentFileName: 'document.txt', Error: null }));
+    httpClientMock.instrumentedFetch.mockResolvedValueOnce(Response.json({ DataId: 'health-scan', Error: null }));
+
+    await overridden.uploadDocument(uploadRequest);
+    await overridden.checkHealth();
+
+    expect(httpClientMock.instrumentedFetch.mock.calls.map(([, url]) => url)).toEqual(['https://upload.example.test/root/relocated/v2/SPOUploadDocument', 'https://upload.example.test/root/relocated/v2/Scan']);
   });
 
   it('returns a valid service rejection without translating it to a transport failure', async () => {
@@ -536,7 +555,10 @@ describe('document upload repository bindings', () => {
     container.bind(TYPES.AppIdentityClient).toConstantValue(mock<AppIdentityClient>());
 
     expect(container.get(TYPES.DocumentUploadRepository)).toBeInstanceOf(DefaultDocumentUploadRepository);
-    expect(container.get(TYPES.DocumentUploadRepository).getMetadata().baseUrl).toBe('https://interop.example.test/client-correspondence/document-upload/upload/v1/api');
+    expect(container.get(TYPES.DocumentUploadRepository).getMetadata()).toEqual({
+      scanUrl: 'https://interop.example.test/client-correspondence/document-upload/upload/v1/api/Scan',
+      spoUploadDocumentUrl: 'https://interop.example.test/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
+    });
   });
 
   it('resolves the mock without default repository credentials', () => {

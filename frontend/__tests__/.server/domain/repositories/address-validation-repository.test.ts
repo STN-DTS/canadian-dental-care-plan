@@ -14,6 +14,7 @@ describe('DefaultAddressValidationRepository', () => {
   beforeEach(() => {
     serverConfigMock = {
       INTEROP_API_BASE_URI: 'https://api.example.com',
+      INTEROP_ADDRESS_VALIDATION_CORRECT_PATHNAME: '/address/validation/v1/CAN/correct',
       INTEROP_ADDRESS_VALIDATION_REQUEST_CITY_MAX_LENGTH: 30,
       INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('SUBSCRIPTION_KEY'),
     };

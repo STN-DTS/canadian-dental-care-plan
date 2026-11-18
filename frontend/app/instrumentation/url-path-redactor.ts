@@ -48,8 +48,8 @@ export class UrlPathRedactor {
     const queryOrFragment = value.slice(pathStart).search(/[?#]/);
     const pathEnd = queryOrFragment === -1 ? value.length : pathStart + queryOrFragment;
     const path = value.slice(pathStart, pathEnd);
-    // Drop the whole suffix rather than parsing untrusted OData key delimiters.
-    const redactedPath = path.replace(/(\/dental-care\/(?:appeal-upload-eligible|doc-metadata)\/pp\/v1\/esdc_clients)(?:\(|%28)[\s\S]*/i, '$1([REDACTED])');
+    // Drop the whole suffix rather than parsing untrusted OData key delimiters. Match any prefix because Interop pathnames are configurable.
+    const redactedPath = path.replace(/(\/esdc_clients)(?:\(|%28)[\s\S]*/i, '$1([REDACTED])');
 
     return redactedPath === path ? value : value.slice(0, pathStart) + redactedPath + value.slice(pathEnd);
   }
