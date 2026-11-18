@@ -300,7 +300,7 @@ The upload request includes these fields:
 The repository sends the request to:
 
 ```text
-POST {INTEROP_API_BASE_URI}/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument
+POST {INTEROP_DOCUMENT_UPLOAD_BASE_URI or INTEROP_API_BASE_URI}/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument
 ```
 
 The successful response contains a nonempty `DocumentFileName`. A returned rejection contains an `ErrorCode` and `ErrorMessage`. EWDU's confirmed unsafe-file response is HTTP 400 with this payload:
@@ -452,6 +452,19 @@ Validity starts at the token request, after discovery, and refresh occurs early 
 User-initiated retries submit only pending files. Power Platform manages its own background-ingestion retries. DTS has no cross-system transaction, rollback, or saved flow that users can resume after a reload. The form loader resets an open flow's metadata.
 
 ### Diagnosing an upload failure after an OAuth rollout
+
+For an upload HTTP failure, find the WARN record `HTTP response returned an error status`
+in the same trace. Its `server.address` and `url.path` show the endpoint that
+returned the status; see
+[Outbound HTTP endpoint diagnostics](./observability.md#outbound-http-endpoint-diagnostics).
+`INTEROP_DOCUMENT_UPLOAD_BASE_URI`, when set, takes precedence over
+`INTEROP_API_BASE_URI`. Configure the base URI, not the complete operation URL.
+A 404 can mean that the base URI, the route, or the gateway (APIM) configuration
+is wrong.
+
+The upstream status is in `meta.httpStatusCode`; the enclosing `AppError`
+defaults to HTTP 500, so its `httpStatusCode` and logged
+`http.response.status_code` can differ from the downstream status.
 
 Follow the failing request's trace from `DefaultDocumentUploadRepository.uploadDocument`
 through `OpenIdAppIdentityClient.getAccessToken` to the dependency spans. A cached

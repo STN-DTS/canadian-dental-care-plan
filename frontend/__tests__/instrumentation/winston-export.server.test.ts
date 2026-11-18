@@ -382,6 +382,18 @@ test('the application preload preserves event schemas, severity and privacy thro
     expect(Object.keys(httpFailure?.attributes ?? {}).sort()).toEqual(
       ['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'http.response.status_code', 'httpStatusCode', 'label', 'meta', 'timestamp'].sort(),
     );
+    const httpEndpoint = records.find((record) => record.body === 'HTTP response returned an error status');
+    expect(httpEndpoint).toMatchObject({
+      severityNumber: SeverityNumber.WARN,
+      attributes: {
+        'cdcp.operation.name': 'http.client.document-scan-api.spo-upload-document.posts',
+        'http.request.method': 'POST',
+        'server.address': 'interop.example.test',
+        'url.path': '/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument',
+        'http.response.status_code': 404,
+      },
+    });
+    expect(consoleRecords).toContainEqual(expect.objectContaining({ message: 'HTTP response returned an error status', 'url.path': '/client-correspondence/document-upload/upload/v1/api/SPOUploadDocument' }));
 
     for (const record of documentFailures) {
       expect(record).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { errorCode: 'API-DOC-0005' } });

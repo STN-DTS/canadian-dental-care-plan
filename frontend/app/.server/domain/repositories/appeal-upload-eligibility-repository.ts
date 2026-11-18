@@ -100,6 +100,7 @@ export class DefaultAppealUploadEligibilityRepository implements AppealUploadEli
           [HttpStatusCodes.BAD_GATEWAY]: [],
         },
       },
+      expectedStatuses: [HttpStatusCodes.NOT_FOUND],
     });
 
     if (response.status === HttpStatusCodes.NOT_FOUND) {

@@ -1,7 +1,8 @@
-import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import type { Attributes } from '@opentelemetry/api';
+import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { inject } from 'inversify';
 import { retry } from 'moderndash';
-import { ProxyAgent, fetch } from 'undici';
+import { ProxyAgent, Request, fetch } from 'undici';
 import type { RequestInfo, RequestInit, Response } from 'undici';
 
 import { TYPES } from '~/.server/constants';
@@ -12,8 +13,11 @@ import type { InstrumentationService } from '~/.server/observability';
 import { Traced, TracedHttpRequest } from '~/.server/observability/decorator';
 import { getEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { normalizeMethod } from '~/.server/utils/otel-instrumentation-utils';
 import { isAppError } from '~/errors/app-error';
+import type { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import { operationalErrorCode } from '~/instrumentation/operational-error-type';
 
 /**
  * A custom fetch(..) function that can be used for making HTTP requests.
@@ -81,7 +85,37 @@ interface FetchRetryOptions {
 export type InstrumentedFetchOptions = RequestInit &
   FetchOptions & {
     retryOptions?: RetryOptions;
+
+    /**
+     * 4xx/5xx statuses the caller handles as a normal outcome, such as 404 for "not found".
+     * These are logged at TRACE instead of WARN.
+     */
+    expectedStatuses?: readonly number[];
   };
+
+/**
+ * Returns the request method and endpoint attributes. Only the host, port and path are kept;
+ * credentials, query strings and fragments are dropped, and log sinks redact record keys in `url.path`.
+ */
+function getRequestAttributes(input: RequestInfo | URL, method: string | undefined): Attributes {
+  const url = URL.parse(input instanceof Request ? input.url : input.toString());
+  const requestMethod = normalizeMethod(method ?? (input instanceof Request ? input.method : 'GET'));
+
+  if (!url) {
+    return { [ATTR_HTTP_REQUEST_METHOD]: requestMethod };
+  }
+
+  return {
+    [ATTR_HTTP_REQUEST_METHOD]: requestMethod,
+    [ATTR_SERVER_ADDRESS]: url.hostname,
+    ...(url.port ? { [ATTR_SERVER_PORT]: Number(url.port) } : {}),
+    [ATTR_URL_PATH]: url.pathname,
+  };
+}
+
+function isRetryConditionError(error: AppError): boolean {
+  return error.errorCode === ErrorCodes.API_HTTP_RETRY_NO_CONDITIONS || error.errorCode === ErrorCodes.API_HTTP_RETRY_CONDITION_MATCHED;
+}
 
 /**
  * Service interface for managing HTTP requests with optional instrumentation and proxy support.
@@ -138,13 +172,21 @@ export class DefaultHttpClient implements HttpClient {
 
   @TracedHttpRequest()
   async instrumentedFetch(metricPrefix: string, input: RequestInfo | URL, options: InstrumentedFetchOptions = {}): Promise<Response> {
-    this.log.debug('Executing instrumented HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix });
-    const { proxyUrl, timeout, retryOptions, ...init } = options;
+    const requestAttributes = { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, ...getRequestAttributes(input, options.method) };
+    this.log.debug('Executing instrumented HTTP request', requestAttributes);
+    const { proxyUrl, timeout, retryOptions, expectedStatuses = [], ...init } = options;
 
     // Configure default retry options if not specified
     const { retries = 0, backoffMs = 100, retryConditions = {} } = retryOptions ?? {};
 
-    const fetchFn = this.getFetchFn({ proxyUrl, timeout });
+    const baseFetchFn = this.getFetchFn({ proxyUrl, timeout });
+    let lastResponseStatus: number | undefined;
+
+    const fetchFn: FetchFn = async (fetchInput, fetchInit) => {
+      const response = await baseFetchFn(fetchInput, fetchInit);
+      lastResponseStatus = response.status;
+      return response;
+    };
 
     try {
       const response = await retry(async () => await this.fetchWithRetryConditions({ fetchFn, input, init, metricPrefix, retryConditions }), {
@@ -155,7 +197,13 @@ export class DefaultHttpClient implements HttpClient {
         },
       });
 
-      this.log.trace('HTTP response received', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.status });
+      if (response.status >= 400 && !expectedStatuses.includes(response.status)) {
+        // Callers own the failure outcome; this records which endpoint answered.
+        this.log.warn('HTTP response returned an error status', { ...requestAttributes, [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.status });
+      } else {
+        this.log.trace('HTTP response received', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.status });
+      }
+
       this.instrumentationService.countHttpStatus(metricPrefix, response.status);
 
       return response;
@@ -163,7 +211,10 @@ export class DefaultHttpClient implements HttpClient {
       // Only instrument with status 500 if the failure was not due to an expected AppError
       // (e.g., not a retry condition match); this indicates the fetch itself failed.
       if (!isAppError(error)) {
+        this.log.warn('HTTP request did not complete', { ...requestAttributes, [ATTR_ERROR_TYPE]: operationalErrorCode(error) ?? 'http_request_failed' });
         this.instrumentationService.countHttpStatus(metricPrefix, 500);
+      } else if (isRetryConditionError(error) && lastResponseStatus !== undefined) {
+        this.log.warn('HTTP request retries exhausted', { ...requestAttributes, [ATTR_HTTP_RESPONSE_STATUS_CODE]: lastResponseStatus, [ATTR_CDCP_RETRY_LIMIT]: retries });
       }
 
       throw error;

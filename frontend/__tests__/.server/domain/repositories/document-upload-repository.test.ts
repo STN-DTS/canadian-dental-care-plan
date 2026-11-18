@@ -102,6 +102,7 @@ describe('DefaultDocumentUploadRepository', () => {
         programActivityIdentificationID: serverConfig.EWDU_PROGRAM_ACTIVITY_ID,
       }),
       retryOptions: { retries: 0, retryConditions: {} },
+      expectedStatuses: [400],
     });
   });
 
@@ -296,6 +297,7 @@ describe('DefaultDocumentUploadRepository', () => {
         backoffMs: serverConfig.INTEROP_API_BACKOFF_MS,
         retryConditions: { 502: [], 503: [], 504: [] },
       },
+      expectedStatuses: [400],
     });
   });
 

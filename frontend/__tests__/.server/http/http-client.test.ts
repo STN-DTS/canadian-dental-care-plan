@@ -7,6 +7,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { mock } from 'vitest-mock-extended';
 
 import { DefaultHttpClient } from '~/.server/http/http-client';
+import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability';
 import { AppError } from '~/errors/app-error';
 
@@ -25,6 +27,14 @@ describe('DefaultHttpClient', () => {
     httpClient = new DefaultHttpClient(mockInstrumentationService);
     vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(mockFetch);
   });
+
+  function createClientWithLogger() {
+    const log = mock<Logger>();
+    vi.mocked(createLogger).mockReturnValueOnce(log);
+    const client = new DefaultHttpClient(mockInstrumentationService);
+    vi.spyOn(client, 'getFetchFn').mockReturnValue(mockFetch);
+    return { client, log };
+  }
 
   describe('HTTP dependency tracing', () => {
     const exporter = new InMemorySpanExporter();
@@ -204,6 +214,88 @@ describe('DefaultHttpClient', () => {
   });
 
   describe('instrumentedFetch', () => {
+    it('logs the endpoint without credentials, query or fragment when the response has an error status', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockResolvedValueOnce(new Response('response-body-canary', { status: 404 }));
+
+      await client.instrumentedFetch('http.client.test.posts', 'https://user-canary:pass-canary@api.example.test:8443/base/operation?token=query-canary#fragment-canary', { method: 'post', headers: { authorization: 'Bearer header-canary' } });
+
+      expect(log.warn).toHaveBeenCalledExactlyOnceWith('HTTP response returned an error status', {
+        'cdcp.operation.name': 'http.client.test.posts',
+        'http.request.method': 'POST',
+        'server.address': 'api.example.test',
+        'server.port': 8443,
+        'url.path': '/base/operation',
+        'http.response.status_code': 404,
+      });
+      expect(JSON.stringify([log.debug.mock.calls, log.warn.mock.calls])).not.toMatch(/canary/);
+    });
+
+    it('logs the endpoint when the request does not complete', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockRejectedValueOnce(new Error('transport-canary'));
+
+      await expect(client.instrumentedFetch('http.client.test.gets', new Request('https://api.example.test/operation'))).rejects.toThrow('transport-canary');
+
+      expect(log.warn).toHaveBeenCalledExactlyOnceWith('HTTP request did not complete', {
+        'cdcp.operation.name': 'http.client.test.gets',
+        'http.request.method': 'GET',
+        'server.address': 'api.example.test',
+        'url.path': '/operation',
+        'error.type': 'http_request_failed',
+      });
+    });
+
+    it('does not warn for an error status the caller expects, and does not pass the option to fetch', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
+      await client.instrumentedFetch('http.client.test.gets', 'https://api.example.test/operation', { expectedStatuses: [404] });
+
+      expect(log.warn).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledExactlyOnceWith('https://api.example.test/operation', {});
+      expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledExactlyOnceWith('http.client.test.gets', 404);
+    });
+
+    it('still warns for an error status the caller does not expect', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 500 }));
+
+      await client.instrumentedFetch('http.client.test.gets', 'https://api.example.test/operation', { expectedStatuses: [404] });
+
+      expect(log.warn).toHaveBeenCalledExactlyOnceWith('HTTP response returned an error status', expect.objectContaining({ 'http.response.status_code': 500 }));
+    });
+
+    it('warns with the endpoint and last status when retries are exhausted', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockResolvedValue(new Response('retry-body-canary', { status: 503 }));
+
+      await expect(
+        client.instrumentedFetch('http.client.test.posts', 'https://user:secret@api.example.test/esdc_clients(123)/operation?sin=canary', {
+          method: 'post',
+          retryOptions: { retries: 1, backoffMs: 0, retryConditions: { 503: [] } },
+        }),
+      ).rejects.toBeInstanceOf(AppError);
+
+      expect(log.warn).toHaveBeenCalledExactlyOnceWith('HTTP request retries exhausted', {
+        'cdcp.operation.name': 'http.client.test.posts',
+        'http.request.method': 'POST',
+        'server.address': 'api.example.test',
+        'url.path': '/esdc_clients(123)/operation',
+        'http.response.status_code': 503,
+        'cdcp.retry.limit': 1,
+      });
+    });
+
+    it('does not warn for a successful response', async () => {
+      const { client, log } = createClientWithLogger();
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+      await client.instrumentedFetch('http.client.test.gets', 'https://api.example.test/operation');
+
+      expect(log.warn).not.toHaveBeenCalled();
+    });
+
     it('calls fetch and instrumentationService on success', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }));
 

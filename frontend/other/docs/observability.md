@@ -190,9 +190,35 @@ classification remain the caller's responsibility.
 This decorator emits no logs or completion events and does not sanitize errors
 for callers. Callers must still sanitize raw transport errors before logging or
 allowing a generic method decorator to record them.
+
 For uploads, `logUploadAttempt` and `logFlowFinished` still own their respective
 batch and flow completion events. Express `requestLoggerMiddleware` owns inbound
 HTTP completion; the service still logs its handled technical failure once.
+
+#### Outbound HTTP endpoint diagnostics
+
+The span carries no URL, so `DefaultHttpClient` logs the endpoint it called as
+ordinary diagnostics without an `EventName`:
+
+| Message                                  | Severity | When                                                      |
+| ---------------------------------------- | -------- | --------------------------------------------------------- |
+| `Executing instrumented HTTP request`    | DEBUG    | Before every request                                      |
+| `HTTP response returned an error status` | WARN     | Final 4xx or 5xx status not listed in `expectedStatuses`  |
+| `HTTP request did not complete`          | WARN     | The request threw without an application retry `AppError` |
+| `HTTP request retries exhausted`         | WARN     | The last attempt still matched a retry condition          |
+
+These records carry `cdcp.operation.name`, `http.request.method`,
+`server.address`, `server.port` (only when explicit), and `url.path`. The WARN
+records add `http.response.status_code` or a bounded `error.type`; the
+retries-exhausted record also adds `cdcp.retry.limit`. Credentials,
+query strings, fragments, headers, and bodies are never logged. Client-record
+keys in `url.path` are redacted by `UrlPathRedactor` in every log sink. WARN
+does not decide the outcome; the caller still classifies and logs its handled
+failure. Callers that treat a 4xx as a normal result pass it in the
+`expectedStatuses` option of `instrumentedFetch`; those statuses log the TRACE
+`HTTP response received` record instead of a WARN. Appeal upload eligibility
+expects 404 (no client found), and EWDU upload and scan expect 400 (structured
+rejection).
 
 `OpenIdAppIdentityClient.getAccessToken` retains an INTERNAL method span, including
 cache hits. A cache miss creates discovery/token CLIENT children as needed:

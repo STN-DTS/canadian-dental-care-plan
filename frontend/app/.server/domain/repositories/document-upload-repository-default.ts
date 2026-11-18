@@ -78,6 +78,8 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
         // A retry can save the same file twice if the first response was lost.
         // Keep HTTP responses available for classification instead of retrying them.
         retryOptions: { retries: 0, retryConditions: {} },
+        // EWDU returns structured rejections, including unsafe files, as HTTP 400.
+        expectedStatuses: [HttpStatusCodes.BAD_REQUEST],
       });
     } catch {
       throwAppError('Document upload failed during authentication or request.', ErrorCodes.API_DOC_UPLOAD_FAILED);
@@ -130,6 +132,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
             [HttpStatusCodes.GATEWAY_TIMEOUT]: [],
           },
         },
+        expectedStatuses: [HttpStatusCodes.BAD_REQUEST],
       });
 
       if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
