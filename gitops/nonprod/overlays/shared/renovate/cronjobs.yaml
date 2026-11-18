@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:44.175.2@sha256:00eaca87a98032a352556dfc466389c191546b47b57ea056bd4ab276965eb2a3
+              image: ghcr.io/renovatebot/renovate:44.252.6@sha256:a5db2980cdc3339bb6af11c5c5f46f5b561c821f69b9bcb5607c19d02078ea2e
               args: [renovate]
               env:
                 - name: RENOVATE_CONFIG_FILE
