@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { Cache, Context, Data, Effect, Exit, Option, Result } from 'effect';
 import type { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
@@ -5,10 +6,13 @@ import { inject, injectable } from 'inversify';
 import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
 import type { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { TYPES } from '~/.server/constants';
+import { createLogger } from '~/.server/logging';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import { nowMs } from '~/utils/date-utils';
+
+const log = createLogger('AppIdentityTokenCache');
 
 /**
  * Cache key for one app identity: issuer, credentials, scope.
@@ -125,7 +129,14 @@ export class AppIdentityTokenCache {
 
       const token = yield* Cache.get(acquisitions, key);
       yield* Cache.set(tokens, key, token);
-    }).pipe(Effect.ignoreCause);
+    }).pipe(
+      Effect.tapError(() =>
+        Effect.sync(() => {
+          log.warn('App identity token refresh failed; serving the current token until it expires', { [ATTR_ERROR_TYPE]: 'app_identity_token_refresh_failed' });
+        }),
+      ),
+      Effect.ignoreCause,
+    );
 
     void Effect.runPromise(Effect.provideService(refresh, TokenSource, acquire));
   }
@@ -182,11 +193,14 @@ function tokenExpiredError(): AppError {
 function acquireToken(key: IdentityKey, config: AppIdentityTokenCacheConfig): Effect.Effect<AccessToken, AppError, TokenSource> {
   return Effect.gen(function* () {
     const acquire = yield* TokenSource;
+    log.debug('Requesting app identity token');
     const token = toAccessToken(yield* acquireSafely(acquire, key), config);
 
     if (!Number.isFinite(token.expiresAt) || token.expiresAt <= nowMs()) {
       return yield* Effect.fail(tokenExpiredError());
     }
+
+    log.debug('App identity token acquired');
 
     return token;
   });
@@ -194,10 +208,17 @@ function acquireToken(key: IdentityKey, config: AppIdentityTokenCacheConfig): Ef
 
 /**
  * Runs the injected acquire function so that only an `AppError` can come out. A defect (a throw, in the effect or
- * while building it) becomes a generic failure, since the raw error can contain credentials.
+ * while building it) becomes a generic failure, since the raw error can contain credentials. The raw error is not
+ * logged for the same reason, so the log records only that a defect happened.
  */
 function acquireSafely(acquire: AcquireToken, key: IdentityKey): Effect.Effect<IssuedToken, AppError> {
-  return Effect.suspend(() => acquire(key)).pipe(Effect.catchDefect(() => Effect.fail(new AppError('App identity token acquisition failed.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED))));
+  return Effect.suspend(() => acquire(key)).pipe(
+    Effect.catchDefect(() => {
+      log.error('Unexpected error while acquiring app identity token', { [ATTR_ERROR_TYPE]: 'unexpected_acquire_error' });
+
+      return Effect.fail(new AppError('App identity token acquisition failed.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED));
+    }),
+  );
 }
 
 /**

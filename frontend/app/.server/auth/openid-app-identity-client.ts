@@ -1,3 +1,4 @@
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { Cache, Context, Effect, Exit, Redacted, Result } from 'effect';
 import { inject, injectable } from 'inversify';
 import { ClientSecretPost, Configuration, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
@@ -7,11 +8,14 @@ import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/ap
 import type { AcquireToken, AppIdentityTokenCache, IdentityKey, IssuedToken } from '~/.server/auth/app-identity-token-cache';
 import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
+import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { validateOAuthIssuer } from '~/.server/utils/url-utils';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+
+const log = createLogger('OpenIdAppIdentityClient');
 
 /**
  * Issues OAuth client-credentials access tokens for the app identity. Caching is handled by {@link AppIdentityTokenCache}.
@@ -85,6 +89,7 @@ function assertValidRequest({ issuer, clientId, clientSecret, scope }: GetAccess
   const isInvalid = Result.isFailure(validateOAuthIssuer(issuer.href)) || !Redacted.value(clientId).trim() || !Redacted.value(clientSecret).trim() || !scope.trim();
 
   if (isInvalid) {
+    log.debug('App identity request rejected', { [ATTR_ERROR_TYPE]: 'invalid_app_identity_request' });
     throwAppError('App identity arguments are invalid.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_INVALID_REQUEST);
   }
 }
@@ -124,11 +129,26 @@ const configurations = Effect.runSync(
  * Fetches the issuer's OIDC discovery document using the identity's client authentication.
  */
 async function discoverConfiguration(key: IdentityKey, fetch: CustomFetch): Promise<Configuration> {
+  log.debug('Discovering OpenID configuration');
+
   const issuer = new URL(key.issuer);
   const clientId = Redacted.value(key.clientId);
   const clientAuthentication = ClientSecretPost(Redacted.value(key.clientSecret));
 
   return await discovery(issuer, clientId, undefined, clientAuthentication, { [customFetch]: fetch, timeout: 10 });
+}
+
+/**
+ * Drops the cached discovery metadata so the endpoint is rediscovered on the next token request.
+ */
+function discardConfiguration(key: IdentityKey): Effect.Effect<void> {
+  return Cache.invalidate(configurations, key).pipe(
+    Effect.andThen(
+      Effect.sync(() => {
+        log.debug('Discarded cached OpenID configuration after a failed token request');
+      }),
+    ),
+  );
 }
 
 /**
@@ -144,7 +164,7 @@ function requestToken(key: IdentityKey): Effect.Effect<IssuedToken, AppError, Op
     const response = yield* Effect.tryPromise({
       try: async () => await clientCredentialsGrant(configuration, { scope: key.scope }),
       catch: fetchFailedError,
-    }).pipe(Effect.tapError(() => Cache.invalidate(configurations, key)));
+    }).pipe(Effect.tapError(() => discardConfiguration(key)));
 
     if (!isUsableTokenResponse(response)) {
       return yield* Effect.fail(new AppError('App identity token response is invalid.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_INVALID_TOKEN_RESPONSE));
