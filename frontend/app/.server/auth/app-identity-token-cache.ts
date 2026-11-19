@@ -127,6 +127,11 @@ export class AppIdentityTokenCache {
         return;
       }
 
+      // Skip while a refresh is in flight or its failure is still remembered, so callers neither repeat the work nor the warning.
+      if (yield* Cache.has(acquisitions, key)) {
+        return;
+      }
+
       const token = yield* Cache.get(acquisitions, key);
       yield* Cache.set(tokens, key, token);
     }).pipe(
