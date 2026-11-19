@@ -1,7 +1,7 @@
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { ATTR_ERROR_TYPE, ERROR_TYPE_VALUE_OTHER } from '@opentelemetry/semantic-conventions';
 import { Cache, Effect, Exit, Redacted, Result } from 'effect';
 import { inject, injectable } from 'inversify';
-import { ClientSecretPost, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
+import { ClientSecretPost, ResponseBodyError, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
 import type { Configuration, CustomFetch, TokenEndpointResponse } from 'openid-client';
 
 import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
@@ -93,6 +93,36 @@ function fetchFailedError(): AppError {
 }
 
 /**
+ * OAuth error codes the issuer can return from the token endpoint (RFC 6749 section 5.2, plus the codes Entra ID
+ * uses for the client-credentials grant). Anything else is reported as `_OTHER`, so the log never carries issuer-controlled text.
+ */
+const OAUTH_ERROR_CODES = new Set(['invalid_request', 'invalid_client', 'invalid_grant', 'unauthorized_client', 'unsupported_grant_type', 'invalid_scope', 'invalid_resource', 'server_error', 'temporarily_unavailable']);
+
+/** Codes that mean the issuer had a temporary problem, not that our configuration is wrong. */
+const TRANSIENT_OAUTH_ERROR_CODES = new Set(['server_error', 'temporarily_unavailable']);
+
+/**
+ * Turns a failed token request into the generic error. When the issuer rejected the request with an OAuth error, only
+ * its allowlisted error code is logged, so operators can tell an expired client secret (`invalid_client`) from an outage.
+ * The error description and response body are never logged because they can contain credentials or tenant details.
+ * Transport failures are not logged here, since the HTTP client already logs them.
+ */
+function tokenRequestFailedError(error: unknown): AppError {
+  if (error instanceof ResponseBodyError) {
+    const code = OAUTH_ERROR_CODES.has(error.error) ? error.error : ERROR_TYPE_VALUE_OTHER;
+    const attributes = { [ATTR_ERROR_TYPE]: code };
+
+    if (TRANSIENT_OAUTH_ERROR_CODES.has(code)) {
+      log.warn('App identity token request was rejected by the issuer', attributes);
+    } else {
+      log.error('App identity token request was rejected by the issuer', attributes);
+    }
+  }
+
+  return fetchFailedError();
+}
+
+/**
  * OIDC discovery metadata per identity, kept for the configured lifetime. Failures are not cached.
  * The metadata is bound to the given `fetch`, so token requests made with it use the same `fetch`.
  */
@@ -145,7 +175,7 @@ function requestToken(key: IdentityKey, configurations: ConfigurationCache): Eff
     const requestedAt = Temporal.Now.instant().epochMilliseconds;
     const response = yield* Effect.tryPromise({
       try: async () => await clientCredentialsGrant(configuration, { scope: key.scope }),
-      catch: fetchFailedError,
+      catch: tokenRequestFailedError,
     }).pipe(Effect.tapError(() => discardConfiguration(configurations, key)));
 
     if (!isUsableTokenResponse(response)) {
