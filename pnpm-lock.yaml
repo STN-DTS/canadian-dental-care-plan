@@ -292,8 +292,8 @@ catalogs:
       specifier: 8.5.1
       version: 8.5.1
     '@stylistic/eslint-plugin':
-      specifier: 6.0.0
-      version: 6.0.0
+      specifier: 6.0.1
+      version: 6.0.1
     '@tailwindcss/vite':
       specifier: 4.3.5
       version: 4.3.5
@@ -547,7 +547,7 @@ importers:
         version: 12.0.0(@types/node@26.6.6)(debug@4.4.3)(swiper@12.2.0)
       '@stylistic/eslint-plugin':
         specifier: 'catalog:'
-        version: 6.0.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2007))
+        version: 6.0.1(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2007))
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -2784,8 +2784,8 @@ packages:
   '@so-ric/colorspace@1.1.6':
     resolution: {integrity: sha512-/KiKkpHNOBgkFJwu9sh48LkHSMYGyuTcSFK/qMBdnOAlrRJzRSXAOFB5qwzaVQuDl8wAvHVMkaASQDReTahxuw==}
 
-  '@stylistic/eslint-plugin@6.0.0':
-    resolution: {integrity: sha512-phICSey4OqR8nkSwmoeXsl9EBzv30Zqbge4jrK3CU02GhjTgZ+y5qhTTg92EDK5j7JhX2xzp4VvH+YYUknQ8/Q==}
+  '@stylistic/eslint-plugin@6.0.1':
+    resolution: {integrity: sha512-7nyi2RmGIuzBYGq5C8cFaoQsh+COfo6oHMWCygzg2iaqJJ4RDThaKCMYRkkOUAQWv80R7sbBbpuKZfulH7bFcw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
@@ -7717,7 +7717,7 @@ snapshots:
       color: 5.0.3
       text-hex: 1.0.0
 
-  '@stylistic/eslint-plugin@6.0.0(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2007))':
+  '@stylistic/eslint-plugin@6.0.1(eslint@10.14.0(jiti@2.7.0))(oxlint@1.93.0(oxlint-tsgolint@7.0.2007))':
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.14.0(jiti@2.7.0))
       '@typescript-eslint/types': 8.72.2
