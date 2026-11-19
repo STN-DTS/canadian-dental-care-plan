@@ -8,6 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
+import { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
+import { appIdentityDiscoveryCacheConfigSchema } from '~/.server/auth/app-identity-discovery-cache-config-schema';
+import type { AppIdentityDiscoveryCacheConfigEnv } from '~/.server/auth/app-identity-discovery-cache-config-schema';
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
@@ -26,7 +29,8 @@ import { expectDefined } from '~/utils/assert-utils';
 const config = {
   HTTP_PROXY_URL: 'http://proxy.example.test',
   ...appIdentityTokenCacheConfigSchema.parse({}),
-} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL'> & AppIdentityTokenCacheConfigEnv;
+  ...appIdentityDiscoveryCacheConfigSchema.parse({}),
+} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL'> & AppIdentityTokenCacheConfigEnv & AppIdentityDiscoveryCacheConfigEnv;
 
 const identity = {
   issuer: new URL('https://identity.example.test/organization'),
@@ -74,8 +78,11 @@ function deferredResponse() {
 const FAILURE_TTL_MS = 5_000;
 const flushBackgroundRefresh = async () => await vi.advanceTimersByTimeAsync(0);
 
-function createClient(httpClient: HttpClient): OpenIdAppIdentityClient {
-  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}))));
+function createClient(httpClient: HttpClient, discoveryEnv: Record<string, string> = {}): OpenIdAppIdentityClient {
+  const tokenConfig = new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}));
+  const discoveryConfig = new AppIdentityDiscoveryCacheConfig(appIdentityDiscoveryCacheConfigSchema.parse(discoveryEnv));
+
+  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(tokenConfig), discoveryConfig);
 }
 
 describe('OpenIdAppIdentityClient', () => {
@@ -334,6 +341,34 @@ describe('OpenIdAppIdentityClient', () => {
     vi.advanceTimersByTime(500);
 
     await expect(client.getAccessToken(identity)).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED });
+  });
+
+  it('uses the configured discovery lifetime', async () => {
+    const configured = createClient(httpClient, { APP_IDENTITY_DISCOVERY_CACHE_TTL_MS: '5000' });
+    tokenFetch.mockImplementation(async () => await Promise.resolve(tokenResponse('access-token', 10)));
+    await configured.getAccessToken(identity);
+
+    // The token reaches its refresh point (9s) after the configured discovery lifetime (5s).
+    vi.advanceTimersByTime(9_000);
+    await configured.getAccessToken(identity);
+    await flushBackgroundRefresh();
+
+    expect(tokenFetch).toHaveBeenCalledTimes(2);
+    expect(discoveryFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains at most the configured number of discovery entries', async () => {
+    const configured = createClient(httpClient, { APP_IDENTITY_DISCOVERY_CACHE_CAPACITY: '1' });
+    const other = { ...identity, clientSecret: Redacted.make('other-secret') };
+    tokenFetch.mockImplementation(async () => await Promise.resolve(tokenResponse('access-token', 10)));
+    await configured.getAccessToken(identity);
+    await configured.getAccessToken(other);
+
+    // Both tokens have expired, so each identity needs a new token. Only one discovery entry fits, so the first was evicted.
+    vi.advanceTimersByTime(10_000);
+    await configured.getAccessToken(identity);
+
+    expect(discoveryFetch).toHaveBeenCalledTimes(3);
   });
 
   it('rediscovers the endpoint after the configuration lifetime', async () => {

@@ -2,6 +2,7 @@ import { DiagLogLevel } from '@opentelemetry/api';
 import { randomUUID } from 'node:crypto';
 import * as z from 'zod';
 
+import { appIdentityDiscoveryCacheConfigSchema } from '~/.server/auth/app-identity-discovery-cache-config-schema';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
 import { documentUploadRepositoryConfigSchema } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
@@ -308,7 +309,11 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
     message: 'RENEWAL_PERIOD_END_DATE must be greater than or equal to RENEWAL_PERIOD_START_DATE',
   });
 
-const serverEnvSchema = baseServerEnvSchema.and(documentUploadRepositoryConfigSchema).and(appIdentityTokenCacheConfigSchema);
+const serverEnvSchema = baseServerEnvSchema
+  // Combine the base schema with additional configuration schemas
+  .and(documentUploadRepositoryConfigSchema)
+  .and(appIdentityTokenCacheConfigSchema)
+  .and(appIdentityDiscoveryCacheConfigSchema);
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 

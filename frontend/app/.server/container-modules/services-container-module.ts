@@ -1,6 +1,7 @@
 import { ContainerModule } from 'inversify';
 import type { BindingConstraints } from 'inversify';
 
+import { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
@@ -71,6 +72,7 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.AppealUploadEligibilityService).to(DefaultAppealUploadEligibilityService);
     options.bind(TYPES.AppIdentityClient).to(OpenIdAppIdentityClient).inSingletonScope();
     options.bind(TYPES.AppIdentityTokenCache).to(AppIdentityTokenCache).inSingletonScope();
+    options.bind(TYPES.AppIdentityDiscoveryCacheConfig).to(AppIdentityDiscoveryCacheConfig).inSingletonScope();
     options.bind(TYPES.AppIdentityTokenCacheConfig).to(AppIdentityTokenCacheConfig).inSingletonScope();
     options.bind(TYPES.ApplicantService).to(DefaultApplicantService);
     options.bind(TYPES.ApplicationStatusService).to(DefaultApplicationStatusService);

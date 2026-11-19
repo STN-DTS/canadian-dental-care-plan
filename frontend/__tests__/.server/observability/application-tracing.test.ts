@@ -14,6 +14,8 @@ import { mock } from 'vitest-mock-extended';
 
 import { DefaultAppContainerProvider } from '~/.server/app-container-provider';
 import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
+import { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
+import { appIdentityDiscoveryCacheConfigSchema } from '~/.server/auth/app-identity-discovery-cache-config-schema';
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
@@ -66,7 +68,7 @@ function createCountryService() {
 }
 
 function createIdentityClient(httpClient: ConstructorParameters<typeof OpenIdAppIdentityClient>[0]): OpenIdAppIdentityClient {
-  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}))));
+  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}))), new AppIdentityDiscoveryCacheConfig(appIdentityDiscoveryCacheConfigSchema.parse({})));
 }
 
 function createExpressSession() {

@@ -5,6 +5,7 @@ import { ClientSecretPost, clientCredentialsGrant, customFetch, discovery } from
 import type { Configuration, CustomFetch, TokenEndpointResponse } from 'openid-client';
 
 import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
+import type { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
 import type { AcquireToken, AppIdentityTokenCache, IdentityKey, IssuedToken } from '~/.server/auth/app-identity-token-cache';
 import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
@@ -31,10 +32,10 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
   private readonly tokenCache: AppIdentityTokenCache;
   private readonly configurations: ConfigurationCache;
 
-  constructor(@inject(TYPES.HttpClient) httpClient: HttpClient, @inject(TYPES.AppIdentityTokenCache) tokenCache: AppIdentityTokenCache) {
+  constructor(@inject(TYPES.HttpClient) httpClient: HttpClient, @inject(TYPES.AppIdentityTokenCache) tokenCache: AppIdentityTokenCache, @inject(TYPES.AppIdentityDiscoveryCacheConfig) discoveryConfig: AppIdentityDiscoveryCacheConfig) {
     this.httpClient = httpClient;
     this.tokenCache = tokenCache;
-    this.configurations = createConfigurationCache(this.fetch);
+    this.configurations = createConfigurationCache(this.fetch, discoveryConfig);
   }
 
   /**
@@ -70,16 +71,6 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
 }
 
 /**
- * How long discovery metadata is reused, so endpoint changes are eventually picked up.
- */
-const CONFIGURATION_TTL_MS = 3_600_000;
-
-/**
- * Maximum number of identities whose discovery metadata is retained.
- */
-const CONFIGURATION_CACHE_CAPACITY = 100;
-
-/**
  * Rejects requests that could send credentials to an unsafe or unintended place: an invalid issuer
  * (see `validateOAuthIssuer`) or blank credentials and scope.
  *
@@ -102,10 +93,10 @@ function fetchFailedError(): AppError {
 }
 
 /**
- * OIDC discovery metadata per identity, kept for {@link CONFIGURATION_TTL_MS}. Failures are not cached.
+ * OIDC discovery metadata per identity, kept for the configured lifetime. Failures are not cached.
  * The metadata is bound to the given `fetch`, so token requests made with it use the same `fetch`.
  */
-function createConfigurationCache(fetch: CustomFetch): ConfigurationCache {
+function createConfigurationCache(fetch: CustomFetch, config: AppIdentityDiscoveryCacheConfig): ConfigurationCache {
   return Effect.runSync(
     Cache.makeWith(
       (key: IdentityKey) =>
@@ -113,7 +104,7 @@ function createConfigurationCache(fetch: CustomFetch): ConfigurationCache {
           try: async () => await discoverConfiguration(key, fetch),
           catch: fetchFailedError,
         }),
-      { capacity: CONFIGURATION_CACHE_CAPACITY, timeToLive: (exit) => (Exit.isSuccess(exit) ? CONFIGURATION_TTL_MS : 0) },
+      { capacity: config.capacity, timeToLive: (exit) => (Exit.isSuccess(exit) ? config.ttlMs : 0) },
     ),
   );
 }
