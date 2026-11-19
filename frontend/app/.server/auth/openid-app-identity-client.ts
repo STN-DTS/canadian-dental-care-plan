@@ -1,8 +1,8 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import { Cache, Context, Effect, Exit, Redacted, Result } from 'effect';
+import { Cache, Effect, Exit, Redacted, Result } from 'effect';
 import { inject, injectable } from 'inversify';
-import { ClientSecretPost, Configuration, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
-import type { CustomFetch, TokenEndpointResponse } from 'openid-client';
+import { ClientSecretPost, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
+import type { Configuration, CustomFetch, TokenEndpointResponse } from 'openid-client';
 
 import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
 import type { AcquireToken, AppIdentityTokenCache, IdentityKey, IssuedToken } from '~/.server/auth/app-identity-token-cache';
@@ -17,17 +17,24 @@ import { ErrorCodes } from '~/errors/error-codes';
 
 const log = createLogger('OpenIdAppIdentityClient');
 
+type ConfigurationCache = Cache.Cache<IdentityKey, Configuration, AppError>;
+
 /**
- * Issues OAuth client-credentials access tokens for the app identity. Caching is handled by {@link AppIdentityTokenCache}.
+ * Issues OAuth client-credentials access tokens for the app identity. Token caching is handled by {@link AppIdentityTokenCache}.
+ *
+ * Each instance owns its discovery cache, like the token cache, so both are shared only when the instance is shared.
+ * The container binds this client as a singleton.
  */
 @injectable()
 export class OpenIdAppIdentityClient implements AppIdentityClient {
   private readonly httpClient: HttpClient;
   private readonly tokenCache: AppIdentityTokenCache;
+  private readonly configurations: ConfigurationCache;
 
   constructor(@inject(TYPES.HttpClient) httpClient: HttpClient, @inject(TYPES.AppIdentityTokenCache) tokenCache: AppIdentityTokenCache) {
     this.httpClient = httpClient;
     this.tokenCache = tokenCache;
+    this.configurations = createConfigurationCache(this.fetch);
   }
 
   /**
@@ -43,9 +50,9 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
   }
 
   /**
-   * Requests a token from the issuer through this client's `fetch`. Used by the cache when it needs a new token.
+   * Requests a token from the issuer. Used by the token cache when it needs a new token.
    */
-  private readonly acquireToken: AcquireToken = (key: IdentityKey) => Effect.provideService(requestToken(key), OpenIdFetch, this.fetch);
+  private readonly acquireToken: AcquireToken = (key: IdentityKey) => requestToken(key, this.configurations);
 
   /**
    * `fetch` handed to openid-client so discovery and token requests go through the instrumented HTTP client.
@@ -60,13 +67,6 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
 
     return new globalThis.Response(await response.arrayBuffer(), { status: response.status, statusText: response.statusText, headers: [...response.headers] });
   };
-}
-
-/**
- * Empties the discovery cache. For tests only: the cache lives for the whole process.
- */
-export async function clearDiscoveryCache(): Promise<void> {
-  await Effect.runPromise(Cache.invalidateAll(configurations));
 }
 
 /**
@@ -102,28 +102,21 @@ function fetchFailedError(): AppError {
 }
 
 /**
- * Supplies the client's `fetch` to the discovery cache lookup. The cache is module-level and cannot hold it,
- * so each token request provides it.
- */
-class OpenIdFetch extends Context.Service<OpenIdFetch, CustomFetch>()('OpenIdFetch') {}
-
-/**
  * OIDC discovery metadata per identity, kept for {@link CONFIGURATION_TTL_MS}. Failures are not cached.
+ * The metadata is bound to the given `fetch`, so token requests made with it use the same `fetch`.
  */
-const configurations = Effect.runSync(
-  Cache.makeWith(
-    (key: IdentityKey) =>
-      Effect.gen(function* () {
-        const fetch = yield* OpenIdFetch;
-
-        return yield* Effect.tryPromise({
+function createConfigurationCache(fetch: CustomFetch): ConfigurationCache {
+  return Effect.runSync(
+    Cache.makeWith(
+      (key: IdentityKey) =>
+        Effect.tryPromise({
           try: async () => await discoverConfiguration(key, fetch),
           catch: fetchFailedError,
-        });
-      }),
-    { capacity: CONFIGURATION_CACHE_CAPACITY, timeToLive: (exit) => (Exit.isSuccess(exit) ? CONFIGURATION_TTL_MS : 0), requireServicesAt: 'lookup' },
-  ),
-);
+        }),
+      { capacity: CONFIGURATION_CACHE_CAPACITY, timeToLive: (exit) => (Exit.isSuccess(exit) ? CONFIGURATION_TTL_MS : 0) },
+    ),
+  );
+}
 
 /**
  * Fetches the issuer's OIDC discovery document using the identity's client authentication.
@@ -141,7 +134,7 @@ async function discoverConfiguration(key: IdentityKey, fetch: CustomFetch): Prom
 /**
  * Drops the cached discovery metadata so the endpoint is rediscovered on the next token request.
  */
-function discardConfiguration(key: IdentityKey): Effect.Effect<void> {
+function discardConfiguration(configurations: ConfigurationCache, key: IdentityKey): Effect.Effect<void> {
   return Cache.invalidate(configurations, key).pipe(
     Effect.andThen(
       Effect.sync(() => {
@@ -155,16 +148,14 @@ function discardConfiguration(key: IdentityKey): Effect.Effect<void> {
  * Requests a token with the client-credentials grant, using the cached discovery metadata. A failed token request
  * drops the cached metadata so the endpoint is rediscovered next time.
  */
-function requestToken(key: IdentityKey): Effect.Effect<IssuedToken, AppError, OpenIdFetch> {
+function requestToken(key: IdentityKey, configurations: ConfigurationCache): Effect.Effect<IssuedToken, AppError> {
   return Effect.gen(function* () {
-    const fetch = yield* OpenIdFetch;
-    const cached = yield* Cache.get(configurations, key);
-    const configuration = bindFetch(cached, key, fetch);
+    const configuration = yield* Cache.get(configurations, key);
     const requestedAt = Temporal.Now.instant().epochMilliseconds;
     const response = yield* Effect.tryPromise({
       try: async () => await clientCredentialsGrant(configuration, { scope: key.scope }),
       catch: fetchFailedError,
-    }).pipe(Effect.tapError(() => discardConfiguration(key)));
+    }).pipe(Effect.tapError(() => discardConfiguration(configurations, key)));
 
     if (!isUsableTokenResponse(response)) {
       return yield* Effect.fail(new AppError('App identity token response is invalid.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_INVALID_TOKEN_RESPONSE));
@@ -172,19 +163,6 @@ function requestToken(key: IdentityKey): Effect.Effect<IssuedToken, AppError, Op
 
     return { value: Redacted.make(response.access_token), requestedAt, lifetimeMs: response.expires_in * 1000 };
   });
-}
-
-/**
- * Copies the cached discovery result into a `Configuration` that uses the caller's `fetch`. A `Configuration`
- * keeps the `fetch` it was created with, so reusing the cached one would send every token request through whichever
- * client discovered first.
- */
-function bindFetch(cached: Configuration, key: IdentityKey, fetch: CustomFetch): Configuration {
-  const configuration = new Configuration(cached.serverMetadata(), Redacted.value(key.clientId), undefined, ClientSecretPost(Redacted.value(key.clientSecret)));
-  configuration.timeout = cached.timeout;
-  configuration[customFetch] = fetch;
-
-  return configuration;
 }
 
 /**

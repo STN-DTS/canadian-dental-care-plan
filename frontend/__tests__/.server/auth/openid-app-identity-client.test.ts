@@ -12,7 +12,7 @@ import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
 import type { AppIdentityTokenCacheConfigEnv } from '~/.server/auth/app-identity-token-cache-config-schema';
-import { OpenIdAppIdentityClient, clearDiscoveryCache } from '~/.server/auth/openid-app-identity-client';
+import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createServicesContainerModule } from '~/.server/container-modules/services-container-module';
@@ -84,8 +84,7 @@ describe('OpenIdAppIdentityClient', () => {
   const discoveryFetch = vi.fn<HttpClient['instrumentedFetch']>();
   let client: OpenIdAppIdentityClient;
 
-  beforeEach(async () => {
-    await clearDiscoveryCache();
+  beforeEach(() => {
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') });
     tokenFetch.mockReset();
     discoveryFetch.mockReset().mockImplementation(async () => await Promise.resolve(metadataResponse()));
@@ -354,18 +353,18 @@ describe('OpenIdAppIdentityClient', () => {
     expect(discoveryFetch).toHaveBeenCalledTimes(2);
   });
 
-  it('sends each client its own token requests while sharing the cached discovery', async () => {
+  it('keeps each client on its own fetch and discovery, so a separate instance does not reuse another instance cache', async () => {
     const otherHttpClient = mock<HttpClient>();
-    otherHttpClient.instrumentedFetch.mockImplementation(async () => await Promise.resolve(tokenResponse('other-client-token')));
+    otherHttpClient.instrumentedFetch.mockImplementation(async (...args) => await Promise.resolve(args[1] === discoveryUrl ? metadataResponse() : tokenResponse('other-client-token')));
     tokenFetch.mockResolvedValueOnce(tokenResponse('first-client-token'));
     await client.getAccessToken(identity);
 
     const token = await createClient(otherHttpClient).getAccessToken(identity);
 
     expect(Redacted.value(token)).toBe('other-client-token');
-    expect(otherHttpClient.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.app-identity.token.posts', tokenEndpoint, expect.anything());
-    expect(tokenFetch).toHaveBeenCalledOnce();
+    expect(otherHttpClient.instrumentedFetch.mock.calls.map(([operation]) => operation)).toEqual(['http.client.app-identity.discovery.gets', 'http.client.app-identity.token.posts']);
     expect(discoveryFetch).toHaveBeenCalledOnce();
+    expect(tokenFetch).toHaveBeenCalledOnce();
   });
 
   it('retains a short-lived token until its proportional refresh margin', async () => {

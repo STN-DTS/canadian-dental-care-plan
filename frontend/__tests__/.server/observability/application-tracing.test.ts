@@ -17,7 +17,7 @@ import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
-import { OpenIdAppIdentityClient, clearDiscoveryCache } from '~/.server/auth/openid-app-identity-client';
+import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
 import type { DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import { DefaultCountryDtoMapper } from '~/.server/domain/mappers/country-dto-mapper';
 import { DefaultLanguageDtoMapper } from '~/.server/domain/mappers/language-dto-mapper';
@@ -225,7 +225,6 @@ describe('application method spans', () => {
   });
 
   afterEach(async () => {
-    await clearDiscoveryCache();
     await processor.forceFlush();
     exporter.reset();
   });
