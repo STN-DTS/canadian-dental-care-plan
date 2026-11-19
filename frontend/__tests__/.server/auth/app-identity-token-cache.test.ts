@@ -122,8 +122,8 @@ describe('AppIdentityTokenCache', () => {
     const acquire = vi.fn<AcquireToken>(() => Effect.sync(() => issueToken('token')));
     await configuredCache.getAccessToken(request, acquire);
 
-    // Margin is min(60s, 50% of 200s) = 60s, so the refresh point is 140s instead of the default 180s.
-    await vi.advanceTimersByTimeAsync(140_001);
+    // Margin is min(300s, 50% of 200s) = 100s, so the refresh point is 100s instead of the default 180s.
+    await vi.advanceTimersByTimeAsync(100_001);
     await configuredCache.getAccessToken(request, acquire);
     await flushBackgroundRefresh();
 

@@ -286,7 +286,8 @@ describe('OpenIdAppIdentityClient', () => {
     expect(tokenFetch).toHaveBeenCalledOnce();
     expect(discoveryFetch).toHaveBeenCalledOnce();
 
-    vi.advanceTimersByTime(3_539_999);
+    // The default margin for a 3,600s token is min(300s, 360s) = 300s, so the refresh point is 3,300s and the hard expiry 3,450s.
+    vi.advanceTimersByTime(3_299_999);
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('access-token');
     expect(tokenFetch).toHaveBeenCalledOnce();
 
@@ -372,7 +373,7 @@ describe('OpenIdAppIdentityClient', () => {
   });
 
   it('rediscovers the endpoint after the configuration lifetime', async () => {
-    tokenFetch.mockResolvedValue(tokenResponse('access-token', 3_700));
+    tokenFetch.mockResolvedValue(tokenResponse('access-token', 4_000));
     await client.getAccessToken(identity);
 
     vi.advanceTimersByTime(3_599_999);
@@ -380,8 +381,8 @@ describe('OpenIdAppIdentityClient', () => {
     await flushBackgroundRefresh();
     expect(discoveryFetch).toHaveBeenCalledOnce();
 
-    // The token reaches its refresh point (3,640s) after the configuration has expired (3,600s).
-    vi.advanceTimersByTime(40_001);
+    // The token reaches its refresh point (3,700s) after the configuration has expired (3,600s).
+    vi.advanceTimersByTime(100_001);
     await client.getAccessToken(identity);
     await flushBackgroundRefresh();
     expect(tokenFetch).toHaveBeenCalledTimes(2);

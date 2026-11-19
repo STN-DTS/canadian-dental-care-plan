@@ -14,7 +14,7 @@ export const appIdentityTokenCacheConfigSchema = z.object({
   APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO: z.coerce.number().gt(0).lt(1).default(0.1),
 
   /** Upper bound on how long before expiry a background refresh starts, in milliseconds. */
-  APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS: z.coerce.number().int().nonnegative().default(60_000),
+  APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS: z.coerce.number().int().nonnegative().default(300_000),
 });
 
 export type AppIdentityTokenCacheConfigEnv = z.infer<typeof appIdentityTokenCacheConfigSchema>;
