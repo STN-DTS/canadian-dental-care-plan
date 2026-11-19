@@ -1,6 +1,8 @@
 import { ContainerModule } from 'inversify';
 import type { BindingConstraints } from 'inversify';
 
+import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
+import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
 import { DefaultRaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
@@ -68,6 +70,8 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.AddressValidationService).to(DefaultAddressValidationService);
     options.bind(TYPES.AppealUploadEligibilityService).to(DefaultAppealUploadEligibilityService);
     options.bind(TYPES.AppIdentityClient).to(OpenIdAppIdentityClient).inSingletonScope();
+    options.bind(TYPES.AppIdentityTokenCache).to(AppIdentityTokenCache).inSingletonScope();
+    options.bind(TYPES.AppIdentityTokenCacheConfig).to(AppIdentityTokenCacheConfig).inSingletonScope();
     options.bind(TYPES.ApplicantService).to(DefaultApplicantService);
     options.bind(TYPES.ApplicationStatusService).to(DefaultApplicationStatusService);
     options.bind(TYPES.ApplicationYearService).to(DefaultApplicationYearService);

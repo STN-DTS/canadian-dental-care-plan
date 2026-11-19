@@ -14,7 +14,10 @@ import { mock } from 'vitest-mock-extended';
 
 import { DefaultAppContainerProvider } from '~/.server/app-container-provider';
 import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
-import { OpenIdAppIdentityClient, clearAppIdentityCaches } from '~/.server/auth/openid-app-identity-client';
+import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
+import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
+import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
+import { OpenIdAppIdentityClient, clearDiscoveryCache } from '~/.server/auth/openid-app-identity-client';
 import type { DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import { DefaultCountryDtoMapper } from '~/.server/domain/mappers/country-dto-mapper';
 import { DefaultLanguageDtoMapper } from '~/.server/domain/mappers/language-dto-mapper';
@@ -62,6 +65,10 @@ function createCountryService() {
   return { service, repository, httpClient };
 }
 
+function createIdentityClient(httpClient: ConstructorParameters<typeof OpenIdAppIdentityClient>[0]): OpenIdAppIdentityClient {
+  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}))));
+}
+
 function createExpressSession() {
   const sessionData = mock<Request['session']>({ id: 'synthetic-session' });
   return { session: new ExpressSession({ session: sessionData }), sessionData };
@@ -90,6 +97,7 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
     'domain/services/sun-life-communication-method-service.ts',
   ]);
   const untracedMethods = new Set([
+    'AppIdentityTokenCache.getAccessToken',
     'DefaultAddressValidationRepository.checkHealth',
     'DefaultApplicantRepository.checkHealth',
     'DefaultAuditService.createAudit',
@@ -217,7 +225,7 @@ describe('application method spans', () => {
   });
 
   afterEach(async () => {
-    await clearAppIdentityCaches();
+    await clearDiscoveryCache();
     await processor.forceFlush();
     exporter.reset();
   });
@@ -239,7 +247,7 @@ describe('application method spans', () => {
       .mockResolvedValueOnce(Response.json({ issuer: issuer.href, token_endpoint: 'https://identity.example.test/token' }))
       .mockRejectedValueOnce(new Error(secret));
     vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetch);
-    const client = new OpenIdAppIdentityClient(httpClient);
+    const client = createIdentityClient(httpClient);
 
     await trace.getTracer('application-tracing-test').startActiveSpan('test.request', async (span) => {
       try {
@@ -274,7 +282,7 @@ describe('application method spans', () => {
     }
 
     vi.spyOn(client, 'getFetchFn').mockReturnValue(transport);
-    const identity = new OpenIdAppIdentityClient(client);
+    const identity = createIdentityClient(client);
 
     await expect(identity.getAccessToken({ issuer, clientId: Redacted.make('client-canary'), clientSecret: Redacted.make('secret-canary'), scope: 'test.scope' })).rejects.toThrow('App identity token acquisition failed.');
 
@@ -295,7 +303,7 @@ describe('application method spans', () => {
       .mockResolvedValueOnce(Response.json({ issuer: issuer.href, token_endpoint: 'https://identity.example.test/token' }))
       .mockResolvedValueOnce(Response.json({ access_token: 'cached-token-canary', token_type: 'Bearer', expires_in: 3600 }));
     vi.spyOn(client, 'getFetchFn').mockReturnValue(transport);
-    const identity = new OpenIdAppIdentityClient(client);
+    const identity = createIdentityClient(client);
     const request = { issuer, clientId: Redacted.make('client'), clientSecret: Redacted.make('secret'), scope: 'test.scope' };
 
     await identity.getAccessToken(request);

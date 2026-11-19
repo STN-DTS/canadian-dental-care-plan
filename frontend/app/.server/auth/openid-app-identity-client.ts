@@ -4,8 +4,7 @@ import { ClientSecretPost, Configuration, clientCredentialsGrant, customFetch, d
 import type { CustomFetch, TokenEndpointResponse } from 'openid-client';
 
 import type { AppIdentityClient, GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
-import { clearTokenCaches, getCachedAccessToken } from '~/.server/auth/app-identity-token-cache';
-import type { AcquireToken, IdentityKey, IssuedToken } from '~/.server/auth/app-identity-token-cache';
+import type { AcquireToken, AppIdentityTokenCache, IdentityKey, IssuedToken } from '~/.server/auth/app-identity-token-cache';
 import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
 import { Traced } from '~/.server/observability/decorator';
@@ -15,14 +14,16 @@ import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 /**
- * Issues OAuth client-credentials access tokens for the app identity. Caching is handled by {@link getCachedAccessToken}.
+ * Issues OAuth client-credentials access tokens for the app identity. Caching is handled by {@link AppIdentityTokenCache}.
  */
 @injectable()
 export class OpenIdAppIdentityClient implements AppIdentityClient {
   private readonly httpClient: HttpClient;
+  private readonly tokenCache: AppIdentityTokenCache;
 
-  constructor(@inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(@inject(TYPES.HttpClient) httpClient: HttpClient, @inject(TYPES.AppIdentityTokenCache) tokenCache: AppIdentityTokenCache) {
     this.httpClient = httpClient;
+    this.tokenCache = tokenCache;
   }
 
   /**
@@ -34,7 +35,7 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
   async getAccessToken(request: GetAccessTokenRequest): Promise<Redacted.Redacted<string>> {
     assertValidRequest(request);
 
-    return await getCachedAccessToken(request, this.acquireToken);
+    return await this.tokenCache.getAccessToken(request, this.acquireToken);
   }
 
   /**
@@ -58,10 +59,10 @@ export class OpenIdAppIdentityClient implements AppIdentityClient {
 }
 
 /**
- * Empties the token and discovery caches. For tests only: the caches live for the whole process.
+ * Empties the discovery cache. For tests only: the cache lives for the whole process.
  */
-export async function clearAppIdentityCaches(): Promise<void> {
-  await Promise.all([clearTokenCaches(), Effect.runPromise(Cache.invalidateAll(configurations))]);
+export async function clearDiscoveryCache(): Promise<void> {
+  await Effect.runPromise(Cache.invalidateAll(configurations));
 }
 
 /**

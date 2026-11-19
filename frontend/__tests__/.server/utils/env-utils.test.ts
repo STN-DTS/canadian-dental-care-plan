@@ -53,6 +53,43 @@ describe('getEnv secret values', () => {
     expect(Redacted.isRedacted(config.GC_NOTIFY_API_KEY)).toBe(true);
   });
 
+  it('uses the default app identity token cache settings when none are configured', () => {
+    expect(getEnv()).toMatchObject({
+      APP_IDENTITY_TOKEN_CACHE_CAPACITY: 100,
+      APP_IDENTITY_TOKEN_CACHE_FAILURE_TTL_MS: 5000,
+      APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO: 0.1,
+      APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS: 60_000,
+    });
+  });
+
+  it('reads the app identity token cache settings from the environment', () => {
+    vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_CAPACITY', '10');
+    vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_FAILURE_TTL_MS', '0');
+    vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO', '0.25');
+    vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS', '30000');
+
+    expect(getEnv()).toMatchObject({
+      APP_IDENTITY_TOKEN_CACHE_CAPACITY: 10,
+      APP_IDENTITY_TOKEN_CACHE_FAILURE_TTL_MS: 0,
+      APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO: 0.25,
+      APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS: 30_000,
+    });
+  });
+
+  it.each([
+    ['APP_IDENTITY_TOKEN_CACHE_CAPACITY', '0'],
+    ['APP_IDENTITY_TOKEN_CACHE_CAPACITY', '1.5'],
+    ['APP_IDENTITY_TOKEN_CACHE_FAILURE_TTL_MS', '-1'],
+    ['APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO', '0'],
+    ['APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO', '1'],
+    ['APP_IDENTITY_TOKEN_CACHE_REFRESH_MARGIN_RATIO', 'abc'],
+    ['APP_IDENTITY_TOKEN_CACHE_MAX_REFRESH_MARGIN_MS', '-5'],
+  ])('rejects %s=%s', (name, value) => {
+    vi.stubEnv(name, value);
+
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+
   it('uses the mock document upload provider independently of other service mocks', () => {
     vi.stubEnv('ENABLED_MOCKS', 'cct,code-tables');
 

@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
-import { OpenIdAppIdentityClient, clearAppIdentityCaches } from '~/.server/auth/openid-app-identity-client';
+import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
+import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
+import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
+import type { AppIdentityTokenCacheConfigEnv } from '~/.server/auth/app-identity-token-cache-config-schema';
+import { OpenIdAppIdentityClient, clearDiscoveryCache } from '~/.server/auth/openid-app-identity-client';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createServicesContainerModule } from '~/.server/container-modules/services-container-module';
@@ -21,7 +25,8 @@ import { expectDefined } from '~/utils/assert-utils';
 
 const config = {
   HTTP_PROXY_URL: 'http://proxy.example.test',
-} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL'>;
+  ...appIdentityTokenCacheConfigSchema.parse({}),
+} satisfies Pick<ServerConfig, 'HTTP_PROXY_URL'> & AppIdentityTokenCacheConfigEnv;
 
 const identity = {
   issuer: new URL('https://identity.example.test/organization'),
@@ -69,6 +74,10 @@ function deferredResponse() {
 const FAILURE_TTL_MS = 5_000;
 const flushBackgroundRefresh = async () => await vi.advanceTimersByTimeAsync(0);
 
+function createClient(httpClient: HttpClient): OpenIdAppIdentityClient {
+  return new OpenIdAppIdentityClient(httpClient, new AppIdentityTokenCache(new AppIdentityTokenCacheConfig(appIdentityTokenCacheConfigSchema.parse({}))));
+}
+
 describe('OpenIdAppIdentityClient', () => {
   const httpClient = mock<HttpClient>();
   const tokenFetch = vi.fn<HttpClient['instrumentedFetch']>();
@@ -76,14 +85,14 @@ describe('OpenIdAppIdentityClient', () => {
   let client: OpenIdAppIdentityClient;
 
   beforeEach(async () => {
-    await clearAppIdentityCaches();
+    await clearDiscoveryCache();
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') });
     tokenFetch.mockReset();
     discoveryFetch.mockReset().mockImplementation(async () => await Promise.resolve(metadataResponse()));
     httpClient.instrumentedFetch.mockReset().mockImplementation(async (...args) => {
       return await (args[1] === discoveryUrl ? discoveryFetch(...args) : tokenFetch(...args));
     });
-    client = new OpenIdAppIdentityClient(httpClient);
+    client = createClient(httpClient);
   });
 
   afterEach(() => {
@@ -348,11 +357,10 @@ describe('OpenIdAppIdentityClient', () => {
   it('sends each client its own token requests while sharing the cached discovery', async () => {
     const otherHttpClient = mock<HttpClient>();
     otherHttpClient.instrumentedFetch.mockImplementation(async () => await Promise.resolve(tokenResponse('other-client-token')));
-    tokenFetch.mockResolvedValueOnce(tokenResponse('first-client-token', 10));
+    tokenFetch.mockResolvedValueOnce(tokenResponse('first-client-token'));
     await client.getAccessToken(identity);
 
-    vi.advanceTimersByTime(10_000);
-    const token = await new OpenIdAppIdentityClient(otherHttpClient).getAccessToken(identity);
+    const token = await createClient(otherHttpClient).getAccessToken(identity);
 
     expect(Redacted.value(token)).toBe('other-client-token');
     expect(otherHttpClient.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.app-identity.token.posts', tokenEndpoint, expect.anything());
@@ -634,6 +642,7 @@ describe('OpenIdAppIdentityClient', () => {
     const tokens = await Promise.all([firstConsumer.getAccessToken(identity), secondConsumer.getAccessToken({ ...identity, issuer: new URL(identity.issuer) })]);
 
     expect(firstConsumer).toBe(secondConsumer);
+    expect(container.get(TYPES.AppIdentityTokenCache)).toBe(container.get(TYPES.AppIdentityTokenCache));
     expect(tokens.map((token) => Redacted.value(token))).toEqual(['access-token', 'access-token']);
     expect(discoveryFetch).toHaveBeenCalledOnce();
     expect(tokenFetch).toHaveBeenCalledOnce();

@@ -3,6 +3,8 @@ import type { Newable } from 'inversify';
 
 import type { BearerTokenResolver, TokenRolesExtractor } from '~/.server/auth';
 import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
+import type { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
+import type { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ClientConfig, ServerConfig } from '~/.server/configs';
 import type { BuildInfoService } from '~/.server/core';
@@ -166,6 +168,8 @@ export const TYPES = assignServiceIdentifiers({
   AppealUploadEligibilityRepository: serviceId<AppealUploadEligibilityRepository>(),
   AppealUploadEligibilityService: serviceId<AppealUploadEligibilityService>(),
   AppIdentityClient: serviceId<AppIdentityClient>(),
+  AppIdentityTokenCache: serviceId<AppIdentityTokenCache>(),
+  AppIdentityTokenCacheConfig: serviceId<AppIdentityTokenCacheConfig>(),
   ApplicantDtoMapper: serviceId<ApplicantDtoMapper>(),
   ApplicantRepository: serviceId<ApplicantRepository>(),
   ApplicantService: serviceId<ApplicantService>(),
