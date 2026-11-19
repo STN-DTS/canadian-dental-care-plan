@@ -8,15 +8,14 @@ import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 /**
- * Caches app identity access tokens so the issuer is called as little as possible; tokens are needed on every
- * document upload. Three layered caches, all keyed by identity (issuer, credentials, scope):
+ * App identity access token cache. Tokens are needed on every document upload, so this keeps calls to the issuer to a minimum.
  *
+ * Three layers, all keyed by identity (issuer, credentials, scope):
  * - `configurations`: OIDC discovery metadata.
- * - `acquisitions`: token requests, shared by concurrent callers.
- * - `tokens`: tokens served to callers. A token past its refresh point is still served while one background refresh
- *   replaces it, so callers do not wait on the issuer.
+ * - `acquisitions`: token requests. Concurrent callers share one request.
+ * - `tokens`: tokens served to callers. A token past its refresh point is still served while one background refresh replaces it.
  *
- * The caches live at module level so they stay shared however many clients exist.
+ * The caches are module-level, so they stay shared across client instances. Callers use {@link getCachedAccessToken}.
  */
 
 /** Maximum number of identities retained by each cache; the least recently used entries are evicted beyond this. */
@@ -80,7 +79,7 @@ function isUsableTokenResponse(response: TokenEndpointResponse): response is Tok
  * Builds a token with its two deadlines, both measured from when the request started so that
  * request latency is subtracted from the token's usable lifetime.
  *
- * - `refreshAt`: lifetime minus the refresh margin (10%, at most 60s).
+ * - `refreshAt`: lifetime minus the refresh margin ({@link REFRESH_MARGIN_RATIO} of the lifetime, capped at {@link MAX_REFRESH_MARGIN_MS}).
  * - `expiresAt`: lifetime minus half the refresh margin, a safety buffer so a returned token is still valid downstream.
  *
  * @param response A response that passed {@link isUsableTokenResponse}.
@@ -212,11 +211,11 @@ function refreshInBackground(key: IdentityKey, fetch: CustomFetch): void {
 /**
  * Returns a bearer token for the given identity, from cache whenever possible.
  *
- * A valid cached token is returned immediately. If it is past its refresh point, a single background refresh is
- * started and the current token is still returned. Only a cold or fully expired entry waits on the issuer.
+ * A valid cached token is returned immediately. If it is past its refresh point, one background refresh starts and
+ * the current token is still returned. Only a cold or fully expired entry waits on the issuer.
  *
  * @param request A request that has already been validated.
- * @param fetch Used for discovery and token requests made on behalf of this call.
+ * @param fetch Used for the discovery and token requests this call can trigger, including the background refresh.
  * @throws An application error if the token cannot be acquired or has expired.
  */
 export async function getCachedAccessToken(request: GetAccessTokenRequest, fetch: CustomFetch): Promise<Redacted.Redacted<string>> {

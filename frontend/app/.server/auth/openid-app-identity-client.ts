@@ -25,7 +25,7 @@ function assertValidRequest({ issuer, clientId, clientSecret, scope }: GetAccess
   }
 }
 
-/** Issues OAuth client-credentials access tokens for the app identity. Tokens are cached; see `app-identity-token-cache`. */
+/** Issues OAuth client-credentials access tokens for the app identity. Caching is handled by {@link getCachedAccessToken}. */
 @injectable()
 export class OpenIdAppIdentityClient implements AppIdentityClient {
   private readonly httpClient: HttpClient;
