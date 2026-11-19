@@ -209,3 +209,10 @@ export function isValidTimeZone(timeZone: string): boolean {
     return false;
   }
 }
+
+/**
+ * Returns the current time in milliseconds since the Unix epoch.
+ */
+export function nowMs(): number {
+  return Temporal.Now.instant().epochMilliseconds;
+}

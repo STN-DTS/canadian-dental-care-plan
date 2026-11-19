@@ -8,8 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
-import { clearAppIdentityCaches } from '~/.server/auth/app-identity-token-cache';
-import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
+import { OpenIdAppIdentityClient, clearAppIdentityCaches } from '~/.server/auth/openid-app-identity-client';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createServicesContainerModule } from '~/.server/container-modules/services-container-module';

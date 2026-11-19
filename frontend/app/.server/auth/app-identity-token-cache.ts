@@ -1,53 +1,30 @@
-import { Cache, Context, Data, Effect, Exit, Option, Redacted, Result } from 'effect';
-import { ClientSecretPost, Configuration, clientCredentialsGrant, customFetch, discovery } from 'openid-client';
-import type { CustomFetch, TokenEndpointResponse } from 'openid-client';
-
-import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
-import { throwAppError } from '~/.server/utils/error-utils';
-import { AppError } from '~/errors/app-error';
-import { ErrorCodes } from '~/errors/error-codes';
-
 /**
  * App identity access token cache. Tokens are needed on every document upload, so this keeps calls to the issuer to a minimum.
  *
- * Three layers, all keyed by identity (issuer, credentials, scope):
- * - `configurations`: OIDC discovery metadata.
- * - `acquisitions`: token requests. Concurrent callers share one request.
+ * It does not know how a token is obtained. Callers pass an {@link AcquireToken} function that does the request.
+ *
+ * Two layers, both keyed by {@link IdentityKey}:
+ * - `acquisitions`: token requests. Concurrent callers share one request, and a failure is remembered briefly.
  * - `tokens`: tokens served to callers. A token past its refresh point is still served while one background refresh replaces it.
  *
  * The caches are module-level, so they stay shared across client instances. Callers use {@link getCachedAccessToken}.
  */
 
-/** Maximum number of identities retained by each cache; the least recently used entries are evicted beyond this. */
-const CACHE_CAPACITY = 100;
-/** How long a failed acquisition is remembered, so an issuer outage is not hit by every caller. */
-const FAILURE_TTL_MS = 5_000;
-/** How long discovery metadata is reused, so endpoint changes are eventually picked up. */
-const CONFIGURATION_TTL_MS = 3_600_000;
-/** Fraction of a token's lifetime before its expiry at which a refresh starts (capped by {@link MAX_REFRESH_MARGIN_MS}). */
-const REFRESH_MARGIN_RATIO = 0.1;
-/** Upper bound on how long before expiry a refresh starts. */
-const MAX_REFRESH_MARGIN_MS = 60_000;
+import { Cache, Context, Data, Effect, Exit, Option, Result } from 'effect';
+import type { Redacted } from 'effect';
 
-/** Current time as epoch milliseconds, the unit shared by `AccessToken` deadlines and cache TTLs. */
-const nowMs = () => Temporal.Now.instant().epochMilliseconds;
-
-/** A cached access token and the two deadlines that govern how it is used (epoch milliseconds). */
-interface AccessToken {
-  /** The bearer token, redacted so it is not exposed by logging or inspection. */
-  readonly value: Redacted.Redacted<string>;
-  /** After this instant the token is served while a background refresh runs. */
-  readonly refreshAt: number;
-  /** After this instant the token must never be returned. */
-  readonly expiresAt: number;
-}
+import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
+import { nowMs } from '~/utils/date-utils';
 
 /**
  * Cache key for one app identity: issuer, credentials, scope.
  *
  * Same identity = same key, so callers share one token. Any change (e.g. rotated secret) = new key.
  */
-class IdentityKey extends Data.Class<{
+export class IdentityKey extends Data.Class<{
   readonly issuer: string;
   readonly clientId: Redacted.Redacted<string>;
   readonly clientSecret: Redacted.Redacted<string>;
@@ -59,116 +36,91 @@ class IdentityKey extends Data.Class<{
   }
 }
 
-/** Failure to obtain an app identity token. Its message is safe to surface and never contains secrets. */
-class AppIdentityError extends AppError {}
-
-/** Generic acquisition failure; transport and parser errors can contain credentials or response bodies, so callers only ever see this. */
-const fetchFailedError = () => new AppIdentityError('App identity token acquisition failed.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED);
-/** The issued token's usable lifetime had already elapsed (for example, a very slow token request). */
-const tokenExpiredError = () => new AppIdentityError('App identity token expired before use.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_TOKEN_EXPIRED);
-
 /**
- * Checks that the issuer's response is usable as an `Authorization: Bearer` credential with a known lifetime.
- * The library already validates the protocol; header-safe characters and a positive `expires_in` are local requirements.
+ * A token as the issuer returned it, before the cache applies its deadlines.
  */
-function isUsableTokenResponse(response: TokenEndpointResponse): response is TokenEndpointResponse & { expires_in: number } {
-  return response.token_type === 'bearer' && /^[A-Za-z0-9._~+/-]+=*$/.test(response.access_token) && response.expires_in !== undefined && Number.isFinite(response.expires_in) && response.expires_in > 0;
+export interface IssuedToken {
+  /**
+   * The bearer token, redacted so it is not exposed by logging or inspection.
+   */
+  readonly value: Redacted.Redacted<string>;
+
+  /**
+   * Epoch milliseconds just before the token request was sent. The token's lifetime counts from here.
+   */
+  readonly requestedAt: number;
+
+  /**
+   * How long the issuer says the token is valid, in milliseconds. Must be greater than zero.
+   */
+  readonly lifetimeMs: number;
 }
 
 /**
- * Builds a token with its two deadlines, both measured from when the request started so that
- * request latency is subtracted from the token's usable lifetime.
+ * Requests a new token from the issuer.
  *
- * - `refreshAt`: lifetime minus the refresh margin ({@link REFRESH_MARGIN_RATIO} of the lifetime, capped at {@link MAX_REFRESH_MARGIN_MS}).
- * - `expiresAt`: lifetime minus half the refresh margin, a safety buffer so a returned token is still valid downstream.
+ * Failures must be an `AppError` whose message is safe to surface: transport and parser errors can contain
+ * credentials or response bodies.
+ */
+export type AcquireToken = (key: IdentityKey) => Effect.Effect<IssuedToken, AppError>;
+
+/**
+ * Returns a bearer token for the given identity, from cache whenever possible.
  *
- * @param response A response that passed {@link isUsableTokenResponse}.
- * @param startedAt Epoch milliseconds captured just before the token request was sent.
+ * A valid cached token is returned immediately. If it is past its refresh point, one background refresh starts and
+ * the current token is still returned. Only a cold or fully expired entry waits on the issuer.
+ *
+ * @param request A request that has already been validated.
+ * @param acquire Requests a new token when the cache needs one, including for the background refresh.
+ * @throws An application error if the token cannot be acquired or has expired.
  */
-function toAccessToken(response: TokenEndpointResponse & { expires_in: number }, startedAt: number): AccessToken {
-  const lifetimeMs = response.expires_in * 1000;
-  const refreshMarginMs = Math.min(MAX_REFRESH_MARGIN_MS, lifetimeMs * REFRESH_MARGIN_RATIO);
+export async function getCachedAccessToken(request: GetAccessTokenRequest, acquire: AcquireToken): Promise<Redacted.Redacted<string>> {
+  const key = new IdentityKey(request);
+  const result = await Effect.runPromise(Effect.provideService(Effect.result(Cache.get(tokens, key)), TokenSource, acquire));
 
-  return {
-    value: Redacted.make(response.access_token),
-    refreshAt: startedAt + lifetimeMs - refreshMarginMs,
-    // Between refreshAt and expiresAt the token is still served while a refresh is attempted.
-    expiresAt: startedAt + lifetimeMs - refreshMarginMs / 2,
-  };
+  if (Result.isFailure(result)) {
+    throwAppError(result.failure.message, result.failure.errorCode);
+  }
+
+  const token = result.success;
+  const now = nowMs();
+
+  if (token.expiresAt <= now) {
+    throwAppError(tokenExpiredError().message, ErrorCodes.AUTH_OIDC_APP_IDENTITY_TOKEN_EXPIRED);
+  }
+
+  if (token.refreshAt <= now) {
+    refreshInBackground(key, acquire);
+  }
+
+  return token.value;
 }
 
-/**
- * Supplies the caller's `fetch` to cache lookups. The caches are module-level and cannot hold it, so each call
- * provides it.
- */
-class AppIdentityFetch extends Context.Service<AppIdentityFetch, CustomFetch>()('AppIdentityFetch') {}
-
-/** Fetches the issuer's OIDC discovery document using the identity's client authentication. */
-async function discoverConfiguration(key: IdentityKey, fetch: CustomFetch): Promise<Configuration> {
-  const issuer = new URL(key.issuer);
-  const clientId = Redacted.value(key.clientId);
-  const clientAuthentication = ClientSecretPost(Redacted.value(key.clientSecret));
-
-  return await discovery(issuer, clientId, undefined, clientAuthentication, { [customFetch]: fetch, timeout: 10 });
+/** Empties the token caches. For tests only: the caches live for the whole process. */
+export async function clearTokenCaches(): Promise<void> {
+  await Effect.runPromise(Effect.all([Cache.invalidateAll(acquisitions), Cache.invalidateAll(tokens)]));
 }
 
-/** OIDC discovery metadata per identity, kept for {@link CONFIGURATION_TTL_MS}. Failures are not cached. */
-const configurations = Effect.runSync(
-  Cache.makeWith(
-    (key: IdentityKey) =>
-      Effect.gen(function* () {
-        const fetch = yield* AppIdentityFetch;
+/** Maximum number of identities retained by each cache; the least recently used entries are evicted beyond this. */
+const CACHE_CAPACITY = 100;
+/** How long a failed acquisition is remembered, so an issuer outage is not hit by every caller. */
+const FAILURE_TTL_MS = 5_000;
+/** Fraction of a token's lifetime before its expiry at which a refresh starts (capped by {@link MAX_REFRESH_MARGIN_MS}). */
+const REFRESH_MARGIN_RATIO = 0.1;
+/** Upper bound on how long before expiry a refresh starts. */
+const MAX_REFRESH_MARGIN_MS = 60_000;
 
-        return yield* Effect.tryPromise({
-          try: async () => await discoverConfiguration(key, fetch),
-          catch: fetchFailedError,
-        });
-      }),
-    { capacity: CACHE_CAPACITY, timeToLive: (exit) => (Exit.isSuccess(exit) ? CONFIGURATION_TTL_MS : 0), requireServicesAt: 'lookup' },
-  ),
-);
-
-/**
- * Copies the cached discovery result into a `Configuration` that uses the caller's `fetch`. A `Configuration`
- * keeps the `fetch` it was created with, so reusing the cached one would send every token request through whichever
- * client discovered first.
- */
-function bindFetch(cached: Configuration, key: IdentityKey, fetch: CustomFetch): Configuration {
-  const configuration = new Configuration(cached.serverMetadata(), Redacted.value(key.clientId), undefined, ClientSecretPost(Redacted.value(key.clientSecret)));
-  configuration.timeout = cached.timeout;
-  configuration[customFetch] = fetch;
-
-  return configuration;
+/** A cached access token and the two deadlines that govern how it is used (epoch milliseconds). */
+interface AccessToken {
+  readonly value: Redacted.Redacted<string>;
+  /** After this instant the token is served while a background refresh runs. */
+  readonly refreshAt: number;
+  /** After this instant the token must never be returned. */
+  readonly expiresAt: number;
 }
 
-/**
- * Obtains a fresh, validated token: discovers the endpoint (cached), requests the token, then checks the response
- * and that the token is still usable once the request has finished. A failed token request drops the cached
- * discovery config so the endpoint is rediscovered next time.
- */
-const acquireToken = (key: IdentityKey) =>
-  Effect.gen(function* () {
-    const fetch = yield* AppIdentityFetch;
-    const cached = yield* Cache.get(configurations, key);
-    const configuration = bindFetch(cached, key, fetch);
-    const startedAt = nowMs();
-    const response = yield* Effect.tryPromise({
-      try: async () => await clientCredentialsGrant(configuration, { scope: key.scope }),
-      catch: fetchFailedError,
-    }).pipe(Effect.tapError(() => Cache.invalidate(configurations, key)));
-
-    if (!isUsableTokenResponse(response)) {
-      return yield* Effect.fail(new AppIdentityError('App identity token response is invalid.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_INVALID_TOKEN_RESPONSE));
-    }
-
-    const token = toAccessToken(response, startedAt);
-
-    if (!Number.isFinite(token.expiresAt) || token.expiresAt <= nowMs()) {
-      return yield* Effect.fail(tokenExpiredError());
-    }
-
-    return token;
-  });
+/** Supplies the caller's {@link AcquireToken} to cache lookups. The caches are module-level, so each call provides it. */
+class TokenSource extends Context.Service<TokenSource, AcquireToken>()('AppIdentityTokenSource') {}
 
 /**
  * Runs token requests, sharing one in-flight request per identity (cold acquisition and refresh alike).
@@ -188,11 +140,56 @@ const tokens = Effect.runSync(
   }),
 );
 
+/** The issued token's usable lifetime had already elapsed (for example, a very slow token request). */
+function tokenExpiredError(): AppError {
+  return new AppError('App identity token expired before use.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_TOKEN_EXPIRED);
+}
+
+/** Requests a token, then rejects it if its usable lifetime already elapsed while the request ran. */
+function acquireToken(key: IdentityKey): Effect.Effect<AccessToken, AppError, TokenSource> {
+  return Effect.gen(function* () {
+    const acquire = yield* TokenSource;
+    const token = toAccessToken(yield* acquireSafely(acquire, key));
+
+    if (!Number.isFinite(token.expiresAt) || token.expiresAt <= nowMs()) {
+      return yield* Effect.fail(tokenExpiredError());
+    }
+
+    return token;
+  });
+}
+
+/**
+ * Runs the injected acquire function so that only an `AppError` can come out. A defect (a throw, in the effect or
+ * while building it) becomes a generic failure, since the raw error can contain credentials.
+ */
+function acquireSafely(acquire: AcquireToken, key: IdentityKey): Effect.Effect<IssuedToken, AppError> {
+  return Effect.suspend(() => acquire(key)).pipe(Effect.catchDefect(() => Effect.fail(new AppError('App identity token acquisition failed.', ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED))));
+}
+
+/**
+ * Adds the two deadlines to an issued token, both measured from when the request started so that
+ * request latency is subtracted from the token's usable lifetime.
+ *
+ * - `refreshAt`: lifetime minus the refresh margin ({@link REFRESH_MARGIN_RATIO} of the lifetime, capped at {@link MAX_REFRESH_MARGIN_MS}).
+ * - `expiresAt`: lifetime minus half the refresh margin, a safety buffer so a returned token is still valid downstream.
+ */
+function toAccessToken({ value, requestedAt, lifetimeMs }: IssuedToken): AccessToken {
+  const refreshMarginMs = Math.min(MAX_REFRESH_MARGIN_MS, lifetimeMs * REFRESH_MARGIN_RATIO);
+
+  return {
+    value,
+    refreshAt: requestedAt + lifetimeMs - refreshMarginMs,
+    // Between refreshAt and expiresAt the token is still served while a refresh is attempted.
+    expiresAt: requestedAt + lifetimeMs - refreshMarginMs / 2,
+  };
+}
+
 /**
  * Replaces a token that is still valid but past its refresh point without making callers wait.
  * A failed refresh leaves the current token in place until it really expires.
  */
-function refreshInBackground(key: IdentityKey, fetch: CustomFetch): void {
+function refreshInBackground(key: IdentityKey, acquire: AcquireToken): void {
   const refresh = Effect.gen(function* () {
     const current = yield* Cache.getOption(tokens, key);
 
@@ -203,44 +200,7 @@ function refreshInBackground(key: IdentityKey, fetch: CustomFetch): void {
 
     const token = yield* Cache.get(acquisitions, key);
     yield* Cache.set(tokens, key, token);
-  }).pipe(Effect.ignore);
+  }).pipe(Effect.ignoreCause);
 
-  void Effect.runPromise(Effect.provideService(refresh, AppIdentityFetch, fetch));
-}
-
-/**
- * Returns a bearer token for the given identity, from cache whenever possible.
- *
- * A valid cached token is returned immediately. If it is past its refresh point, one background refresh starts and
- * the current token is still returned. Only a cold or fully expired entry waits on the issuer.
- *
- * @param request A request that has already been validated.
- * @param fetch Used for the discovery and token requests this call can trigger, including the background refresh.
- * @throws An application error if the token cannot be acquired or has expired.
- */
-export async function getCachedAccessToken(request: GetAccessTokenRequest, fetch: CustomFetch): Promise<Redacted.Redacted<string>> {
-  const key = new IdentityKey(request);
-  const result = await Effect.runPromise(Effect.provideService(Effect.result(Cache.get(tokens, key)), AppIdentityFetch, fetch));
-
-  if (Result.isFailure(result)) {
-    throwAppError(result.failure.message, result.failure.errorCode);
-  }
-
-  const token = result.success;
-  const now = nowMs();
-
-  if (token.expiresAt <= now) {
-    throwAppError(tokenExpiredError().message, ErrorCodes.AUTH_OIDC_APP_IDENTITY_TOKEN_EXPIRED);
-  }
-
-  if (token.refreshAt <= now) {
-    refreshInBackground(key, fetch);
-  }
-
-  return token.value;
-}
-
-/** Empties all caches. For tests only: the caches live for the whole process. */
-export async function clearAppIdentityCaches(): Promise<void> {
-  await Effect.runPromise(Effect.all([Cache.invalidateAll(configurations), Cache.invalidateAll(acquisitions), Cache.invalidateAll(tokens)]));
+  void Effect.runPromise(Effect.provideService(refresh, TokenSource, acquire));
 }
