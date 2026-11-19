@@ -14,7 +14,7 @@ import { mock } from 'vitest-mock-extended';
 
 import { DefaultAppContainerProvider } from '~/.server/app-container-provider';
 import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
-import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
+import { OpenIdAppIdentityClient, clearAppIdentityCaches } from '~/.server/auth/openid-app-identity-client';
 import type { DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import { DefaultCountryDtoMapper } from '~/.server/domain/mappers/country-dto-mapper';
 import { DefaultLanguageDtoMapper } from '~/.server/domain/mappers/language-dto-mapper';
@@ -222,6 +222,7 @@ describe('application method spans', () => {
   });
 
   afterEach(async () => {
+    await clearAppIdentityCaches();
     await processor.forceFlush();
     exporter.reset();
   });

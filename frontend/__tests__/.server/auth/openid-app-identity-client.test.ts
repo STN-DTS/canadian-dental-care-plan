@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { GetAccessTokenRequest } from '~/.server/auth/app-identity-client';
-import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
+import { OpenIdAppIdentityClient, clearAppIdentityCaches } from '~/.server/auth/openid-app-identity-client';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createServicesContainerModule } from '~/.server/container-modules/services-container-module';
@@ -66,13 +66,17 @@ function deferredResponse() {
   };
 }
 
+const FAILURE_TTL_MS = 5_000;
+const flushBackgroundRefresh = async () => await vi.advanceTimersByTimeAsync(0);
+
 describe('OpenIdAppIdentityClient', () => {
   const httpClient = mock<HttpClient>();
   const tokenFetch = vi.fn<HttpClient['instrumentedFetch']>();
   const discoveryFetch = vi.fn<HttpClient['instrumentedFetch']>();
   let client: OpenIdAppIdentityClient;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await clearAppIdentityCaches();
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') });
     tokenFetch.mockReset();
     discoveryFetch.mockReset().mockImplementation(async () => await Promise.resolve(metadataResponse()));
@@ -170,6 +174,9 @@ describe('OpenIdAppIdentityClient', () => {
     expect(discoveryFetch).toHaveBeenCalledTimes(2);
 
     vi.advanceTimersByTime(9_000);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('original-token');
+    expect(Redacted.value(await client.getAccessToken(other))).toBe('other-token');
+    await flushBackgroundRefresh();
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('original-refresh');
     expect(Redacted.value(await client.getAccessToken(other))).toBe('other-refresh');
     expect(discoveryFetch).toHaveBeenCalledTimes(2);
@@ -272,11 +279,84 @@ describe('OpenIdAppIdentityClient', () => {
     const refresh = deferredResponse();
     tokenFetch.mockImplementationOnce(refresh.fetch);
     const refreshing = Array.from({ length: 100 }, async () => await client.getAccessToken(identity));
-    refresh.resolve(tokenResponse('refreshed-token'));
 
-    const refreshedTokens = await Promise.all(refreshing);
-    expect(refreshedTokens.every((token) => Redacted.value(token) === 'refreshed-token')).toBe(true);
+    // Callers are served the still-valid token without waiting for the refresh.
+    const servedTokens = await Promise.all(refreshing);
+    expect(servedTokens.every((token) => Redacted.value(token) === 'access-token')).toBe(true);
+    await refresh.started;
     expect(tokenFetch).toHaveBeenCalledTimes(2);
+    refresh.resolve(tokenResponse('refreshed-token'));
+    await flushBackgroundRefresh();
+
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('refreshed-token');
+    expect(tokenFetch).toHaveBeenCalledTimes(2);
+    expect(discoveryFetch).toHaveBeenCalledOnce();
+  });
+
+  it('keeps serving a valid token when the background refresh fails, retrying only after the failure window', async () => {
+    tokenFetch.mockResolvedValueOnce(tokenResponse('old-token', 200)).mockRejectedValueOnce(new Error('issuer down'));
+    await client.getAccessToken(identity);
+
+    // Refresh point at 180s, hard expiry at 190s.
+    vi.advanceTimersByTime(180_000);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('old-token');
+    await flushBackgroundRefresh();
+    expect(tokenFetch).toHaveBeenCalledTimes(2);
+
+    vi.advanceTimersByTime(FAILURE_TTL_MS - 1);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('old-token');
+    await flushBackgroundRefresh();
+    expect(tokenFetch).toHaveBeenCalledTimes(2);
+
+    tokenFetch.mockResolvedValueOnce(tokenResponse('new-token'));
+    vi.advanceTimersByTime(1);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('old-token');
+    await flushBackgroundRefresh();
+    expect(tokenFetch).toHaveBeenCalledTimes(3);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('new-token');
+  });
+
+  it('never serves a token past its hard expiry when refreshes keep failing', async () => {
+    tokenFetch.mockResolvedValueOnce(tokenResponse('old-token', 10)).mockRejectedValue(new Error('issuer down'));
+    await client.getAccessToken(identity);
+
+    vi.advanceTimersByTime(9_000);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('old-token');
+    await flushBackgroundRefresh();
+    vi.advanceTimersByTime(500);
+
+    await expect(client.getAccessToken(identity)).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_FETCH_FAILED });
+  });
+
+  it('rediscovers the endpoint after the configuration lifetime', async () => {
+    tokenFetch.mockResolvedValue(tokenResponse('access-token', 3_700));
+    await client.getAccessToken(identity);
+
+    vi.advanceTimersByTime(3_599_999);
+    await client.getAccessToken(identity);
+    await flushBackgroundRefresh();
+    expect(discoveryFetch).toHaveBeenCalledOnce();
+
+    // The token reaches its refresh point (3,640s) after the configuration has expired (3,600s).
+    vi.advanceTimersByTime(40_001);
+    await client.getAccessToken(identity);
+    await flushBackgroundRefresh();
+    expect(tokenFetch).toHaveBeenCalledTimes(2);
+    expect(discoveryFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends each client its own token requests while sharing the cached discovery', async () => {
+    const otherHttpClient = mock<HttpClient>();
+    otherHttpClient.instrumentedFetch.mockImplementation(async () => await Promise.resolve(tokenResponse('other-client-token')));
+    tokenFetch.mockResolvedValueOnce(tokenResponse('first-client-token', 10));
+    await client.getAccessToken(identity);
+
+    vi.advanceTimersByTime(10_000);
+    const token = await new OpenIdAppIdentityClient(otherHttpClient).getAccessToken(identity);
+
+    expect(Redacted.value(token)).toBe('other-client-token');
+    expect(otherHttpClient.instrumentedFetch).toHaveBeenCalledExactlyOnceWith('http.client.app-identity.token.posts', tokenEndpoint, expect.anything());
+    expect(tokenFetch).toHaveBeenCalledOnce();
     expect(discoveryFetch).toHaveBeenCalledOnce();
   });
 
@@ -286,8 +366,11 @@ describe('OpenIdAppIdentityClient', () => {
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('short-token');
     vi.advanceTimersByTime(8_999);
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('short-token');
+    await flushBackgroundRefresh();
     expect(tokenFetch).toHaveBeenCalledOnce();
     vi.advanceTimersByTime(1);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('short-token');
+    await flushBackgroundRefresh();
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('next-token');
     expect(tokenFetch).toHaveBeenCalledTimes(2);
   });
@@ -306,6 +389,8 @@ describe('OpenIdAppIdentityClient', () => {
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('short-token');
     expect(tokenFetch).toHaveBeenCalledOnce();
     vi.advanceTimersByTime(1);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('short-token');
+    await flushBackgroundRefresh();
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('next-token');
     expect(discoveryFetch).toHaveBeenCalledOnce();
   });
@@ -323,6 +408,8 @@ describe('OpenIdAppIdentityClient', () => {
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('slow-token');
     expect(tokenFetch).toHaveBeenCalledOnce();
     vi.advanceTimersByTime(1);
+    expect(Redacted.value(await client.getAccessToken(identity))).toBe('slow-token');
+    await flushBackgroundRefresh();
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('next-token');
     expect(tokenFetch).toHaveBeenCalledTimes(2);
   });
@@ -339,18 +426,12 @@ describe('OpenIdAppIdentityClient', () => {
       name: 'AppError',
       errorCode: ErrorCodes.AUTH_OIDC_APP_IDENTITY_TOKEN_EXPIRED,
     });
+    vi.advanceTimersByTime(FAILURE_TTL_MS);
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('next-token');
     expect(tokenFetch).toHaveBeenCalledTimes(2);
   });
 
-  it.each(['cold', 'refresh'])('shares a %s failure without caching it or serving a stale token', async (state) => {
-    if (state === 'refresh') {
-      tokenFetch.mockResolvedValueOnce(tokenResponse('old-token', 10));
-      await client.getAccessToken(identity);
-      vi.advanceTimersByTime(9_001);
-      tokenFetch.mockClear();
-    }
-
+  it('shares a cold failure briefly, rediscovers the endpoint, and recovers after the failure window', async () => {
     const pending = deferredResponse();
     tokenFetch.mockImplementationOnce(pending.fetch);
     const callers = Array.from({ length: 100 }, async () => await client.getAccessToken({ ...identity, issuer: new URL(identity.issuer) }));
@@ -362,10 +443,15 @@ describe('OpenIdAppIdentityClient', () => {
     expect(results.every((result) => result.status === 'rejected')).toBe(true);
     expect(inspect(results)).not.toMatch(/secret|access-token|response-body/);
     expect(tokenFetch).toHaveBeenCalledOnce();
+
+    await expect(client.getAccessToken(identity)).rejects.toThrow('App identity token acquisition failed.');
+    expect(tokenFetch).toHaveBeenCalledOnce();
+
+    vi.advanceTimersByTime(FAILURE_TTL_MS);
     tokenFetch.mockResolvedValueOnce(tokenResponse('recovered-token'));
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('recovered-token');
     expect(tokenFetch).toHaveBeenCalledTimes(2);
-    expect(discoveryFetch).toHaveBeenCalledOnce();
+    expect(discoveryFetch).toHaveBeenCalledTimes(2);
   });
 
   it('gives concurrent callers their own correlation ID when acquisition fails', async () => {
@@ -408,6 +494,7 @@ describe('OpenIdAppIdentityClient', () => {
     expect(inspect(results)).not.toMatch(/secret|response-body/);
     expect(discoveryFetch).toHaveBeenCalledOnce();
     expect(tokenFetch).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(FAILURE_TTL_MS);
     tokenFetch.mockResolvedValueOnce(tokenResponse());
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('access-token');
     expect(discoveryFetch).toHaveBeenCalledTimes(2);
@@ -417,6 +504,7 @@ describe('OpenIdAppIdentityClient', () => {
     discoveryFetch.mockResolvedValueOnce(metadataResponse('https://unexpected.example.test'));
     await expect(client.getAccessToken(identity)).rejects.toThrow('App identity token acquisition failed.');
     expect(tokenFetch).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(FAILURE_TTL_MS);
     tokenFetch.mockResolvedValueOnce(tokenResponse());
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('access-token');
     expect(discoveryFetch).toHaveBeenCalledTimes(2);
@@ -443,9 +531,9 @@ describe('OpenIdAppIdentityClient', () => {
     expect(error).toBeInstanceOf(AppError);
     expect(inspect(error)).not.toContain('secret');
     expect(error).toHaveProperty('cause', undefined);
+    vi.advanceTimersByTime(FAILURE_TTL_MS);
     expect(Redacted.value(await client.getAccessToken(identity))).toBe('access-token');
     expect(tokenFetch).toHaveBeenCalledTimes(2);
-    expect(discoveryFetch).toHaveBeenCalledOnce();
   });
 
   it('reports an invalid bearer token with an application error code', async () => {
