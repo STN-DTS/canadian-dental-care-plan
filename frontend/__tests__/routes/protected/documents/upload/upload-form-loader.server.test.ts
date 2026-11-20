@@ -13,6 +13,7 @@ import { loadDocumentUploadState, resetDocumentUploadState, updateDocumentUpload
 import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
+import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';
 import { loader } from '~/routes/protected/documents/upload/upload-form-loader.server';
 
 vi.mock(import('~/.server/context/user-context'));
@@ -31,16 +32,22 @@ const state: DocumentUploadState = {
   ],
 };
 const emptyState: DocumentUploadState = { id: uploadId, status: 'initialized', documents: [] };
+const sortedDocumentTypes = [
+  { id: 'receipt', code: '001', name: 'Receipt', status: EVIDENTIARY_DOCUMENT_TYPE_STATUS.active },
+  { id: 'other', code: '998', name: 'Other', status: EVIDENTIARY_DOCUMENT_TYPE_STATUS.active },
+];
+const listAndSortLocalizedEvidentiaryDocumentTypesByStatus = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  listAndSortLocalizedEvidentiaryDocumentTypesByStatus.mockResolvedValue(sortedDocumentTypes);
   vi.mocked(loadDocumentUploadState).mockReturnValue(state);
   vi.mocked(updateDocumentUploadState).mockReturnValue(emptyState);
   vi.mocked(resetDocumentUploadState).mockReturnValue(emptyState);
   vi.mocked(getLocale).mockReturnValue('en');
   vi.mocked(getFixedT).mockResolvedValue(mockFn<Awaited<ReturnType<typeof getFixedT>>>().mockReturnValue('Upload documents'));
   vi.mocked(getUser).mockReturnValue(mock<ReturnType<typeof getUser>>({ id: 'user' }));
-  appContainer.get.calledWith(TYPES.EvidentiaryDocumentTypeService).mockReturnValue({ listLocalizedEvidentiaryDocumentTypesByStatus: vi.fn().mockResolvedValue([]) });
+  appContainer.get.calledWith(TYPES.EvidentiaryDocumentTypeService).mockReturnValue({ listAndSortLocalizedEvidentiaryDocumentTypesByStatus });
   appContainer.get.calledWith(TYPES.ClientConfig).mockReturnValue({ SCCH_BASE_URI: 'http://localhost/dashboard' });
   appContainer.get.calledWith(TYPES.AuditService).mockReturnValue({ createAudit: vi.fn() });
 });
@@ -71,5 +78,14 @@ describe('upload form loader reset handling', () => {
     expect(updateDocumentUploadState).not.toHaveBeenCalled();
     expect(result.documentUploadState).toEqual(emptyState);
     expect(loadDocumentUploadState).not.toHaveBeenCalled();
+  });
+});
+
+describe('upload form loader document types', () => {
+  it('returns active document types in the sorted order provided by the service', async () => {
+    const result = await loader(createArgs('document'));
+
+    expect(listAndSortLocalizedEvidentiaryDocumentTypesByStatus).toHaveBeenCalledExactlyOnceWith(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, 'en');
+    expect(result.documentTypes).toEqual(sortedDocumentTypes);
   });
 });

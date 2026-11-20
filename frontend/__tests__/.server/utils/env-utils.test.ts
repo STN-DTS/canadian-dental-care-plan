@@ -98,6 +98,24 @@ describe('getEnv secret values', () => {
     expect(() => getEnv()).toThrow('Invalid application configuration');
   });
 
+  it('defaults the Other evidentiary document type code to 998', () => {
+    vi.stubEnv('EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER', undefined);
+
+    expect(getEnv().EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER).toBe('998');
+  });
+
+  it('keeps the Other evidentiary document type code as a trimmed string with leading zeros', () => {
+    vi.stubEnv('EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER', ' 0998 ');
+
+    expect(getEnv().EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER).toBe('0998');
+  });
+
+  it('rejects a blank Other evidentiary document type code', () => {
+    vi.stubEnv('EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER', '  ');
+
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+
   it('uses the mock document upload provider independently of other service mocks', () => {
     vi.stubEnv('ENABLED_MOCKS', 'cct,code-tables');
 

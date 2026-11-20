@@ -291,7 +291,8 @@ test.describe('confirmation access and partial completion', () => {
     await uploadPage.removeFile(uploadFailureName);
     await uploadPage.finishButton.click();
     await submittedPage.waitForConfirmation();
-    await expect(submittedPage.submittedFiles).toHaveText(pairs(['evidence.txt']));
+    // partialUpload() selects the first option, which is alphabetical.
+    await expect(submittedPage.submittedFiles).toHaveText(['Filename evidence.txt, (document type Benefit Provider Letter)']);
     await expect(submittedPage.main.getByText(uploadFailureName, { exact: true })).toHaveCount(0);
   });
 

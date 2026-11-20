@@ -108,6 +108,32 @@ test.describe('access and lifecycle', () => {
 });
 
 test.describe('selection and editing', () => {
+  const sortedTypeLabels = {
+    en: ['Benefit Provider Letter', 'Canadian Dental Care Plan Eligibility Review Form', 'Employer Letter', 'Employer/Benefit Provider Email', 'Multiple evidence items', 'Record of Employment (ROE)', 'Other'],
+    fr: [
+      'Courriel – employeur/fournisseur de services',
+      'Éléments de preuve multiples',
+      'Formulaire d’examen de l’admissibilité des membres du Régime canadien de soins dentaires',
+      'Lettre – employeur',
+      'Lettre – fournisseur de prestations',
+      'Relevé d’emploi (RE)',
+      'Autre',
+    ],
+  } as const;
+
+  for (const locale of ['en', 'fr'] as const) {
+    test.describe(`document type order ${locale}`, () => {
+      test.use({ uploadLocale: locale });
+
+      test('lists active document types alphabetically with Other last', async ({ uploadPage }) => {
+        await uploadPage.addFile();
+        const options = uploadPage.item('evidence.txt').getByRole('combobox', { name: uploadPage.copy.type }).locator('option');
+        await expect(options.first()).toHaveAttribute('value', '');
+        expect((await options.allTextContents()).slice(1)).toEqual(sortedTypeLabels[locale]);
+      });
+    });
+  }
+
   test('adds a pending file with an empty type and focuses it', async ({ uploadPage }) => {
     const { page } = uploadPage;
     await uploadPage.addFile();

@@ -21,7 +21,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
-  const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listLocalizedEvidentiaryDocumentTypesByStatus(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, locale);
+  const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listAndSortLocalizedEvidentiaryDocumentTypesByStatus(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, locale);
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
   const user = getUser(context);
   appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload', { userId: user.id });
