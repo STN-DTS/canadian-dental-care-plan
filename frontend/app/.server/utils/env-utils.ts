@@ -63,6 +63,9 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
   BENEFIT_APPLICATION_CHANNEL_CODE_PUBLIC: z.string().trim().nonempty().default("775170001"),
   BENEFIT_APPLICATION_CHANNEL_CODE_PROTECTED: z.string().trim().nonempty().default("775170004"),
 
+  // evidentiary document type codes
+  EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER: z.string().trim().nonempty().default("998"),
+
   // province/territory lookup identifiers
   ALBERTA_PROVINCE_ID: z.string().trim().nonempty().default("3b17d494-35b3-eb11-8236-0022486d8d5f"),
   BRITISH_COLUMBIA_PROVINCE_ID: z.string().trim().nonempty().default("9c440baa-35b3-eb11-8236-0022486d8d5f"),

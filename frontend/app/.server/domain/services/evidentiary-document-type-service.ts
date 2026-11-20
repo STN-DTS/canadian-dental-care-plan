@@ -60,6 +60,15 @@ export interface EvidentiaryDocumentTypeService {
   listLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>>;
 
   /**
+   * Retrieves localized evidentiary document types with the specified status, sorted by name with the configured "Other" type last.
+   *
+   * @param status - The status of the evidentiary document types to retrieve.
+   * @param locale - The desired locale (e.g., 'en' or 'fr').
+   * @returns Sorted localized evidentiary document type DTOs with the specified status.
+   */
+  listAndSortLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>>;
+
+  /**
    * Retrieves a specific evidentiary document type by its ID in the specified locale.
    *
    * @param id - The ID of the evidentiary document type to retrieve.
@@ -75,12 +84,12 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
   private readonly log: Logger;
   private readonly evidentiaryDocumentTypeDtoMapper: EvidentiaryDocumentTypeDtoMapper;
   private readonly evidentiaryDocumentTypeRepository: EvidentiaryDocumentTypeRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>;
 
   constructor(
     @inject(TYPES.EvidentiaryDocumentTypeDtoMapper) evidentiaryDocumentTypeDtoMapper: EvidentiaryDocumentTypeDtoMapper,
     @inject(TYPES.EvidentiaryDocumentTypeRepository) evidentiaryDocumentTypeRepository: EvidentiaryDocumentTypeRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>,
   ) {
     this.log = createLogger('DefaultEvidentiaryDocumentTypeService');
     this.evidentiaryDocumentTypeDtoMapper = evidentiaryDocumentTypeDtoMapper;
@@ -160,6 +169,24 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
     const localizedEvidentiaryDocumentTypeDtos = this.evidentiaryDocumentTypeDtoMapper.mapEvidentiaryDocumentTypeDtosToEvidentiaryDocumentTypeLocalizedDtos(evidentiaryDocumentTypeDtos, locale);
     this.log.trace('Returning localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: localizedEvidentiaryDocumentTypeDtos.length });
     return localizedEvidentiaryDocumentTypeDtos;
+  }
+
+  async listAndSortLocalizedEvidentiaryDocumentTypesByStatus(status: EvidentiaryDocumentTypeStatus, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentTypeLocalizedDto>> {
+    this.log.trace('Getting and sorting localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale });
+    const localizedEvidentiaryDocumentTypeDtos = await this.listLocalizedEvidentiaryDocumentTypesByStatus(status, locale);
+    const otherCode = this.serverConfig.EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER;
+    const sortedLocalizedEvidentiaryDocumentTypeDtos = localizedEvidentiaryDocumentTypeDtos.toSorted((a, b) => {
+      const aIsOther = a.code === otherCode;
+      const bIsOther = b.code === otherCode;
+
+      if (aIsOther !== bIsOther) {
+        return aIsOther ? 1 : -1;
+      }
+
+      return a.name.localeCompare(b.name, locale);
+    });
+    this.log.trace('Returning sorted localized evidentiary document types', { [ATTR_CDCP_LOCALE]: locale, [ATTR_CDCP_REFERENCE_COUNT]: sortedLocalizedEvidentiaryDocumentTypeDtos.length });
+    return sortedLocalizedEvidentiaryDocumentTypeDtos;
   }
 
   async getLocalizedEvidentiaryDocumentTypeById(id: string, locale: AppLocale): Promise<EvidentiaryDocumentTypeLocalizedDto> {
