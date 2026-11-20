@@ -176,7 +176,7 @@ export class DefaultApplicantRepository implements ApplicantRepository {
       throwAppError('Failed to POST to /applicant. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_APPLICANT_FIND_BY_SIN_RATE_LIMITED);
     }
 
-    throwAppError('SIN applicant lookup failed.', ErrorCodes.API_APPLICANT_FIND_BY_SIN_FAILED);
+    throwAppError('SIN applicant lookup failed.', ErrorCodes.API_APPLICANT_FIND_BY_SIN_FAILED, { httpStatusCode: response.status });
   }
 
   getMetadata(): Record<string, string> {

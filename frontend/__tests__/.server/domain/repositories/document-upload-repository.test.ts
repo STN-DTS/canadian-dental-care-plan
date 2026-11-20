@@ -193,7 +193,7 @@ describe('DefaultDocumentUploadRepository', () => {
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
       message: 'Document upload returned an invalid response (HTTP 400).',
-      meta: { httpStatusCode: 400 },
+      httpStatusCode: 400,
     });
   });
 
@@ -214,7 +214,7 @@ describe('DefaultDocumentUploadRepository', () => {
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
-      meta: { httpStatusCode: status },
+      httpStatusCode: status,
       message: `Document upload failed with HTTP ${status}.`,
     });
   });
@@ -227,7 +227,7 @@ describe('DefaultDocumentUploadRepository', () => {
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
-      meta: { httpStatusCode: 503 },
+      httpStatusCode: 503,
     });
     expect(cancel).toHaveBeenCalledExactlyOnceWith();
     expect(response.bodyUsed).toBe(true);
@@ -241,7 +241,7 @@ describe('DefaultDocumentUploadRepository', () => {
     await expect(repository.uploadDocument(uploadRequest)).rejects.toMatchObject({
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
-      meta: { httpStatusCode: 503 },
+      httpStatusCode: 503,
     });
     expect(cancel).toHaveBeenCalledExactlyOnceWith();
   });
@@ -256,7 +256,7 @@ describe('DefaultDocumentUploadRepository', () => {
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
       message: 'Document upload returned an invalid response (HTTP 200).',
-      meta: { httpStatusCode: 200 },
+      httpStatusCode: 200,
     });
   });
 
@@ -283,7 +283,7 @@ describe('DefaultDocumentUploadRepository', () => {
       name: 'AppError',
       errorCode: ErrorCodes.API_DOC_UPLOAD_FAILED,
       message: `Document upload returned an invalid response (HTTP ${response.status}).`,
-      meta: { httpStatusCode: response.status },
+      httpStatusCode: response.status,
     });
   });
 

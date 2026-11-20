@@ -93,13 +93,13 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
         // Preserve the original HTTP failure if cleanup fails.
       });
 
-      throw throwAppError(`Document upload failed with HTTP ${response.status}.`, ErrorCodes.API_DOC_UPLOAD_FAILED, { meta: { httpStatusCode: response.status } });
+      throw throwAppError(`Document upload failed with HTTP ${response.status}.`, ErrorCodes.API_DOC_UPLOAD_FAILED, { httpStatusCode: response.status });
     }
 
     try {
       return uploadResponseSchema.parse(await response.json());
     } catch {
-      throwAppError(`Document upload returned an invalid response (HTTP ${response.status}).`, ErrorCodes.API_DOC_UPLOAD_FAILED, { meta: { httpStatusCode: response.status } });
+      throwAppError(`Document upload returned an invalid response (HTTP ${response.status}).`, ErrorCodes.API_DOC_UPLOAD_FAILED, { httpStatusCode: response.status });
     }
   }
 
@@ -141,7 +141,7 @@ export class DefaultDocumentUploadRepository implements DocumentUploadRepository
       if (!response.ok && response.status !== HttpStatusCodes.BAD_REQUEST) {
         await response.text();
 
-        throwAppError('Scan call failed, preserving scan catch.', ErrorCodes.API_DOC_SCAN_FAILED, { meta: { httpStatusCode: response.status } });
+        throwAppError('Scan call failed, preserving scan catch.', ErrorCodes.API_DOC_SCAN_FAILED, { httpStatusCode: response.status });
       }
 
       return scanResponseSchema.parse(await response.json());

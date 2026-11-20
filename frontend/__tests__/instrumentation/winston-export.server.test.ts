@@ -23,11 +23,6 @@ const logRecordSchema = z.object({
   eventName: z.string().optional(),
   spanContext: z.object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number() }).optional(),
 });
-const documentFailureRecordSchema = logRecordSchema.extend({
-  body: z.enum(['Document upload failed during authentication or request.', 'Document upload failed with HTTP 404.']),
-  attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.strictObject({ httpStatusCode: z.number() })])),
-});
-
 test('the application preload preserves event schemas, severity and privacy through its real log sinks', async () => {
   const auditDirectory = await mkdtemp(join(tmpdir(), 'cdcp-audit-export-'));
   const payloads: Buffer[] = [];
@@ -72,6 +67,7 @@ test('the application preload preserves event schemas, severity and privacy thro
           import express from 'express';
           import { once } from 'node:events';
           import { Headers } from 'undici';
+          import { DefaultApplicantRepository } from './app/.server/domain/repositories/applicant-repository.ts';
           import { DocumentUploadRepositoryDefaultConfig } from './app/.server/domain/repositories/configs/document-upload-repository-default-config.ts';
           import { DefaultDocumentUploadRepository } from './app/.server/domain/repositories/document-upload-repository-default.ts';
           import { DefaultAuditService } from './app/.server/domain/services/audit-service.ts';
@@ -113,6 +109,30 @@ test('the application preload preserves event schemas, severity and privacy thro
           assert.equal(winston.transports.length, 3);
           singleton('winstonLogger', () => winston);
           const logger = new DefaultLogger(winston, 'winston-export-test');
+          const applicantErrors = [];
+          for (const status of [201, 302, 400, 503]) {
+            const applicantRepository = new DefaultApplicantRepository({
+              INTEROP_API_BASE_URI: 'https://interop.example.test',
+              INTEROP_APPLICANT_PATHNAME: '/applicant',
+              INTEROP_API_SUBSCRIPTION_KEY: Redacted.make('applicant-subscription-key-canary'),
+            }, {
+              instrumentedFetch: async () => new Response('applicant-response-body-canary person@applicant.invalid 999999998 applicant-token-canary', {
+                status,
+                statusText: 'applicant-status-text-canary',
+                headers: { 'X-Canary': 'applicant-header-canary' },
+              }),
+            });
+            await assert.rejects(applicantRepository.findApplicantBySin({
+              Applicant: { PersonSINIdentification: { IdentificationID: '999999998' } },
+            }), error => {
+              assert.equal(error.errorCode, ErrorCodes.API_APPLICANT_FIND_BY_SIN_FAILED);
+              assert.equal(error.httpStatusCode, status);
+              assert.equal(error.meta, undefined);
+              applicantErrors.push(error);
+              logger.error(error, { 'error.type': 'AppError' });
+              return true;
+            });
+          }
           logger.error('Synthetic Redis connection failed', {
             'error.type': redisErrorType(Object.assign(new Error('operational-person@example.test operational-token-canary 000-000-000'), { code: 'ECONNREFUSED' })),
             [ATTR_CDCP_ERROR_CODE]: operationalErrorCode(Object.assign(new Error('operational-token-canary'), { code: 'ECONNREFUSED' })),
@@ -234,6 +254,9 @@ test('the application preload preserves event schemas, severity and privacy thro
           });
           const developmentLogger = new DefaultLogger(developmentWinston, 'document-upload-dev-test');
           developmentLogger.error(documentResult.error, { 'error.type': 'document_upload_network' });
+          for (const error of applicantErrors) {
+            developmentLogger.error(error, { 'error.type': 'AppError' });
+          }
           const developmentFinished = once(developmentWinston, 'finish');
           developmentWinston.end();
           await developmentFinished;
@@ -326,7 +349,7 @@ test('the application preload preserves event schemas, severity and privacy thro
     const records = stdout
       .split('\n')
       .filter((line) => line.startsWith(recordPrefix))
-      .map((line) => z.union([logRecordSchema, documentFailureRecordSchema]).parse(JSON.parse(line.slice(recordPrefix.length))));
+      .map((line) => logRecordSchema.parse(JSON.parse(line.slice(recordPrefix.length))));
     const spanPrefix = 'OTEL_TEST_SPAN:';
     const spanSchema = z.object({
       name: z.string(),
@@ -367,6 +390,19 @@ test('the application preload preserves event schemas, severity and privacy thro
       .map((line) => jsonRecordSchema.parse(JSON.parse(line)));
     const consoleOutput = consoleRecords.map((record) => JSON.stringify(record)).join('\n');
 
+    for (const status of [201, 302, 400, 503]) {
+      const message = 'SIN applicant lookup failed.';
+      const record = records.find((entry) => entry.body === message && entry.attributes.httpStatusCode === status);
+      expect(record).toMatchObject({
+        severityNumber: SeverityNumber.ERROR,
+        severityText: 'error',
+        attributes: { 'error.type': 'AppError', errorCode: 'API-APPLICANT-0004', httpStatusCode: status },
+      });
+      expect(record?.eventName).toBeUndefined();
+      expect(Object.keys(record?.attributes ?? {}).sort()).toEqual(['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'httpStatusCode', 'label', 'timestamp'].sort());
+      expect(consoleRecords).toContainEqual(expect.objectContaining({ message, errorCode: 'API-APPLICANT-0004', httpStatusCode: status }));
+    }
+
     expect(exported).toContain('Synthetic dependency request finished');
     expect(exported).toContain('Synthetic HTTP request completed');
     expect(exported).toContain('org.event.category');
@@ -380,10 +416,8 @@ test('the application preload preserves event schemas, severity and privacy thro
     const documentFailures = records.filter((record) => record.body === 'Document upload failed during authentication or request.');
     expect(documentFailures).toHaveLength(3);
     const httpFailure = records.find((record) => record.body === 'Document upload failed with HTTP 404.');
-    expect(httpFailure).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { 'error.type': 'document_upload_failed', 'http.response.status_code': 500, errorCode: 'API-DOC-0005', meta: { httpStatusCode: 404 } } });
-    expect(Object.keys(httpFailure?.attributes ?? {}).sort()).toEqual(
-      ['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'http.response.status_code', 'httpStatusCode', 'label', 'meta', 'timestamp'].sort(),
-    );
+    expect(httpFailure).toMatchObject({ severityNumber: SeverityNumber.ERROR, severityText: 'error', attributes: { 'error.type': 'document_upload_failed', 'http.response.status_code': 404, errorCode: 'API-DOC-0005', httpStatusCode: 404 } });
+    expect(Object.keys(httpFailure?.attributes ?? {}).sort()).toEqual(['correlationId', 'error.type', 'errorCode', 'exception.message', 'exception.stacktrace', 'exception.type', 'http.response.status_code', 'httpStatusCode', 'label', 'timestamp'].sort());
     const httpEndpoint = records.find((record) => record.body === 'HTTP response returned an error status');
     expect(httpEndpoint).toMatchObject({
       severityNumber: SeverityNumber.WARN,
@@ -443,6 +477,12 @@ test('the application preload preserves event schemas, severity and privacy thro
         'document-filename-canary',
         'document-response-body-canary',
         'document-undeclared-field-canary',
+        'applicant-subscription-key-canary',
+        'applicant-response-body-canary',
+        'person@applicant.invalid',
+        'applicant-token-canary',
+        'applicant-status-text-canary',
+        'applicant-header-canary',
         'sink-person',
         'sink-token-canary',
         'query-token-canary',

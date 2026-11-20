@@ -325,7 +325,10 @@ describe('withAppErrorResponses', () => {
     { description: 'ordinary errors', error: new Error('synthetic-private-message') },
     { description: 'other thrown objects', error: { custom: 'unrelated' } },
     { description: 'malformed AppErrors', error: Object.assign(new Error('malformed'), { name: 'AppError' }) },
-    { description: 'AppErrors with a non-error status', error: new AppError('invalid status', ErrorCodes.DEV_TEST_ERROR, { httpStatusCode: HttpStatusCodes.NO_CONTENT }) },
+    ...[200, 204, 302].map((httpStatusCode) => ({
+      description: `AppErrors with non-error HTTP status ${httpStatusCode}`,
+      error: new AppError('invalid status', ErrorCodes.DEV_TEST_ERROR, { httpStatusCode }),
+    })),
     ...[399, 600, 500.5, NaN].map((httpStatusCode) => ({
       description: `AppErrors with HTTP status ${httpStatusCode}`,
       error: Object.assign(new AppError('invalid status', ErrorCodes.DEV_TEST_ERROR), { httpStatusCode }),

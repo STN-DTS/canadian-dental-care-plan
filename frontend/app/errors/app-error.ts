@@ -1,6 +1,5 @@
 import type { Primitive } from 'type-fest';
 
-import type { HttpStatusCode } from '~/constants/http-status-codes';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { isErrorCode } from '~/errors/error-codes';
 import type { ErrorCode } from '~/errors/error-codes';
@@ -12,9 +11,10 @@ export type AppErrorOptions = ErrorOptions & {
   correlationId?: string;
 
   /**
-   * The HTTP status code associated with this error.
+   * The HTTP status associated with this error, defaulting to 500. The route error
+   * boundary uses it as the frontend response status only when it is a 4xx or 5xx integer.
    */
-  httpStatusCode?: HttpStatusCode;
+  httpStatusCode?: number;
 
   /**
    * Additional metadata associated with this error.
@@ -40,9 +40,9 @@ export class AppError extends Error {
   public readonly correlationId: string;
 
   /**
-   * The HTTP status code associated with this error.
+   * The HTTP status associated with this error.
    */
-  public readonly httpStatusCode: HttpStatusCode;
+  public readonly httpStatusCode: number;
 
   /**
    * Additional metadata associated with this error.

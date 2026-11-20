@@ -464,9 +464,13 @@ returned the status; see
 A 404 can mean that the base URI, the route, or the gateway (APIM) configuration
 is wrong.
 
-The upstream status is in `meta.httpStatusCode`; the enclosing `AppError`
-defaults to HTTP 500, so its `httpStatusCode` and logged
-`http.response.status_code` can differ from the downstream status.
+For upload HTTP failures or invalid responses, `AppError.httpStatusCode`
+carries the actual upstream status, including 2xx and 3xx statuses, and the
+service uses it for the `http.response.status_code` diagnostic. Failures without
+an upstream response retain the default HTTP 500. The route error boundary
+uses only 4xx/5xx AppError statuses as frontend response statuses; the
+document-upload service instead catches upload errors and returns its existing
+error outcome.
 
 Follow the failing request's trace from `DefaultDocumentUploadRepository.uploadDocument`
 through `OpenIdAppIdentityClient.getAccessToken` to the dependency spans. A cached

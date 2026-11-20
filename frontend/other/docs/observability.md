@@ -260,6 +260,13 @@ fields. `AppError` extends `Error`, so its message and stack are retained.
 Aborted requests remain suppressed. Ordinary errors without an AppError ID
 cannot be looked up by this occurrence ID.
 
+SIN applicant lookup failures (`API-APPLICANT-0004`) carry the actual upstream
+status in `AppError.httpStatusCode`. The route error boundary uses it as the
+frontend response status for 4xx/5xx errors; non-error statuses are not adapted
+and follow React Router's error handling. The 429 and exhausted 502 retry branches
+have separate errors. Response bodies, status text, headers, and applicant data
+are not included.
+
 ### AppError code taxonomy
 
 Error codes use `DOMAIN-SUBDOMAIN-NNNN`. The domain identifies the capability:
