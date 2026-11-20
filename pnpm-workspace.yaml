@@ -85,7 +85,7 @@ catalog:
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   compression: 1.8.2
-  connect-redis: 10.0.0
+  connect-redis: 11.0.0
   content-disposition: 3.0.0
   cross-env: 10.1.0
   effect: 4.1.4
