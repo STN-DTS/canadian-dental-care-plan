@@ -16,7 +16,7 @@ spec:
       containers:
         - name: squid-proxy
           # Canonical publishes versioned Squid images as _edge; use the Ubuntu 24.04 LTS variant.
-          image: docker.io/ubuntu/squid:6.6-24.04_edge@sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
+          image: docker.io/ubuntu/squid:6.6-24.04_edge@sha256:d9c34c5ab74c6dd41cf1070d9b4221aac072e67e983527ca2d41512958f77506
           ports:
             - name: squid
               containerPort: 3128
