@@ -403,8 +403,8 @@ catalogs:
       specifier: 5.2.3
       version: 5.2.3
     jose:
-      specifier: 6.2.17
-      version: 6.2.17
+      specifier: 6.2.18
+      version: 6.2.18
     jsdom:
       specifier: 31.0.1
       version: 31.0.1
@@ -733,7 +733,7 @@ importers:
         version: 5.2.3
       jose:
         specifier: 'catalog:'
-        version: 6.2.17
+        version: 6.2.18
       libphonenumber-js:
         specifier: 'catalog:'
         version: 1.13.16
@@ -4344,8 +4344,8 @@ packages:
     resolution: {integrity: sha512-9FzQjJ7MATs1tSpnco1K6ayiYE3figslrXA72G2HQ/n76RzvYlofyi5QM+iX4YRs/pu3yzxlVQSST23+dMDknw==}
     engines: {node: '>= 0.6.0'}
 
-  jose@6.2.17:
-    resolution: {integrity: sha512-wOuK9V1yujQFH5S0ZWmLcDZN7+IKh9bUCC2ZPCf2HDlol3WWHy+PPyNjEI75FXRLMp3vDKQcupP59xhVU95hcg==}
+  jose@6.2.18:
+    resolution: {integrity: sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg==}
 
   js-tokens@10.0.0:
     resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
@@ -9231,7 +9231,7 @@ snapshots:
 
   jmespath@0.16.0: {}
 
-  jose@6.2.17: {}
+  jose@6.2.18: {}
 
   js-tokens@10.0.0: {}
 
@@ -9627,7 +9627,7 @@ snapshots:
 
   openid-client@6.9.0:
     dependencies:
-      jose: 6.2.17
+      jose: 6.2.18
       oauth4webapi: 3.8.8
 
   optionator@0.9.4:
