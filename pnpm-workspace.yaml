@@ -100,7 +100,7 @@ catalog:
   isbot: 5.2.3
   jose: 6.2.18
   jsdom: 31.0.1
-  libphonenumber-js: 1.13.16
+  libphonenumber-js: 1.13.17
   logform: 2.7.0
   markdown-to-jsx: 9.10.6
   micro-memoize: 5.2.2
