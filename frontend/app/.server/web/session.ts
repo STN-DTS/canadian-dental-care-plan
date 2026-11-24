@@ -59,7 +59,7 @@ type SessionTypeMap = {
         preferredMethodGovernmentOfCanada: string;
       }
   );
-  /** Single-use correlation values for an AUTH_PROVIDER=oidc sign-in attempt. */
+  /** Correlation values for an AUTH_PROVIDER=oidc sign-in attempt; removed at the callback. */
   oidcAuthCorrelation: AuthCorrelation;
   programApplicant: ProgramApplicantDto;
   userInfoToken: UserinfoToken;

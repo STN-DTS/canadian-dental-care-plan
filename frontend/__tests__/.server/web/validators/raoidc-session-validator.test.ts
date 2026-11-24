@@ -111,7 +111,7 @@ describe('DefaultRaoidcSessionValidator', () => {
 
       const result = await oidcValidator.validateRaoidcSession({ session: mockSession });
 
-      expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; RAOIDC is not the configured auth provider [test-session-id]' });
+      expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; RAOIDC is not the configured auth provider' });
       expect(validateSession).not.toHaveBeenCalled();
     });
   });

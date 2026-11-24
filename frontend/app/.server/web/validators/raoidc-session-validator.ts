@@ -59,8 +59,8 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
     const { serverConfig } = this;
 
     if (serverConfig.AUTH_PROVIDER !== 'raoidc') {
-      this.log.debug('RAOIDC is not the configured auth provider', { [ATTR_SESSION_ID]: session.id });
-      return { isValid: false, errorMessage: `RAOIDC session validation failed; RAOIDC is not the configured auth provider [${session.id}]` };
+      this.log.debug('RAOIDC is not the configured auth provider');
+      return { isValid: false, errorMessage: 'RAOIDC session validation failed; RAOIDC is not the configured auth provider' };
     }
 
     const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = serverConfig;

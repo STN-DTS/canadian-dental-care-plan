@@ -8,7 +8,7 @@ import type { AuthProviderConfig } from '~/.server/auth/auth-provider-config-sch
 export type AuthProviderId = AuthProviderConfig['AUTH_PROVIDER'];
 
 /**
- * Single-use values for one sign-in attempt. Keep them server-side (in the session) and discard them at the callback.
+ * Values for one sign-in attempt. Keep them server-side (in the session) and discard them at the callback.
  */
 export interface AuthCorrelation {
   readonly state: string;

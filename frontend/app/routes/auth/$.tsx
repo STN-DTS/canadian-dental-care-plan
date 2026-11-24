@@ -256,7 +256,9 @@ async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('auth.callback.oidc.requests').add(1);
 
-  // Single use: removed before validation so a replayed or failed callback cannot reuse it.
+  // Removed before validation so a later or failed callback cannot reuse it. This is not atomic: overlapping requests
+  // can load the same session copy, and the provider's single-use code is what stops both from succeeding. Atomic
+  // consumption is needed once the callback creates a CDCP session (8845).
   const correlation = session.find('oidcAuthCorrelation');
   session.unset('oidcAuthCorrelation');
 
