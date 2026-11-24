@@ -8,8 +8,7 @@ import { mock } from 'vitest-mock-extended';
 import type { MockProxy } from 'vitest-mock-extended';
 
 import { DefaultRaoidcService } from '~/.server/auth/raoidc-service';
-import type { RaoidcService } from '~/.server/auth/raoidc-service';
-import type { ServerConfig } from '~/.server/configs';
+import type { DefaultRaoidcService_ServerConfig, RaoidcService } from '~/.server/auth/raoidc-service';
 import type { HttpClient } from '~/.server/http';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
@@ -37,7 +36,7 @@ vi.mock(import('~/.server/utils/raoidc-utils'));
 vi.mock(import('~/utils/string-utils'));
 
 describe('DefaultRaoidcService', () => {
-  const mockServerConfig: Pick<ServerConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID' | 'AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS' | 'AUTH_JWT_PRIVATE_KEY' | 'AUTH_LOGOUT_REDIRECT_URL' | 'HTTP_PROXY_URL'> = {
+  const mockServerConfig: DefaultRaoidcService_ServerConfig = {
     AUTH_RAOIDC_BASE_URL: 'https://example.com/auth',
     AUTH_RAOIDC_CLIENT_ID: 'mock_client_id',
     AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS: 10,

@@ -3,6 +3,7 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import type { AuthProviderConfig } from '~/.server/auth/auth-provider-config-schema';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { FetchFn, HttpClient } from '~/.server/http';
@@ -43,10 +44,10 @@ export interface RaoidcSessionValidator {
 @injectable()
 export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID' | 'HTTP_PROXY_URL'>;
+  private readonly serverConfig: Pick<ServerConfig, 'HTTP_PROXY_URL'> & AuthProviderConfig;
   private readonly fetchFn: FetchFn;
 
-  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID' | 'HTTP_PROXY_URL'>, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+  constructor(@inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'HTTP_PROXY_URL'> & AuthProviderConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultRaoidcSessionValidator');
     this.serverConfig = serverConfig;
     this.fetchFn = httpClient.getFetchFn({ proxyUrl: serverConfig.HTTP_PROXY_URL });
@@ -55,7 +56,14 @@ export class DefaultRaoidcSessionValidator implements RaoidcSessionValidator {
   @Traced()
   async validateRaoidcSession({ session }: ValidateRaoidcSessionParams): Promise<ValidateRaoidcSessionResult> {
     this.log.debug('Performing RAOIDC session validation', { [ATTR_SESSION_ID]: session.id });
-    const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = this.serverConfig;
+    const { serverConfig } = this;
+
+    if (serverConfig.AUTH_PROVIDER !== 'raoidc') {
+      this.log.debug('RAOIDC is not the configured auth provider', { [ATTR_SESSION_ID]: session.id });
+      return { isValid: false, errorMessage: `RAOIDC session validation failed; RAOIDC is not the configured auth provider [${session.id}]` };
+    }
+
+    const { AUTH_RAOIDC_BASE_URL, AUTH_RAOIDC_CLIENT_ID } = serverConfig;
 
     const idTokenOption = session.find('idToken');
 

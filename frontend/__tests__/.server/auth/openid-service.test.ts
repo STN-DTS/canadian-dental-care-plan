@@ -41,8 +41,6 @@ const providerJwk = { ...(await exportJWK(providerKeys.publicKey)), kid: 'provid
 
 type OidcServerConfig = Pick<ServerConfig, 'HTTP_PROXY_URL'> & {
   AUTH_PROVIDER: 'oidc';
-  AUTH_RAOIDC_BASE_URL: string;
-  AUTH_RAOIDC_CLIENT_ID: string;
   AUTH_OIDC_ISSUER_URL: string;
   AUTH_OIDC_CLIENT_ID: string;
   AUTH_OIDC_REDIRECT_URI: string;
@@ -55,8 +53,6 @@ function createConfig(overrides: Partial<OidcServerConfig> = {}): OpenIdServiceC
   return new OpenIdServiceConfig({
     HTTP_PROXY_URL: proxyUrl,
     AUTH_PROVIDER: 'oidc',
-    AUTH_RAOIDC_BASE_URL: '',
-    AUTH_RAOIDC_CLIENT_ID: '',
     AUTH_OIDC_ISSUER_URL: issuer,
     AUTH_OIDC_CLIENT_ID: clientId,
     AUTH_OIDC_REDIRECT_URI: redirectUri,

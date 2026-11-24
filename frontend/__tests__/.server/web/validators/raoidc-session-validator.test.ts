@@ -1,5 +1,5 @@
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import { Option } from 'effect';
+import { Option, Redacted } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockProxy } from 'vitest-mock-extended';
 import { mock } from 'vitest-mock-extended';
@@ -28,6 +28,7 @@ describe('DefaultRaoidcSessionValidator', () => {
     vi.mocked(createLogger).mockReturnValue(mockLogger);
 
     mockServerConfig = {
+      AUTH_PROVIDER: 'raoidc' as const,
       AUTH_RAOIDC_BASE_URL: 'https://auth.example.com',
       AUTH_RAOIDC_CLIENT_ID: 'client-id',
       HTTP_PROXY_URL: 'https://proxy.example.com',
@@ -88,6 +89,30 @@ describe('DefaultRaoidcSessionValidator', () => {
 
       expect(result).toEqual({ isValid: true });
       expect(mockLogger.debug).toHaveBeenCalledWith('Authentication check passed for RAOIDC session', { [ATTR_SESSION_ID]: 'test-session-id' });
+    });
+
+    it('should return isValid: false without contacting RAOIDC when another auth provider is configured', async () => {
+      const oidcValidator = new DefaultRaoidcSessionValidator(
+        {
+          AUTH_PROVIDER: 'oidc',
+          AUTH_OIDC_ISSUER_URL: 'https://isams.example.com/oauth2',
+          AUTH_OIDC_CLIENT_ID: 'client-id',
+          AUTH_OIDC_REDIRECT_URI: 'https://cdcp.example.com/auth/callback/oidc',
+          AUTH_OIDC_PRIVATE_KEY: Redacted.make('key'),
+          AUTH_OIDC_PRIVATE_KEY_ID: 'kid',
+          AUTH_OIDC_CLIENT_ASSERTION_AUDIENCE: 'token-endpoint',
+          HTTP_PROXY_URL: undefined,
+        },
+        mockHttpClient,
+      );
+      vi.mocked(validateSession).mockClear();
+      mockSession.find.calledWith('idToken').mockReturnValue(Option.some({ sid: 'session-id' } as IdToken));
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some({ mocked: true } as UserinfoToken));
+
+      const result = await oidcValidator.validateRaoidcSession({ session: mockSession });
+
+      expect(result).toEqual({ isValid: false, errorMessage: 'RAOIDC session validation failed; RAOIDC is not the configured auth provider [test-session-id]' });
+      expect(validateSession).not.toHaveBeenCalled();
     });
   });
 });

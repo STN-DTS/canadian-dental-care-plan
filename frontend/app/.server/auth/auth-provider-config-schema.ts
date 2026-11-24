@@ -45,10 +45,6 @@ const raoidcAuthProviderConfigSchema = z.object({
 const oidcAuthProviderConfigSchema = z.object({
   AUTH_PROVIDER: z.literal('oidc'),
 
-  // RAOIDC routes are disabled for this provider, so its settings are not required.
-  AUTH_RAOIDC_BASE_URL: z.string().trim().default(''),
-  AUTH_RAOIDC_CLIENT_ID: z.string().trim().default(''),
-
   /** HTTPS issuer identifier; discovery uses `<issuer>/.well-known/openid-configuration`. */
   AUTH_OIDC_ISSUER_URL: z
     .string()
@@ -72,5 +68,7 @@ const oidcAuthProviderConfigSchema = z.object({
 export const authProviderConfigSchema = z.discriminatedUnion('AUTH_PROVIDER', [raoidcAuthProviderConfigSchema, oidcAuthProviderConfigSchema]);
 
 export type AuthProviderConfig = z.infer<typeof authProviderConfigSchema>;
+
+export type RaoidcAuthProviderConfig = Extract<AuthProviderConfig, { AUTH_PROVIDER: 'raoidc' }>;
 
 export type OidcAuthProviderConfig = Extract<AuthProviderConfig, { AUTH_PROVIDER: 'oidc' }>;

@@ -2,6 +2,7 @@ import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 import { subtle } from 'node:crypto';
 
+import type { RaoidcAuthProviderConfig } from '~/.server/auth/auth-provider-config-schema';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { FetchFn, HttpClient } from '~/.server/http';
@@ -16,6 +17,10 @@ import type { ClientMetadata, IdToken, UserinfoToken } from '~/.server/utils/rao
 import * as raoidcUtils from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 import { expandTemplate } from '~/utils/string-utils';
+
+/** Bound only when AUTH_PROVIDER=raoidc, so the RAOIDC settings are always present. */
+export type DefaultRaoidcService_ServerConfig = Pick<ServerConfig, 'AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS' | 'AUTH_JWT_PRIVATE_KEY' | 'AUTH_LOGOUT_REDIRECT_URL' | 'HTTP_PROXY_URL'> &
+  Pick<RaoidcAuthProviderConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID'>;
 
 export interface RaoidcService {
   /**
@@ -104,13 +109,10 @@ interface SigninRequest {
 @injectable()
 export class DefaultRaoidcService implements RaoidcService {
   private readonly log: Logger;
-  private readonly serverConfig: Pick<ServerConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID' | 'AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS' | 'AUTH_JWT_PRIVATE_KEY' | 'AUTH_LOGOUT_REDIRECT_URL' | 'HTTP_PROXY_URL'>;
+  private readonly serverConfig: DefaultRaoidcService_ServerConfig;
   private readonly fetchFn: FetchFn;
 
-  constructor(
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'AUTH_RAOIDC_BASE_URL' | 'AUTH_RAOIDC_CLIENT_ID' | 'AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS' | 'AUTH_JWT_PRIVATE_KEY' | 'AUTH_LOGOUT_REDIRECT_URL' | 'HTTP_PROXY_URL'>,
-    @inject(TYPES.HttpClient) httpClient: HttpClient,
-  ) {
+  constructor(@inject(TYPES.ServerConfig) serverConfig: DefaultRaoidcService_ServerConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
     this.log = createLogger('DefaultRaoidcService');
     this.serverConfig = serverConfig;
     this.fetchFn = httpClient.getFetchFn({ proxyUrl: serverConfig.HTTP_PROXY_URL });

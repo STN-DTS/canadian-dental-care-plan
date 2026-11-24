@@ -283,9 +283,21 @@ describe('getEnv auth provider', () => {
 
     const config = getEnv();
     assert(config.AUTH_PROVIDER === 'oidc');
-    expect(config).toMatchObject({ AUTH_OIDC_CLIENT_ASSERTION_AUDIENCE: 'token-endpoint', AUTH_OIDC_CLIENT_ID: 'isams-client', AUTH_RAOIDC_BASE_URL: '' });
+    expect(config).toMatchObject({ AUTH_OIDC_CLIENT_ASSERTION_AUDIENCE: 'token-endpoint', AUTH_OIDC_CLIENT_ID: 'isams-client' });
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_BASE_URL');
     expect(Redacted.isRedacted(config.AUTH_OIDC_PRIVATE_KEY)).toBe(true);
     expect(JSON.stringify(config)).not.toContain('PRIVATE KEY');
+  });
+
+  it('drops RAOIDC settings when the OIDC provider is configured', () => {
+    configureOidc();
+    vi.stubEnv('AUTH_RAOIDC_BASE_URL', 'https://auth.example.test');
+    vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', 'client-id');
+
+    const config = getEnv();
+
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_BASE_URL');
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_CLIENT_ID');
   });
 
   it('accepts the OIDC private key as single-line base64 PKCS#8', () => {
