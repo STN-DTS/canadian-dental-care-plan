@@ -109,7 +109,7 @@ catalog:
   moderndash: 4.0.2
   openid-client: 6.9.1
   morgan: 1.12.1
-  npm-run-all2: 9.0.4
+  npm-run-all2: 9.1.0
   nprogress: 0.2.0
   oxfmt: 0.79.0
   oxlint: 1.94.0
