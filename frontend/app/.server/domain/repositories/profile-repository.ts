@@ -10,7 +10,6 @@ import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { buildEndpointUrl } from '~/.server/utils/url-utils';
-import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
 
 export interface ProfileRepository {
@@ -111,9 +110,8 @@ export class DefaultProfileRepository implements ProfileRepository {
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the update was not applied; do not replay it.
+        retryOnTransportError: false,
       },
     });
 
@@ -140,9 +138,8 @@ export class DefaultProfileRepository implements ProfileRepository {
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the update was not applied; do not replay it.
+        retryOnTransportError: false,
       },
     });
 
@@ -169,9 +166,8 @@ export class DefaultProfileRepository implements ProfileRepository {
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the update was not applied; do not replay it.
+        retryOnTransportError: false,
       },
     });
 
@@ -198,9 +194,8 @@ export class DefaultProfileRepository implements ProfileRepository {
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the update was not applied; do not replay it.
+        retryOnTransportError: false,
       },
     });
 
@@ -227,9 +222,8 @@ export class DefaultProfileRepository implements ProfileRepository {
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the update was not applied; do not replay it.
+        retryOnTransportError: false,
       },
     });
 

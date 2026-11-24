@@ -442,15 +442,18 @@ Validity starts at the token request, after discovery, and refresh occurs early 
 
 ### Retry behavior
 
-| Operation                   | Retryable statuses currently configured |
-| --------------------------- | --------------------------------------- |
-| EWDU `SPOUploadDocument`    | None; POST retries are disabled         |
-| EWDU `Scan`                 | 502, 503, 504                           |
-| Power Platform document GET | 502                                     |
+| Operation                            | Retryable statuses currently configured |
+| ------------------------------------ | --------------------------------------- |
+| EWDU `SPOUploadDocument`             | None; POST retries are disabled         |
+| EWDU `Scan`                          | 502, 503, 504                           |
+| Power Platform document GET          | 502                                     |
+| Power Platform metadata POST adapter | None; POST retries are disabled         |
 
 `Scan` retries network failures and the configured HTTP statuses using `INTEROP_API_MAX_RETRIES` and `INTEROP_API_BACKOFF_MS`. Health checks use the same policy.
 
 `SPOUploadDocument` does not retry HTTP requests. If EWDU saves a file but DTS loses the response, another request could save it twice. DTS reports a generic upload error because it cannot confirm the outcome.
+
+The Power Platform metadata POST adapter also does not retry HTTP responses or transport failures. The current EWDU upload flow does not invoke this adapter.
 
 User-initiated retries submit only pending files. Power Platform manages its own background-ingestion retries. DTS has no cross-system transaction, rollback, or saved flow that users can resume after a reload. The form loader resets an open flow's metadata.
 

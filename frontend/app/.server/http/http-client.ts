@@ -1,7 +1,7 @@
 import type { Attributes } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 import { inject } from 'inversify';
-import { retry } from 'moderndash';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { ProxyAgent, Request, fetch } from 'undici';
 import type { RequestInfo, RequestInit, Response } from 'undici';
 
@@ -54,7 +54,7 @@ interface RetryOptions {
 
   /**
    * Base delay in milliseconds before the first retry attempt.
-   * Subsequent retries will use exponential backoff.
+   * Retry N waits N * backoffMs.
    */
   backoffMs?: number;
 
@@ -65,6 +65,13 @@ interface RetryOptions {
   retryConditions?: {
     [statusCode: number]: (string | RegExp)[];
   };
+
+  /**
+   * Whether to retry when the request throws without a response (socket reset, timeout, etc.).
+   * Defaults to true. Set to false for requests that create or change records: the upstream may
+   * have processed the request even though no response arrived, so a retry can create a duplicate.
+   */
+  retryOnTransportError?: boolean;
 }
 
 /**
@@ -78,6 +85,8 @@ interface FetchRetryOptions {
   metricPrefix: string;
   retryConditions: Record<number, (string | RegExp)[]>;
 }
+
+type FetchWithRetriesOptions = FetchRetryOptions & Required<Pick<RetryOptions, 'retries' | 'backoffMs' | 'retryOnTransportError'>>;
 
 /**
  * Extended options for instrumented fetch calls.
@@ -177,7 +186,7 @@ export class DefaultHttpClient implements HttpClient {
     const { proxyUrl, timeout, retryOptions, expectedStatuses = [], ...init } = options;
 
     // Configure default retry options if not specified
-    const { retries = 0, backoffMs = 100, retryConditions = {} } = retryOptions ?? {};
+    const { retries = 0, backoffMs = 100, retryConditions = {}, retryOnTransportError = true } = retryOptions ?? {};
 
     const baseFetchFn = this.getFetchFn({ proxyUrl, timeout });
     let lastResponseStatus: number | undefined;
@@ -189,13 +198,7 @@ export class DefaultHttpClient implements HttpClient {
     };
 
     try {
-      const response = await retry(async () => await this.fetchWithRetryConditions({ fetchFn, input, init, metricPrefix, retryConditions }), {
-        maxRetries: retries,
-        backoff: (retries) => retries * backoffMs,
-        onRetry: (_error, attempt) => {
-          this.log.debug('Retrying HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_CDCP_RETRY_COUNT]: attempt, [ATTR_CDCP_RETRY_LIMIT]: retries });
-        },
-      });
+      const response = await this.fetchWithRetries({ fetchFn, input, init, metricPrefix, retryConditions, retries, backoffMs, retryOnTransportError });
 
       if (response.status >= 400 && !expectedStatuses.includes(response.status)) {
         // Callers own the failure outcome; this records which endpoint answered.
@@ -218,6 +221,24 @@ export class DefaultHttpClient implements HttpClient {
       }
 
       throw error;
+    }
+  }
+
+  private async fetchWithRetries(options: FetchWithRetriesOptions, attemptNumber = 1): Promise<Response> {
+    try {
+      return await this.fetchWithRetryConditions(options);
+    } catch (error) {
+      const { retries, backoffMs, retryOnTransportError, metricPrefix } = options;
+      const retryable = isAppError(error) ? isRetryConditionError(error) : retryOnTransportError;
+      const retryCount = attemptNumber - 1;
+
+      if (!retryable || retryCount >= retries) {
+        throw error;
+      }
+
+      await sleep((retryCount + 1) * backoffMs);
+      this.log.debug('Retrying HTTP request', { [ATTR_CDCP_OPERATION_NAME]: metricPrefix, [ATTR_CDCP_RETRY_COUNT]: retryCount + 1, [ATTR_CDCP_RETRY_LIMIT]: retries });
+      return await this.fetchWithRetries(options, attemptNumber + 1);
     }
   }
 

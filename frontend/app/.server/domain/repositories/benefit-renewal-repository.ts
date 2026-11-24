@@ -68,8 +68,9 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
         retryConditions: {
           [HttpStatusCodes.BAD_REQUEST]: [/A record with the same value for Application Confirmation Number already exists/],
-          [HttpStatusCodes.BAD_GATEWAY]: [],
         },
+        // A 502 or lost response does not prove the renewal was not created; replaying it creates duplicates.
+        retryOnTransportError: false,
       },
     });
 

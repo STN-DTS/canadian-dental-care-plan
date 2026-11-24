@@ -153,9 +153,8 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
       retryOptions: {
         retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
         backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_GATEWAY]: [],
-        },
+        // A 502 or lost response does not prove the document record was not created; do not replay it.
+        retryOnTransportError: false,
       },
     });
 

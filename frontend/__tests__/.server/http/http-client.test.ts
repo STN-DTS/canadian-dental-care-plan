@@ -14,6 +14,10 @@ import { AppError } from '~/errors/app-error';
 
 vi.unmock(import('~/.server/observability/decorator'));
 
+function transportError(code: string) {
+  return new TypeError('fetch failed', { cause: Object.assign(new Error('cause'), { code }) });
+}
+
 describe('DefaultHttpClient', () => {
   let httpClient: DefaultHttpClient;
 
@@ -385,6 +389,36 @@ describe('DefaultHttpClient', () => {
 
       expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledWith('example-metric', 500);
       expect(mockInstrumentationService.countHttpStatus).toHaveBeenCalledOnce();
+    });
+
+    it('retries transport failures by default', async () => {
+      mockFetch.mockRejectedValueOnce(transportError('UND_ERR_HEADERS_TIMEOUT')).mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+      const res = await httpClient.instrumentedFetch('example-metric', 'https://api.example.com', { method: 'POST', retryOptions: { retries: 1, backoffMs: 0 } });
+
+      expect(res.status).toBe(201);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(['UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_SOCKET', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT'])('does not replay a write after %s when transport retries are disabled', async (code) => {
+      const error = transportError(code);
+      mockFetch.mockRejectedValue(error);
+
+      await expect(httpClient.instrumentedFetch('example-metric', 'https://api.example.com', { method: 'POST', retryOptions: { retries: 3, backoffMs: 0, retryOnTransportError: false } })).rejects.toBe(error);
+
+      expect(mockFetch).toHaveBeenCalledOnce();
+    });
+
+    it('still retries a configured retry condition when transport retries are disabled', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('duplicate key', { status: 400 })).mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+      const res = await httpClient.instrumentedFetch('example-metric', 'https://api.example.com', {
+        method: 'POST',
+        retryOptions: { retries: 3, backoffMs: 0, retryOnTransportError: false, retryConditions: { 400: [/duplicate key/] } },
+      });
+
+      expect(res.status).toBe(201);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
   });
 });
