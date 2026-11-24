@@ -79,7 +79,7 @@ test.describe('without JavaScript', () => {
 });
 
 test.describe('on a mobile viewport', () => {
-  test.use({ viewport: { width: 375, height: 812 } });
+  test.use({ viewport: { width: 320, height: 812 } });
 
   test('the correlation ID and error code remain selectable and the error page does not scroll horizontally', async ({ page, statusCheckerPage }) => {
     await statusCheckerPage.checkStatus(failingStatusCheck);

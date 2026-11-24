@@ -19,9 +19,9 @@ describe('AppErrorDetails', () => {
     expect(view.container.querySelectorAll('dd')).toHaveLength(2);
     expect(screen.getByText(translation('correlationId'))).toBeVisible();
     expect(screen.getByText(translation('errorCode'))).toBeVisible();
-    expect(screen.getByText(error.correlationId)).toHaveClass('font-mono');
+    expect(screen.getByText(error.correlationId)).toHaveClass('font-mono', 'min-w-0', 'wrap-anywhere');
     expect(screen.getByText(error.correlationId)).not.toHaveClass('select-text');
-    expect(screen.getByText(error.errorCode)).toHaveClass('font-mono');
+    expect(screen.getByText(error.errorCode)).toHaveClass('font-mono', 'min-w-0', 'wrap-anywhere');
     expect(screen.getByText(error.errorCode)).not.toHaveClass('select-text');
     expect(view.container).not.toHaveTextContent(error.message);
     expect(view.container.querySelector('[tabindex], button, a')).toBeNull();

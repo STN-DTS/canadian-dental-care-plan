@@ -23,12 +23,12 @@ export function AppErrorDetails({ error, lng, className }: AppErrorDetailsProps)
     <DefinitionList layout="single-column" className={cn('mt-6 text-gray-800', className)}>
       {correlationId !== undefined && (
         <DefinitionListItem term={t(($) => $.serverError.correlationId, { lng })}>
-          <span className="font-mono">{correlationId}</span>
+          <span className="min-w-0 font-mono wrap-anywhere">{correlationId}</span>
         </DefinitionListItem>
       )}
       {errorCode !== undefined && (
         <DefinitionListItem term={t(($) => $.serverError.errorCode, { lng })}>
-          <span className="font-mono">{errorCode}</span>
+          <span className="min-w-0 font-mono wrap-anywhere">{errorCode}</span>
         </DefinitionListItem>
       )}
     </DefinitionList>
