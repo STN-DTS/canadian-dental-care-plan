@@ -61,7 +61,7 @@ export function Eligibility(props: EligibilityProps) {
   return (
     <Card className={cn('gap-2 p-0', className)}>
       <CardHeader className={cn('flex w-full items-center py-2', eligibilityBackgroundColors[type])}>
-        <CardTitle className="mb-0 flex w-full items-center justify-between text-base/normal">
+        <CardTitle className="mb-0 flex w-full items-center justify-between text-base">
           <span>{title ?? defaultTitles[type]}</span>
           {eligibilityIcons[type]}
         </CardTitle>
