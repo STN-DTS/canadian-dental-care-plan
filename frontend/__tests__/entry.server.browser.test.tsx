@@ -21,7 +21,7 @@ import { defaultsConfig } from '~/.server/logging/logging-config';
 import { createWinstonInstance } from '~/.server/logging/winston-factory';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
 import type { Session } from '~/.server/web/session';
-import { CorrelationDetail } from '~/components/correlation-detail';
+import { AppErrorDetails } from '~/components/app-error-details';
 import { handleError } from '~/entry.server';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -84,7 +84,7 @@ describe('server error diagnostics', () => {
     try {
       const html = renderToStaticMarkup(
         <I18nextProvider i18n={i18n}>
-          <CorrelationDetail error={JSON.parse(JSON.stringify(error))} />
+          <AppErrorDetails error={JSON.parse(JSON.stringify(error))} />
         </I18nextProvider>,
       );
       handleError(error, { ...mock<LoaderFunctionArgs>(), request: new Request('http://localhost/en'), context, params: {} });

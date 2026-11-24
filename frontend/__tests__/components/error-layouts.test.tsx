@@ -62,7 +62,7 @@ describe('error layouts', () => {
     }
 
     expect(view.container).not.toHaveTextContent(appError.message);
-    expect(view.container).not.toHaveTextContent(appError.errorCode);
+    expect(screen.getAllByText(appError.errorCode)).toHaveLength(bilingual ? 2 : 1);
     view.rerender(
       <I18nextProvider i18n={i18n}>
         <MemoryRouter>

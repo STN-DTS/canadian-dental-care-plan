@@ -4,7 +4,7 @@
  * The status-check mock fails like an interop API 429 for the reserved
  * application code, so the error passes through the real route, service,
  * correlation middleware, route-error adapter, and handleError. Users see only
- * the correlation ID; the server log keeps the full error for that ID. Root,
+ * the correlation ID and error code; the server log keeps the full error for that ID. Root,
  * plain Error, 404, and resource-route cases live in app-error-boundary.test.ts.
  */
 import { expect, test } from './fixtures/error-correlation';
@@ -34,9 +34,11 @@ for (const locale of Object.keys(statusCheckerCopy) as StatusCheckerLocale[]) {
       await statusCheckerPage.checkStatus(failingStatusCheck);
       const correlationId = await statusCheckerPage.readCorrelationId();
 
-      await expect(statusCheckerPage.correlationDetail).toHaveText(`${statusCheckerPage.copy.correlationIdLabel} ${correlationId}`);
+      await expect(statusCheckerPage.correlationLabel).toHaveText(statusCheckerPage.copy.correlationIdLabel);
+      await expect(statusCheckerPage.correlationId).toHaveText(correlationId);
+      await expect(statusCheckerPage.main.getByText(errorCode, { exact: true })).toBeVisible();
 
-      await Promise.all([errorCode, ...privateDetails].map(async (detail) => await expect(statusCheckerPage.main).not.toContainText(detail)));
+      await Promise.all(privateDetails.map(async (detail) => await expect(statusCheckerPage.main).not.toContainText(detail)));
 
       await expect
         .poll(async () => await findHandleErrorRecord(correlationId))
@@ -72,19 +74,22 @@ test.describe('without JavaScript', () => {
     const response = await documentResponse;
     expect(response.status()).toBe(500);
     expectOnlyPublicErrorDetails(await response.text(), (await response.headerValue('x-correlation-id')) ?? '');
+    await expect(statusCheckerPage.main.getByText(errorCode, { exact: true })).toBeVisible();
   });
 });
 
 test.describe('on a mobile viewport', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test('the correlation ID is selectable and the error page does not scroll horizontally', async ({ page, statusCheckerPage }) => {
+  test('the correlation ID and error code remain selectable and the error page does not scroll horizontally', async ({ page, statusCheckerPage }) => {
     await statusCheckerPage.checkStatus(failingStatusCheck);
     const correlationId = await statusCheckerPage.readCorrelationId();
 
-    await expect(statusCheckerPage.correlationId).toHaveCSS('user-select', 'text');
     await statusCheckerPage.correlationId.selectText();
     expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(correlationId);
+    const displayedErrorCode = statusCheckerPage.main.getByText(errorCode, { exact: true });
+    await displayedErrorCode.selectText();
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(errorCode);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });

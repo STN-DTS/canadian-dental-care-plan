@@ -241,13 +241,13 @@ or deployed gateway policies.
 ### Application error correlation IDs
 
 Error pages display an existing `AppError.correlationId`, for example
-`AB-123456`. This is an application-error occurrence ID, not a trace ID,
+`AB-123456`, alongside the public `AppError.errorCode`. The correlation ID is an application-error occurrence ID, not a trace ID,
 request ID, applicant identifier, or error-code catalog entry. Do not ask a
 user for stack traces, exception messages, tokens, or applicant information.
 Ask for the displayed ID and approximate time of the failure.
 
 Public and protected errors use the selected language. Bilingual fallback
-pages show the same ID in both sections. Not-found pages show it only when
+pages show the same ID and error code in both sections. Not-found pages show them only when
 their supplied error carries an AppError ID. Missing or blank IDs produce no
 detail. Rendering and serialization never generate replacement IDs.
 

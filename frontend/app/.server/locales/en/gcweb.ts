@@ -107,7 +107,8 @@ const ns = {
     cdcpLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan.html",
   },
   serverError: {
-    correlationId: "<strong>Correlation ID:</strong> <span>{{correlationId}}</span>",
+    correlationId: "Correlation ID:",
+    errorCode: "Error code:",
     documentTitle: "Internal server error",
     pageTitle: "We're having a problem with that page",
     pageSubtitle: "(Error 500)",
