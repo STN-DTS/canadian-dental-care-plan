@@ -1,9 +1,10 @@
+import { invariant } from '@dts-stn/invariant';
 import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { BenefitApplicationRequestEntity, BenefitApplicationResponseEntity } from '~/.server/domain/entities';
+import type { BenefitApplicationResponseEntity, BenefitApplicationSubmissionEntity } from '~/.server/domain/entities';
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
@@ -12,15 +13,16 @@ import { throwAppError } from '~/.server/utils/error-utils';
 import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
+import { isValidId } from '~/utils/id-utils';
 
 export interface BenefitApplicationRepository {
   /**
    * Submits a benefit application request.
    *
-   * @param benefitApplicationRequestEntity The benefit application request entity.
+   * @param benefitApplicationSubmissionEntity The application request and its flow ID.
    * @returns A Promise that resolves to the benefit application response entity.
    */
-  createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity>;
+  createBenefitApplication(benefitApplicationSubmissionEntity: BenefitApplicationSubmissionEntity): Promise<BenefitApplicationResponseEntity>;
 }
 
 @injectable()
@@ -64,7 +66,9 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
   }
 
   @Traced()
-  async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
+  async createBenefitApplication(benefitApplicationSubmissionEntity: BenefitApplicationSubmissionEntity): Promise<BenefitApplicationResponseEntity> {
+    const { applicationId, ...benefitApplicationRequestEntity } = benefitApplicationSubmissionEntity;
+    invariant(isValidId(applicationId), 'A valid application ID is required for the idempotency key');
     this.log.trace('Submitting benefit application');
 
     const url = this.benefitApplicationUrl;
@@ -73,6 +77,7 @@ export class DefaultBenefitApplicationRepository implements BenefitApplicationRe
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Idempotency-Key': applicationId,
         'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(benefitApplicationRequestEntity),
@@ -112,7 +117,7 @@ export class MockBenefitApplicationRepository implements BenefitApplicationRepos
     this.log = createLogger('MockBenefitApplicationRepository');
   }
 
-  async createBenefitApplication(benefitApplicationRequestEntity: BenefitApplicationRequestEntity): Promise<BenefitApplicationResponseEntity> {
+  async createBenefitApplication(_benefitApplicationSubmissionEntity: BenefitApplicationSubmissionEntity): Promise<BenefitApplicationResponseEntity> {
     this.log.debug('Creating mock benefit application');
 
     const benefitApplicationResponseEntity: BenefitApplicationResponseEntity = {

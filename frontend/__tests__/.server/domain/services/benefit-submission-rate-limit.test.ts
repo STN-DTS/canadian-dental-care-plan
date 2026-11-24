@@ -13,6 +13,8 @@ import { DefaultBenefitRenewalService } from '~/.server/domain/services/benefit-
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
+const applicationId = 'c48267e0-f11c-4624-bba2-3501b2c33aa1';
+
 describe('benefit submission rate limits', () => {
   it.each([
     ['public application', 'application', 'public'],
@@ -28,14 +30,14 @@ describe('benefit submission rate limits', () => {
       const repository = mock<BenefitApplicationRepository>();
       repository.createBenefitApplication.mockRejectedValue(error);
       const service = new DefaultBenefitApplicationService(mock<BenefitApplicationDtoMapper>(), repository, mock<AuditService>(), config, redis);
-      const request = mock<BenefitApplicationDto>({ applicationChannelCode: channel, userId: 'test-user' });
+      const request = mock<BenefitApplicationDto>({ applicationChannelCode: channel, applicationId, userId: 'test-user' });
 
       submission = service.createPublicBenefitApplication(request);
     } else {
       const repository = mock<BenefitRenewalRepository>();
       repository.createBenefitRenewal.mockRejectedValue(error);
       const service = new DefaultBenefitRenewalService(mock<BenefitRenewalDtoMapper>(), repository, mock<AuditService>(), config, redis);
-      const request = mock<BenefitRenewalDto>({ applicationChannelCode: channel, userId: 'test-user' });
+      const request = mock<BenefitRenewalDto>({ applicationChannelCode: channel, applicationId, userId: 'test-user' });
 
       submission = channel === 'public' ? service.createPublicBenefitRenewal(request) : service.createProtectedBenefitRenewal(request);
     }
@@ -50,7 +52,7 @@ describe('benefit submission rate limits', () => {
     const error = new AppError('Upstream failure', ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED);
     repository.createBenefitApplication.mockRejectedValue(error);
     const service = new DefaultBenefitApplicationService(mock<BenefitApplicationDtoMapper>(), repository, mock<AuditService>(), mock<ServerConfig>(), redis);
-    const request = mock<BenefitApplicationDto>({ applicationChannelCode: 'public', userId: 'test-user' });
+    const request = mock<BenefitApplicationDto>({ applicationChannelCode: 'public', applicationId, userId: 'test-user' });
 
     await expect(service.createPublicBenefitApplication(request)).rejects.toBe(error);
     expect(redis.set).not.toHaveBeenCalled();

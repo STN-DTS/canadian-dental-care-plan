@@ -37,6 +37,7 @@ import { ErrorCodes } from '~/errors/error-codes';
 import { isEmpty } from '~/utils/string-utils';
 
 export interface BenefitRenewalAdultState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -56,6 +57,7 @@ export interface BenefitRenewalAdultState {
 }
 
 export interface BenefitRenewalFamilyState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -76,6 +78,7 @@ export interface BenefitRenewalFamilyState {
 }
 
 export interface BenefitRenewalChildState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -173,6 +176,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
   @Traced()
   mapBenefitRenewalAdultStateToBenefitRenewalDto(
     {
+      id,
       channelCode,
       applicantInformation,
       applicationYear,
@@ -212,6 +216,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     });
 
     return {
+      applicationId: id,
       applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,
@@ -260,6 +265,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
   @Traced()
   mapBenefitRenewalFamilyStateToBenefitRenewalDto(
     {
+      id,
       channelCode,
       applicantInformation,
       applicationYear,
@@ -302,6 +308,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     });
 
     return {
+      applicationId: id,
       applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,
@@ -353,6 +360,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
   @Traced()
   mapBenefitRenewalChildStateToBenefitRenewalDto(
     {
+      id,
       channelCode,
       applicantInformation,
       applicationYear,
@@ -393,6 +401,7 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
     });
 
     return {
+      applicationId: id,
       applicationChannelCode: channelCode,
       applicationCategoryCodeName: clientApplication.applicationCategoryCodeName,
       dateOfBirth: clientApplication.dateOfBirth,

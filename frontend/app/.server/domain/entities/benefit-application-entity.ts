@@ -124,6 +124,11 @@ export type BenefitApplicationRequestEntity = ReadonlyDeep<{
   };
 }>;
 
+export type BenefitApplicationSubmissionEntity = BenefitApplicationRequestEntity &
+  ReadonlyDeep<{
+    applicationId: string;
+  }>;
+
 export type BenefitApplicationResponseEntity = ReadonlyDeep<{
   BenefitApplication: {
     BenefitApplicationIdentification: {

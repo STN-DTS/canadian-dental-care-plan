@@ -21,18 +21,18 @@ export interface BenefitRenewalService {
   /**
    * Submits a public benefit renewal request.
    *
-   * @param benefitRenewalDto The benefit renewal request dto
+   * @param benefitRenewalSubmissionDto The benefit renewal request and application flow ID.
    * @returns A Promise that resolves to the benefit renewal application code
    */
-  createPublicBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string>;
+  createPublicBenefitRenewal(benefitRenewalSubmissionDto: BenefitRenewalDto): Promise<string>;
 
   /**
    * Submits a protected benefit renewal request.
    *
-   * @param benefitRenewalDto The benefit renewal request dto
+   * @param benefitRenewalSubmissionDto The benefit renewal request and application flow ID.
    * @returns A Promise that resolves to the benefit renewal application code
    */
-  createProtectedBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string>;
+  createProtectedBenefitRenewal(benefitRenewalSubmissionDto: BenefitRenewalDto): Promise<string>;
 }
 
 @injectable()
@@ -70,8 +70,8 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
   }
 
   @Traced()
-  async createPublicBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
-    this.log.trace('Creating public benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId });
+  async createPublicBenefitRenewal(benefitRenewalSubmissionDto: BenefitRenewalDto): Promise<string> {
+    this.log.trace('Creating public benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalSubmissionDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -79,21 +79,22 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Request to renew benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_KILLSWITCH_ENGAGED);
     }
 
-    if (benefitRenewalDto.applicationChannelCode !== 'public') {
+    if (benefitRenewalSubmissionDto.applicationChannelCode !== 'public') {
       throwAppError('Invalid renewal application channel.', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('benefit-renewal-submit.post', { userId: benefitRenewalDto.userId });
+    this.auditService.createAudit('benefit-renewal-submit.post', { userId: benefitRenewalSubmissionDto.userId });
 
     try {
-      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto);
-      const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
+      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);
+      const benefitRenewalSubmissionEntity = { ...benefitRenewalRequestEntity, applicationId: benefitRenewalSubmissionDto.applicationId };
+      const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalSubmissionEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 
       this.log.info('Benefit renewal confirmation received', {
         [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
         [ATTR_CDCP_APPLICATION_CHANNEL]: 'public',
-        [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId,
+        [ATTR_CDCP_USER_ID]: benefitRenewalSubmissionDto.userId,
       });
       return applicationCode;
     } catch (error) {
@@ -107,8 +108,8 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
   }
 
   @Traced()
-  async createProtectedBenefitRenewal(benefitRenewalDto: BenefitRenewalDto): Promise<string> {
-    this.log.trace('Creating protected benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId });
+  async createProtectedBenefitRenewal(benefitRenewalSubmissionDto: BenefitRenewalDto): Promise<string> {
+    this.log.trace('Creating protected benefit renewal', { [ATTR_CDCP_USER_ID]: benefitRenewalSubmissionDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -116,21 +117,22 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Request to renew protected benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_KILLSWITCH_ENGAGED);
     }
 
-    if (benefitRenewalDto.applicationChannelCode !== 'protected') {
+    if (benefitRenewalSubmissionDto.applicationChannelCode !== 'protected') {
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-renewal-submit.post', { userId: benefitRenewalDto.userId });
+    this.auditService.createAudit('protected-renewal-submit.post', { userId: benefitRenewalSubmissionDto.userId });
 
     try {
-      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto);
-      const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalRequestEntity);
+      const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);
+      const benefitRenewalSubmissionEntity = { ...benefitRenewalRequestEntity, applicationId: benefitRenewalSubmissionDto.applicationId };
+      const benefitRenewalResponseEntity = await this.benefitRenewalRepository.createBenefitRenewal(benefitRenewalSubmissionEntity);
       const applicationCode = this.benefitRenewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode(benefitRenewalResponseEntity);
 
       this.log.info('Benefit renewal confirmation received', {
         [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
         [ATTR_CDCP_APPLICATION_CHANNEL]: 'protected',
-        [ATTR_CDCP_USER_ID]: benefitRenewalDto.userId,
+        [ATTR_CDCP_USER_ID]: benefitRenewalSubmissionDto.userId,
       });
       return applicationCode;
     } catch (error) {

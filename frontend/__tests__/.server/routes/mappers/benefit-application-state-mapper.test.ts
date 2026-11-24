@@ -39,6 +39,7 @@ const TEST_APPLICANTS = {
 } as const;
 
 const TEST_APPLICATION_YEAR = { applicationYearId: 'AY-2024', taxYear: '2024', dependentEligibilityEndDate: '2025-06-30' } as const;
+const TEST_APPLICATION_ID = 'c48267e0-f11c-4624-bba2-3501b2c33aa1';
 
 const TEST_COMMUNICATION_PREFS = {
   EMAIL: { preferredLanguage: 'en', preferredMethod: 'email', preferredNotificationMethod: 'digital' },
@@ -57,6 +58,7 @@ const TEST_DENTAL_BENEFITS = {
 
 /** Create a complete adult application state with sensible defaults */
 const createAdultApplicationState = (overrides: Partial<ApplicationAdultState> = {}): ApplicationAdultState => ({
+  id: TEST_APPLICATION_ID,
   channelCode: 'public',
   applicantInformation: TEST_APPLICANTS.JOHN_DOE,
   applicationYear: TEST_APPLICATION_YEAR,
@@ -76,6 +78,7 @@ const createAdultApplicationState = (overrides: Partial<ApplicationAdultState> =
 
 /** Create a complete family application state with sensible defaults */
 const createFamilyApplicationState = (overrides: Partial<ApplicationFamilyState> = {}): ApplicationFamilyState => ({
+  id: TEST_APPLICATION_ID,
   channelCode: 'public',
   applicantInformation: TEST_APPLICANTS.BOB_SMITH,
   applicationYear: TEST_APPLICATION_YEAR,
@@ -96,6 +99,7 @@ const createFamilyApplicationState = (overrides: Partial<ApplicationFamilyState>
 
 /** Create a complete children-only application state with sensible defaults */
 const createChildrenApplicationState = (overrides: Partial<ApplicationChildrenState> = {}): ApplicationChildrenState => ({
+  id: TEST_APPLICATION_ID,
   channelCode: 'public',
   applicantInformation: TEST_APPLICANTS.ALICE_JOHNSON,
   applicationYear: TEST_APPLICATION_YEAR,
@@ -162,6 +166,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       setupMocks({ emailRequired: true, emailValid: true, email: 'john.doe@example.com' });
 
       expect(mapper.mapApplicationAdultStateToBenefitApplicationDto(state)).toStrictEqual({
+        applicationId: TEST_APPLICATION_ID,
         applicationChannelCode: 'public',
         applicantInformation: {
           firstName: 'John',
@@ -245,6 +250,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('maps returning member ID to applicantInformation.clientNumber', () => {
       const state: ApplicationAdultState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'John',
@@ -344,6 +350,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       setupMocks({ emailRequired: false });
 
       expect(mapper.mapApplicationFamilyStateToBenefitApplicationDto(state)).toStrictEqual({
+        applicationId: TEST_APPLICATION_ID,
         applicationChannelCode: 'public',
         applicantInformation: {
           firstName: 'Jane',
@@ -427,6 +434,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
       setupMocks({ emailRequired: true, emailValid: true, email: 'alice.johnson@example.com' });
 
       expect(mapper.mapApplicationChildrenStateToBenefitApplicationDto(state)).toStrictEqual({
+        applicationId: TEST_APPLICATION_ID,
         applicationChannelCode: 'public',
         applicantInformation: {
           firstName: 'Alice',
@@ -483,6 +491,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('maps child socialInsuranceNumber when hasSocialInsuranceNumber is true', () => {
       const state: ApplicationChildrenState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'Alice',
@@ -534,6 +543,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
     it('throws when youth applicant missing livingIndependently', () => {
       vi.mocked(getContextualAgeCategoryFromDate).mockReturnValueOnce('youth');
       const state: ApplicationChildrenState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'Youth',
@@ -583,6 +593,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('maps multiple children with dentalBenefits and dentalInsurance', () => {
       const state: ApplicationChildrenState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'Parent',
@@ -680,6 +691,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('maps adult with protected channel and valid email', () => {
       const state: ApplicationAdultState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'protected',
         applicantInformation: {
           firstName: 'Protected',
@@ -722,6 +734,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('throws when protected channel email invalid', () => {
       const state: ApplicationAdultState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'protected',
         applicantInformation: {
           firstName: 'Bad',
@@ -768,6 +781,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('returns undefined email when public channel email not required', () => {
       const state: ApplicationAdultState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'NoEmail',
@@ -807,6 +821,7 @@ describe('DefaultBenefitApplicationStateMapper', () => {
 
     it('throws when public channel email required but invalid', () => {
       const state: ApplicationAdultState = {
+        id: TEST_APPLICATION_ID,
         channelCode: 'public',
         applicantInformation: {
           firstName: 'BadEmail',

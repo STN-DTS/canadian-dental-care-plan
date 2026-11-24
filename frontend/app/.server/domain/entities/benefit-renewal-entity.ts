@@ -145,6 +145,11 @@ export type BenefitRenewalRequestEntity = ReadonlyDeep<{
   };
 }>;
 
+export type BenefitRenewalSubmissionEntity = BenefitRenewalRequestEntity &
+  ReadonlyDeep<{
+    applicationId: string;
+  }>;
+
 export type BenefitRenewalResponseEntity = ReadonlyDeep<{
   BenefitApplication: {
     BenefitApplicationIdentification: {

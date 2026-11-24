@@ -1,6 +1,7 @@
 import type { ReadonlyDeep } from 'type-fest';
 
 export type BenefitRenewalDto = ReadonlyDeep<{
+  applicationId: string;
   applicationChannelCode: 'protected' | 'public';
   applicantInformation: BenefitRenewalApplicantInformationDto;
   applicationYearId: string;

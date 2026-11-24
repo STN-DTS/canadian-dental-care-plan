@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [Submission idempotency](#submission-idempotency)
 - [CANADA.CA - PUBLIC](#canadaca---public)
   - [Public Application](#public-application)
     - [Public Entry Points](#public-entry-points)
@@ -31,6 +32,29 @@
   - [Letters](#letters)
   - [Profile](#profile)
   - [Error & Special Pages](#error--special-pages)
+
+---
+
+## Submission idempotency
+
+Public and protected application and renewal POSTs send `Idempotency-Key` with
+the application flow ID as a plain UUID value.
+The ID stays the same when the same flow is resubmitted or the existing
+duplicate-confirmation-number response retry occurs. Starting a new flow,
+including after session expiry, creates a new ID even for the same applicant or
+a different channel.
+
+The header alone does not prevent duplicates. Upstream acceptance and
+enforcement have not been verified. The API must atomically record and enforce
+keys, handle requests already in progress, return the original result for the
+same key and payload, and reject a different payload with the same key. The API
+team must confirm support for this header and agree on the key format, scope,
+and retention period before relying on this behavior. Editing a failed
+submission within the same flow can change its payload while retaining the key;
+there is no local payload guard or outcome reconciliation. The frontend still
+does not retry transport errors or 502 responses for these writes; the existing
+duplicate-confirmation-number 400 retry remains and its safety requires
+upstream confirmation.
 
 ---
 

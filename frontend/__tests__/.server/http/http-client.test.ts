@@ -126,6 +126,29 @@ describe('DefaultHttpClient', () => {
       expect(await request.text()).toBe('request-body-canary');
     });
 
+    it('preserves the idempotency key when tracing and retrying an application request', async () => {
+      const applicationId = 'c48267e0-f11c-4624-bba2-3501b2c33aa1';
+      const idempotencyKey = applicationId;
+      const transport = vi
+        .fn<ReturnType<DefaultHttpClient['getFetchFn']>>()
+        .mockResolvedValueOnce(new Response('retryable', { status: 400 }))
+        .mockResolvedValue(new Response('{}'));
+      const client = new DefaultHttpClient(mock<InstrumentationService>());
+      vi.spyOn(client, 'getFetchFn').mockReturnValue(transport);
+
+      await client.instrumentedFetch('http.client.test.posts', 'https://example.test', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
+        body: '{}',
+        retryOptions: { retries: 1, backoffMs: 0, retryConditions: { 400: ['retryable'] }, retryOnTransportError: false },
+      });
+
+      const outgoingHeaders = transport.mock.calls.map(([, init]) => new Headers(init?.headers));
+      expect(outgoingHeaders.map((headers) => headers.get('Idempotency-Key'))).toEqual([idempotencyKey, idempotencyKey]);
+      expect(outgoingHeaders.every((headers) => headers.has('traceparent'))).toBe(true);
+      expect(JSON.stringify(exporter.getFinishedSpans().map((span) => span.attributes))).not.toContain(applicationId);
+    });
+
     it.each(['delete', 'custom-method-canary'])('bounds method attributes without altering the supplied method %s', async (method) => {
       const client = new DefaultHttpClient(mock<InstrumentationService>());
       const transport = vi.fn<ReturnType<DefaultHttpClient['getFetchFn']>>().mockResolvedValue(new Response(null));

@@ -1,9 +1,10 @@
+import { invariant } from '@dts-stn/invariant';
 import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { BenefitRenewalRequestEntity, BenefitRenewalResponseEntity } from '~/.server/domain/entities';
+import type { BenefitRenewalResponseEntity, BenefitRenewalSubmissionEntity } from '~/.server/domain/entities';
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
@@ -12,15 +13,16 @@ import { throwAppError } from '~/.server/utils/error-utils';
 import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { ErrorCodes } from '~/errors/error-codes';
+import { isValidId } from '~/utils/id-utils';
 
 export interface BenefitRenewalRepository {
   /**
    * Submits benefit renewal request.
    *
-   * @param benefitRenewalRequest The renewal request stored in session.
+   * @param benefitRenewalSubmissionEntity The renewal request and its flow ID.
    * @returns A Promise that resolves to the renewal response if successful, or `null` otherwise.
    */
-  createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity>;
+  createBenefitRenewal(benefitRenewalSubmissionEntity: BenefitRenewalSubmissionEntity): Promise<BenefitRenewalResponseEntity>;
 }
 
 @injectable()
@@ -49,7 +51,9 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
   }
 
   @Traced()
-  async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
+  async createBenefitRenewal(benefitRenewalSubmissionEntity: BenefitRenewalSubmissionEntity): Promise<BenefitRenewalResponseEntity> {
+    const { applicationId, ...benefitRenewalRequest } = benefitRenewalSubmissionEntity;
+    invariant(isValidId(applicationId), 'A valid application ID is required for the idempotency key');
     this.log.trace('Submitting benefit renewal');
 
     const url = new URL(this.benefitApplicationUrl);
@@ -60,6 +64,7 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Idempotency-Key': applicationId,
         'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
       },
       body: JSON.stringify(benefitRenewalRequest),
@@ -100,7 +105,7 @@ export class MockBenefitRenewalRepository implements BenefitRenewalRepository {
     this.log = createLogger('MockBenefitRenewalRepository');
   }
 
-  async createBenefitRenewal(benefitRenewalRequest: BenefitRenewalRequestEntity): Promise<BenefitRenewalResponseEntity> {
+  async createBenefitRenewal(_benefitRenewalSubmissionEntity: BenefitRenewalSubmissionEntity): Promise<BenefitRenewalResponseEntity> {
     this.log.debug('Creating mock benefit renewal');
 
     const benefitRenewalResponseEntity: BenefitRenewalResponseEntity = {

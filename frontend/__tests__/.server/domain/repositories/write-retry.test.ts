@@ -1,5 +1,5 @@
 import { Redacted } from 'effect';
-import { MockAgent, Response, fetch } from 'undici';
+import { Headers, MockAgent, Response, fetch } from 'undici';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -24,6 +24,9 @@ const serverConfig = {
   INTEROP_API_MAX_RETRIES: 3,
   INTEROP_API_BACKOFF_MS: 0,
 };
+
+const applicationId = 'c48267e0-f11c-4624-bba2-3501b2c33aa1';
+const anotherApplicationId = '8264181c-e8ec-4d60-a57c-815af94394f2';
 
 const benefitRequest = {
   BenefitApplication: {
@@ -71,12 +74,12 @@ const profileRequest = {
 const benefitOperations = [
   {
     name: 'benefit application',
-    submit: async (client: DefaultHttpClient) => await new DefaultBenefitApplicationRepository(serverConfig, client).createBenefitApplication(benefitRequest),
+    submit: async (client: DefaultHttpClient, idempotencyKey = applicationId) => await new DefaultBenefitApplicationRepository(serverConfig, client).createBenefitApplication({ ...benefitRequest, applicationId: idempotencyKey }),
     errorCode: ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED,
   },
   {
     name: 'benefit renewal',
-    submit: async (client: DefaultHttpClient) => await new DefaultBenefitRenewalRepository(serverConfig, client).createBenefitRenewal(benefitRequest),
+    submit: async (client: DefaultHttpClient, idempotencyKey = applicationId) => await new DefaultBenefitRenewalRepository(serverConfig, client).createBenefitRenewal({ ...benefitRequest, applicationId: idempotencyKey }),
     errorCode: ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED,
   },
 ];
@@ -149,6 +152,30 @@ it.each(benefitOperations)('$name stops on a transport error after retrying a du
   expect(fetchFn).toHaveBeenCalledTimes(2);
 });
 
+it.each(benefitOperations)('$name uses the application ID as the idempotency key for retries and resubmissions', async ({ submit }) => {
+  const fetchFn = vi
+    .fn<FetchFn>()
+    .mockResolvedValueOnce(new Response('A record with the same value for Application Confirmation Number already exists', { status: 400 }))
+    .mockImplementation(async () => await Promise.resolve(new Response('{}')));
+  const client = createHttpClient(fetchFn);
+
+  await submit(client, applicationId);
+  await submit(client, applicationId);
+  await submit(client, anotherApplicationId);
+
+  expect(fetchFn.mock.calls.map(([, init]) => new Headers(init?.headers).get('Idempotency-Key'))).toEqual([applicationId, applicationId, applicationId, anotherApplicationId]);
+  expect(fetchFn.mock.calls.map(([, init]) => init?.body)).toEqual([JSON.stringify(benefitRequest), JSON.stringify(benefitRequest), JSON.stringify(benefitRequest), JSON.stringify(benefitRequest)]);
+});
+
+it.each(benefitOperations)('$name rejects an invalid idempotency key before sending a request', async ({ submit }) => {
+  const fetchFn = vi.fn<FetchFn>().mockResolvedValue(new Response('{}'));
+  const client = createHttpClient(fetchFn);
+
+  await expect(submit(client, '')).rejects.toThrow('A valid application ID is required for the idempotency key');
+  await expect(submit(client, 'not-a-uuid')).rejects.toThrow('A valid application ID is required for the idempotency key');
+  expect(fetchFn).not.toHaveBeenCalled();
+});
+
 it('does not repeat an application POST when a redirect fails to connect', async () => {
   const agent = new MockAgent({ enableCallHistory: true });
   agent.disableNetConnect();
@@ -166,7 +193,7 @@ it('does not repeat an application POST when a redirect fails to connect', async
     const client = createHttpClient(async (input, init) => await fetch(input, { ...init, dispatcher: agent }));
     const repository = new DefaultBenefitApplicationRepository(serverConfig, client);
 
-    await expect(repository.createBenefitApplication(benefitRequest)).rejects.toMatchObject({ cause: { code: 'ECONNREFUSED' } });
+    await expect(repository.createBenefitApplication({ ...benefitRequest, applicationId })).rejects.toMatchObject({ cause: { code: 'ECONNREFUSED' } });
     expect(agent.getCallHistory()?.filterCallsByPath('/applications')).toHaveLength(1);
     expect(agent.getCallHistory()?.filterCallsByPath('/redirected')).toHaveLength(1);
   } finally {

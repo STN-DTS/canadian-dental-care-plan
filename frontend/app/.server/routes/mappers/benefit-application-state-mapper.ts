@@ -24,6 +24,7 @@ import { ErrorCodes } from '~/errors/error-codes';
 import { isEmpty } from '~/utils/string-utils';
 
 export interface ApplicationAdultState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -44,6 +45,7 @@ export interface ApplicationAdultState {
 }
 
 export interface ApplicationFamilyState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -65,6 +67,7 @@ export interface ApplicationFamilyState {
 }
 
 export interface ApplicationChildrenState {
+  id: string;
   channelCode: BaseApplicationChannelCodeState;
   applicantInformation: BaseApplicationApplicantInformationState;
   applicationYear: BaseApplicationYearState;
@@ -145,6 +148,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     invariant(applicationAdultState.dentalBenefits, 'Expected dentalBenefits to be defined for an adult application');
 
     return {
+      applicationId: applicationAdultState.id,
       applicationChannelCode: applicationAdultState.channelCode,
       applicantInformation: this.toApplicantInformation({
         applicantInformation: applicationAdultState.applicantInformation,
@@ -189,6 +193,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     invariant(applicationFamilyState.dentalBenefits, 'Expected dentalBenefits to be defined for a family application');
 
     return {
+      applicationId: applicationFamilyState.id,
       applicationChannelCode: applicationFamilyState.channelCode,
       applicantInformation: this.toApplicantInformation({
         applicantInformation: applicationFamilyState.applicantInformation,
@@ -230,6 +235,7 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
     }
 
     return {
+      applicationId: applicationChildrenState.id,
       applicationChannelCode: applicationChildrenState.channelCode,
       applicantInformation: this.toApplicantInformation({
         applicantInformation: applicationChildrenState.applicantInformation,

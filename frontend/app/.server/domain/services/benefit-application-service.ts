@@ -21,18 +21,18 @@ export interface BenefitApplicationService {
   /**
    * Submits a public benefit application request.
    *
-   * @param benefitApplicationRequestDto The public benefit application request dto
+   * @param benefitApplicationSubmissionDto The public benefit application request and application flow ID.
    * @returns A Promise that resolves to the benefit application code
    */
-  createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string>;
+  createPublicBenefitApplication(benefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string>;
 
   /**
    * Submits a protected benefit application request.
    *
-   * @param protectedBenefitApplicationRequestDto The protected route benefit application request dto
+   * @param protectedBenefitApplicationSubmissionDto The protected benefit application request and application flow ID.
    * @returns A Promise that resolves to the benefit application code
    */
-  createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string>;
+  createProtectedBenefitApplication(protectedBenefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string>;
 }
 
 @injectable()
@@ -70,8 +70,8 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   }
 
   @Traced()
-  async createPublicBenefitApplication(benefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating public benefit application', { [ATTR_CDCP_USER_ID]: benefitApplicationRequestDto.userId });
+  async createPublicBenefitApplication(benefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string> {
+    this.log.trace('Creating public benefit application', { [ATTR_CDCP_USER_ID]: benefitApplicationSubmissionDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -79,21 +79,22 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Request to create public benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PUBLIC_APPLICATION_KILLSWITCH_ENGAGED);
     }
 
-    if (benefitApplicationRequestDto.applicationChannelCode !== 'public') {
+    if (benefitApplicationSubmissionDto.applicationChannelCode !== 'public') {
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PUBLIC_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('application-submit.post', { userId: benefitApplicationRequestDto.userId });
+    this.auditService.createAudit('application-submit.post', { userId: benefitApplicationSubmissionDto.userId });
 
     try {
-      const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationRequestDto);
-      const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(benefitApplicationRequestEntity);
+      const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationSubmissionDto);
+      const benefitApplicationSubmissionEntity = { ...benefitApplicationRequestEntity, applicationId: benefitApplicationSubmissionDto.applicationId };
+      const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(benefitApplicationSubmissionEntity);
       const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 
       this.log.info('Benefit application confirmation received', {
         [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
         [ATTR_CDCP_APPLICATION_CHANNEL]: 'public',
-        [ATTR_CDCP_USER_ID]: benefitApplicationRequestDto.userId,
+        [ATTR_CDCP_USER_ID]: benefitApplicationSubmissionDto.userId,
       });
       return applicationCode;
     } catch (error) {
@@ -107,8 +108,8 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
   }
 
   @Traced()
-  async createProtectedBenefitApplication(protectedBenefitApplicationRequestDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId });
+  async createProtectedBenefitApplication(protectedBenefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string> {
+    this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationSubmissionDto.userId });
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -116,20 +117,21 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Request to create protected benefit application is unavailable (killswitch engaged)', ErrorCodes.APP_SUBM_PROTECTED_APPLICATION_KILLSWITCH_ENGAGED);
     }
 
-    if (protectedBenefitApplicationRequestDto.applicationChannelCode !== 'protected') {
+    if (protectedBenefitApplicationSubmissionDto.applicationChannelCode !== 'protected') {
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-application-submit.post', { userId: protectedBenefitApplicationRequestDto.userId });
+    this.auditService.createAudit('protected-application-submit.post', { userId: protectedBenefitApplicationSubmissionDto.userId });
 
-    const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationRequestDto);
-    const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(protectedBenefitApplicationRequestEntity);
+    const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationSubmissionDto);
+    const protectedBenefitApplicationSubmissionEntity = { ...protectedBenefitApplicationRequestEntity, applicationId: protectedBenefitApplicationSubmissionDto.applicationId };
+    const benefitApplicationResponseEntity = await this.benefitApplicationRepository.createBenefitApplication(protectedBenefitApplicationSubmissionEntity);
     const applicationCode = this.benefitApplicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode(benefitApplicationResponseEntity);
 
     this.log.info('Benefit application confirmation received', {
       [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
       [ATTR_CDCP_APPLICATION_CHANNEL]: 'protected',
-      [ATTR_CDCP_USER_ID]: protectedBenefitApplicationRequestDto.userId,
+      [ATTR_CDCP_USER_ID]: protectedBenefitApplicationSubmissionDto.userId,
     });
     return applicationCode;
   }
