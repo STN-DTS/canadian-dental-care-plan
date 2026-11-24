@@ -11,7 +11,7 @@ exports[`Eligibility > should render eligible status 1`] = `
       data-slot="card-header"
     >
       <h3
-        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base"
+        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base/normal"
         data-slot="card-title"
       >
         <span>
@@ -56,7 +56,7 @@ exports[`Eligibility > should render eligible-proof status 1`] = `
       data-slot="card-header"
     >
       <h3
-        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base"
+        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base/normal"
         data-slot="card-title"
       >
         <span>
@@ -104,7 +104,7 @@ exports[`Eligibility > should render ineligible status 1`] = `
       data-slot="card-header"
     >
       <h3
-        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base"
+        class="font-lato font-bold mb-0 flex w-full items-center justify-between text-base/normal"
         data-slot="card-title"
       >
         <span>
