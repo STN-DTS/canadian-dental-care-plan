@@ -94,7 +94,7 @@ catalog:
   fast-xml-parser: 5.12.1
   file-type: 22.3.0
   filesize: 11.0.35
-  i18next: 27.2.2
+  i18next: 27.2.3
   i18next-http-backend: 4.1.0
   inversify: 8.3.0
   isbot: 5.2.3
