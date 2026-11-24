@@ -1,35 +1,13 @@
 import { Result } from 'effect';
-import { createPrivateKey } from 'node:crypto';
-import type { KeyObject } from 'node:crypto';
 import * as z from 'zod';
 
+import { isPrivateKey } from '~/.server/utils/crypto-utils';
 import { validateOAuthIssuer } from '~/.server/utils/url-utils';
 import { stringToRedacted } from '~/.server/utils/zod-utils';
 
-/**
- * Parses an RSA private key given either as PEM (with BEGIN/END lines) or as single-line base64 PKCS#8 DER, the
- * format used by `AUTH_JWT_PRIVATE_KEY`.
- *
- * @throws When the value is not a parseable private key.
- */
-export function parseOidcPrivateKey(value: string): KeyObject {
-  const trimmed = value.trim();
-
-  if (trimmed.startsWith('-----BEGIN')) {
-    return createPrivateKey(trimmed);
-  }
-
-  return createPrivateKey({ key: Buffer.from(trimmed, 'base64'), format: 'der', type: 'pkcs8' });
-}
-
 /** RS256 requires an RSA key; iSAMS accepts 2048- or 4096-bit keys. */
 function isValidRs256PrivateKey(value: string): boolean {
-  try {
-    const key = parseOidcPrivateKey(value);
-    return key.asymmetricKeyType === 'rsa' && (key.asymmetricKeyDetails?.modulusLength ?? 0) >= 2048;
-  } catch {
-    return false;
-  }
+  return isPrivateKey(value, { asymmetricKeyType: 'rsa', minModulusLength: 2048 });
 }
 
 const raoidcAuthProviderConfigSchema = z.object({
@@ -53,7 +31,7 @@ const oidcAuthProviderConfigSchema = z.object({
   AUTH_OIDC_CLIENT_ID: z.string().trim().nonempty(),
 
   /** The exact redirect URI registered with the provider; sent unchanged at authorization and token exchange. */
-  AUTH_OIDC_REDIRECT_URI: z.url({ protocol: /^https?$/ }),
+  AUTH_OIDC_REDIRECT_URI: z.url({ protocol: /^https?$/ }).refine((value) => !value.includes('?'), { error: 'OIDC redirect URI must not contain query components' }),
 
   /** RSA signing key registered for `private_key_jwt` (PEM or single-line base64 PKCS#8). */
   AUTH_OIDC_PRIVATE_KEY: z.string().refine(isValidRs256PrivateKey, { error: 'OIDC private key must be an RSA key of at least 2048 bits' }).pipe(stringToRedacted),

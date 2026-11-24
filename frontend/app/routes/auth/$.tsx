@@ -261,7 +261,7 @@ async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs
   session.unset('oidcAuthCorrelation');
 
   if (Option.isNone(correlation)) {
-    log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing', [ATTR_SESSION_ID]: session.id });
+    log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing' });
     instrumentationService.createCounter('auth.callback.oidc.requests.stale-session').add(1);
     throw new AppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
   }

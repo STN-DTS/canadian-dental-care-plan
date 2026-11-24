@@ -19,13 +19,13 @@ import {
 } from 'openid-client';
 import type { Configuration, CustomFetch } from 'openid-client';
 
-import { parseOidcPrivateKey } from '~/.server/auth/auth-provider-config-schema';
 import type { AuthCallbackResult, AuthService, AuthSigninRequest, HandleAuthCallbackArgs } from '~/.server/auth/auth-service';
 import type { OpenIdServiceConfig } from '~/.server/auth/openid-service-config';
 import { TYPES } from '~/.server/constants';
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
+import { parsePrivateKey } from '~/.server/utils/crypto-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -206,7 +206,7 @@ export class DefaultOpenIdService implements AuthService {
 
 /** Imports the registered key for RS256 (RSASSA-PKCS1-v1_5 with SHA-256); the key is not extractable. */
 async function importSigningKey(privateKey: Redacted.Redacted<string>): Promise<CryptoKey> {
-  const der = parseOidcPrivateKey(Redacted.value(privateKey)).export({ format: 'der', type: 'pkcs8' });
+  const der = parsePrivateKey(Redacted.value(privateKey)).export({ format: 'der', type: 'pkcs8' });
   return await globalThis.crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
 }
 
