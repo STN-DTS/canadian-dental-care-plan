@@ -39,8 +39,7 @@ export class StatusCheckerPage extends BasePage {
   readonly sinInput;
   readonly submitButton;
   readonly errorHeading;
-  /** The paragraph that announces the correlation ID; its `span` holds only the ID. */
-  readonly correlationDetail;
+  readonly correlationLabel;
   readonly correlationId;
 
   /**
@@ -56,8 +55,8 @@ export class StatusCheckerPage extends BasePage {
     this.sinInput = this.main.getByRole('textbox', { name: this.copy.sin });
     this.submitButton = this.main.getByRole('button', { name: this.copy.submit, exact: true });
     this.errorHeading = this.main.getByRole('heading', { level: 1, name: this.copy.errorTitle });
-    this.correlationDetail = this.main.getByRole('paragraph').filter({ hasText: this.copy.correlationIdLabel });
-    this.correlationId = this.correlationDetail.locator('span');
+    this.correlationLabel = this.main.getByText(this.copy.correlationIdLabel, { exact: true });
+    this.correlationId = this.main.getByRole('definition').first().locator('span');
   }
 
   /**

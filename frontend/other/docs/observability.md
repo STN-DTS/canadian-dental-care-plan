@@ -240,16 +240,19 @@ or deployed gateway policies.
 
 ### Application error correlation IDs
 
-Error pages display an existing `AppError.correlationId`, for example
-`AB-123456`. This is an application-error occurrence ID, not a trace ID,
+Error pages display the available public AppError details independently:
+a nonblank `AppError.correlationId`, for example `AB-123456`, and an
+`AppError.errorCode` when available. The error code is displayed even when the
+correlation ID is missing or blank. The correlation ID is an application-error occurrence ID, not a trace ID,
 request ID, applicant identifier, or error-code catalog entry. Do not ask a
 user for stack traces, exception messages, tokens, or applicant information.
 Ask for the displayed ID and approximate time of the failure.
 
 Public and protected errors use the selected language. Bilingual fallback
-pages show the same ID in both sections. Not-found pages show it only when
-their supplied error carries an AppError ID. Missing or blank IDs produce no
-detail. Rendering and serialization never generate replacement IDs.
+pages show the same available details in both sections. Not-found pages use
+the same independent field rules for their supplied error. Missing or blank
+correlation IDs omit only the ID detail; no details are rendered when neither
+field is available. Rendering and serialization never generate replacement IDs.
 
 The existing `entry.server/handleError` diagnostic passes the original error
 as the first argument to `log.error`, including for client errors. Native
