@@ -81,7 +81,7 @@ catalog:
   '@vitejs/plugin-react': 6.3.0
   '@vitest/coverage-v8': 5.1.1
   '@vitest/ui': 5.1.1
-  bowser: 2.15.0
+  bowser: 2.15.1
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   compression: 1.8.2

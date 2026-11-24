@@ -352,8 +352,8 @@ catalogs:
       specifier: 5.1.1
       version: 5.1.1
     bowser:
-      specifier: 2.15.0
-      version: 2.15.0
+      specifier: 2.15.1
+      version: 2.15.1
     class-variance-authority:
       specifier: 0.7.1
       version: 0.7.1
@@ -682,7 +682,7 @@ importers:
         version: 8.5.2(react-router@8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)
       bowser:
         specifier: 'catalog:'
-        version: 2.15.0
+        version: 2.15.1
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -3396,8 +3396,8 @@ packages:
     resolution: {integrity: sha512-Ifk1KcLrxaGt1occQagQNFNNOqRt1LFuehEnHHzB8Z6cRgIxRU1TBaiIsUiCdA+gy5PL7Y1IX31DNKkRmxtXjQ==}
     engines: {node: '>=18'}
 
-  bowser@2.15.0:
-    resolution: {integrity: sha512-xic6KSZglg/I4ymp45fdM4GWfYpBK79Fxd/TOvJktlaPgQqqDxvmGwOPZl2V0dyeS3Lj5c180bLhXF43iyAjZQ==}
+  bowser@2.15.1:
+    resolution: {integrity: sha512-ma47ABeUiTsmG4McKDtGCgQSiTCatM97Mlbn13K42N1kPSFE14oN3WFMjtyL4KubhGvQTqYheKl4Qx2bJtMXLQ==}
 
   boxen@8.0.1:
     resolution: {integrity: sha512-F3PH5k5juxom4xktynS7MoFY+NUWH5LC4CnH11YB8NPew+HLpmBLCybSAEyb2F+4pRXhuhWqFesoQd6DAyc2hw==}
@@ -8278,7 +8278,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  bowser@2.15.0: {}
+  bowser@2.15.1: {}
 
   boxen@8.0.1:
     dependencies:
