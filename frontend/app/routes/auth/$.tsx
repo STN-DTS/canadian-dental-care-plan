@@ -6,6 +6,7 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import { Option } from 'effect';
 
 import { AUDIT_EVENT_AUTH_SESSION_CREATED, AUDIT_EVENT_AUTH_SESSION_DESTROYED } from '~/.server/audit/audit-event-ids';
+import type { AuthConnectivityVerifiedResult } from '~/.server/auth/auth-service';
 import { TYPES } from '~/.server/constants';
 /**
  * Handler for /auth/logout{?locale=(en|fr)} requests
@@ -16,10 +17,12 @@ import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 import type { Route } from './+types/$';
 
-const defaultProviderId = 'raoidc';
 const defaultReturnUrl = '/';
 
 /**
@@ -46,22 +49,32 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const log = createLogger('auth.$/loader');
   const { '*': slug } = params;
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  const { AUTH_PROVIDER } = appContainer.get(TYPES.ServerConfig);
 
-  switch (slug) {
-    case 'login': {
+  // Only the configured provider's routes are served, so there is no fallback between providers.
+  switch (true) {
+    case slug === 'login': {
       return handleLoginRequest({ context, url });
     }
 
-    case 'logout': {
+    case slug === 'logout': {
       return await handleLogoutRequest({ context, url });
     }
 
-    case 'login/raoidc': {
+    case slug === 'login/raoidc' && AUTH_PROVIDER === 'raoidc': {
       return await handleRaoidcLoginRequest({ context, url });
     }
 
-    case 'callback/raoidc': {
+    case slug === 'callback/raoidc' && AUTH_PROVIDER === 'raoidc': {
       return await handleRaoidcCallbackRequest({ context, url });
+    }
+
+    case slug === 'login/oidc' && AUTH_PROVIDER === 'oidc': {
+      return await handleOidcLoginRequest({ context });
+    }
+
+    case slug === 'callback/oidc' && AUTH_PROVIDER === 'oidc': {
+      return await handleOidcCallbackRequest({ context, url });
     }
 
     default: {
@@ -83,7 +96,8 @@ function handleLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' |
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('auth.login.requests').add(1);
 
-  const loginUrl = new URL(`/auth/login/${defaultProviderId}`, url);
+  const { AUTH_PROVIDER } = appContainer.get(TYPES.ServerConfig);
+  const loginUrl = new URL(`/auth/login/${AUTH_PROVIDER}`, url);
   loginUrl.search = url.search;
 
   log.debug('Redirecting to default authentication provider', { [ATTR_URL_PATH]: loginUrl.pathname });
@@ -206,4 +220,56 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
   auditService.createAudit(AUDIT_EVENT_AUTH_SESSION_CREATED, { userId: idToken.sub });
 
   return redirectDocument(returnUrl);
+}
+
+/**
+ * Handler for /auth/login/oidc requests (iSAMS OIDC connectivity proof)
+ */
+async function handleOidcLoginRequest({ context }: Pick<Route.LoaderArgs, 'context'>) {
+  const { appContainer, session } = context.get(appContext);
+  const log = createLogger('auth.$/handleOidcLoginRequest');
+  log.debug('Handling OIDC login request');
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  instrumentationService.createCounter('auth.login.oidc.requests').add(1);
+
+  const authService = appContainer.get(TYPES.AuthService);
+  const { authUrl, correlation } = await authService.generateSigninRequest();
+
+  log.debug('Regenerate session to prevent fixation and wipe prior session data');
+  await session.regenerate();
+  session.set('oidcAuthCorrelation', correlation);
+
+  log.debug('Redirecting to OIDC sign-in');
+  return redirectDocument(authUrl.href);
+}
+
+/**
+ * Handler for /auth/callback/oidc requests (iSAMS OIDC connectivity proof)
+ *
+ * Reports verified connectivity only. It never stores tokens or claims, so it cannot create an authenticated CDCP
+ * session or grant access to protected routes.
+ */
+async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
+  const { appContainer, session } = context.get(appContext);
+  const log = createLogger('auth.$/handleOidcCallbackRequest');
+  log.debug('Handling OIDC callback request');
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  instrumentationService.createCounter('auth.callback.oidc.requests').add(1);
+
+  // Single use: removed before validation so a replayed or failed callback cannot reuse it.
+  const correlation = session.find('oidcAuthCorrelation');
+  session.unset('oidcAuthCorrelation');
+
+  if (Option.isNone(correlation)) {
+    log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing', [ATTR_SESSION_ID]: session.id });
+    instrumentationService.createCounter('auth.callback.oidc.requests.stale-session').add(1);
+    throw new AppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+  }
+
+  const authService = appContainer.get(TYPES.AuthService);
+  // Typed as the connectivity result so this route fails to compile if the callback can ever return a signed-in user.
+  const result: AuthConnectivityVerifiedResult = await authService.handleCallback({ callbackUrl: url, correlation: correlation.value });
+
+  instrumentationService.createCounter('auth.callback.oidc.requests.connectivity-verified').add(1);
+  return Response.json({ outcome: result.outcome, authenticated: result.authenticated, issuer: result.issuer, verifiedAt: Temporal.Now.instant().toString() }, { headers: { 'Cache-Control': 'no-store' } });
 }

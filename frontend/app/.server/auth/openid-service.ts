@@ -1,0 +1,258 @@
+import { ATTR_ERROR_TYPE, ERROR_TYPE_VALUE_OTHER } from '@opentelemetry/semantic-conventions';
+import { Redacted } from 'effect';
+import { inject, injectable } from 'inversify';
+import {
+  AuthorizationResponseError,
+  ClientError,
+  PrivateKeyJwt,
+  ResponseBodyError,
+  authorizationCodeGrant,
+  buildAuthorizationUrl,
+  calculatePKCECodeChallenge,
+  customFetch,
+  discovery,
+  enableNonRepudiationChecks,
+  modifyAssertion,
+  randomNonce,
+  randomPKCECodeVerifier,
+  randomState,
+} from 'openid-client';
+import type { Configuration, CustomFetch } from 'openid-client';
+
+import { parseOidcPrivateKey } from '~/.server/auth/auth-provider-config-schema';
+import type { AuthCallbackResult, AuthService, AuthSigninRequest, HandleAuthCallbackArgs } from '~/.server/auth/auth-service';
+import type { OpenIdServiceConfig } from '~/.server/auth/openid-service-config';
+import { TYPES } from '~/.server/constants';
+import type { HttpClient } from '~/.server/http';
+import { createLogger } from '~/.server/logging';
+import { Traced } from '~/.server/observability/decorator';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
+
+const log = createLogger('DefaultOpenIdService');
+
+/** Connectivity proof only; profile, email and AccountMapper scopes belong to the full sign-in (8845). */
+const SCOPE = 'openid';
+
+/** Error codes the provider can return at the callback or token endpoint (RFC 6749 sections 4.1.2.1 and 5.2, OIDC Core 3.1.2.6). */
+const OAUTH_ERROR_CODES = new Set([
+  'access_denied',
+  'account_selection_required',
+  'consent_required',
+  'interaction_required',
+  'invalid_client',
+  'invalid_grant',
+  'invalid_request',
+  'invalid_scope',
+  'login_required',
+  'server_error',
+  'temporarily_unavailable',
+  'unauthorized_client',
+  'unsupported_grant_type',
+  'unsupported_response_type',
+]);
+
+/** Library failures meaning the token response, including the ID token signature and claims, failed validation. */
+const VALIDATION_ERROR_CODES = new Set(['OAUTH_INVALID_RESPONSE', 'OAUTH_JSON_ATTRIBUTE_COMPARISON_FAILED', 'OAUTH_JWT_CLAIM_COMPARISON_FAILED', 'OAUTH_JWT_TIMESTAMP_CHECK_FAILED', 'OAUTH_KEY_SELECTION_FAILED', 'OAUTH_PARSE_ERROR']);
+
+/**
+ * iSAMS OIDC connectivity proof: authorization code flow with PKCE (S256) and `private_key_jwt` (RS256) client
+ * authentication. Endpoints come from the issuer's discovery document, and the ID token's signature, issuer, audience,
+ * expiry and nonce are validated.
+ *
+ * The callback only reports that the exchange was verified. Tokens and claims are discarded; no CDCP session is created.
+ */
+@injectable()
+export class DefaultOpenIdService implements AuthService {
+  readonly provider = 'oidc';
+
+  private readonly config: OpenIdServiceConfig;
+  private readonly httpClient: HttpClient;
+  private signingKey?: Promise<CryptoKey>;
+
+  constructor(@inject(TYPES.OpenIdServiceConfig) config: OpenIdServiceConfig, @inject(TYPES.HttpClient) httpClient: HttpClient) {
+    this.config = config;
+    this.httpClient = httpClient;
+  }
+
+  @Traced()
+  async generateSigninRequest(): Promise<AuthSigninRequest> {
+    log.debug('Generating OIDC connectivity sign-in request');
+    const configuration = await this.discover();
+
+    const correlation = { state: randomState(), nonce: randomNonce(), codeVerifier: randomPKCECodeVerifier() };
+    const authUrl = buildAuthorizationUrl(configuration, {
+      redirect_uri: this.config.redirectUri.href,
+      scope: SCOPE,
+      code_challenge: await calculatePKCECodeChallenge(correlation.codeVerifier),
+      code_challenge_method: 'S256',
+      state: correlation.state,
+      nonce: correlation.nonce,
+    });
+
+    return { authUrl, correlation };
+  }
+
+  @Traced()
+  async handleCallback({ callbackUrl, correlation }: HandleAuthCallbackArgs): Promise<AuthCallbackResult> {
+    log.debug('Handling OIDC connectivity callback');
+    const { redirectUri } = this.config;
+    const { searchParams } = callbackUrl;
+
+    if (callbackUrl.pathname !== redirectUri.pathname) {
+      throw callbackInvalidError('unexpected_callback_path');
+    }
+
+    if (searchParams.has('error')) {
+      throw providerError(searchParams.get('error'));
+    }
+
+    if (!searchParams.get('code')) {
+      throw callbackInvalidError('authorization_code_missing');
+    }
+
+    if (searchParams.get('state') !== correlation.state) {
+      throw callbackInvalidError('state_mismatch');
+    }
+
+    const configuration = await this.discover();
+
+    // Rebuilt from the configured URI so the token request sends exactly the redirect_uri used at authorization.
+    const currentUrl = new URL(redirectUri);
+    currentUrl.search = callbackUrl.search;
+
+    let tokens: Awaited<ReturnType<typeof authorizationCodeGrant>>;
+
+    try {
+      tokens = await authorizationCodeGrant(configuration, currentUrl, {
+        expectedNonce: correlation.nonce,
+        expectedState: correlation.state,
+        idTokenExpected: true,
+        pkceCodeVerifier: correlation.codeVerifier,
+      });
+    } catch (error) {
+      throw tokenRequestError(error);
+    }
+
+    if (tokens.claims() === undefined) {
+      throw tokenResponseInvalidError('id_token_missing');
+    }
+
+    log.info('OIDC connectivity verified');
+    return { outcome: 'connectivity-verified', authenticated: false, issuer: configuration.serverMetadata().issuer };
+  }
+
+  /**
+   * Discovers the issuer's endpoints and binds `private_key_jwt` client authentication, with ID token signature
+   * checks enabled. Not cached, so every attempt proves discovery is reachable.
+   */
+  private async discover(): Promise<Configuration> {
+    const { clientAssertionAudience, clientId, issuer, privateKeyId } = this.config;
+    const key = await this.getSigningKey();
+    let audience: string | undefined;
+
+    const clientAuthentication = PrivateKeyJwt(
+      { key, kid: privateKeyId },
+      {
+        [modifyAssertion]: (_header, payload) => {
+          if (audience) {
+            payload.aud = audience;
+          }
+        },
+      },
+    );
+
+    let configuration: Configuration;
+
+    try {
+      configuration = await discovery(issuer, clientId, undefined, clientAuthentication, { [customFetch]: this.fetch, timeout: 10, execute: [enableNonRepudiationChecks] });
+    } catch (error) {
+      log.warn('OIDC discovery failed', { [ATTR_ERROR_TYPE]: libraryErrorType(error) });
+      throw new AppError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+    }
+
+    const metadata = configuration.serverMetadata();
+    audience = clientAssertionAudience === 'issuer' ? metadata.issuer : metadata.token_endpoint;
+
+    if (!audience) {
+      log.warn('OIDC discovery document has no token endpoint', { [ATTR_ERROR_TYPE]: 'token_endpoint_missing' });
+      throw new AppError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+    }
+
+    return configuration;
+  }
+
+  private async getSigningKey(): Promise<CryptoKey> {
+    this.signingKey ??= importSigningKey(this.config.privateKey);
+    return await this.signingKey;
+  }
+
+  /**
+   * `fetch` for openid-client so discovery, JWKS and token requests use the instrumented HTTP client and proxy.
+   * Redirects are refused and retries are disabled so the client assertion and code are only sent once.
+   */
+  private readonly fetch: CustomFetch = async (url, options) => {
+    const response = await this.httpClient.instrumentedFetch(`http.client.oidc-connectivity.${options.method === 'GET' ? 'gets' : 'posts'}`, url, {
+      ...options,
+      proxyUrl: this.config.httpProxyUrl,
+      redirect: 'error',
+      retryOptions: { retries: 0, retryConditions: {} },
+    });
+
+    return new globalThis.Response(await response.arrayBuffer(), { status: response.status, statusText: response.statusText, headers: [...response.headers] });
+  };
+}
+
+/** Imports the registered key for RS256 (RSASSA-PKCS1-v1_5 with SHA-256); the key is not extractable. */
+async function importSigningKey(privateKey: Redacted.Redacted<string>): Promise<CryptoKey> {
+  const der = parseOidcPrivateKey(Redacted.value(privateKey)).export({ format: 'der', type: 'pkcs8' });
+  return await globalThis.crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+}
+
+/** Only allowlisted OAuth codes are logged; provider descriptions and URIs can carry arbitrary text. */
+function oauthErrorType(code: unknown): string {
+  return typeof code === 'string' && OAUTH_ERROR_CODES.has(code) ? code : ERROR_TYPE_VALUE_OTHER;
+}
+
+/** openid-client error codes are library constants, so they are safe to log; messages and causes are not. */
+function libraryErrorType(error: unknown): string {
+  return error instanceof ClientError && typeof error.code === 'string' ? error.code : ERROR_TYPE_VALUE_OTHER;
+}
+
+function callbackInvalidError(reason: string): AppError {
+  log.warn('OIDC connectivity callback rejected', { [ATTR_ERROR_TYPE]: reason });
+  return new AppError('OIDC callback is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+}
+
+function providerError(code: unknown): AppError {
+  log.warn('OIDC provider returned an error to the callback', { [ATTR_ERROR_TYPE]: oauthErrorType(code) });
+  return new AppError('OIDC provider returned an error.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_PROVIDER_ERROR, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+}
+
+function tokenResponseInvalidError(reason: string): AppError {
+  log.warn('OIDC token response rejected', { [ATTR_ERROR_TYPE]: reason });
+  return new AppError('OIDC token response is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_RESPONSE_INVALID, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+}
+
+/**
+ * Classifies a failed code exchange without exposing tokens, codes or provider text: validation failures mean the
+ * response or ID token was rejected; provider rejections, transport failures and anything else are exchange failures.
+ */
+function tokenRequestError(error: unknown): AppError {
+  if (error instanceof ResponseBodyError) {
+    log.warn('OIDC token request was rejected by the provider', { [ATTR_ERROR_TYPE]: oauthErrorType(error.error) });
+    return new AppError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+  }
+
+  if (error instanceof AuthorizationResponseError) {
+    return providerError(error.error);
+  }
+
+  if (error instanceof ClientError && VALIDATION_ERROR_CODES.has(error.code ?? '')) {
+    return tokenResponseInvalidError(libraryErrorType(error));
+  }
+
+  log.warn('OIDC token request failed', { [ATTR_ERROR_TYPE]: libraryErrorType(error) });
+  return new AppError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+}

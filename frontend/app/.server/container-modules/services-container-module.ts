@@ -6,6 +6,8 @@ import { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-dis
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
 import { OpenIdAppIdentityClient } from '~/.server/auth/openid-app-identity-client';
+import { DefaultOpenIdService } from '~/.server/auth/openid-service';
+import { OpenIdServiceConfig } from '~/.server/auth/openid-service-config';
 import { DefaultRaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -65,7 +67,7 @@ function sessionTypeIs(serverConfig: Pick<ServerConfig, 'SESSION_STORAGE_TYPE'>,
 /**
  * Defines the container module for service bindings.
  */
-export function createServicesContainerModule(serverConfig: Pick<ServerConfig, 'ENABLED_MOCKS' | 'SESSION_STORAGE_TYPE'>): ContainerModule {
+export function createServicesContainerModule(serverConfig: Pick<ServerConfig, 'AUTH_PROVIDER' | 'ENABLED_MOCKS' | 'SESSION_STORAGE_TYPE'>): ContainerModule {
   // oxfmt-ignore
   return new ContainerModule((options) => {
     options.bind(TYPES.AddressValidationService).to(DefaultAddressValidationService);
@@ -78,6 +80,8 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.ApplicationStatusService).to(DefaultApplicationStatusService);
     options.bind(TYPES.ApplicationYearService).to(DefaultApplicationYearService);
     options.bind(TYPES.AuditService).to(DefaultAuditService);
+    // AuthService is bound only for AUTH_PROVIDER=oidc; RAOIDC uses RaoidcService
+    options.bind(TYPES.AuthService).to(DefaultOpenIdService).inSingletonScope().when(() => serverConfig.AUTH_PROVIDER === 'oidc');
     options.bind(TYPES.BenefitApplicationService).to(DefaultBenefitApplicationService);
     options.bind(TYPES.BenefitRenewalService).to(DefaultBenefitRenewalService);
     options.bind(TYPES.BuildInfoService).to(DefaultBuildInfoService);
@@ -101,6 +105,7 @@ export function createServicesContainerModule(serverConfig: Pick<ServerConfig, '
     options.bind(TYPES.LetterService).to(DefaultLetterService);
     options.bind(TYPES.LetterTypeService).to(DefaultLetterTypeService);
     options.bind(TYPES.MaritalStatusService).to(DefaultMaritalStatusService);
+    options.bind(TYPES.OpenIdServiceConfig).to(OpenIdServiceConfig).inSingletonScope().when(() => serverConfig.AUTH_PROVIDER === 'oidc');
     options.bind(TYPES.ProfileService).to(DefaultProfileService);
     options.bind(TYPES.ProgramApplicantService).to(DefaultProgramApplicantService);
     options.bind(TYPES.ProvinceTerritoryStateService).to(DefaultProvinceTerritoryStateService);

@@ -4,6 +4,7 @@ import * as z from 'zod';
 
 import { appIdentityDiscoveryCacheConfigSchema } from '~/.server/auth/app-identity-discovery-cache-config-schema';
 import { appIdentityTokenCacheConfigSchema } from '~/.server/auth/app-identity-token-cache-config-schema';
+import { authProviderConfigSchema } from '~/.server/auth/auth-provider-config-schema';
 import { documentUploadRepositoryConfigSchema } from '~/.server/domain/repositories/configs/document-upload-repository-config-schema';
 import { generateCryptoKey } from '~/.server/utils/crypto-utils';
 import { singleton } from '~/.server/utils/instance-registry';
@@ -163,8 +164,7 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
   AUTH_JWT_PRIVATE_KEY: z.string().refine(isValidPrivateKey).pipe(stringToRedacted),
   AUTH_JWT_PUBLIC_KEY: z.string().refine(isValidPublicKey),
   AUTH_LOGOUT_REDIRECT_URL: z.url(),
-  AUTH_RAOIDC_BASE_URL: z.string().trim().nonempty(),
-  AUTH_RAOIDC_CLIENT_ID: z.string().trim().nonempty(),
+  // AUTH_PROVIDER and provider-specific settings are in authProviderConfigSchema
   AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS: z.coerce.number().default(10 * 60),
   AUTH_RASCL_LOGOUT_URL: z.string().trim().nonempty(),
 
@@ -325,6 +325,7 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
 const serverEnvSchema = baseServerEnvSchema
   // Combine the base schema with additional configuration schemas
   .and(documentUploadRepositoryConfigSchema)
+  .and(authProviderConfigSchema)
   .and(appIdentityTokenCacheConfigSchema)
   .and(appIdentityDiscoveryCacheConfigSchema);
 

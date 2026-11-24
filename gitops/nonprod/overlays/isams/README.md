@@ -49,13 +49,16 @@ hostname, Redis instance, and session storage.
 
 - [ ] The frontend image includes the 8840 OIDC PKCE flow. Pin its tag in
       `patches/deployments.yaml`; the build workflow restarts only dev and int1.
-- [ ] The `AUTH_OIDC_*` variable and secret names match the 8840 schema. The
-      current schema accepts only `AUTH_PROVIDER=mock` or `raoidc` and requires
-      `AUTH_RAOIDC_BASE_URL` and `AUTH_RAOIDC_CLIENT_ID`, which this overlay omits.
-- [ ] Replace the placeholder issuer and client ID with the approved iSAMS Test values.
+      Older images do not recognize `AUTH_PROVIDER` and require the RAOIDC
+      settings this overlay omits, so they fail to start.
+- [ ] Replace the placeholder issuer, client ID and signing key ID with the
+      approved iSAMS Test registration. Confirm the client assertion audience
+      (`token-endpoint` or `issuer`). The placeholder issuer fails validation,
+      so the frontend does not start until it is replaced.
 - [ ] Vault contains `cdcp-dev` property `ISAMS_OIDC_PRIVATE_KEY`.
 - [ ] DNS for the hostname exists, and `devdpdtsstncom` covers it.
-- [ ] The callback URL is registered with iSAMS, and
+- [ ] `https://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc` is registered
+      with iSAMS as the redirect URI, and
       `https://cdcp-isams.dev-dp.dts-stn.com/oauth/callback` is registered on
       the OAuth proxy's Entra ID app.
 - [ ] Squid allows outbound access to the iSAMS Test tenant.
@@ -73,4 +76,6 @@ kubectl kustomize gitops/nonprod/overlays/isams
 
 After approved deployment, check `/api/readyz` and confirm that the pod can
 reach the iSAMS discovery document through the proxy. The live PKCE proof is
-tracked in 8843.
+tracked in 8843: `/auth/login/oidc` starts the flow, and the callback returns
+`{"outcome":"connectivity-verified","authenticated":false,...}`. It does not
+sign the user in, so protected pages stay unavailable.

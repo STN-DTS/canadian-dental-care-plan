@@ -666,7 +666,7 @@ describe('OpenIdAppIdentityClient', () => {
 
   it('shares the real singleton binding between independently resolved consumers', async () => {
     const container = new Container();
-    container.load(createServicesContainerModule({ ENABLED_MOCKS: [], SESSION_STORAGE_TYPE: 'memory' }));
+    container.load(createServicesContainerModule({ AUTH_PROVIDER: 'raoidc', ENABLED_MOCKS: [], SESSION_STORAGE_TYPE: 'memory' }));
     container.bind(TYPES.ServerConfig).toConstantValue(Object.assign(mock<ServerConfig>(), config));
     const binding = container.rebind(TYPES.HttpClient);
     binding.toConstantValue(httpClient);
