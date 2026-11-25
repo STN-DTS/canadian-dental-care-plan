@@ -300,6 +300,13 @@ describe('getEnv auth provider', () => {
     expect(config).not.toHaveProperty('AUTH_RAOIDC_CLIENT_ID');
   });
 
+  it.each(['https://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc', 'http://localhost:3000/auth/callback/oidc'])('accepts the redirect URI %s', (redirectUri) => {
+    configureOidc();
+    vi.stubEnv('AUTH_OIDC_REDIRECT_URI', redirectUri);
+
+    expect(getEnv()).toMatchObject({ AUTH_OIDC_REDIRECT_URI: redirectUri });
+  });
+
   it('accepts the OIDC private key as single-line base64 PKCS#8', () => {
     configureOidc();
     vi.stubEnv('AUTH_OIDC_PRIVATE_KEY', privateKey.toString('base64'));
@@ -312,6 +319,15 @@ describe('getEnv auth provider', () => {
     ['AUTH_OIDC_ISSUER_URL', 'https://isams.example.test/oauth2/.well-known/openid-configuration'],
     ['AUTH_OIDC_CLIENT_ID', ''],
     ['AUTH_OIDC_REDIRECT_URI', 'not-a-url'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/callback'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc/'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/raoidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc?env=test'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc?'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc#fragment'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc#'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://user:pass@cdcp.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'ftp://cdcp.example.test/auth/callback/oidc'],
     ['AUTH_OIDC_PRIVATE_KEY', 'not-a-key'],
     ['AUTH_OIDC_PRIVATE_KEY', generateKeyPairSync('ec', { namedCurve: 'P-256', privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey],
     ['AUTH_OIDC_PRIVATE_KEY_ID', ''],

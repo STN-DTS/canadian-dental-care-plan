@@ -5,6 +5,22 @@ import { isPrivateKey } from '~/.server/utils/crypto-utils';
 import { validateOAuthIssuer } from '~/.server/utils/url-utils';
 import { stringToRedacted } from '~/.server/utils/zod-utils';
 
+/** The only callback path the auth loader serves for AUTH_PROVIDER=oidc. */
+export const OIDC_CALLBACK_PATHNAME = '/auth/callback/oidc';
+
+/**
+ * The redirect URI is sent as-is at authorization and rebuilt from its origin and path at token exchange, so it must
+ * point at the served callback path with no query, fragment or credentials.
+ */
+function isValidOidcRedirectUri(value: string): boolean {
+  if (!URL.canParse(value)) {
+    return false;
+  }
+
+  const url = new URL(value);
+  return url.pathname === OIDC_CALLBACK_PATHNAME && url.search === '' && url.hash === '' && !value.includes('?') && !value.includes('#') && url.username === '' && url.password === '';
+}
+
 /** RS256 requires an RSA key; iSAMS accepts 2048- or 4096-bit keys. */
 function isValidRs256PrivateKey(value: string): boolean {
   return isPrivateKey(value, { asymmetricKeyType: 'rsa', minModulusLength: 2048 });
@@ -31,7 +47,7 @@ const oidcAuthProviderConfigSchema = z.object({
   AUTH_OIDC_CLIENT_ID: z.string().trim().nonempty(),
 
   /** The exact redirect URI registered with the provider; sent unchanged at authorization and token exchange. */
-  AUTH_OIDC_REDIRECT_URI: z.url({ protocol: /^https?$/ }).refine((value) => !value.includes('?'), { error: 'OIDC redirect URI must not contain query components' }),
+  AUTH_OIDC_REDIRECT_URI: z.url({ protocol: /^https?$/ }).refine(isValidOidcRedirectUri, { error: `OIDC redirect URI must use the ${OIDC_CALLBACK_PATHNAME} path, with no query, fragment or credentials` }),
 
   /** RSA signing key registered for `private_key_jwt` (PEM or single-line base64 PKCS#8). */
   AUTH_OIDC_PRIVATE_KEY: z.string().refine(isValidRs256PrivateKey, { error: 'OIDC private key must be an RSA key of at least 2048 bits' }).pipe(stringToRedacted),
