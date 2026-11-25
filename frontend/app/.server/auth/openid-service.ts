@@ -108,12 +108,12 @@ export class DefaultOpenIdService implements AuthService {
       throw providerError(searchParams.get('error'));
     }
 
-    if (!searchParams.get('code')) {
-      throw callbackInvalidError('authorization_code_missing');
+    if (searchParams.getAll('code').length !== 1 || !searchParams.get('code')) {
+      throw callbackInvalidError('authorization_code_missing_or_duplicated');
     }
 
-    if (searchParams.get('state') !== correlation.state) {
-      throw callbackInvalidError('state_mismatch');
+    if (searchParams.getAll('state').length !== 1 || searchParams.get('state') !== correlation.state) {
+      throw callbackInvalidError('state_missing_mismatched_or_duplicated');
     }
 
     const configuration = await this.discover();
