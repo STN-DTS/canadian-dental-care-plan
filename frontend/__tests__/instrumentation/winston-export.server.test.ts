@@ -301,7 +301,7 @@ test('the application preload preserves event schemas, severity and privacy thro
           const auditService = new DefaultAuditService();
           trace.getTracer('winston-export-test').startActiveSpan('Synthetic audit context', span => {
             auditService.createAudit('auth.session-created', {
-              userId: 'spoofed-actor-canary',
+              userId: 'auth-actor-001',
               sin: '999999998',
               invalidSin: '999999999',
               email: 'sink-person@example.invalid',
@@ -312,6 +312,9 @@ test('the application preload preserves event schemas, severity and privacy thro
             span.end();
           });
           auditService.createAudit('pdf.get', { userId: 'spoofed-actor-canary', letterId: 'audit-letter-001' });
+          auditService.createAudit('auth.session-destroyed', { userId: '999-999-999' });
+          auditService.createAudit('auth.session-destroyed', { userId: 'sink-person@example.invalid' });
+          auditService.createAudit('auth.session-destroyed', { userId: 'Bearer sink-token-canary' });
           const requestContext = new RouterContextProvider();
           requestContext.set(userContext, { id: 'context-actor-001', mocked: false, sin: '999999997' });
           const requestUrl = new URL('https://localhost/en/protected/profile');
@@ -526,7 +529,14 @@ test('the application preload preserves event schemas, severity and privacy thro
     }
 
     const auditRecords = records.filter((record) => record.eventName === 'cdcp.audit.recorded');
-    expect(auditRecords).toHaveLength(3);
+    expect(auditRecords).toHaveLength(6);
+    const expectedAuditActors = new Map<unknown, string | undefined>([
+      ['auth.session-created', 'auth-actor-001'],
+      ['auth.session-destroyed', undefined],
+      ['pdf.get', 'anonymous'],
+      ['client-eligibility.number.get', 'context-actor-001'],
+    ]);
+    expect(auditRecords.filter((record) => record.attributes['cdcp.audit.event_id'] === 'auth.session-destroyed')).toHaveLength(3);
 
     for (const record of auditRecords) {
       const attributes = record.attributes;
@@ -536,9 +546,10 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(record.severityNumber).toBe(SeverityNumber.INFO);
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
-      expect(attributes['cdcp.user.id']).toBe(attributes['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'anonymous');
-      expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
-      expect(Object.keys(attributes)).toEqual(expect.arrayContaining(['cdcp.audit.event_id', 'cdcp.user.id']));
+      expect(expectedAuditActors.has(attributes['cdcp.audit.event_id'])).toBe(true);
+      expect(attributes['cdcp.user.id']).toBe(expectedAuditActors.get(attributes['cdcp.audit.event_id']));
+      expect(Object.keys(attributes)).toContain('cdcp.audit.event_id');
+      expect(Object.hasOwn(attributes, 'cdcp.user.id')).toBe(expectedAuditActors.get(attributes['cdcp.audit.event_id']) !== undefined);
       expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'timestamp'].includes(key))).toEqual([]);
     }
 
@@ -549,13 +560,14 @@ test('the application preload preserves event schemas, severity and privacy thro
     expect(auditRecords.find((record) => record.attributes['cdcp.audit.event_id'] === 'pdf.get')?.attributes['cdcp.letter.id']).toBe('audit-letter-001');
 
     for (const sinkRecords of [fileRecords, consoleRecords.filter((record) => record.message === 'Audit event recorded')]) {
-      expect(sinkRecords).toHaveLength(3);
+      expect(sinkRecords).toHaveLength(6);
 
       for (const record of sinkRecords) {
         expect(record.level).toBe('audit');
         expect(record['otel.event.name']).toBe('cdcp.audit.recorded');
-        expect(record['cdcp.user.id']).toBe(record['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'anonymous');
-        expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
+        expect(expectedAuditActors.has(record['cdcp.audit.event_id'])).toBe(true);
+        expect(record['cdcp.user.id']).toBe(expectedAuditActors.get(record['cdcp.audit.event_id']));
+        expect(Object.hasOwn(record, 'cdcp.user.id')).toBe(expectedAuditActors.get(record['cdcp.audit.event_id']) !== undefined);
         expect(typeof record.timestamp).toBe('string');
         expect(Object.keys(record).every((key) => ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'trace_id', 'span_id', 'trace_flags'].includes(key))).toBe(true);
       }

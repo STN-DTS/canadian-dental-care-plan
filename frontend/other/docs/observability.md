@@ -606,11 +606,12 @@ The bounded schema admits:
 - `cdcp.audit.event_id`: a code-defined action identifier of at most 128
   lowercase ASCII letters, digits, dots or hyphens, beginning with a letter.
 - `cdcp.user.id`: the existing approved opaque actor identifier. The service
-  always resolves it from the authenticated user of the current request at
-  call time; callers cannot supply it, and a runtime `userId` detail is
-  rejected as unapproved metadata. Without a request scope or a signed-in
-  user, the actor is `anonymous`. An authenticated identifier that fails the
-  format check below is omitted with a fixed diagnostic.
+  resolves it from the authenticated user of the current request at call time.
+  For `auth.session-created` and `auth.session-destroyed` only, the caller
+  supplies the ID token subject as `auditDetails.userId`; it takes precedence
+  over request context. A `userId` detail on any other event is rejected.
+  Without a supplied subject or request user, the actor is `anonymous`.
+  An identifier that fails the format check below is omitted with a fixed diagnostic.
 - `cdcp.letter.id`: the existing approved opaque letter identifier, only for
   `pdf.get`.
 
@@ -635,7 +636,9 @@ Fluentd to read them while enforcing approved access, integrity and retention
 policies. The local sink test verifies
 delivery to file, console and OTLP with ordinary diagnostics filtered out and
 trace sampling disabled, including an audit attributed to the request user
-and a caller-supplied actor that never reaches any sink.
+and authentication audits attributed to the supplied ID token subject. The
+test also checks that rejected subjects and caller-supplied actors on other
+events never reach any sink.
 
 Ordinary diagnostics that carry `cdcp.user.id` read it with
 `userLogAttributes()` from `app/.server/logging/user-log-attributes.ts`, which

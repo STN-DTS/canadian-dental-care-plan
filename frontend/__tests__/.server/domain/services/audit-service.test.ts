@@ -69,10 +69,10 @@ describe('DefaultAuditService', () => {
     expect(auditedUserIds(logger)).toEqual(['anonymous', 'anonymous']);
   });
 
-  it('ignores a caller-supplied actor and records the request user', async () => {
+  it('ignores a caller-supplied actor for a non-authentication event', async () => {
     await runInRequestScope(createRequestContext('context-user'), () => {
-      // @ts-expect-error -- the actor is resolved by the audit service, not supplied by callers
-      new DefaultAuditService().createAudit('auth.session-created', { userId: 'spoofed-user' });
+      // @ts-expect-error -- explicit actors are only permitted for authentication events
+      new DefaultAuditService().createAudit('letters.get', { userId: 'spoofed-user' });
     });
 
     expect(auditedUserIds(logger)).toEqual(['context-user']);
@@ -80,6 +80,47 @@ describe('DefaultAuditService', () => {
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Unapproved audit metadata omitted', {
       [ATTR_ERROR_TYPE]: 'audit_metadata_rejected',
     });
+  });
+
+  it.each(['auth.session-created', 'auth.session-destroyed'] as const)('uses the supplied token subject for %s without a request user', (eventId) => {
+    new DefaultAuditService().createAudit(eventId, { userId: 'token-user' });
+
+    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
+      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
+      'cdcp.audit.event_id': eventId,
+      'cdcp.user.id': 'token-user',
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('uses the supplied token subject for authentication even when a request user exists', async () => {
+    await runInRequestScope(createRequestContext('context-user'), () => {
+      new DefaultAuditService().createAudit('auth.session-created', { userId: 'token-user' });
+    });
+
+    expect(auditedUserIds(logger)).toEqual(['token-user']);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it.each(['999999998', '999-999-999', 'actor@example.invalid', 'Bearer synthetic-token', '', 'a'.repeat(256)])('omits an inadmissible authentication subject: %s', (userId) => {
+    new DefaultAuditService().createAudit('auth.session-created', { userId });
+
+    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
+      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
+      'cdcp.audit.event_id': 'auth.session-created',
+    });
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Unapproved audit metadata omitted', {
+      [ATTR_ERROR_TYPE]: 'audit_metadata_rejected',
+    });
+  });
+
+  it('uses the request user when an authentication event has no supplied subject', async () => {
+    await runInRequestScope(createRequestContext('context-user'), () => {
+      new DefaultAuditService().createAudit('auth.session-created', { userId: undefined });
+    });
+
+    expect(auditedUserIds(logger)).toEqual(['context-user']);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('omits arbitrary metadata and the letter identifier outside PDF audit records', () => {
@@ -118,16 +159,18 @@ describe('DefaultAuditService', () => {
   it('does not invoke metadata getters or proxy traps', () => {
     const getter = vi.fn(() => 'private-getter-canary');
     const details = Object.defineProperty({}, 'letterId', { enumerable: true, get: getter });
+    const actorDetails = Object.defineProperty({}, 'userId', { enumerable: true, get: getter });
     const ownKeys = vi.fn(() => ['letterId']);
     const proxy = new Proxy({}, { ownKeys });
     const service = new DefaultAuditService();
 
     service.createAudit('pdf.get', details);
+    service.createAudit('auth.session-created', actorDetails);
     service.createAudit('pdf.get', proxy);
 
     expect(getter).not.toHaveBeenCalled();
     expect(ownKeys).not.toHaveBeenCalled();
-    expect(logger.audit).toHaveBeenCalledTimes(2);
+    expect(logger.audit).toHaveBeenCalledTimes(3);
     expect(JSON.stringify(logger.audit.mock.calls)).not.toContain('private-getter-canary');
   });
 

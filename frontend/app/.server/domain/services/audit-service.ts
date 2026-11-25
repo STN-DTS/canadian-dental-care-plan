@@ -3,7 +3,7 @@ import { injectable } from 'inversify';
 import { isProxy } from 'node:util/types';
 
 import { findUser } from '~/.server/context/user-context';
-import type { AuditDetails } from '~/.server/domain/dtos';
+import type { AuditDetails, AuthenticationAuditDetails } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUDIT_EVENT_ID, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
@@ -12,14 +12,17 @@ export interface AuditService {
   /**
    * Creates an audit log entry for a given event.
    *
-   * The actor is always the authenticated user of the current request, or `anonymous` when
-   * there is none (for example, public routes and background work). Callers cannot supply it.
+   * Authentication events may provide the ID token subject as the actor. Otherwise, the actor
+   * is the authenticated request user, or `anonymous` when there is none.
    *
    * @param eventId A code-defined audit action identifier
-   * @param auditDetails Only an opaque `letterId` for `pdf.get` is admitted
+   * @param auditDetails An opaque `userId` for authentication events or `letterId` for `pdf.get`
    */
+  createAudit(eventId: AuthenticationAuditEvent, auditDetails?: AuthenticationAuditDetails): void;
   createAudit(eventId: string, auditDetails?: AuditDetails): void;
 }
+
+type AuthenticationAuditEvent = 'auth.session-created' | 'auth.session-destroyed';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
@@ -36,16 +39,18 @@ export class DefaultAuditService implements AuditService {
     this.log.debug('DefaultAuditService initiated.');
   }
 
-  createAudit(eventId: string, auditDetails?: AuditDetails): void {
+  createAudit(eventId: AuthenticationAuditEvent, auditDetails?: AuthenticationAuditDetails): void;
+  createAudit(eventId: string, auditDetails?: AuditDetails): void;
+  createAudit(eventId: string, auditDetails?: AuditDetails | AuthenticationAuditDetails): void {
     if (typeof eventId !== 'string' || !/^[a-z][a-z0-9.-]{0,127}$/.test(eventId)) {
       this.log.error(new Error('Audit record rejected because its action identifier is invalid'), { [ATTR_ERROR_TYPE]: 'audit_event_invalid' });
       return;
     }
 
-    const attributes = this.projectAuditDetails(eventId, auditDetails);
-    const actor = this.resolveActor();
+    const { attributes, actor: suppliedActor } = this.projectAuditDetails(eventId, auditDetails);
+    const actor = suppliedActor === undefined ? this.resolveActor() : suppliedActor;
 
-    if (actor !== undefined) {
+    if (actor !== undefined && actor !== null) {
       attributes[ATTR_CDCP_USER_ID] = actor;
     }
 
@@ -77,29 +82,42 @@ export class DefaultAuditService implements AuditService {
 
   /**
    * Projects caller metadata onto approved audit attributes, omitting anything else.
+   * An absent actor falls back to request context; a rejected actor is null.
    */
-  private projectAuditDetails(eventId: string, auditDetails: unknown): Record<string, string> {
+  private projectAuditDetails(eventId: string, auditDetails: unknown): { attributes: Record<string, string>; actor: string | null | undefined } {
+    const attributes: Record<string, string> = {};
+    let actor: string | null | undefined;
+
     if (auditDetails === undefined) {
-      return {};
+      return { attributes, actor };
     }
 
     if (typeof auditDetails !== 'object' || auditDetails === null || isProxy(auditDetails)) {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
-      return {};
+      return { attributes, actor };
     }
 
-    const attributes: Record<string, string> = {};
     let rejected = false;
 
     for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(auditDetails))) {
       const value: unknown = descriptor.value;
+      const isAuthActor = key === 'userId' && (eventId === 'auth.session-created' || eventId === 'auth.session-destroyed');
+      const isLetterId = key === 'letterId' && eventId === 'pdf.get';
 
-      if (key !== 'letterId' || eventId !== 'pdf.get' || !('value' in descriptor)) {
+      if ((!isAuthActor && !isLetterId) || !('value' in descriptor)) {
         rejected = true;
       } else if (value !== undefined) {
         if (isAdmissibleIdentifier(value)) {
-          attributes[ATTR_CDCP_LETTER_ID] = value;
+          if (isAuthActor) {
+            actor = value;
+          } else {
+            attributes[ATTR_CDCP_LETTER_ID] = value;
+          }
         } else {
+          if (isAuthActor) {
+            actor = null;
+          }
+
           rejected = true;
         }
       }
@@ -109,7 +127,7 @@ export class DefaultAuditService implements AuditService {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
     }
 
-    return attributes;
+    return { attributes, actor };
   }
 }
 
