@@ -11,6 +11,8 @@ import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import type { Logger } from '~/.server/logging';
+import * as logging from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
 import type { Session } from '~/.server/web/session';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
@@ -55,6 +57,7 @@ function withCorrelation(session: Session) {
 
 describe('auth loader', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
@@ -141,6 +144,21 @@ describe('auth loader', () => {
   });
 
   describe('OIDC error responses', () => {
+    it.each([
+      [HttpStatusCodes.BAD_GATEWAY, 'error', 'warn'],
+      [HttpStatusCodes.BAD_REQUEST, 'warn', 'error'],
+    ] as const)('logs a %i OIDC failure at %s level', async (status, expectedLevel, otherLevel) => {
+      const logger = mock<Logger>();
+      vi.spyOn(logging, 'createLogger').mockReturnValue(logger);
+      const { args, authService } = createArgs('oidc', 'login/oidc');
+      authService.generateSigninRequest.mockRejectedValue(new AppError('OIDC request failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: status, correlationId: 'correlation-id' }));
+
+      await loader(args);
+
+      expect(logger[expectedLevel]).toHaveBeenCalledWith('OIDC request failed', expect.objectContaining({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, correlationId: 'correlation-id' }));
+      expect(logger[otherLevel]).not.toHaveBeenCalled();
+    });
+
     it.each([
       ['login/oidc', ''],
       ['callback/oidc', '?code=synthetic-code&state=synthetic-state'],
