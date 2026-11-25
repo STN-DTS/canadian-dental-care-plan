@@ -86,7 +86,7 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
 
     this.getEvidentiaryDocumentTypeById = memoize(this.getEvidentiaryDocumentTypeById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: evidentiaryDocumentTypeCacheTTL,
     });
 

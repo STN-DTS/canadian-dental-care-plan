@@ -86,7 +86,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
 
     this.getDocumentUploadReasonById = memoize(this.getDocumentUploadReasonById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: documentUploadReasonCacheTTL,
     });
 

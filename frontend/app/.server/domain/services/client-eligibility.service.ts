@@ -55,7 +55,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     this.listClientEligibilitiesByClientNumbers = memoize(this.listClientEligibilitiesByClientNumbers, {
       async: true,
       expires: clientEligibilityCacheTtl,
-      maxSize: Infinity,
+      maxSize: 1000,
     });
 
     type MemoizedListClientEligibilitiesByClientNumbers = Memoized<typeof this.listClientEligibilitiesByClientNumbers, Options<typeof this.listClientEligibilitiesByClientNumbers>>;

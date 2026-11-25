@@ -112,7 +112,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
 
     this.getProvinceTerritoryStateById = memoize(this.getProvinceTerritoryStateById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: provinceTerritoryStateCacheTTL,
     });
 
@@ -121,7 +121,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
 
     this.getProvinceTerritoryStateByCode = memoize(this.getProvinceTerritoryStateByCode, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: provinceTerritoryStateCacheTTL,
     });
 

@@ -87,7 +87,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
 
     this.getLetterTypeById = memoize(this.getLetterTypeById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: letterTypeCacheTTL,
     });
 

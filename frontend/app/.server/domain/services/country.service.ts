@@ -104,7 +104,7 @@ export class DefaultCountryService implements CountryService {
     this.getCountryById = memoize(this.getCountryById, {
       async: true,
       expires: countryCacheTTL,
-      maxSize: Infinity,
+      maxSize: 500,
     });
 
     type MemoizedGetCountryById = Memoized<typeof this.getCountryById, Options<typeof this.getCountryById>>;

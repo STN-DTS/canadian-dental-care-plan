@@ -106,7 +106,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
 
     this.findFederalGovernmentInsurancePlanById = memoize(this.findFederalGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: federalGovernmentInsurancePlanCacheTTL,
     });
 
@@ -115,7 +115,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
 
     this.getFederalGovernmentInsurancePlanById = memoize(this.getFederalGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: federalGovernmentInsurancePlanCacheTTL,
     });
 

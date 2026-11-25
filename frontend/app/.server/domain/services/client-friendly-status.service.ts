@@ -79,7 +79,7 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
 
     this.getClientFriendlyStatusById = memoize(this.getClientFriendlyStatusById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: clientFriendlyStatusCacheTTL,
     });
 

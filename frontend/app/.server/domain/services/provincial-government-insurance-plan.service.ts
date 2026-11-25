@@ -57,7 +57,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
 
     this.findProvincialGovernmentInsurancePlanById = memoize(this.findProvincialGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: provincialGovernmentInsurancePlanCacheTTL,
     });
 
@@ -66,7 +66,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
 
     this.getProvincialGovernmentInsurancePlanById = memoize(this.getProvincialGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: 500,
       expires: provincialGovernmentInsurancePlanCacheTTL,
     });
 

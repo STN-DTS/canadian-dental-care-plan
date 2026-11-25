@@ -53,7 +53,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
 
     this.getIntakeApplicationYear = memoize(this.getIntakeApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
-      maxSize: Infinity,
+      maxSize: 10,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
 
@@ -62,7 +62,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
 
     this.getRenewalApplicationYear = memoize(this.getRenewalApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
-      maxSize: Infinity,
+      maxSize: 10,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
 
