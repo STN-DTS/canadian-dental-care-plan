@@ -18,8 +18,26 @@ export default defineConfig({
         'jsx-a11y/role-supports-aria-props': 'off',
       },
     },
+    {
+      // The helper wraps micro-memoize, and tests may mock the library it wraps.
+      files: ['app/.server/utils/memoize-utils.ts', '__mocks__/micro-memoize.ts', '__tests__/**'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
   ],
   rules: {
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: [
+          {
+            name: 'micro-memoize',
+            message: 'Use createMemoized from ~/.server/utils/memoize-utils so every cache is bounded and keyed by value.',
+          },
+        ],
+      },
+    ],
     'jsx-a11y/no-redundant-roles': 'off',
     'jsx-a11y/prefer-tag-over-role': 'off',
     'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
