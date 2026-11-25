@@ -52,15 +52,16 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     const clientEligibilityCacheTtl = secondsToMilliseconds(this.serverConfig.LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS);
     this.log.debug('Cache TTL value: %d ms', clientEligibilityCacheTtl);
 
-    this.listClientEligibilitiesByClientNumbers = memoize(this.listClientEligibilitiesByClientNumbers, {
+    this.fetchClientEligibilities = memoize(this.fetchClientEligibilities, {
       async: true,
       expires: clientEligibilityCacheTtl,
       maxSize: 1000,
+      transformKey: ([clientNumbers]) => [...new Set(clientNumbers)].toSorted(),
     });
 
-    type MemoizedListClientEligibilitiesByClientNumbers = Memoized<typeof this.listClientEligibilitiesByClientNumbers, Options<typeof this.listClientEligibilitiesByClientNumbers>>;
-    (this.listClientEligibilitiesByClientNumbers as MemoizedListClientEligibilitiesByClientNumbers).cache.on('add', ({ key }) => {
-      this.log.info('Creating new listClientEligibilitiesByClientNumbers memo');
+    type MemoizedFetchClientEligibilities = Memoized<typeof this.fetchClientEligibilities, Options<typeof this.fetchClientEligibilities>>;
+    (this.fetchClientEligibilities as MemoizedFetchClientEligibilities).cache.on('add', () => {
+      this.log.info('Creating new fetchClientEligibilities memo');
     });
 
     this.log.debug('DefaultClientEligibilityService initiated.');
@@ -71,12 +72,18 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
 
     this.auditService.createAudit('client-eligibility.number.get');
 
+    const clientEligibilityDtos = await this.fetchClientEligibilities(clientNumbers);
+
+    this.log.trace('Returning client eligibilities: [%j]', clientEligibilityDtos);
+    return clientEligibilityDtos;
+  }
+
+  private async fetchClientEligibilities(clientNumbers: ReadonlyArray<string>): Promise<ReadonlyMap<string, ClientEligibilityDto>> {
     const clientEligibilityRequestDto = clientNumbers.map((clientNumber) => ({ clientNumber }));
     const clientEligibilityRequestEntity = this.clientEligibilityDtoMapper.mapClientEligibilityRequestDtoToClientEligibilityRequestEntity(clientEligibilityRequestDto);
     const clientEligibilityEntities = await this.clientEligibilityRepository.listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity);
     const clientEligibilityDtos = clientEligibilityEntities.map((entity) => this.clientEligibilityDtoMapper.mapClientEligibilityEntityToClientEligibilityDto(entity));
 
-    this.log.trace('Returning client eligibility: [%j]', clientEligibilityDtos);
     return new Map(clientEligibilityDtos.map((dto) => [dto.clientNumber, dto]));
   }
 }
