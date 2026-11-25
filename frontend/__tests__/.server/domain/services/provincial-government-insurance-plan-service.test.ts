@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,6 +8,7 @@ import { ProvincialGovernmentInsurancePlanNotFoundException } from '~/.server/do
 import type { ProvincialGovernmentInsurancePlanDtoMapper } from '~/.server/domain/mappers';
 import type { GovernmentInsurancePlanRepository } from '~/.server/domain/repositories';
 import { DefaultProvincialGovernmentInsurancePlanService } from '~/.server/domain/services';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 vi.mock(import('micro-memoize'));
 
@@ -29,9 +29,9 @@ describe('DefaultProvincialGovernmentInsurancePlanService', () => {
 
       const service = new DefaultProvincialGovernmentInsurancePlanService(mockProvincialGovernmentInsurancePlanDtoMapper, mockGovernmentInsurancePlanRepository, mockServerConfig); // Act and Assert
 
-      expect((service.listProvincialGovernmentInsurancePlans as Memoized<typeof service.listProvincialGovernmentInsurancePlans, Options<typeof service.listProvincialGovernmentInsurancePlans>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
-      expect((service.getProvincialGovernmentInsurancePlanById as Memoized<typeof service.getProvincialGovernmentInsurancePlanById, Options<typeof service.getProvincialGovernmentInsurancePlanById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
-      expect((service.getProvincialGovernmentInsurancePlanById as Memoized<typeof service.getProvincialGovernmentInsurancePlanById, Options<typeof service.getProvincialGovernmentInsurancePlanById>>).options.maxSize).toBe(10);
+      expect((service.listProvincialGovernmentInsurancePlans as MemoizedFunction<typeof service.listProvincialGovernmentInsurancePlans>).options.expires).toBe(10_000); // 10 seconds in milliseconds
+      expect((service.getProvincialGovernmentInsurancePlanById as MemoizedFunction<typeof service.getProvincialGovernmentInsurancePlanById>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getProvincialGovernmentInsurancePlanById as MemoizedFunction<typeof service.getProvincialGovernmentInsurancePlanById>).options.maxSize).toBe(10);
     });
   });
 

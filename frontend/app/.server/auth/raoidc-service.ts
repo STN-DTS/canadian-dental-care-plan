@@ -1,7 +1,5 @@
 import { Redacted } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 import { subtle } from 'node:crypto';
 
 import type { ServerConfig } from '~/.server/configs';
@@ -12,6 +10,8 @@ import type { Logger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 import type { ClientMetadata, IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import * as raoidcUtils from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -121,12 +121,15 @@ export class DefaultRaoidcService implements RaoidcService {
     // Configure caching for raoidc operations
     const raoidcMetadataCacheTTL = 1000 * this.serverConfig.AUTH_RAOIDC_METADATA_CACHE_TTL_SECONDS;
 
-    this.fetchServerMetadata = memoize(this.fetchServerMetadata, {
+    this.fetchServerMetadata = createMemoized(this.fetchServerMetadata, {
+      maxSize: 1,
       async: true,
-      expires: raoidcMetadataCacheTTL,
+      expiresMs: raoidcMetadataCacheTTL,
+      // fetchFn is the same instance on every call, so the base URL identifies the entry
+      key: (authServerUrl) => authServerUrl,
     });
 
-    type MemoizedFetchServerMetadata = Memoized<typeof this.fetchServerMetadata, Options<typeof this.fetchServerMetadata>>;
+    type MemoizedFetchServerMetadata = MemoizedFunction<typeof this.fetchServerMetadata>;
     (this.fetchServerMetadata as MemoizedFetchServerMetadata).cache.on('add', () => {
       this.log.debug('RAOIDC server metadata cache entry created');
     });

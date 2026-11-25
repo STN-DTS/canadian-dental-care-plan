@@ -1,12 +1,12 @@
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_BUILD_DATE, ATTR_CDCP_BUILD_ID, ATTR_CDCP_BUILD_REVISION, ATTR_CDCP_BUILD_VERSION } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 export interface BuildInfo {
   buildDate: string;
@@ -34,9 +34,9 @@ export class DefaultBuildInfoService implements BuildInfoService {
   }
 
   private init(): void {
-    this.getBuildInfo = memoize(this.getBuildInfo);
+    this.getBuildInfo = createMemoized(this.getBuildInfo, { maxSize: 1 });
 
-    type MemoizedGetBuildInfo = Memoized<typeof this.getBuildInfo, Options<typeof this.getBuildInfo>>;
+    type MemoizedGetBuildInfo = MemoizedFunction<typeof this.getBuildInfo>;
     (this.getBuildInfo as MemoizedGetBuildInfo).cache.on('add', () => {
       this.log.info('Creating new getBuildInfo memo');
     });

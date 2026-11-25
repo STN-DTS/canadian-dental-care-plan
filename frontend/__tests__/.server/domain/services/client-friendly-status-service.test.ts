@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,6 +8,7 @@ import type { ClientFriendlyStatusDtoMapper } from '~/.server/domain/mappers';
 import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositories';
 import type { ClientFriendlyStatusServiceImpl_ServerConfig } from '~/.server/domain/services';
 import { DefaultClientFriendlyStatusService } from '~/.server/domain/services';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 vi.mock(import('micro-memoize'));
 
@@ -25,8 +25,8 @@ describe('DefaultClientFriendlyStatusService', () => {
 
       const service = new DefaultClientFriendlyStatusService(mockClientFriendlyStatusDtoMapper, mockClientFriendlyStatusRepository, mockServerConfig); // Act and Assert
 
-      expect((service.getClientFriendlyStatusById as Memoized<typeof service.getClientFriendlyStatusById, Options<typeof service.getClientFriendlyStatusById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
-      expect((service.getClientFriendlyStatusById as Memoized<typeof service.getClientFriendlyStatusById, Options<typeof service.getClientFriendlyStatusById>>).options.maxSize).toBe(10);
+      expect((service.getClientFriendlyStatusById as MemoizedFunction<typeof service.getClientFriendlyStatusById>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getClientFriendlyStatusById as MemoizedFunction<typeof service.getClientFriendlyStatusById>).options.maxSize).toBe(10);
     });
   });
 

@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,8 @@ import type { DocumentUploadReasonRepository } from '~/.server/domain/repositori
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Service interface for managing document upload reason data.
@@ -78,21 +78,22 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allDocumentUploadReasonsCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: documentUploadReasonCacheTTL });
 
-    this.listDocumentUploadReasons = memoize(this.listDocumentUploadReasons, {
+    this.listDocumentUploadReasons = createMemoized(this.listDocumentUploadReasons, {
+      maxSize: 1,
       async: true,
-      expires: allDocumentUploadReasonsCacheTTL,
+      expiresMs: allDocumentUploadReasonsCacheTTL,
     });
 
-    type MemoizedListDocumentUploadReasons = Memoized<typeof this.listDocumentUploadReasons, Options<typeof this.listDocumentUploadReasons>>;
+    type MemoizedListDocumentUploadReasons = MemoizedFunction<typeof this.listDocumentUploadReasons>;
     (this.listDocumentUploadReasons as MemoizedListDocumentUploadReasons).cache.on('add', () => this.log.debug('Creating new listDocumentUploadReasons memo'));
 
-    this.getDocumentUploadReasonById = memoize(this.getDocumentUploadReasonById, {
+    this.getDocumentUploadReasonById = createMemoized(this.getDocumentUploadReasonById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_MAX_SIZE,
-      expires: documentUploadReasonCacheTTL,
+      expiresMs: documentUploadReasonCacheTTL,
     });
 
-    type MemoizedGetDocumentUploadReasonById = Memoized<typeof this.getDocumentUploadReasonById, Options<typeof this.getDocumentUploadReasonById>>;
+    type MemoizedGetDocumentUploadReasonById = MemoizedFunction<typeof this.getDocumentUploadReasonById>;
     (this.getDocumentUploadReasonById as MemoizedGetDocumentUploadReasonById).cache.on('add', () => this.log.debug('Creating new getDocumentUploadReasonById memo'));
 
     this.log.debug('DefaultDocumentUploadReasonService initiated.');

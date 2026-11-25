@@ -1,6 +1,4 @@
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
@@ -9,6 +7,8 @@ import { Traced } from '~/.server/observability/decorator';
 import type { AddressValidatorFactory } from '~/.server/routes/validators/';
 import { DefaultHomeAddressValidator } from '~/.server/routes/validators/home-address-validator';
 import type { HomeAddressValidator } from '~/.server/routes/validators/home-address-validator';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Factory interface for creating home address validators.
@@ -34,9 +34,9 @@ export class DefaultHomeAddressValidatorFactory implements HomeAddressValidatorF
   }
 
   private init(): void {
-    this.createHomeAddressValidator = memoize(this.createHomeAddressValidator);
+    this.createHomeAddressValidator = createMemoized(this.createHomeAddressValidator, { maxSize: 1 });
 
-    type MemoizedCreateHomeAddressValidator = Memoized<typeof this.createHomeAddressValidator, Options<typeof this.createHomeAddressValidator>>;
+    type MemoizedCreateHomeAddressValidator = MemoizedFunction<typeof this.createHomeAddressValidator>;
     (this.createHomeAddressValidator as MemoizedCreateHomeAddressValidator).cache.on('add', () => {
       this.log.debug('Home address validator cache entry created');
     });

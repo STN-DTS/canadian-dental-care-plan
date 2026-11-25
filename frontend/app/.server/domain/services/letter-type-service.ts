@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,8 @@ import type { LetterTypeRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Service interface for managing letter type data.
@@ -78,21 +78,22 @@ export class DefaultLetterTypeService implements LetterTypeService {
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allLetterTypesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: letterTypeCacheTTL });
 
-    this.listLetterTypes = memoize(this.listLetterTypes, {
+    this.listLetterTypes = createMemoized(this.listLetterTypes, {
+      maxSize: 1,
       async: true,
-      expires: allLetterTypesCacheTTL,
+      expiresMs: allLetterTypesCacheTTL,
     });
 
-    type MemoizedListLetterTypes = Memoized<typeof this.listLetterTypes, Options<typeof this.listLetterTypes>>;
+    type MemoizedListLetterTypes = MemoizedFunction<typeof this.listLetterTypes>;
     (this.listLetterTypes as MemoizedListLetterTypes).cache.on('add', () => this.log.debug('Creating new listLetterTypes memo'));
 
-    this.getLetterTypeById = memoize(this.getLetterTypeById, {
+    this.getLetterTypeById = createMemoized(this.getLetterTypeById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_LETTER_TYPE_CACHE_MAX_SIZE,
-      expires: letterTypeCacheTTL,
+      expiresMs: letterTypeCacheTTL,
     });
 
-    type MemoizedGetLetterTypeById = Memoized<typeof this.getLetterTypeById, Options<typeof this.getLetterTypeById>>;
+    type MemoizedGetLetterTypeById = MemoizedFunction<typeof this.getLetterTypeById>;
     (this.getLetterTypeById as MemoizedGetLetterTypeById).cache.on('add', () => this.log.debug('Creating new getLetterTypeById memo'));
 
     this.log.debug('DefaultLetterTypeService initiated.');

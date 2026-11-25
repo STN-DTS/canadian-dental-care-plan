@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,6 +8,7 @@ import type { CountryDtoMapper } from '~/.server/domain/mappers';
 import type { CountryRepository } from '~/.server/domain/repositories';
 import type { CountryServiceImpl_ServiceConfig } from '~/.server/domain/services';
 import { DefaultCountryService } from '~/.server/domain/services';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 vi.mock(import('micro-memoize'));
 
@@ -27,9 +27,9 @@ describe('DefaultCountryService', () => {
 
       const service = new DefaultCountryService(mockCountryDtoMapper, mockCountryRepository, mockServerConfig); // Act and Assert
 
-      expect((service.listCountries as Memoized<typeof service.listCountries, Options<typeof service.listCountries>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
-      expect((service.getCountryById as Memoized<typeof service.getCountryById, Options<typeof service.getCountryById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
-      expect((service.getCountryById as Memoized<typeof service.getCountryById, Options<typeof service.getCountryById>>).options.maxSize).toBe(10);
+      expect((service.listCountries as MemoizedFunction<typeof service.listCountries>).options.expires).toBe(10_000); // 10 seconds in milliseconds
+      expect((service.getCountryById as MemoizedFunction<typeof service.getCountryById>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getCountryById as MemoizedFunction<typeof service.getCountryById>).options.maxSize).toBe(10);
     });
   });
 

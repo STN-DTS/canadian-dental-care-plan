@@ -1,6 +1,4 @@
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
@@ -9,6 +7,8 @@ import { Traced } from '~/.server/observability/decorator';
 import type { AddressValidatorFactory } from '~/.server/routes/validators/';
 import { DefaultMailingAddressValidator } from '~/.server/routes/validators/mailing-address-validator';
 import type { MailingAddressValidator } from '~/.server/routes/validators/mailing-address-validator';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Factory interface for creating mailing address validators.
@@ -34,9 +34,9 @@ export class DefaultMailingAddressValidatorFactory implements MailingAddressVali
   }
 
   private init(): void {
-    this.createMailingAddressValidator = memoize(this.createMailingAddressValidator);
+    this.createMailingAddressValidator = createMemoized(this.createMailingAddressValidator, { maxSize: 1 });
 
-    type MemoizedCreateMailingAddressValidator = Memoized<typeof this.createMailingAddressValidator, Options<typeof this.createMailingAddressValidator>>;
+    type MemoizedCreateMailingAddressValidator = MemoizedFunction<typeof this.createMailingAddressValidator>;
     (this.createMailingAddressValidator as MemoizedCreateMailingAddressValidator).cache.on('add', () => {
       this.log.debug('Mailing address validator cache entry created');
     });

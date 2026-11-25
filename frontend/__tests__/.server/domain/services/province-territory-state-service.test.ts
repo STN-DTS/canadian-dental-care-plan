@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,6 +8,7 @@ import { ProvinceTerritoryStateNotFoundException } from '~/.server/domain/except
 import type { ProvinceTerritoryStateDtoMapper } from '~/.server/domain/mappers';
 import type { ProvinceTerritoryStateRepository } from '~/.server/domain/repositories';
 import { DefaultProvinceTerritoryStateService } from '~/.server/domain/services';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 vi.mock(import('micro-memoize'));
 
@@ -26,9 +26,9 @@ describe('DefaultProvinceTerritoryStateService', () => {
 
       const service = new DefaultProvinceTerritoryStateService(mockProvinceTerritoryStateDtoMapper, mockProvinceTerritoryStateRepository, mockServerConfig); // Act and Assert
 
-      expect((service.listProvinceTerritoryStates as Memoized<typeof service.listProvinceTerritoryStates, Options<typeof service.listProvinceTerritoryStates>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
-      expect((service.getProvinceTerritoryStateById as Memoized<typeof service.getProvinceTerritoryStateById, Options<typeof service.getProvinceTerritoryStateById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
-      expect((service.getProvinceTerritoryStateById as Memoized<typeof service.getProvinceTerritoryStateById, Options<typeof service.getProvinceTerritoryStateById>>).options.maxSize).toBe(10);
+      expect((service.listProvinceTerritoryStates as MemoizedFunction<typeof service.listProvinceTerritoryStates>).options.expires).toBe(10_000); // 10 seconds in milliseconds
+      expect((service.getProvinceTerritoryStateById as MemoizedFunction<typeof service.getProvinceTerritoryStateById>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getProvinceTerritoryStateById as MemoizedFunction<typeof service.getProvinceTerritoryStateById>).options.maxSize).toBe(10);
     });
   });
 

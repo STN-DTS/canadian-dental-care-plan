@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,8 @@ import type { EvidentiaryDocumentTypeRepository } from '~/.server/domain/reposit
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 import type { EvidentiaryDocumentTypeStatus } from '~/constants/evidentiary-document-type';
 
 /**
@@ -111,21 +111,22 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allEvidentiaryDocumentTypesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: evidentiaryDocumentTypeCacheTTL });
 
-    this.listEvidentiaryDocumentTypes = memoize(this.listEvidentiaryDocumentTypes, {
+    this.listEvidentiaryDocumentTypes = createMemoized(this.listEvidentiaryDocumentTypes, {
+      maxSize: 1,
       async: true,
-      expires: allEvidentiaryDocumentTypesCacheTTL,
+      expiresMs: allEvidentiaryDocumentTypesCacheTTL,
     });
 
-    type MemoizedListEvidentiaryDocumentTypes = Memoized<typeof this.listEvidentiaryDocumentTypes, Options<typeof this.listEvidentiaryDocumentTypes>>;
+    type MemoizedListEvidentiaryDocumentTypes = MemoizedFunction<typeof this.listEvidentiaryDocumentTypes>;
     (this.listEvidentiaryDocumentTypes as MemoizedListEvidentiaryDocumentTypes).cache.on('add', () => this.log.debug('Creating new listEvidentiaryDocumentTypes memo'));
 
-    this.getEvidentiaryDocumentTypeById = memoize(this.getEvidentiaryDocumentTypeById, {
+    this.getEvidentiaryDocumentTypeById = createMemoized(this.getEvidentiaryDocumentTypeById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_MAX_SIZE,
-      expires: evidentiaryDocumentTypeCacheTTL,
+      expiresMs: evidentiaryDocumentTypeCacheTTL,
     });
 
-    type MemoizedGetEvidentiaryDocumentTypeById = Memoized<typeof this.getEvidentiaryDocumentTypeById, Options<typeof this.getEvidentiaryDocumentTypeById>>;
+    type MemoizedGetEvidentiaryDocumentTypeById = MemoizedFunction<typeof this.getEvidentiaryDocumentTypeById>;
     (this.getEvidentiaryDocumentTypeById as MemoizedGetEvidentiaryDocumentTypeById).cache.on('add', () => this.log.debug('Creating new getEvidentiaryDocumentTypeById memo'));
 
     this.log.debug('DefaultEvidentiaryDocumentTypeService initiated.');

@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,8 @@ import type { ClientFriendlyStatusRepository } from '~/.server/domain/repositori
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Service interface for managing client friendly status data.
@@ -79,13 +79,13 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_TTL_MS]: clientFriendlyStatusCacheTTL });
 
-    this.getClientFriendlyStatusById = memoize(this.getClientFriendlyStatusById, {
+    this.getClientFriendlyStatusById = createMemoized(this.getClientFriendlyStatusById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_MAX_SIZE,
-      expires: clientFriendlyStatusCacheTTL,
+      expiresMs: clientFriendlyStatusCacheTTL,
     });
 
-    type MemoizedGetClientFriendlyStatusById = Memoized<typeof this.getClientFriendlyStatusById, Options<typeof this.getClientFriendlyStatusById>>;
+    type MemoizedGetClientFriendlyStatusById = MemoizedFunction<typeof this.getClientFriendlyStatusById>;
     (this.getClientFriendlyStatusById as MemoizedGetClientFriendlyStatusById).cache.on('add', () => this.log.debug('Creating new getClientFriendlyStatusById memo'));
 
     this.log.debug('DefaultClientFriendlyStatusService initiated.');

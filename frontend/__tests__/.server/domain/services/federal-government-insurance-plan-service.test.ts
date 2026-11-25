@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import type { Memoized, Options } from 'micro-memoize';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,6 +8,7 @@ import { FederalGovernmentInsurancePlanNotFoundException } from '~/.server/domai
 import type { FederalGovernmentInsurancePlanDtoMapper } from '~/.server/domain/mappers';
 import type { GovernmentInsurancePlanRepository } from '~/.server/domain/repositories';
 import { DefaultFederalGovernmentInsurancePlanService } from '~/.server/domain/services';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 vi.mock(import('micro-memoize'));
 
@@ -26,9 +26,9 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       const service = new DefaultFederalGovernmentInsurancePlanService(mockFederalGovernmentInsurancePlanDtoMapper, mockGovernmentInsurancePlanRepository, mockServerConfig); // Act and Assert
 
-      expect((service.listFederalGovernmentInsurancePlans as Memoized<typeof service.listFederalGovernmentInsurancePlans, Options<typeof service.listFederalGovernmentInsurancePlans>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
-      expect((service.getFederalGovernmentInsurancePlanById as Memoized<typeof service.getFederalGovernmentInsurancePlanById, Options<typeof service.getFederalGovernmentInsurancePlanById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
-      expect((service.getFederalGovernmentInsurancePlanById as Memoized<typeof service.getFederalGovernmentInsurancePlanById, Options<typeof service.getFederalGovernmentInsurancePlanById>>).options.maxSize).toBe(10);
+      expect((service.listFederalGovernmentInsurancePlans as MemoizedFunction<typeof service.listFederalGovernmentInsurancePlans>).options.expires).toBe(10_000); // 10 seconds in milliseconds
+      expect((service.getFederalGovernmentInsurancePlanById as MemoizedFunction<typeof service.getFederalGovernmentInsurancePlanById>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getFederalGovernmentInsurancePlanById as MemoizedFunction<typeof service.getFederalGovernmentInsurancePlanById>).options.maxSize).toBe(10);
     });
   });
 

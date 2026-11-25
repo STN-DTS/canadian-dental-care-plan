@@ -2,7 +2,6 @@ import type { redirect } from 'react-router';
 
 import { Redacted } from 'effect';
 import type { JWTPayload } from 'jose';
-import type { Memoized, Options } from 'micro-memoize';
 import { subtle } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -13,6 +12,7 @@ import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import type { HttpClient } from '~/.server/http';
 import { generateCryptoKey, generateJwkId } from '~/.server/utils/crypto-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 import type { IdToken, JWKSet, ServerMetadata, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { fetchAccessToken, fetchServerMetadata, fetchUserInfo, generateAuthorizationRequest, generateCodeChallenge, generateRandomState } from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -68,7 +68,7 @@ describe('DefaultRaoidcService', () => {
       const serviceTest = new DefaultRaoidcServiceTest(mockServerConfig, mockHttpClient);
 
       // Act and Assert
-      expect((serviceTest.fetchServerMetadataTest as Memoized<typeof serviceTest.fetchServerMetadataTest, Options<typeof serviceTest.fetchServerMetadataTest>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
+      expect((serviceTest.fetchServerMetadataTest as MemoizedFunction<typeof serviceTest.fetchServerMetadataTest>).options.expires).toBe(10_000); // 10 seconds in milliseconds
     });
   });
 

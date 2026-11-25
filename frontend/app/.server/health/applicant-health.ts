@@ -1,7 +1,5 @@
 import type { HealthCheck } from '@dts-stn/health-checks';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -10,6 +8,8 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 @injectable()
 export class ApplicantHealthCheck implements HealthCheck {
@@ -37,14 +37,15 @@ export class ApplicantHealthCheck implements HealthCheck {
     const healthCacheTTL = this.serverConfig.HEALTH_CACHE_TTL;
     this.log.debug('Initializing ApplicantHealthCheck', { [ATTR_CDCP_CACHE_TTL_MS]: healthCacheTTL });
 
-    this.check = memoize(this.check, {
+    this.check = createMemoized(this.check, {
+      maxSize: 1,
       async: true,
-      expires: healthCacheTTL,
-      // transformKey is required to effectively ignore the abort signal sent from @dts-stn/health-checks when caching
-      transformKey: () => [''],
+      expiresMs: healthCacheTTL,
+      // Ignore the abort signal sent from @dts-stn/health-checks so every check shares one cache entry
+      key: () => '',
     });
 
-    type MemoizedCheck = Memoized<typeof this.check, Options<typeof this.check>>;
+    type MemoizedCheck = MemoizedFunction<typeof this.check>;
     (this.check as MemoizedCheck).cache.on('add', () => this.log.info('Cached function for ApplicantHealthCheck has been initialized.'));
 
     this.log.debug('ApplicantHealthCheck initialization complete.');

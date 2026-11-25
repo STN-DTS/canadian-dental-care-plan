@@ -1,7 +1,5 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -10,6 +8,8 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 import type { DynatraceRumScriptDto } from '~/.server/web/dtos';
 import type { DynatraceDtoMapper } from '~/.server/web/mappers';
 import type { DynatraceRepository } from '~/.server/web/repositories';
@@ -51,9 +51,9 @@ export class DefaultDynatraceService implements DynatraceService {
 
     this.log.debug('Initializing Dynatrace RUM script cache', { [ATTR_CDCP_CACHE_TTL_MS]: dynatraceRumScriptUriCacheTTL });
 
-    this.findDynatraceRumScript = memoize(this.findDynatraceRumScript, { async: true });
+    this.findDynatraceRumScript = createMemoized(this.findDynatraceRumScript, { maxSize: 1, async: true });
 
-    type MemoizedFindDynatraceRumScript = Memoized<typeof this.findDynatraceRumScript, Options<typeof this.findDynatraceRumScript>>;
+    type MemoizedFindDynatraceRumScript = MemoizedFunction<typeof this.findDynatraceRumScript>;
     (this.findDynatraceRumScript as MemoizedFindDynatraceRumScript).cache.on('add', () => this.log.info('Creating new findDynatraceRumScript memo'));
 
     this.log.debug('DefaultDynatraceService initiated.');

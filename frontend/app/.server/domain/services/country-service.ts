@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -13,6 +11,8 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
 import { moveToTop } from '~/.server/utils/collection-utils';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 /**
  * Service interface for managing country data.
@@ -93,23 +93,24 @@ export class DefaultCountryService implements CountryService {
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allCountriesCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: countryCacheTTL });
 
-    this.listCountries = memoize(this.listCountries, {
+    this.listCountries = createMemoized(this.listCountries, {
+      maxSize: 1,
       async: true,
-      expires: allCountriesCacheTTL,
+      expiresMs: allCountriesCacheTTL,
     });
 
-    type MemoizedListCountries = Memoized<typeof this.listCountries, Options<typeof this.listCountries>>;
+    type MemoizedListCountries = MemoizedFunction<typeof this.listCountries>;
     (this.listCountries as MemoizedListCountries).cache.on('add', () => {
       this.log.debug('Creating new listCountries memo');
     });
 
-    this.getCountryById = memoize(this.getCountryById, {
+    this.getCountryById = createMemoized(this.getCountryById, {
       async: true,
-      expires: countryCacheTTL,
+      expiresMs: countryCacheTTL,
       maxSize: this.serverConfig.LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE,
     });
 
-    type MemoizedGetCountryById = Memoized<typeof this.getCountryById, Options<typeof this.getCountryById>>;
+    type MemoizedGetCountryById = MemoizedFunction<typeof this.getCountryById>;
     (this.getCountryById as MemoizedGetCountryById).cache.on('add', () => {
       this.log.debug('Creating new getCountryById memo');
     });

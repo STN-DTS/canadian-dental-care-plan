@@ -1,7 +1,5 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,8 @@ import type { GovernmentInsurancePlanRepository } from '~/.server/domain/reposit
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_ITEM_TTL_MS, ATTR_CDCP_CACHE_LIST_TTL_MS, ATTR_CDCP_LOCALE, ATTR_CDCP_REFERENCE_COUNT } from '~/.server/logging/log-attributes';
+import { createMemoized } from '~/.server/utils/memoize-utils';
+import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
 
 export interface ProvincialGovernmentInsurancePlanService {
   listProvincialGovernmentInsurancePlans(): Promise<ReadonlyArray<ProvincialGovernmentInsurancePlanDto>>;
@@ -53,30 +53,31 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
 
     this.log.debug('Reference cache configured', { [ATTR_CDCP_CACHE_LIST_TTL_MS]: allProvincialGovernmentInsurancePlansCacheTTL, [ATTR_CDCP_CACHE_ITEM_TTL_MS]: provincialGovernmentInsurancePlanCacheTTL });
 
-    this.listProvincialGovernmentInsurancePlans = memoize(this.listProvincialGovernmentInsurancePlans, {
+    this.listProvincialGovernmentInsurancePlans = createMemoized(this.listProvincialGovernmentInsurancePlans, {
+      maxSize: 1,
       async: true,
-      expires: allProvincialGovernmentInsurancePlansCacheTTL,
+      expiresMs: allProvincialGovernmentInsurancePlansCacheTTL,
     });
 
-    type MemoizedListProvincialGovernmentInsurancePlans = Memoized<typeof this.listProvincialGovernmentInsurancePlans, Options<typeof this.listProvincialGovernmentInsurancePlans>>;
+    type MemoizedListProvincialGovernmentInsurancePlans = MemoizedFunction<typeof this.listProvincialGovernmentInsurancePlans>;
     (this.listProvincialGovernmentInsurancePlans as MemoizedListProvincialGovernmentInsurancePlans).cache.on('add', () => this.log.debug('Creating new listProvincialGovernmentInsurancePlans memo'));
 
-    this.findProvincialGovernmentInsurancePlanById = memoize(this.findProvincialGovernmentInsurancePlanById, {
+    this.findProvincialGovernmentInsurancePlanById = createMemoized(this.findProvincialGovernmentInsurancePlanById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
-      expires: provincialGovernmentInsurancePlanCacheTTL,
+      expiresMs: provincialGovernmentInsurancePlanCacheTTL,
     });
 
-    type MemoizedFindProvincialGovernmentInsurancePlanById = Memoized<typeof this.findProvincialGovernmentInsurancePlanById, Options<typeof this.findProvincialGovernmentInsurancePlanById>>;
+    type MemoizedFindProvincialGovernmentInsurancePlanById = MemoizedFunction<typeof this.findProvincialGovernmentInsurancePlanById>;
     (this.findProvincialGovernmentInsurancePlanById as MemoizedFindProvincialGovernmentInsurancePlanById).cache.on('add', () => this.log.debug('Creating new findProvincialGovernmentInsurancePlanById memo'));
 
-    this.getProvincialGovernmentInsurancePlanById = memoize(this.getProvincialGovernmentInsurancePlanById, {
+    this.getProvincialGovernmentInsurancePlanById = createMemoized(this.getProvincialGovernmentInsurancePlanById, {
       async: true,
       maxSize: this.serverConfig.LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
-      expires: provincialGovernmentInsurancePlanCacheTTL,
+      expiresMs: provincialGovernmentInsurancePlanCacheTTL,
     });
 
-    type MemoizedGetProvincialGovernmentInsurancePlanById = Memoized<typeof this.getProvincialGovernmentInsurancePlanById, Options<typeof this.getProvincialGovernmentInsurancePlanById>>;
+    type MemoizedGetProvincialGovernmentInsurancePlanById = MemoizedFunction<typeof this.getProvincialGovernmentInsurancePlanById>;
     (this.getProvincialGovernmentInsurancePlanById as MemoizedGetProvincialGovernmentInsurancePlanById).cache.on('add', () => this.log.debug('Creating new getProvincialGovernmentInsurancePlanById memo'));
 
     this.log.debug('DefaultProvincialGovernmentInsurancePlanService initiated.');
