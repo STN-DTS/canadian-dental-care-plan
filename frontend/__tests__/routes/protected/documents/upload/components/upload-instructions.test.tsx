@@ -24,8 +24,8 @@ const formLinks = {
 it('defaults the configurable eligibility links to the current Canada.ca pages', () => {
   const env = clientEnvSchema.parse({});
 
-  expect(env.DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN).toBe('https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html#h2.3');
-  expect(env.DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR).toBe('https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html#h2.3');
+  expect(env.DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN).toBe('https://www.canada.ca/dental-applicant-review');
+  expect(env.DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR).toBe('https://www.canada.ca/examen-demandeur-dentaire');
 });
 
 async function renderInstructions(locale: 'en' | 'fr') {
