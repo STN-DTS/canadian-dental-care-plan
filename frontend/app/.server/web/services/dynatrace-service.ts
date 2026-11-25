@@ -18,6 +18,8 @@ export interface DynatraceService {
   /**
    * Retrieves the Dynatrace Real User Monitoring (RUM) script.
    *
+   * Results, including `null` fallbacks, are cached per process until the configured TTL expires.
+   *
    * @returns A promise that resolves to the Dynatrace RUM script DTO,
    * or `null` if no RUM script is found or an error occurs during the retrieval
    */
@@ -48,7 +50,7 @@ export class DefaultDynatraceService implements DynatraceService {
 
     this.log.debug('Initializing Dynatrace RUM script cache', { [ATTR_CDCP_CACHE_TTL_MS]: dynatraceRumScriptUriCacheTTL });
 
-    this.findDynatraceRumScript = createMemoized(this.findDynatraceRumScript, { maxSize: 1, async: true });
+    this.findDynatraceRumScript = createMemoized(this.findDynatraceRumScript, { maxSize: 1, async: true, expiresMs: dynatraceRumScriptUriCacheTTL });
 
     type MemoizedFindDynatraceRumScript = MemoizedFunction<typeof this.findDynatraceRumScript>;
     (this.findDynatraceRumScript as MemoizedFindDynatraceRumScript).cache.on('add', () => this.log.info('Creating new findDynatraceRumScript memo'));
