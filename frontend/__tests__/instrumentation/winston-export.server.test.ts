@@ -74,7 +74,10 @@ test('the application preload preserves event schemas, severity and privacy thro
           import { Headers } from 'undici';
           import { DocumentUploadRepositoryDefaultConfig } from './app/.server/domain/repositories/configs/document-upload-repository-default-config.ts';
           import { DefaultDocumentUploadRepository } from './app/.server/domain/repositories/document-upload-repository-default.ts';
+          import { RouterContextProvider } from 'react-router';
+          import { userContext } from './app/.server/context/user-context.ts';
           import { DefaultAuditService } from './app/.server/domain/services/audit-service.ts';
+          import { contextStorageMiddleware } from './app/middlewares/context-storage.server.ts';
           import { DefaultDocumentUploadService } from './app/.server/domain/services/document-upload-service.ts';
           import { createRequestLoggerMiddleware } from './app/.server/express-server/middleware.ts';
           import { DefaultHttpClient } from './app/.server/http/http-client.ts';
@@ -296,6 +299,13 @@ test('the application preload preserves event schemas, severity and privacy thro
             span.end();
           });
           auditService.createAudit('pdf.get', { userId: 'audit-actor-001', letterId: 'audit-letter-001' });
+          const requestContext = new RouterContextProvider();
+          requestContext.set(userContext, { id: 'context-actor-001', mocked: false, sin: '999999997' });
+          const requestUrl = new URL('https://localhost/en/protected/profile');
+          await contextStorageMiddleware({ context: requestContext, params: {}, request: new Request(requestUrl), url: requestUrl, pattern: '' }, async () => {
+            auditService.createAudit('client-eligibility.number.get', { email: 'sink-person@example.invalid', token: 'sink-token-canary' });
+            return new Response();
+          });
           const finished = once(winston, 'finish');
           winston.end();
           await finished;
@@ -502,7 +512,7 @@ test('the application preload preserves event schemas, severity and privacy thro
     }
 
     const auditRecords = records.filter((record) => record.eventName === 'cdcp.audit.recorded');
-    expect(auditRecords).toHaveLength(2);
+    expect(auditRecords).toHaveLength(3);
 
     for (const record of auditRecords) {
       const attributes = record.attributes;
@@ -512,8 +522,8 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(record.severityNumber).toBe(SeverityNumber.INFO);
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
-      expect(attributes['cdcp.user.id']).toBe('audit-actor-001');
-      expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
+      expect(attributes['cdcp.user.id']).toBe(attributes['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'audit-actor-001');
+      expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
       expect(Object.keys(attributes)).toEqual(expect.arrayContaining(['cdcp.audit.event_id', 'cdcp.user.id']));
       expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'timestamp'].includes(key))).toEqual([]);
     }
@@ -525,13 +535,13 @@ test('the application preload preserves event schemas, severity and privacy thro
     expect(auditRecords.find((record) => record.attributes['cdcp.audit.event_id'] === 'pdf.get')?.attributes['cdcp.letter.id']).toBe('audit-letter-001');
 
     for (const sinkRecords of [fileRecords, consoleRecords.filter((record) => record.message === 'Audit event recorded')]) {
-      expect(sinkRecords).toHaveLength(2);
+      expect(sinkRecords).toHaveLength(3);
 
       for (const record of sinkRecords) {
         expect(record.level).toBe('audit');
         expect(record['otel.event.name']).toBe('cdcp.audit.recorded');
-        expect(record['cdcp.user.id']).toBe('audit-actor-001');
-        expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get)$/);
+        expect(record['cdcp.user.id']).toBe(record['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'audit-actor-001');
+        expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
         expect(typeof record.timestamp).toBe('string');
         expect(Object.keys(record).every((key) => ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'trace_id', 'span_id', 'trace_flags'].includes(key))).toBe(true);
       }

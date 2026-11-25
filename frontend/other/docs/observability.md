@@ -606,6 +606,11 @@ The bounded schema admits:
 - `cdcp.audit.event_id`: a code-defined action identifier of at most 128
   lowercase ASCII letters, digits, dots or hyphens, beginning with a letter.
 - `cdcp.user.id`: the existing approved opaque actor identifier, when present.
+  When the caller omits `userId` or passes `undefined`, the service reads the
+  authenticated user of the current request at call time. An explicit
+  `userId`, including `anonymous`, takes precedence. Without a request scope or
+  a signed-in user, the field is omitted. Protected routes must not pass
+  `anonymous` as the actor.
 - `cdcp.letter.id`: the existing approved opaque letter identifier, only for
   `pdf.get`.
 
@@ -629,7 +634,7 @@ permissions, subject to the process umask. Deployment configuration must allow
 Fluentd to read them while enforcing approved access, integrity and retention
 policies. The local sink test verifies
 delivery to file, console and OTLP with ordinary diagnostics filtered out and
-trace sampling disabled.
+trace sampling disabled, including an audit attributed to the request user.
 
 ### Application confirmation codes
 
