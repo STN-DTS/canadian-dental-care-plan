@@ -130,5 +130,19 @@ describe('DefaultApplicationYearService', () => {
       // Mapper should only be called once due to caching
       expect(mockApplicationYearDtoMapper.mapApplicationYearResultEntityToApplicationYearResultDto).toHaveBeenCalledTimes(1);
     });
+
+    it.each(['getIntakeApplicationYear', 'getRenewalApplicationYear'] as const)('should cache %s results separately for each date', (method) => {
+      const mockApplicationYearRepository = mock<ApplicationYearRepository>();
+      const mockApplicationYearDtoMapper = mock<ApplicationYearDtoMapper>();
+      mockApplicationYearRepository[method].mockImplementation((date) => (date === '2024-01-01' ? mockIntakeApplicationYearEntity : mockRenewalApplicationYearEntity));
+      mockApplicationYearDtoMapper.mapApplicationYearResultEntityToApplicationYearResultDto.mockImplementation((entity) => ({ ...mockIntakeApplicationYearResultDto, applicationYear: entity === mockIntakeApplicationYearEntity ? '2024' : '2025' }));
+
+      const service = new DefaultApplicationYearService(mockApplicationYearDtoMapper, mockApplicationYearRepository, mockServerConfig);
+
+      const results = ['2024-01-01', '2025-01-01', '2024-01-01', '2025-01-01'].map((date) => service[method](date).applicationYear);
+
+      expect(results).toEqual(['2024', '2025', '2024', '2025']);
+      expect(mockApplicationYearRepository[method]).toHaveBeenCalledTimes(2);
+    });
   });
 });
