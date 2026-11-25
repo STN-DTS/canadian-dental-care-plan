@@ -27,8 +27,10 @@ import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { parsePrivateKey } from '~/.server/utils/crypto-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import type { HttpStatusCode } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import type { ErrorCode } from '~/errors/error-codes';
 
 const log = createLogger('DefaultOpenIdService');
 
@@ -172,16 +174,14 @@ export class DefaultOpenIdService implements AuthService {
     try {
       configuration = await discovery(issuer, clientId, undefined, clientAuthentication, { [customFetch]: this.fetch, timeout: 10, execute: [enableNonRepudiationChecks] });
     } catch (error) {
-      log.warn('OIDC discovery failed', { [ATTR_ERROR_TYPE]: libraryErrorType(error) });
-      throw new AppError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+      throw connectivityError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, HttpStatusCodes.BAD_GATEWAY, libraryErrorType(error));
     }
 
     const metadata = configuration.serverMetadata();
     audience = clientAssertionAudience === 'issuer' ? metadata.issuer : metadata.token_endpoint;
 
     if (!audience) {
-      log.warn('OIDC discovery document has no token endpoint', { [ATTR_ERROR_TYPE]: 'token_endpoint_missing' });
-      throw new AppError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+      throw connectivityError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, HttpStatusCodes.BAD_GATEWAY, 'token_endpoint_missing');
     }
 
     return configuration;
@@ -224,19 +224,26 @@ function libraryErrorType(error: unknown): string {
   return error instanceof ClientError && typeof error.code === 'string' ? error.code : ERROR_TYPE_VALUE_OTHER;
 }
 
+/**
+ * Creates a connectivity error carrying a bounded failure reason in `meta.reason` (a fixed string, allowlisted OAuth
+ * code or library error code, never provider text). The auth route logs it once with that reason; here it is only a
+ * debug breadcrumb.
+ */
+function connectivityError(message: string, errorCode: ErrorCode, httpStatusCode: HttpStatusCode, reason: string): AppError {
+  log.debug('OIDC connectivity check failed', { [ATTR_ERROR_TYPE]: reason });
+  return new AppError(message, errorCode, { httpStatusCode, meta: { reason } });
+}
+
 function callbackInvalidError(reason: string): AppError {
-  log.warn('OIDC connectivity callback rejected', { [ATTR_ERROR_TYPE]: reason });
-  return new AppError('OIDC callback is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+  return connectivityError('OIDC callback is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, HttpStatusCodes.BAD_REQUEST, reason);
 }
 
 function providerError(code: unknown): AppError {
-  log.warn('OIDC provider returned an error to the callback', { [ATTR_ERROR_TYPE]: oauthErrorType(code) });
-  return new AppError('OIDC provider returned an error.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_PROVIDER_ERROR, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+  return connectivityError('OIDC provider returned an error.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_PROVIDER_ERROR, HttpStatusCodes.BAD_REQUEST, oauthErrorType(code));
 }
 
 function tokenResponseInvalidError(reason: string): AppError {
-  log.warn('OIDC token response rejected', { [ATTR_ERROR_TYPE]: reason });
-  return new AppError('OIDC token response is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_RESPONSE_INVALID, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+  return connectivityError('OIDC token response is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_RESPONSE_INVALID, HttpStatusCodes.BAD_GATEWAY, reason);
 }
 
 /**
@@ -245,8 +252,7 @@ function tokenResponseInvalidError(reason: string): AppError {
  */
 function tokenRequestError(error: unknown): AppError {
   if (error instanceof ResponseBodyError) {
-    log.warn('OIDC token request was rejected by the provider', { [ATTR_ERROR_TYPE]: oauthErrorType(error.error) });
-    return new AppError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+    return connectivityError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, HttpStatusCodes.BAD_GATEWAY, oauthErrorType(error.error));
   }
 
   if (error instanceof AuthorizationResponseError) {
@@ -257,6 +263,5 @@ function tokenRequestError(error: unknown): AppError {
     return tokenResponseInvalidError(libraryErrorType(error));
   }
 
-  log.warn('OIDC token request failed', { [ATTR_ERROR_TYPE]: libraryErrorType(error) });
-  return new AppError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY });
+  return connectivityError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, HttpStatusCodes.BAD_GATEWAY, libraryErrorType(error));
 }

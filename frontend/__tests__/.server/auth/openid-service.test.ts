@@ -206,7 +206,12 @@ describe('DefaultOpenIdService', () => {
     it('fails when discovery is unavailable', async () => {
       provider.discovery = () => new Response('unavailable', { status: 503 });
 
-      await expect(createService().generateSigninRequest()).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED });
+      await expect(createService().generateSigninRequest()).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, httpStatusCode: 502, meta: { reason: expect.stringMatching(/^OAUTH_/) } });
+
+      // The auth route owns the failure log; the service leaves only a debug breadcrumb.
+      expect(logger.debug).toHaveBeenCalledWith('OIDC connectivity check failed', expect.objectContaining({ 'error.type': expect.stringMatching(/^OAUTH_/) }));
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('fails when the discovered issuer does not match the configured issuer', async () => {
@@ -288,7 +293,7 @@ describe('DefaultOpenIdService', () => {
       await expect(service.handleCallback({ callbackUrl: url, correlation })).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID });
     });
 
-    it('rejects a provider error response and logs only an allowlisted error code', async () => {
+    it('rejects a provider error response with only an allowlisted error code as its reason', async () => {
       const service = createService();
       const { correlation } = await startSignin(service);
 
@@ -297,7 +302,9 @@ describe('DefaultOpenIdService', () => {
       expect(error).toBeInstanceOf(AppError);
       expect(error).toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_PROVIDER_ERROR });
 
-      expect(logger.warn).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ 'error.type': 'access_denied' }));
+      expect(error).toMatchObject({ meta: { reason: 'access_denied' } });
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
       expectNoSensitiveValues(error, correlation);
     });
 
@@ -311,7 +318,9 @@ describe('DefaultOpenIdService', () => {
       expect(error).toBeInstanceOf(AppError);
       expect(error).toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED });
 
-      expect(logger.warn).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ 'error.type': 'invalid_grant' }));
+      expect(error).toMatchObject({ meta: { reason: 'invalid_grant' } });
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
       expectNoSensitiveValues(error, tampered);
     });
 

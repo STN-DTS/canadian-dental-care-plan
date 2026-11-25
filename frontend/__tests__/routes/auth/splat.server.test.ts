@@ -178,6 +178,18 @@ describe('auth loader', () => {
       expect(body).not.toContain('token exchange failed');
     });
 
+    it('logs the service failure reason once as the error type', async () => {
+      const logger = mock<Logger>();
+      vi.spyOn(logging, 'createLogger').mockReturnValue(logger);
+      const { args, authService } = createArgs('oidc', 'login/oidc');
+      authService.generateSigninRequest.mockRejectedValue(new AppError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY, meta: { reason: 'OAUTH_RESPONSE_IS_NOT_CONFORM' } }));
+
+      await loader(args);
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith('OIDC request failed', expect.objectContaining({ 'error.type': 'OAUTH_RESPONSE_IS_NOT_CONFORM', errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED }));
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
     it('rethrows errors that are not AppErrors', async () => {
       const { args, authService } = createArgs('oidc', 'login/oidc');
       const failure = new Error('unexpected');

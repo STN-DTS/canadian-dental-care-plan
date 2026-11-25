@@ -276,7 +276,7 @@ async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs
   if (Option.isNone(correlation)) {
     log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing' });
     instrumentationService.createCounter('auth.callback.oidc.requests.stale-session').add(1);
-    throw new AppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST });
+    throw new AppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST, meta: { reason: 'authentication_callback_session_missing' } });
   }
 
   const authService = appContainer.get(TYPES.AuthService);
@@ -306,7 +306,9 @@ async function withOidcErrorResponse(handler: () => Promise<Response>, log: Logg
       recordError(span, error);
     }
 
-    log[error.httpStatusCode >= 500 ? 'error' : 'warn']('OIDC request failed', { [ATTR_ERROR_TYPE]: error.errorCode, correlationId: error.correlationId, errorCode: error.errorCode });
+    // The single failure log for OIDC requests. The service attaches a bounded reason in meta.reason.
+    const reason = typeof error.meta?.reason === 'string' ? error.meta.reason : error.errorCode;
+    log[error.httpStatusCode >= 500 ? 'error' : 'warn']('OIDC request failed', { [ATTR_ERROR_TYPE]: reason, correlationId: error.correlationId, errorCode: error.errorCode });
     instrumentationService.createCounter('auth.oidc.requests.failed').add(1);
 
     return Response.json({ name: error.name, errorCode: error.errorCode, correlationId: error.correlationId }, { status: error.httpStatusCode, headers: { 'Cache-Control': 'no-store' } });
