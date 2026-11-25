@@ -183,6 +183,7 @@ For frontend changes, also:
 - [README](README.md)
 - [Application routes reference](other/docs/application-routes-reference.md)
 - [Authentication](other/docs/Authentication.md)
+- [Testing RAOIDC locally through the Squid proxy](other/docs/raoidc-local-testing-with-squid-proxy.md)
 - [Member eligibility](other/docs/member-eligibility-feature.md)
 - [Document upload](other/docs/document-upload-feature.md)
 - [Local observability](other/docs/observability.md)

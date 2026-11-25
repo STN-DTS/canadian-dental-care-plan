@@ -15,6 +15,9 @@ Authentication System (ECAS) team.
 CDCP uses the _authorization code flow with proof key for code exchange (PKCE)_
 OAuth flow to authenticate users.
 
+To sign in to a local frontend with the real nonprod RAOIDC service, see
+[Testing RAOIDC locally through the cluster Squid proxy](./raoidc-local-testing-with-squid-proxy.md).
+
 ## Authentication routes
 
 The CDCP frontend provides the following routes/endpoints to handle the
