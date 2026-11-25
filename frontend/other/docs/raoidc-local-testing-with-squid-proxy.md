@@ -232,12 +232,13 @@ Restart the dev server after you change `.env`.
 4. ECAS redirects you to `http://localhost:3000/auth/callback/raoidc`. The
    server completes the token exchange through the proxy and redirects you to
    the protected page. This confirms the RAOIDC callback succeeded, not that
-   applicant data is available. Protected applicant flows also require a
-   `sin` claim in userinfo and an applicant record for that SIN. If the claim is
-   missing, the protected flow redirects back to login. With the
-   `power-platform` mock enabled, a SIN with no matching local fixture redirects
-   to the data-unavailable page. These are downstream claim or fixture
-   mismatches, not proxy or token-exchange failures.
+   applicant data is available. Protected routes require a `sin` claim in
+   userinfo; applicant-dependent flows also need an applicant record for that
+   SIN. A valid session without the claim shows the protected server-error
+   page, not a login redirect. With the `power-platform` mock enabled, a SIN
+   with no matching local fixture redirects to the data-unavailable page. These
+   are downstream claim or fixture mismatches, not proxy or token-exchange
+   failures.
 
 Set `LOG_LEVEL=debug` to see the `Using proxy fetch` message from the HTTP
 client and each RAOIDC step in the server logs.
@@ -252,7 +253,7 @@ client and each RAOIDC step in the server logs.
 | `AUTH_OIDC_ACCESS_TOKEN_FETCH_FAILED` on the callback                   | The token exchange was rejected. Check that `AUTH_JWT_PRIVATE_KEY` is the registered nonprod key and that `AUTH_RAOIDC_BASE_URL` matches the server you signed in to. |
 | Token decryption fails after the callback                               | Confirm `AUTH_JWT_PRIVATE_KEY` matches the private key whose public key is registered for client `CDCP` on the same nonprod RAOIDC server.                            |
 | JWT verification fails after successful decryption                      | After decryption, JWT verification uses RAOIDC's JWKS. Check the provider signing key/JWKS or token validity; the CDCP client key pair is not used.                   |
-| Callback succeeds, then a protected flow returns to login               | The userinfo token may be missing the required `sin` claim. Confirm the ECAS test account provides it.                                                                |
+| Callback succeeds, then a protected flow shows the server-error page    | The userinfo token may be missing the required `sin` claim. Confirm the ECAS test account provides it.                                                                |
 | Callback succeeds, then a protected flow redirects to data unavailable  | With the `power-platform` mock enabled, the account's userinfo `sin` may not match a local applicant fixture. Use an account that matches a fixture.                  |
 | `Invalid redirect url. client_id: CDCP` on the ECAS page                | The app is not running at `http://localhost:3000`. Use that exact origin.                                                                                             |
 | `kubectl port-forward` exits with `lost connection to pod` or idles out | Port-forwards drop on idle timeouts and pod replacements. Run the `port-forward service/squid-proxy-shared` command again.                                            |
