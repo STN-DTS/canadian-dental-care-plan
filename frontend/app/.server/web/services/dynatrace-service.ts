@@ -64,12 +64,12 @@ export class DefaultDynatraceService implements DynatraceService {
       const dynatraceRumScript = await this.dynatraceRepository.findDynatraceRumScript();
 
       if (!dynatraceRumScript) {
-        this.log.debug('No Dynatrace RUM script found; returning null.');
+        this.log.info('No Dynatrace RUM script found; returning null.');
         return null;
       }
 
       const dynatraceRumScriptDto = this.dynatraceDtoMapper.mapDynatraceRumScriptToDynatraceRumScriptDto(dynatraceRumScript);
-      this.log.trace('Dynatrace RUM script mapped');
+      this.log.info('Dynatrace RUM script mapped');
       return dynatraceRumScriptDto;
     } catch {
       this.log.warn('Could not retrieve Dynatrace RUM script; returning null', { [ATTR_ERROR_TYPE]: 'rum_script_retrieval_failed' });
