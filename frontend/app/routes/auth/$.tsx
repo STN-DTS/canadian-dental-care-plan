@@ -306,7 +306,7 @@ async function withOidcErrorResponse(handler: () => Promise<Response>, log: Logg
       recordError(span, error);
     }
 
-    log.warn('OIDC request failed', { [ATTR_ERROR_TYPE]: error.errorCode, correlationId: error.correlationId, errorCode: error.errorCode });
+    log[error.httpStatusCode >= 500 ? 'error' : 'warn']('OIDC request failed', { [ATTR_ERROR_TYPE]: error.errorCode, correlationId: error.correlationId, errorCode: error.errorCode });
     instrumentationService.createCounter('auth.oidc.requests.failed').add(1);
 
     return Response.json({ name: error.name, errorCode: error.errorCode, correlationId: error.correlationId }, { status: error.httpStatusCode, headers: { 'Cache-Control': 'no-store' } });
