@@ -167,6 +167,33 @@ Use mocks for local tests. Do not call real government or partner services from
 unit tests. Keep API endpoints, subscription keys, JWT keys, and other secrets
 in environment configuration.
 
+## Server-side caching
+
+Memoize server functions with `createMemoized` from
+`app/.server/utils/memoize-utils.ts`. Oxlint rejects direct `micro-memoize`
+imports outside the helper and tests.
+
+- Set a finite `maxSize`. micro-memoize silently treats `Infinity`, negative,
+  and non-numeric sizes as 1. Use `maxSize: 1` for functions without
+  arguments, and add a `*_CACHE_MAX_SIZE` setting in `env-utils.ts` and
+  `.env.example` for caches keyed by request data.
+- Keys compare by value only for primitives. Arrays, objects, dates, and
+  functions compare by reference, so a new array on each call never hits the
+  cache. When a parameter is not a primitive, the helper requires a `key`
+  function returning a primitive or a tuple of primitives. Normalize
+  equivalent inputs, for example by sorting and de-duplicating list members.
+- Pass `async: true` for promise-returning functions so rejected promises are
+  not cached, and `expiresMs` for entries that must expire.
+- Do not cache audit or other side effects. Audit in the public method on
+  every call, then delegate to a private memoized fetch.
+- Do not cache per-user data in a shared key. Include every input that
+  changes the result in the key.
+- Test cache behavior with the real library: equivalent inputs reuse one
+  entry, and different inputs do not.
+
+See the [server caching skill](../.github/skills/server-caching/SKILL.md) for
+the review workflow.
+
 ## Pull request checklist
 
 Follow the [root PR expectations and checklist](../CONTRIBUTING.md#pull-request-expectations).
@@ -177,6 +204,8 @@ For frontend changes, also:
 - Run formatting, typechecking, linting, focused tests, and `pnpm --filter @cdcp-rcsd/frontend run build`.
 - Build before running browser tests, and state which journeys were tested.
 - Keep screenshots and reproduction steps free of applicant information.
+- For new or changed server caches, use `createMemoized` with a finite size
+  and a value-based key, and test cache hits and misses.
 
 ## Related documentation
 

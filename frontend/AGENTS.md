@@ -16,6 +16,9 @@ These rules supplement the [root guidance](../AGENTS.md) for files under
   changing localized behavior.
 - Follow the [localization typography skill](../.github/skills/localization-typography/SKILL.md)
   when editing locale strings. Keep punctuation inside translations, not in JSX.
+- Follow the [server caching skill](../.github/skills/server-caching/SKILL.md)
+  when memoizing server functions. Use `createMemoized` with a finite
+  `maxSize`, and map non-primitive arguments to a primitive `key`.
 - Follow the [path-scoped Express instructions](../.github/instructions/frontend-express.instructions.md)
   for Express server files, especially stable middleware names used by telemetry.
 - Keep unit tests in `__tests__/` and browser tests in `e2e/`. Use existing
