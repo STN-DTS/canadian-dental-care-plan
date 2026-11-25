@@ -1,9 +1,11 @@
 import { createContext } from 'react-router';
 import type { RouterContextProvider } from 'react-router';
 
+import { Option } from 'effect';
+
 import { throwAppError } from '~/.server/utils/error-utils';
 import { ErrorCodes } from '~/errors/error-codes';
-import { getContext } from '~/middlewares/context-storage.server';
+import { findContext, getContext } from '~/middlewares/context-storage.server';
 
 export type UserContext = {
   birthdate?: string;
@@ -34,4 +36,17 @@ export function getUser(context?: Readonly<RouterContextProvider>): UserContext 
   }
 
   return user;
+}
+
+/**
+ * Finds authenticated user details from provided router context or current request context.
+ *
+ * Unlike {@link getUser}, this never throws: it returns `Option.none()` outside a request
+ * scope or when `authMiddleware` has not populated user context (for example, public routes).
+ *
+ * @param context - Optional router context provider. Defaults to current request context.
+ */
+export function findUser(context?: Pick<Readonly<RouterContextProvider>, 'get'>): Option.Option<UserContext> {
+  const ctx = context ?? findContext().valueOrUndefined;
+  return Option.fromNullishOr(ctx?.get(userContext));
 }
