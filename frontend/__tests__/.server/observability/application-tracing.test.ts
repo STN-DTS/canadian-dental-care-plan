@@ -62,6 +62,7 @@ function createCountryService() {
     CANADA_COUNTRY_ID: '1',
     LOOKUP_SVC_ALL_COUNTRIES_CACHE_TTL_SECONDS: 60,
     LOOKUP_SVC_COUNTRY_CACHE_TTL_SECONDS: 60,
+    LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE: 10,
   });
 
   return { service, repository, httpClient };

@@ -84,12 +84,18 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
   private readonly log: Logger;
   private readonly evidentiaryDocumentTypeDtoMapper: EvidentiaryDocumentTypeDtoMapper;
   private readonly evidentiaryDocumentTypeRepository: EvidentiaryDocumentTypeRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_MAX_SIZE'
+  >;
 
   constructor(
     @inject(TYPES.EvidentiaryDocumentTypeDtoMapper) evidentiaryDocumentTypeDtoMapper: EvidentiaryDocumentTypeDtoMapper,
     @inject(TYPES.EvidentiaryDocumentTypeRepository) evidentiaryDocumentTypeRepository: EvidentiaryDocumentTypeRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      'EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER' | 'LOOKUP_SVC_ALL_EVIDENTIARY_DOCUMENT_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_MAX_SIZE'
+    >,
   ) {
     this.log = createLogger('DefaultEvidentiaryDocumentTypeService');
     this.evidentiaryDocumentTypeDtoMapper = evidentiaryDocumentTypeDtoMapper;
@@ -115,7 +121,7 @@ export class DefaultEvidentiaryDocumentTypeService implements EvidentiaryDocumen
 
     this.getEvidentiaryDocumentTypeById = memoize(this.getEvidentiaryDocumentTypeById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_MAX_SIZE,
       expires: evidentiaryDocumentTypeCacheTTL,
     });
 

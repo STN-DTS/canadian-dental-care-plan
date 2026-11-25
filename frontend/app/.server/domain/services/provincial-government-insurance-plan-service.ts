@@ -27,12 +27,18 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
   private readonly log: Logger;
   private readonly provincialGovernmentInsurancePlanDtoMapper: ProvincialGovernmentInsurancePlanDtoMapper;
   private readonly governmentInsurancePlanRepository: GovernmentInsurancePlanRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCIAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<
+    ServerConfig,
+    'LOOKUP_SVC_ALL_PROVINCIAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE'
+  >;
 
   constructor(
     @inject(TYPES.ProvincialGovernmentInsurancePlanDtoMapper) provincialGovernmentInsurancePlanDtoMapper: ProvincialGovernmentInsurancePlanDtoMapper,
     @inject(TYPES.GovernmentInsurancePlanRepository) governmentInsurancePlanRepository: GovernmentInsurancePlanRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCIAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      'LOOKUP_SVC_ALL_PROVINCIAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE'
+    >,
   ) {
     this.log = createLogger('DefaultProvincialGovernmentInsurancePlanService');
     this.provincialGovernmentInsurancePlanDtoMapper = provincialGovernmentInsurancePlanDtoMapper;
@@ -57,7 +63,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
 
     this.findProvincialGovernmentInsurancePlanById = memoize(this.findProvincialGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
       expires: provincialGovernmentInsurancePlanCacheTTL,
     });
 
@@ -66,7 +72,7 @@ export class DefaultProvincialGovernmentInsurancePlanService implements Provinci
 
     this.getProvincialGovernmentInsurancePlanById = memoize(this.getProvincialGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
       expires: provincialGovernmentInsurancePlanCacheTTL,
     });
 

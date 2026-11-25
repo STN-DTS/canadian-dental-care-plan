@@ -15,6 +15,7 @@ vi.mock(import('micro-memoize'));
 describe('DefaultClientFriendlyStatusService', () => {
   const mockServerConfig: ClientFriendlyStatusServiceImpl_ServerConfig = {
     LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_TTL_SECONDS: 5,
+    LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_MAX_SIZE: 10,
   };
 
   describe('constructor', () => {
@@ -25,6 +26,7 @@ describe('DefaultClientFriendlyStatusService', () => {
       const service = new DefaultClientFriendlyStatusService(mockClientFriendlyStatusDtoMapper, mockClientFriendlyStatusRepository, mockServerConfig); // Act and Assert
 
       expect((service.getClientFriendlyStatusById as Memoized<typeof service.getClientFriendlyStatusById, Options<typeof service.getClientFriendlyStatusById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getClientFriendlyStatusById as Memoized<typeof service.getClientFriendlyStatusById, Options<typeof service.getClientFriendlyStatusById>>).options.maxSize).toBe(10);
     });
   });
 

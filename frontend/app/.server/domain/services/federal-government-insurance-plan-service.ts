@@ -76,12 +76,15 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
   private readonly log: Logger;
   private readonly federalGovernmentInsurancePlanDtoMapper: FederalGovernmentInsurancePlanDtoMapper;
   private readonly governmentInsurancePlanRepository: GovernmentInsurancePlanRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE'>;
 
   constructor(
     @inject(TYPES.FederalGovernmentInsurancePlanDtoMapper) federalGovernmentInsurancePlanDtoMapper: FederalGovernmentInsurancePlanDtoMapper,
     @inject(TYPES.GovernmentInsurancePlanRepository) governmentInsurancePlanRepository: GovernmentInsurancePlanRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<
+      ServerConfig,
+      'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE'
+    >,
   ) {
     this.log = createLogger('DefaultFederalGovernmentInsurancePlanService');
     this.federalGovernmentInsurancePlanDtoMapper = federalGovernmentInsurancePlanDtoMapper;
@@ -106,7 +109,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
 
     this.findFederalGovernmentInsurancePlanById = memoize(this.findFederalGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
       expires: federalGovernmentInsurancePlanCacheTTL,
     });
 
@@ -115,7 +118,7 @@ export class DefaultFederalGovernmentInsurancePlanService implements FederalGove
 
     this.getFederalGovernmentInsurancePlanById = memoize(this.getFederalGovernmentInsurancePlanById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE,
       expires: federalGovernmentInsurancePlanCacheTTL,
     });
 

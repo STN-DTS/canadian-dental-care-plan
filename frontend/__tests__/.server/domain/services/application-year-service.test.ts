@@ -50,7 +50,7 @@ describe('DefaultApplicationYearService', () => {
     dependentEligibilityEndDate: '2025-06-30',
   };
 
-  const mockServerConfig = { LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS: 10 };
+  const mockServerConfig = { LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS: 10, LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE: 10 };
 
   describe('getIntakeApplicationYear', () => {
     it('should return the correct intake application year DTO', () => {

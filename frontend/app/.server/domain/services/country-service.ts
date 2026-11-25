@@ -53,7 +53,7 @@ export interface CountryService {
   getLocalizedCountryById(id: string, locale: AppLocale): Promise<CountryLocalizedDto>;
 }
 
-export type CountryServiceImpl_ServiceConfig = Pick<ServerConfig, 'CANADA_COUNTRY_ID' | 'LOOKUP_SVC_ALL_COUNTRIES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_COUNTRY_CACHE_TTL_SECONDS'>;
+export type CountryServiceImpl_ServiceConfig = Pick<ServerConfig, 'CANADA_COUNTRY_ID' | 'LOOKUP_SVC_ALL_COUNTRIES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_COUNTRY_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE'>;
 
 /**
  * Implementation of the CountryService interface.
@@ -106,7 +106,7 @@ export class DefaultCountryService implements CountryService {
     this.getCountryById = memoize(this.getCountryById, {
       async: true,
       expires: countryCacheTTL,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE,
     });
 
     type MemoizedGetCountryById = Memoized<typeof this.getCountryById, Options<typeof this.getCountryById>>;

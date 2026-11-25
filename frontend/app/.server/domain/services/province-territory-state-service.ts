@@ -84,12 +84,12 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
   private readonly log: Logger;
   private readonly provinceTerritoryStateDtoMapper: ProvinceTerritoryStateDtoMapper;
   private readonly provinceTerritoryStateRepository: ProvinceTerritoryStateRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE'>;
 
   constructor(
     @inject(TYPES.ProvinceTerritoryStateDtoMapper) provinceTerritoryStateDtoMapper: ProvinceTerritoryStateDtoMapper,
     @inject(TYPES.ProvinceTerritoryStateRepository) provinceTerritoryStateRepository: ProvinceTerritoryStateRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE'>,
   ) {
     this.log = createLogger('DefaultProvinceTerritoryStateService');
     this.provinceTerritoryStateDtoMapper = provinceTerritoryStateDtoMapper;
@@ -114,7 +114,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
 
     this.getProvinceTerritoryStateById = memoize(this.getProvinceTerritoryStateById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE,
       expires: provinceTerritoryStateCacheTTL,
     });
 
@@ -123,7 +123,7 @@ export class DefaultProvinceTerritoryStateService implements ProvinceTerritorySt
 
     this.getProvinceTerritoryStateByCode = memoize(this.getProvinceTerritoryStateByCode, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE,
       expires: provinceTerritoryStateCacheTTL,
     });
 

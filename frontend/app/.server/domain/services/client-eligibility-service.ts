@@ -33,13 +33,13 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
   private readonly clientEligibilityDtoMapper: ClientEligibilityDtoMapper;
   private readonly clientEligibilityRepository: ClientEligibilityRepository;
   private readonly auditService: AuditService;
-  private readonly serverConfig: Pick<ServerConfig, 'ELIGIBILITY_STATUS_CODE_ELIGIBLE' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'ELIGIBILITY_STATUS_CODE_ELIGIBLE' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_MAX_SIZE'>;
 
   constructor(
     @inject(TYPES.ClientEligibilityDtoMapper) clientEligibilityDtoMapper: ClientEligibilityDtoMapper,
     @inject(TYPES.ClientEligibilityRepository) clientEligibilityRepository: ClientEligibilityRepository,
     @inject(TYPES.AuditService) auditService: AuditService,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'ELIGIBILITY_STATUS_CODE_ELIGIBLE' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'ELIGIBILITY_STATUS_CODE_ELIGIBLE' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_MAX_SIZE'>,
   ) {
     this.log = createLogger('DefaultClientEligibilityService');
     this.clientEligibilityDtoMapper = clientEligibilityDtoMapper;
@@ -57,7 +57,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     this.listClientEligibilitiesByClientNumbers = memoize(this.listClientEligibilitiesByClientNumbers, {
       async: true,
       expires: clientEligibilityCacheTtl,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_MAX_SIZE,
     });
 
     type MemoizedListClientEligibilitiesByClientNumbers = Memoized<typeof this.listClientEligibilitiesByClientNumbers, Options<typeof this.listClientEligibilitiesByClientNumbers>>;

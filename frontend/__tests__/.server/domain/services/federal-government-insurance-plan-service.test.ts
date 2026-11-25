@@ -13,9 +13,10 @@ import { DefaultFederalGovernmentInsurancePlanService } from '~/.server/domain/s
 vi.mock(import('micro-memoize'));
 
 describe('DefaultFederalGovernmentInsurancePlanService', () => {
-  const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS'> = {
+  const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE'> = {
     LOOKUP_SVC_ALL_FEDERAL_GOVERNMENT_INSURANCE_PLANS_CACHE_TTL_SECONDS: 10,
     LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_TTL_SECONDS: 5,
+    LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE: 10,
   };
 
   describe('constructor', () => {
@@ -27,6 +28,7 @@ describe('DefaultFederalGovernmentInsurancePlanService', () => {
 
       expect((service.listFederalGovernmentInsurancePlans as Memoized<typeof service.listFederalGovernmentInsurancePlans, Options<typeof service.listFederalGovernmentInsurancePlans>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
       expect((service.getFederalGovernmentInsurancePlanById as Memoized<typeof service.getFederalGovernmentInsurancePlanById, Options<typeof service.getFederalGovernmentInsurancePlanById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getFederalGovernmentInsurancePlanById as Memoized<typeof service.getFederalGovernmentInsurancePlanById, Options<typeof service.getFederalGovernmentInsurancePlanById>>).options.maxSize).toBe(10);
     });
   });
 

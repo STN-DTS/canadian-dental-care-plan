@@ -13,9 +13,10 @@ import { DefaultProvinceTerritoryStateService } from '~/.server/domain/services'
 vi.mock(import('micro-memoize'));
 
 describe('DefaultProvinceTerritoryStateService', () => {
-  const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS'> = {
+  const mockServerConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE'> = {
     LOOKUP_SVC_ALL_PROVINCE_TERRITORY_STATES_CACHE_TTL_SECONDS: 10,
     LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_TTL_SECONDS: 5,
+    LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE: 10,
   };
 
   describe('constructor', () => {
@@ -27,6 +28,7 @@ describe('DefaultProvinceTerritoryStateService', () => {
 
       expect((service.listProvinceTerritoryStates as Memoized<typeof service.listProvinceTerritoryStates, Options<typeof service.listProvinceTerritoryStates>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
       expect((service.getProvinceTerritoryStateById as Memoized<typeof service.getProvinceTerritoryStateById, Options<typeof service.getProvinceTerritoryStateById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getProvinceTerritoryStateById as Memoized<typeof service.getProvinceTerritoryStateById, Options<typeof service.getProvinceTerritoryStateById>>).options.maxSize).toBe(10);
     });
   });
 

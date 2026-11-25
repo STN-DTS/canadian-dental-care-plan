@@ -17,6 +17,7 @@ describe('DefaultCountryService', () => {
     CANADA_COUNTRY_ID: '1',
     LOOKUP_SVC_ALL_COUNTRIES_CACHE_TTL_SECONDS: 10,
     LOOKUP_SVC_COUNTRY_CACHE_TTL_SECONDS: 5,
+    LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE: 10,
   };
 
   describe('constructor', () => {
@@ -28,6 +29,7 @@ describe('DefaultCountryService', () => {
 
       expect((service.listCountries as Memoized<typeof service.listCountries, Options<typeof service.listCountries>>).options.expires).toBe(10_000); // 10 seconds in milliseconds
       expect((service.getCountryById as Memoized<typeof service.getCountryById, Options<typeof service.getCountryById>>).options.expires).toBe(5000); // 5 seconds in milliseconds
+      expect((service.getCountryById as Memoized<typeof service.getCountryById, Options<typeof service.getCountryById>>).options.maxSize).toBe(10);
     });
   });
 

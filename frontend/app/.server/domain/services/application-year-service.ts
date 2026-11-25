@@ -35,12 +35,12 @@ export class DefaultApplicationYearService implements ApplicationYearService {
   private readonly log: Logger;
   private readonly applicationYearDtoMapper: ApplicationYearDtoMapper;
   private readonly applicationYearRepository: ApplicationYearRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE'>;
 
   constructor(
     @inject(TYPES.ApplicationYearDtoMapper) applicationYearDtoMapper: ApplicationYearDtoMapper,
     @inject(TYPES.ApplicationYearRepository) applicationYearRepository: ApplicationYearRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE'>,
   ) {
     this.log = createLogger('DefaultApplicationYearService');
     this.applicationYearDtoMapper = applicationYearDtoMapper;
@@ -54,7 +54,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
 
     this.getIntakeApplicationYear = memoize(this.getIntakeApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
 
@@ -63,7 +63,7 @@ export class DefaultApplicationYearService implements ApplicationYearService {
 
     this.getRenewalApplicationYear = memoize(this.getRenewalApplicationYear, {
       isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
 

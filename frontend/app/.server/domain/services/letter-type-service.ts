@@ -57,12 +57,12 @@ export class DefaultLetterTypeService implements LetterTypeService {
   private readonly log: Logger;
   private readonly letterTypeDtoMapper: LetterTypeDtoMapper;
   private readonly letterTypeRepository: LetterTypeRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_LETTER_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_TTL_SECONDS' | 'INVALID_LETTER_TYPE_IDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_LETTER_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_MAX_SIZE' | 'INVALID_LETTER_TYPE_IDS'>;
 
   constructor(
     @inject(TYPES.LetterTypeDtoMapper) letterTypeDtoMapper: LetterTypeDtoMapper,
     @inject(TYPES.LetterTypeRepository) letterTypeRepository: LetterTypeRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_LETTER_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_TTL_SECONDS' | 'INVALID_LETTER_TYPE_IDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_LETTER_TYPES_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_LETTER_TYPE_CACHE_MAX_SIZE' | 'INVALID_LETTER_TYPE_IDS'>,
   ) {
     this.log = createLogger('DefaultLetterTypeService');
     this.letterTypeDtoMapper = letterTypeDtoMapper;
@@ -88,7 +88,7 @@ export class DefaultLetterTypeService implements LetterTypeService {
 
     this.getLetterTypeById = memoize(this.getLetterTypeById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_LETTER_TYPE_CACHE_MAX_SIZE,
       expires: letterTypeCacheTTL,
     });
 

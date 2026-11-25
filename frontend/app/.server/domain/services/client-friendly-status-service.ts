@@ -37,7 +37,7 @@ export interface ClientFriendlyStatusService {
   getLocalizedClientFriendlyStatusById(id: string, locale: AppLocale): Promise<ClientFriendlyStatusLocalizedDto>;
 }
 
-export type ClientFriendlyStatusServiceImpl_ServerConfig = Pick<ServerConfig, 'LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_TTL_SECONDS'>;
+export type ClientFriendlyStatusServiceImpl_ServerConfig = Pick<ServerConfig, 'LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_MAX_SIZE'>;
 
 /**
  * Implementation of the ClientFriendlyStatusService interface.
@@ -81,7 +81,7 @@ export class DefaultClientFriendlyStatusService implements ClientFriendlyStatusS
 
     this.getClientFriendlyStatusById = memoize(this.getClientFriendlyStatusById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_MAX_SIZE,
       expires: clientFriendlyStatusCacheTTL,
     });
 

@@ -57,12 +57,12 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
   private readonly log: Logger;
   private readonly documentUploadReasonDtoMapper: DocumentUploadReasonDtoMapper;
   private readonly documentUploadReasonRepository: DocumentUploadReasonRepository;
-  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_DOCUMENT_UPLOAD_REASONS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_TTL_SECONDS'>;
+  private readonly serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_DOCUMENT_UPLOAD_REASONS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_MAX_SIZE'>;
 
   constructor(
     @inject(TYPES.DocumentUploadReasonDtoMapper) documentUploadReasonDtoMapper: DocumentUploadReasonDtoMapper,
     @inject(TYPES.DocumentUploadReasonRepository) documentUploadReasonRepository: DocumentUploadReasonRepository,
-    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_DOCUMENT_UPLOAD_REASONS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_TTL_SECONDS'>,
+    @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'LOOKUP_SVC_ALL_DOCUMENT_UPLOAD_REASONS_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_TTL_SECONDS' | 'LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_MAX_SIZE'>,
   ) {
     this.log = createLogger('DefaultDocumentUploadReasonService');
     this.documentUploadReasonDtoMapper = documentUploadReasonDtoMapper;
@@ -88,7 +88,7 @@ export class DefaultDocumentUploadReasonService implements DocumentUploadReasonS
 
     this.getDocumentUploadReasonById = memoize(this.getDocumentUploadReasonById, {
       async: true,
-      maxSize: Infinity,
+      maxSize: this.serverConfig.LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_MAX_SIZE,
       expires: documentUploadReasonCacheTTL,
     });
 
