@@ -3,7 +3,6 @@ import { inject, injectable } from 'inversify';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
@@ -30,19 +29,16 @@ export class DefaultDynatraceService implements DynatraceService {
   private readonly log: Logger;
   private readonly dynatraceDtoMapper: DynatraceDtoMapper;
   private readonly dynatraceRepository: DynatraceRepository;
-  private readonly auditService: AuditService;
   private readonly serverConfig: Pick<ServerConfig, 'DYNATRACE_API_RUM_SCRIPT_URI_CACHE_TTL_SECONDS'>;
 
   constructor(
     @inject(TYPES.DynatraceDtoMapper) dynatraceDtoMapper: DynatraceDtoMapper,
     @inject(TYPES.DynatraceRepository) dynatraceRepository: DynatraceRepository,
-    @inject(TYPES.AuditService) auditService: AuditService,
     @inject(TYPES.ServerConfig) serverConfig: Pick<ServerConfig, 'DYNATRACE_API_RUM_SCRIPT_URI_CACHE_TTL_SECONDS'>,
   ) {
     this.log = createLogger('DefaultDynatraceService');
     this.dynatraceDtoMapper = dynatraceDtoMapper;
     this.dynatraceRepository = dynatraceRepository;
-    this.auditService = auditService;
     this.serverConfig = serverConfig;
     this.init();
   }
@@ -65,8 +61,6 @@ export class DefaultDynatraceService implements DynatraceService {
     this.log.trace('Finding Dynatrace RUM script', userLogAttributes());
 
     try {
-      this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get');
-
       const dynatraceRumScript = await this.dynatraceRepository.findDynatraceRumScript();
 
       if (!dynatraceRumScript) {
