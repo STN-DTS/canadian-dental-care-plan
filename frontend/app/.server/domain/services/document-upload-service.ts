@@ -2,6 +2,7 @@ import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
+import { getUser } from '~/.server/context/user-context';
 import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
 import type { DocumentUploadErrorEntity } from '~/.server/domain/entities';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
@@ -9,7 +10,8 @@ import type { DocumentUploadRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_DOCUMENT_OUTCOME, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { ATTR_CDCP_DOCUMENT_OUTCOME } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { AppError } from '~/errors/app-error';
 
@@ -18,9 +20,11 @@ export interface DocumentUploadService {
    * Upload a document to a predetermined drop location.
    * This will process the file through scan for threats and upload the file to an SFTP/FTPS drop location.
    * This does not save any metadata and is purely a drop location.
+   * The authenticated request user is recorded as the backend transaction entry user.
    *
    * @param documentUploadRequestDto The document upload request DTO
    * @returns A success, unsafe-file, rejection, or technical error outcome. Technical failures are logged, not thrown.
+   * @throws {AppError} When no authenticated user is available in the request context.
    */
   uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto>;
 
@@ -54,12 +58,13 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
 
   @Traced()
   async uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto> {
-    this.log.trace('Uploading document', { [ATTR_CDCP_USER_ID]: documentUploadRequestDto.userId });
+    const transactionEntryUserId = getUser().id;
+    this.log.trace('Uploading document', userLogAttributes());
 
     try {
       this.auditService.createAudit('documentupload.upload');
 
-      const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto);
+      const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto, transactionEntryUserId);
       const responseEntity = await this.documentUploadRepository.uploadDocument(requestEntity);
 
       if (responseEntity.DocumentFileName === null) {
@@ -86,7 +91,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
 
   @Traced()
   async scanDocument(documentScanRequestDto: DocumentScanRequestDto): Promise<DocumentScanResponseDto> {
-    this.log.trace('Scanning document', { [ATTR_CDCP_USER_ID]: documentScanRequestDto.userId });
+    this.log.trace('Scanning document', userLogAttributes());
 
     try {
       this.auditService.createAudit('documentupload.scan');

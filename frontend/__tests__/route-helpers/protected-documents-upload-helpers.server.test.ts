@@ -6,7 +6,6 @@ import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
-import { getUser } from '~/.server/context/user-context';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
@@ -16,7 +15,6 @@ import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-util
 
 vi.mock(import('~/.server/context/app-context'));
 vi.mock(import('~/.server/context/applicant-context'));
-vi.mock(import('~/.server/context/user-context'));
 vi.mock(import('~/.server/utils/locale-utils'), () => ({ getFixedT: vi.fn() }));
 vi.mock(import('~/middlewares/context-storage.server'));
 vi.mock(import('~/utils/file-utils'));
@@ -39,7 +37,6 @@ const translations = {
 
 const getAppContextMock = vi.mocked(getAppContext, { partial: true });
 const getApplicantMock = vi.mocked(getApplicant, { partial: true });
-const getUserMock = vi.mocked(getUser, { partial: true });
 const getFixedTMock = vi.mocked(getFixedT);
 const getUrlMock = vi.mocked(getUrl);
 const arrayBufferToBase64Mock = vi.mocked(arrayBufferToBase64);
@@ -52,7 +49,6 @@ beforeEach(() => {
   tMock.mockImplementation((selector) => selector(translations as never));
   getAppContextMock.mockReturnValue({ appContainer: appContainerMock });
   getApplicantMock.mockReturnValue({ clientNumber: 'client-123' });
-  getUserMock.mockReturnValue({ id: 'user-123' });
   getUrlMock.mockReturnValue(new URL('https://example.test/documents'));
   getFixedTMock.mockResolvedValue(tMock);
   arrayBufferToBase64Mock.mockReturnValue('base64-content');
@@ -149,7 +145,6 @@ describe('protected-documents-upload-helpers.server', () => {
         binary: 'base64-content',
         uploadDate,
         lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(1_000),
-        userId: 'user-123',
       });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledOnce();
       expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();

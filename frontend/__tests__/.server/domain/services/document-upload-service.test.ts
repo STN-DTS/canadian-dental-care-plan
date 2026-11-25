@@ -1,7 +1,10 @@
+import { RouterContextProvider } from 'react-router';
+
 import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import { getUser } from '~/.server/context/user-context';
 import type { DocumentScanRequestDto, DocumentUploadRequestDto } from '~/.server/domain/dtos';
 import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
@@ -12,11 +15,11 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 
 const scanRequest: DocumentScanRequestDto = {
   fileName: 'document.txt',
   binary: 'Y29udGVudA==',
-  userId: 'user-123',
 };
 
 const uploadRequest: DocumentUploadRequestDto = {
@@ -34,10 +37,15 @@ const uploadEntity: DocumentUploadRequestEntity = {
   documentCategoryText: 'RECEIPT',
   originalDocumentCreationDate: uploadRequest.uploadDate.toString(),
   originalDocumentLastModifiedDate: uploadRequest.lastModifiedDate.toString(),
-  transactionEntryUserID: uploadRequest.userId,
+  transactionEntryUserID: 'user-123',
   persist: true,
   commit: true,
 };
+
+vi.mock(import('~/.server/context/user-context'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, getUser: vi.fn(actual.getUser) };
+});
 
 describe('DefaultDocumentUploadService', () => {
   let mapper: ReturnType<typeof mock<DocumentUploadDtoMapper>>;
@@ -52,6 +60,7 @@ describe('DefaultDocumentUploadService', () => {
     auditService = mock<AuditService>();
     logger = mock<Logger>();
     vi.mocked(createLogger).mockReturnValue(logger);
+    vi.mocked(getUser).mockReturnValue({ id: 'user-123', mocked: false, sin: '000000000' });
     mapper.mapDocumentScanRequestDtoToEntity.mockReturnValue(scanEntity);
     mapper.mapDocumentUploadRequestDtoToEntity.mockResolvedValue(uploadEntity);
     mapper.mapDocumentUploadErrorEntityToDto.mockImplementation((error) => {
@@ -70,7 +79,7 @@ describe('DefaultDocumentUploadService', () => {
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'success', documentFileName: 'stored-document.txt' });
 
       expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('documentupload.upload');
-      expect(mapper.mapDocumentUploadRequestDtoToEntity).toHaveBeenCalledExactlyOnceWith(uploadRequest);
+      expect(mapper.mapDocumentUploadRequestDtoToEntity).toHaveBeenCalledExactlyOnceWith(uploadRequest, 'user-123');
       expect(repository.uploadDocument).toHaveBeenCalledExactlyOnceWith(uploadEntity);
       expect(repository.scanDocument).not.toHaveBeenCalled();
     });
@@ -158,6 +167,20 @@ describe('DefaultDocumentUploadService', () => {
 
       expect(logger.error).toHaveBeenCalledWith(error, { [ATTR_ERROR_TYPE]: 'document_upload_failed' });
       expect(mapper.mapDocumentUploadRequestDtoToEntity).not.toHaveBeenCalled();
+      expect(repository.uploadDocument).not.toHaveBeenCalled();
+    });
+
+    it('should throw without auditing or uploading when the request has no user', async () => {
+      vi.mocked(getUser).mockReset();
+      const url = new URL('https://localhost:3000/en/protected/documents');
+
+      const upload = contextStorageMiddleware({ context: new RouterContextProvider(), params: {}, request: new Request(url), url, pattern: '' }, async () => {
+        await service.uploadDocument(uploadRequest);
+        return new Response();
+      });
+
+      await expect(upload).rejects.toMatchObject({ errorCode: ErrorCodes.PLT_CTX_USER_UNAVAILABLE });
+      expect(auditService.createAudit).not.toHaveBeenCalled();
       expect(repository.uploadDocument).not.toHaveBeenCalled();
     });
   });

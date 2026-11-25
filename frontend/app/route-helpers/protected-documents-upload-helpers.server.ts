@@ -4,7 +4,6 @@ import type { Get } from 'type-fest';
 import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
-import { getUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
@@ -69,7 +68,6 @@ export type UploadDocumentsResponse = UploadDocumentsResponseSuccess | UploadDoc
  * @returns Success when every document uploads; otherwise, file-specific errors.
  */
 export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']): Promise<UploadDocumentsResponse> {
-  const user = getUser();
   const applicant = getApplicant();
   const url = getUrl();
   const t = await getFixedT(url, 'documents');
@@ -87,7 +85,6 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
         binary: arrayBufferToBase64(fileBuffer),
         uploadDate,
         lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(file.lastModified),
-        userId: user.id,
       });
 
       switch (response.status) {

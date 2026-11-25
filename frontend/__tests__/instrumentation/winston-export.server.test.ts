@@ -216,13 +216,20 @@ test('the application preload preserves event schemas, severity and privacy thro
             trace.setSpanContext(context.active(), { traceId: '1'.repeat(32), spanId: '2'.repeat(16), traceFlags: 1, isRemote: true }),
             async span => {
               try {
-                const result = await documentService.uploadDocument({ userId: 'user' });
-                assert.equal(result.status, 'error');
-                failDocumentIdentity = true;
-                assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
-                failDocumentIdentity = false;
-                failDocumentHttp = true;
-                assert.equal((await documentService.uploadDocument({ userId: 'user' })).status, 'error');
+                const documentContext = new RouterContextProvider();
+                documentContext.set(userContext, { id: 'user', mocked: false, sin: '999999997' });
+                const documentUrl = new URL('https://localhost/en/protected/documents');
+                let result;
+                await contextStorageMiddleware({ context: documentContext, params: {}, request: new Request(documentUrl), url: documentUrl, pattern: '' }, async () => {
+                  result = await documentService.uploadDocument({});
+                  assert.equal(result.status, 'error');
+                  failDocumentIdentity = true;
+                  assert.equal((await documentService.uploadDocument({})).status, 'error');
+                  failDocumentIdentity = false;
+                  failDocumentHttp = true;
+                  assert.equal((await documentService.uploadDocument({})).status, 'error');
+                  return new Response();
+                });
                 return result;
               } finally {
                 span.end();
