@@ -64,6 +64,27 @@ describe('getEnv secret values', () => {
     });
   });
 
+  it('uses bounded defaults for lookup cache sizes', () => {
+    const cacheSizes = {
+      LOOKUP_SVC_APPLICATION_YEAR_CACHE_MAX_SIZE: 10,
+      LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_MAX_SIZE: 1000,
+      LOOKUP_SVC_CLIENT_FRIENDLY_STATUS_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_COUNTRY_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_DOCUMENT_UPLOAD_REASON_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_EVIDENTIARY_DOCUMENT_TYPE_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_FEDERAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_LETTER_TYPE_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_PROVINCE_TERRITORY_STATE_CACHE_MAX_SIZE: 500,
+      LOOKUP_SVC_PROVINCIAL_GOVERNMENT_INSURANCE_PLAN_CACHE_MAX_SIZE: 500,
+    } as const;
+
+    for (const name of Object.keys(cacheSizes)) {
+      vi.stubEnv(name, undefined);
+    }
+
+    expect(getEnv()).toMatchObject(cacheSizes);
+  });
+
   it('reads the app identity token cache settings from the environment', () => {
     vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_CAPACITY', '10');
     vi.stubEnv('APP_IDENTITY_TOKEN_CACHE_FAILURE_TTL_MS', '0');
