@@ -4,12 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ClientConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { applicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto } from '~/.server/domain/dtos';
-import type { AuditService, LetterService, LetterTypeService } from '~/.server/domain/services';
+import type { LetterService, LetterTypeService } from '~/.server/domain/services';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';

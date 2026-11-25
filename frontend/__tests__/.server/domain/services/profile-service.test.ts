@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { UpdateAddressRequestDto, UpdateCommunicationPreferenceRequestDto, UpdateDentalBenefitsRequestDto, UpdateEmailAddressRequestDto, UpdatePhoneNumbersRequestDto } from '~/.server/domain/dtos';
 import type { UpdateAddressRequestEntity, UpdateCommunicationPreferenceRequestEntity, UpdateDentalBenefitsRequestEntity, UpdateEmailAddressRequestEntity, UpdatePhoneNumbersRequestEntity } from '~/.server/domain/entities';
 import type { ProfileDtoMapper } from '~/.server/domain/mappers';
 import type { ProfileRepository } from '~/.server/domain/repositories';
 import { DefaultProfileService } from '~/.server/domain/services';
-import type { AuditService } from '~/.server/domain/services';
 
 describe('DefaultProfileService', () => {
   const mockProfileDtoMapper = mock<ProfileDtoMapper>();

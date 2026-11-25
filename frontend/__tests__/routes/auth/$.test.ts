@@ -8,11 +8,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import type { AppContainerProvider } from '~/.server/app-container-provider';
+import { DefaultAuditService } from '~/.server/audit/audit-service';
 import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { DefaultAuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';

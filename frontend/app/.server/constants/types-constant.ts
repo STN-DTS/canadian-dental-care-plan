@@ -1,6 +1,7 @@
 import type { HealthCheck } from '@dts-stn/health-checks';
 import type { Newable } from 'inversify';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { BearerTokenResolver, TokenRolesExtractor } from '~/.server/auth';
 import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
 import type { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
@@ -71,7 +72,6 @@ import type {
   ApplicantService,
   ApplicationStatusService,
   ApplicationYearService,
-  AuditService,
   BenefitApplicationService,
   BenefitRenewalService,
   ClientApplicationRenewalEligibilityService,

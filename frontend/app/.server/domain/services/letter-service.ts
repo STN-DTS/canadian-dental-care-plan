@@ -1,11 +1,11 @@
 import { inject, injectable } from 'inversify';
 import { sort } from 'moderndash';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { LetterDto, LettersRequestDto, PdfRequestDto } from '~/.server/domain/dtos';
 import type { LetterDtoMapper } from '~/.server/domain/mappers';
 import type { LetterRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_LETTERS_SORT_ORDER, ATTR_CDCP_LETTER_ID } from '~/.server/logging/log-attributes';

@@ -1,10 +1,10 @@
 import { inject, injectable } from 'inversify';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { UpdateAddressRequestDto, UpdateCommunicationPreferenceRequestDto, UpdateDentalBenefitsRequestDto, UpdateEmailAddressRequestDto, UpdatePhoneNumbersRequestDto } from '~/.server/domain/dtos';
 import type { ProfileDtoMapper } from '~/.server/domain/mappers';
 import type { ProfileRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
 import { userLogAttributes } from '~/.server/logging/user-log-attributes';

@@ -7,6 +7,7 @@ import { Headers, Response } from 'undici';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, mockFn } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
@@ -16,7 +17,6 @@ import type { BenefitApplicationRequestEntity, BenefitRenewalRequestEntity } fro
 import type { BenefitApplicationDtoMapper, BenefitRenewalDtoMapper } from '~/.server/domain/mappers';
 import { DefaultBenefitApplicationRepository } from '~/.server/domain/repositories/benefit-application-repository';
 import { DefaultBenefitRenewalRepository } from '~/.server/domain/repositories/benefit-renewal-repository';
-import type { AuditService } from '~/.server/domain/services';
 import { DefaultBenefitApplicationService } from '~/.server/domain/services/benefit-application-service';
 import { DefaultBenefitRenewalService } from '~/.server/domain/services/benefit-renewal-service';
 import { DefaultHttpClient } from '~/.server/http';

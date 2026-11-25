@@ -1,12 +1,12 @@
 import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
 import type { DocumentUploadErrorEntity } from '~/.server/domain/entities';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
 import type { DocumentUploadRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_DOCUMENT_OUTCOME } from '~/.server/logging/log-attributes';

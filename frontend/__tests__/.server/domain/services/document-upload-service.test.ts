@@ -2,13 +2,14 @@ import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { DocumentScanRequestDto, DocumentUploadRequestDto } from '~/.server/domain/dtos';
 import type { DocumentScanRequestEntity, DocumentUploadRequestEntity } from '~/.server/domain/entities';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
 import { DefaultDocumentUploadDtoMapper } from '~/.server/domain/mappers/document-upload-dto-mapper';
 import type { DocumentUploadRepository } from '~/.server/domain/repositories';
 import { DefaultDocumentUploadService } from '~/.server/domain/services';
-import type { AuditService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
+import type { EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { EVIDENTIARY_DOCUMENT_TYPE_STATUS } from '~/constants/evidentiary-document-type';

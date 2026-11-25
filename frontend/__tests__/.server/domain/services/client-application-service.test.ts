@@ -2,11 +2,11 @@ import { Option } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ClientApplicationBasicInfoRequestDto, ClientApplicationDto, ClientApplicationSinRequestDto } from '~/.server/domain/dtos';
 import type { ClientApplicationBasicInfoRequestEntity, ClientApplicationEntity, ClientApplicationSinRequestEntity } from '~/.server/domain/entities';
 import type { ClientApplicationDtoMapper } from '~/.server/domain/mappers';
 import type { ClientApplicationRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { DefaultClientApplicationService } from '~/.server/domain/services';
 
 describe('DefaultClientApplicationService', () => {

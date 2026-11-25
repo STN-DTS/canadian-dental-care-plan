@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ClientEligibilityDto } from '~/.server/domain/dtos';
 import type { ClientEligibilityEntity } from '~/.server/domain/entities/client-eligibility-entity';
 import type { ClientEligibilityDtoMapper } from '~/.server/domain/mappers';
 import type { ClientEligibilityRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { DefaultClientEligibilityService } from '~/.server/domain/services/client-eligibility-service';
 
 function createService() {

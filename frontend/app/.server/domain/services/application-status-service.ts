@@ -1,11 +1,11 @@
 import type { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { ApplicationStatusBasicInfoRequestDto, ApplicationStatusSinRequestDto } from '~/.server/domain/dtos';
 import type { ApplicationStatusDtoMapper } from '~/.server/domain/mappers';
 import type { ApplicationStatusRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { userLogAttributes } from '~/.server/logging/user-log-attributes';

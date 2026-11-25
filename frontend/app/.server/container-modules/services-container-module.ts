@@ -1,6 +1,7 @@
 import { ContainerModule } from 'inversify';
 import type { BindingConstraints } from 'inversify';
 
+import { DefaultAuditService } from '~/.server/audit/audit-service';
 import { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
 import { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
@@ -16,7 +17,6 @@ import {
   DefaultApplicantService,
   DefaultApplicationStatusService,
   DefaultApplicationYearService,
-  DefaultAuditService,
   DefaultBenefitApplicationService,
   DefaultBenefitRenewalService,
   DefaultClientApplicationRenewalEligibilityService,

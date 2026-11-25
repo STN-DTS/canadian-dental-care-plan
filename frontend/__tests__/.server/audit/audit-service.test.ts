@@ -4,8 +4,8 @@ import { ATTR_ERROR_TYPE, ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-c
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import { DefaultAuditService } from '~/.server/audit/audit-service';
 import { userContext } from '~/.server/context/user-context';
-import { DefaultAuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { contextStorageMiddleware } from '~/middlewares/context-storage.server';

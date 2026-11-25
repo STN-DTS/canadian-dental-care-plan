@@ -76,7 +76,7 @@ test('the application preload preserves event schemas, severity and privacy thro
           import { DefaultDocumentUploadRepository } from './app/.server/domain/repositories/document-upload-repository-default.ts';
           import { RouterContextProvider } from 'react-router';
           import { userContext } from './app/.server/context/user-context.ts';
-          import { DefaultAuditService } from './app/.server/domain/services/audit-service.ts';
+          import { DefaultAuditService } from './app/.server/audit/audit-service.ts';
           import { contextStorageMiddleware } from './app/middlewares/context-storage.server.ts';
           import { DefaultDocumentUploadService } from './app/.server/domain/services/document-upload-service.ts';
           import { createRequestLoggerMiddleware } from './app/.server/express-server/middleware.ts';

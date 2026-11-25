@@ -6,10 +6,11 @@ import { I18nextProvider } from 'react-i18next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import type { AppContext } from '~/.server/context/app-context';
-import type { AuditService, DocumentUploadService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
+import type { DocumentUploadService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';

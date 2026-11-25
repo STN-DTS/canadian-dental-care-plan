@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import type { RedisService } from '~/.server/data';
 import type { BenefitApplicationDto, BenefitRenewalDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationDtoMapper, BenefitRenewalDtoMapper } from '~/.server/domain/mappers';
 import type { BenefitApplicationRepository, BenefitRenewalRepository } from '~/.server/domain/repositories';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
-import type { AuditService } from '~/.server/domain/services';
 import { DefaultBenefitApplicationService } from '~/.server/domain/services/benefit-application-service';
 import { DefaultBenefitRenewalService } from '~/.server/domain/services/benefit-renewal-service';
 import { AppError } from '~/errors/app-error';

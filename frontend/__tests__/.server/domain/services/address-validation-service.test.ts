@@ -2,12 +2,12 @@ import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { AddressCorrectionRequestDto, AddressCorrectionResultDto } from '~/.server/domain/dtos';
 import type { AddressCorrectionResultEntity } from '~/.server/domain/entities';
 import type { AddressValidationDtoMapper } from '~/.server/domain/mappers';
 import type { AddressValidationRepository } from '~/.server/domain/repositories';
 import { DefaultAddressValidationService } from '~/.server/domain/services';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 

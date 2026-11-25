@@ -2,11 +2,11 @@ import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinRequestDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import type { ApplicantResponseEntity, FindApplicantByBasicInfoRequestEntity, FindApplicantBySinRequestEntity } from '~/.server/domain/entities';
 import type { ProgramApplicantDtoMapper } from '~/.server/domain/mappers';
 import type { ApplicantRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { DefaultProgramApplicantService } from '~/.server/domain/services';
 
 describe('DefaultProgramApplicantService', () => {

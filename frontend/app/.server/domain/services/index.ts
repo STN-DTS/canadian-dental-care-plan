@@ -3,7 +3,6 @@ export * from './appeal-upload-eligibility-service';
 export * from './applicant-service';
 export * from './application-status-service';
 export * from './application-year-service';
-export * from './audit-service';
 export * from './benefit-application-service';
 export * from './benefit-renewal-service';
 export * from './client-application-service';

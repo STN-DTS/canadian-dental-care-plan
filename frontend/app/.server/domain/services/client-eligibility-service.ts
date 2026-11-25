@@ -1,11 +1,11 @@
 import { inject, injectable } from 'inversify';
 
+import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import type { ClientEligibilityDto } from '~/.server/domain/dtos';
 import type { ClientEligibilityDtoMapper } from '~/.server/domain/mappers';
 import type { ClientEligibilityRepository } from '~/.server/domain/repositories';
-import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';

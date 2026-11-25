@@ -2,8 +2,8 @@ import { ATTR_ERROR_TYPE, ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-c
 import { injectable } from 'inversify';
 import { isProxy } from 'node:util/types';
 
+import type { AuditDetails, AuthenticationAuditDetails } from '~/.server/audit/audit-dto';
 import { findUser } from '~/.server/context/user-context';
-import type { AuditDetails, AuthenticationAuditDetails } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUDIT_EVENT_ID, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
