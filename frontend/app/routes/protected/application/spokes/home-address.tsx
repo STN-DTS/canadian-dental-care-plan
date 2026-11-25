@@ -8,6 +8,7 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { getUser } from '~/.server/context/user-context';
 import { getProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
@@ -166,7 +167,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     city: formattedHomeAddress.city,
     postalCode: formattedHomeAddress.postalZipCode,
     provinceCode: formattedHomeAddress.provinceState,
-    userId: 'anonymous',
+    userId: getUser(context).id,
   });
 
   if (addressCorrectionResult.status === 'not-correct') {

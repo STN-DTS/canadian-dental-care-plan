@@ -11,6 +11,7 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import type { AppContext } from '~/.server/context/app-context';
+import { userContext } from '~/.server/context/user-context';
 import type { BenefitApplicationDto, BenefitRenewalDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationRequestEntity, BenefitRenewalRequestEntity } from '~/.server/domain/entities';
 import type { BenefitApplicationDtoMapper, BenefitRenewalDtoMapper } from '~/.server/domain/mappers';
@@ -192,6 +193,8 @@ describe.each(cases)('$name', ({ action, channel, context: applicationContext })
     appContainer.get.calledWith(TYPES.BenefitRenewalService).mockReturnValue(renewalService);
     const context = new RouterContextProvider();
     context.set(appContext, { appContainer, session });
+    context.set(userContext, { id: 'test-user', mocked: false, sin: '999999998' });
+
     const formData = new FormData();
     formData.set('acknowledgeInfo', 'yes');
     formData.set('acknowledgeCriteria', 'yes');
@@ -211,5 +214,15 @@ describe.each(cases)('$name', ({ action, channel, context: applicationContext })
     expect(retryResult).toMatchObject({ status: 302 });
     expect(newFlowResult).toMatchObject({ status: 302 });
     expect(fetchFn.mock.calls.map(([, init]) => new Headers(init?.headers).get('Idempotency-Key'))).toEqual([applicationId, applicationId, anotherApplicationId]);
+
+    const expectedUserId = channel === 'protected' ? 'test-user' : undefined;
+    const intakeMapperCalls = [
+      ...applicationStateMapper.mapApplicationAdultStateToBenefitApplicationDto.mock.calls,
+      ...applicationStateMapper.mapApplicationChildrenStateToBenefitApplicationDto.mock.calls,
+      ...applicationStateMapper.mapApplicationFamilyStateToBenefitApplicationDto.mock.calls,
+    ];
+
+    expect(securityHandler.validateHCaptchaResponse.mock.calls.map(([params]) => params.userId)).toEqual([expectedUserId, expectedUserId, expectedUserId]);
+    expect(intakeMapperCalls.map(([, userId]) => userId)).toEqual(intakeMapperCalls.map(() => expectedUserId));
   });
 });

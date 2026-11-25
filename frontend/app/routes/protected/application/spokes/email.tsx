@@ -5,6 +5,7 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { getUser } from '~/.server/context/user-context';
 import { getProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -102,14 +103,14 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   const isNewEmail = state.email !== parsedDataResult.data.email;
-  const verificationCode = isNewEmail || state.verifyEmail === undefined ? verificationCodeService.createVerificationCode('anonymous') : state.verifyEmail.verificationCode;
+  const verificationCode = isNewEmail || state.verifyEmail === undefined ? verificationCodeService.createVerificationCode(getUser(context).id) : state.verifyEmail.verificationCode;
 
   if (isNewEmail) {
     await verificationCodeService.sendVerificationCodeEmail({
       email: parsedDataResult.data.email,
       verificationCode,
       preferredLanguage: state.communicationPreferences?.value?.preferredLanguage === ENGLISH_LANGUAGE_CODE.toString() ? 'en' : 'fr',
-      userId: 'anonymous',
+      userId: getUser(context).id,
     });
   }
 

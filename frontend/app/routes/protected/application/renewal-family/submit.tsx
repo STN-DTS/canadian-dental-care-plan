@@ -6,6 +6,7 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { getUser } from '~/.server/context/user-context';
 import { loadProtectedApplicationRenewalFamilyStateForReview } from '~/.server/routes/helpers/protected-application-renewal-family-route-helpers';
 import { clearProtectedApplicationState, saveProtectedApplicationState, shouldSkipMaritalStatus, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -86,7 +87,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationRenewalFamily');
 
-  await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
+  await securityHandler.validateHCaptchaResponse({ formData, request, userId: getUser(context).id }, () => {
     clearProtectedApplicationState({ params, session });
     throw redirect(getPathById('protected/unable-to-process-request', params));
   });

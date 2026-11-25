@@ -10,6 +10,7 @@ import * as z from 'zod';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { getUser } from '~/.server/context/user-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import type { AddressInvalidResponse, AddressResponse, AddressSuggestionResponse, CanadianAddress } from '~/components/address-validation-dialog';
@@ -182,7 +183,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     city: formattedHomeAddress.city,
     postalCode: formattedHomeAddress.postalZipCode,
     provinceCode: formattedHomeAddress.provinceState,
-    userId: 'anonymous',
+    userId: getUser(context).id,
   });
 
   if (addressCorrectionResult.status === 'not-correct') {
