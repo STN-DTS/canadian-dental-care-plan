@@ -6,7 +6,6 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import { loadProtectedApplicationRenewalAdultStateForReview } from '~/.server/routes/helpers/protected-application-renewal-adult-route-helpers';
 import { clearProtectedApplicationState, saveProtectedApplicationState, shouldSkipMaritalStatus, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -55,10 +54,9 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { ENABLED_FEATURES } = appContainer.get(TYPES.ClientConfig);
 
   const viewPayloadEnabled = ENABLED_FEATURES.includes('view-payload');
-  const userInfoToken = session.get('userInfoToken');
   const benefitApplicationDtoMapper = appContainer.get(TYPES.BenefitRenewalDtoMapper);
   const benefitApplicationStateMapper = appContainer.get(TYPES.BenefitRenewalStateMapper);
-  const benefitRenewalDto = viewPayloadEnabled && benefitApplicationStateMapper.mapBenefitRenewalAdultStateToBenefitRenewalDto(state, { userId: userInfoToken.sub });
+  const benefitRenewalDto = viewPayloadEnabled && benefitApplicationStateMapper.mapBenefitRenewalAdultStateToBenefitRenewalDto(state);
   const payload = benefitRenewalDto && benefitApplicationDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalDto);
 
   return {
@@ -81,7 +79,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationRenewalAdult');
 
-  await securityHandler.validateHCaptchaResponse({ formData, request, userId: getUser(context).id }, () => {
+  await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
     clearProtectedApplicationState({ params, session });
     throw redirect(getPathById('protected/unable-to-process-request', params));
   });
@@ -104,8 +102,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  const userInfoToken = session.get('userInfoToken');
-  const benefitApplicationDto = appContainer.get(TYPES.BenefitRenewalStateMapper).mapBenefitRenewalAdultStateToBenefitRenewalDto(state, { userId: userInfoToken.sub });
+  const benefitApplicationDto = appContainer.get(TYPES.BenefitRenewalStateMapper).mapBenefitRenewalAdultStateToBenefitRenewalDto(state);
   const confirmationCode = await appContainer.get(TYPES.BenefitRenewalService).createProtectedBenefitRenewal(benefitApplicationDto);
   const submissionInfo = { confirmationCode, submittedOn: Temporal.Now.instant().toString() };
   saveProtectedApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });

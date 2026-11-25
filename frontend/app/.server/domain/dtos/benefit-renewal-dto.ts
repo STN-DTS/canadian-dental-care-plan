@@ -28,9 +28,6 @@ export type BenefitRenewalDto = ReadonlyDeep<{
    * name will be "Renewal" since the benefit application will be renewed instead of a new application being created.
    */
   applicationCategoryCodeName: 'New' | 'Renewal';
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type BenefitRenewalApplicantInformationDto = ReadonlyDeep<{

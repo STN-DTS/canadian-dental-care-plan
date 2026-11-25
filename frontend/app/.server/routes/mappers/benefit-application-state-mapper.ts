@@ -128,17 +128,17 @@ interface ToEmailAddressPublicChannelArgs {
 }
 
 export interface BenefitApplicationStateMapper {
-  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId?: string): BenefitApplicationDto;
+  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState): BenefitApplicationDto;
 
-  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId?: string): BenefitApplicationDto;
+  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState): BenefitApplicationDto;
 
-  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId?: string): BenefitApplicationDto;
+  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState): BenefitApplicationDto;
 }
 
 @injectable()
 export class DefaultBenefitApplicationStateMapper implements BenefitApplicationStateMapper {
   @Traced()
-  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState, userId: string = 'anonymous'): BenefitApplicationDto {
+  mapApplicationAdultStateToBenefitApplicationDto(applicationAdultState: ApplicationAdultState): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationAdultState.applicantInformation.dateOfBirth, applicationAdultState.applicationYear);
 
     if (ageCategory === 'youth' && applicationAdultState.livingIndependently === undefined) {
@@ -178,12 +178,11 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       partnerInformation: applicationAdultState.partnerInformation,
       termsAndConditions: applicationAdultState.termsAndConditions,
       typeOfApplication: 'adult',
-      userId: userId,
     };
   }
 
   @Traced()
-  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState, userId: string = 'anonymous'): BenefitApplicationDto {
+  mapApplicationFamilyStateToBenefitApplicationDto(applicationFamilyState: ApplicationFamilyState): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationFamilyState.applicantInformation.dateOfBirth, applicationFamilyState.applicationYear);
 
     if (ageCategory === 'youth' && applicationFamilyState.livingIndependently === undefined) {
@@ -222,12 +221,11 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       partnerInformation: applicationFamilyState.partnerInformation,
       termsAndConditions: applicationFamilyState.termsAndConditions,
       typeOfApplication: 'adult-child',
-      userId: userId,
     };
   }
 
   @Traced()
-  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState, userId: string = 'anonymous'): BenefitApplicationDto {
+  mapApplicationChildrenStateToBenefitApplicationDto(applicationChildrenState: ApplicationChildrenState): BenefitApplicationDto {
     const ageCategory = getContextualAgeCategoryFromDate(applicationChildrenState.applicantInformation.dateOfBirth, applicationChildrenState.applicationYear);
 
     if (ageCategory === 'youth' && applicationChildrenState.livingIndependently === undefined) {
@@ -266,7 +264,6 @@ export class DefaultBenefitApplicationStateMapper implements BenefitApplicationS
       partnerInformation: applicationChildrenState.partnerInformation,
       termsAndConditions: applicationChildrenState.termsAndConditions,
       typeOfApplication: 'child',
-      userId: userId,
     };
   }
 

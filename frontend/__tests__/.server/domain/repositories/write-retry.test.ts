@@ -113,7 +113,7 @@ const writeOperations = [
   },
   {
     name: 'evidentiary document metadata',
-    submit: async (client: DefaultHttpClient) => await new DefaultEvidentiaryDocumentRepository(serverConfig, client).createEvidentiaryDocumentMetadata({ clientId: 'test', userId: 'test', documents: [] }),
+    submit: async (client: DefaultHttpClient) => await new DefaultEvidentiaryDocumentRepository(serverConfig, client).createEvidentiaryDocumentMetadata({ clientId: 'test', documents: [] }),
     errorCode: ErrorCodes.API_DOC_EVIDENTIARY_METADATA_CREATE_FAILED,
   },
 ];

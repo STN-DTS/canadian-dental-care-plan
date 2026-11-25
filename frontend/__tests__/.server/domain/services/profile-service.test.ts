@@ -15,8 +15,6 @@ describe('DefaultProfileService', () => {
 
   const service = new DefaultProfileService(mockAuditService, mockProfileDtoMapper, mockProfileRepository);
 
-  const userId = 'test-user';
-
   it('should update communication preferences', async () => {
     const mockCommunicationPreferenceDto: UpdateCommunicationPreferenceRequestDto = {
       clientId: '123456789',
@@ -54,7 +52,7 @@ describe('DefaultProfileService', () => {
 
     mockProfileDtoMapper.mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity.mockReturnValue(mockCommunicationPreferenceEntity);
 
-    await service.updateCommunicationPreferences(mockCommunicationPreferenceDto, userId);
+    await service.updateCommunicationPreferences(mockCommunicationPreferenceDto);
 
     expect(mockAuditService.createAudit).toHaveBeenCalledWith('profile-update.communication-preferences.post');
     expect(mockProfileDtoMapper.mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity).toHaveBeenCalledWith(mockCommunicationPreferenceDto);
@@ -133,7 +131,7 @@ describe('DefaultProfileService', () => {
 
     mockProfileDtoMapper.mapUpdateEmailAddressRequestDtoToUpdateEmailAddressRequestEntity.mockReturnValue(mockEmailAddressEntity);
 
-    await service.updateEmailAddress(mockEmailAddressDto, userId);
+    await service.updateEmailAddress(mockEmailAddressDto);
 
     expect(mockProfileDtoMapper.mapUpdateEmailAddressRequestDtoToUpdateEmailAddressRequestEntity).toHaveBeenCalledWith(mockEmailAddressDto);
     expect(mockProfileRepository.updateEmailAddress).toHaveBeenCalledWith(mockEmailAddressEntity);
@@ -179,7 +177,7 @@ describe('DefaultProfileService', () => {
 
     mockProfileDtoMapper.mapUpdatePhoneNumbersRequestDtoToUpdatePhoneNumbersRequestEntity.mockReturnValue(mockPhoneNumbersEntity);
 
-    await service.updatePhoneNumbers(mockPhoneNumbersDto, userId);
+    await service.updatePhoneNumbers(mockPhoneNumbersDto);
 
     expect(mockProfileDtoMapper.mapUpdatePhoneNumbersRequestDtoToUpdatePhoneNumbersRequestEntity).toHaveBeenCalledWith(mockPhoneNumbersDto);
     expect(mockProfileRepository.updatePhoneNumbers).toHaveBeenCalledWith(mockPhoneNumbersEntity);

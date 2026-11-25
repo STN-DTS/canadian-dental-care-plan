@@ -55,7 +55,6 @@ export type CreateEvidentiaryDocumentMetadataResponseEntity = ReadonlyDeep<{
  */
 export type FindEvidentiaryDocumentsRequest = Readonly<{
   clientId: string;
-  userId: string;
 }>;
 
 /**
@@ -63,7 +62,6 @@ export type FindEvidentiaryDocumentsRequest = Readonly<{
  */
 export type CreateEvidentiaryDocumentMetadataRepositoryRequest = Readonly<{
   clientId: string;
-  userId: string;
   documents: ReadonlyArray<UploadEvidentiaryDocumentMetadataEntity>;
 }>;
 

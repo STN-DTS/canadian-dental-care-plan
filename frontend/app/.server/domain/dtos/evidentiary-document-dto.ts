@@ -78,9 +78,6 @@ export type CreateEvidentiaryDocumentMetadataResponseDto = ReadonlyDeep<{
 export type ListEvidentiaryDocumentsRequest = Readonly<{
   /** The client ID of the applicant. */
   clientId: string;
-
-  /** A unique identifier for the applicant - used for auditing */
-  userId: string;
 }>;
 
 /**
@@ -89,9 +86,6 @@ export type ListEvidentiaryDocumentsRequest = Readonly<{
 export type CreateEvidentiaryDocumentMetadataRequest = Readonly<{
   /** The client ID of the applicant. */
   clientId: string;
-
-  /** A unique identifier for the applicant - used for auditing */
-  userId: string;
 
   /** The documents to upload */
   documents: ReadonlyArray<CreateEvidentiaryDocumentMetadataDto>;

@@ -32,23 +32,21 @@ describe('DefaultHCaptchaValidator', () => {
 
     const result = await validator.validateHCaptchaResponse({
       hCaptchaResponse: 'valid-token',
-      userId: 'test-user',
       ipAddress: '127.0.0.1',
     });
 
     expect(result).toEqual({ isValid: true });
-    expect(mockLogger.debug).toHaveBeenCalledWith('Starting hCaptcha response validation', { 'cdcp.user.id': 'test-user' });
+    expect(mockLogger.debug).toHaveBeenCalledWith('Starting hCaptcha response validation', {});
   });
 
   it('should return isValid: true when the hCaptcha response is missing', async () => {
     const result = await validator.validateHCaptchaResponse({
       hCaptchaResponse: '',
-      userId: 'test-user',
       ipAddress: '127.0.0.1',
     });
 
     expect(result).toEqual({ isValid: true });
-    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha response not found; gracefully passing validation', { 'cdcp.user.id': 'test-user' });
+    expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha response not found; gracefully passing validation', {});
   });
 
   it('should return isValid: false when the hCaptcha score exceeds the threshold', async () => {
@@ -57,7 +55,6 @@ describe('DefaultHCaptchaValidator', () => {
 
     const result = await validator.validateHCaptchaResponse({
       hCaptchaResponse: 'valid-token',
-      userId: 'test-user',
       ipAddress: '127.0.0.1',
     });
 
@@ -66,7 +63,6 @@ describe('DefaultHCaptchaValidator', () => {
       errorMessage: 'hCaptcha response validation failed; hCaptcha score exceeds threshold.',
     });
     expect(mockLogger.warn).toHaveBeenCalledWith('hCaptcha score exceeds max threshold', {
-      'cdcp.user.id': 'test-user',
       'cdcp.hcaptcha.score': 1,
       'cdcp.hcaptcha.max_score': 0.9,
       [ATTR_ERROR_TYPE]: 'hcaptcha_score_exceeded',
@@ -79,13 +75,11 @@ describe('DefaultHCaptchaValidator', () => {
 
     const result = await validator.validateHCaptchaResponse({
       hCaptchaResponse: 'valid-token',
-      userId: 'test-user',
       ipAddress: '127.0.0.1',
     });
 
     expect(result).toEqual({ isValid: true });
     expect(mockLogger.warn).toHaveBeenCalledWith('Error during hCaptcha response validation; gracefully passing validation', {
-      'cdcp.user.id': 'test-user',
       [ATTR_ERROR_TYPE]: 'hcaptcha_validation_failed',
     });
   });

@@ -47,7 +47,6 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     const clientApplicationRenewalEligibilityResult = await clientApplicationRenewalEligibilityService.getClientApplicationRenewalEligibilityBySin({
       sin: userInfoToken.sin,
       applicationYear: applicationYear,
-      userId: userInfoToken.sub,
     });
 
     if (clientApplicationRenewalEligibilityResult.result === 'INELIGIBLE-ALREADY-RENEWED') {

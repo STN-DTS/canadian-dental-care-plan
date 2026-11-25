@@ -12,10 +12,10 @@ import { sanitizeSin } from '~/utils/sin-utils';
 /** Maps program applicant lookup DTOs and repository responses between domain layers. */
 export interface ProgramApplicantDtoMapper {
   /** Maps basic identity details to an applicant repository request. */
-  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindProgramApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity;
+  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: FindProgramApplicantByBasicInfoDto): FindApplicantByBasicInfoRequestEntity;
 
   /** Maps and sanitizes a SIN lookup to an applicant repository request. */
-  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindProgramApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity;
+  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: FindProgramApplicantBySinRequestDto): FindApplicantBySinRequestEntity;
 
   /**
    * Maps a repository response to the strict program applicant contract.
@@ -34,7 +34,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     this.log = createLogger('DefaultProgramApplicantDtoMapper');
   }
 
-  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindProgramApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
+  mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request: FindProgramApplicantByBasicInfoDto): FindApplicantByBasicInfoRequestEntity {
     return {
       Applicant: {
         PersonName: {
@@ -54,7 +54,7 @@ export class DefaultProgramApplicantDtoMapper implements ProgramApplicantDtoMapp
     };
   }
 
-  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindProgramApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
+  mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: FindProgramApplicantBySinRequestDto): FindApplicantBySinRequestEntity {
     return {
       Applicant: {
         PersonSINIdentification: {

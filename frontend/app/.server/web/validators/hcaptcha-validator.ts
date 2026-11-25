@@ -5,7 +5,8 @@ import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_HCAPTCHA_MAX_SCORE, ATTR_CDCP_HCAPTCHA_SCORE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { ATTR_CDCP_HCAPTCHA_MAX_SCORE, ATTR_CDCP_HCAPTCHA_SCORE } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import type { HCaptchaVerifyRequestDto } from '~/.server/web/dtos';
 import type { HCaptchaService } from '~/.server/web/services';
@@ -23,11 +24,6 @@ export interface ValidateHCaptchaResponseParams {
    * The client's IP address (optional).
    */
   ipAddress?: string;
-
-  /**
-   * The ID of the user attempting the request. Defaults to 'anonymous'.
-   */
-  userId?: string;
 }
 
 /**
@@ -61,26 +57,26 @@ export class DefaultHCaptchaValidator implements HCaptchaValidator {
   }
 
   @Traced()
-  async validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId = 'anonymous' }: ValidateHCaptchaResponseParams): Promise<ValidateHCaptchaResponseResult> {
-    this.log.debug('Starting hCaptcha response validation', { [ATTR_CDCP_USER_ID]: userId });
+  async validateHCaptchaResponse({ hCaptchaResponse, ipAddress }: ValidateHCaptchaResponseParams): Promise<ValidateHCaptchaResponseResult> {
+    this.log.debug('Starting hCaptcha response validation', userLogAttributes());
 
     if (!hCaptchaResponse) {
-      this.log.warn('hCaptcha response not found; gracefully passing validation', { [ATTR_CDCP_USER_ID]: userId });
+      this.log.warn('hCaptcha response not found; gracefully passing validation', userLogAttributes());
       return { isValid: true };
     }
 
     try {
-      const hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto = { hCaptchaResponse, ipAddress, userId };
+      const hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto = { hCaptchaResponse, ipAddress };
       const { score } = await this.hCaptchaService.verifyHCaptchaResponse(hCaptchaVerifyRequestDto);
       this.log.trace('hCaptcha verification score received', {
-        [ATTR_CDCP_USER_ID]: userId,
+        ...userLogAttributes(),
         [ATTR_CDCP_HCAPTCHA_SCORE]: score,
         [ATTR_CDCP_HCAPTCHA_MAX_SCORE]: this.serverConfig.HCAPTCHA_MAX_SCORE,
       });
 
       if (score && score > this.serverConfig.HCAPTCHA_MAX_SCORE) {
         this.log.warn('hCaptcha score exceeds max threshold', {
-          [ATTR_CDCP_USER_ID]: userId,
+          ...userLogAttributes(),
           [ATTR_CDCP_HCAPTCHA_SCORE]: score,
           [ATTR_CDCP_HCAPTCHA_MAX_SCORE]: this.serverConfig.HCAPTCHA_MAX_SCORE,
           [ATTR_ERROR_TYPE]: 'hcaptcha_score_exceeded',
@@ -91,11 +87,11 @@ export class DefaultHCaptchaValidator implements HCaptchaValidator {
         };
       }
 
-      this.log.debug('hCaptcha response validated successfully', { [ATTR_CDCP_USER_ID]: userId });
+      this.log.debug('hCaptcha response validated successfully', userLogAttributes());
       return { isValid: true };
     } catch {
       this.log.warn('Error during hCaptcha response validation; gracefully passing validation', {
-        [ATTR_CDCP_USER_ID]: userId,
+        ...userLogAttributes(),
         [ATTR_ERROR_TYPE]: 'hcaptcha_validation_failed',
       });
       // Gracefully pass the validation if there's an issue with the external service

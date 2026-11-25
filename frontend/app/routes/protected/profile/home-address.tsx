@@ -10,7 +10,6 @@ import * as z from 'zod';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
-import { getUser } from '~/.server/context/user-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import type { AddressInvalidResponse, AddressResponse, AddressSuggestionResponse, CanadianAddress } from '~/components/address-validation-dialog';
@@ -96,7 +95,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const formData = await request.formData();
   const locale = getLocale(url);
 
@@ -138,24 +137,20 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const isUseSelectedAddressAction = formAction === FORM_ACTION.useSelectedAddress;
   const canProceed = isNotCanada || isUseInvalidAddressAction || isUseSelectedAddressAction;
 
-  const idToken = session.get('idToken');
   appContainer.get(TYPES.AuditService).createAudit('update-data.profile.home-address');
 
   if (canProceed) {
-    await appContainer.get(TYPES.ProfileService).updateAddresses(
-      {
-        clientId: clientApplication.applicantInformation.clientId,
-        mailingAddress: {
-          address: clientApplication.contactInformation.mailingAddress.address,
-          city: clientApplication.contactInformation.mailingAddress.city,
-          countryId: clientApplication.contactInformation.mailingAddress.country,
-          postalZipCode: clientApplication.contactInformation.mailingAddress.postalCode,
-          provinceStateId: clientApplication.contactInformation.mailingAddress.province,
-        },
-        homeAddress,
+    await appContainer.get(TYPES.ProfileService).updateAddresses({
+      clientId: clientApplication.applicantInformation.clientId,
+      mailingAddress: {
+        address: clientApplication.contactInformation.mailingAddress.address,
+        city: clientApplication.contactInformation.mailingAddress.city,
+        countryId: clientApplication.contactInformation.mailingAddress.country,
+        postalZipCode: clientApplication.contactInformation.mailingAddress.postalCode,
+        provinceStateId: clientApplication.contactInformation.mailingAddress.province,
       },
-      idToken.sub,
-    );
+      homeAddress,
+    });
     return redirect(getPathById('protected/profile/contact-information', params));
   }
 
@@ -182,7 +177,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     city: formattedHomeAddress.city,
     postalCode: formattedHomeAddress.postalZipCode,
     provinceCode: formattedHomeAddress.provinceState,
-    userId: getUser(context).id,
   });
 
   if (addressCorrectionResult.status === 'not-correct') {
@@ -209,20 +203,17 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     } as const satisfies AddressSuggestionResponse;
   }
 
-  await appContainer.get(TYPES.ProfileService).updateAddresses(
-    {
-      clientId: clientApplication.applicantInformation.clientId,
-      mailingAddress: {
-        address: clientApplication.contactInformation.mailingAddress.address,
-        city: clientApplication.contactInformation.mailingAddress.city,
-        countryId: clientApplication.contactInformation.mailingAddress.country,
-        postalZipCode: clientApplication.contactInformation.mailingAddress.postalCode,
-        provinceStateId: clientApplication.contactInformation.mailingAddress.province,
-      },
-      homeAddress,
+  await appContainer.get(TYPES.ProfileService).updateAddresses({
+    clientId: clientApplication.applicantInformation.clientId,
+    mailingAddress: {
+      address: clientApplication.contactInformation.mailingAddress.address,
+      city: clientApplication.contactInformation.mailingAddress.city,
+      countryId: clientApplication.contactInformation.mailingAddress.country,
+      postalZipCode: clientApplication.contactInformation.mailingAddress.postalCode,
+      provinceStateId: clientApplication.contactInformation.mailingAddress.province,
     },
-    idToken.sub,
-  );
+    homeAddress,
+  });
   return redirect(getPathById('protected/profile/contact-information', params));
 }
 

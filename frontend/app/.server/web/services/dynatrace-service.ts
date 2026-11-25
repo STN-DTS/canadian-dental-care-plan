@@ -6,7 +6,8 @@ import { TYPES } from '~/.server/constants';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_CACHE_TTL_MS, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { createMemoized } from '~/.server/utils/memoize-utils';
 import type { MemoizedFunction } from '~/.server/utils/memoize-utils';
@@ -60,8 +61,8 @@ export class DefaultDynatraceService implements DynatraceService {
   }
 
   @Traced()
-  async findDynatraceRumScript(userId = 'anonymous'): Promise<DynatraceRumScriptDto | null> {
-    this.log.trace('Finding Dynatrace RUM script', { [ATTR_CDCP_USER_ID]: userId });
+  async findDynatraceRumScript(): Promise<DynatraceRumScriptDto | null> {
+    this.log.trace('Finding Dynatrace RUM script', userLogAttributes());
 
     try {
       this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get');

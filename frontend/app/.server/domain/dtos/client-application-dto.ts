@@ -107,9 +107,6 @@ export type ClientApplicationBasicInfoRequestDto = Readonly<{
   firstName: string;
   lastName: string;
   applicationYearId?: string;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type ClientApplicationBasicInfoAndSinRequestDto = Readonly<{
@@ -119,15 +116,9 @@ export type ClientApplicationBasicInfoAndSinRequestDto = Readonly<{
   lastName: string;
   applicationYearId?: string;
   sin: string;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type ClientApplicationSinRequestDto = Readonly<{
   sin: string;
   applicationYearId?: string;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;

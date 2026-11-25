@@ -71,7 +71,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const formData = await request.formData();
 
   const clientApplication = getClientApplication(context);
@@ -98,16 +98,11 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  const idToken = session.get('idToken');
-
-  await appContainer.get(TYPES.ProfileService).updatePhoneNumbers(
-    {
-      clientId: clientApplication.applicantInformation.clientId,
-      phoneNumber: parsedDataResult.data.phoneNumber,
-      phoneNumberAlt: parsedDataResult.data.phoneNumberAlt,
-    },
-    idToken.sub,
-  );
+  await appContainer.get(TYPES.ProfileService).updatePhoneNumbers({
+    clientId: clientApplication.applicantInformation.clientId,
+    phoneNumber: parsedDataResult.data.phoneNumber,
+    phoneNumberAlt: parsedDataResult.data.phoneNumberAlt,
+  });
 
   appContainer.get(TYPES.AuditService).createAudit('update-data.profile.phone-number');
 

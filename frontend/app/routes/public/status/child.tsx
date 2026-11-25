@@ -220,14 +220,12 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     ? await applicationStatusService.findApplicationStatusIdBySin({
         sin: parsedSinResult.data.sin,
         applicationCode: parsedCodeResult.data.code,
-        userId: 'anonymous',
       })
     : await applicationStatusService.findApplicationStatusIdByBasicInfo({
         applicationCode: parsedCodeResult.data.code,
         firstName: parsedChildInfoResult?.data.firstName ?? '',
         lastName: parsedChildInfoResult?.data.lastName ?? '',
         dateOfBirth: parsedChildInfoResult?.data.dateOfBirth ?? '',
-        userId: 'anonymous',
       });
 
   const id = randomUUID().toString();

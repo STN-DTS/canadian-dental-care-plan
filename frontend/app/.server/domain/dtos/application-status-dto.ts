@@ -13,9 +13,6 @@ export type ApplicationStatusBasicInfoRequestDto = Readonly<{
 
   /** Applicant's date of birth in YYYY-MM-DD format */
   dateOfBirth: string;
-
-  /** A unique identifier for the applicant - used for auditing */
-  userId: string;
 }>;
 
 /**
@@ -27,7 +24,4 @@ export type ApplicationStatusSinRequestDto = Readonly<{
 
   /** Social Insurance Number of the applicant */
   sin: string;
-
-  /** A unique identifier for the applicant - used for auditing */
-  userId: string;
 }>;

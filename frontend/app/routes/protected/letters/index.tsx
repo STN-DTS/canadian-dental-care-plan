@@ -59,7 +59,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const userInfoToken: UserinfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const allLetters = await appContainer.get(TYPES.LetterService).findLettersByClientId({ clientId: applicant.clientNumber, userId: userInfoToken.sub, sortOrder });
+  const allLetters = await appContainer.get(TYPES.LetterService).findLettersByClientId({ clientId: applicant.clientNumber, sortOrder });
   const letterTypes = await appContainer.get(TYPES.LetterTypeService).listLetterTypes();
   const letters = allLetters.filter(({ letterTypeId }) => letterTypes.some(({ id }) => letterTypeId === id));
 

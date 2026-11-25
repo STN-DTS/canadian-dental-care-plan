@@ -114,7 +114,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   invariant(userInfoToken.sub, 'Expected userInfoToken.sub to be defined');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const idToken = session.get('idToken');
   const t = await getFixedT(url, 'protectedProfile');
   const { ENGLISH_LANGUAGE_CODE } = appContainer.get(TYPES.ServerConfig);
 
@@ -124,7 +123,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   appContainer.get(TYPES.AuditService).createAudit('update-data.profile.verify-email');
 
   if (formAction === FORM_ACTION.request) {
-    const newVerificationCode = verificationCodeService.createVerificationCode(idToken.sub);
+    const newVerificationCode = verificationCodeService.createVerificationCode();
 
     session.set('profileEmailAddressFlowState', {
       ...profileEmailAddressFlowState,
@@ -136,7 +135,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       email: profileEmailAddressFlowState.emailAddress,
       verificationCode: newVerificationCode,
       preferredLanguage: clientApplication.communicationPreferences.preferredLanguage === ENGLISH_LANGUAGE_CODE.toString() ? 'en' : 'fr',
-      userId: idToken.sub,
     });
 
     return { status: 'verification-code-sent' } as const;
@@ -179,24 +177,18 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   // Proceed to update email address; and communication preferences if applicable
   const profileService = appContainer.get(TYPES.ProfileService);
 
-  await profileService.updateEmailAddress(
-    {
-      clientId: clientApplication.applicantInformation.clientId,
-      email: profileEmailAddressFlowState.emailAddress,
-    },
-    idToken.sub,
-  );
+  await profileService.updateEmailAddress({
+    clientId: clientApplication.applicantInformation.clientId,
+    email: profileEmailAddressFlowState.emailAddress,
+  });
 
   if (profileEmailAddressFlowState.context === 'communication-preferences') {
-    await profileService.updateCommunicationPreferences(
-      {
-        clientId: clientApplication.applicantInformation.clientId,
-        preferredLanguage: profileEmailAddressFlowState.preferredLanguage,
-        preferredMethodSunLife: profileEmailAddressFlowState.preferredMethodSunLife,
-        preferredMethodGovernmentOfCanada: profileEmailAddressFlowState.preferredMethodGovernmentOfCanada,
-      },
-      idToken.sub,
-    );
+    await profileService.updateCommunicationPreferences({
+      clientId: clientApplication.applicantInformation.clientId,
+      preferredLanguage: profileEmailAddressFlowState.preferredLanguage,
+      preferredMethodSunLife: profileEmailAddressFlowState.preferredMethodSunLife,
+      preferredMethodGovernmentOfCanada: profileEmailAddressFlowState.preferredMethodGovernmentOfCanada,
+    });
   }
 
   // Clear the flow state

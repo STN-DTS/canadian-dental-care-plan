@@ -8,7 +8,6 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import { getProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -98,7 +97,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.request) {
-    const verificationCode = verificationCodeService.createVerificationCode(getUser(context).id);
+    const verificationCode = verificationCodeService.createVerificationCode();
 
     saveProtectedApplicationState({
       params,
@@ -117,7 +116,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         email: state.email,
         verificationCode,
         preferredLanguage: state.communicationPreferences.value.preferredLanguage === ENGLISH_LANGUAGE_CODE.toString() ? 'en' : 'fr',
-        userId: getUser(context).id,
       });
       return { status: 'verification-code-sent' } as const;
     }

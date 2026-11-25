@@ -7,7 +7,7 @@ import type { ClientApplicationRenewalEligibilityDtoMapper } from '~/.server/dom
 import type { AuditService, ClientApplicationService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { sanitizeSin } from '~/utils/sin-utils';
 
@@ -56,7 +56,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
 
   @Traced()
   async getClientApplicationRenewalEligibilityByBasicInfoAndSin(request: ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto): Promise<ClientApplicationRenewalEligibilityDto> {
-    this.log.trace('Getting renewal eligibility by basic info and SIN', { [ATTR_CDCP_USER_ID]: request.userId });
+    this.log.trace('Getting renewal eligibility by basic info and SIN', userLogAttributes());
 
     const clientApplicationDto = await this.clientApplicationService.findClientApplicationByBasicInfoAndSin({
       clientNumber: request.clientNumber,
@@ -65,7 +65,6 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       lastName: request.lastName,
       applicationYearId: request.applicationYear.applicationYearId,
       sin: request.sin,
-      userId: request.userId,
     });
 
     this.auditService.createAudit('client-application-renewal-eligibility.basic-info-and-sin.get');
@@ -76,7 +75,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     });
 
     if (clientApplicationRenewalEligibilityDto !== undefined) {
-      this.log.trace('Returning client application renewal eligibility', { [ATTR_CDCP_USER_ID]: request.userId });
+      this.log.trace('Returning client application renewal eligibility', userLogAttributes());
       return clientApplicationRenewalEligibilityDto;
     }
 
@@ -87,7 +86,6 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       dateOfBirth: request.dateOfBirth,
       firstName: request.firstName,
       lastName: request.lastName,
-      userId: request.userId,
     });
 
     const programApplicant = Option.match(programApplicantOption, {
@@ -102,26 +100,25 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     }
 
     if (!programApplicant.socialInsuranceNumber) {
-      this.log.trace('Skipping program applicant identity check because no stored SIN is available', { [ATTR_CDCP_USER_ID]: request.userId });
+      this.log.trace('Skipping program applicant identity check because no stored SIN is available', userLogAttributes());
     } else if (sanitizeSin(programApplicant.socialInsuranceNumber) !== sanitizeSin(request.sin)) {
-      this.log.trace('Program applicant identity check did not match', { [ATTR_CDCP_USER_ID]: request.userId });
+      this.log.trace('Program applicant identity check did not match', userLogAttributes());
       return { result: 'INELIGIBLE-APPLICANT-SIN-MISMATCH' };
     }
 
     const applicationYear = request.applicationYear;
     this.log.debug('Program applicant found for provided basic info and SIN, returning eligibility result based on program applicant');
-    this.log.trace('Mapping program applicant renewal eligibility', { [ATTR_CDCP_USER_ID]: request.userId });
+    this.log.trace('Mapping program applicant renewal eligibility', userLogAttributes());
     return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);
   }
 
   @Traced()
   async getClientApplicationRenewalEligibilityBySin(request: ClientApplicationRenewalEligibilitySinRequestDto): Promise<ClientApplicationRenewalEligibilityDto> {
-    this.log.trace('Getting renewal eligibility by SIN', { [ATTR_CDCP_USER_ID]: request.userId });
+    this.log.trace('Getting renewal eligibility by SIN', userLogAttributes());
 
     const clientApplicationDto = await this.clientApplicationService.findClientApplicationBySin({
       sin: request.sin,
       applicationYearId: request.applicationYear.applicationYearId,
-      userId: request.userId,
     });
 
     this.auditService.createAudit('client-application-renewal-eligibility.sin.get');
@@ -132,14 +129,13 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
     });
 
     if (clientApplicationRenewalEligibilityDto !== undefined) {
-      this.log.trace('Returning client application renewal eligibility', { [ATTR_CDCP_USER_ID]: request.userId });
+      this.log.trace('Returning client application renewal eligibility', userLogAttributes());
       return clientApplicationRenewalEligibilityDto;
     }
 
     // If no client application is found with the provided SIN, we check if a program applicant exists with that SIN
     const programApplicantOption = await this.programApplicantService.findProgramApplicantBySin({
       sin: request.sin,
-      userId: request.userId,
     });
 
     const programApplicant = Option.match(programApplicantOption, {
@@ -155,7 +151,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
 
     const applicationYear = request.applicationYear;
     this.log.debug('Program applicant found for provided SIN, returning eligibility result based on program applicant');
-    this.log.trace('Mapping program applicant renewal eligibility', { [ATTR_CDCP_USER_ID]: request.userId });
+    this.log.trace('Mapping program applicant renewal eligibility', userLogAttributes());
     return await this.clientApplicationRenewalEligibilityDtoMapper.mapProgramApplicantDtoToClientApplicationRenewalEligibilityDto(programApplicant, applicationYear);
   }
 }

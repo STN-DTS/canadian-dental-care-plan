@@ -220,7 +220,7 @@ describe('DefaultClientApplicationService', () => {
   describe('findClientApplicationBySin', () => {
     it('should find client application by SIN', async () => {
       // Arrange
-      const mockClientApplicationSinRequestDto: ClientApplicationSinRequestDto = { sin: '80000002', applicationYearId: '00000000-0000-0000-0000-000000000000', userId: 'test-user' };
+      const mockClientApplicationSinRequestDto: ClientApplicationSinRequestDto = { sin: '80000002', applicationYearId: '00000000-0000-0000-0000-000000000000' };
       const mockClientApplicationSinRequestEntity: ClientApplicationSinRequestEntity = {
         Applicant: { PersonSINIdentification: { IdentificationID: mockClientApplicationSinRequestDto.sin } },
         BenefitApplicationYear: { IdentificationID: '00000000-0000-0000-0000-000000000000' },
@@ -246,7 +246,7 @@ describe('DefaultClientApplicationService', () => {
     });
 
     it('should return null if client application is not found by SIN', async () => {
-      const mockClientApplicationSinRequestDto: ClientApplicationSinRequestDto = { sin: '80000002', applicationYearId: '00000000-0000-0000-0000-000000000000', userId: 'test-user' };
+      const mockClientApplicationSinRequestDto: ClientApplicationSinRequestDto = { sin: '80000002', applicationYearId: '00000000-0000-0000-0000-000000000000' };
       const mockClientApplicationSinRequestEntity: ClientApplicationSinRequestEntity = {
         Applicant: { PersonSINIdentification: { IdentificationID: mockClientApplicationSinRequestDto.sin } },
         BenefitApplicationYear: { IdentificationID: '00000000-0000-0000-0000-000000000000' },
@@ -280,7 +280,6 @@ describe('DefaultClientApplicationService', () => {
         dateOfBirth: '2000-01-01',
         clientNumber: 'ABC123',
         applicationYearId: '00000000-0000-0000-0000-000000000000',
-        userId: 'test-user',
       };
       const mockClientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity = {
         Applicant: {
@@ -318,7 +317,6 @@ describe('DefaultClientApplicationService', () => {
         dateOfBirth: '2000-01-01',
         clientNumber: 'ABC123',
         applicationYearId: '00000000-0000-0000-0000-000000000000',
-        userId: 'test-user',
       };
       const mockClientApplicationBasicInfoRequestEntity: ClientApplicationBasicInfoRequestEntity = {
         Applicant: {

@@ -123,7 +123,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const formData = await request.formData();
 
   const clientApplication = getClientApplication(context);
@@ -217,18 +217,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     );
   }
 
-  const idToken = session.get('idToken');
-
-  await appContainer.get(TYPES.ProfileService).updateDentalBenefits(
-    {
-      clientId: child.information.clientId,
-      hasFederalBenefits: parsedFederalBenefitsResult.data.hasFederalBenefits,
-      federalSocialProgram: parsedFederalBenefitsResult.data.federalSocialProgram,
-      hasProvincialTerritorialBenefits: parsedProvincialTerritorialBenefitsResult.data.hasProvincialTerritorialBenefits,
-      provincialTerritorialSocialProgram: parsedProvincialTerritorialBenefitsResult.data.provincialTerritorialSocialProgram,
-    },
-    idToken.sub,
-  );
+  await appContainer.get(TYPES.ProfileService).updateDentalBenefits({
+    clientId: child.information.clientId,
+    hasFederalBenefits: parsedFederalBenefitsResult.data.hasFederalBenefits,
+    federalSocialProgram: parsedFederalBenefitsResult.data.federalSocialProgram,
+    hasProvincialTerritorialBenefits: parsedProvincialTerritorialBenefitsResult.data.hasProvincialTerritorialBenefits,
+    provincialTerritorialSocialProgram: parsedProvincialTerritorialBenefitsResult.data.provincialTerritorialSocialProgram,
+  });
 
   appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-child-dental-benefits');
 

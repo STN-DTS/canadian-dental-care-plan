@@ -8,7 +8,7 @@ import type { AddressValidationRepository } from '~/.server/domain/repositories'
 import type { AuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 
 export interface AddressValidationService {
@@ -46,7 +46,7 @@ export class DefaultAddressValidationService implements AddressValidationService
 
   @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestDto: AddressCorrectionRequestDto): Promise<AddressCorrectionResultDto> {
-    this.log.trace('Getting address correction results', { [ATTR_CDCP_USER_ID]: addressCorrectionRequestDto.userId });
+    this.log.trace('Getting address correction results', userLogAttributes());
     this.auditService.createAudit('address-validation.get-address-correction-result');
 
     try {

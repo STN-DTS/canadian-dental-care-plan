@@ -7,7 +7,7 @@ import type { ProfileRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 
 export interface ProfileService {
@@ -15,19 +15,17 @@ export interface ProfileService {
    * Updates communication preferences for a user in the protected route.
    *
    * @param updateCommunicationPreferenceRequestDto The update communication preference request dto
-   * @param userId The current logged in user ID
    * @returns A Promise that resolves when the update is complete
    */
-  updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto, userId: string): Promise<void>;
+  updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto): Promise<void>;
 
   /**
    * Updates phone numbers for a user in the protected route.
    *
    * @param updatePhoneNumbersRequestDto The update phone numbers request dto
-   * @param userId The current logged in user ID
    * @returns A Promise that resolves when the update is complete
    */
-  updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto, userId: string): Promise<void>;
+  updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto): Promise<void>;
 
   /**
    * Updates dental benefits for a user in the protected route.
@@ -35,25 +33,23 @@ export interface ProfileService {
    * @param dentalBenefitsDto The update dental benefits request dto
    * @returns A Promise that resolves when the update is complete
    */
-  updateDentalBenefits(updateDentalBenefitsRequestDto: UpdateDentalBenefitsRequestDto, userId: string): Promise<void>;
+  updateDentalBenefits(updateDentalBenefitsRequestDto: UpdateDentalBenefitsRequestDto): Promise<void>;
 
   /**
    * Updates email address for a user in the protected route.
    *
    * @param emailAddressDto The email address dto
-   * @param userId The current logged in user ID
    * @returns A Promise that resolves when the update is complete
    */
-  updateEmailAddress(emailAddressDto: UpdateEmailAddressRequestDto, userId: string): Promise<void>;
+  updateEmailAddress(emailAddressDto: UpdateEmailAddressRequestDto): Promise<void>;
 
   /**
    * Updates mailing and home addresses for a user in the protected route.
    *
    * @param updateAddressRequestDto The address dto
-   * @param userId The current logged in user ID
    * @returns A Promise that resolves when the update is complete
    */
-  updateAddresses(updateAddressRequestDto: UpdateAddressRequestDto, userId: string): Promise<void>;
+  updateAddresses(updateAddressRequestDto: UpdateAddressRequestDto): Promise<void>;
 }
 
 @injectable()
@@ -80,8 +76,8 @@ export class DefaultProfileService implements ProfileService {
   }
 
   @Traced()
-  async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating communication preferences', { [ATTR_CDCP_USER_ID]: userId });
+  async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto): Promise<void> {
+    this.log.trace('Updating communication preferences', userLogAttributes());
 
     this.auditService.createAudit('profile-update.communication-preferences.post');
 
@@ -92,8 +88,8 @@ export class DefaultProfileService implements ProfileService {
   }
 
   @Traced()
-  async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating phone numbers', { [ATTR_CDCP_USER_ID]: userId });
+  async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto): Promise<void> {
+    this.log.trace('Updating phone numbers', userLogAttributes());
 
     this.auditService.createAudit('profile-update.phone-numbers.post');
 
@@ -114,8 +110,8 @@ export class DefaultProfileService implements ProfileService {
   }
 
   @Traced()
-  async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto, userId: string): Promise<void> {
-    this.log.trace('Updating email address', { [ATTR_CDCP_USER_ID]: userId });
+  async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto): Promise<void> {
+    this.log.trace('Updating email address', userLogAttributes());
 
     this.auditService.createAudit('profile-update.email-address.post');
 

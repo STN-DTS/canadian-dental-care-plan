@@ -163,7 +163,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     city: formattedHomeAddress.city,
     postalCode: formattedHomeAddress.postalZipCode,
     provinceCode: formattedHomeAddress.provinceState,
-    userId: 'anonymous',
   });
 
   if (addressCorrectionResult.status === 'not-correct') {

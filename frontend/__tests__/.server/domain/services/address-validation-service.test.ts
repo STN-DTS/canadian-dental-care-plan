@@ -47,7 +47,6 @@ describe('DefaultAddressValidationService', () => {
         city: 'North Pole',
         provinceCode: 'ON',
         postalCode: 'H0H 0H0',
-        userId: 'userId',
       };
 
       const result = await service.getAddressCorrectionResult(mockAddressCorrectionRequestDto);
@@ -81,7 +80,6 @@ describe('DefaultAddressValidationService', () => {
         city: 'North Pole',
         provinceCode: 'ON',
         postalCode: 'H0H 0H0',
-        userId: 'userId',
       };
       const result = await service.getAddressCorrectionResult(mockAddressCorrectionRequestDto);
 

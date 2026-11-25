@@ -97,7 +97,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.request) {
-    const verificationCode = verificationCodeService.createVerificationCode('anonymous');
+    const verificationCode = verificationCodeService.createVerificationCode();
 
     savePublicApplicationState({
       params,
@@ -116,7 +116,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
         email: state.email,
         verificationCode,
         preferredLanguage: state.communicationPreferences.value.preferredLanguage === ENGLISH_LANGUAGE_CODE.toString() ? 'en' : 'fr',
-        userId: 'anonymous',
       });
       return { status: 'verification-code-sent' } as const;
     }

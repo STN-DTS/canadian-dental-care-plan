@@ -6,7 +6,6 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import { loadProtectedApplicationIntakeAdultStateForReview } from '~/.server/routes/helpers/protected-application-intake-adult-route-helpers';
 import { clearProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -56,7 +55,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const viewPayloadEnabled = ENABLED_FEATURES.includes('view-payload');
   const benefitApplicationDtoMapper = appContainer.get(TYPES.BenefitApplicationDtoMapper);
   const benefitApplicationStateMapper = appContainer.get(TYPES.BenefitApplicationStateMapper);
-  const benefitApplicationDto = viewPayloadEnabled && benefitApplicationStateMapper.mapApplicationAdultStateToBenefitApplicationDto(state, getUser(context).id);
+  const benefitApplicationDto = viewPayloadEnabled && benefitApplicationStateMapper.mapApplicationAdultStateToBenefitApplicationDto(state);
   const payload = benefitApplicationDto && benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationDto);
 
   return {
@@ -78,7 +77,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationIntakeAdult');
 
-  await securityHandler.validateHCaptchaResponse({ formData, request, userId: getUser(context).id }, () => {
+  await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
     clearProtectedApplicationState({ params, session });
     throw redirect(getPathById('protected/unable-to-process-request', params));
   });
@@ -101,7 +100,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  const benefitApplicationDto = appContainer.get(TYPES.BenefitApplicationStateMapper).mapApplicationAdultStateToBenefitApplicationDto(state, getUser(context).id);
+  const benefitApplicationDto = appContainer.get(TYPES.BenefitApplicationStateMapper).mapApplicationAdultStateToBenefitApplicationDto(state);
   const confirmationCode = await appContainer.get(TYPES.BenefitApplicationService).createProtectedBenefitApplication(benefitApplicationDto);
   const submissionInfo = { confirmationCode, submittedOn: Temporal.Now.instant().toString() };
   saveProtectedApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });

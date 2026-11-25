@@ -16,9 +16,6 @@ export type BenefitApplicationDto = ReadonlyDeep<{
   partnerInformation?: BenefitApplicationPartnerInformationDto;
   termsAndConditions: BenefitApplicationTermsAndConditionsDto;
   typeOfApplication: BenefitApplicationTypeOfApplicationDto;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type BenefitApplicationApplicantInformationDto = ReadonlyDeep<{

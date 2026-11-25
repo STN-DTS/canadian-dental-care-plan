@@ -103,9 +103,6 @@ export type ClientApplicationRenewalEligibilityBasicInfoRequestDto = Readonly<{
   firstName: string;
   lastName: string;
   applicationYearId: string;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto = Readonly<{
@@ -115,15 +112,9 @@ export type ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto = Reado
   lastName: string;
   applicationYear: { applicationYearId: string; taxYear: string };
   sin: string;
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;
 
 export type ClientApplicationRenewalEligibilitySinRequestDto = Readonly<{
   sin: string;
   applicationYear: { applicationYearId: string; taxYear: string };
-
-  /** A unique identifier for the user making the request - used for auditing */
-  userId: string;
 }>;

@@ -94,7 +94,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const formData = await request.formData();
 
   const clientApplication = getClientApplication(context);
@@ -152,17 +152,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   // Update communication preferences
-  const idToken = session.get('idToken');
 
-  await appContainer.get(TYPES.ProfileService).updateCommunicationPreferences(
-    {
-      clientId: clientApplication.applicantInformation.clientId,
-      preferredLanguage: parsedDataResult.data.preferredLanguage,
-      preferredMethodSunLife: parsedDataResult.data.preferredMethodSunLife,
-      preferredMethodGovernmentOfCanada: parsedDataResult.data.preferredMethodGovernmentOfCanada,
-    },
-    idToken.sub,
-  );
+  await appContainer.get(TYPES.ProfileService).updateCommunicationPreferences({
+    clientId: clientApplication.applicantInformation.clientId,
+    preferredLanguage: parsedDataResult.data.preferredLanguage,
+    preferredMethodSunLife: parsedDataResult.data.preferredMethodSunLife,
+    preferredMethodGovernmentOfCanada: parsedDataResult.data.preferredMethodGovernmentOfCanada,
+  });
 
   appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-communication-preferences');
 

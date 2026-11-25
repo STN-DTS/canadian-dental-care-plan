@@ -11,7 +11,8 @@ import type { AuditService } from '~/.server/domain/services';
 import { KILLSWITCH_KEY } from '~/.server/domain/services';
 import type { Logger } from '~/.server/logging';
 import { createLogger, maskApplicationConfirmationCode } from '~/.server/logging';
-import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { ATTR_CDCP_APPLICATION_CHANNEL, ATTR_CDCP_APPLICATION_CONFIRMATION_CODE } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -71,7 +72,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
 
   @Traced()
   async createPublicBenefitApplication(benefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating public benefit application', { [ATTR_CDCP_USER_ID]: benefitApplicationSubmissionDto.userId });
+    this.log.trace('Creating public benefit application', userLogAttributes());
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -94,7 +95,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       this.log.info('Benefit application confirmation received', {
         [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
         [ATTR_CDCP_APPLICATION_CHANNEL]: 'public',
-        [ATTR_CDCP_USER_ID]: benefitApplicationSubmissionDto.userId,
+        ...userLogAttributes(),
       });
       return applicationCode;
     } catch (error) {
@@ -109,7 +110,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
 
   @Traced()
   async createProtectedBenefitApplication(protectedBenefitApplicationSubmissionDto: BenefitApplicationDto): Promise<string> {
-    this.log.trace('Creating protected benefit application', { [ATTR_CDCP_USER_ID]: protectedBenefitApplicationSubmissionDto.userId });
+    this.log.trace('Creating protected benefit application', userLogAttributes());
 
     const killswitchEngaged = await this.redisService?.get(KILLSWITCH_KEY);
 
@@ -131,7 +132,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
     this.log.info('Benefit application confirmation received', {
       [ATTR_CDCP_APPLICATION_CONFIRMATION_CODE]: maskApplicationConfirmationCode(applicationCode),
       [ATTR_CDCP_APPLICATION_CHANNEL]: 'protected',
-      [ATTR_CDCP_USER_ID]: protectedBenefitApplicationSubmissionDto.userId,
+      ...userLogAttributes(),
     });
     return applicationCode;
   }

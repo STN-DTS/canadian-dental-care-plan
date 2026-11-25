@@ -8,7 +8,7 @@ import type { CreateEvidentiaryDocumentMetadataRepositoryRequest, CreateEvidenti
 import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { buildEndpointUrl, expandPathParams } from '~/.server/utils/url-utils';
@@ -22,7 +22,7 @@ export interface EvidentiaryDocumentRepository {
   /**
    * Finds evidentiary documents based on the provided request object.
    *
-   * @param findEvidentiaryDocumentsRequest The request object containing the client ID and userId for auditing.
+   * @param findEvidentiaryDocumentsRequest The request object containing the client ID.
    * @returns A promise that resolves to an array of evidentiary document entities.
    */
   findEvidentiaryDocuments(findEvidentiaryDocumentsRequest: FindEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentEntity>>;
@@ -88,7 +88,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
 
   @Traced()
   async findEvidentiaryDocuments(findEvidentiaryDocumentsRequest: FindEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentEntity>> {
-    this.log.debug('Fetching evidentiary documents', { [ATTR_CDCP_USER_ID]: findEvidentiaryDocumentsRequest.userId });
+    this.log.debug('Fetching evidentiary documents', userLogAttributes());
 
     const url = new URL(this.evidentiaryDocumentsUrl);
 
@@ -120,13 +120,13 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
     const documentResponseEntity = (await response.json()) as EvidentiaryDocumentResponseEntity;
     const documentEntities = this.mapResponseToEntities(documentResponseEntity);
 
-    this.log.trace('Returning evidentiary documents', { [ATTR_CDCP_USER_ID]: findEvidentiaryDocumentsRequest.userId });
+    this.log.trace('Returning evidentiary documents', userLogAttributes());
     return documentEntities;
   }
 
   @Traced()
   async createEvidentiaryDocumentMetadata(createRequest: CreateEvidentiaryDocumentMetadataRepositoryRequest): Promise<CreateEvidentiaryDocumentMetadataResponseEntity> {
-    this.log.debug('Uploading evidentiary document metadata', { [ATTR_CDCP_USER_ID]: createRequest.userId });
+    this.log.debug('Uploading evidentiary document metadata', userLogAttributes());
 
     const url = new URL(expandPathParams(this.evidentiaryDocumentsUploadUrl, { clientId: createRequest.clientId }));
 
@@ -164,7 +164,7 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
     }
 
     const uploadResponse = (await response.json()) as CreateEvidentiaryDocumentMetadataResponseEntity;
-    this.log.trace('Evidentiary document metadata response received', { [ATTR_CDCP_USER_ID]: createRequest.userId });
+    this.log.trace('Evidentiary document metadata response received', userLogAttributes());
     return uploadResponse;
   }
 
@@ -199,7 +199,6 @@ export class DefaultEvidentiaryDocumentRepository implements EvidentiaryDocument
   async checkHealth(): Promise<void> {
     await this.findEvidentiaryDocuments({
       clientId: '00000000-0000-0000-0000-000000000000',
-      userId: 'health-check',
     });
   }
 }
@@ -213,7 +212,7 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
   }
 
   async findEvidentiaryDocuments(findEvidentiaryDocumentsRequest: FindEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentEntity>> {
-    this.log.debug('Fetching mock evidentiary documents', { [ATTR_CDCP_USER_ID]: findEvidentiaryDocumentsRequest.userId });
+    this.log.debug('Fetching mock evidentiary documents', userLogAttributes());
 
     const mockEvidentiaryDocumentEntities: ReadonlyArray<EvidentiaryDocumentEntity> = [
       {
@@ -254,12 +253,12 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
       },
     ];
 
-    this.log.trace('Returning mock evidentiary documents', { [ATTR_CDCP_USER_ID]: findEvidentiaryDocumentsRequest.userId });
+    this.log.trace('Returning mock evidentiary documents', userLogAttributes());
     return await Promise.resolve(mockEvidentiaryDocumentEntities);
   }
 
   async createEvidentiaryDocumentMetadata(createRequest: CreateEvidentiaryDocumentMetadataRepositoryRequest): Promise<CreateEvidentiaryDocumentMetadataResponseEntity> {
-    this.log.debug('Uploading mock evidentiary document metadata', { [ATTR_CDCP_USER_ID]: createRequest.userId });
+    this.log.debug('Uploading mock evidentiary document metadata', userLogAttributes());
 
     const mockResponse: CreateEvidentiaryDocumentMetadataResponseEntity = {
       esdc_evidentiarydocuments: createRequest.documents.map((doc) => ({
@@ -273,7 +272,7 @@ export class MockEvidentiaryDocumentRepository implements EvidentiaryDocumentRep
       })),
     };
 
-    this.log.trace('Mock evidentiary document metadata response generated', { [ATTR_CDCP_USER_ID]: createRequest.userId });
+    this.log.trace('Mock evidentiary document metadata response generated', userLogAttributes());
     return await Promise.resolve(mockResponse);
   }
 

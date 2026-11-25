@@ -86,7 +86,6 @@ describe('DefaultAddressValidationDtoMapper', () => {
         city: 'north pole',
         postalCode: 'h0h0h0',
         provinceCode: 'ON',
-        userId: 'test user',
       };
 
       const expectedResult: AddressCorrectionResultDto = {
@@ -114,7 +113,6 @@ describe('DefaultAddressValidationDtoMapper', () => {
         city: 'north pole',
         postalCode: 'invalid',
         provinceCode: 'ON',
-        userId: 'test user',
       };
 
       const expectedResult: AddressCorrectionResultDto = {

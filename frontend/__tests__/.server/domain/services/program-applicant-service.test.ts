@@ -27,9 +27,8 @@ describe('DefaultProgramApplicantService', () => {
     dateOfBirth: '1990-01-01',
     firstName: 'John',
     lastName: 'Doe',
-    userId: 'user-id',
   };
-  const sinRequest: FindProgramApplicantBySinRequestDto = { sin: '123456789', userId: 'user-id' };
+  const sinRequest: FindProgramApplicantBySinRequestDto = { sin: '123456789' };
 
   let service: DefaultProgramApplicantService;
 

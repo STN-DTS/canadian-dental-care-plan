@@ -30,14 +30,14 @@ describe('benefit submission rate limits', () => {
       const repository = mock<BenefitApplicationRepository>();
       repository.createBenefitApplication.mockRejectedValue(error);
       const service = new DefaultBenefitApplicationService(mock<BenefitApplicationDtoMapper>(), repository, mock<AuditService>(), config, redis);
-      const request = mock<BenefitApplicationDto>({ applicationChannelCode: channel, applicationId, userId: 'test-user' });
+      const request = mock<BenefitApplicationDto>({ applicationChannelCode: channel, applicationId });
 
       submission = service.createPublicBenefitApplication(request);
     } else {
       const repository = mock<BenefitRenewalRepository>();
       repository.createBenefitRenewal.mockRejectedValue(error);
       const service = new DefaultBenefitRenewalService(mock<BenefitRenewalDtoMapper>(), repository, mock<AuditService>(), config, redis);
-      const request = mock<BenefitRenewalDto>({ applicationChannelCode: channel, applicationId, userId: 'test-user' });
+      const request = mock<BenefitRenewalDto>({ applicationChannelCode: channel, applicationId });
 
       submission = channel === 'public' ? service.createPublicBenefitRenewal(request) : service.createProtectedBenefitRenewal(request);
     }
@@ -52,7 +52,7 @@ describe('benefit submission rate limits', () => {
     const error = new AppError('Upstream failure', ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED);
     repository.createBenefitApplication.mockRejectedValue(error);
     const service = new DefaultBenefitApplicationService(mock<BenefitApplicationDtoMapper>(), repository, mock<AuditService>(), mock<ServerConfig>(), redis);
-    const request = mock<BenefitApplicationDto>({ applicationChannelCode: 'public', applicationId, userId: 'test-user' });
+    const request = mock<BenefitApplicationDto>({ applicationChannelCode: 'public', applicationId });
 
     await expect(service.createPublicBenefitApplication(request)).rejects.toBe(error);
     expect(redis.set).not.toHaveBeenCalled();

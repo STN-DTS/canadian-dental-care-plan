@@ -7,9 +7,6 @@ export type HCaptchaVerifyRequestDto = Readonly<{
 
   /** The user's IP address. */
   ipAddress?: string;
-
-  /** A unique identifier for the user - used for auditing */
-  userId: string;
 }>;
 
 /**

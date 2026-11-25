@@ -11,10 +11,10 @@ import { sanitizeSin } from '~/utils/sin-utils';
 /** Maps applicant lookup DTOs and repository responses between domain layers. */
 export interface ApplicantDtoMapper {
   /** Maps basic identity details to an applicant repository request. */
-  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity;
+  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: FindApplicantByBasicInfoDto): FindApplicantByBasicInfoRequestEntity;
 
   /** Maps and sanitizes a SIN lookup to an applicant repository request. */
-  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity;
+  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: FindApplicantBySinRequestDto): FindApplicantBySinRequestEntity;
 
   /**
    * Maps an applicant response while omitting incomplete optional addresses.
@@ -33,7 +33,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     this.log = createLogger('DefaultApplicantDtoMapper');
   }
 
-  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: OmitStrict<FindApplicantByBasicInfoDto, 'userId'>): FindApplicantByBasicInfoRequestEntity {
+  mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request: FindApplicantByBasicInfoDto): FindApplicantByBasicInfoRequestEntity {
     return {
       Applicant: {
         PersonName: {
@@ -53,7 +53,7 @@ export class DefaultApplicantDtoMapper implements ApplicantDtoMapper {
     };
   }
 
-  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: OmitStrict<FindApplicantBySinRequestDto, 'userId'>): FindApplicantBySinRequestEntity {
+  mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request: FindApplicantBySinRequestDto): FindApplicantBySinRequestEntity {
     return {
       Applicant: {
         PersonSINIdentification: {

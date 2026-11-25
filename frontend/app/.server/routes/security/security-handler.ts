@@ -52,9 +52,6 @@ export interface ValidateHCaptchaResponseParams {
 
   /** The incoming request, used to extract the user's IP address. */
   request: Pick<Request, 'headers'>;
-
-  /** The user ID performing the validation (defaults to 'anonymous' if not provided). */
-  userId?: string;
 }
 
 /**
@@ -267,7 +264,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
    * @returns {Promise<void>} Resolves after validation is complete.
    */
   @Traced()
-  async validateHCaptchaResponse({ formData, request, userId = 'anonymous' }: ValidateHCaptchaResponseParams, invalidHCaptchaCallback: InvalidHCaptchaCallback): Promise<void> {
+  async validateHCaptchaResponse({ formData, request }: ValidateHCaptchaResponseParams, invalidHCaptchaCallback: InvalidHCaptchaCallback): Promise<void> {
     this.log.debug('Validating hCaptcha response');
 
     const isHcaptchaEnabled = this.serverConfig.ENABLED_FEATURES.includes('hcaptcha');
@@ -280,7 +277,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
     const hCaptchaResponse = String(formData.get('h-captcha-response'));
     const ipAddress = getClientIpAddress(request) ?? undefined;
 
-    const result = await this.hCaptchaValidator.validateHCaptchaResponse({ hCaptchaResponse, ipAddress, userId });
+    const result = await this.hCaptchaValidator.validateHCaptchaResponse({ hCaptchaResponse, ipAddress });
 
     if (!result.isValid) {
       this.log.debug('hCaptcha response is invalid; invoking rejection callback');
@@ -322,7 +319,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
     const clientApplicationOption = await this.clientApplicationService.findClientApplicationBySin({
       applicationYearId,
       sin: userInfoToken.sin,
-      userId: userInfoToken.sub,
     });
 
     if (Option.isNone(clientApplicationOption)) {
@@ -356,7 +352,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     const applicantOption = await this.applicantService.findApplicantBySin({
       sin: userInfoToken.sin,
-      userId: userInfoToken.sub,
     });
 
     if (Option.isNone(applicantOption)) {
@@ -393,7 +388,6 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     const programApplicantOption = await this.programApplicantService.findProgramApplicantBySin({
       sin: userInfoToken.sin,
-      userId: userInfoToken.sub,
     });
 
     if (Option.isNone(programApplicantOption)) {

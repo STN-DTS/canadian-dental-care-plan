@@ -99,7 +99,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const statusId = await applicationStatusService.findApplicationStatusIdBySin({
     sin,
     applicationCode: code,
-    userId: 'anonymous',
   });
 
   const id = randomUUID().toString();

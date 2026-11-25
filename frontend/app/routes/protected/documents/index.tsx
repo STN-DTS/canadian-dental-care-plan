@@ -3,7 +3,6 @@ import { Trans, useTranslation } from 'react-i18next';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
-import { getUser } from '~/.server/context/user-context';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
@@ -29,12 +28,11 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { appContainer } = context.get(appContext);
   const applicant = getApplicant(context);
-  const user = getUser(context);
   const locale = getLocale(url);
 
   const evidentiaryDocumentService = appContainer.get(TYPES.EvidentiaryDocumentService);
   const recordSourceService = appContainer.get(TYPES.RecordSourceService);
-  const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId, userId: user.id }, locale);
+  const evidentiaryDocuments = await evidentiaryDocumentService.listLocalizedEvidentiaryDocuments({ clientId: applicant.clientId }, locale);
   const localizedRecordSources = recordSourceService.listLocalizedRecordSources(locale);
   const recordSourceMap = new Map(localizedRecordSources.map(({ id, name }) => [id, name]));
 

@@ -22,12 +22,10 @@ describe('DefaultApplicantService', () => {
     dateOfBirth: '1990-01-01',
     firstName: 'John',
     lastName: 'Doe',
-    userId: 'user-id',
   };
 
   const sinRequest: FindApplicantBySinRequestDto = {
     sin: '123456789',
-    userId: 'user-id',
   };
 
   const applicantDto: ApplicantDto = {

@@ -181,7 +181,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     city: formattedMailingAddress.city,
     postalCode: formattedMailingAddress.postalZipCode,
     provinceCode: formattedMailingAddress.provinceState,
-    userId: 'anonymous',
   });
 
   if (addressCorrectionResult.status === 'not-correct') {

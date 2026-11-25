@@ -13,18 +13,12 @@ export type FindProgramApplicantByBasicInfoDto = Readonly<{
 
   /** Applicant's last name. */
   lastName: string;
-
-  /** Unique identifier of the user making the request, used for auditing. */
-  userId: string;
 }>;
 
 /** Information used to find a program applicant by Social Insurance Number (SIN). */
 export type FindProgramApplicantBySinRequestDto = Readonly<{
   /** Applicant's SIN. */
   sin: string;
-
-  /** Unique identifier of the user making the request, used for auditing. */
-  userId: string;
 }>;
 
 /**

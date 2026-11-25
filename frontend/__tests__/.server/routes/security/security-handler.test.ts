@@ -143,7 +143,6 @@ describe('DefaultSecurityHandler', () => {
       const params = {
         formData: mockFormData,
         request: mockRequest,
-        userId: 'user-id',
       };
 
       await securityHandler.validateHCaptchaResponse(params, mockOnInvalidHCaptcha);
@@ -174,7 +173,6 @@ describe('DefaultSecurityHandler', () => {
       const params = {
         formData: mockFormData,
         request: mockRequest,
-        userId: 'user-id',
       };
 
       await securityHandler.validateHCaptchaResponse(params, mockOnInvalidHCaptcha);
@@ -198,7 +196,6 @@ describe('DefaultSecurityHandler', () => {
       const params = {
         formData: mockFormData,
         request: mockRequest,
-        userId: 'user-id',
       };
 
       await securityHandler.validateHCaptchaResponse(params, mockOnInvalidHCaptcha);
@@ -337,7 +334,7 @@ describe('DefaultSecurityHandler', () => {
       });
 
       expect(result).toBe(applicant);
-      expect(mockApplicantService.findApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockApplicantService.findApplicantBySin).toHaveBeenCalledWith({ sin: '123456789' });
       expect(mockProgramApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
       expect(mockSession.set).toHaveBeenCalledWith('applicant', applicant);
     });
@@ -360,7 +357,7 @@ describe('DefaultSecurityHandler', () => {
       });
 
       expect(result).toBe(programApplicant);
-      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789' });
       expect(session.set).toHaveBeenCalledWith('programApplicant', programApplicant);
     });
 
@@ -401,7 +398,7 @@ describe('DefaultSecurityHandler', () => {
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
       expect((error as Response).headers.get('Location')).toBe('/en/protected/data-unavailable');
-      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789', userId: 'user-id' });
+      expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789' });
     });
   });
 

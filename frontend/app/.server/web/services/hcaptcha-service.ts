@@ -4,7 +4,7 @@ import { TYPES } from '~/.server/constants';
 import type { AuditService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import type { HCaptchaVerifyRequestDto, HCaptchaVerifyResponseDto } from '~/.server/web/dtos';
 import type { HCaptchaDtoMapper } from '~/.server/web/mappers';
@@ -14,7 +14,7 @@ export interface HCaptchaService {
   /**
    * Verifies a user's hCaptcha response.
    *
-   * @param hCaptchaVerifyRequestDto The hCaptcha verify request dto that includes the hCaptcha response token, optional IP address and userId for auditing
+   * @param hCaptchaVerifyRequestDto The hCaptcha verify request dto that includes the hCaptcha response token, and optional IP address
    * @returns A Promise that resolves to the hCaptcha verify response dto that includes the success status and score if successful.
    */
   verifyHCaptchaResponse(hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto): Promise<HCaptchaVerifyResponseDto>;
@@ -36,7 +36,7 @@ export class DefaultHCaptchaService implements HCaptchaService {
 
   @Traced()
   async verifyHCaptchaResponse(hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto): Promise<HCaptchaVerifyResponseDto> {
-    this.log.trace('Verifying hCaptcha response', { [ATTR_CDCP_USER_ID]: hCaptchaVerifyRequestDto.userId });
+    this.log.trace('Verifying hCaptcha response', userLogAttributes());
 
     this.auditService.createAudit('hcaptcha.verify');
 

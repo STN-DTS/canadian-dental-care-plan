@@ -7,18 +7,17 @@ import type { VerificationCodeRepository } from '~/.server/domain/repositories';
 import type { AuditService } from '~/.server/domain/services/audit-service';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { randomString } from '~/utils/string-utils';
 
 export interface VerificationCodeService {
   /**
-   * Generates a random 5-digit verification code for the specified user.
+   * Generates a random 5-digit verification code.
    *
-   * @param userId A unique identifier of the user requesting a verification code.
    * @returns A 5-digit verification code.
    */
-  createVerificationCode(userId: string): string;
+  createVerificationCode(): string;
 
   /**
    * Sends a verification code email using the data passed in the `VerificationCodeEmailRequestDto` object
@@ -54,26 +53,26 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
   }
 
   @Traced()
-  createVerificationCode(userId: string): string {
-    this.log.trace('Creating verification code', { [ATTR_CDCP_USER_ID]: userId });
+  createVerificationCode(): string {
+    this.log.trace('Creating verification code', userLogAttributes());
     this.auditService.createAudit('verification-code.post');
 
     const verificationCode = randomString(5, '0123456789');
-    this.log.trace('Verification code created', { [ATTR_CDCP_USER_ID]: userId });
+    this.log.trace('Verification code created', userLogAttributes());
 
     return verificationCode;
   }
 
   @Traced()
   async sendVerificationCodeEmail(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): Promise<void> {
-    this.log.trace('Sending verification code email', { [ATTR_CDCP_USER_ID]: verificationCodeEmailRequestDto.userId });
+    this.log.trace('Sending verification code email', userLogAttributes());
 
     this.auditService.createAudit('verification-code-email.post');
 
     const verificationCodeEmailRequestEntity = this.verificationCodeDtoMapper.mapVerificationCodeEmailRequestDtoToVerificationCodeEmailRequestEntity(verificationCodeEmailRequestDto);
     await this.verificationCodeRepository.sendVerificationCodeEmail(verificationCodeEmailRequestEntity);
 
-    this.log.trace('Verification code email sent', { [ATTR_CDCP_USER_ID]: verificationCodeEmailRequestDto.userId });
+    this.log.trace('Verification code email sent', userLogAttributes());
   }
 }
 
@@ -88,11 +87,11 @@ export class StubVerificationCodeService extends DefaultVerificationCodeService 
   }
 
   @Traced()
-  createVerificationCode(userId: string): string {
-    this.log.trace('Creating stub verification code', { [ATTR_CDCP_USER_ID]: userId });
+  createVerificationCode(): string {
+    this.log.trace('Creating stub verification code', userLogAttributes());
 
     const verificationCode = '12345';
-    this.log.trace('Stub verification code created', { [ATTR_CDCP_USER_ID]: userId });
+    this.log.trace('Stub verification code created', userLogAttributes());
 
     return verificationCode;
   }

@@ -97,9 +97,9 @@ export interface BenefitRenewalChildState {
 }
 
 export interface BenefitRenewalStateMapper {
-  mapBenefitRenewalAdultStateToBenefitRenewalDto(benefitrenewalAdultState: BenefitRenewalAdultState, options?: { userId?: string }): BenefitRenewalDto;
-  mapBenefitRenewalFamilyStateToBenefitRenewalDto(benefitrenewalFamilyState: BenefitRenewalFamilyState, options?: { userId?: string }): BenefitRenewalDto;
-  mapBenefitRenewalChildStateToBenefitRenewalDto(benefitRenewalChildState: BenefitRenewalChildState, options?: { userId?: string }): BenefitRenewalDto;
+  mapBenefitRenewalAdultStateToBenefitRenewalDto(benefitrenewalAdultState: BenefitRenewalAdultState): BenefitRenewalDto;
+  mapBenefitRenewalFamilyStateToBenefitRenewalDto(benefitrenewalFamilyState: BenefitRenewalFamilyState): BenefitRenewalDto;
+  mapBenefitRenewalChildStateToBenefitRenewalDto(benefitRenewalChildState: BenefitRenewalChildState): BenefitRenewalDto;
 }
 
 interface ToApplicantInformationArgs {
@@ -174,30 +174,25 @@ interface ToPartnerInformationArgs {
 @injectable()
 export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapper {
   @Traced()
-  mapBenefitRenewalAdultStateToBenefitRenewalDto(
-    {
-      id,
-      channelCode,
-      applicantInformation,
-      applicationYear,
-      clientApplication,
-      communicationPreferences,
-      dentalBenefits,
-      dentalInsurance,
-      email,
-      emailVerified,
-      homeAddress,
-      isHomeAddressSameAsMailingAddress,
-      mailingAddress,
-      maritalStatus,
-      partnerInformation,
-      phoneNumber,
-      termsAndConditions,
-    }: BenefitRenewalAdultState,
-    options?: { userId?: string },
-  ): BenefitRenewalDto {
-    const userId = options?.userId ?? 'anonymous';
-
+  mapBenefitRenewalAdultStateToBenefitRenewalDto({
+    id,
+    channelCode,
+    applicantInformation,
+    applicationYear,
+    clientApplication,
+    communicationPreferences,
+    dentalBenefits,
+    dentalInsurance,
+    email,
+    emailVerified,
+    homeAddress,
+    isHomeAddressSameAsMailingAddress,
+    mailingAddress,
+    maritalStatus,
+    partnerInformation,
+    phoneNumber,
+    termsAndConditions,
+  }: BenefitRenewalAdultState): BenefitRenewalDto {
     if (communicationPreferences === undefined) {
       throwAppError('Adult renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_ADULT_COMMUNICATION_PREFERENCES_MISSING);
     }
@@ -252,7 +247,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       }),
       typeOfApplication: 'adult',
       termsAndConditions,
-      userId,
       changeIndicators: {
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,
@@ -263,31 +257,26 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
   }
 
   @Traced()
-  mapBenefitRenewalFamilyStateToBenefitRenewalDto(
-    {
-      id,
-      channelCode,
-      applicantInformation,
-      applicationYear,
-      children,
-      clientApplication,
-      phoneNumber,
-      dentalBenefits,
-      dentalInsurance,
-      homeAddress,
-      isHomeAddressSameAsMailingAddress,
-      mailingAddress,
-      maritalStatus,
-      partnerInformation,
-      email,
-      emailVerified,
-      communicationPreferences,
-      termsAndConditions,
-    }: BenefitRenewalFamilyState,
-    options?: { userId?: string },
-  ): BenefitRenewalDto {
-    const userId = options?.userId ?? 'anonymous';
-
+  mapBenefitRenewalFamilyStateToBenefitRenewalDto({
+    id,
+    channelCode,
+    applicantInformation,
+    applicationYear,
+    children,
+    clientApplication,
+    phoneNumber,
+    dentalBenefits,
+    dentalInsurance,
+    homeAddress,
+    isHomeAddressSameAsMailingAddress,
+    mailingAddress,
+    maritalStatus,
+    partnerInformation,
+    email,
+    emailVerified,
+    communicationPreferences,
+    termsAndConditions,
+  }: BenefitRenewalFamilyState): BenefitRenewalDto {
     if (communicationPreferences === undefined) {
       throwAppError('Family renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_FAMILY_COMMUNICATION_PREFERENCES_MISSING);
     }
@@ -347,7 +336,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       }),
       typeOfApplication: 'adult-child',
       termsAndConditions,
-      userId,
       changeIndicators: {
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,
@@ -358,29 +346,24 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
   }
 
   @Traced()
-  mapBenefitRenewalChildStateToBenefitRenewalDto(
-    {
-      id,
-      channelCode,
-      applicantInformation,
-      applicationYear,
-      children,
-      clientApplication,
-      phoneNumber,
-      homeAddress,
-      isHomeAddressSameAsMailingAddress,
-      mailingAddress,
-      maritalStatus,
-      partnerInformation,
-      email,
-      emailVerified,
-      communicationPreferences,
-      termsAndConditions,
-    }: BenefitRenewalChildState,
-    options?: { userId?: string },
-  ): BenefitRenewalDto {
-    const userId = options?.userId ?? 'anonymous';
-
+  mapBenefitRenewalChildStateToBenefitRenewalDto({
+    id,
+    channelCode,
+    applicantInformation,
+    applicationYear,
+    children,
+    clientApplication,
+    phoneNumber,
+    homeAddress,
+    isHomeAddressSameAsMailingAddress,
+    mailingAddress,
+    maritalStatus,
+    partnerInformation,
+    email,
+    emailVerified,
+    communicationPreferences,
+    termsAndConditions,
+  }: BenefitRenewalChildState): BenefitRenewalDto {
     if (communicationPreferences === undefined) {
       throwAppError('Child renewal lacks communication preferences.', ErrorCodes.APP_RENEWAL_CHILD_COMMUNICATION_PREFERENCES_MISSING);
     }
@@ -437,7 +420,6 @@ export class DefaultBenefitRenewalStateMapper implements BenefitRenewalStateMapp
       }),
       typeOfApplication: 'child',
       termsAndConditions,
-      userId,
       changeIndicators: {
         hasMaritalStatusChanged: !!maritalStatus,
         hasAddressChanged: mailingAddress?.hasChanged,

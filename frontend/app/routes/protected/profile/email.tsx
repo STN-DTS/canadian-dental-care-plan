@@ -111,7 +111,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const t = await getFixedT(url, 'protectedProfile');
   const { ENGLISH_LANGUAGE_CODE } = appContainer.get(TYPES.ServerConfig);
-  const idToken = session.get('idToken');
 
   const emailSchema = z.object({
     email: z
@@ -143,7 +142,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   if (isNewEmail) {
     const verificationCodeService = appContainer.get(TYPES.VerificationCodeService);
-    const verificationCode = verificationCodeService.createVerificationCode(idToken.sub);
+    const verificationCode = verificationCodeService.createVerificationCode();
 
     session.set(
       'profileEmailAddressFlowState',
@@ -169,7 +168,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       email: parsedDataResult.data.email,
       verificationCode,
       preferredLanguage: clientApplication.communicationPreferences.preferredLanguage === ENGLISH_LANGUAGE_CODE.toString() ? 'en' : 'fr',
-      userId: idToken.sub,
     });
 
     return redirect(getPathById('protected/profile/contact/email-address/verify', params));

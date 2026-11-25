@@ -205,7 +205,6 @@ describe('DefaultBenefitApplicationStateMapper', () => {
         partnerInformation: undefined,
         termsAndConditions: { acknowledgeTerms: true, acknowledgePrivacy: true, shareData: true },
         typeOfApplication: 'adult',
-        userId: 'anonymous',
       });
     });
 
@@ -401,7 +400,6 @@ describe('DefaultBenefitApplicationStateMapper', () => {
         partnerInformation: undefined,
         termsAndConditions: { acknowledgeTerms: true, acknowledgePrivacy: true, shareData: true },
         typeOfApplication: 'adult-child',
-        userId: 'anonymous',
       });
     });
   });
@@ -485,7 +483,6 @@ describe('DefaultBenefitApplicationStateMapper', () => {
         partnerInformation: undefined,
         termsAndConditions: { acknowledgeTerms: true, acknowledgePrivacy: true, shareData: true },
         typeOfApplication: 'child',
-        userId: 'anonymous',
       });
     });
 

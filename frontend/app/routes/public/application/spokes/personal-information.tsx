@@ -209,7 +209,6 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       dateOfBirth: parsedDataResult.data.dateOfBirth,
       applicationYear: state.applicationYear,
       sin: parsedDataResult.data.socialInsuranceNumber,
-      userId: 'anonymous',
     });
 
     if (clientApplicationRenewalEligibilityResult.result === 'INELIGIBLE-ALREADY-RENEWED') {

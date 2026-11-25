@@ -6,7 +6,8 @@ import type { EvidentiaryDocumentDtoMapper } from '~/.server/domain/mappers';
 import type { EvidentiaryDocumentRepository } from '~/.server/domain/repositories';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { ATTR_CDCP_LOCALE, ATTR_CDCP_USER_ID } from '~/.server/logging/log-attributes';
+import { ATTR_CDCP_LOCALE } from '~/.server/logging/log-attributes';
+import { userLogAttributes } from '~/.server/logging/user-log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 
 /**
@@ -16,7 +17,7 @@ export interface EvidentiaryDocumentService {
   /**
    * Lists evidentiary documents based on the provided request object.
    *
-   * @param listEvidentiaryDocumentsRequestDto The request object containing the client ID and userId for auditing.
+   * @param listEvidentiaryDocumentsRequestDto The request object containing the client ID.
    * @returns A promise that resolves to an array of evidentiary document DTOs.
    */
   listEvidentiaryDocuments(listEvidentiaryDocumentsRequestDto: ListEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentDto>>;
@@ -24,7 +25,7 @@ export interface EvidentiaryDocumentService {
   /**
    * Lists evidentiary documents in the specified locale based on the provided request object.
    *
-   * @param listEvidentiaryDocumentsRequestDto The request object containing the client ID and userId for auditing.
+   * @param listEvidentiaryDocumentsRequestDto The request object containing the client ID.
    * @param locale The desired locale (e.g., 'en' or 'fr').
    * @returns A promise that resolves to an array of localized evidentiary document DTOs.
    */
@@ -53,37 +54,36 @@ export class DefaultEvidentiaryDocumentService implements EvidentiaryDocumentSer
 
   @Traced()
   async listEvidentiaryDocuments(listEvidentiaryDocumentsRequest: ListEvidentiaryDocumentsRequest): Promise<ReadonlyArray<EvidentiaryDocumentDto>> {
-    this.log.debug('Getting evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId });
+    this.log.debug('Getting evidentiary documents', userLogAttributes());
 
     const findEvidentiaryDocumentsRequest = listEvidentiaryDocumentsRequest;
     const evidentiaryDocumentEntities = await this.evidentiaryDocumentRepository.findEvidentiaryDocuments(findEvidentiaryDocumentsRequest);
 
     const evidentiaryDocumentDtos = this.evidentiaryDocumentDtoMapper.mapEvidentiaryDocumentEntitiesToEvidentiaryDocumentDtos(evidentiaryDocumentEntities);
 
-    this.log.trace('Returning evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId });
+    this.log.trace('Returning evidentiary documents', userLogAttributes());
     return evidentiaryDocumentDtos;
   }
 
   @Traced()
   async listLocalizedEvidentiaryDocuments(listEvidentiaryDocumentsRequest: ListEvidentiaryDocumentsRequest, locale: AppLocale): Promise<ReadonlyArray<EvidentiaryDocumentLocalizedDto>> {
-    this.log.debug('Getting localized evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId, [ATTR_CDCP_LOCALE]: locale });
+    this.log.debug('Getting localized evidentiary documents', { ...userLogAttributes(), [ATTR_CDCP_LOCALE]: locale });
 
     const evidentiaryDocumentDtos = await this.listEvidentiaryDocuments(listEvidentiaryDocumentsRequest);
     const localizedEvidentiaryDocumentDtos = this.evidentiaryDocumentDtoMapper.mapEvidentiaryDocumentDtosToEvidentiaryDocumentLocalizedDtos(evidentiaryDocumentDtos, locale);
 
-    this.log.trace('Returning localized evidentiary documents', { [ATTR_CDCP_USER_ID]: listEvidentiaryDocumentsRequest.userId, [ATTR_CDCP_LOCALE]: locale });
+    this.log.trace('Returning localized evidentiary documents', { ...userLogAttributes(), [ATTR_CDCP_LOCALE]: locale });
     return localizedEvidentiaryDocumentDtos;
   }
 
   @Traced()
   async createEvidentiaryDocumentMetadata(createEvidentiaryDocumentMetadataRequest: CreateEvidentiaryDocumentMetadataRequest): Promise<CreateEvidentiaryDocumentMetadataResponseDto> {
-    this.log.debug('Uploading evidentiary document metadata', { [ATTR_CDCP_USER_ID]: createEvidentiaryDocumentMetadataRequest.userId });
+    this.log.debug('Uploading evidentiary document metadata', userLogAttributes());
 
     const documentEntities = this.evidentiaryDocumentDtoMapper.mapCreateEvidentiaryDocumentMetadataDtosToEntities(createEvidentiaryDocumentMetadataRequest.documents);
 
     const repositoryRequest = {
       clientId: createEvidentiaryDocumentMetadataRequest.clientId,
-      userId: createEvidentiaryDocumentMetadataRequest.userId,
       documents: documentEntities,
     };
 
@@ -91,7 +91,7 @@ export class DefaultEvidentiaryDocumentService implements EvidentiaryDocumentSer
 
     const uploadResponseDto = this.evidentiaryDocumentDtoMapper.mapCreateEvidentiaryDocumentMetadataResponseEntityToDto(uploadResponseEntity);
 
-    this.log.trace('Evidentiary document metadata response received', { [ATTR_CDCP_USER_ID]: createEvidentiaryDocumentMetadataRequest.userId });
+    this.log.trace('Evidentiary document metadata response received', userLogAttributes());
     return uploadResponseDto;
   }
 }
