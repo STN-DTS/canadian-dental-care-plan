@@ -1,6 +1,4 @@
 import { inject, injectable } from 'inversify';
-import { memoize } from 'micro-memoize';
-import type { Memoized, Options } from 'micro-memoize';
 
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -12,6 +10,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_CACHE_TTL_MS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { createMemoized } from '~/.server/utils/memoize-utils';
 import { secondsToMilliseconds } from '~/utils/units-utils';
 
 /**
@@ -54,16 +53,17 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
     const clientEligibilityCacheTtl = secondsToMilliseconds(this.serverConfig.LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_TTL_SECONDS);
     this.log.debug('Client eligibility cache configured', { [ATTR_CDCP_CACHE_TTL_MS]: clientEligibilityCacheTtl });
 
-    this.listClientEligibilitiesByClientNumbers = memoize(this.listClientEligibilitiesByClientNumbers, {
+    // Only the fetch is cached; the public method audits every access, including cache hits.
+    const memoizedFetchClientEligibilities = createMemoized(this.fetchClientEligibilities, {
       async: true,
-      expires: clientEligibilityCacheTtl,
+      expiresMs: clientEligibilityCacheTtl,
+      key: (clientNumbers) => [...new Set(clientNumbers)].toSorted(),
       maxSize: this.serverConfig.LOOKUP_SVC_CLIENT_ELIGIBILITY_CACHE_MAX_SIZE,
     });
-
-    type MemoizedListClientEligibilitiesByClientNumbers = Memoized<typeof this.listClientEligibilitiesByClientNumbers, Options<typeof this.listClientEligibilitiesByClientNumbers>>;
-    (this.listClientEligibilitiesByClientNumbers as MemoizedListClientEligibilitiesByClientNumbers).cache.on('add', () => {
+    memoizedFetchClientEligibilities.cache.on('add', () => {
       this.log.debug('Client eligibility cache entry created');
     });
+    this.fetchClientEligibilities = memoizedFetchClientEligibilities;
 
     this.log.debug('DefaultClientEligibilityService initiated.');
   }
@@ -74,12 +74,17 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
 
     this.auditService.createAudit('client-eligibility.number.get');
 
+    const clientEligibilities = await this.fetchClientEligibilities(clientNumbers);
+
+    this.log.trace('Returning client eligibility');
+    return clientEligibilities;
+  }
+
+  private async fetchClientEligibilities(clientNumbers: ReadonlyArray<string>): Promise<ReadonlyMap<string, ClientEligibilityDto>> {
     const clientEligibilityRequestDto = clientNumbers.map((clientNumber) => ({ clientNumber }));
     const clientEligibilityRequestEntity = this.clientEligibilityDtoMapper.mapClientEligibilityRequestDtoToClientEligibilityRequestEntity(clientEligibilityRequestDto);
     const clientEligibilityEntities = await this.clientEligibilityRepository.listClientEligibilitiesByClientNumbers(clientEligibilityRequestEntity);
     const clientEligibilityDtos = clientEligibilityEntities.map((entity) => this.clientEligibilityDtoMapper.mapClientEligibilityEntityToClientEligibilityDto(entity));
-
-    this.log.trace('Returning client eligibility');
     return new Map(clientEligibilityDtos.map((dto) => [dto.clientNumber, dto]));
   }
 }
