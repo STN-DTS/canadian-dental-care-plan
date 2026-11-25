@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         # see https://github.com/stakater/Reloader/pkgs/container/reloader
-        - image: ghcr.io/stakater/reloader:v1.4.1
+        - image: ghcr.io/stakater/reloader:v1.4.25@sha256:db8b1818f5da373ab85c05b30220fcae80a9ac0532052e6d68a6a5999111f18f
           env:
             - name: KUBERNETES_NAMESPACE
               valueFrom:
