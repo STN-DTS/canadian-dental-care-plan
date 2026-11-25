@@ -71,7 +71,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 });
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
@@ -100,8 +100,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     dcTermsTitle: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.editDentalBenefits.dcTermsTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-dental-benefits', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-dental-benefits');
 
   return {
     federalProgram,
@@ -216,7 +215,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     idToken.sub,
   );
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-dental-benefits', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-dental-benefits');
 
   return redirect(getPathById('protected/profile/dental-benefits', params));
 }

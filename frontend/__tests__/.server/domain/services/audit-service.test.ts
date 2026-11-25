@@ -10,7 +10,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 
-function createUserContext(userId?: string): RouterContextProvider {
+function createRequestContext(userId?: string): RouterContextProvider {
   const context = new RouterContextProvider();
 
   if (userId !== undefined) {
@@ -40,79 +40,90 @@ describe('DefaultAuditService', () => {
     vi.mocked(createLogger).mockReturnValue(logger);
   });
 
-  it('emits a structured audit event without interpolation or mutating caller metadata', () => {
-    const details = Object.freeze({ userId: 'actor-001' });
+  it('records the request user as the actor without mutating caller metadata', async () => {
+    const details = Object.freeze({ letterId: 'letter-001' });
+
+    await runInRequestScope(createRequestContext('actor-001'), () => new DefaultAuditService().createAudit('pdf.get', details));
+
+    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
+      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
+      'cdcp.audit.event_id': 'pdf.get',
+      'cdcp.letter.id': 'letter-001',
+      'cdcp.user.id': 'actor-001',
+    });
+    expect(details).toEqual({ letterId: 'letter-001' });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('records an anonymous actor when there is no request user or request scope', async () => {
+    const service = new DefaultAuditService();
+
+    await runInRequestScope(createRequestContext(), () => service.createAudit('client-eligibility.number.get'));
+    service.createAudit('client-eligibility.number.get');
+
+    expect(logger.audit).toHaveBeenNthCalledWith(1, 'Audit event recorded', {
+      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
+      'cdcp.audit.event_id': 'client-eligibility.number.get',
+      'cdcp.user.id': 'anonymous',
+    });
+    expect(auditedUserIds(logger)).toEqual(['anonymous', 'anonymous']);
+  });
+
+  it('ignores a caller-supplied actor and records the request user', async () => {
+    await runInRequestScope(createRequestContext('context-user'), () => {
+      // @ts-expect-error -- the actor is resolved by the audit service, not supplied by callers
+      new DefaultAuditService().createAudit('auth.session-created', { userId: 'spoofed-user' });
+    });
+
+    expect(auditedUserIds(logger)).toEqual(['context-user']);
+    expect(JSON.stringify(logger.audit.mock.calls)).not.toContain('spoofed-user');
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Unapproved audit metadata omitted', {
+      [ATTR_ERROR_TYPE]: 'audit_metadata_rejected',
+    });
+  });
+
+  it('omits arbitrary metadata and the letter identifier outside PDF audit records', () => {
+    const details = {
+      letterId: 'letter-001',
+      sin: '999999998',
+      email: 'audit-canary@example.invalid',
+      token: 'audit-token-canary',
+      error: new Error('audit-exception-canary'),
+    };
 
     new DefaultAuditService().createAudit('auth.session-created', details);
 
     expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
       [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
       'cdcp.audit.event_id': 'auth.session-created',
-      'cdcp.user.id': 'actor-001',
-    });
-    expect(details).toEqual({ userId: 'actor-001' });
-    expect(logger.warn).not.toHaveBeenCalled();
-  });
-
-  it('retains the approved letter identifier only for PDF audit records', () => {
-    new DefaultAuditService().createAudit('pdf.get', { userId: 'actor-001', letterId: 'letter-001' });
-
-    expect(logger.audit).toHaveBeenCalledWith('Audit event recorded', {
-      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-      'cdcp.audit.event_id': 'pdf.get',
-      'cdcp.user.id': 'actor-001',
-      'cdcp.letter.id': 'letter-001',
-    });
-  });
-
-  it('omits arbitrary metadata and preserves the audit fact', () => {
-    new DefaultAuditService().createAudit('auth.session-created', {
-      userId: 'actor-001',
-      letterId: 'letter-001',
-      sin: '999999998',
-      email: 'audit-canary@example.invalid',
-      token: 'audit-token-canary',
-      error: new Error('audit-exception-canary'),
-    });
-
-    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
-      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-      'cdcp.audit.event_id': 'auth.session-created',
-      'cdcp.user.id': 'actor-001',
+      'cdcp.user.id': 'anonymous',
     });
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Unapproved audit metadata omitted', {
       [ATTR_ERROR_TYPE]: 'audit_metadata_rejected',
     });
   });
 
-  it('emits an audit event without optional metadata', () => {
-    new DefaultAuditService().createAudit('client-eligibility.number.get');
+  it.each(['999999998', '999-999-999', 'actor@example.invalid', 'Bearer synthetic-token', '', 'a'.repeat(256)])('omits an inadmissible request user identifier: %s', async (userId) => {
+    await runInRequestScope(createRequestContext(userId), () => new DefaultAuditService().createAudit('letters.get'));
 
     expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
       [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-      'cdcp.audit.event_id': 'client-eligibility.number.get',
+      'cdcp.audit.event_id': 'letters.get',
     });
-  });
-
-  it.each(['999999998', '999-999-999', 'actor@example.invalid', 'Bearer synthetic-token', '', 'a'.repeat(256)])('omits an inadmissible actor identifier: %s', (userId) => {
-    new DefaultAuditService().createAudit('auth.session-created', { userId });
-
-    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
-      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-      'cdcp.audit.event_id': 'auth.session-created',
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith('Unapproved audit actor omitted', {
+      [ATTR_ERROR_TYPE]: 'audit_metadata_rejected',
     });
-    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('does not invoke metadata getters or proxy traps', () => {
     const getter = vi.fn(() => 'private-getter-canary');
-    const details = Object.defineProperty({}, 'userId', { enumerable: true, get: getter });
-    const ownKeys = vi.fn(() => ['userId']);
+    const details = Object.defineProperty({}, 'letterId', { enumerable: true, get: getter });
+    const ownKeys = vi.fn(() => ['letterId']);
     const proxy = new Proxy({}, { ownKeys });
     const service = new DefaultAuditService();
 
-    service.createAudit('auth.session-created', details);
-    service.createAudit('auth.session-created', proxy);
+    service.createAudit('pdf.get', details);
+    service.createAudit('pdf.get', proxy);
 
     expect(getter).not.toHaveBeenCalled();
     expect(ownKeys).not.toHaveBeenCalled();
@@ -130,83 +141,27 @@ describe('DefaultAuditService', () => {
     expect(logger.error.mock.calls[0]?.[0]).toBeInstanceOf(Error);
   });
 
-  describe('request user fallback', () => {
-    it.each([
-      ['omitted details', undefined],
-      ['omitted userId', {}],
-      ['undefined userId', { userId: undefined }],
-    ])('records the request user when the actor is absent (%s)', async (_, details) => {
-      await runInRequestScope(createUserContext('context-user'), () => new DefaultAuditService().createAudit('client-eligibility.number.get', details));
-
-      expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
-        [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-        'cdcp.audit.event_id': 'client-eligibility.number.get',
-        'cdcp.user.id': 'context-user',
-      });
-      expect(logger.warn).not.toHaveBeenCalled();
+  it('resolves the request user at call time and isolates concurrent requests sharing one service', async () => {
+    const service = new DefaultAuditService();
+    const firstContext = createRequestContext();
+    let releaseFirst!: () => void;
+    const secondDone = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
     });
 
-    it('keeps the letter identifier alongside the request user for PDF audit records', async () => {
-      await runInRequestScope(createUserContext('context-user'), () => new DefaultAuditService().createAudit('pdf.get', { letterId: 'letter-001' }));
+    await Promise.all([
+      runInRequestScope(firstContext, async () => {
+        service.createAudit('letters.get');
+        firstContext.set(userContext, { id: 'first-user', mocked: false, sin: '999999998' });
+        await secondDone;
+        service.createAudit('letters.get');
+      }),
+      runInRequestScope(createRequestContext('second-user'), () => {
+        service.createAudit('letters.get');
+        releaseFirst();
+      }),
+    ]);
 
-      expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
-        [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
-        'cdcp.audit.event_id': 'pdf.get',
-        'cdcp.letter.id': 'letter-001',
-        'cdcp.user.id': 'context-user',
-      });
-    });
-
-    it.each(['explicit-user', 'anonymous'])('prefers an explicit actor over the request user: %s', async (userId) => {
-      await runInRequestScope(createUserContext('context-user'), () => new DefaultAuditService().createAudit('auth.session-created', { userId }));
-
-      expect(auditedUserIds(logger)).toEqual([userId]);
-    });
-
-    it('does not substitute the request user for a rejected explicit actor', async () => {
-      await runInRequestScope(createUserContext('context-user'), () => new DefaultAuditService().createAudit('auth.session-created', { userId: '999999998' }));
-
-      expect(auditedUserIds(logger)).toEqual([undefined]);
-      expect(logger.warn).toHaveBeenCalledOnce();
-    });
-
-    it('omits the actor when there is no request user or request scope', async () => {
-      const service = new DefaultAuditService();
-
-      await runInRequestScope(createUserContext(), () => service.createAudit('letters.get'));
-      service.createAudit('letters.get');
-
-      expect(auditedUserIds(logger)).toEqual([undefined, undefined]);
-    });
-
-    it('omits an inadmissible request user identifier', async () => {
-      await runInRequestScope(createUserContext('999-999-998'), () => new DefaultAuditService().createAudit('letters.get'));
-
-      expect(auditedUserIds(logger)).toEqual([undefined]);
-    });
-
-    it('resolves the request user at call time and isolates concurrent requests sharing one service', async () => {
-      const service = new DefaultAuditService();
-      const firstContext = createUserContext();
-      let releaseFirst!: () => void;
-      const secondDone = new Promise<void>((resolve) => {
-        releaseFirst = resolve;
-      });
-
-      await Promise.all([
-        runInRequestScope(firstContext, async () => {
-          service.createAudit('letters.get');
-          firstContext.set(userContext, { id: 'first-user', mocked: false, sin: '999999998' });
-          await secondDone;
-          service.createAudit('letters.get');
-        }),
-        runInRequestScope(createUserContext('second-user'), () => {
-          service.createAudit('letters.get');
-          releaseFirst();
-        }),
-      ]);
-
-      expect(auditedUserIds(logger)).toEqual([undefined, 'second-user', 'first-user']);
-    });
+    expect(auditedUserIds(logger)).toEqual(['anonymous', 'second-user', 'first-user']);
   });
 });

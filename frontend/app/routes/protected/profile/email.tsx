@@ -84,7 +84,7 @@ function LayoutBreadcrumbs(): JSX.Element {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, params, request, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
   const profileEmailContext = requireProfileEmailContext({ url, params });
 
@@ -93,8 +93,7 @@ export async function loader({ context, params, request, url }: Route.LoaderArgs
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.email.pageTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.email-address', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.email-address');
 
   return {
     meta,
@@ -135,7 +134,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.email-address', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.email-address');
 
   const isNewEmail =
     clientApplication.contactInformation.email !== parsedDataResult.data.email ||

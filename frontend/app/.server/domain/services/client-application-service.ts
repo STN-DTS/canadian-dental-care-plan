@@ -68,7 +68,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by basic info', { [ATTR_CDCP_USER_ID]: clientApplicationBasicInfoRequestDto.userId });
 
-    this.auditService.createAudit('client-application.basic-info.get', { userId: clientApplicationBasicInfoRequestDto.userId });
+    this.auditService.createAudit('client-application.basic-info.get');
 
     const clientApplicationBasicInfoRequestEntity = this.clientApplicationDtoMapper.mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity(clientApplicationBasicInfoRequestDto);
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity);
@@ -110,7 +110,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
   async findClientApplicationBySin(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by SIN', { [ATTR_CDCP_USER_ID]: clientApplicationSinRequestDto.userId });
 
-    this.auditService.createAudit('client-application.sin.get', { userId: clientApplicationSinRequestDto.userId });
+    this.auditService.createAudit('client-application.sin.get');
 
     const clientApplicationSinRequestEntity = this.clientApplicationDtoMapper.mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity(clientApplicationSinRequestDto);
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationBySin(clientApplicationSinRequestEntity);

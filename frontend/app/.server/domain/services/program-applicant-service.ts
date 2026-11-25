@@ -50,7 +50,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
 
   @Traced()
   async findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option.Option<ProgramApplicantDto>> {
-    this.auditService.createAudit('program-applicant.basic-info.get', { userId: request.userId });
+    this.auditService.createAudit('program-applicant.basic-info.get');
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantByBasicInfo(requestEntity);
@@ -73,7 +73,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
 
   @Traced()
   async findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option.Option<ProgramApplicantDto>> {
-    this.auditService.createAudit('program-applicant.personal-information.get', { userId: request.userId });
+    this.auditService.createAudit('program-applicant.personal-information.get');
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantBySin(requestEntity);

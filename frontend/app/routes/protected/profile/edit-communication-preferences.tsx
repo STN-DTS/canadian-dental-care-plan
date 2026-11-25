@@ -62,7 +62,7 @@ function isClientApplicationEmailAddressVerified(clientApplication: PickDeep<Cli
 }
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
@@ -77,8 +77,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const gcCommunicationMethods = appContainer.get(TYPES.GCCommunicationMethodService).listLocalizedGCCommunicationMethods(locale);
   const sunLifeCommunicationMethods = appContainer.get(TYPES.SunLifeCommunicationMethodService).listLocalizedSunLifeCommunicationMethods(locale);
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-communication-preferences', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-communication-preferences');
 
   return {
     meta,
@@ -165,7 +164,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     idToken.sub,
   );
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-communication-preferences', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-communication-preferences');
 
   const redirectUrl = getPathById('protected/profile/communication-preferences', params);
   return { success: true, redirectUrl, revalidate: false };

@@ -56,7 +56,7 @@ describe('DefaultProfileService', () => {
 
     await service.updateCommunicationPreferences(mockCommunicationPreferenceDto, userId);
 
-    expect(mockAuditService.createAudit).toHaveBeenCalledWith('profile-update.communication-preferences.post', { userId });
+    expect(mockAuditService.createAudit).toHaveBeenCalledWith('profile-update.communication-preferences.post');
     expect(mockProfileDtoMapper.mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity).toHaveBeenCalledWith(mockCommunicationPreferenceDto);
     expect(mockProfileRepository.updateCommunicationPreferences).toHaveBeenCalledWith(mockCommunicationPreferenceEntity);
   });

@@ -57,7 +57,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     this.log.trace('Uploading document', { [ATTR_CDCP_USER_ID]: documentUploadRequestDto.userId });
 
     try {
-      this.auditService.createAudit('documentupload.upload', { userId: documentUploadRequestDto.userId });
+      this.auditService.createAudit('documentupload.upload');
 
       const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto);
       const responseEntity = await this.documentUploadRepository.uploadDocument(requestEntity);
@@ -89,7 +89,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     this.log.trace('Scanning document', { [ATTR_CDCP_USER_ID]: documentScanRequestDto.userId });
 
     try {
-      this.auditService.createAudit('documentupload.scan', { userId: documentScanRequestDto.userId });
+      this.auditService.createAudit('documentupload.scan');
 
       const requestEntity = this.documentUploadDtoMapper.mapDocumentScanRequestDtoToEntity(documentScanRequestDto);
       const responseEntity = await this.documentUploadRepository.scanDocument(requestEntity);

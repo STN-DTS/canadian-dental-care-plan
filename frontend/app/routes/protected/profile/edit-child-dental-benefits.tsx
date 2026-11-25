@@ -73,7 +73,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 });
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const child = clientApplication.children.find((child) => child.information.clientId === params.childId);
@@ -109,8 +109,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     dcTermsTitle: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.editChildDentalBenefits.dcTermsTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-child-dental-benefits', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-child-dental-benefits');
 
   return {
     federalProgram,
@@ -231,7 +230,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     idToken.sub,
   );
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-child-dental-benefits', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-child-dental-benefits');
 
   return redirect(getPathById('protected/profile/dental-benefits', params));
 }

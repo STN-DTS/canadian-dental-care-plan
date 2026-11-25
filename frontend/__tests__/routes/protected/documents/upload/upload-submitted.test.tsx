@@ -9,7 +9,6 @@ import { mock } from 'vitest-mock-extended';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import type { AppContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import type { AuditService, DocumentUploadService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
@@ -23,7 +22,6 @@ import { pageIds } from '~/page-ids';
 import DocumentsSubmitted, { handle, loader, meta } from '~/routes/protected/documents/upload/upload-submitted';
 
 vi.unmock(import('react-i18next'));
-vi.mock(import('~/.server/context/user-context'));
 vi.mock(import('~/.server/utils/env-utils'));
 vi.mock(import('~/.server/utils/locale-utils'), { spy: true });
 vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'), { spy: true });
@@ -55,7 +53,6 @@ function createArgs(locale: AppLocale): Parameters<typeof loader>[0] {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getEnv, { partial: true }).mockReturnValue({ I18NEXT_DEBUG: false });
-  vi.mocked(getUser).mockReturnValue(mock<ReturnType<typeof getUser>>({ id: 'receipt-user' }));
   session.has.mockReturnValue(true);
   storeDocuments([uploadedDocument]);
   appContainer.get.calledWith(TYPES.EvidentiaryDocumentTypeService).mockReturnValue(documentTypeService);
@@ -133,8 +130,7 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
 
     expect(result.meta).toEqual({ title });
     expect(result.SCCH_BASE_URI).toBe(baseUri);
-    expect(getUser).toHaveBeenCalledExactlyOnceWith(args.context);
-    expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('page-view.documents-submitted', { userId: 'receipt-user' });
+    expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('page-view.documents-submitted');
     const parentMatch = mock<NonNullable<Parameters<typeof meta>[0]['matches'][0]>>({ meta: [{ title: 'Parent title' }, { name: 'description', content: 'Parent description' }] });
     const metaArgs = mock<Parameters<typeof meta>[0]>();
     metaArgs.loaderData = result;

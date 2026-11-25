@@ -59,7 +59,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
   async findApplicationStatusIdByBasicInfo(applicationStatusBasicInfoRequestDto: ApplicationStatusBasicInfoRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by basic info', { [ATTR_CDCP_USER_ID]: applicationStatusBasicInfoRequestDto.userId });
 
-    this.auditService.createAudit('application-status.post', { userId: applicationStatusBasicInfoRequestDto.userId });
+    this.auditService.createAudit('application-status.post');
 
     const applicationStatusBasicInfoRequestEntity = this.applicationStatusDtoMapper.mapApplicationStatusBasicInfoRequestDtoToApplicationStatusBasicInfoRequestEntity(applicationStatusBasicInfoRequestDto);
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity);
@@ -73,7 +73,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
   async findApplicationStatusIdBySin(applicationStatusSinRequestDto: ApplicationStatusSinRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by SIN', { [ATTR_CDCP_USER_ID]: applicationStatusSinRequestDto.userId });
 
-    this.auditService.createAudit('application-status.post', { userId: applicationStatusSinRequestDto.userId });
+    this.auditService.createAudit('application-status.post');
 
     const applicationStatusSinRequestEntity = this.applicationStatusDtoMapper.mapApplicationStatusSinRequestDtoToApplicationStatusSinRequestEntity(applicationStatusSinRequestDto);
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusBySin(applicationStatusSinRequestEntity);

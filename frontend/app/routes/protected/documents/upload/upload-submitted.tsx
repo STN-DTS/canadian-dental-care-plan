@@ -4,7 +4,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -52,8 +51,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const user = getUser(context);
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted', { userId: user.id });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted');
 
   return { meta, uploadedDocuments, SCCH_BASE_URI };
 }

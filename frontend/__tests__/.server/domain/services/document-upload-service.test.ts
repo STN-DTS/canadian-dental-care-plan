@@ -69,7 +69,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.uploadDocument(uploadRequest)).resolves.toEqual({ status: 'success', documentFileName: 'stored-document.txt' });
 
-      expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('documentupload.upload', { userId: uploadRequest.userId });
+      expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('documentupload.upload');
       expect(mapper.mapDocumentUploadRequestDtoToEntity).toHaveBeenCalledExactlyOnceWith(uploadRequest);
       expect(repository.uploadDocument).toHaveBeenCalledExactlyOnceWith(uploadEntity);
       expect(repository.scanDocument).not.toHaveBeenCalled();
@@ -168,7 +168,7 @@ describe('DefaultDocumentUploadService', () => {
 
       await expect(service.scanDocument(scanRequest)).resolves.toEqual({ status: 'success', DataId: 'scan-123' });
 
-      expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('documentupload.scan', { userId: scanRequest.userId });
+      expect(auditService.createAudit).toHaveBeenCalledExactlyOnceWith('documentupload.scan');
       expect(mapper.mapDocumentScanRequestDtoToEntity).toHaveBeenCalledExactlyOnceWith(scanRequest);
       expect(repository.scanDocument).toHaveBeenCalledExactlyOnceWith(scanEntity);
       expect(repository.uploadDocument).not.toHaveBeenCalled();

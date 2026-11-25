@@ -12,14 +12,16 @@ export interface AuditService {
   /**
    * Creates an audit log entry for a given event.
    *
-   * When `userId` is omitted or `undefined`, the authenticated user of the current
-   * request (if any) is recorded as the actor. An explicitly supplied `userId` wins.
+   * The actor is always the authenticated user of the current request, or `anonymous` when
+   * there is none (for example, public routes and background work). Callers cannot supply it.
    *
    * @param eventId A code-defined audit action identifier
-   * @param auditDetails Only opaque `userId` and, for `pdf.get`, `letterId` are admitted
+   * @param auditDetails Only an opaque `letterId` for `pdf.get` is admitted
    */
   createAudit(eventId: string, auditDetails?: AuditDetails): void;
 }
+
+const ANONYMOUS_ACTOR = 'anonymous';
 
 @injectable()
 export class DefaultAuditService implements AuditService {
@@ -40,14 +42,11 @@ export class DefaultAuditService implements AuditService {
       return;
     }
 
-    const { attributes, actorSupplied } = this.projectAuditDetails(eventId, auditDetails);
+    const attributes = this.projectAuditDetails(eventId, auditDetails);
+    const actor = this.resolveActor();
 
-    if (!actorSupplied) {
-      const contextUserId = findUser().valueOrUndefined?.id;
-
-      if (isAdmissibleIdentifier(contextUserId)) {
-        attributes[ATTR_CDCP_USER_ID] = contextUserId;
-      }
+    if (actor !== undefined) {
+      attributes[ATTR_CDCP_USER_ID] = actor;
     }
 
     this.log.audit('Audit event recorded', {
@@ -58,37 +57,48 @@ export class DefaultAuditService implements AuditService {
   }
 
   /**
-   * Projects caller metadata onto approved audit attributes. `actorSupplied` is `true` when the
-   * caller provided a non-`undefined` actor (admitted or rejected), or metadata that cannot be
-   * inspected safely; in both cases no contextual actor is substituted.
+   * Resolves the audit actor from the current request user, or `anonymous` when there is none.
+   * Returns `undefined`, and warns, when the user identifier is not admissible.
    */
-  private projectAuditDetails(eventId: string, auditDetails: unknown): { attributes: Record<string, string>; actorSupplied: boolean } {
+  private resolveActor(): string | undefined {
+    const user = findUser().valueOrUndefined;
+
+    if (user === undefined) {
+      return ANONYMOUS_ACTOR;
+    }
+
+    if (isAdmissibleIdentifier(user.id)) {
+      return user.id;
+    }
+
+    this.log.warn('Unapproved audit actor omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
+    return undefined;
+  }
+
+  /**
+   * Projects caller metadata onto approved audit attributes, omitting anything else.
+   */
+  private projectAuditDetails(eventId: string, auditDetails: unknown): Record<string, string> {
     if (auditDetails === undefined) {
-      return { attributes: {}, actorSupplied: false };
+      return {};
     }
 
     if (typeof auditDetails !== 'object' || auditDetails === null || isProxy(auditDetails)) {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
-      return { attributes: {}, actorSupplied: true };
+      return {};
     }
 
     const attributes: Record<string, string> = {};
-    let actorSupplied = false;
     let rejected = false;
 
     for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(auditDetails))) {
-      const attribute = key === 'userId' ? ATTR_CDCP_USER_ID : key === 'letterId' && eventId === 'pdf.get' ? ATTR_CDCP_LETTER_ID : undefined;
       const value: unknown = descriptor.value;
 
-      if (attribute === ATTR_CDCP_USER_ID && (!('value' in descriptor) || value !== undefined)) {
-        actorSupplied = true;
-      }
-
-      if (attribute === undefined || !('value' in descriptor)) {
+      if (key !== 'letterId' || eventId !== 'pdf.get' || !('value' in descriptor)) {
         rejected = true;
       } else if (value !== undefined) {
         if (isAdmissibleIdentifier(value)) {
-          attributes[attribute] = value;
+          attributes[ATTR_CDCP_LETTER_ID] = value;
         } else {
           rejected = true;
         }
@@ -99,7 +109,7 @@ export class DefaultAuditService implements AuditService {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
     }
 
-    return { attributes, actorSupplied };
+    return attributes;
   }
 }
 

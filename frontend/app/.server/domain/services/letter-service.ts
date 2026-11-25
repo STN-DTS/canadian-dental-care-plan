@@ -52,7 +52,7 @@ export class DefaultLetterService implements LetterService {
   async findLettersByClientId({ clientId, userId, sortOrder = 'desc' }: LettersRequestDto): Promise<ReadonlyArray<LetterDto>> {
     this.log.trace('Finding letters', { [ATTR_CDCP_USER_ID]: userId, [ATTR_CDCP_LETTERS_SORT_ORDER]: sortOrder });
 
-    this.auditService.createAudit('letters.get', { userId });
+    this.auditService.createAudit('letters.get');
 
     const letterEntities = await this.letterRepository.findLettersByClientId(clientId);
     const letterDtos = this.letterDtoMapper.mapLetterEntitiesToLetterDtos(letterEntities);
@@ -69,7 +69,7 @@ export class DefaultLetterService implements LetterService {
   async getPdfByLetterId({ letterId, userId }: PdfRequestDto): Promise<string> {
     this.log.trace('Finding letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId, [ATTR_CDCP_USER_ID]: userId });
 
-    this.auditService.createAudit('pdf.get', { letterId, userId });
+    this.auditService.createAudit('pdf.get', { letterId });
 
     const pdfEntity = await this.letterRepository.getPdfByLetterId(letterId);
     const pdf = this.letterDtoMapper.mapPdfEntityToString(pdfEntity);

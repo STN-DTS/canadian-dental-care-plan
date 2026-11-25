@@ -288,7 +288,7 @@ test('the application preload preserves event schemas, severity and privacy thro
           const auditService = new DefaultAuditService();
           trace.getTracer('winston-export-test').startActiveSpan('Synthetic audit context', span => {
             auditService.createAudit('auth.session-created', {
-              userId: 'audit-actor-001',
+              userId: 'spoofed-actor-canary',
               sin: '999999998',
               invalidSin: '999999999',
               email: 'sink-person@example.invalid',
@@ -298,7 +298,7 @@ test('the application preload preserves event schemas, severity and privacy thro
             });
             span.end();
           });
-          auditService.createAudit('pdf.get', { userId: 'audit-actor-001', letterId: 'audit-letter-001' });
+          auditService.createAudit('pdf.get', { userId: 'spoofed-actor-canary', letterId: 'audit-letter-001' });
           const requestContext = new RouterContextProvider();
           requestContext.set(userContext, { id: 'context-actor-001', mocked: false, sin: '999999997' });
           const requestUrl = new URL('https://localhost/en/protected/profile');
@@ -458,6 +458,7 @@ test('the application preload preserves event schemas, severity and privacy thro
         'query-token-canary',
         'nested-audit-canary',
         'arbitrary-error-canary',
+        'spoofed-actor-canary',
       ]) {
         expect(output).not.toContain(canary);
       }
@@ -522,7 +523,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       expect(record.severityNumber).toBe(SeverityNumber.INFO);
       expect(timestamp).toBeGreaterThan(0n);
       expect(observedTimestamp).toBeGreaterThanOrEqual(timestamp);
-      expect(attributes['cdcp.user.id']).toBe(attributes['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'audit-actor-001');
+      expect(attributes['cdcp.user.id']).toBe(attributes['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'anonymous');
       expect(attributes['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
       expect(Object.keys(attributes)).toEqual(expect.arrayContaining(['cdcp.audit.event_id', 'cdcp.user.id']));
       expect(Object.keys(attributes).filter((key) => !['cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'label', 'timestamp'].includes(key))).toEqual([]);
@@ -540,7 +541,7 @@ test('the application preload preserves event schemas, severity and privacy thro
       for (const record of sinkRecords) {
         expect(record.level).toBe('audit');
         expect(record['otel.event.name']).toBe('cdcp.audit.recorded');
-        expect(record['cdcp.user.id']).toBe(record['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'audit-actor-001');
+        expect(record['cdcp.user.id']).toBe(record['cdcp.audit.event_id'] === 'client-eligibility.number.get' ? 'context-actor-001' : 'anonymous');
         expect(record['cdcp.audit.event_id']).toMatch(/^(auth.session-created|pdf.get|client-eligibility.number.get)$/);
         expect(typeof record.timestamp).toBe('string');
         expect(Object.keys(record).every((key) => ['level', 'message', 'label', 'timestamp', 'otel.event.name', 'cdcp.audit.event_id', 'cdcp.user.id', 'cdcp.letter.id', 'trace_id', 'span_id', 'trace_flags'].includes(key))).toBe(true);

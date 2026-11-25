@@ -64,7 +64,7 @@ export class DefaultDynatraceService implements DynatraceService {
     this.log.trace('Finding Dynatrace RUM script', { [ATTR_CDCP_USER_ID]: userId });
 
     try {
-      this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get', { userId });
+      this.auditService.createAudit('dynatrace-service.retrieve-rum-script.get');
 
       const dynatraceRumScript = await this.dynatraceRepository.findDynatraceRumScript();
 

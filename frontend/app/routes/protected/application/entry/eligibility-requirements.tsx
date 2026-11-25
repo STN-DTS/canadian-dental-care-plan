@@ -7,7 +7,6 @@ import { appContext } from '~/.server/context/app-context';
 import { isTaxFilingSectionCompleted, isTermsAndConditionsSectionCompleted } from '~/.server/routes/helpers/protected-application-entry-section-checks';
 import { getProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '~/components/card';
@@ -33,8 +32,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.application.entry.eligibility-requirements', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.application.entry.eligibility-requirements');
 
   const state = getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);

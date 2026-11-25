@@ -83,7 +83,7 @@ export class DefaultProfileService implements ProfileService {
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating communication preferences', { [ATTR_CDCP_USER_ID]: userId });
 
-    this.auditService.createAudit('profile-update.communication-preferences.post', { userId });
+    this.auditService.createAudit('profile-update.communication-preferences.post');
 
     const updateCommunicationPreferenceRequestEntity = this.profileDtoMapper.mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity(updateCommunicationPreferenceRequestDto);
     await this.profileRepository.updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity);
@@ -95,7 +95,7 @@ export class DefaultProfileService implements ProfileService {
   async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating phone numbers', { [ATTR_CDCP_USER_ID]: userId });
 
-    this.auditService.createAudit('profile-update.phone-numbers.post', { userId });
+    this.auditService.createAudit('profile-update.phone-numbers.post');
 
     const updatePhoneNumbersRequestEntity = this.profileDtoMapper.mapUpdatePhoneNumbersRequestDtoToUpdatePhoneNumbersRequestEntity(updatePhoneNumbersRequestDto);
     await this.profileRepository.updatePhoneNumbers(updatePhoneNumbersRequestEntity);
@@ -117,7 +117,7 @@ export class DefaultProfileService implements ProfileService {
   async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto, userId: string): Promise<void> {
     this.log.trace('Updating email address', { [ATTR_CDCP_USER_ID]: userId });
 
-    this.auditService.createAudit('profile-update.email-address.post', { userId });
+    this.auditService.createAudit('profile-update.email-address.post');
 
     const updateEmailAddressRequestEntity = this.profileDtoMapper.mapUpdateEmailAddressRequestDtoToUpdateEmailAddressRequestEntity(updateEmailAddressRequestDto);
     await this.profileRepository.updateEmailAddress(updateEmailAddressRequestEntity);

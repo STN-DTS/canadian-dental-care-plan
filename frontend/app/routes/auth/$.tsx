@@ -11,6 +11,7 @@ import { TYPES } from '~/.server/constants';
  *
  */
 import { appContext } from '~/.server/context/app-context';
+import { createUserContext, userContext } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
@@ -112,8 +113,11 @@ async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'con
   const signoutUrl = raoidcService.generateSignoutRequest({ sessionId: idToken.sid, locale });
 
   log.debug('Destroying application session before provider logout', { [ATTR_SESSION_ID]: session.id });
+  // Attribute the logout audit to the session user; a session without valid userinfo is audited as anonymous.
+  const user = session.find('userInfoToken').pipe(Option.flatMap((userInfoToken) => createUserContext(idToken, userInfoToken)));
+  context.set(userContext, Option.getOrNull(user));
   const auditService = appContainer.get(TYPES.AuditService);
-  auditService.createAudit('auth.session-destroyed', { userId: idToken.sub });
+  auditService.createAudit('auth.session-destroyed');
 
   await session.destroy();
   return redirectDocument(signoutUrl);
@@ -199,10 +203,12 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
   const { idToken, userInfoToken } = await raoidcService.handleCallback({ requestUrl: url, codeVerifier: Option.getOrThrow(codeVerifier), expectedState: Option.getOrThrow(state), redirectUri });
   session.set('idToken', idToken);
   session.set('userInfoToken', userInfoToken);
+  // Attribute the login audit to the new session user; tokens without valid userinfo are audited as anonymous.
+  context.set(userContext, Option.getOrNull(createUserContext(idToken, userInfoToken)));
 
   log.debug('RAOIDC login successful; redirecting to application');
   const auditService = appContainer.get(TYPES.AuditService);
-  auditService.createAudit('auth.session-created', { userId: idToken.sub });
+  auditService.createAudit('auth.session-created');
 
   return redirectDocument(returnUrl);
 }

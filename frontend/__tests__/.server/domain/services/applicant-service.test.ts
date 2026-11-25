@@ -73,7 +73,7 @@ describe('DefaultApplicantService', () => {
     const result = await service.findApplicantBySin(sinRequest);
 
     expect(Option.getOrThrow(result).applicantType).toBeUndefined();
-    expect(auditService.createAudit).toHaveBeenCalledWith('applicant.personal-information.get', { userId: 'user-id' });
+    expect(auditService.createAudit).toHaveBeenCalledWith('applicant.personal-information.get');
   });
 
   it('preserves a missing repository result for a SIN lookup', async () => {

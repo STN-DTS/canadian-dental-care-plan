@@ -4,7 +4,8 @@ import { Option } from 'effect';
 import { describe, expect, it } from 'vitest';
 
 import type { UserContext } from '~/.server/context/user-context';
-import { findUser, getUser, userContext } from '~/.server/context/user-context';
+import { createUserContext, findUser, getUser, userContext } from '~/.server/context/user-context';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 
@@ -52,5 +53,22 @@ describe('getUser', () => {
 
   it('throws PLT_CTX_REQUEST_STORE_UNAVAILABLE outside a request scope', () => {
     expect(() => getUser()).toThrow(expect.objectContaining({ errorCode: ErrorCodes.PLT_CTX_REQUEST_STORE_UNAVAILABLE }));
+  });
+});
+
+describe('createUserContext', () => {
+  const idToken = { sub: 'user-001' } as IdToken;
+
+  it('maps matching session tokens to user details', () => {
+    const userInfoToken = { sub: 'user-001', sin: '999999998', locale: 'fr', birthdate: '2000-01-01', mocked: true } as UserinfoToken;
+
+    expect(createUserContext(idToken, userInfoToken)).toEqual(Option.some({ id: 'user-001', sin: '999999998', locale: 'fr', birthdate: '2000-01-01', mocked: true }));
+  });
+
+  it.each([
+    ['mismatched subjects', { sub: 'user-002', sin: '999999998' }],
+    ['a missing SIN', { sub: 'user-001' }],
+  ])('returns none for %s', (_, userInfoToken) => {
+    expect(createUserContext(idToken, userInfoToken as UserinfoToken)).toEqual(Option.none());
   });
 });

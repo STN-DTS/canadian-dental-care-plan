@@ -52,7 +52,7 @@ export class DefaultApplicantService implements ApplicantService {
   @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>> {
     this.log.trace('Finding applicant by basic info', { [ATTR_CDCP_USER_ID]: request.userId });
-    this.auditService.createAudit('applicant.basic-info.get', { userId: request.userId });
+    this.auditService.createAudit('applicant.basic-info.get');
 
     const applicantBasicInfoRequestEntity = this.applicantDtoMapper.mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntity = await this.applicantRepository.findApplicantByBasicInfo(applicantBasicInfoRequestEntity);
@@ -71,7 +71,7 @@ export class DefaultApplicantService implements ApplicantService {
   async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>> {
     const { userId } = request;
     this.log.trace('Finding applicant by SIN', { [ATTR_CDCP_USER_ID]: userId });
-    this.auditService.createAudit('applicant.personal-information.get', { userId });
+    this.auditService.createAudit('applicant.personal-information.get');
 
     const applicantRequestEntity = this.applicantDtoMapper.mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantResponseEntity = await this.applicantRepository.findApplicantBySin(applicantRequestEntity);

@@ -65,7 +65,7 @@ function LayoutBreadcrumbs(): JSX.Element {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
@@ -78,8 +78,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.homeAddress.pageTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.home-address', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.home-address');
 
   return {
     meta,
@@ -140,7 +139,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const canProceed = isNotCanada || isUseInvalidAddressAction || isUseSelectedAddressAction;
 
   const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.home-address', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.home-address');
 
   if (canProceed) {
     await appContainer.get(TYPES.ProfileService).updateAddresses(

@@ -51,7 +51,7 @@ function LayoutBreadcrumbs(): JSX.Element {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
@@ -59,8 +59,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.phoneNumber.pageTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.phone-number', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.phone-number');
 
   return {
     meta,
@@ -110,7 +109,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     idToken.sub,
   );
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.phone-number', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.phone-number');
 
   return redirect(getPathById('protected/profile/contact-information', params));
 }

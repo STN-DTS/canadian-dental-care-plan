@@ -10,7 +10,6 @@ import { appContext } from '~/.server/context/app-context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { isWithinRenewalPeriod, startProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { useApplicationFlowStorage } from '~/hooks';
 import { pageIds } from '~/page-ids';
@@ -35,8 +34,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.application.index', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.application.index');
 
   const applicationYearService = appContainer.get(TYPES.ApplicationYearService);
   const applicationYear = applicationYearService.getIntakeApplicationYear(getCurrentDateString());

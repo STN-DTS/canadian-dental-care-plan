@@ -4,6 +4,7 @@ import type { RouterContextProvider } from 'react-router';
 import { Option } from 'effect';
 
 import { throwAppError } from '~/.server/utils/error-utils';
+import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 import { findContext, getContext } from '~/middlewares/context-storage.server';
 
@@ -49,4 +50,24 @@ export function getUser(context?: Readonly<RouterContextProvider>): UserContext 
 export function findUser(context?: Pick<Readonly<RouterContextProvider>, 'get'>): Option.Option<UserContext> {
   const ctx = context ?? findContext().valueOrUndefined;
   return Option.fromNullishOr(ctx?.get(userContext));
+}
+
+/**
+ * Builds authenticated user details from RAOIDC session tokens.
+ *
+ * @returns The user details, or `Option.none()` when the tokens belong to different subjects or
+ * the userinfo token has no SIN.
+ */
+export function createUserContext(idToken: IdToken, userInfoToken: UserinfoToken): Option.Option<UserContext> {
+  if (idToken.sub !== userInfoToken.sub || !userInfoToken.sin) {
+    return Option.none();
+  }
+
+  return Option.some({
+    id: idToken.sub,
+    sin: userInfoToken.sin,
+    locale: userInfoToken.locale,
+    mocked: userInfoToken.mocked === true,
+    birthdate: userInfoToken.birthdate,
+  });
 }

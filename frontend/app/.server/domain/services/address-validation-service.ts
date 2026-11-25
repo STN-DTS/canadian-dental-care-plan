@@ -47,7 +47,7 @@ export class DefaultAddressValidationService implements AddressValidationService
   @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestDto: AddressCorrectionRequestDto): Promise<AddressCorrectionResultDto> {
     this.log.trace('Getting address correction results', { [ATTR_CDCP_USER_ID]: addressCorrectionRequestDto.userId });
-    this.auditService.createAudit('address-validation.get-address-correction-result', { userId: addressCorrectionRequestDto.userId });
+    this.auditService.createAudit('address-validation.get-address-correction-result');
 
     try {
       const addressCorrectionResultEntity = await this.addressValidationRepository.getAddressCorrectionResult(addressCorrectionRequestDto);

@@ -83,7 +83,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Invalid renewal application channel.', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('benefit-renewal-submit.post', { userId: benefitRenewalSubmissionDto.userId });
+    this.auditService.createAudit('benefit-renewal-submit.post');
 
     try {
       const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);
@@ -121,7 +121,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-renewal-submit.post', { userId: benefitRenewalSubmissionDto.userId });
+    this.auditService.createAudit('protected-renewal-submit.post');
 
     try {
       const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);

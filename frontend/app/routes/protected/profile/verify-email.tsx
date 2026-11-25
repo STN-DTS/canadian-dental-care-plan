@@ -82,8 +82,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.verifyEmail.pageTitle) }),
   };
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.verify-email', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.verify-email');
 
   // Prepare back button context
   const backButtonProfileEmailContext: ProfileEmailContext =
@@ -122,7 +121,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const verificationCodeService = appContainer.get(TYPES.VerificationCodeService);
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.verify-email', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.verify-email');
 
   if (formAction === FORM_ACTION.request) {
     const newVerificationCode = verificationCodeService.createVerificationCode(idToken.sub);

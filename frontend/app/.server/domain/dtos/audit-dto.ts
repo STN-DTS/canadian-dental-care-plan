@@ -1,13 +1,8 @@
 /**
- * Audit context. Logging admits only opaque `userId` and, for `pdf.get`, `letterId`;
- * other metadata is omitted rather than serialized.
+ * Audit metadata. Logging admits only an opaque `letterId` for `pdf.get`; other metadata is
+ * omitted rather than serialized. The audit service resolves the actor from the request user,
+ * so callers cannot supply it.
  */
-export type AuditDetails = Readonly<
-  Record<string, unknown> & {
-    /**
-     * Optional identifier for the user associated with the audit event. When omitted or
-     * `undefined`, the audit service records the authenticated user of the current request.
-     */
-    userId?: string;
-  }
->;
+export type AuditDetails = Readonly<{
+  letterId?: string;
+}>;

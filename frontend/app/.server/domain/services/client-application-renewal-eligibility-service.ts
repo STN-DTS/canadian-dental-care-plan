@@ -68,7 +68,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       userId: request.userId,
     });
 
-    this.auditService.createAudit('client-application-renewal-eligibility.basic-info-and-sin.get', { userId: request.userId });
+    this.auditService.createAudit('client-application-renewal-eligibility.basic-info-and-sin.get');
 
     const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
       onNone: () => {},
@@ -124,7 +124,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       userId: request.userId,
     });
 
-    this.auditService.createAudit('client-application-renewal-eligibility.sin.get', { userId: request.userId });
+    this.auditService.createAudit('client-application-renewal-eligibility.sin.get');
 
     const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
       onNone: () => {},

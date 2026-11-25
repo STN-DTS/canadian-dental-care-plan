@@ -10,7 +10,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
+import type { UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
 import { ButtonLink } from '~/components/buttons';
@@ -71,8 +71,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   };
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.letters', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.letters');
 
   return { letters, letterTypes, meta, sortOrder, SCCH_BASE_URI };
 }

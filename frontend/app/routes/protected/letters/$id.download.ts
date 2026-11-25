@@ -7,7 +7,7 @@ import { Buffer } from 'node:buffer';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getLocale } from '~/.server/utils/locale-utils';
-import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
+import type { UserinfoToken } from '~/.server/utils/raoidc-utils';
 
 import type { Route } from './+types/$id.download';
 
@@ -39,8 +39,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const pdfBytes = await appContainer.get(TYPES.LetterService).getPdfByLetterId({ letterId: params.id, userId: userInfoToken.sub });
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('download.letter', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('download.letter');
 
   const decodedPdfBytes = Buffer.from(pdfBytes, 'base64');
   return new Response(decodedPdfBytes, {

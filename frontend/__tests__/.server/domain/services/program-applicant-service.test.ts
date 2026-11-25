@@ -48,7 +48,7 @@ describe('DefaultProgramApplicantService', () => {
 
     expect(Option.getOrThrow(result)).toBe(programApplicant);
     expect(repository.findApplicantByBasicInfo).toHaveBeenCalledWith(basicInfoRequestEntity);
-    expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.basic-info.get', { userId: 'user-id' });
+    expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.basic-info.get');
   });
 
   it('returns none when the applicant has no category', async () => {
@@ -66,7 +66,7 @@ describe('DefaultProgramApplicantService', () => {
     const result = await service.findProgramApplicantBySin(sinRequest);
 
     expect(Option.isNone(result)).toBe(true);
-    expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.personal-information.get', { userId: 'user-id' });
+    expect(auditService.createAudit).toHaveBeenCalledWith('program-applicant.personal-information.get');
   });
 
   it('propagates strict mapper failures for categorized applicants', async () => {

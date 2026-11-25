@@ -4,7 +4,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { getUser } from '~/.server/context/user-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ProtectedBreadcrumbs } from '~/components/breadcrumbs';
@@ -39,8 +38,7 @@ export async function loader({ context, url, params }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const user = getUser(context);
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-not-required', { userId: user.id });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-not-required');
 
   return { meta, SCCH_BASE_URI };
 }

@@ -23,7 +23,7 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const locale = getLocale(url);
@@ -34,8 +34,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.communication-preferences', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.communication-preferences');
 
   return {
     meta,

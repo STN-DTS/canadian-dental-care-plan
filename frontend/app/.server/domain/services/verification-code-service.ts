@@ -56,7 +56,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
   @Traced()
   createVerificationCode(userId: string): string {
     this.log.trace('Creating verification code', { [ATTR_CDCP_USER_ID]: userId });
-    this.auditService.createAudit('verification-code.post', { userId });
+    this.auditService.createAudit('verification-code.post');
 
     const verificationCode = randomString(5, '0123456789');
     this.log.trace('Verification code created', { [ATTR_CDCP_USER_ID]: userId });
@@ -68,7 +68,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
   async sendVerificationCodeEmail(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): Promise<void> {
     this.log.trace('Sending verification code email', { [ATTR_CDCP_USER_ID]: verificationCodeEmailRequestDto.userId });
 
-    this.auditService.createAudit('verification-code-email.post', { userId: verificationCodeEmailRequestDto.userId });
+    this.auditService.createAudit('verification-code-email.post');
 
     const verificationCodeEmailRequestEntity = this.verificationCodeDtoMapper.mapVerificationCodeEmailRequestDtoToVerificationCodeEmailRequestEntity(verificationCodeEmailRequestDto);
     await this.verificationCodeRepository.sendVerificationCodeEmail(verificationCodeEmailRequestEntity);

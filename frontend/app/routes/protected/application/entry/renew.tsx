@@ -8,7 +8,6 @@ import { isRenewalSelectionCompleted } from '~/.server/routes/helpers/protected-
 import { getContextualAgeCategoryFromDate, getInitialApplicationFlowUrl, getProtectedApplicationState, validateProtectedApplicationContext } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '~/components/card';
@@ -35,8 +34,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.application.entry.type-of-application', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.application.entry.type-of-application');
 
   const state = getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'renewal');

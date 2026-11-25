@@ -3,7 +3,6 @@ import { Trans, useTranslation } from 'react-i18next';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
 import { InlineLink } from '~/components/inline-link';
 import { pageIds } from '~/page-ids';
@@ -21,15 +20,14 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
 
   const t = await getFixedT(url, ['unableToProcessRequest', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.pageTitle) }),
   };
 
-  const idToken: IdToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.renew.unable-to-process-request', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.renew.unable-to-process-request');
 
   return { meta };
 }

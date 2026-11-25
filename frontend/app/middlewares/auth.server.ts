@@ -1,10 +1,11 @@
 import type { MiddlewareFunction } from 'react-router';
 
 import { invariant } from '@dts-stn/invariant';
+import { Option } from 'effect';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { userContext } from '~/.server/context/user-context';
+import { createUserContext, userContext } from '~/.server/context/user-context';
 
 /**
  * Validates the RAOIDC session and adds authenticated user details to request context.
@@ -21,13 +22,7 @@ export const authMiddleware: MiddlewareFunction<Response> = async ({ context, ur
   invariant(idToken.sub === userInfoToken.sub, 'Expected idToken.sub to match userInfoToken.sub');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  context.set(userContext, {
-    id: idToken.sub,
-    sin: userInfoToken.sin,
-    locale: userInfoToken.locale,
-    mocked: userInfoToken.mocked === true,
-    birthdate: userInfoToken.birthdate,
-  });
+  context.set(userContext, Option.getOrThrow(createUserContext(idToken, userInfoToken)));
 
   return await next();
 };

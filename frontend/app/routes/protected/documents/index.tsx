@@ -45,7 +45,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { SCCH_BASE_URI, RECORD_SOURCE_API, RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ClientConfig);
   const { timeZone } = getHints(request);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents', { userId: user.id });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.documents');
 
   return {
     meta,

@@ -38,7 +38,7 @@ export class DefaultHCaptchaService implements HCaptchaService {
   async verifyHCaptchaResponse(hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto): Promise<HCaptchaVerifyResponseDto> {
     this.log.trace('Verifying hCaptcha response', { [ATTR_CDCP_USER_ID]: hCaptchaVerifyRequestDto.userId });
 
-    this.auditService.createAudit('hcaptcha.verify', { userId: hCaptchaVerifyRequestDto.userId });
+    this.auditService.createAudit('hcaptcha.verify');
 
     const hCaptchaVerifyRequestEntity = this.hCaptchaDtoMapper.mapHCaptchaVerifyRequestDtoToHCaptchaVerifyRequestEntity(hCaptchaVerifyRequestDto);
     const hCaptchaVerifyResponseEntity = await this.hCaptchaRepository.verifyHCaptchaResponse(hCaptchaVerifyRequestEntity);

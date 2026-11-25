@@ -83,7 +83,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PUBLIC_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('application-submit.post', { userId: benefitApplicationSubmissionDto.userId });
+    this.auditService.createAudit('application-submit.post');
 
     try {
       const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationSubmissionDto);
@@ -121,7 +121,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-application-submit.post', { userId: protectedBenefitApplicationSubmissionDto.userId });
+    this.auditService.createAudit('protected-application-submit.post');
 
     const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationSubmissionDto);
     const protectedBenefitApplicationSubmissionEntity = { ...protectedBenefitApplicationRequestEntity, applicationId: protectedBenefitApplicationSubmissionDto.applicationId };

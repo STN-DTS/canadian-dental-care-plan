@@ -29,7 +29,7 @@ export const handle = {
 export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMetaTags(loaderData.meta.title));
 
 export async function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer, session } = context.get(appContext);
+  const { appContainer } = context.get(appContext);
   const clientApplication = getClientApplication(context);
 
   const clientNumber = clientApplication.applicantInformation.clientNumber;
@@ -70,8 +70,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   };
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  const idToken = session.get('idToken');
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.eligibility', { userId: idToken.sub });
+  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.eligibility');
 
   const currentCoverage = appContainer.get(TYPES.CoverageService).getCurrentCoverage();
 
