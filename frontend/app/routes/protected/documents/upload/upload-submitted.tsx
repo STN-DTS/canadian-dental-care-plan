@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import { Trans, useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_SUBMITTED } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
@@ -51,7 +52,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-submitted');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_SUBMITTED);
 
   return { meta, uploadedDocuments, SCCH_BASE_URI };
 }

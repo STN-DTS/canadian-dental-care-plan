@@ -169,6 +169,11 @@ in environment configuration.
 
 ## Audit and user attribution
 
+Use the `AUDIT_EVENT_*` constants in
+[audit-event-ids.ts](app/.server/audit/audit-event-ids.ts) for audit calls.
+Add new action IDs there and keep existing values stable: they are emitted as
+`cdcp.audit.event_id`, not as the OpenTelemetry event name.
+
 `AuditService.createAudit` resolves the actor from the authenticated request
 user; `anonymous` is recorded when there is no user. The authentication route
 is the exception: `auth.session-created` and `auth.session-destroyed` supply

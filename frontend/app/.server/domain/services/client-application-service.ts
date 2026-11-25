@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_CLIENT_APPLICATION_BASIC_INFO_GET, AUDIT_EVENT_CLIENT_APPLICATION_SIN_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { ClientApplicationBasicInfoAndSinRequestDto, ClientApplicationBasicInfoRequestDto, ClientApplicationDto, ClientApplicationSinRequestDto } from '~/.server/domain/dtos';
@@ -68,7 +69,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
   async findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestDto: ClientApplicationBasicInfoRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by basic info', userLogAttributes());
 
-    this.auditService.createAudit('client-application.basic-info.get');
+    this.auditService.createAudit(AUDIT_EVENT_CLIENT_APPLICATION_BASIC_INFO_GET);
 
     const clientApplicationBasicInfoRequestEntity = this.clientApplicationDtoMapper.mapClientApplicationBasicInfoRequestDtoToClientApplicationBasicInfoRequestEntity(clientApplicationBasicInfoRequestDto);
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationByBasicInfo(clientApplicationBasicInfoRequestEntity);
@@ -110,7 +111,7 @@ export class DefaultClientApplicationService implements ClientApplicationService
   async findClientApplicationBySin(clientApplicationSinRequestDto: ClientApplicationSinRequestDto): Promise<Option.Option<ClientApplicationDto>> {
     this.log.trace('Finding client application by SIN', userLogAttributes());
 
-    this.auditService.createAudit('client-application.sin.get');
+    this.auditService.createAudit(AUDIT_EVENT_CLIENT_APPLICATION_SIN_GET);
 
     const clientApplicationSinRequestEntity = this.clientApplicationDtoMapper.mapClientApplicationSinRequestDtoToClientApplicationSinRequestEntity(clientApplicationSinRequestDto);
     const clientApplicationEntity = await this.clientApplicationRepository.findClientApplicationBySin(clientApplicationSinRequestEntity);

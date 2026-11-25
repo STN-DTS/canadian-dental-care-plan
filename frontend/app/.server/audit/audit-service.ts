@@ -2,7 +2,8 @@ import { ATTR_ERROR_TYPE, ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-c
 import { injectable } from 'inversify';
 import { isProxy } from 'node:util/types';
 
-import type { AuditDetails, AuthenticationAuditDetails } from '~/.server/audit/audit-dto';
+import type { AuditDetails } from '~/.server/audit/audit-dto';
+import * as auditEventIds from '~/.server/audit/audit-event-ids';
 import { findUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -18,11 +19,10 @@ export interface AuditService {
    * @param eventId A code-defined audit action identifier
    * @param auditDetails An opaque `userId` for authentication events or `letterId` for `pdf.get`
    */
-  createAudit(eventId: AuthenticationAuditEvent, auditDetails?: AuthenticationAuditDetails): void;
-  createAudit(eventId: string, auditDetails?: AuditDetails): void;
+  createAudit(eventId: AuditEventId, auditDetails?: AuditDetails): void;
 }
 
-type AuthenticationAuditEvent = 'auth.session-created' | 'auth.session-destroyed';
+export type AuditEventId = (typeof auditEventIds)[keyof typeof auditEventIds];
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
@@ -39,9 +39,7 @@ export class DefaultAuditService implements AuditService {
     this.log.debug('DefaultAuditService initiated.');
   }
 
-  createAudit(eventId: AuthenticationAuditEvent, auditDetails?: AuthenticationAuditDetails): void;
-  createAudit(eventId: string, auditDetails?: AuditDetails): void;
-  createAudit(eventId: string, auditDetails?: AuditDetails | AuthenticationAuditDetails): void {
+  createAudit(eventId: AuditEventId, auditDetails?: AuditDetails): void {
     if (typeof eventId !== 'string' || !/^[a-z][a-z0-9.-]{0,127}$/.test(eventId)) {
       this.log.error(new Error('Audit record rejected because its action identifier is invalid'), { [ATTR_ERROR_TYPE]: 'audit_event_invalid' });
       return;
@@ -101,8 +99,8 @@ export class DefaultAuditService implements AuditService {
 
     for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(auditDetails))) {
       const value: unknown = descriptor.value;
-      const isAuthActor = key === 'userId' && (eventId === 'auth.session-created' || eventId === 'auth.session-destroyed');
-      const isLetterId = key === 'letterId' && eventId === 'pdf.get';
+      const isAuthActor = key === 'userId' && (eventId === auditEventIds.AUDIT_EVENT_AUTH_SESSION_CREATED || eventId === auditEventIds.AUDIT_EVENT_AUTH_SESSION_DESTROYED);
+      const isLetterId = key === 'letterId' && eventId === auditEventIds.AUDIT_EVENT_PDF_GET;
 
       if ((!isAuthActor && !isLetterId) || !('value' in descriptor)) {
         rejected = true;

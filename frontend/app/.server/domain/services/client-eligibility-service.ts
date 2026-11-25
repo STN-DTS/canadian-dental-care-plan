@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_CLIENT_ELIGIBILITY_NUMBER_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -72,7 +73,7 @@ export class DefaultClientEligibilityService implements ClientEligibilityService
   async listClientEligibilitiesByClientNumbers(clientNumbers: ReadonlyArray<string>): Promise<ReadonlyMap<string, ClientEligibilityDto>> {
     this.log.trace('Getting client eligibility');
 
-    this.auditService.createAudit('client-eligibility.number.get');
+    this.auditService.createAudit(AUDIT_EVENT_CLIENT_ELIGIBILITY_NUMBER_GET);
 
     const clientEligibilities = await this.fetchClientEligibilities(clientNumbers);
 

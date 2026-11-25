@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_APPLICANT_INFORMATION } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -48,7 +49,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     sin: child.information.socialInsuranceNumber,
   }));
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.applicant-information');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_APPLICANT_INFORMATION);
 
   return {
     meta,

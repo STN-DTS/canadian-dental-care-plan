@@ -603,8 +603,11 @@ observed timestamps.
 
 The bounded schema admits:
 
-- `cdcp.audit.event_id`: a code-defined action identifier of at most 128
+- `cdcp.audit.event_id`: a code-defined action identifier from
+  [audit-event-ids.ts](../../app/.server/audit/audit-event-ids.ts), at most 128
   lowercase ASCII letters, digits, dots or hyphens, beginning with a letter.
+  TypeScript callers use `AUDIT_EVENT_*` constants; runtime validation checks
+  the identifier's syntax, not membership in the constants module.
 - `cdcp.user.id`: the existing approved opaque actor identifier. The service
   resolves it from the authenticated user of the current request at call time.
   For `auth.session-created` and `auth.session-destroyed` only, the caller

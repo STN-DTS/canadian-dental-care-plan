@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import { Trans, useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_NOT_REQUIRED } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -38,7 +39,7 @@ export async function loader({ context, url, params }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-not-required');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_NOT_REQUIRED);
 
   return { meta, SCCH_BASE_URI };
 }

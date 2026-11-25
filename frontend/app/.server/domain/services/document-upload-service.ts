@@ -1,6 +1,7 @@
 import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_DOCUMENT_UPLOAD_SCAN, AUDIT_EVENT_DOCUMENT_UPLOAD_UPLOAD } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
@@ -59,7 +60,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     this.log.trace('Uploading document', userLogAttributes());
 
     try {
-      this.auditService.createAudit('documentupload.upload');
+      this.auditService.createAudit(AUDIT_EVENT_DOCUMENT_UPLOAD_UPLOAD);
 
       const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto);
       const responseEntity = await this.documentUploadRepository.uploadDocument(requestEntity);
@@ -91,7 +92,7 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
     this.log.trace('Scanning document', userLogAttributes());
 
     try {
-      this.auditService.createAudit('documentupload.scan');
+      this.auditService.createAudit(AUDIT_EVENT_DOCUMENT_UPLOAD_SCAN);
 
       const requestEntity = this.documentUploadDtoMapper.mapDocumentScanRequestDtoToEntity(documentScanRequestDto);
       const responseEntity = await this.documentUploadRepository.scanDocument(requestEntity);

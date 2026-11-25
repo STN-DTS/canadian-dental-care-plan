@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_HCAPTCHA_VERIFY } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import { createLogger } from '~/.server/logging';
@@ -38,7 +39,7 @@ export class DefaultHCaptchaService implements HCaptchaService {
   async verifyHCaptchaResponse(hCaptchaVerifyRequestDto: HCaptchaVerifyRequestDto): Promise<HCaptchaVerifyResponseDto> {
     this.log.trace('Verifying hCaptcha response', userLogAttributes());
 
-    this.auditService.createAudit('hcaptcha.verify');
+    this.auditService.createAudit(AUDIT_EVENT_HCAPTCHA_VERIFY);
 
     const hCaptchaVerifyRequestEntity = this.hCaptchaDtoMapper.mapHCaptchaVerifyRequestDtoToHCaptchaVerifyRequestEntity(hCaptchaVerifyRequestDto);
     const hCaptchaVerifyResponseEntity = await this.hCaptchaRepository.verifyHCaptchaResponse(hCaptchaVerifyRequestEntity);

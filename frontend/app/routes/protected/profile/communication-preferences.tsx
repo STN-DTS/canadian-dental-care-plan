@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_COMMUNICATION_PREFERENCES } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -34,7 +35,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
   const { COMMUNICATION_METHOD_SUNLIFE_EMAIL_ID, COMMUNICATION_METHOD_GC_DIGITAL_ID } = appContainer.get(TYPES.ServerConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.communication-preferences');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_COMMUNICATION_PREFERENCES);
 
   return {
     meta,

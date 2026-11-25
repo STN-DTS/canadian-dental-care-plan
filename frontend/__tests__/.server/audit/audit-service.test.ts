@@ -71,7 +71,6 @@ describe('DefaultAuditService', () => {
 
   it('ignores a caller-supplied actor for a non-authentication event', async () => {
     await runInRequestScope(createRequestContext('context-user'), () => {
-      // @ts-expect-error -- explicit actors are only permitted for authentication events
       new DefaultAuditService().createAudit('letters.get', { userId: 'spoofed-user' });
     });
 
@@ -174,7 +173,20 @@ describe('DefaultAuditService', () => {
     expect(JSON.stringify(logger.audit.mock.calls)).not.toContain('private-getter-canary');
   });
 
+  it('records a syntactically valid unregistered action that reaches runtime', () => {
+    // @ts-expect-error -- callers must use a registered audit action
+    new DefaultAuditService().createAudit('test.unregistered');
+
+    expect(logger.audit).toHaveBeenCalledExactlyOnceWith('Audit event recorded', {
+      [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
+      'cdcp.audit.event_id': 'test.unregistered',
+      'cdcp.user.id': 'anonymous',
+    });
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
   it.each(['actor@example.invalid', '999999998', 'Bearer synthetic-token', 'event\nforgery', 'a'.repeat(129)])('rejects an invalid audit action without logging its value: %s', (eventId) => {
+    // @ts-expect-error -- exercise runtime validation of untyped input
     new DefaultAuditService().createAudit(eventId);
 
     expect(logger.audit).not.toHaveBeenCalled();

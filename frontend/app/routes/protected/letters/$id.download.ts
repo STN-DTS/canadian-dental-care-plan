@@ -4,6 +4,7 @@ import { create } from 'content-disposition';
 import { Option } from 'effect';
 import { Buffer } from 'node:buffer';
 
+import { AUDIT_EVENT_DOWNLOAD_LETTER } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getLocale } from '~/.server/utils/locale-utils';
@@ -36,7 +37,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   const pdfBytes = await appContainer.get(TYPES.LetterService).getPdfByLetterId({ letterId: params.id });
 
-  appContainer.get(TYPES.AuditService).createAudit('download.letter');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_DOWNLOAD_LETTER);
 
   const decodedPdfBytes = Buffer.from(pdfBytes, 'base64');
   return new Response(decodedPdfBytes, {

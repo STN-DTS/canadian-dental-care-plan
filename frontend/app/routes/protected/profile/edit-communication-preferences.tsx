@@ -7,6 +7,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { PickDeep } from 'type-fest';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_COMMUNICATION_PREFERENCES, AUDIT_EVENT_UPDATE_DATA_PROFILE_EDIT_COMMUNICATION_PREFERENCES } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -77,7 +78,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const gcCommunicationMethods = appContainer.get(TYPES.GCCommunicationMethodService).listLocalizedGCCommunicationMethods(locale);
   const sunLifeCommunicationMethods = appContainer.get(TYPES.SunLifeCommunicationMethodService).listLocalizedSunLifeCommunicationMethods(locale);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-communication-preferences');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_COMMUNICATION_PREFERENCES);
 
   return {
     meta,
@@ -160,7 +161,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     preferredMethodGovernmentOfCanada: parsedDataResult.data.preferredMethodGovernmentOfCanada,
   });
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-communication-preferences');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_EDIT_COMMUNICATION_PREFERENCES);
 
   const redirectUrl = getPathById('protected/profile/communication-preferences', params);
   return { success: true, redirectUrl, revalidate: false };

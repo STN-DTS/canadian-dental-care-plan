@@ -1,3 +1,4 @@
+import { AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_UPLOAD } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { resetDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
@@ -22,7 +23,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const t = await getFixedT(url, ['documents', 'gcweb']);
   const documentTypes = await appContainer.get(TYPES.EvidentiaryDocumentTypeService).listAndSortLocalizedEvidentiaryDocumentTypesByStatus(EVIDENTIARY_DOCUMENT_TYPE_STATUS.active, locale);
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents-upload');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_DOCUMENTS_UPLOAD);
 
   return {
     meta: { title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.upload.pageTitle) }) },

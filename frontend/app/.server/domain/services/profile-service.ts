@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_PROFILE_UPDATE_COMMUNICATION_PREFERENCES_POST, AUDIT_EVENT_PROFILE_UPDATE_EMAIL_ADDRESS_POST, AUDIT_EVENT_PROFILE_UPDATE_PHONE_NUMBERS_POST } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { UpdateAddressRequestDto, UpdateCommunicationPreferenceRequestDto, UpdateDentalBenefitsRequestDto, UpdateEmailAddressRequestDto, UpdatePhoneNumbersRequestDto } from '~/.server/domain/dtos';
@@ -79,7 +80,7 @@ export class DefaultProfileService implements ProfileService {
   async updateCommunicationPreferences(updateCommunicationPreferenceRequestDto: UpdateCommunicationPreferenceRequestDto): Promise<void> {
     this.log.trace('Updating communication preferences', userLogAttributes());
 
-    this.auditService.createAudit('profile-update.communication-preferences.post');
+    this.auditService.createAudit(AUDIT_EVENT_PROFILE_UPDATE_COMMUNICATION_PREFERENCES_POST);
 
     const updateCommunicationPreferenceRequestEntity = this.profileDtoMapper.mapUpdateCommunicationPreferenceRequestDtoToUpdateCommunicationPreferenceRequestEntity(updateCommunicationPreferenceRequestDto);
     await this.profileRepository.updateCommunicationPreferences(updateCommunicationPreferenceRequestEntity);
@@ -91,7 +92,7 @@ export class DefaultProfileService implements ProfileService {
   async updatePhoneNumbers(updatePhoneNumbersRequestDto: UpdatePhoneNumbersRequestDto): Promise<void> {
     this.log.trace('Updating phone numbers', userLogAttributes());
 
-    this.auditService.createAudit('profile-update.phone-numbers.post');
+    this.auditService.createAudit(AUDIT_EVENT_PROFILE_UPDATE_PHONE_NUMBERS_POST);
 
     const updatePhoneNumbersRequestEntity = this.profileDtoMapper.mapUpdatePhoneNumbersRequestDtoToUpdatePhoneNumbersRequestEntity(updatePhoneNumbersRequestDto);
     await this.profileRepository.updatePhoneNumbers(updatePhoneNumbersRequestEntity);
@@ -113,7 +114,7 @@ export class DefaultProfileService implements ProfileService {
   async updateEmailAddress(updateEmailAddressRequestDto: UpdateEmailAddressRequestDto): Promise<void> {
     this.log.trace('Updating email address', userLogAttributes());
 
-    this.auditService.createAudit('profile-update.email-address.post');
+    this.auditService.createAudit(AUDIT_EVENT_PROFILE_UPDATE_EMAIL_ADDRESS_POST);
 
     const updateEmailAddressRequestEntity = this.profileDtoMapper.mapUpdateEmailAddressRequestDtoToUpdateEmailAddressRequestEntity(updateEmailAddressRequestDto);
     await this.profileRepository.updateEmailAddress(updateEmailAddressRequestEntity);

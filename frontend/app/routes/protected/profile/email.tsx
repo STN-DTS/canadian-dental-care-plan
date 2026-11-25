@@ -5,6 +5,7 @@ import { data, redirect, useFetcher } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EMAIL_ADDRESS, AUDIT_EVENT_UPDATE_DATA_PROFILE_EMAIL_ADDRESS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -93,7 +94,7 @@ export async function loader({ context, params, request, url }: Route.LoaderArgs
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.email.pageTitle) }),
   };
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.email-address');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_EMAIL_ADDRESS);
 
   return {
     meta,
@@ -133,7 +134,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.email-address');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_EMAIL_ADDRESS);
 
   const isNewEmail =
     clientApplication.contactInformation.email !== parsedDataResult.data.email ||

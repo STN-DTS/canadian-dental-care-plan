@@ -5,6 +5,7 @@ import { redirect, useNavigate, useNavigation } from 'react-router';
 import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_APPLICATION_INDEX } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -34,7 +35,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.application.index');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_APPLICATION_INDEX);
 
   const applicationYearService = appContainer.get(TYPES.ApplicationYearService);
   const applicationYear = applicationYearService.getIntakeApplicationYear(getCurrentDateString());

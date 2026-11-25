@@ -7,6 +7,7 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_MAILING_ADDRESS, AUDIT_EVENT_UPDATE_DATA_PROFILE_MAILING_ADDRESS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -78,7 +79,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.mailingAddress.pageTitle) }),
   };
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.mailing-address');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_MAILING_ADDRESS);
 
   return {
     meta,
@@ -140,7 +141,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const isUseSelectedAddressAction = formAction === FORM_ACTION.useSelectedAddress;
   const canProceed = isNotCanada || isUseInvalidAddressAction || isUseSelectedAddressAction;
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.mailing-address');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_MAILING_ADDRESS);
 
   if (canProceed) {
     await appContainer.get(TYPES.ProfileService).updateAddresses({

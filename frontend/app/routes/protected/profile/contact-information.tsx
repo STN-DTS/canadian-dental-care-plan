@@ -2,6 +2,7 @@ import { faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-sv
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_CONTACT_INFORMATION } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -39,7 +40,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 
   const locale = getLocale(url);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.contact-information');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_CONTACT_INFORMATION);
 
   const provinceTerritoryStateService = appContainer.get(TYPES.ProvinceTerritoryStateService);
   const countryService = appContainer.get(TYPES.CountryService);

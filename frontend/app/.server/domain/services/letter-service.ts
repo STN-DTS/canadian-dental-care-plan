@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { sort } from 'moderndash';
 
+import { AUDIT_EVENT_LETTERS_GET, AUDIT_EVENT_PDF_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { LetterDto, LettersRequestDto, PdfRequestDto } from '~/.server/domain/dtos';
@@ -16,7 +17,7 @@ export interface LetterService {
   /**
    * Find all letters for a given client id.
    *
-   * @param lettersRequestDto The letters request dto that includes the client id and user id for auditing
+   * @param lettersRequestDto The client ID and sort order.
    * @returns A Promise that resolves to all letters found for the client id.
    */
   findLettersByClientId(lettersRequestDto: LettersRequestDto): Promise<ReadonlyArray<LetterDto>>;
@@ -24,7 +25,7 @@ export interface LetterService {
   /**
    * Retrieve the PDF for a given letter id.
    *
-   * @param pdfRequestDto  The PDF request dto that includes the letter id and user id for auditing
+   * @param pdfRequestDto The letter ID.
    * @returns A Promise that resolves to the PDF data as a base64-encoded string representing the bytes.
    */
   getPdfByLetterId(pdfRequestDto: PdfRequestDto): Promise<string>;
@@ -53,7 +54,7 @@ export class DefaultLetterService implements LetterService {
   async findLettersByClientId({ clientId, sortOrder = 'desc' }: LettersRequestDto): Promise<ReadonlyArray<LetterDto>> {
     this.log.trace('Finding letters', { ...userLogAttributes(), [ATTR_CDCP_LETTERS_SORT_ORDER]: sortOrder });
 
-    this.auditService.createAudit('letters.get');
+    this.auditService.createAudit(AUDIT_EVENT_LETTERS_GET);
 
     const letterEntities = await this.letterRepository.findLettersByClientId(clientId);
     const letterDtos = this.letterDtoMapper.mapLetterEntitiesToLetterDtos(letterEntities);
@@ -70,7 +71,7 @@ export class DefaultLetterService implements LetterService {
   async getPdfByLetterId({ letterId }: PdfRequestDto): Promise<string> {
     this.log.trace('Finding letter PDF', { [ATTR_CDCP_LETTER_ID]: letterId, ...userLogAttributes() });
 
-    this.auditService.createAudit('pdf.get', { letterId });
+    this.auditService.createAudit(AUDIT_EVENT_PDF_GET, { letterId });
 
     const pdfEntity = await this.letterRepository.getPdfByLetterId(letterId);
     const pdf = this.letterDtoMapper.mapPdfEntityToString(pdfEntity);

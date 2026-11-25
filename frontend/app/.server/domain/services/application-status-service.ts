@@ -1,6 +1,7 @@
 import type { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_APPLICATION_STATUS_POST } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { ApplicationStatusBasicInfoRequestDto, ApplicationStatusSinRequestDto } from '~/.server/domain/dtos';
@@ -59,7 +60,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
   async findApplicationStatusIdByBasicInfo(applicationStatusBasicInfoRequestDto: ApplicationStatusBasicInfoRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by basic info', userLogAttributes());
 
-    this.auditService.createAudit('application-status.post');
+    this.auditService.createAudit(AUDIT_EVENT_APPLICATION_STATUS_POST);
 
     const applicationStatusBasicInfoRequestEntity = this.applicationStatusDtoMapper.mapApplicationStatusBasicInfoRequestDtoToApplicationStatusBasicInfoRequestEntity(applicationStatusBasicInfoRequestDto);
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusByBasicInfo(applicationStatusBasicInfoRequestEntity);
@@ -73,7 +74,7 @@ export class DefaultApplicationStatusService implements ApplicationStatusService
   async findApplicationStatusIdBySin(applicationStatusSinRequestDto: ApplicationStatusSinRequestDto): Promise<Option.Option<string>> {
     this.log.trace('Finding application status by SIN', userLogAttributes());
 
-    this.auditService.createAudit('application-status.post');
+    this.auditService.createAudit(AUDIT_EVENT_APPLICATION_STATUS_POST);
 
     const applicationStatusSinRequestEntity = this.applicationStatusDtoMapper.mapApplicationStatusSinRequestDtoToApplicationStatusSinRequestEntity(applicationStatusSinRequestDto);
     const applicationStatusEntity = await this.applicationStatusRepository.getApplicationStatusBySin(applicationStatusSinRequestEntity);

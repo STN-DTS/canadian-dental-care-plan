@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_DENTAL_BENEFITS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -76,7 +77,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.dental-benefits');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_DENTAL_BENEFITS);
 
   return { meta, clientApplication, clientDentalBenefits, children, SCCH_BASE_URI };
 }

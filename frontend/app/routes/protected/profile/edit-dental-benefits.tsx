@@ -6,6 +6,7 @@ import { data, redirect, useFetcher } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_DENTAL_BENEFITS, AUDIT_EVENT_UPDATE_DATA_PROFILE_EDIT_DENTAL_BENEFITS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -100,7 +101,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     dcTermsTitle: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.editDentalBenefits.dcTermsTitle) }),
   };
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.edit-dental-benefits');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_DENTAL_BENEFITS);
 
   return {
     federalProgram,
@@ -210,7 +211,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     provincialTerritorialSocialProgram: parsedProvincialTerritorialBenefitsResult.data.provincialTerritorialSocialProgram,
   });
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.edit-dental-benefits');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_EDIT_DENTAL_BENEFITS);
 
   return redirect(getPathById('protected/profile/dental-benefits', params));
 }

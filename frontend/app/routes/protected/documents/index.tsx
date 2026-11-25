@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_DOCUMENTS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
@@ -43,7 +44,7 @@ export async function loader({ context, request, url }: Route.LoaderArgs) {
   const { SCCH_BASE_URI, RECORD_SOURCE_API, RECORD_SOURCE_MSCA } = appContainer.get(TYPES.ClientConfig);
   const { timeZone } = getHints(request);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.documents');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_DOCUMENTS);
 
   return {
     meta,

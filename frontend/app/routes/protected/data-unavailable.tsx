@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_RENEW_DATA_UNAVAILABLE } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -30,7 +31,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.renew.data-unavailable');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_RENEW_DATA_UNAVAILABLE);
 
   return { meta, SCCH_BASE_URI };
 }

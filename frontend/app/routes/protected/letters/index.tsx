@@ -6,6 +6,7 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_LETTERS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
@@ -71,7 +72,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   };
   const { SCCH_BASE_URI } = appContainer.get(TYPES.ClientConfig);
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.letters');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_LETTERS);
 
   return { letters, letterTypes, meta, sortOrder, SCCH_BASE_URI };
 }

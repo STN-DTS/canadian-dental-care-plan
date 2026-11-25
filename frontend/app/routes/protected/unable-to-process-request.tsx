@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_RENEW_UNABLE_TO_PROCESS_REQUEST } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getFixedT } from '~/.server/utils/locale-utils';
@@ -27,7 +28,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.pageTitle) }),
   };
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.renew.unable-to-process-request');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_RENEW_UNABLE_TO_PROCESS_REQUEST);
 
   return { meta };
 }

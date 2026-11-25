@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_CLIENT_APPLICATION_RENEWAL_ELIGIBILITY_BASIC_INFO_AND_SIN_GET, AUDIT_EVENT_CLIENT_APPLICATION_RENEWAL_ELIGIBILITY_SIN_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { ClientApplicationRenewalEligibilityBasicInfoAndSinRequestDto, ClientApplicationRenewalEligibilityDto, ClientApplicationRenewalEligibilitySinRequestDto } from '~/.server/domain/dtos';
@@ -68,7 +69,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       sin: request.sin,
     });
 
-    this.auditService.createAudit('client-application-renewal-eligibility.basic-info-and-sin.get');
+    this.auditService.createAudit(AUDIT_EVENT_CLIENT_APPLICATION_RENEWAL_ELIGIBILITY_BASIC_INFO_AND_SIN_GET);
 
     const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
       onNone: () => {},
@@ -122,7 +123,7 @@ export class DefaultClientApplicationRenewalEligibilityService implements Client
       applicationYearId: request.applicationYear.applicationYearId,
     });
 
-    this.auditService.createAudit('client-application-renewal-eligibility.sin.get');
+    this.auditService.createAudit(AUDIT_EVENT_CLIENT_APPLICATION_RENEWAL_ELIGIBILITY_SIN_GET);
 
     const clientApplicationRenewalEligibilityDto = await Option.match(clientApplicationDto, {
       onNone: () => {},

@@ -5,6 +5,7 @@ import { data, redirect, useFetcher } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
+import { AUDIT_EVENT_PAGE_VIEW_PROFILE_PHONE_NUMBER, AUDIT_EVENT_UPDATE_DATA_PROFILE_PHONE_NUMBER } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
@@ -59,7 +60,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
     title: t(($) => $.meta.title.mscaTemplate, { ns: 'gcweb', title: t(($) => $.phoneNumber.pageTitle) }),
   };
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.profile.phone-number');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_PROFILE_PHONE_NUMBER);
 
   return {
     meta,
@@ -104,7 +105,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     phoneNumberAlt: parsedDataResult.data.phoneNumberAlt,
   });
 
-  appContainer.get(TYPES.AuditService).createAudit('update-data.profile.phone-number');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_PHONE_NUMBER);
 
   return redirect(getPathById('protected/profile/contact-information', params));
 }

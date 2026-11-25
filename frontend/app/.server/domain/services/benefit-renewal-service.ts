@@ -1,6 +1,7 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable, optional } from 'inversify';
 
+import { AUDIT_EVENT_BENEFIT_RENEWAL_SUBMIT_POST, AUDIT_EVENT_PROTECTED_RENEWAL_SUBMIT_POST } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -84,7 +85,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Invalid renewal application channel.', ErrorCodes.APP_SUBM_PUBLIC_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('benefit-renewal-submit.post');
+    this.auditService.createAudit(AUDIT_EVENT_BENEFIT_RENEWAL_SUBMIT_POST);
 
     try {
       const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);
@@ -122,7 +123,7 @@ export class DefaultBenefitRenewalService implements BenefitRenewalService {
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_RENEWAL_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-renewal-submit.post');
+    this.auditService.createAudit(AUDIT_EVENT_PROTECTED_RENEWAL_SUBMIT_POST);
 
     try {
       const benefitRenewalRequestEntity = this.benefitRenewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity(benefitRenewalSubmissionDto);

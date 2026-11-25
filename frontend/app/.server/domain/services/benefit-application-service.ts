@@ -1,6 +1,7 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable, optional } from 'inversify';
 
+import { AUDIT_EVENT_APPLICATION_SUBMIT_POST, AUDIT_EVENT_PROTECTED_APPLICATION_SUBMIT_POST } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
@@ -84,7 +85,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PUBLIC_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('application-submit.post');
+    this.auditService.createAudit(AUDIT_EVENT_APPLICATION_SUBMIT_POST);
 
     try {
       const benefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(benefitApplicationSubmissionDto);
@@ -122,7 +123,7 @@ export class DefaultBenefitApplicationService implements BenefitApplicationServi
       throwAppError('Invalid application channel code', ErrorCodes.APP_SUBM_PROTECTED_APPLICATION_CHANNEL_INVALID);
     }
 
-    this.auditService.createAudit('protected-application-submit.post');
+    this.auditService.createAudit(AUDIT_EVENT_PROTECTED_APPLICATION_SUBMIT_POST);
 
     const protectedBenefitApplicationRequestEntity = this.benefitApplicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity(protectedBenefitApplicationSubmissionDto);
     const protectedBenefitApplicationSubmissionEntity = { ...protectedBenefitApplicationRequestEntity, applicationId: protectedBenefitApplicationSubmissionDto.applicationId };

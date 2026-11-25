@@ -2,6 +2,7 @@ import { invariant } from '@dts-stn/invariant';
 import { faCircleCheck, faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 import { useTranslation } from 'react-i18next';
 
+import { AUDIT_EVENT_PAGE_VIEW_APPLICATION_ENTRY_ELIGIBILITY_REQUIREMENTS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { isTaxFilingSectionCompleted, isTermsAndConditionsSectionCompleted } from '~/.server/routes/helpers/protected-application-entry-section-checks';
@@ -32,7 +33,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sin, 'Expected userInfoToken.sin to be defined');
 
-  appContainer.get(TYPES.AuditService).createAudit('page-view.application.entry.eligibility-requirements');
+  appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_APPLICATION_ENTRY_ELIGIBILITY_REQUIREMENTS);
 
   const state = getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);

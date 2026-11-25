@@ -1,6 +1,7 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_ADDRESS_VALIDATION_GET_ADDRESS_CORRECTION_RESULT } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { AddressCorrectionRequestDto, AddressCorrectionResultDto } from '~/.server/domain/dtos';
@@ -47,7 +48,7 @@ export class DefaultAddressValidationService implements AddressValidationService
   @Traced()
   async getAddressCorrectionResult(addressCorrectionRequestDto: AddressCorrectionRequestDto): Promise<AddressCorrectionResultDto> {
     this.log.trace('Getting address correction results', userLogAttributes());
-    this.auditService.createAudit('address-validation.get-address-correction-result');
+    this.auditService.createAudit(AUDIT_EVENT_ADDRESS_VALIDATION_GET_ADDRESS_CORRECTION_RESULT);
 
     try {
       const addressCorrectionResultEntity = await this.addressValidationRepository.getAddressCorrectionResult(addressCorrectionRequestDto);

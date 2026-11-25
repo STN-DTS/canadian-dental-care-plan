@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_APPLICANT_BASIC_INFO_GET, AUDIT_EVENT_APPLICANT_PERSONAL_INFORMATION_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { ApplicantDto, FindApplicantByBasicInfoDto, FindApplicantBySinRequestDto } from '~/.server/domain/dtos';
@@ -19,7 +20,7 @@ export interface ApplicantService {
   /**
    * Finds an applicant by client number and identity details.
    *
-   * @param request Applicant identity details and audit user identifier.
+   * @param request Applicant identity details.
    * @returns Applicant when found; otherwise, `None`.
    */
   findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>>;
@@ -27,7 +28,7 @@ export interface ApplicantService {
   /**
    * Finds an applicant by SIN.
    *
-   * @param request Applicant SIN and audit user identifier.
+   * @param request Applicant SIN.
    * @returns Applicant when found; otherwise, `None`.
    */
   findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>>;
@@ -52,7 +53,7 @@ export class DefaultApplicantService implements ApplicantService {
   @Traced()
   async findApplicantByBasicInfo(request: FindApplicantByBasicInfoDto): Promise<Option.Option<ApplicantDto>> {
     this.log.trace('Finding applicant by basic info', userLogAttributes());
-    this.auditService.createAudit('applicant.basic-info.get');
+    this.auditService.createAudit(AUDIT_EVENT_APPLICANT_BASIC_INFO_GET);
 
     const applicantBasicInfoRequestEntity = this.applicantDtoMapper.mapFindApplicantByBasicInfoRequestDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntity = await this.applicantRepository.findApplicantByBasicInfo(applicantBasicInfoRequestEntity);
@@ -70,7 +71,7 @@ export class DefaultApplicantService implements ApplicantService {
   @Traced()
   async findApplicantBySin(request: FindApplicantBySinRequestDto): Promise<Option.Option<ApplicantDto>> {
     this.log.trace('Finding applicant by SIN', userLogAttributes());
-    this.auditService.createAudit('applicant.personal-information.get');
+    this.auditService.createAudit(AUDIT_EVENT_APPLICANT_PERSONAL_INFORMATION_GET);
 
     const applicantRequestEntity = this.applicantDtoMapper.mapFindApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantResponseEntity = await this.applicantRepository.findApplicantBySin(applicantRequestEntity);

@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_PROGRAM_APPLICANT_BASIC_INFO_GET, AUDIT_EVENT_PROGRAM_APPLICANT_PERSONAL_INFORMATION_GET } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { FindProgramApplicantByBasicInfoDto, FindProgramApplicantBySinRequestDto, ProgramApplicantDto } from '~/.server/domain/dtos';
@@ -17,7 +18,7 @@ export interface ProgramApplicantService {
   /**
    * Finds a program applicant by client number and identity details.
    *
-   * @param request Applicant identity details and audit user identifier.
+   * @param request Applicant identity details.
    * @returns Program applicant when found and categorized; otherwise, `None`.
    * @throws When a categorized applicant is missing fields required by `ProgramApplicantDto`.
    */
@@ -26,7 +27,7 @@ export interface ProgramApplicantService {
   /**
    * Finds a program applicant by SIN.
    *
-   * @param request Applicant SIN and audit user identifier.
+   * @param request Applicant SIN.
    * @returns Program applicant when found and categorized; otherwise, `None`.
    * @throws When a categorized applicant is missing fields required by `ProgramApplicantDto`.
    */
@@ -50,7 +51,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
 
   @Traced()
   async findProgramApplicantByBasicInfo(request: FindProgramApplicantByBasicInfoDto): Promise<Option.Option<ProgramApplicantDto>> {
-    this.auditService.createAudit('program-applicant.basic-info.get');
+    this.auditService.createAudit(AUDIT_EVENT_PROGRAM_APPLICANT_BASIC_INFO_GET);
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantByBasicInfoDtoToFindApplicantByBasicInfoRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantByBasicInfo(requestEntity);
@@ -73,7 +74,7 @@ export class DefaultProgramApplicantService implements ProgramApplicantService {
 
   @Traced()
   async findProgramApplicantBySin(request: FindProgramApplicantBySinRequestDto): Promise<Option.Option<ProgramApplicantDto>> {
-    this.auditService.createAudit('program-applicant.personal-information.get');
+    this.auditService.createAudit(AUDIT_EVENT_PROGRAM_APPLICANT_PERSONAL_INFORMATION_GET);
 
     const requestEntity = this.programApplicantDtoMapper.mapFindProgramApplicantBySinRequestDtoToFindApplicantBySinRequestEntity(request);
     const applicantEntityOption = await this.applicantRepository.findApplicantBySin(requestEntity);

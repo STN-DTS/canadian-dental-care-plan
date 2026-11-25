@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 
+import { AUDIT_EVENT_VERIFICATION_CODE_EMAIL_POST, AUDIT_EVENT_VERIFICATION_CODE_POST } from '~/.server/audit/audit-event-ids';
 import type { AuditService } from '~/.server/audit/audit-service';
 import { TYPES } from '~/.server/constants';
 import type { VerificationCodeEmailRequestDto } from '~/.server/domain/dtos';
@@ -55,7 +56,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
   @Traced()
   createVerificationCode(): string {
     this.log.trace('Creating verification code', userLogAttributes());
-    this.auditService.createAudit('verification-code.post');
+    this.auditService.createAudit(AUDIT_EVENT_VERIFICATION_CODE_POST);
 
     const verificationCode = randomString(5, '0123456789');
     this.log.trace('Verification code created', userLogAttributes());
@@ -67,7 +68,7 @@ export class DefaultVerificationCodeService implements VerificationCodeService {
   async sendVerificationCodeEmail(verificationCodeEmailRequestDto: VerificationCodeEmailRequestDto): Promise<void> {
     this.log.trace('Sending verification code email', userLogAttributes());
 
-    this.auditService.createAudit('verification-code-email.post');
+    this.auditService.createAudit(AUDIT_EVENT_VERIFICATION_CODE_EMAIL_POST);
 
     const verificationCodeEmailRequestEntity = this.verificationCodeDtoMapper.mapVerificationCodeEmailRequestDtoToVerificationCodeEmailRequestEntity(verificationCodeEmailRequestDto);
     await this.verificationCodeRepository.sendVerificationCodeEmail(verificationCodeEmailRequestEntity);

@@ -5,6 +5,7 @@ import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventi
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 
+import { AUDIT_EVENT_AUTH_SESSION_CREATED, AUDIT_EVENT_AUTH_SESSION_DESTROYED } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 /**
  * Handler for /auth/logout{?locale=(en|fr)} requests
@@ -113,7 +114,7 @@ async function handleLogoutRequest({ context, url }: Pick<Route.LoaderArgs, 'con
 
   log.debug('Destroying application session before provider logout', { [ATTR_SESSION_ID]: session.id });
   const auditService = appContainer.get(TYPES.AuditService);
-  auditService.createAudit('auth.session-destroyed', { userId: idToken.sub });
+  auditService.createAudit(AUDIT_EVENT_AUTH_SESSION_DESTROYED, { userId: idToken.sub });
 
   await session.destroy();
   return redirectDocument(signoutUrl);
@@ -202,7 +203,7 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
 
   log.debug('RAOIDC login successful; redirecting to application');
   const auditService = appContainer.get(TYPES.AuditService);
-  auditService.createAudit('auth.session-created', { userId: idToken.sub });
+  auditService.createAudit(AUDIT_EVENT_AUTH_SESSION_CREATED, { userId: idToken.sub });
 
   return redirectDocument(returnUrl);
 }
