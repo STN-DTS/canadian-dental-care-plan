@@ -116,6 +116,10 @@ export class DefaultOpenIdService implements AuthService {
       throw callbackInvalidError('state_missing_mismatched_or_duplicated');
     }
 
+    if (searchParams.getAll('code').length !== 1 || searchParams.getAll('state').length !== 1) {
+      throw callbackInvalidError('duplicate_callback_parameters');
+    }
+
     const configuration = await this.discover();
 
     // Rebuilt from the configured URI so the token request sends exactly the redirect_uri used at authorization.
