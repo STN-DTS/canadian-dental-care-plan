@@ -2,6 +2,7 @@ import { ATTR_ERROR_TYPE, ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-c
 import { injectable } from 'inversify';
 import { isProxy } from 'node:util/types';
 
+import { findUser } from '~/.server/context/user-context';
 import type { AuditDetails } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -10,6 +11,9 @@ import { ATTR_CDCP_AUDIT_EVENT_ID, ATTR_CDCP_LETTER_ID, ATTR_CDCP_USER_ID } from
 export interface AuditService {
   /**
    * Creates an audit log entry for a given event.
+   *
+   * When `userId` is omitted or `undefined`, the authenticated user of the current
+   * request (if any) is recorded as the actor. An explicitly supplied `userId` wins.
    *
    * @param eventId A code-defined audit action identifier
    * @param auditDetails Only opaque `userId` and, for `pdf.get`, `letterId` are admitted
@@ -36,34 +40,54 @@ export class DefaultAuditService implements AuditService {
       return;
     }
 
+    const { attributes, actorSupplied } = this.projectAuditDetails(eventId, auditDetails);
+
+    if (!actorSupplied) {
+      const contextUserId = findUser().valueOrUndefined?.id;
+
+      if (isAdmissibleIdentifier(contextUserId)) {
+        attributes[ATTR_CDCP_USER_ID] = contextUserId;
+      }
+    }
+
     this.log.audit('Audit event recorded', {
       [ATTR_OTEL_EVENT_NAME]: 'cdcp.audit.recorded',
       [ATTR_CDCP_AUDIT_EVENT_ID]: eventId,
-      ...this.projectAuditDetails(eventId, auditDetails),
+      ...attributes,
     });
   }
 
-  private projectAuditDetails(eventId: string, auditDetails: unknown): Record<string, string> {
+  /**
+   * Projects caller metadata onto approved audit attributes. `actorSupplied` is `true` when the
+   * caller provided a non-`undefined` actor (admitted or rejected), or metadata that cannot be
+   * inspected safely; in both cases no contextual actor is substituted.
+   */
+  private projectAuditDetails(eventId: string, auditDetails: unknown): { attributes: Record<string, string>; actorSupplied: boolean } {
     if (auditDetails === undefined) {
-      return {};
+      return { attributes: {}, actorSupplied: false };
     }
 
     if (typeof auditDetails !== 'object' || auditDetails === null || isProxy(auditDetails)) {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
-      return {};
+      return { attributes: {}, actorSupplied: true };
     }
 
     const attributes: Record<string, string> = {};
+    let actorSupplied = false;
     let rejected = false;
 
     for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(auditDetails))) {
       const attribute = key === 'userId' ? ATTR_CDCP_USER_ID : key === 'letterId' && eventId === 'pdf.get' ? ATTR_CDCP_LETTER_ID : undefined;
       const value: unknown = descriptor.value;
 
+      if (attribute === ATTR_CDCP_USER_ID && (!('value' in descriptor) || value !== undefined)) {
+        actorSupplied = true;
+      }
+
       if (attribute === undefined || !('value' in descriptor)) {
         rejected = true;
       } else if (value !== undefined) {
-        if (typeof value === 'string' && /^[a-zA-Z0-9._:-]{1,255}$/.test(value) && !/^\d{3}[-.]?\d{3}[-.]?\d{3}$/.test(value)) {
+        if (isAdmissibleIdentifier(value)) {
           attributes[attribute] = value;
         } else {
           rejected = true;
@@ -75,6 +99,10 @@ export class DefaultAuditService implements AuditService {
       this.log.warn('Unapproved audit metadata omitted', { [ATTR_ERROR_TYPE]: 'audit_metadata_rejected' });
     }
 
-    return attributes;
+    return { attributes, actorSupplied };
   }
+}
+
+function isAdmissibleIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-zA-Z0-9._:-]{1,255}$/.test(value) && !/^\d{3}[-.]?\d{3}[-.]?\d{3}$/.test(value);
 }
