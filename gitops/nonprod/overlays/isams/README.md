@@ -13,11 +13,6 @@ hostname, Redis instance, and session storage.
 | Name suffix | `-isams`                        |
 | Hostname    | `cdcp-isams.dev-dp.dts-stn.com` |
 
-> [!WARNING]
-> This is a draft. The nonprod GitOps workflow deploys every overlay on merge
-> to `main`. Do not merge until every item in [Before merging](#before-merging)
-> is resolved and deployment is approved.
-
 ## Base Components
 
 - Frontend
