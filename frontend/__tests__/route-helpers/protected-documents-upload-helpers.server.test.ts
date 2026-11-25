@@ -1,3 +1,6 @@
+import { RouterContextProvider } from 'react-router';
+
+import { Option } from 'effect';
 import type { TFunction } from 'i18next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock, mockFn } from 'vitest-mock-extended';
@@ -6,9 +9,11 @@ import type { AppContainerProvider } from '~/.server/app-container-provider';
 import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
+import { userContext } from '~/.server/context/user-context';
 import type { DocumentUploadService } from '~/.server/domain/services';
 import { getFixedT } from '~/.server/utils/locale-utils';
-import { getUrl } from '~/middlewares/context-storage.server';
+import { ErrorCodes } from '~/errors/error-codes';
+import { findContext, getContext, getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
 import { uploadDocuments, validateDocumentContents } from '~/route-helpers/protected-documents-upload-helpers.server';
 import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-utils';
@@ -38,6 +43,8 @@ const translations = {
 const getAppContextMock = vi.mocked(getAppContext, { partial: true });
 const getApplicantMock = vi.mocked(getApplicant, { partial: true });
 const getFixedTMock = vi.mocked(getFixedT);
+const findContextMock = vi.mocked(findContext);
+const getContextMock = vi.mocked(getContext);
 const getUrlMock = vi.mocked(getUrl);
 const arrayBufferToBase64Mock = vi.mocked(arrayBufferToBase64);
 const isFileContentTypeAllowedMock = vi.mocked(isFileContentTypeAllowed);
@@ -49,6 +56,10 @@ beforeEach(() => {
   tMock.mockImplementation((selector) => selector(translations as never));
   getAppContextMock.mockReturnValue({ appContainer: appContainerMock });
   getApplicantMock.mockReturnValue({ clientNumber: 'client-123' });
+  const context = new RouterContextProvider();
+  context.set(userContext, { id: 'user-123', mocked: false, sin: '000000000' });
+  getContextMock.mockReturnValue(context);
+  findContextMock.mockReturnValue(Option.none());
   getUrlMock.mockReturnValue(new URL('https://example.test/documents'));
   getFixedTMock.mockResolvedValue(tMock);
   arrayBufferToBase64Mock.mockReturnValue('base64-content');
@@ -145,9 +156,17 @@ describe('protected-documents-upload-helpers.server', () => {
         binary: 'base64-content',
         uploadDate,
         lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(1_000),
+        userId: 'user-123',
       });
       expect(documentUploadServiceMock.uploadDocument).toHaveBeenCalledOnce();
       expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
+    });
+
+    it('does not upload when the request has no authenticated user', async () => {
+      getContextMock.mockReturnValue(new RouterContextProvider());
+
+      await expect(uploadDocuments(createFiles())).rejects.toMatchObject({ errorCode: ErrorCodes.PLT_CTX_USER_UNAVAILABLE });
+      expect(documentUploadServiceMock.uploadDocument).not.toHaveBeenCalled();
     });
 
     it('retains each file timestamp created before its upload call rather than the completion time', async () => {

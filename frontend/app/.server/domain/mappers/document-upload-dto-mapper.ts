@@ -8,7 +8,7 @@ import type { EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 export interface DocumentUploadDtoMapper {
   mapDocumentScanRequestDtoToEntity(documentScanRequestDto: DocumentScanRequestDto): DocumentScanRequestEntity;
   mapDocumentUploadErrorEntityToDto(documentUploadErrorEntity: DocumentUploadErrorEntity): DocumentUploadErrorDto;
-  mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto, transactionEntryUserId: string): Promise<DocumentUploadRequestEntity>;
+  mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadRequestEntity>;
 }
 
 @injectable()
@@ -33,7 +33,7 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
     };
   }
 
-  async mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto, transactionEntryUserId: string): Promise<DocumentUploadRequestEntity> {
+  async mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadRequestEntity> {
     const evidentiaryDocumentType = await this.evidentiaryDocumentTypeService.getEvidentiaryDocumentTypeById(documentUploadRequestDto.evidentiaryDocumentTypeId);
     return {
       filename: documentUploadRequestDto.fileName,
@@ -41,7 +41,7 @@ export class DefaultDocumentUploadDtoMapper implements DocumentUploadDtoMapper {
       subjectPersonIdentificationID: documentUploadRequestDto.clientNumber,
       documentCategoryText: evidentiaryDocumentType.code,
       originalDocumentCreationDate: documentUploadRequestDto.uploadDate.toString(),
-      transactionEntryUserID: transactionEntryUserId,
+      transactionEntryUserID: documentUploadRequestDto.userId,
       originalDocumentLastModifiedDate: documentUploadRequestDto.lastModifiedDate.toString(),
       persist: true,
       commit: true,

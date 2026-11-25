@@ -2,7 +2,6 @@ import { ATTR_ERROR_TYPE, ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/
 import { inject, injectable } from 'inversify';
 
 import { TYPES } from '~/.server/constants';
-import { getUser } from '~/.server/context/user-context';
 import type { DocumentScanRequestDto, DocumentScanResponseDto, DocumentUploadRequestDto, DocumentUploadResponseDto } from '~/.server/domain/dtos';
 import type { DocumentUploadErrorEntity } from '~/.server/domain/entities';
 import type { DocumentUploadDtoMapper } from '~/.server/domain/mappers';
@@ -20,11 +19,10 @@ export interface DocumentUploadService {
    * Upload a document to a predetermined drop location.
    * This will process the file through scan for threats and upload the file to an SFTP/FTPS drop location.
    * This does not save any metadata and is purely a drop location.
-   * The authenticated request user is recorded as the backend transaction entry user.
+   * The caller supplies the authenticated user for the backend transaction entry.
    *
    * @param documentUploadRequestDto The document upload request DTO
    * @returns A success, unsafe-file, rejection, or technical error outcome. Technical failures are logged, not thrown.
-   * @throws {AppError} When no authenticated user is available in the request context.
    */
   uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto>;
 
@@ -58,13 +56,12 @@ export class DefaultDocumentUploadService implements DocumentUploadService {
 
   @Traced()
   async uploadDocument(documentUploadRequestDto: DocumentUploadRequestDto): Promise<DocumentUploadResponseDto> {
-    const transactionEntryUserId = getUser().id;
     this.log.trace('Uploading document', userLogAttributes());
 
     try {
       this.auditService.createAudit('documentupload.upload');
 
-      const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto, transactionEntryUserId);
+      const requestEntity = await this.documentUploadDtoMapper.mapDocumentUploadRequestDtoToEntity(documentUploadRequestDto);
       const responseEntity = await this.documentUploadRepository.uploadDocument(requestEntity);
 
       if (responseEntity.DocumentFileName === null) {

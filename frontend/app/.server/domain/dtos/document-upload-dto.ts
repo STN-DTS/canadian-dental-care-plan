@@ -19,6 +19,9 @@ export type DocumentUploadRequestDto = Readonly<{
 
   /** Original last-modified date of the selected file */
   lastModifiedDate: Temporal.Instant;
+
+  /** Authenticated user identifier sent as the backend transaction entry user */
+  userId: string;
 }>;
 
 /**

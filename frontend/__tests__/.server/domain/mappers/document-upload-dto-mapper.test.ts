@@ -20,17 +20,15 @@ describe('document upload timestamp contracts', () => {
     });
     const mapper = new DefaultDocumentUploadDtoMapper(typeService);
 
-    const entity = await mapper.mapDocumentUploadRequestDtoToEntity(
-      {
-        fileName: 'receipt.pdf',
-        binary: 'Y29udGVudA==',
-        clientNumber: 'client-123',
-        evidentiaryDocumentTypeId: 'receipt',
-        uploadDate: Temporal.Instant.from(timestamp),
-        lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(-1),
-      },
-      'user-123',
-    );
+    const entity = await mapper.mapDocumentUploadRequestDtoToEntity({
+      fileName: 'receipt.pdf',
+      binary: 'Y29udGVudA==',
+      clientNumber: 'client-123',
+      evidentiaryDocumentTypeId: 'receipt',
+      uploadDate: Temporal.Instant.from(timestamp),
+      lastModifiedDate: Temporal.Instant.fromEpochMilliseconds(-1),
+      userId: 'user-123',
+    });
 
     expect(entity).toEqual({
       filename: 'receipt.pdf',

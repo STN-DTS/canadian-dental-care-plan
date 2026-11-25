@@ -209,6 +209,12 @@ test('the application preload preserves event schemas, severity and privacy thro
             documentRepository,
             { createAudit() {} },
           );
+          const documentUploadRequest = {
+            clientNumber: 'client', fileName: 'document-filename-canary.txt', binary: 'dGVzdA==',
+            evidentiaryDocumentTypeId: 'receipt', userId: 'user',
+            uploadDate: Temporal.Instant.from('2026-10-06T00:00:00Z'),
+            lastModifiedDate: Temporal.Instant.from('2026-10-06T00:00:00Z'),
+          };
           winston.level = 'trace';
           const documentResult = await trace.getTracer('winston-export-test').startActiveSpan(
             'Synthetic upload context',
@@ -221,13 +227,13 @@ test('the application preload preserves event schemas, severity and privacy thro
                 const documentUrl = new URL('https://localhost/en/protected/documents');
                 let result;
                 await contextStorageMiddleware({ context: documentContext, params: {}, request: new Request(documentUrl), url: documentUrl, pattern: '' }, async () => {
-                  result = await documentService.uploadDocument({});
+                  result = await documentService.uploadDocument(documentUploadRequest);
                   assert.equal(result.status, 'error');
                   failDocumentIdentity = true;
-                  assert.equal((await documentService.uploadDocument({})).status, 'error');
+                  assert.equal((await documentService.uploadDocument(documentUploadRequest)).status, 'error');
                   failDocumentIdentity = false;
                   failDocumentHttp = true;
-                  assert.equal((await documentService.uploadDocument({})).status, 'error');
+                  assert.equal((await documentService.uploadDocument(documentUploadRequest)).status, 'error');
                   return new Response();
                 });
                 return result;

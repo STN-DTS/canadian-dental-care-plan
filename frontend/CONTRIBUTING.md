@@ -172,10 +172,10 @@ in environment configuration.
 `AuditService.createAudit` resolves the actor from the authenticated request
 user; `anonymous` is recorded when there is no user. Do not add `userId` to
 audit calls, service DTOs, or method parameters to attribute audits or logs.
-Read the user in services with `getUser()` only when a backend contract needs
-it, and use `userLogAttributes()` for the `cdcp.user.id` log attribute. Set
-`userContext` before auditing in routes that authenticate outside
-`authMiddleware`. See the
+When a backend contract needs a user ID, resolve it at the caller with
+`getUser()` and pass it to the service. Use `userLogAttributes()` for the
+`cdcp.user.id` log attribute. Set `userContext` before auditing in routes
+that authenticate outside `authMiddleware`. See the
 [audit records documentation](other/docs/observability.md#audit-records).
 
 ## Server-side caching
