@@ -202,7 +202,7 @@ const ns = {
           "<strong>Couverture offerte par les programmes sociaux gouvernementaux\u00A0:</strong> Si vous avez une assurance ou une couverture dentaire dans le cadre d'un programme social provincial, territorial ou fédéral, vous pourriez tout de même être admissible au RCSD. Les services dentaires fournis dans le cadre des programmes sociaux gouvernementaux ne sont pas considérés comme une assurance ou une couverture dentaire privée.",
       },
       eligibility: "Pour en savoir plus, consultez les <eligibilityCriteria>critères d'admissibilité au Régime canadien de soins dentaires</eligibilityCriteria>.",
-      eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/examen-admissibilite-membres.html",
+      eligibilityLink: "https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/admissibilite.html",
     },
     yes: {
       alertTitle: "Confirmation de l'assurance ou couverture dentaire privée",

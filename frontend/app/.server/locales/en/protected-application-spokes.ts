@@ -197,7 +197,7 @@ const ns = {
           "<strong>Coverage of dental services through government social programs:</strong> If you have dental insurance or coverage through a provincial, territorial or federal government social program, you could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
       },
       eligibility: "You can review the <eligibilityCriteria>Canadian Dental Care Plan eligibility criteria</eligibilityCriteria> for more information",
-      eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
+      eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html",
     },
     yes: {
       alertTitle: "Private dental insurance or coverage confirmation",
@@ -550,7 +550,7 @@ const ns = {
             "<strong>Coverage of dental services through government social programs:</strong> If {{childName}} has dental insurance or coverage through a provincial, territorial or federal government social program, they could still qualify for the CDCP. Dental services through government social programs are not considered private dental insurance or coverage.",
         },
         eligibility: "You can review the <eligibilityCriteria>Canadian Dental Care Plan eligibility criteria</eligibilityCriteria> for more information",
-        eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/member-eligibility-review.html",
+        eligibilityLink: "https://www.canada.ca/en/services/benefits/dental/dental-care-plan/qualify.html",
       },
       alert: {
         yes: {
