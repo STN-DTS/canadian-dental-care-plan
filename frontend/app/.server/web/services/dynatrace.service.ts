@@ -48,7 +48,7 @@ export class DefaultDynatraceService implements DynatraceService {
 
     this.log.debug('Cache TTL value: dynatraceRumScriptUriCacheTTL: %d ms', dynatraceRumScriptUriCacheTTL);
 
-    this.findDynatraceRumScript = memoize(this.findDynatraceRumScript, { async: true });
+    this.findDynatraceRumScript = memoize(this.findDynatraceRumScript, { async: true, expires: dynatraceRumScriptUriCacheTTL });
 
     type MemoizedFindDynatraceRumScript = Memoized<typeof this.findDynatraceRumScript, Options<typeof this.findDynatraceRumScript>>;
     (this.findDynatraceRumScript as MemoizedFindDynatraceRumScript).cache.on('add', () => this.log.info('Creating new findDynatraceRumScript memo'));
