@@ -52,7 +52,6 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     this.log.debug('Cache TTL value: %d ms', 1000 * this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS);
 
     this.getIntakeApplicationYear = memoize(this.getIntakeApplicationYear, {
-      isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
       maxSize: 10,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
@@ -61,7 +60,6 @@ export class DefaultApplicationYearService implements ApplicationYearService {
     (this.getIntakeApplicationYear as MemoizedGetIntakeApplicationYear).cache.on('add', () => this.log.info('Creating new getIntakeApplicationYear memo'));
 
     this.getRenewalApplicationYear = memoize(this.getRenewalApplicationYear, {
-      isKeyEqual: (cacheKey, key) => cacheKey.every((item, idx) => item.date === key[idx].date),
       maxSize: 10,
       expires: this.serverConfig.LOOKUP_SVC_APPLICATION_YEAR_CACHE_TTL_SECONDS * 1000,
     });
