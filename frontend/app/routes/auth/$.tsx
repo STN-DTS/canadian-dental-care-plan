@@ -1,5 +1,6 @@
 import { redirectDocument } from 'react-router';
 
+import { trace } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 // Session attributes are currently incubating OpenTelemetry conventions.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
@@ -14,11 +15,14 @@ import { TYPES } from '~/.server/constants';
  */
 import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
+import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
+import { recordError } from '~/.server/utils/otel-instrumentation-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
-import { AppError } from '~/errors/app-error';
+import { AppError, isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 import type { Route } from './+types/$';
@@ -58,6 +62,13 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }
 
     case slug === 'logout': {
+      if (AUTH_PROVIDER === 'oidc') {
+        const { session } = context.get(appContext);
+        const { AUTH_LOGOUT_REDIRECT_URL } = appContainer.get(TYPES.ServerConfig);
+        await session.destroy();
+        return redirectDocument(AUTH_LOGOUT_REDIRECT_URL);
+      }
+
       return await handleLogoutRequest({ context, url });
     }
 
@@ -70,11 +81,11 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     }
 
     case slug === 'login/oidc' && AUTH_PROVIDER === 'oidc': {
-      return await handleOidcLoginRequest({ context });
+      return await withOidcErrorResponse(async () => await handleOidcLoginRequest({ context }), log, instrumentationService);
     }
 
     case slug === 'callback/oidc' && AUTH_PROVIDER === 'oidc': {
-      return await handleOidcCallbackRequest({ context, url });
+      return await withOidcErrorResponse(async () => await handleOidcCallbackRequest({ context, url }), log, instrumentationService);
     }
 
     default: {
@@ -274,4 +285,30 @@ async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs
 
   instrumentationService.createCounter('auth.callback.oidc.requests.connectivity-verified').add(1);
   return Response.json({ outcome: result.outcome, authenticated: result.authenticated, issuer: result.issuer, verifiedAt: Temporal.Now.instant().toString() }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+/**
+ * `/auth/*` is a resource route, so `withAppErrorResponses` leaves its errors alone and React Router would turn an
+ * AppError into a 500. Return the AppError's configured status with only its public details instead. A returned
+ * response skips `handleError`, so the error is logged and recorded on the active span here. Other errors are rethrown.
+ */
+async function withOidcErrorResponse(handler: () => Promise<Response>, log: Logger, instrumentationService: InstrumentationService): Promise<Response> {
+  try {
+    return await handler();
+  } catch (error) {
+    if (!isAppError(error)) {
+      throw error;
+    }
+
+    const span = trace.getActiveSpan();
+
+    if (span) {
+      recordError(span, error);
+    }
+
+    log.warn('OIDC request failed', { [ATTR_ERROR_TYPE]: error.errorCode, correlationId: error.correlationId, errorCode: error.errorCode });
+    instrumentationService.createCounter('auth.oidc.requests.failed').add(1);
+
+    return Response.json({ name: error.name, errorCode: error.errorCode, correlationId: error.correlationId }, { status: error.httpStatusCode, headers: { 'Cache-Control': 'no-store' } });
+  }
 }

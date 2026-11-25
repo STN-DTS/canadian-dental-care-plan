@@ -13,6 +13,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
 import type { Session } from '~/.server/web/session';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import { loader } from '~/routes/auth/$';
@@ -116,7 +117,10 @@ describe('auth loader', () => {
     it('rejects a callback without a sign-in attempt in the session', async () => {
       const { args, authService, session } = createArgs('oidc', 'callback/oidc', '?code=synthetic-code&state=synthetic-state');
 
-      await expect(loader(args)).rejects.toSatisfy((error) => error instanceof AppError && error.errorCode === ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID);
+      const response = (await loader(args)) as Response;
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, correlationId: '' });
 
       expect(authService.handleCallback).not.toHaveBeenCalled();
       expect(session.set).not.toHaveBeenCalled();
@@ -125,13 +129,43 @@ describe('auth loader', () => {
     it('clears the correlation values when validation fails', async () => {
       const { args, authService, session } = createArgs('oidc', 'callback/oidc', '?code=synthetic-code&state=forged');
       withCorrelation(session);
-      const failure = new AppError('OIDC callback is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID);
-      authService.handleCallback.mockRejectedValue(failure);
+      authService.handleCallback.mockRejectedValue(new AppError('OIDC callback is invalid.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST }));
 
-      await expect(loader(args)).rejects.toBe(failure);
+      const response = (await loader(args)) as Response;
+
+      expect(response.status).toBe(400);
 
       expect(session.unset).toHaveBeenCalledWith('oidcAuthCorrelation');
       expect(session.set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('OIDC error responses', () => {
+    it.each([
+      ['login/oidc', ''],
+      ['callback/oidc', '?code=synthetic-code&state=synthetic-state'],
+    ])('returns the configured status and only public details for an AppError from %s', async (slug, search) => {
+      const { args, authService, session } = createArgs('oidc', slug, search);
+      withCorrelation(session);
+      const failure = new AppError('OIDC token exchange failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, { httpStatusCode: HttpStatusCodes.BAD_GATEWAY, correlationId: 'correlation-id' });
+      authService.generateSigninRequest.mockRejectedValue(failure);
+      authService.handleCallback.mockRejectedValue(failure);
+
+      const response = (await loader(args)) as Response;
+      const body = await response.text();
+
+      expect(response.status).toBe(502);
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(JSON.parse(body)).toEqual({ name: 'AppError', errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_TOKEN_EXCHANGE_FAILED, correlationId: 'correlation-id' });
+      expect(body).not.toContain('token exchange failed');
+    });
+
+    it('rethrows errors that are not AppErrors', async () => {
+      const { args, authService } = createArgs('oidc', 'login/oidc');
+      const failure = new Error('unexpected');
+      authService.generateSigninRequest.mockRejectedValue(failure);
+
+      await expect(loader(args)).rejects.toBe(failure);
     });
   });
 });
