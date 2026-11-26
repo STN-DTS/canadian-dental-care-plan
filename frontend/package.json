@@ -97,7 +97,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.65.1",
     "@react-router/dev": "^7.17.0",
     "@react-router/express": "^7.17.0",
     "@tailwindcss/vite": "^4.3.0",
