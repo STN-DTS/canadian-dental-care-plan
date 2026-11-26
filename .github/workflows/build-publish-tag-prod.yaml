@@ -1,0 +1,232 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+# Tests the frontend and scans, publishes, and signs OCI images for v7.* tags.
+# Uses PROD ACR and runners; manual runs must target a valid release tag.
+
+name: build-publish-tag-prod
+run-name: Build, test, and publish PROD tag images
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-prod-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  push:
+    tags:
+      - 'v7.*'
+  workflow_dispatch: {}
+
+env:
+  CI: true
+
+jobs:
+  check-repository:
+    if: ${{ github.event.repository.fork != true }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Allow non-fork repository
+        run: echo "Repository check passed."
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    needs: check-repository
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate release tag
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$REF_TYPE" != "tag" || ! "$REF_NAME" =~ ^v7\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$ ]]; then
+            echo "Must run against a v7 release tag (v7.X.Y with an optional suffix), got '$REF_NAME'." >&2
+            exit 1
+          fi
+
+          version="${REF_NAME#v}"
+          build_number="$(printf '%05x' "$GITHUB_RUN_NUMBER")"
+          generated_tag="${version}-${GITHUB_SHA:0:8}-${build_number}"
+          docker_tag_regex='^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
+
+          if [[ ! "$version" =~ $docker_tag_regex || ! "$generated_tag" =~ $docker_tag_regex ]]; then
+            echo "Release tag '$REF_NAME' generates an invalid Docker tag." >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          printf 'Validated release version: %s\nImage tag: %s\n' "$version" "$generated_tag"
+
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.13.1
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Check repository formatting
+        working-directory: frontend
+        run: npm run format:check
+      - name: Run typecheck
+        working-directory: frontend
+        run: npm run typecheck
+      - name: Run lint
+        working-directory: frontend
+        run: npm run lint:eslint
+      - name: Run unit tests with coverage
+        working-directory: frontend
+        run: npm run test:unit:coverage
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npm exec -- playwright install chromium --with-deps
+      - name: Run end-to-end tests
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Upload test reports
+        if: ${{ always() && needs.check-repository.result == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          if-no-files-found: warn
+          name: test-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/coverage/
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7
+  build-frontend:
+    permissions:
+      contents: read
+      security-events: write
+    runs-on: arc-runners-dshp-prod
+    needs:
+      - check-repository
+      - test-frontend
+    env:
+      IMAGE_NAME: ${{ vars.PROD_ACR_DOMAIN }}/canada-dental-care-plan/canada-dental-care-plan-frontend
+      PUBLIC_KEY_PATH: .github/actions/sign-container-image/prod-cosign-v1.pub
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify image signing configuration
+        run: |
+          set -euo pipefail
+          echo "Checking the image signing public key..."
+          if [[ ! -s "$PUBLIC_KEY_PATH" ]]; then
+            echo "::error::Image signing public key is missing or empty." >&2
+            exit 1
+          fi
+          echo "Image signing public key is available."
+      - name: Authenticate to Azure and setup ACR credentials
+        uses: STN-DTS/canadian-dental-care-plan/.github/actions/azure-acr-login@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
+        with:
+          acr-domain: ${{ vars.PROD_ACR_DOMAIN }}
+          azure-client-id-vault-selector: canada-dental-care-plan/data/SPN SPN_ID
+          azure-client-secret-vault-selector: canada-dental-care-plan/data/SPN SPN_PASSWORD
+          azure-subscription-id: ${{ vars.PROD_AZURE_SUBSCRIPTION_ID }}
+          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          vault-approle-role-id: ${{ secrets.PROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.PROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.PROD_VAULT_URL }}
+      - name: Generate dynamic build variables
+        id: build-vars
+        uses: STN-DTS/canadian-dental-care-plan/.github/actions/generate-build-vars@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
+        with:
+          version: ${{ needs.test-frontend.outputs.version }}
+      - name: Build frontend OCI image
+        env:
+          BUILD_DATE: ${{ steps.build-vars.outputs.build-date }}
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+        run: |
+          set -euo pipefail
+
+          IMAGE_TAG="${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          printf 'Building frontend image: %s:%s\n' "$IMAGE_NAME" "$IMAGE_TAG"
+          # The v7 Dockerfile uses frontend-relative COPY paths.
+          docker build \
+            --progress plain \
+            --file frontend/dockerfile frontend \
+            --build-arg BUILD_DATE="$BUILD_DATE" \
+            --build-arg BUILD_ID="$BUILD_NUMBER" \
+            --build-arg BUILD_REVISION="$BUILD_REVISION" \
+            --build-arg BUILD_VERSION="$BUILD_VERSION" \
+            --tag "$IMAGE_NAME:$IMAGE_TAG"
+          echo "Creating the release version image alias..."
+          docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$BUILD_VERSION"
+          echo "Frontend image build and tagging completed."
+      - name: Scan frontend OCI image
+        uses: STN-DTS/canadian-dental-care-plan/.github/actions/aqua-scan@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
+        with:
+          artifact-prefix: cdcp-frontend
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-version }}-${{ steps.build-vars.outputs.build-revision }}-${{ steps.build-vars.outputs.build-number }}
+          scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
+          vault-approle-role-id: ${{ secrets.PROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.PROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.PROD_VAULT_URL }}
+      - name: Push frontend OCI image to registry
+        id: push
+        uses: STN-DTS/canadian-dental-care-plan/.github/actions/push-container-image@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-version }}-${{ steps.build-vars.outputs.build-revision }}-${{ steps.build-vars.outputs.build-number }}
+      - name: Sign and verify frontend OCI image
+        uses: STN-DTS/canadian-dental-care-plan/.github/actions/sign-container-image@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.image-digest }}
+          public-key-path: ${{ env.PUBLIC_KEY_PATH }}
+          vault-approle-role-id: ${{ secrets.PROD_VAULT_APPROLE_ROLE_ID }}
+          vault-approle-secret-id: ${{ secrets.PROD_VAULT_APPROLE_SECRET_ID }}
+          vault-url: ${{ secrets.PROD_VAULT_URL }}
+      - name: Publish signed release version alias
+        env:
+          BUILD_NUMBER: ${{ steps.build-vars.outputs.build-number }}
+          BUILD_REVISION: ${{ steps.build-vars.outputs.build-revision }}
+          BUILD_VERSION: ${{ steps.build-vars.outputs.build-version }}
+        run: |
+          set -euo pipefail
+
+          image_ref="${IMAGE_NAME}:${BUILD_VERSION}-${BUILD_REVISION}-${BUILD_NUMBER}"
+          printf 'Publishing signed release alias: %s:%s\n' "$IMAGE_NAME" "$BUILD_VERSION"
+          docker tag "$image_ref" "${IMAGE_NAME}:${BUILD_VERSION}"
+          docker push "${IMAGE_NAME}:${BUILD_VERSION}"
+          echo "Signed release version alias published."
+
+          {
+            echo "## Published release alias"
+            echo
+            echo "| Application | Tag | Image | Source commit |"
+            echo "| --- | --- | --- | --- |"
+            echo "| CDCP frontend | \`${BUILD_VERSION}\` | \`${IMAGE_NAME}:${BUILD_VERSION}\` | [\`${GITHUB_SHA:0:8}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up Azure and registry credentials
+        if: ${{ always() && needs.check-repository.result == 'success' }}
+        run: |
+          set -euo pipefail
+          echo "Cleaning up temporary Azure and registry credentials..."
+          if [[ -n "${AZURE_CONFIG_DIR:-}" ]]; then
+            rm -rf -- "$AZURE_CONFIG_DIR"
+          fi
+          if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+            rm -rf -- "$DOCKER_CONFIG"
+          fi
+          echo "Credential cleanup completed."
