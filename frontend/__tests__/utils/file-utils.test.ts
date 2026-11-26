@@ -74,12 +74,14 @@ describe('file-utils', () => {
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.rtf'], file })).resolves.toBe(true);
     });
 
-    it('should allow alias extensions sharing the same MIME type', async () => {
+    it('should allow alias extensions and uppercase filenames sharing the same MIME type', async () => {
       const jpgFile = new File([jpegBytes], 'photo.jpg', { type: 'image/jpeg' });
       const jpegFile = new File([jpegBytes], 'photo.jpeg', { type: 'image/jpeg' });
+      const uppercaseJpgFile = new File([jpegBytes], 'PHOTO.JPG', { type: 'image/jpeg' });
 
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.jpg', '.jpeg'], file: jpgFile })).resolves.toBe(true);
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.jpg', '.jpeg'], file: jpegFile })).resolves.toBe(true);
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.jpg', '.jpeg'], file: uppercaseJpgFile })).resolves.toBe(true);
     });
 
     it('should reject detected content whose extension is not allowed', async () => {

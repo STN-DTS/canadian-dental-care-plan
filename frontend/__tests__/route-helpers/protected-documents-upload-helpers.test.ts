@@ -152,6 +152,38 @@ describe('protected-documents-upload-helpers', () => {
       });
     });
 
+    it('should accept files with uppercase allowed extensions during selection', async () => {
+      const args = createFileSelectionArgs([new File(['Plain text'], 'NOTES.TXT', { type: 'text/plain' }), new File([String.raw`{\rtf1\ansi Test}`], 'LETTER.RTF', { type: 'application/rtf' })]);
+
+      await expect(validateFileSelection(args)).resolves.toEqual({
+        success: true,
+        errors: undefined,
+      });
+    });
+
+    it('should reject mismatched content for an uppercase allowed extension with invalidFileContent', async () => {
+      const args = createFileSelectionArgs([new File(['not rtf content'], 'LETTER.RTF', { type: 'application/rtf' })]);
+
+      const actual = await validateFileSelection(args);
+
+      expect(actual).toEqual({
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['invalid file content'],
+            },
+          },
+        },
+      });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        filename: 'LETTER.RTF',
+        fileTypeName: 'Rich Text Format document',
+        fileExtension: '.rtf',
+      });
+    });
+
     it('should reject files exceeding maximum size', async () => {
       const oversizedFile = new File([new Uint8Array(1024 * 1024 + 1)], 'document.txt', { type: 'text/plain' });
       const args = createFileSelectionArgs([oversizedFile]);
@@ -304,6 +336,17 @@ describe('protected-documents-upload-helpers', () => {
           },
         },
       });
+    });
+
+    it('should accept submitted files with uppercase allowed extensions', async () => {
+      const formData = createUploadFormData([
+        { id: 'first', file: new File(['Plain text'], 'NOTES.TXT', { type: 'text/plain' }), documentType: 'receipt' },
+        { id: 'second', file: new File([String.raw`{\rtf1\ansi Test}`], 'LETTER.RTF', { type: 'application/rtf' }), documentType: 'receipt' },
+      ]);
+
+      const files = await getFiles(formData);
+
+      expect(validateUploadedFiles({ files, locale: 'en', t: tFunctionMock }).success).toBe(true);
     });
 
     it('should reject an unsupported file extension', async () => {

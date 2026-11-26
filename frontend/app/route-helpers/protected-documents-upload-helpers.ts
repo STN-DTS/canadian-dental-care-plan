@@ -352,12 +352,12 @@ type CreateFileValidationSchemaArgs = {
  */
 function createFileValidationSchema({ context, locale, t }: CreateFileValidationSchemaArgs) {
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = getClientEnv();
-  const allowedExtensions = DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension);
+  const allowedExtensions = DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension.toLowerCase());
   const maxFileSizeInBytes = megabytesToBytes(DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB);
   return z
     .custom<File>((value) => typeof value === 'object' && value !== null && 'name' in value && 'size' in value)
     .superRefine((file, ctx) => {
-      if (!allowedExtensions.includes(getFileExtension(file.name))) {
+      if (!allowedExtensions.includes(getFileExtension(file.name).toLowerCase())) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.upload.errorMessage.invalidFileType, {
