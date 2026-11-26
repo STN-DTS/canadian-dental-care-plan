@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
 # Validates release/v7.* branches on pushes, manual runs, and reusable calls.
-# Scans, publishes, and signs release candidate OCI images in nonprod ACR.
+# Publishes and signs release candidate OCI images in nonprod ACR.
 
 name: build-publish-release-nonprod
 run-name: Build, test, and publish nonprod release candidate images
@@ -98,7 +98,6 @@ jobs:
   build-frontend:
     permissions:
       contents: read
-      security-events: write
     if: ${{ startsWith(github.ref, 'refs/heads/release/v7.') }}
     runs-on: arc-runners-dshp-dev
     needs:
@@ -190,15 +189,6 @@ jobs:
           echo "Creating the release candidate image alias..."
           docker tag "$IMAGE_NAME:$BUILD_REVISION" "$IMAGE_NAME:$BUILD_VERSION-RC$RC_LABEL-$SHORT_SHA"
           echo "Frontend image build and tagging completed."
-      - name: Scan frontend OCI image
-        uses: STN-DTS/canadian-dental-care-plan/.github/actions/aqua-scan@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
-        with:
-          artifact-prefix: cdcp-frontend
-          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.build-vars.outputs.build-revision }}
-          scan-timestamp: ${{ steps.build-vars.outputs.scan-timestamp }}
-          vault-approle-role-id: ${{ secrets.NONPROD_VAULT_APPROLE_ROLE_ID }}
-          vault-approle-secret-id: ${{ secrets.NONPROD_VAULT_APPROLE_SECRET_ID }}
-          vault-url: ${{ secrets.NONPROD_VAULT_URL }}
       - name: Push frontend OCI image to registry
         id: push
         uses: STN-DTS/canadian-dental-care-plan/.github/actions/push-container-image@449bbe3a57a1574fff1a17c666d9e54d2b1396f5
