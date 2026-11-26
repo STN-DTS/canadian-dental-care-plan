@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { getFiles, validateFileSelection } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFileContents } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import { useDocumentUploadForm } from '~/routes/protected/documents/upload/hooks/use-document-upload-form';
@@ -22,6 +22,7 @@ vi.mock(import('~/route-helpers/protected-documents-upload-helpers'), async (imp
   return {
     ...actual,
     validateFileSelection: vi.fn(async () => await Promise.resolve({ success: true as const, errors: undefined })),
+    validateUploadedFileContents: vi.fn(async () => await Promise.resolve({ success: true as const })),
     getFiles: vi.fn(async (formData: FormData) => {
       const fileIds = formData.getAll('file_id') as string[];
       const fileObjects = formData.getAll('file_object') as File[];
@@ -33,6 +34,7 @@ vi.mock(import('~/route-helpers/protected-documents-upload-helpers'), async (imp
 
 const getFilesMock = vi.mocked(getFiles);
 const validateFileSelectionMock = vi.mocked(validateFileSelection);
+const validateUploadedFileContentsMock = vi.mocked(validateUploadedFileContents);
 const getClientEnvMock = vi.mocked(getClientEnv, { partial: true });
 
 function createForm() {
@@ -42,6 +44,7 @@ function createForm() {
 beforeEach(() => {
   vi.clearAllMocks();
   validateFileSelectionMock.mockResolvedValue({ success: true, errors: undefined });
+  validateUploadedFileContentsMock.mockResolvedValue({ success: true });
   getClientEnvMock.mockReturnValue({
     DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' }],
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
@@ -114,6 +117,38 @@ describe('useDocumentUploadForm', () => {
     expect(result.current.documentUploadFormState.documents).toEqual([]);
     expect(result.current.isValidating).toBe(false);
     expect(consoleError).toHaveBeenCalledExactlyOnceWith('Failed to validate the selected upload files.', error);
+  });
+
+  it('blocks opening review when content validation fails on submit', async () => {
+    const receipt = new File(['not a pdf'], 'receipt.pdf', { type: 'application/pdf' });
+    const errors = {
+      errors: [],
+      properties: {
+        files: {
+          errors: [],
+          properties: {
+            'file-1': { errors: [], properties: { file: { errors: ['invalid file content'] } } },
+          },
+        },
+      },
+    };
+    const submit = vi.fn<DocumentUploadFetcher['submit']>();
+    vi.mocked(useDocumentUploadFetcher).mockReturnValue(createFetcher(undefined, submit));
+    validateUploadedFileContentsMock.mockResolvedValueOnce({ success: false, errors });
+    const { result } = renderHook(() => useDocumentUploadForm());
+
+    act(() => {
+      result.current.handleFileChange([{ id: 'file-1', file: receipt }]);
+      result.current.handleDocumentTypeChange('file-1', 'receipt');
+    });
+
+    await act(async () => {
+      await result.current.submitForm(createForm());
+    });
+
+    expect(result.current.reviewState).toBe('closed');
+    expect(result.current.actionData?.errors).toEqual(errors);
+    expect(submit).not.toHaveBeenCalled();
   });
 
   it('preserves selected files, document types, and other form data when a reviewed submission is confirmed', async () => {

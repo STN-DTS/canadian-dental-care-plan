@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { getI18n } from 'react-i18next';
 import * as z from 'zod';
 
-import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateUploadedFileContents, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { FORM_ACTION } from '~/routes/protected/documents/upload/upload-form-action';
 import type { FormAction } from '~/routes/protected/documents/upload/upload-form-action';
 import { getLanguage } from '~/utils/locale-utils';
@@ -57,6 +57,12 @@ async function uploadAction({ formAction, formData, locale, serverAction, t }: U
 
   if (!validationResult.success) {
     return data({ formAction, source, responseType: 'validation-errors', errors: validationResult.errors } as const, 400);
+  }
+
+  const contentValidationResult = await validateUploadedFileContents({ files: validationResult.data.files, locale, t });
+
+  if (!contentValidationResult.success) {
+    return data({ formAction, source, responseType: 'content-validation-errors', errors: contentValidationResult.errors } as const, 400);
   }
 
   // At this point, all validations have passed, and we can proceed with the server action.

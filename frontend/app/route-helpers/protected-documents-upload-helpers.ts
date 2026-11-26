@@ -1,14 +1,28 @@
 import type { TFunction } from 'i18next';
+import type { Get } from 'type-fest';
 import * as z from 'zod';
 
 import { expectDefined } from '~/utils/assert-utils';
 import { getClientEnv } from '~/utils/env-utils';
-import { findDuplicateFile, getFileExtension, hashFileBuffer } from '~/utils/file-utils';
+import type { DocumentUploadAllowedFileType } from '~/utils/env-utils';
+import { findDuplicateFile, getFileExtension, hashFileBuffer, isFileContentTypeAllowed } from '~/utils/file-utils';
 import { bytesToFilesize, megabytesToBytes } from '~/utils/units-utils';
 
 type DocumentUploadSchema = ReturnType<typeof createDocumentUploadSchema>;
 export type DocumentUploadSchemaOutput = z.output<DocumentUploadSchema>;
 export type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadSchemaOutput>;
+
+export type FileContentValidationFailureReason = 'unsupported_file_extension' | 'unsupported_file_content_type' | 'file_content_validation_failed';
+
+type ValidateFileContentArgs = {
+  allowedExtensions: readonly string[];
+  allowedFileTypesByExtension: ReadonlyMap<string, DocumentUploadAllowedFileType>;
+  file: File;
+  locale: string;
+  t: TFunction<'documents'>;
+};
+
+type ValidateFileContentResult = { success: true; error?: undefined; reason?: undefined } | { success: false; error: string; reason: FileContentValidationFailureReason; cause?: unknown };
 
 type ValidateFileSelectionArgs = {
   currentFileCount: number;
@@ -23,7 +37,7 @@ type ValidateFileSelectionFailure = { success: false; errors: DocumentUploadSche
 type ValidateFileSelectionResult = ValidateFileSelectionSuccess | ValidateFileSelectionFailure;
 
 /**
- * Validates newly selected files against upload count, extension, and size limits.
+ * Validates newly selected files against upload count, extension, size, content type, and duplicate limits.
  *
  * @param args - Current file count, already listed files, proposed files, locale, and translator.
  * @returns Whether the selection is valid and any file selection errors.
@@ -39,10 +53,33 @@ export async function validateFileSelection({ currentFileCount, existingFiles, f
   let errorMessage: string | undefined;
 
   if (validationResult.success) {
-    const duplicateFile = await findDuplicateFile([...existingFiles, ...files]);
+    const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES } = getClientEnv();
+    const allowedFileTypesByExtension = new Map(DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map((fileType) => [fileType.extension.toLowerCase(), fileType]));
+    const allowedExtensions = [...allowedFileTypesByExtension.keys()];
 
-    if (duplicateFile) {
-      errorMessage = t(($) => $.upload.errorMessage.duplicateFile, { filename: duplicateFile.name });
+    const contentResults = await Promise.all(
+      files.map(
+        async (file) =>
+          await validateFileContent({
+            allowedExtensions,
+            allowedFileTypesByExtension,
+            file,
+            locale,
+            t,
+          }),
+      ),
+    );
+
+    const firstContentFailure = contentResults.find((result) => !result.success);
+
+    if (firstContentFailure) {
+      errorMessage = firstContentFailure.error;
+    } else {
+      const duplicateFile = await findDuplicateFile([...existingFiles, ...files]);
+
+      if (duplicateFile) {
+        errorMessage = t(($) => $.upload.errorMessage.duplicateFile, { filename: duplicateFile.name });
+      }
     }
   } else {
     errorMessage = expectDefined(validationResult.error.issues[0], 'Expected file selection validation issue').message;
@@ -65,6 +102,138 @@ export async function validateFileSelection({ currentFileCount, existingFiles, f
   return {
     success: true,
     errors: undefined,
+  };
+}
+
+type ValidateUploadedFileContentsArgs = {
+  allowedFileTypes?: ReadonlyArray<DocumentUploadAllowedFileType>;
+  files: Readonly<Record<string, { file: File }>>;
+  locale: string;
+  onFailure?: (failure: { id: string; reason: FileContentValidationFailureReason; cause?: unknown }) => void;
+  t: TFunction<'documents'>;
+};
+
+export type ValidateUploadedFileContentsResult = { success: true; errors?: undefined } | { success: false; errors: DocumentUploadSchemaErrorTree };
+
+/**
+ * Validates that each submitted file has a supported extension and content matching that extension's MIME type.
+ *
+ * Checks the file extension first before inspecting magic bytes. Shared between client and server upload actions.
+ *
+ * @param args - Files, locale, translator, optional allowed file types override, and optional failure callback.
+ * @returns Success when every document passes content validation; otherwise, file-specific errors.
+ */
+export async function validateUploadedFileContents({ allowedFileTypes = getClientEnv().DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES, files, locale, onFailure, t }: ValidateUploadedFileContentsArgs): Promise<ValidateUploadedFileContentsResult> {
+  const allowedFileTypesByExtension = new Map(allowedFileTypes.map((fileType) => [fileType.extension.toLowerCase(), fileType]));
+  const allowedExtensions = [...allowedFileTypesByExtension.keys()];
+
+  const results = await Promise.all(
+    Object.entries(files).map(async ([id, { file }]) => {
+      const result = await validateFileContent({
+        allowedExtensions,
+        allowedFileTypesByExtension,
+        file,
+        locale,
+        t,
+      });
+
+      if (!result.success) {
+        onFailure?.({ id, reason: result.reason, cause: result.cause });
+        return { id, error: result.error };
+      }
+
+      return { id };
+    }),
+  );
+
+  return createDocumentUploadFileErrorTree(results);
+}
+
+/**
+ * Validates one file's extension against the allow-list first, then checks that its content matches that extension's MIME type.
+ */
+async function validateFileContent({ allowedExtensions, allowedFileTypesByExtension, file, locale, t }: ValidateFileContentArgs): Promise<ValidateFileContentResult> {
+  const fileExtension = getFileExtension(file.name).toLowerCase();
+  const allowedFileType = allowedFileTypesByExtension.get(fileExtension);
+
+  if (!allowedFileType) {
+    return {
+      success: false,
+      reason: 'unsupported_file_extension',
+      error: t(($) => $.upload.errorMessage.invalidFileType, {
+        filename: file.name,
+        extensions: allowedExtensions.join(', '),
+      }),
+    };
+  }
+
+  try {
+    const isContentTypeAllowed = await isFileContentTypeAllowed({
+      allowedExtensions,
+      file,
+    });
+
+    if (!isContentTypeAllowed) {
+      const fileTypeName = locale.toLowerCase().startsWith('fr') ? allowedFileType.nameFr : allowedFileType.nameEn;
+      return {
+        success: false,
+        reason: 'unsupported_file_content_type',
+        error: t(($) => $.upload.errorMessage.invalidFileContent, {
+          filename: file.name,
+          fileTypeName,
+          fileExtension: allowedFileType.extension,
+        }),
+      };
+    }
+
+    return { success: true };
+  } catch (cause) {
+    return {
+      success: false,
+      reason: 'file_content_validation_failed',
+      cause,
+      error: t(($) => $.upload.errorMessage.contentValidationError, { filename: file.name }),
+    };
+  }
+}
+
+/**
+ * Converts per-file batch failures into a structured document upload error tree keyed by file ID.
+ *
+ * @param results - Per-file operation results identified by file ID.
+ * @returns Success when no result contains an error; otherwise, an error tree keyed by file ID.
+ */
+export function createDocumentUploadFileErrorTree(results: ReadonlyArray<{ id: string; error?: string }>): ValidateUploadedFileContentsResult {
+  const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
+
+  if (failures.length === 0) {
+    return { success: true };
+  }
+
+  const fileProperties: NonNullable<Get<DocumentUploadSchemaErrorTree, 'properties.files.properties'>> = {};
+
+  for (const { id, error } of failures) {
+    fileProperties[id] = {
+      errors: [],
+      properties: {
+        file: {
+          errors: [error],
+        },
+      },
+    };
+  }
+
+  return {
+    success: false,
+    errors: {
+      errors: [],
+      properties: {
+        files: {
+          errors: [],
+          properties: fileProperties,
+        },
+      },
+    },
   };
 }
 

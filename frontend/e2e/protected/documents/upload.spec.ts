@@ -167,6 +167,26 @@ test.describe('selection and editing', () => {
     { name: 'unsupported extension', payload: file('evidence.exe'), error: /You can't upload this file format\. Choose a file in one of these formats:/ },
     { name: 'oversized file', payload: { ...file('oversized.txt'), buffer: Buffer.alloc(maxBytes + 1, 'a') }, error: 'The file is too large to upload. Make sure the file size is less than 5 MB.' },
     { name: 'duplicate file', payload: file(), error: 'The file "evidence.txt" is already selected or uploaded. You must choose a different file.' },
+    {
+      name: 'undetectable non-text content',
+      payload: file('unrecognized.pdf', 'Not a PDF', 'application/pdf'),
+      error: 'The file "unrecognized.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+    },
+    {
+      name: 'detected disallowed content',
+      payload: file('disallowed.txt', 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR', 'text/plain'),
+      error: 'The file "disallowed.txt" appears to be saved in the wrong format. Save the file as a Plain text file (.txt) and upload it again.',
+    },
+    {
+      name: 'mismatched allowed content renamed to another extension',
+      payload: file('mismatched.pdf', String.raw`{\rtf1\ansi Test document}`, 'application/pdf'),
+      error: 'The file "mismatched.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+    },
+    {
+      name: 'truncated image content',
+      payload: { ...file('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) },
+      error: 'The file "truncated.png" appears to be saved in the wrong format. Save the file as a PNG image (.png) and upload it again.',
+    },
   ]) {
     test(`rejects ${scenario.name} without changing existing selection`, async ({ uploadPage }) => {
       const { page } = uploadPage;
@@ -351,20 +371,6 @@ test.describe('validation, scanning and uploading', () => {
     await submittedPage.confirmation(['evidence.txt']);
   });
 
-  for (const scenario of [
-    { name: 'undetectable non-text content', payload: file('unrecognized.pdf', 'Not a PDF', 'application/pdf') },
-    { name: 'detected disallowed content', payload: file('disallowed.txt', 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR', 'text/plain') },
-  ]) {
-    test(`rejects ${scenario.name} before upload`, async ({ uploadPage }) => {
-      const { page } = uploadPage;
-      await uploadPage.addFile(scenario.payload);
-      await uploadPage.chooseType(scenario.payload.name);
-      await uploadPage.submit();
-      await expect(uploadPage.item(scenario.payload.name)).toContainText(`You can't upload this file format for "${scenario.payload.name}". Choose a file in one of these formats:`);
-      await expect(page).toHaveURL(flowUrl);
-    });
-  }
-
   test('every failed upload remains pending and can be retried', async ({ uploadPage }) => {
     const { page } = uploadPage;
     await uploadPage.addFile(file(failureName));
@@ -395,16 +401,21 @@ test.describe('validation, scanning and uploading', () => {
     await uploadPage.expectUploadCounts(0, 1);
     await expect(uploadPage.item('replacement.txt').getByRole('combobox')).toHaveValue('');
   });
+});
 
-  test('truncated image content rejects every upload in the batch', async ({ uploadPage }) => {
-    await uploadPage.addFile();
-    await uploadPage.chooseType('evidence.txt');
-    await uploadPage.addFile({ ...file('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) });
-    await uploadPage.chooseType('truncated.png');
-    await uploadPage.submit();
-    await expect(uploadPage.item('truncated.png')).toContainText('You can\'t upload this file format for "truncated.png". Choose a file in one of these formats:');
-    await expect(uploadPage.page.getByText('Uploaded successfully', { exact: true })).toHaveCount(0);
-    await expect(uploadPage.page.getByRole('combobox')).toHaveCount(2);
+test.describe('French localized content mismatch validation', () => {
+  test.use({ uploadLocale: 'fr' });
+
+  test('displays the French dynamic format error on selection when file content does not match its extension', async ({ uploadPage }) => {
+    const { page } = uploadPage;
+    const requests = collectUploadRequests(page);
+    const payload = file('mismatched.pdf', String.raw`{\rtf1\ansi Test document}`, 'application/pdf');
+    const picker = page.waitForEvent('filechooser');
+    await uploadPage.uploadButton.click();
+    await (await picker).setFiles(payload);
+    await expect(page.getByText('Le fichier «\u00A0mismatched.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.').first()).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Fichiers sélectionnés\u00A0: 0');
+    expect(requests).toHaveLength(0);
   });
 });
 

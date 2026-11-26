@@ -1,19 +1,11 @@
 import { Option } from 'effect';
-import { fileTypeFromBuffer } from 'file-type';
+import { fileTypeFromBlob } from 'file-type';
 import mime from 'mime';
-
-interface FileContentTypeInput {
-  readonly file: File;
-}
-
-interface BufferedFileContentTypeInput {
-  readonly fileBuffer: ArrayBuffer;
-  readonly declaredMimeType: string;
-}
 
 type IsFileContentTypeAllowedArgs = {
   readonly allowedExtensions: readonly string[];
-} & (FileContentTypeInput | BufferedFileContentTypeInput);
+  readonly file: File;
+};
 
 /**
  * EICAR test string used for antivirus testing.
@@ -130,39 +122,34 @@ function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | und
 }
 
 /**
- * Validates a file's content type using signature detection.
+ * Validates that a file's detected content matches the MIME type of its own allowed extension.
  *
- * Detected MIME types must match a MIME type derived from the allowed extensions. When
- * detection returns no type, the file is allowed only when declared as `text/plain`.
- * File extensions must be validated separately by the caller.
+ * The file extension must appear in `allowedExtensions`, and any detected MIME type must
+ * equal the MIME type registered for that extension. When signature detection returns no
+ * type, the file is allowed only when its extension maps to `text/plain` and its declared
+ * MIME type is `text/plain`.
  *
- * Pass pre-read buffered content to avoid reading the same file more than once.
- *
- * @param args - Allowed extensions plus a file or buffered file content
- * @returns Whether the content satisfies the detected-type policy or plain-text fallback
- * @throws {Error} When detected content is available and an allowed extension has no registered MIME type
+ * @param args - Allowed extensions and file to inspect
+ * @returns Whether the content matches the expected MIME type for the file's allowed extension
+ * @throws {Error} When the file's allowed extension has no registered MIME type
  */
-export async function isFileContentTypeAllowed(args: IsFileContentTypeAllowedArgs): Promise<boolean> {
-  let fileBuffer: ArrayBuffer;
-  let declaredMimeType: string;
+export async function isFileContentTypeAllowed({ allowedExtensions, file }: IsFileContentTypeAllowedArgs): Promise<boolean> {
+  const fileExtension = getFileExtension(file.name).toLowerCase();
+  const normalizedAllowedExtensions = new Set(allowedExtensions.map((extension) => extension.toLowerCase()));
 
-  if ('file' in args) {
-    fileBuffer = await args.file.arrayBuffer();
-    declaredMimeType = args.file.type;
-  } else {
-    fileBuffer = args.fileBuffer;
-    declaredMimeType = args.declaredMimeType;
+  if (!normalizedAllowedExtensions.has(fileExtension)) {
+    return false;
   }
 
-  const detectedFileType = await fileTypeFromBuffer(fileBuffer);
+  const expectedMimeType = getMimeType(fileExtension);
+  const detectedFileType = await fileTypeFromBlob(file);
 
-  // Plain text has no detectable signature, so fall back to its declared MIME type.
+  // Plain text has no detectable signature, so fall back to its declared MIME type only for plain-text extensions.
   if (!detectedFileType) {
-    return declaredMimeType === 'text/plain';
+    return expectedMimeType === 'text/plain' && file.type === 'text/plain';
   }
 
-  const allowedMimeTypes = new Set(args.allowedExtensions.map(getMimeType));
-  return allowedMimeTypes.has(detectedFileType.mime);
+  return detectedFileType.mime === expectedMimeType;
 }
 
 /**

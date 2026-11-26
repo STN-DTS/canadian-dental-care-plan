@@ -92,6 +92,7 @@ const ns = {
       documentTypeRequired: 'Select a document type for file "{{filename}}".',
       invalidFileType: 'You can\'t upload this file format for "{{filename}}". Choose a file in one of these formats: {{extensions}}',
       invalidFileType_fileSelection: "You can't upload this file format. Choose a file in one of these formats: {{extensions}}",
+      invalidFileContent: 'The file "{{filename}}" appears to be saved in the wrong format. Save the file as a {{fileTypeName}} ({{fileExtension}}) and upload it again.',
       tooManyFiles_one: "You can upload up to {{count}} file at a time. Submit before uploading more.",
       tooManyFiles_other: "You can upload up to {{count}} files at a time. Submit before uploading more.",
       fileTooLarge: "The file is too large to upload. Make sure the file size is less than {{filesize}}.",

@@ -105,6 +105,30 @@ for (const scenario of [
   { name: 'missing document type', file: validFile, type: '', error: 'Select a document type for file' },
   { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'You can\'t upload this file format for "evidence.exe". Choose a file in one of these formats:' },
   { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'The file is too large to upload. Make sure the file size is less than 5\u00A0MB.' },
+  {
+    name: 'undetectable non-text content',
+    file: documentFile('unrecognized.pdf', 'Not a PDF', 'application/pdf'),
+    type: 'invalid-type-id',
+    error: 'The file "unrecognized.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+  },
+  {
+    name: 'detected disallowed content',
+    file: documentFile('disallowed.txt', 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR', 'text/plain'),
+    type: 'invalid-type-id',
+    error: 'The file "disallowed.txt" appears to be saved in the wrong format. Save the file as a Plain text file (.txt) and upload it again.',
+  },
+  {
+    name: 'mismatched allowed content renamed to another extension',
+    file: documentFile('mismatched.pdf', String.raw`{\rtf1\ansi Test document}`, 'application/pdf'),
+    type: 'invalid-type-id',
+    error: 'The file "mismatched.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+  },
+  {
+    name: 'truncated image content',
+    file: { ...documentFile('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) },
+    type: 'invalid-type-id',
+    error: 'The file "truncated.png" appears to be saved in the wrong format. Save the file as a PNG image (.png) and upload it again.',
+  },
 ]) {
   test(`server repeats ${scenario.name} validation when client checks are bypassed`, async ({ uploadPage, uploadApi }) => {
     const { response, values } = await uploadApi.postData([
@@ -117,6 +141,21 @@ for (const scenario of [
     expect(values.some((value) => typeof value === 'string' && value.includes(scenario.error))).toBe(true);
   });
 }
+
+test.describe('French server-bypass content validation', () => {
+  test.use({ uploadLocale: 'fr' });
+
+  test('server returns the French dynamic format error when client checks are bypassed', async ({ uploadPage, uploadApi }) => {
+    const { response, values } = await uploadApi.postData([
+      ['_action', 'upload'],
+      ['file_id', 'first'],
+      ['file_object', documentFile('mismatched.pdf', String.raw`{\rtf1\ansi Test document}`, 'application/pdf')],
+      ['file_document_type', 'invalid-type-id'],
+    ]);
+    expect(response.status()).toBe(400);
+    expect(values).toContain('Le fichier «\u00A0mismatched.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.');
+  });
+});
 
 test('server rejects duplicate file contents with distinct IDs', async ({ uploadApi }) => {
   const { response, values } = await uploadApi.postData([...validFields, ['file_id', 'second'], ['file_object', validFile], ['file_document_type', 'invalid-type-id']]);

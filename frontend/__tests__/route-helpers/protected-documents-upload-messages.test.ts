@@ -96,6 +96,17 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     expect(t(($) => $.upload.errorMessage.fileSelectionFailed)).toBe(expected);
   });
 
+  it('provides localized wording when file content does not match its supported extension', async () => {
+    const t = await getTranslator();
+    const fileTypeName = locale === 'en' ? 'PDF document' : 'Document PDF';
+    const expected =
+      locale === 'en'
+        ? 'The file "letter.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.'
+        : 'Le fichier «\u00A0letter.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.';
+
+    expect(t(($) => $.upload.errorMessage.invalidFileContent, { filename: 'letter.pdf', fileTypeName, fileExtension: '.pdf' })).toBe(expected);
+  });
+
   it('validates oversized files both during selection and during submission', async () => {
     const t = await getTranslator();
     const file = new File([new Uint8Array(1024 * 1024 + 1)], 'oversized.txt');
@@ -148,13 +159,13 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
   it.each([1, 3])('accepts selection and submission at the maximum file count of %i', async (count) => {
     getClientEnvMock.mockReturnValue({ ...uploadLimits, DOCUMENT_UPLOAD_MAX_FILE_COUNT: count });
     const t = await getTranslator();
-    const selection = { currentFileCount: count - 1, existingFiles: [], files: [new File(['extra content'], 'extra.txt')], locale, t };
+    const selection = { currentFileCount: count - 1, existingFiles: [], files: [new File(['extra content'], 'extra.txt', { type: 'text/plain' })], locale, t };
 
     const submission = new FormData();
 
     for (let index = 0; index < count; index++) {
       submission.append('file_id', String(index));
-      submission.append('file_object', new File([`content ${index}`], `${index}.txt`));
+      submission.append('file_object', new File([`content ${index}`], `${index}.txt`, { type: 'text/plain' }));
       submission.append('file_document_type', 'receipt');
     }
 

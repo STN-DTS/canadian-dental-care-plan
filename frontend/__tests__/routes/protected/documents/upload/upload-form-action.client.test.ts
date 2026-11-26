@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { getDocumentUploadSubmittedUrl, startDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import { getFiles, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateUploadedFileContents, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { clientAction } from '~/routes/protected/documents/upload/upload-form-action.client';
 import { getLanguage } from '~/utils/locale-utils';
 
@@ -57,6 +57,7 @@ beforeEach(() => {
     success: true,
     data: { files: Object.fromEntries(parsedFiles) },
   });
+  vi.mocked(validateUploadedFileContents).mockResolvedValue({ success: true });
   vi.mocked(getLanguage).mockReturnValue('en');
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', documents: [] });
@@ -76,6 +77,56 @@ describe('clientAction', () => {
     expect(serverAction).toHaveBeenCalledOnce();
     expect(getFiles).not.toHaveBeenCalled();
     expect(validateUploadedFiles).not.toHaveBeenCalled();
+    expect(validateUploadedFileContents).not.toHaveBeenCalled();
+  });
+
+  it.each(['en', 'fr'] as const)('rejects mismatched file contents in %s without calling the server action', async (locale) => {
+    const { validateUploadedFileContents: validateUploadedFileContentsActual } = await vi.importActual<{
+      validateUploadedFileContents: typeof validateUploadedFileContents;
+    }>('~/route-helpers/protected-documents-upload-helpers');
+    vi.mocked(validateUploadedFileContents).mockImplementation(validateUploadedFileContentsActual);
+    vi.mocked(getLanguage).mockReturnValue(locale);
+    const serverAction = vi.fn();
+    const formData = validUploadFormData();
+
+    const result = await clientAction(
+      mock<ClientActionArgs>({
+        request: createRequest(formData),
+        url: new URL(`http://localhost/${locale}/protected/documents/upload/session-1`),
+        serverAction,
+      }),
+    );
+
+    expect(serverAction).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      data: {
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                'file-1': {
+                  errors: [],
+                  properties: {
+                    file: {
+                      errors: [expect.anything()],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        formAction: 'upload',
+        responseType: 'content-validation-errors',
+        source: 'client',
+      },
+      init: {
+        status: 400,
+      },
+      type: 'DataWithResponseInit',
+    });
   });
 
   it.each(['en', 'fr'] as const)('revalidates missing document types in %s without calling the server action', async (locale) => {
@@ -142,6 +193,7 @@ describe('clientAction', () => {
     ).resolves.toEqual({ submitted: true });
     expect(getFiles).toHaveBeenCalledExactlyOnceWith(formData);
     expect(validateUploadedFiles).toHaveBeenCalledExactlyOnceWith({ files: parsedFiles, locale: 'fr', t: expect.any(Function) });
+    expect(validateUploadedFileContents).toHaveBeenCalledExactlyOnceWith({ files: Object.fromEntries(parsedFiles), locale: 'fr', t: expect.any(Function) });
     expect(serverAction).toHaveBeenCalledOnce();
   });
 });

@@ -4,7 +4,7 @@ import { invariant } from '@dts-stn/invariant';
 import { useTranslation } from 'react-i18next';
 
 import type { FileState } from '~/components/file-upload';
-import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFileContents, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import type { DocumentUploadSchemaErrorTree } from '~/route-helpers/protected-documents-upload-helpers';
 import { useDocumentUploadFetcher } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
 import type { DocumentUploadFetcherData } from '~/routes/protected/documents/upload/hooks/use-document-upload-fetcher';
@@ -260,15 +260,26 @@ export function useDocumentUploadForm() {
 
       try {
         const files = await getFiles(formData);
-        const result = validateUploadedFiles({ files, locale: i18n.language, t });
+        const validationResult = validateUploadedFiles({ files, locale: i18n.language, t });
 
         if (selectionVersion !== selectionVersionRef.current) {
           return;
         }
 
-        setValidationResponse(result.success ? undefined : { errors: result.errors });
+        if (!validationResult.success) {
+          setValidationResponse({ errors: validationResult.errors });
+          return;
+        }
 
-        if (result.success) {
+        const contentValidationResult = await validateUploadedFileContents({ files: validationResult.data.files, locale: i18n.language, t });
+
+        if (selectionVersion !== selectionVersionRef.current) {
+          return;
+        }
+
+        setValidationResponse(contentValidationResult.success ? undefined : { errors: contentValidationResult.errors });
+
+        if (contentValidationResult.success) {
           reviewStateRef.current = 'reviewing';
           setReviewState('reviewing');
         }

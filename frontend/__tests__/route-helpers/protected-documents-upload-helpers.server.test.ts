@@ -11,7 +11,7 @@ import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { userContext } from '~/.server/context/user-context';
 import type { DocumentUploadService } from '~/.server/domain/services';
-import { getFixedT } from '~/.server/utils/locale-utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { ErrorCodes } from '~/errors/error-codes';
 import { findContext, getContext, getUrl } from '~/middlewares/context-storage.server';
 import type { DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
@@ -20,9 +20,13 @@ import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-util
 
 vi.mock(import('~/.server/context/app-context'));
 vi.mock(import('~/.server/context/applicant-context'));
-vi.mock(import('~/.server/utils/locale-utils'), () => ({ getFixedT: vi.fn() }));
+vi.mock(import('~/.server/utils/locale-utils'), () => ({ getFixedT: vi.fn(), getLocale: vi.fn() }));
 vi.mock(import('~/middlewares/context-storage.server'));
-vi.mock(import('~/utils/file-utils'));
+vi.mock(import('~/utils/file-utils'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  arrayBufferToBase64: vi.fn(),
+  isFileContentTypeAllowed: vi.fn(),
+}));
 
 const documentUploadServiceMock = mock<DocumentUploadService>();
 const appContainerMock = mock<AppContainerProvider>();
@@ -31,6 +35,7 @@ const tMock = mockFn<TFunction<'documents'>>();
 const translations = {
   upload: {
     errorMessage: {
+      invalidFileContent: 'invalid file content',
       invalidFileType: 'invalid file type',
       contentValidationError: 'content validation error',
       uploadFailed: 'upload failed',
@@ -43,6 +48,7 @@ const translations = {
 const getAppContextMock = vi.mocked(getAppContext, { partial: true });
 const getApplicantMock = vi.mocked(getApplicant, { partial: true });
 const getFixedTMock = vi.mocked(getFixedT);
+const getLocaleMock = vi.mocked(getLocale);
 const findContextMock = vi.mocked(findContext);
 const getContextMock = vi.mocked(getContext);
 const getUrlMock = vi.mocked(getUrl);
@@ -60,7 +66,8 @@ beforeEach(() => {
   context.set(userContext, { id: 'user-123', mocked: false, sin: '000000000' });
   getContextMock.mockReturnValue(context);
   findContextMock.mockReturnValue(Option.none());
-  getUrlMock.mockReturnValue(new URL('https://example.test/documents'));
+  getUrlMock.mockReturnValue(new URL('https://example.test/en/documents'));
+  getLocaleMock.mockReturnValue('en');
   getFixedTMock.mockResolvedValue(tMock);
   arrayBufferToBase64Mock.mockReturnValue('base64-content');
   isFileContentTypeAllowedMock.mockResolvedValue(true);
@@ -74,21 +81,65 @@ beforeEach(() => {
 describe('protected-documents-upload-helpers.server', () => {
   describe('validateDocumentContents', () => {
     it('should accept allowed content using only server configuration', async () => {
-      await expect(validateDocumentContents(createFiles())).resolves.toEqual({ success: true });
+      const files = createFiles();
+      await expect(validateDocumentContents(files)).resolves.toEqual({ success: true });
       expect(isFileContentTypeAllowedMock).toHaveBeenCalledWith({
         allowedExtensions: ['.txt'],
-        declaredMimeType: 'text/plain',
-        fileBuffer: new TextEncoder().encode('content').buffer,
+        file: files.first.file,
       });
       expect(appContainerMock.get).toHaveBeenCalledOnce();
       expect(appContainerMock.get).toHaveBeenCalledWith(TYPES.ServerConfig);
       expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
     });
 
-    it('should reject content whose detected type is not allowed', async () => {
+    it.each([
+      { locale: 'en' as const, expectedTypeName: 'Plain text file' },
+      { locale: 'fr' as const, expectedTypeName: 'Fichier texte brut' },
+    ])('should reject mismatched content with the localized file type name for $locale', async ({ locale, expectedTypeName }) => {
+      getLocaleMock.mockReturnValue(locale);
       isFileContentTypeAllowedMock.mockResolvedValue(false);
 
       const result = await validateDocumentContents(createFiles());
+
+      expect(result).toMatchObject({
+        success: false,
+        errors: {
+          properties: {
+            files: {
+              properties: {
+                first: {
+                  properties: {
+                    file: {
+                      errors: ['invalid file content'],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      expect(getFixedTMock).toHaveBeenCalledWith(locale, 'documents');
+      expect(tMock).toHaveBeenCalledWith(expect.any(Function), {
+        filename: 'document.txt',
+        fileTypeName: expectedTypeName,
+        fileExtension: '.txt',
+      });
+      expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
+    });
+
+    it('should reject an unconfigured extension with invalidFileType before checking file contents', async () => {
+      const file = new File(['content'], 'document.exe', { type: 'application/octet-stream', lastModified: 1_000 });
+      const files = {
+        first: {
+          file,
+          fileBuffer: new TextEncoder().encode('content').buffer,
+          fileHash: 'hash',
+          documentType: 'receipt',
+        },
+      } satisfies DocumentUploadSchemaOutput['files'];
+
+      const result = await validateDocumentContents(files);
 
       expect(result).toMatchObject({
         success: false,
@@ -108,7 +159,11 @@ describe('protected-documents-upload-helpers.server', () => {
           },
         },
       });
-      expect(documentUploadServiceMock.scanDocument).not.toHaveBeenCalled();
+      expect(isFileContentTypeAllowedMock).not.toHaveBeenCalled();
+      expect(tMock).toHaveBeenCalledWith(expect.any(Function), {
+        filename: 'document.exe',
+        extensions: '.txt',
+      });
     });
 
     it('should translate unexpected content validation errors for affected files', async () => {

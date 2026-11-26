@@ -1,62 +1,47 @@
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import type { Get } from 'type-fest';
 
 import { TYPES } from '~/.server/constants';
 import { getAppContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
 import { getUser } from '~/.server/context/user-context';
 import { createLogger } from '~/.server/logging';
-import { getFixedT } from '~/.server/utils/locale-utils';
+import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { getUrl } from '~/middlewares/context-storage.server';
-import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput } from '~/route-helpers/protected-documents-upload-helpers';
-import { arrayBufferToBase64, isFileContentTypeAllowed } from '~/utils/file-utils';
-
-type ValidateDocumentContentsResponse = { success: true; errors?: undefined } | { success: false; errors: DocumentUploadSchemaErrorTree };
+import { createDocumentUploadFileErrorTree, validateUploadedFileContents } from '~/route-helpers/protected-documents-upload-helpers';
+import type { DocumentUploadSchemaErrorTree, DocumentUploadSchemaOutput, ValidateUploadedFileContentsResult } from '~/route-helpers/protected-documents-upload-helpers';
+import { arrayBufferToBase64 } from '~/utils/file-utils';
 
 /**
- * Validates file content types locally. EWDU scans files during upload.
+ * Validates file content types locally using server configuration. EWDU scans files during upload.
  *
  * @param files - Files whose content types must be checked before uploading the batch.
  * @returns Success when every document passes validation; otherwise, file-specific errors.
  */
-export async function validateDocumentContents(files: DocumentUploadSchemaOutput['files']): Promise<ValidateDocumentContentsResponse> {
+export async function validateDocumentContents(files: Readonly<Record<string, { file: File }>>): Promise<ValidateUploadedFileContentsResult> {
   const log = createLogger('protected-documents-upload-helpers/validateDocumentContents');
 
   const url = getUrl();
-  const t = await getFixedT(url, 'documents');
+  const locale = getLocale(url);
+  const t = await getFixedT(locale, 'documents');
 
   const { appContainer } = getAppContext();
   const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES } = appContainer.get(TYPES.ServerConfig);
-  const allowedExtensions = DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension);
 
-  const results = await Promise.all(
-    Object.entries(files).map(async ([id, { file, fileBuffer }]) => {
-      try {
-        const invalidTypeError = t(($) => $.upload.errorMessage.invalidFileType, {
-          filename: file.name,
-          extensions: allowedExtensions.join(', '),
-        });
-
-        const isContentTypeAllowed = await isFileContentTypeAllowed({
-          allowedExtensions,
-          declaredMimeType: file.type,
-          fileBuffer,
-        });
-
-        if (!isContentTypeAllowed) {
-          log.debug('File content type rejected before upload', { [ATTR_ERROR_TYPE]: 'unsupported_file_content_type' });
-          return { id, error: invalidTypeError };
-        }
-
-        return { id, success: true };
-      } catch (error) {
-        log.error(error, { [ATTR_ERROR_TYPE]: 'file_content_validation_failed' });
-        return { id, error: t(($) => $.upload.errorMessage.contentValidationError, { filename: file.name }) };
+  return await validateUploadedFileContents({
+    allowedFileTypes: DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES,
+    files,
+    locale,
+    t,
+    onFailure: ({ reason, cause }) => {
+      if (reason === 'unsupported_file_extension') {
+        log.debug('File extension rejected before upload', { [ATTR_ERROR_TYPE]: reason });
+      } else if (reason === 'unsupported_file_content_type') {
+        log.debug('File content type rejected before upload', { [ATTR_ERROR_TYPE]: reason });
+      } else {
+        log.error(cause, { [ATTR_ERROR_TYPE]: reason });
       }
-    }),
-  );
-
-  return processBatchResults(results);
+    },
+  });
 }
 
 export type UploadDocumentsResponseSuccess = { success: true; errors?: undefined; uploadDates: Readonly<Record<string, string>> };
@@ -105,47 +90,7 @@ export async function uploadDocuments(files: DocumentUploadSchemaOutput['files']
   );
 
   return {
-    ...processBatchResults(results),
+    ...createDocumentUploadFileErrorTree(results),
     uploadDates: Object.fromEntries(results.flatMap(({ id, uploadDate }) => (uploadDate === undefined ? [] : [[id, uploadDate]]))),
-  };
-}
-
-/**
- * Converts batch operation failures into document upload validation errors.
- *
- * @param results - Per-file operation results identified by file ID.
- * @returns Success when no result contains an error; otherwise, an error tree keyed by file ID.
- */
-function processBatchResults(results: ReadonlyArray<{ id: string; error?: string }>): ValidateDocumentContentsResponse {
-  const failures = results.filter((result): result is { id: string; error: string } => result.error !== undefined);
-
-  if (failures.length === 0) {
-    return { success: true };
-  }
-
-  const fileProperties: NonNullable<Get<DocumentUploadSchemaErrorTree, 'properties.files.properties'>> = {};
-
-  for (const { id, error } of failures) {
-    fileProperties[id] = {
-      errors: [],
-      properties: {
-        file: {
-          errors: [error],
-        },
-      },
-    };
-  }
-
-  return {
-    success: false,
-    errors: {
-      errors: [],
-      properties: {
-        files: {
-          errors: [],
-          properties: fileProperties,
-        },
-      },
-    },
   };
 }

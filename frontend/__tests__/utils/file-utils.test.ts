@@ -65,23 +65,53 @@ describe('file-utils', () => {
   });
 
   describe('isFileContentTypeAllowed', () => {
-    it('should allow detected RTF content when the extension is allowed', async () => {
-      const file = new File([String.raw`{\rtf1\ansi Test document}`], 'document.rtf', { type: 'application/rtf' });
-      const fileBuffer = await file.arrayBuffer();
+    const rtfContent = String.raw`{\rtf1\ansi Test document}`;
+    const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 
-      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.rtf'], declaredMimeType: file.type, fileBuffer })).resolves.toBe(true);
+    it('should allow detected RTF content when its extension is allowed and matches', async () => {
+      const file = new File([rtfContent], 'document.rtf', { type: 'application/rtf' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.rtf'], file })).resolves.toBe(true);
     });
 
-    it('should reject detected content when its MIME type is not allowed', async () => {
-      const file = new File([String.raw`{\rtf1\ansi Test document}`], 'document.rtf', { type: 'application/rtf' });
+    it('should allow alias extensions sharing the same MIME type', async () => {
+      const jpgFile = new File([jpegBytes], 'photo.jpg', { type: 'image/jpeg' });
+      const jpegFile = new File([jpegBytes], 'photo.jpeg', { type: 'image/jpeg' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.jpg', '.jpeg'], file: jpgFile })).resolves.toBe(true);
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.jpg', '.jpeg'], file: jpegFile })).resolves.toBe(true);
+    });
+
+    it('should reject detected content whose extension is not allowed', async () => {
+      const file = new File([rtfContent], 'document.rtf', { type: 'application/rtf' });
 
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(false);
     });
 
-    it('should allow undetected content declared as text/plain', async () => {
+    it('should reject detected content from another allowed type when renamed to a different allowed extension', async () => {
+      const file = new File([rtfContent], 'document.pdf', { type: 'application/pdf' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf', '.rtf'], file })).resolves.toBe(false);
+    });
+
+    it('should allow undetected content declared as text/plain when .txt is allowed', async () => {
       const file = new File(['Plain text document'], 'document.txt', { type: 'text/plain' });
 
-      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file })).resolves.toBe(true);
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.txt'], file })).resolves.toBe(true);
+    });
+
+    it('should reject undetected text/plain content when .txt is not allowed or extension is not text/plain', async () => {
+      const txtFile = new File(['Plain text document'], 'document.txt', { type: 'text/plain' });
+      const renamedPdfFile = new File(['Plain text document'], 'document.pdf', { type: 'text/plain' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf'], file: txtFile })).resolves.toBe(false);
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf', '.txt'], file: renamedPdfFile })).resolves.toBe(false);
+    });
+
+    it('should reject detected non-text content renamed to .txt even when declared as text/plain', async () => {
+      const file = new File(['BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR'], 'disallowed.txt', { type: 'text/plain' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.txt'], file })).resolves.toBe(false);
     });
 
     it('should reject undetected content not declared as text/plain', async () => {
