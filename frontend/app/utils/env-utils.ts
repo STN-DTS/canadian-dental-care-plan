@@ -3,6 +3,7 @@ import * as z from 'zod';
 
 import { isValidTimeZone } from '~/utils/date-utils';
 import { isValidExtension } from '~/utils/file-utils';
+import { jsonCodec } from '~/utils/zod-utils';
 
 const validFeatureNames = ['hcaptcha', 'killswitch-api', 'show-prototype-banner', 'stub-login', 'status', 'view-letters', 'view-payload', 'doc-upload'] as const;
 
@@ -10,11 +11,44 @@ export type FeatureName = (typeof validFeatureNames)[number];
 
 // refiners
 const areValidFeatureNames = (arr: Array<string>): arr is FeatureName[] => arr.every((featureName) => validFeatureNames.includes(featureName as FeatureName));
+const hasUniqueExtensions = (fileTypes: ReadonlyArray<{ extension: string }>) => new Set(fileTypes.map(({ extension }) => extension)).size === fileTypes.length;
 
 // transformers
 const csvToArray = (csv?: string) => csv?.split(',').map((str) => str.trim()) ?? [];
 const emptyToUndefined = (val?: string) => (val === '' ? undefined : val);
 const toBoolean = (val?: string) => val === 'true';
+
+const allowedFileTypeLabelPattern = /^[\p{L}\p{N} \u00A0.,'’()/+&-]+$/u;
+
+const allowedFileTypeLabelSchema = z.string().trim().nonempty().regex(allowedFileTypeLabelPattern, {
+  error: 'File type name contains unsupported characters',
+});
+
+const allowedFileTypeSchema = z.object({
+  extension: z.string().trim().toLowerCase().refine(isValidExtension, { error: 'Invalid file extension' }),
+  nameEn: allowedFileTypeLabelSchema,
+  nameFr: allowedFileTypeLabelSchema,
+});
+
+const allowedFileTypesSchema = z.array(allowedFileTypeSchema).nonempty().refine(hasUniqueExtensions, { error: 'Duplicate file extensions are not allowed' });
+
+export type DocumentUploadAllowedFileType = ReadonlyDeep<z.infer<typeof allowedFileTypeSchema>>;
+
+const defaultDocumentUploadAllowedFileTypes: z.output<typeof allowedFileTypesSchema> = [
+  { extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' },
+  { extension: '.docx', nameEn: 'Microsoft Word document', nameFr: 'Document Microsoft Word' },
+  { extension: '.rtf', nameEn: 'Rich Text Format document', nameFr: 'Document en format texte enrichi' },
+  { extension: '.xlsx', nameEn: 'Microsoft Excel spreadsheet', nameFr: 'Feuille de calcul Microsoft Excel' },
+  { extension: '.pptx', nameEn: 'Microsoft PowerPoint presentation', nameFr: 'Présentation Microsoft PowerPoint' },
+  { extension: '.txt', nameEn: 'Plain text file', nameFr: 'Fichier texte brut' },
+  { extension: '.jpg', nameEn: 'JPEG image', nameFr: 'Image JPEG' },
+  { extension: '.jpeg', nameEn: 'JPEG image', nameFr: 'Image JPEG' },
+  { extension: '.png', nameEn: 'PNG image', nameFr: 'Image PNG' },
+  { extension: '.gif', nameEn: 'GIF image', nameFr: 'Image GIF' },
+  { extension: '.bmp', nameEn: 'Bitmap image', nameFr: 'Image bitmap' },
+  { extension: '.tif', nameEn: 'TIFF image', nameFr: 'Image TIFF' },
+  { extension: '.tiff', nameEn: 'TIFF image', nameFr: 'Image TIFF' },
+];
 
 /**
  * Environment variables that are safe to expose publicly to the client.
@@ -76,10 +110,7 @@ export const clientEnvSchema = z.object({
   DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR: z.url().default('https://www.canada.ca/examen-demandeur-dentaire'),
 
   // Document upload configs
-  DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: z.string().trim().toLowerCase().default('.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff')
-    .transform(csvToArray)
-    .transform((val) => [...new Set(val)]) // remove duplicates
-    .pipe(z.array(z.string().refine(isValidExtension)).nonempty()),
+  DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: jsonCodec(allowedFileTypesSchema).default(defaultDocumentUploadAllowedFileTypes),
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
   DOCUMENT_UPLOAD_MAX_FILE_COUNT: z.coerce.number().positive().default(10),
   RECORD_SOURCE_API: z.string().trim().nonempty().default('775170002'),

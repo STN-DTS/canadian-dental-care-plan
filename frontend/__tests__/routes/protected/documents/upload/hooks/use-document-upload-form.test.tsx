@@ -43,7 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   validateFileSelectionMock.mockResolvedValue({ success: true, errors: undefined });
   getClientEnvMock.mockReturnValue({
-    DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf'],
+    DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' }],
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
     DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
   });

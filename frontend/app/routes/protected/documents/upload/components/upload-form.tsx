@@ -30,7 +30,8 @@ interface DocumentUploadFormProps {
 
 export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
   const { t, i18n } = useTranslation('documents');
-  const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
+  const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES, DOCUMENT_UPLOAD_MAX_FILE_COUNT, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = useClientEnv();
+  const allowedExtensions = useMemo(() => DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension), [DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES]);
 
   const fetcher = useDocumentUploadFetcher();
   const { isSubmitting: isFetcherSubmitting, submitAction } = useFetcherSubmissionState(fetcher);
@@ -91,7 +92,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
               </li>
               <li>
                 {t(($) => $.upload.uploadFiles.acceptedTypes, {
-                  extensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(', '),
+                  extensions: allowedExtensions.join(', '),
                 })}
               </li>
             </ul>
@@ -104,7 +105,7 @@ export function DocumentUploadForm({ documentTypes }: DocumentUploadFormProps) {
               value={filesWithTypes}
               onValueChange={handleFileChange}
               onBeforeFilesAdd={handleBeforeFilesAdd}
-              accept={DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(',')}
+              accept={allowedExtensions.join(',')}
               disabled={isSubmitting}
               required
               className="gap-4 sm:gap-6"

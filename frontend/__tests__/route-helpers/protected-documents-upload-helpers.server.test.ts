@@ -67,7 +67,7 @@ beforeEach(() => {
 
   appContainerMock.get.mockReset();
   appContainerMock.get.mockReturnValue({
-    DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
+    DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.txt', nameEn: 'Plain text file', nameFr: 'Fichier texte brut' }],
   });
 });
 

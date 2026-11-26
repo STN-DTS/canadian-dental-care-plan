@@ -25,7 +25,7 @@ const uploadId = '00000000-0000-0000-0000-000000000000';
 const clientEnv = {
   ADOBE_ANALYTICS_JQUERY_SRC: 'https://code.jquery.com/jquery-3.7.1.min.js',
   ADOBE_ANALYTICS_SRC: undefined,
-  DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
+  DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.txt', nameEn: 'Plain text file', nameFr: 'Fichier texte brut' }],
   DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
 };

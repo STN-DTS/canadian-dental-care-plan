@@ -252,11 +252,11 @@ from the submitted form, and repeats validation before accepting the submission.
 
 The browser and server use these validation defaults:
 
-| Setting            | Current default                                                                                             | Source                                    |
-| ------------------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Allowed extensions | `.pdf`, `.docx`, `.rtf`, `.xlsx`, `.pptx`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tif`, `.tiff` | `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS` |
-| Maximum file size  | 5 MB per file                                                                                               | `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`        |
-| Maximum file count | 10 listed files during selection; at most 10 pending files per submitted batch                              | `DOCUMENT_UPLOAD_MAX_FILE_COUNT`          |
+| Setting            | Current default                                                                                             | Source                               |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Allowed file types | `.pdf`, `.docx`, `.rtf`, `.xlsx`, `.pptx`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tif`, `.tiff` | `DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES` |
+| Maximum file size  | 5 MB per file                                                                                               | `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`   |
+| Maximum file count | 10 listed files during selection; at most 10 pending files per submitted batch                              | `DOCUMENT_UPLOAD_MAX_FILE_COUNT`     |
 
 The application applies these rules:
 
@@ -396,29 +396,29 @@ Inversify selects the document upload repository using `INTEROP_DOCUMENT_UPLOAD_
 
 ### Runtime settings
 
-| Setting                                       | Purpose                                            | Current default or source                                               |
-| --------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| `INTEROP_API_BASE_URI`                        | Base URI for EWDU and Power Platform Interop APIs  | Required; environment-specific                                          |
-| `INTEROP_API_SUBSCRIPTION_KEY`                | Subscription key used by both adapters             | Required; secret                                                        |
-| `INTEROP_API_MAX_RETRIES`                     | Retry count for configured transient HTTP failures | `3`                                                                     |
-| `INTEROP_API_BACKOFF_MS`                      | Retry backoff                                      | `100` ms                                                                |
-| `INTEROP_DOCUMENT_UPLOAD_PROVIDER`            | Document upload repository provider                | `default`; set to `mock` for mocked uploads                             |
-| `INTEROP_DOCUMENT_UPLOAD_BASE_URI`            | EWDU Interop base URI override                     | `INTEROP_API_BASE_URI`                                                  |
-| `INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY`    | EWDU subscription key override                     | `INTEROP_API_SUBSCRIPTION_KEY`; secret                                  |
-| `INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER`        | HTTPS OAuth issuer URL                             | Required for real EWDU requests; no default                             |
-| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID`     | Application client ID                              | Required for real EWDU requests; no default                             |
-| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET` | Application client secret                          | Required for real EWDU requests; secret                                 |
-| `INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE`         | Resource scope granted to the client               | Required for real EWDU requests; provider-specific                      |
-| `HTTP_PROXY_URL`                              | Optional proxy used by the HTTP client             | Environment-specific                                                    |
-| `EWDU_ENCAPSULATION_USERNAME`                 | Credential added to EWDU request bodies            | `CDCP`                                                                  |
-| `EWDU_ENCAPSULATION_PASSWORD`                 | Credential added to EWDU request bodies            | Required for the default provider; deployment secret                    |
-| `EWDU_PROGRAM_ACTIVITY_ID`                    | EWDU program activity identifier                   | `CDCP`                                                                  |
-| `EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER`        | Document type code (`esdc_value`) listed last      | `998`                                                                   |
-| `RECORD_SOURCE_API`                           | Upload-method override mapping for API source      | `775170002`                                                             |
-| `RECORD_SOURCE_MSCA`                          | Upload-method override mapping for MSCA source     | `775170004`                                                             |
-| `DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS`     | Browser and server extension allow-list            | `.pdf,.docx,.rtf,.xlsx,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff` |
-| `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`            | Browser and server per-file size limit             | `5`                                                                     |
-| `DOCUMENT_UPLOAD_MAX_FILE_COUNT`              | Browser and server batch limit                     | `10`                                                                    |
+| Setting                                       | Purpose                                                                               | Current default or source                                                                                                      |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `INTEROP_API_BASE_URI`                        | Base URI for EWDU and Power Platform Interop APIs                                     | Required; environment-specific                                                                                                 |
+| `INTEROP_API_SUBSCRIPTION_KEY`                | Subscription key used by both adapters                                                | Required; secret                                                                                                               |
+| `INTEROP_API_MAX_RETRIES`                     | Retry count for configured transient HTTP failures                                    | `3`                                                                                                                            |
+| `INTEROP_API_BACKOFF_MS`                      | Retry backoff                                                                         | `100` ms                                                                                                                       |
+| `INTEROP_DOCUMENT_UPLOAD_PROVIDER`            | Document upload repository provider                                                   | `default`; set to `mock` for mocked uploads                                                                                    |
+| `INTEROP_DOCUMENT_UPLOAD_BASE_URI`            | EWDU Interop base URI override                                                        | `INTEROP_API_BASE_URI`                                                                                                         |
+| `INTEROP_DOCUMENT_UPLOAD_SUBSCRIPTION_KEY`    | EWDU subscription key override                                                        | `INTEROP_API_SUBSCRIPTION_KEY`; secret                                                                                         |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_ISSUER`        | HTTPS OAuth issuer URL                                                                | Required for real EWDU requests; no default                                                                                    |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_ID`     | Application client ID                                                                 | Required for real EWDU requests; no default                                                                                    |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_CLIENT_SECRET` | Application client secret                                                             | Required for real EWDU requests; secret                                                                                        |
+| `INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE`         | Resource scope granted to the client                                                  | Required for real EWDU requests; provider-specific                                                                             |
+| `HTTP_PROXY_URL`                              | Optional proxy used by the HTTP client                                                | Environment-specific                                                                                                           |
+| `EWDU_ENCAPSULATION_USERNAME`                 | Credential added to EWDU request bodies                                               | `CDCP`                                                                                                                         |
+| `EWDU_ENCAPSULATION_PASSWORD`                 | Credential added to EWDU request bodies                                               | Required for the default provider; deployment secret                                                                           |
+| `EWDU_PROGRAM_ACTIVITY_ID`                    | EWDU program activity identifier                                                      | `CDCP`                                                                                                                         |
+| `EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER`        | Document type code (`esdc_value`) listed last                                         | `998`                                                                                                                          |
+| `RECORD_SOURCE_API`                           | Upload-method override mapping for API source                                         | `775170002`                                                                                                                    |
+| `RECORD_SOURCE_MSCA`                          | Upload-method override mapping for MSCA source                                        | `775170004`                                                                                                                    |
+| `DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES`          | Browser and server allowed file types (JSON array of `{ extension, nameEn, nameFr }`) | 13 default types (`.pdf`, `.docx`, `.rtf`, `.xlsx`, `.pptx`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tif`, `.tiff`) |
+| `DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB`            | Browser and server per-file size limit                                                | `5`                                                                                                                            |
+| `DOCUMENT_UPLOAD_MAX_FILE_COUNT`              | Browser and server batch limit                                                        | `10`                                                                                                                           |
 
 The browser and server read upload limits from separate configuration values. Update both during deployment so the displayed limits match those the server enforces.
 

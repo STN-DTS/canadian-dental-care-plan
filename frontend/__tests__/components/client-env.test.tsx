@@ -27,7 +27,11 @@ describe('<ClientEnv>', () => {
       COMMUNICATION_METHOD_SUNLIFE_MAIL_ID: 'MAIL',
       COMMUNICATION_METHOD_GC_DIGITAL_ID: 'DIGITAL',
       COMMUNICATION_METHOD_GC_MAIL_ID: 'MAIL',
-      DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf', '.jpg', '.png'],
+      DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [
+        { extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' },
+        { extension: '.jpg', nameEn: 'JPEG image', nameFr: 'Image JPEG' },
+        { extension: '.png', nameEn: 'PNG image', nameFr: 'Image PNG' },
+      ],
       DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_EN: 'https://www.canada.ca/dental-applicant-review',
       DOCUMENT_UPLOAD_ELIGIBILITY_FORM_LINK_FR: 'https://www.canada.ca/examen-demandeur-dentaire',
       DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,

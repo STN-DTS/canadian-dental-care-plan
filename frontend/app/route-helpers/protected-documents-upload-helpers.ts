@@ -182,18 +182,19 @@ type CreateFileValidationSchemaArgs = {
  * @returns Schema configured with client upload extension and size limits.
  */
 function createFileValidationSchema({ context, locale, t }: CreateFileValidationSchemaArgs) {
-  const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = getClientEnv();
+  const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES, DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB } = getClientEnv();
+  const allowedExtensions = DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension);
   const maxFileSizeInBytes = megabytesToBytes(DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB);
   return z
     .custom<File>((value) => typeof value === 'object' && value !== null && 'name' in value && 'size' in value)
     .superRefine((file, ctx) => {
-      if (!DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.includes(getFileExtension(file.name))) {
+      if (!allowedExtensions.includes(getFileExtension(file.name))) {
         ctx.addIssue({
           code: 'custom',
           message: t(($) => $.upload.errorMessage.invalidFileType, {
             context,
             filename: file.name,
-            extensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(', '),
+            extensions: allowedExtensions.join(', '),
           }),
         });
       } else if (file.size > maxFileSizeInBytes) {

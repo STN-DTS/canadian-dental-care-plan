@@ -10,7 +10,7 @@ vi.mock(import('~/utils/env-utils'));
 
 const getClientEnvMock = vi.mocked(getClientEnv, { partial: true });
 getClientEnvMock.mockReturnValue({
-  DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.txt'],
+  DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.txt', nameEn: 'Plain text file', nameFr: 'Fichier texte brut' }],
   DOCUMENT_UPLOAD_MAX_FILE_COUNT: 3,
   DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 1,
 });

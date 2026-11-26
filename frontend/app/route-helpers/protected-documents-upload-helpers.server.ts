@@ -26,18 +26,19 @@ export async function validateDocumentContents(files: DocumentUploadSchemaOutput
   const t = await getFixedT(url, 'documents');
 
   const { appContainer } = getAppContext();
-  const { DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS } = appContainer.get(TYPES.ServerConfig);
+  const { DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES } = appContainer.get(TYPES.ServerConfig);
+  const allowedExtensions = DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES.map(({ extension }) => extension);
 
   const results = await Promise.all(
     Object.entries(files).map(async ([id, { file, fileBuffer }]) => {
       try {
         const invalidTypeError = t(($) => $.upload.errorMessage.invalidFileType, {
           filename: file.name,
-          extensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS.join(', '),
+          extensions: allowedExtensions.join(', '),
         });
 
         const isContentTypeAllowed = await isFileContentTypeAllowed({
-          allowedExtensions: DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS,
+          allowedExtensions,
           declaredMimeType: file.type,
           fileBuffer,
         });

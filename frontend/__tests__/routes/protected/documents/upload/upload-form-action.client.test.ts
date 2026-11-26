@@ -48,7 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn().mockReturnValue(uploadId) });
   vi.stubGlobal('env', {
-    DOCUMENT_UPLOAD_ALLOWED_FILE_EXTENSIONS: ['.pdf'],
+    DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' }],
     DOCUMENT_UPLOAD_MAX_FILE_COUNT: 10,
     DOCUMENT_UPLOAD_MAX_FILE_SIZE_MB: 5,
   });
