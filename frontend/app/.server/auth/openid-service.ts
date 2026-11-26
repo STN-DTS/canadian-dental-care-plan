@@ -84,14 +84,22 @@ export class DefaultOpenIdService implements AuthService {
     const configuration = await this.discover();
 
     const correlation = { state: randomState(), nonce: randomNonce(), codeVerifier: randomPKCECodeVerifier() };
-    const authUrl = buildAuthorizationUrl(configuration, {
-      redirect_uri: this.config.redirectUri.href,
-      scope: SCOPE,
-      code_challenge: await calculatePKCECodeChallenge(correlation.codeVerifier),
-      code_challenge_method: 'S256',
-      state: correlation.state,
-      nonce: correlation.nonce,
-    });
+    const codeChallenge = await calculatePKCECodeChallenge(correlation.codeVerifier);
+    let authUrl: URL;
+
+    try {
+      authUrl = buildAuthorizationUrl(configuration, {
+        redirect_uri: this.config.redirectUri.href,
+        scope: SCOPE,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        state: correlation.state,
+        nonce: correlation.nonce,
+      });
+    } catch (error) {
+      // A missing or non-HTTPS authorization_endpoint in the discovered metadata.
+      throw connectivityError('OIDC discovery failed.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, HttpStatusCodes.BAD_GATEWAY, libraryErrorType(error));
+    }
 
     return { authUrl, correlation };
   }
@@ -219,9 +227,17 @@ function oauthErrorType(code: unknown): string {
   return typeof code === 'string' && OAUTH_ERROR_CODES.has(code) ? code : ERROR_TYPE_VALUE_OTHER;
 }
 
-/** openid-client error codes are library constants, so they are safe to log; messages and causes are not. */
+/**
+ * openid-client and oauth4webapi error codes are library constants, so they are safe to log; messages and causes are
+ * not. Some failures, such as missing server metadata, come straight from oauth4webapi rather than as a `ClientError`.
+ */
 function libraryErrorType(error: unknown): string {
-  return error instanceof ClientError && typeof error.code === 'string' ? error.code : ERROR_TYPE_VALUE_OTHER;
+  if (error instanceof ClientError && typeof error.code === 'string') {
+    return error.code;
+  }
+
+  const code = error instanceof Error && 'code' in error ? error.code : undefined;
+  return typeof code === 'string' && /^OAUTH_[A-Z_]+$/.test(code) ? code : ERROR_TYPE_VALUE_OTHER;
 }
 
 /**

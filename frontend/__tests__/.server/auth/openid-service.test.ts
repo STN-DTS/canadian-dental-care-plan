@@ -214,6 +214,16 @@ describe('DefaultOpenIdService', () => {
       expect(logger.error).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['is missing', undefined, 'OAUTH_MISSING_SERVER_METADATA'],
+      ['is not HTTPS', 'http://isams.example.test/oauth2/authorize', 'OAUTH_HTTP_REQUEST_FORBIDDEN'],
+    ])('fails as a discovery error when the authorization endpoint %s', async (_label, endpoint, reason) => {
+      const metadata = (await provider.discovery().json()) as Record<string, unknown>;
+      provider.discovery = () => Response.json({ ...metadata, authorization_endpoint: endpoint });
+
+      await expect(createService().generateSigninRequest()).rejects.toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED, httpStatusCode: 502, meta: { reason } });
+    });
+
     it('fails when the discovered issuer does not match the configured issuer', async () => {
       const original = provider.discovery();
       const metadata = (await original.json()) as Record<string, unknown>;
