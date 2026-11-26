@@ -96,8 +96,8 @@ describe('file-utils', () => {
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf', '.rtf'], file })).resolves.toBe(false);
     });
 
-    it('should allow undetected content declared as text/plain when .txt is allowed', async () => {
-      const file = new File(['Plain text document'], 'document.txt', { type: 'text/plain' });
+    it.each(['text/plain', 'text/plain;charset=utf-8', 'TEXT/PLAIN; charset=UTF-8'])('should allow undetected content declared as %s when .txt is allowed', async (type) => {
+      const file = new File(['Plain text document'], 'document.txt', { type });
 
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.txt'], file })).resolves.toBe(true);
     });

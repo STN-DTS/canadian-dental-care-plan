@@ -146,7 +146,8 @@ export async function isFileContentTypeAllowed({ allowedExtensions, file }: IsFi
 
   // Plain text has no detectable signature, so fall back to its declared MIME type only for plain-text extensions.
   if (!detectedFileType) {
-    return expectedMimeType === 'text/plain' && file.type === 'text/plain';
+    const declaredMimeType = file.type.split(';')[0]?.trim().toLowerCase();
+    return expectedMimeType === 'text/plain' && declaredMimeType === 'text/plain';
   }
 
   return detectedFileType.mime === expectedMimeType;
