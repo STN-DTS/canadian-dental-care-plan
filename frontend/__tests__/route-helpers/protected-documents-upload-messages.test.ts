@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
-import { getFiles, validateFileSelection, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
+import { getFiles, validateFileSelection, validateUploadedFileContents, validateUploadedFiles } from '~/route-helpers/protected-documents-upload-helpers';
 import { getClientEnv } from '~/utils/env-utils';
 import { bytesToFilesize } from '~/utils/units-utils';
 
@@ -96,15 +96,30 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     expect(t(($) => $.upload.errorMessage.fileSelectionFailed)).toBe(expected);
   });
 
-  it('provides localized wording when file content does not match its supported extension', async () => {
+  it('provides localized wording when file content does not match its supported extension during selection and submission', async () => {
+    getClientEnvMock.mockReturnValue({
+      ...uploadLimits,
+      DOCUMENT_UPLOAD_ALLOWED_FILE_TYPES: [{ extension: '.pdf', nameEn: 'PDF document', nameFr: 'Document PDF' }],
+    });
     const t = await getTranslator();
-    const fileTypeName = locale === 'en' ? 'PDF document' : 'Document PDF';
-    const expected =
+    const file = new File(['Not a PDF'], 'letter.pdf', { type: 'application/pdf' });
+    const expectedSubmit =
       locale === 'en'
         ? 'The file "letter.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.'
-        : 'Le fichier «\u00A0letter.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.';
+        : 'Le fichier «\u00A0letter.pdf\u00A0» semble avoir été enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.';
+    const expectedFileSelection =
+      locale === 'en'
+        ? 'The file appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.'
+        : 'Le fichier semble avoir été enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.';
 
-    expect(t(($) => $.upload.errorMessage.invalidFileContent, { filename: 'letter.pdf', fileTypeName, fileExtension: '.pdf' })).toBe(expected);
+    await expect(validateFileSelection({ currentFileCount: 0, existingFiles: [], files: [file], locale, t })).resolves.toMatchObject({
+      success: false,
+      errors: { properties: { files: { errors: [expectedFileSelection] } } },
+    });
+    await expect(validateUploadedFileContents({ files: { first: { file } }, locale, t })).resolves.toMatchObject({
+      success: false,
+      errors: { properties: { files: { properties: { first: { properties: { file: { errors: [expectedSubmit] } } } } } } },
+    });
   });
 
   it('validates oversized files both during selection and during submission', async () => {

@@ -146,6 +146,7 @@ describe('protected-documents-upload-helpers', () => {
         },
       });
       expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'fileSelection',
         filename: 'letter.rtf',
         fileTypeName: expectedTypeName,
         fileExtension: '.rtf',
@@ -178,6 +179,7 @@ describe('protected-documents-upload-helpers', () => {
         },
       });
       expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'fileSelection',
         filename: 'LETTER.RTF',
         fileTypeName: 'Rich Text Format document',
         fileExtension: '.rtf',
@@ -254,6 +256,7 @@ describe('protected-documents-upload-helpers', () => {
         },
       });
       expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'submit',
         filename: 'letter.rtf',
         fileTypeName: 'Document en format texte enrichi',
         fileExtension: '.rtf',

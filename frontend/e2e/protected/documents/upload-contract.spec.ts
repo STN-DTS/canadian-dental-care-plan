@@ -153,7 +153,7 @@ test.describe('French server-bypass content validation', () => {
       ['file_document_type', 'invalid-type-id'],
     ]);
     expect(response.status()).toBe(400);
-    expect(values).toContain('Le fichier «\u00A0mismatched.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.');
+    expect(values).toContain('Le fichier «\u00A0mismatched.pdf\u00A0» semble avoir été enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.');
   });
 });
 

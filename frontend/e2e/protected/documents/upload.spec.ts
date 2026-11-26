@@ -170,22 +170,22 @@ test.describe('selection and editing', () => {
     {
       name: 'undetectable non-text content',
       payload: file('unrecognized.pdf', 'Not a PDF', 'application/pdf'),
-      error: 'The file "unrecognized.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+      error: 'The file appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
     },
     {
       name: 'detected disallowed content',
       payload: file('disallowed.txt', 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR', 'text/plain'),
-      error: 'The file "disallowed.txt" appears to be saved in the wrong format. Save the file as a Plain text file (.txt) and upload it again.',
+      error: 'The file appears to be saved in the wrong format. Save the file as a Plain text file (.txt) and upload it again.',
     },
     {
       name: 'mismatched allowed content renamed to another extension',
       payload: file('mismatched.pdf', String.raw`{\rtf1\ansi Test document}`, 'application/pdf'),
-      error: 'The file "mismatched.pdf" appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
+      error: 'The file appears to be saved in the wrong format. Save the file as a PDF document (.pdf) and upload it again.',
     },
     {
       name: 'truncated image content',
       payload: { ...file('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) },
-      error: 'The file "truncated.png" appears to be saved in the wrong format. Save the file as a PNG image (.png) and upload it again.',
+      error: 'The file appears to be saved in the wrong format. Save the file as a PNG image (.png) and upload it again.',
     },
   ]) {
     test(`rejects ${scenario.name} without changing existing selection`, async ({ uploadPage }) => {
@@ -413,7 +413,7 @@ test.describe('French localized content mismatch validation', () => {
     const picker = page.waitForEvent('filechooser');
     await uploadPage.uploadButton.click();
     await (await picker).setFiles(payload);
-    await expect(page.getByText('Le fichier «\u00A0mismatched.pdf\u00A0» semble enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.').first()).toBeVisible();
+    await expect(page.getByText('Le fichier semble avoir été enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: Document PDF (.pdf), puis téléversez-le à nouveau.').first()).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('Fichiers sélectionnés\u00A0: 0');
     expect(requests).toHaveLength(0);
   });

@@ -14,9 +14,12 @@ export type DocumentUploadSchemaErrorTree = z.core.$ZodErrorTree<DocumentUploadS
 
 export type FileContentValidationFailureReason = 'unsupported_file_extension' | 'unsupported_file_content_type' | 'file_content_validation_failed';
 
+type FileValidationContext = 'fileSelection' | 'submit';
+
 type ValidateFileContentArgs = {
   allowedExtensions: readonly string[];
   allowedFileTypesByExtension: ReadonlyMap<string, DocumentUploadAllowedFileType>;
+  context: FileValidationContext;
   file: File;
   locale: string;
   t: TFunction<'documents'>;
@@ -63,6 +66,7 @@ export async function validateFileSelection({ currentFileCount, existingFiles, f
           await validateFileContent({
             allowedExtensions,
             allowedFileTypesByExtension,
+            context: 'fileSelection',
             file,
             locale,
             t,
@@ -132,6 +136,7 @@ export async function validateUploadedFileContents({ allowedFileTypes = getClien
       const result = await validateFileContent({
         allowedExtensions,
         allowedFileTypesByExtension,
+        context: 'submit',
         file,
         locale,
         t,
@@ -152,7 +157,7 @@ export async function validateUploadedFileContents({ allowedFileTypes = getClien
 /**
  * Validates one file's extension against the allow-list first, then checks that its content matches that extension's MIME type.
  */
-async function validateFileContent({ allowedExtensions, allowedFileTypesByExtension, file, locale, t }: ValidateFileContentArgs): Promise<ValidateFileContentResult> {
+async function validateFileContent({ allowedExtensions, allowedFileTypesByExtension, context, file, locale, t }: ValidateFileContentArgs): Promise<ValidateFileContentResult> {
   const fileExtension = getFileExtension(file.name).toLowerCase();
   const allowedFileType = allowedFileTypesByExtension.get(fileExtension);
 
@@ -161,6 +166,7 @@ async function validateFileContent({ allowedExtensions, allowedFileTypesByExtens
       success: false,
       reason: 'unsupported_file_extension',
       error: t(($) => $.upload.errorMessage.invalidFileType, {
+        context,
         filename: file.name,
         extensions: allowedExtensions.join(', '),
       }),
@@ -179,6 +185,7 @@ async function validateFileContent({ allowedExtensions, allowedFileTypesByExtens
         success: false,
         reason: 'unsupported_file_content_type',
         error: t(($) => $.upload.errorMessage.invalidFileContent, {
+          context,
           filename: file.name,
           fileTypeName,
           fileExtension: allowedFileType.extension,
@@ -339,7 +346,7 @@ function createFileSelectionSchema({ locale, t }: CreateFileSelectionSchemaArgs)
 }
 
 type CreateFileValidationSchemaArgs = {
-  context: 'fileSelection' | 'submit';
+  context: FileValidationContext;
   locale: string;
   t: TFunction<'documents'>;
 };

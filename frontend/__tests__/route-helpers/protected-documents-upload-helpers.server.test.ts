@@ -121,6 +121,7 @@ describe('protected-documents-upload-helpers.server', () => {
       });
       expect(getFixedTMock).toHaveBeenCalledWith(locale, 'documents');
       expect(tMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'submit',
         filename: 'document.txt',
         fileTypeName: expectedTypeName,
         fileExtension: '.txt',
@@ -161,6 +162,7 @@ describe('protected-documents-upload-helpers.server', () => {
       });
       expect(isFileContentTypeAllowedMock).not.toHaveBeenCalled();
       expect(tMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'submit',
         filename: 'document.exe',
         extensions: '.txt',
       });
