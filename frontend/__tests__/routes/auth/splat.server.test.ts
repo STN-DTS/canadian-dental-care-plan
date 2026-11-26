@@ -11,6 +11,7 @@ import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { correlationIdContext } from '~/.server/context/correlation-context';
 import type { Logger } from '~/.server/logging';
 import * as logging from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
@@ -18,6 +19,7 @@ import type { Session } from '~/.server/web/session';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 import { loader } from '~/routes/auth/$';
 
 const correlation: AuthCorrelation = { state: 'synthetic-state', nonce: 'synthetic-nonce', codeVerifier: 'synthetic-verifier' };
@@ -188,6 +190,19 @@ describe('auth loader', () => {
 
       expect(logger.error).toHaveBeenCalledExactlyOnceWith('OIDC request failed', expect.objectContaining({ 'error.type': 'OAUTH_RESPONSE_IS_NOT_CONFORM', errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_DISCOVERY_FAILED }));
       expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('includes the request correlation ID in the missing-session error response and log', async () => {
+      const logger = mock<Logger>();
+      vi.spyOn(logging, 'createLogger').mockReturnValue(logger);
+      const { args } = createArgs('oidc', 'callback/oidc', '?code=synthetic-code&state=synthetic-state');
+      args.context.set(correlationIdContext, 'request-correlation-id');
+
+      const response = (await contextStorageMiddleware(args, async () => (await loader(args)) as Response)) as Response;
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, correlationId: 'request-correlation-id' });
+      expect(logger.warn).toHaveBeenCalledWith('OIDC request failed', expect.objectContaining({ correlationId: 'request-correlation-id', 'error.type': 'authentication_callback_session_missing' }));
     });
 
     it('rethrows errors that are not AppErrors', async () => {

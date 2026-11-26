@@ -1,3 +1,5 @@
+import { RouterContextProvider } from 'react-router';
+
 import { Redacted } from 'effect';
 import { SignJWT, decodeProtectedHeader, exportJWK, generateKeyPair, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
@@ -11,10 +13,12 @@ import type { AuthCorrelation } from '~/.server/auth/auth-service';
 import { DefaultOpenIdService } from '~/.server/auth/openid-service';
 import { OpenIdServiceConfig } from '~/.server/auth/openid-service-config';
 import type { ServerConfig } from '~/.server/configs';
+import { correlationIdContext } from '~/.server/context/correlation-context';
 import type { HttpClient } from '~/.server/http';
 import type { Logger } from '~/.server/logging';
 import { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
+import { contextStorageMiddleware } from '~/middlewares/context-storage.server';
 
 const logger = vi.hoisted(() => ({ trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn() }));
 
@@ -286,6 +290,22 @@ describe('DefaultOpenIdService', () => {
 
       expect(httpClient.instrumentedFetch).not.toHaveBeenCalled();
       expectNoSensitiveValues(error, correlation);
+    });
+
+    it('carries the request correlation ID on service errors', async () => {
+      const service = createService();
+      const { correlation } = await startSignin(service);
+      const context = new RouterContextProvider();
+      context.set(correlationIdContext, 'request-correlation-id');
+      const url = new URL(redirectUri);
+      let error: unknown;
+
+      await contextStorageMiddleware({ context, params: {}, pattern: '', request: new Request(url), url }, async () => {
+        error = await rejectionOf(service.handleCallback({ callbackUrl: callbackUrl('forged-state'), correlation }));
+        return new globalThis.Response(null, { status: 204 });
+      });
+
+      expect(error).toMatchObject({ errorCode: ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, correlationId: 'request-correlation-id' });
     });
 
     it('rejects a callback without a code', async () => {

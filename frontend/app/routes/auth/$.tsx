@@ -18,11 +18,12 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
 import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
+import { throwAppError } from '~/.server/utils/error-utils';
 import { recordError } from '~/.server/utils/otel-instrumentation-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
-import { AppError, isAppError } from '~/errors/app-error';
+import { isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 
 import type { Route } from './+types/$';
@@ -276,7 +277,7 @@ async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs
   if (Option.isNone(correlation)) {
     log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing' });
     instrumentationService.createCounter('auth.callback.oidc.requests.stale-session').add(1);
-    throw new AppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST, meta: { reason: 'authentication_callback_session_missing' } });
+    throwAppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST, meta: { reason: 'authentication_callback_session_missing' } });
   }
 
   const authService = appContainer.get(TYPES.AuthService);

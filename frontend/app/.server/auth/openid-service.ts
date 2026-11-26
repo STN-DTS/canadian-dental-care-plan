@@ -26,9 +26,10 @@ import type { HttpClient } from '~/.server/http';
 import { createLogger } from '~/.server/logging';
 import { Traced } from '~/.server/observability/decorator';
 import { parsePrivateKey } from '~/.server/utils/crypto-utils';
+import { createAppError } from '~/.server/utils/error-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
 import type { HttpStatusCode } from '~/constants/http-status-codes';
-import { AppError } from '~/errors/app-error';
+import type { AppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import type { ErrorCode } from '~/errors/error-codes';
 
@@ -247,7 +248,7 @@ function libraryErrorType(error: unknown): string {
  */
 function connectivityError(message: string, errorCode: ErrorCode, httpStatusCode: HttpStatusCode, reason: string): AppError {
   log.debug('OIDC connectivity check failed', { [ATTR_ERROR_TYPE]: reason });
-  return new AppError(message, errorCode, { httpStatusCode, meta: { reason } });
+  return createAppError(message, errorCode, { httpStatusCode, meta: { reason } });
 }
 
 function callbackInvalidError(reason: string): AppError {
