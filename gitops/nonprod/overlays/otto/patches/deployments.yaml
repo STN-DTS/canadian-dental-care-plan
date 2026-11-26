@@ -18,7 +18,7 @@ spec:
               $patch: delete
             - name: audit-logs
               mountPath: /home/node/logs
-          image: dtsrhpdevscedacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.3.3
+          image: dtsrhpdevscedacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.4.0
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
