@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { documentFile, uploadFailureName, uploadFlowUrl, waitForUploadRouter } from '../utils/document-upload';
+import { documentFile, uploadFailureName, uploadFlowUrl } from '../utils/document-upload';
 import { BasePage } from './base-page';
 
 export const uploadCopy = {
@@ -89,7 +89,7 @@ export class UploadPage extends BasePage {
   async goto() {
     await this.page.goto(this.copy.entry);
     await this.isLoaded(this.locale === 'en' ? uploadFlowUrl : /\/fr\/protege\/documents\/televerser\/[0-9a-f-]+$/, this.copy.title);
-    await waitForUploadRouter(this.page);
+    await this.waitForHydration();
   }
 
   /**

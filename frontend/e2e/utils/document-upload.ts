@@ -150,14 +150,6 @@ export async function readUploadSubmissions(page: Page): Promise<UploadSubmissio
   });
 }
 
-/** Waits for the React Router test hook before interacting with the hydrated form. */
-export async function waitForUploadRouter(page: Page) {
-  await page.waitForFunction(() => {
-    const routerWindow = window as typeof window & { __reactRouterDataRouter?: { state: { initialized: boolean } } };
-    return routerWindow.__reactRouterDataRouter?.state.initialized === true;
-  });
-}
-
 /**
  * Initiates SPA navigation through React Router's internal browser test hook.
  * This dependency stays here because the form has no same-language internal link.

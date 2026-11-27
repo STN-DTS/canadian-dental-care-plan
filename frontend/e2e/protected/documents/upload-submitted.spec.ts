@@ -11,7 +11,8 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from '../../fixtures/document-upload';
-import { collectUploadRequests, documentFile, readUploadSubmissions, uploadEntryUrl, uploadFailureName, waitForUploadRouter } from '../../utils/document-upload';
+import { BasePage } from '../../pages/base-page';
+import { collectUploadRequests, documentFile, readUploadSubmissions, uploadEntryUrl, uploadFailureName } from '../../utils/document-upload';
 
 const submittedNames = ['eligibility-review.txt', 'employer-letter.txt'];
 // Expected natural labels from the configured code-table mock, not loader output.
@@ -101,7 +102,7 @@ async function submitLocalizedFiles(page: Page, locale: keyof typeof receiptCopy
     await page.goto('/fr/protege/documents/televerser');
     await expect(page).toHaveURL(/\/fr\/protege\/documents\/televerser\/[0-9a-f-]+$/);
     await expect(page.getByRole('heading', { name: 'Soumettre des documents', exact: true })).toBeVisible();
-    await waitForUploadRouter(page);
+    await new BasePage(page).waitForHydration();
   }
 
   // Picker interactions and session mutations must run sequentially.

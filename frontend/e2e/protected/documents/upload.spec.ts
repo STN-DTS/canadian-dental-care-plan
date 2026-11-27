@@ -10,17 +10,7 @@
  * Server validation of crafted HTTP payloads belongs in upload-contract.spec.ts.
  */
 import { expect, test } from '../../fixtures/document-upload';
-import {
-  collectUploadRequests,
-  uploadEntryUrl as entryUrl,
-  uploadFailureName as failureName,
-  documentFile as file,
-  uploadFlowUrl as flowUrl,
-  navigateUploadRouter,
-  readUploadSubmissions,
-  useUploadDateFixture,
-  waitForUploadRouter,
-} from '../../utils/document-upload';
+import { collectUploadRequests, uploadEntryUrl as entryUrl, uploadFailureName as failureName, documentFile as file, uploadFlowUrl as flowUrl, navigateUploadRouter, readUploadSubmissions, useUploadDateFixture } from '../../utils/document-upload';
 
 const maxBytes = 5 * 1024 * 1024;
 
@@ -770,7 +760,7 @@ test.describe('navigation and refresh', () => {
     });
     await page.reload();
     await uploadPage.isLoaded(flowUrl, 'Submit documents');
-    await waitForUploadRouter(page);
+    await uploadPage.waitForHydration();
     await uploadPage.partialUpload();
     await uploadPage.removeFile(failureName);
     await page.goto('/en/protected/documents');

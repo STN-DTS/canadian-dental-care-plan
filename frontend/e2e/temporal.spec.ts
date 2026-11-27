@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 import { BasePage } from './pages/base-page';
-import { waitForUploadRouter } from './utils/document-upload';
 
 test.describe('Temporal fallback', () => {
   test.use({ timezoneId: 'America/Vancouver' });
@@ -26,8 +25,9 @@ test.describe('Temporal fallback', () => {
       });
 
       await page.goto(path);
-      await new BasePage(page).isLoaded(path, title);
-      await waitForUploadRouter(page);
+      const basePage = new BasePage(page);
+      await basePage.isLoaded(path, title);
+      await basePage.waitForHydration();
       await expect(page.getByRole('table').locator('time')).toHaveText([date, date]);
       await expect(page.getByRole('table').locator('time').first()).toHaveAttribute('datetime', '2025-10-21T16:33:31Z');
       expect(await page.evaluate(() => Temporal.PlainDate.from('2000-01-01').toLocaleString('fr-CA', { dateStyle: 'long' }))).toBe('1 janvier 2000');

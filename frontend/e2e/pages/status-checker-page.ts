@@ -68,10 +68,7 @@ export class StatusCheckerPage extends BasePage {
     await this.isLoaded(this.copy.entry, this.copy.title);
 
     if (hydrate) {
-      await this.page.waitForFunction(() => {
-        const routerWindow = window as typeof window & { __reactRouterDataRouter?: { state: { initialized: boolean } } };
-        return routerWindow.__reactRouterDataRouter?.state.initialized === true;
-      });
+      await this.waitForHydration();
     }
   }
 
