@@ -28,24 +28,6 @@ type SessionTypeMap = {
   authState: string;
   idToken: IdToken;
   letters: ReadonlyArray<LetterDto>;
-  profileEmailAddressFlowState: {
-    emailAddress: string;
-    verificationCode: string;
-    verificationAttempts: number;
-  } & (
-    | {
-        context?: 'contact';
-        preferredLanguage?: undefined;
-        preferredMethodSunLife?: undefined;
-        preferredMethodGovernmentOfCanada?: undefined;
-      }
-    | {
-        context: 'communication-preferences';
-        preferredLanguage: string;
-        preferredMethodSunLife: string;
-        preferredMethodGovernmentOfCanada: string;
-      }
-  );
   programApplicant: ProgramApplicantDto;
   userInfoToken: UserinfoToken;
 };

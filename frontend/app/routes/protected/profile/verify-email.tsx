@@ -12,6 +12,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_VERIFY_EMAIL, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { deleteProfileEmailAddressFlowState, findProfileEmailAddressFlowState, setProfileEmailAddressFlowState } from '~/.server/routes/helpers/profile-email-address-flow-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import type { Session } from '~/.server/web/session';
@@ -45,8 +46,8 @@ const FORM_ACTION = {
   submit: 'submit',
 } as const;
 
-function requireProfileEmailAddressFlowState({ session, params }: { session: Session; params: Route.LoaderArgs['params'] }) {
-  const profileEmailAddressFlowState = Option.getOrElse(session.find('profileEmailAddressFlowState'), () => {
+async function requireProfileEmailAddressFlowState({ session, params }: { session: Session; params: Route.LoaderArgs['params'] }) {
+  const profileEmailAddressFlowState = Option.getOrElse(await findProfileEmailAddressFlowState(session), () => {
     throw redirect(getPathById('protected/profile/contact-information', params));
   });
   return profileEmailAddressFlowState;
@@ -76,7 +77,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
   getClientApplication(context);
 
-  const profileEmailAddressFlowState = requireProfileEmailAddressFlowState({ session, params });
+  const profileEmailAddressFlowState = await requireProfileEmailAddressFlowState({ session, params });
 
   const t = await getFixedT(url, ['protectedProfile', 'gcweb']);
   const meta = {
@@ -109,7 +110,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const clientApplication = getClientApplication(context);
 
-  const profileEmailAddressFlowState = requireProfileEmailAddressFlowState({ session, params });
+  const profileEmailAddressFlowState = await requireProfileEmailAddressFlowState({ session, params });
 
   const userInfoToken = session.get('userInfoToken');
   invariant(userInfoToken.sub, 'Expected userInfoToken.sub to be defined');
@@ -126,7 +127,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (formAction === FORM_ACTION.request) {
     const newVerificationCode = verificationCodeService.createVerificationCode();
 
-    session.set('profileEmailAddressFlowState', {
+    await setProfileEmailAddressFlowState(session, {
       ...profileEmailAddressFlowState,
       verificationCode: newVerificationCode,
       verificationAttempts: 0,
@@ -167,7 +168,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (parsedDataResult.data.verificationCode !== profileEmailAddressFlowState.verificationCode) {
     const updatedAttempts = profileEmailAddressFlowState.verificationAttempts + 1;
 
-    session.set('profileEmailAddressFlowState', {
+    await setProfileEmailAddressFlowState(session, {
       ...profileEmailAddressFlowState,
       verificationAttempts: updatedAttempts,
     });
@@ -193,7 +194,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   // Clear the flow state
-  session.unset('profileEmailAddressFlowState');
+  await deleteProfileEmailAddressFlowState(session);
 
   // Redirect based on context
   if (profileEmailAddressFlowState.context === 'communication-preferences') {
