@@ -38,7 +38,6 @@ type SessionTypeMap = {
   authReturnUrl: string;
   authState: string;
   idToken: IdToken;
-  lastAccessTime: string;
   letters: ReadonlyArray<LetterDto>;
   profileEmailAddressFlowState: {
     emailAddress: string;
