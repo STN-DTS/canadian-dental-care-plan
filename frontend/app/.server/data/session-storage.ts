@@ -10,6 +10,11 @@ export type SessionStorage<T> = {
   delete(sessionId: string, key: string): Promise<void>;
 };
 
+export type SessionStorageOptions = {
+  /** Optional TTL override in seconds for entries in this namespace; defaults to the session store TTL. */
+  readonly ttlSeconds?: number;
+};
+
 const SESSION_STATE_SEGMENT = 'STATE';
 
 function getSessionStore(): Store<JsonValue> {
@@ -49,7 +54,7 @@ function getEntryKey(sessionId: string, scopedKey: string): string {
  * session can drop one key from the index, in which case that entry expires by TTL
  * instead of being deleted with the session.
  */
-export function createSessionStorage<T>(namespace: string): SessionStorage<T> {
+export function createSessionStorage<T>(namespace: string, options?: SessionStorageOptions): SessionStorage<T> {
   return {
     async find(sessionId: string, key: string): Promise<Option.Option<T>> {
       const store = getSessionStore();
@@ -59,7 +64,7 @@ export function createSessionStorage<T>(namespace: string): SessionStorage<T> {
     async set(sessionId: string, key: string, value: T): Promise<void> {
       const store = getSessionStore();
       const scopedKey = getScopedKey(namespace, key);
-      await store.set({ key: getEntryKey(sessionId, scopedKey), value: value as JsonValue });
+      await store.set({ key: getEntryKey(sessionId, scopedKey), value: value as JsonValue, ttlSeconds: options?.ttlSeconds });
       // Rewritten on every save so the per-session index TTL never ends before an entry's TTL.
       await store.update(getSessionIndexKey(sessionId), (index) => {
         const current = Option.getOrUndefined(index);

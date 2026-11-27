@@ -93,6 +93,22 @@ describe('KeyvStore', () => {
     await expect(store.find('a')).resolves.toEqual(Option.none());
   });
 
+  it('honors per-entry ttlSeconds overrides', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+
+    try {
+      const store = new KeyvStore<string>('test-entry-ttl', { backend: 'memory', ttlSeconds: 60 });
+      await store.set({ key: 'default', value: 'long' }, { key: 'short', value: 'brief', ttlSeconds: 2 });
+
+      vi.advanceTimersByTime(2_001);
+
+      await expect(store.find('short')).resolves.toEqual(Option.none());
+      await expect(store.find('default')).resolves.toEqual(Option.some('long'));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects failed Redis operations instead of reporting missing keys', async () => {
     const client = new FailingRedisClient();
     vi.mocked(getRedisClient).mockResolvedValue(client as never);

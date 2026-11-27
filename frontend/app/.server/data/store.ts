@@ -11,6 +11,8 @@ export type JsonValue = string | number | boolean | null | readonly JsonValue[] 
 export type StoreEntry<T extends JsonValue> = {
   readonly key: string;
   readonly value: T;
+  /** Optional per-entry TTL override in seconds; defaults to the store's configured TTL. */
+  readonly ttlSeconds?: number;
 };
 
 /**

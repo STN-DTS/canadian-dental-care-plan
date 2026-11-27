@@ -110,6 +110,20 @@ describe('session-storage', () => {
     await expect(storage.find('session-a', 'flow-1')).resolves.toEqual(Option.none());
   });
 
+  it('honors a per-namespace ttlSeconds override independently of the session TTL', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const defaultStorage = createSessionStorage<{ value: string }>('public-application');
+    const shortStorage = createSessionStorage<{ value: string }>('client-application', { ttlSeconds: 2 });
+
+    await defaultStorage.set('session-a', 'flow-1', { value: 'long' });
+    await shortStorage.set('session-a', 'default', { value: 'short' });
+
+    vi.advanceTimersByTime(2_001);
+
+    await expect(shortStorage.find('session-a', 'default')).resolves.toEqual(Option.none());
+    await expect(defaultStorage.find('session-a', 'flow-1')).resolves.toEqual(Option.some({ value: 'long' }));
+  });
+
   it('stores Redis keys under SESSION_KEY_PREFIX with the SESSION:<sid>:STATE:<namespace>:<key> layout', async () => {
     const client = new FakeRedisClient();
     vi.mocked(getRedisClient).mockResolvedValue(client as never);

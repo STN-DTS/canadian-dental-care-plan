@@ -57,7 +57,7 @@ export class KeyvStore<T extends JsonValue> implements Store<T> {
       return;
     }
 
-    const results = await (await this.getKeyv()).setMany(entries.map(({ key, value }) => ({ key, value })));
+    const results = await (await this.getKeyv()).setMany(entries.map(({ key, value, ttlSeconds }) => (ttlSeconds === undefined ? { key, value } : { key, value, ttl: ttlSeconds * 1000 })));
 
     if (results.includes(false)) {
       throw new Error('Store entries could not be written.');
