@@ -20,6 +20,16 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          startupProbe:
+            httpGet:
+              path: /api/readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
           livenessProbe:
             tcpSocket:
               port: http
