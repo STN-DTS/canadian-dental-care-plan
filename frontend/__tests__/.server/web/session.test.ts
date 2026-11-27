@@ -4,10 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import type { MockProxy } from 'vitest-mock-extended';
 
+import { deleteSessionStorage } from '~/.server/data/session-storage';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
 import type { SessionKey } from '~/.server/web/session';
+
+vi.mock(import('~/.server/data/session-storage'), () => ({
+  createSessionStorage: vi.fn(),
+  deleteSessionStorage: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('Session', () => {
   describe('ExpressSession', () => {
@@ -18,6 +24,7 @@ describe('Session', () => {
       mockLogger = mock<Logger>();
 
       vi.mocked(createLogger).mockReturnValue(mockLogger);
+      vi.mocked(deleteSessionStorage).mockClear();
       mockRequest = {
         session: {
           cookie: mock<Request['session']['cookie']>(),
@@ -143,11 +150,37 @@ describe('Session', () => {
       });
     });
 
+    describe('initialize', () => {
+      it('marks an empty session with an initialization timestamp', () => {
+        vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z') });
+        const session = new ExpressSession(mockRequest);
+        session.initialize();
+        expect(mockRequest.session.__initializedAt).toBe('2026-07-01T00:00:00Z');
+      });
+
+      it('does not modify a session that already has data', () => {
+        mockRequest.session.authReturnUrl = '/en/apply';
+        const session = new ExpressSession(mockRequest);
+        session.initialize();
+        expect(mockRequest.session.__initializedAt).toBeUndefined();
+      });
+    });
+
     describe('destroy', () => {
-      it('should destroy the session', async () => {
+      it('should destroy the session and delete session storage', async () => {
         const session = new ExpressSession(mockRequest);
         await session.destroy();
+        expect(deleteSessionStorage).toHaveBeenCalledWith('mockSessionId');
         expect(mockRequest.session.destroy).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe('regenerate', () => {
+      it('should regenerate the session and delete previous session storage', async () => {
+        const session = new ExpressSession(mockRequest);
+        await session.regenerate();
+        expect(deleteSessionStorage).toHaveBeenCalledWith('mockSessionId');
+        expect(mockRequest.session.regenerate).toHaveBeenCalledOnce();
       });
     });
 
@@ -220,6 +253,10 @@ describe('Session', () => {
 
     it('should always return false for unset', () => {
       expect(session.unset('anyKey' as SessionKey)).toBe(false);
+    });
+
+    it('should throw error on initialize', () => {
+      expect(() => session.initialize()).toThrowError('No session available in stateless context');
     });
 
     it('should not throw error on destroy', async () => {

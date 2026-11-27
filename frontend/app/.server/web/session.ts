@@ -3,6 +3,7 @@ import { Option } from 'effect';
 import type { Request } from 'express';
 import assert from 'node:assert';
 
+import { deleteSessionStorage } from '~/.server/data/session-storage';
 import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -137,6 +138,15 @@ export interface Session {
   unset(key: SessionKey): boolean;
 
   /**
+   * Marks an otherwise empty session as initialized so `express-session`
+   * persists it and sends a session cookie even when `saveUninitialized` is `false`.
+   *
+   * Has no effect if the session already holds data, avoiding redundant saves
+   * when `resave` is `false`.
+   */
+  initialize(): void;
+
+  /**
    * Destroys the current session.
    *
    * This method will destroy the session, removing all session data and invalidating the session ID.
@@ -174,6 +184,7 @@ export interface Session {
  */
 export class ExpressSession implements Session {
   private readonly req: Pick<Request, 'session'>;
+  private static readonly SESSION_INITIALIZED_KEY = '__initializedAt';
   static readonly SESSION_RESERVED_KEYS = ['id', 'cookie', 'regenerate', 'destroy', 'reload', 'resetMaxAge', 'save', 'touch'] as const;
 
   private readonly log: Logger;
@@ -254,20 +265,33 @@ export class ExpressSession implements Session {
     return true;
   }
 
+  initialize(): void {
+    const hasSessionData = Object.keys(this.session).some((key) => !this.isReservedKey(key));
+
+    if (!hasSessionData) {
+      this.session[ExpressSession.SESSION_INITIALIZED_KEY] = Temporal.Now.instant().toString();
+      this.log.trace('Session marked as initialized', { [ATTR_SESSION_ID]: this.id });
+    }
+  }
+
   @Traced()
   async destroy(): Promise<void> {
     const id = this.id; // Capture ID before destruction for logging
     this.log.debug('Destroying session', { [ATTR_SESSION_ID]: id });
-    return await new Promise((resolve, reject) => {
-      this.session.destroy((err) => {
-        if (err) {
-          return reject(err);
-        }
+    const expressSession = this.session;
+    await Promise.all([
+      deleteSessionStorage(id),
+      new Promise<void>((resolve, reject) => {
+        expressSession.destroy((err) => {
+          if (err) {
+            return reject(err);
+          }
 
-        this.log.debug('Session destroyed successfully', { [ATTR_SESSION_ID]: id });
-        resolve();
-      });
-    });
+          this.log.debug('Session destroyed successfully', { [ATTR_SESSION_ID]: id });
+          resolve();
+        });
+      }),
+    ]);
   }
 
   @Traced()
@@ -289,17 +313,20 @@ export class ExpressSession implements Session {
   async regenerate(): Promise<void> {
     const originalId = this.id;
     this.log.debug('Regenerating session', { [ATTR_SESSION_ID]: originalId });
+    const expressSession = this.session;
+    await Promise.all([
+      deleteSessionStorage(originalId),
+      new Promise<void>((resolve, reject) => {
+        expressSession.regenerate((err) => {
+          if (err) {
+            return reject(err);
+          }
 
-    return await new Promise((resolve, reject) => {
-      this.session.regenerate((err) => {
-        if (err) {
-          return reject(err);
-        }
-
-        this.log.debug('Session regenerated successfully', { [ATTR_SESSION_ID]: this.id, [ATTR_SESSION_PREVIOUS_ID]: originalId });
-        resolve();
-      });
-    });
+          this.log.debug('Session regenerated successfully', { [ATTR_SESSION_ID]: this.id, [ATTR_SESSION_PREVIOUS_ID]: originalId });
+          resolve();
+        });
+      }),
+    ]);
   }
 
   protected sanitizeKey(key: string): string {
@@ -354,6 +381,10 @@ export class NoopSession implements Session {
   unset(key: SessionKey): boolean {
     this.log.warn('Called "unset" on NoopSession; returning false', { [ATTR_CDCP_SESSION_KEY]: key });
     return false;
+  }
+
+  initialize(): void {
+    throw new Error('No session available in stateless context');
   }
 
   @Traced()

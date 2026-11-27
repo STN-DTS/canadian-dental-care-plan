@@ -35,6 +35,8 @@ import type { FetchFn } from '~/.server/http/http-client';
 import type { InstrumentationService } from '~/.server/observability';
 import { DefaultProtectedApplicationStateResolver } from '~/.server/routes/resolvers/protected-application-state-resolver';
 import { DefaultPublicApplicationStateResolver } from '~/.server/routes/resolvers/public-application-state-resolver';
+import type { ServerEnv } from '~/.server/utils/env-utils';
+import { deleteSingleton, setSingleton } from '~/.server/utils/instance-registry';
 import { ExpressSession, NoopSession } from '~/.server/web/session';
 
 vi.unmock(import('~/.server/observability/decorator'));
@@ -84,6 +86,7 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
     'auth/bearer-token-resolver.ts',
     'core/build-info-service.ts',
     'data/redis-service.ts',
+    'data/store-keyv.ts',
     'domain/services/application-year-service.ts',
     'domain/services/client-friendly-status-service.ts',
     'domain/services/country-service.ts',
@@ -134,11 +137,13 @@ it('enforces tracing boundaries outside logging and tracing internals', () => {
     'ExpressSession.get',
     'ExpressSession.set',
     'ExpressSession.unset',
+    'ExpressSession.initialize',
     'NoopSession.has',
     'NoopSession.find',
     'NoopSession.get',
     'NoopSession.set',
     'NoopSession.unset',
+    'NoopSession.initialize',
   ]);
   const violations: string[] = [];
   let methodCount = 0;
@@ -230,6 +235,8 @@ describe('application method spans', () => {
   afterEach(async () => {
     await processor.forceFlush();
     exporter.reset();
+    deleteSingleton('serverEnv');
+    deleteSingleton('stores');
   });
 
   afterAll(async () => {
@@ -514,12 +521,22 @@ describe('application method spans', () => {
     expect(() => session.get('authReturnUrl')).toThrowError('No session available in stateless context');
     expect(() => session.set('authReturnUrl', '/en/apply')).toThrowError('No session available in stateless context');
     expect(session.unset('authReturnUrl')).toBe(false);
+    expect(() => session.initialize()).toThrowError('No session available in stateless context');
     await processor.forceFlush();
 
     expect(exporter.getFinishedSpans()).toHaveLength(0);
   });
 
   it('retains lifecycle spans under the caller for both session implementations', async () => {
+    setSingleton(
+      'serverEnv',
+      mock<ServerEnv>({
+        SESSION_STORAGE_TYPE: 'memory',
+        SESSION_KEY_PREFIX: 'SESSION:',
+        SESSION_EXPIRES_SECONDS: 60,
+        SESSION_STATE_TTL_OFFSET_SECONDS: 10,
+      }),
+    );
     const { session, sessionData } = createExpressSession();
     const lifecycleMethods = ['save', 'regenerate', 'destroy'] as const;
 
