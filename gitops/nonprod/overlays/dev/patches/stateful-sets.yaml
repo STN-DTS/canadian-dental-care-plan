@@ -3,4 +3,4 @@ kind: StatefulSet
 metadata:
   name: redis
 spec:
-  replicas: 2
+  replicas: 3

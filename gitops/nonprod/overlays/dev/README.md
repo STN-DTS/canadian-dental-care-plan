@@ -24,7 +24,7 @@ Development environment for the Canadian Dental Care Plan.
 
 - `patches/deployments.yaml` — Adds OAuth proxy sidecar to the frontend deployment
 - `patches/services.yaml` — Service customizations
-- `patches/stateful-sets.yaml` — Redis StatefulSet replica count (2 pods: 1 primary + 1 replica)
+- `patches/stateful-sets.yaml` — Redis StatefulSet replica count (3 pods: 1 primary + 2 replicas)
 
 ## Configuration Overrides
 
