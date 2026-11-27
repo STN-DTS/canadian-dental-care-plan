@@ -410,8 +410,8 @@ catalogs:
       specifier: 8.3.0
       version: 8.3.0
     isbot:
-      specifier: 5.2.3
-      version: 5.2.3
+      specifier: 5.2.4
+      version: 5.2.4
     jose:
       specifier: 6.2.18
       version: 6.2.18
@@ -740,7 +740,7 @@ importers:
         version: 8.3.0(reflect-metadata@0.2.2)
       isbot:
         specifier: 'catalog:'
-        version: 5.2.3
+        version: 5.2.4
       jose:
         specifier: 'catalog:'
         version: 6.2.18
@@ -4336,8 +4336,8 @@ packages:
     resolution: {integrity: sha512-jv+8jaWCl0g2lSBkNSVXdzfBA0npK1HGC2KtWM9FumFRoGS94g3NbCCLVnCYHLjp4GrW2KZeeSTMo5ddtznmGw==}
     engines: {node: '>=18'}
 
-  isbot@5.2.3:
-    resolution: {integrity: sha512-e8gGz3VzAuImtTMnB5PqNRRWGAswObTc+X+X5a8PttKT78VSSFec98w9ZwUoy6jJdlvJkVdLiN+WMgA8TewoZg==}
+  isbot@5.2.4:
+    resolution: {integrity: sha512-qFPSy82nnxEUrHdKpIQPVpYwsGJqL/+VGWYVYP5c8XMOyRRPDVb1C5ZMwmKs3nB4Evsw/ux0WqHBkf2UUawC1A==}
     engines: {node: '>=18'}
 
   isexe@2.0.0:
@@ -7609,7 +7609,7 @@ snapshots:
       dedent: 1.7.2
       es-module-lexer: 2.3.2
       exit-hook: 5.1.0
-      isbot: 5.2.3
+      isbot: 5.2.4
       jsesc: 3.1.0
       lodash: 4.18.1
       p-map: 7.1.1
@@ -9228,7 +9228,7 @@ snapshots:
     dependencies:
       system-architecture: 0.1.0
 
-  isbot@5.2.3: {}
+  isbot@5.2.4: {}
 
   isexe@2.0.0: {}
 
