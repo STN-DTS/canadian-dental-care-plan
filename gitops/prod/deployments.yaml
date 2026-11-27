@@ -111,7 +111,7 @@ spec:
                 name: frontend
             - secretRef:
                 name: redis
-          image: dtsrhpprodscedspokeacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.3.3
+          image: dtsrhpprodscedspokeacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:7.4.0
           livenessProbe:
             tcpSocket:
               port: http
