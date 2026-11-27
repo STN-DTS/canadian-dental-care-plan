@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-# Builds the frontend and runs Chromium end-to-end tests at 00:00 UTC daily
-# or on manual dispatch. Publishes Playwright reports for completed test runs.
+# Builds the frontend and runs all Chromium end-to-end suites at 00:00 UTC
+# daily or on manual dispatch. Publishes Playwright reports for completed runs.
 
 name: nightly-e2e
 run-name: Nightly e2e tests
@@ -44,7 +44,19 @@ jobs:
         run: pnpm --filter @cdcp-rcsd/frontend exec playwright install chromium --with-deps
       - name: Run e2e tests
         id: e2e
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/default
         run: pnpm --filter @cdcp-rcsd/frontend run test:e2e
+      - name: Run error correlation e2e tests
+        if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/error-correlation
+        run: pnpm --filter @cdcp-rcsd/frontend exec playwright test --config=e2e/error-correlation.config.ts
+      - name: Run session storage e2e tests
+        if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/session-storage
+        run: pnpm --filter @cdcp-rcsd/frontend exec playwright test --config=e2e/session-storage.config.ts
       - name: Upload Playwright HTML report
         if: ${{ !cancelled() && needs.check-repository.result == 'success' && (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

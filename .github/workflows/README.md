@@ -13,7 +13,7 @@ CI validation, image publication, GitOps deployment, and reporting for the Canad
 | [gitops-main-prod.yaml](gitops-main-prod.yaml)                                       | GitOps pushes to `main`; manual; reusable, all restricted to `main`          | Apply the production root Kustomization to the prod AKS cluster.                                                                                         |
 | [build-publish-tag-nonprod.yaml](build-publish-tag-nonprod.yaml)                     | Pushes of `v*` tags; manual                                                  | Test, scan, publish, and sign release-tagged images in nonprod ACR.                                                                                      |
 | [build-publish-tag-prod.yaml](build-publish-tag-prod.yaml)                           | Pushes of `v*` tags; manual                                                  | Test, scan, publish, and sign release-tagged images in PROD ACR.                                                                                         |
-| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                   | Build the frontend, run Chromium end-to-end tests, and retain Playwright reports.                                                                        |
+| [nightly-e2e.yaml](nightly-e2e.yaml)                                                 | Daily at 00:00 UTC; manual                                                   | Build the frontend, run all Chromium end-to-end suites, and retain Playwright reports.                                                                   |
 | [upload-prod-test-results-sharepoint.yaml](upload-prod-test-results-sharepoint.yaml) | Successful PROD tag workflow completion                                      | Upload the exact source run's test reports to SharePoint as `<release-tag>.zip`.                                                                         |
 
 Tag publishing workflows validate `vX.Y.Z` with an optional suffix. Manual runs
@@ -74,6 +74,16 @@ The PR root check validates it on every run. Root lint steps use `pnpm run lint`
 which selects the root config and excludes frontend files. Frontend typechecking
 generates React Router types before frontend linting runs. Nightly E2E, GitOps,
 dependency automation, and report-upload workflows do not repeat these checks.
+
+### Nightly end-to-end testing
+
+The nightly workflow builds once and runs the default suite followed by the
+error-correlation and short-TTL session-storage configurations. All suites run
+even if an earlier suite fails; setup failures and cancellation stop the run.
+Each suite writes a separate HTML report under `frontend/playwright-report/`.
+Reports and test results are uploaded together for seven days after completed
+test runs. When adding a configuration under `frontend/e2e/`, include it in
+the nightly workflow.
 
 ### Nonprod branch guards
 
