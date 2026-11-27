@@ -19,6 +19,11 @@ class FakeRedisClient extends EventEmitter {
   readonly values = new Map<string, string>();
   readonly info = vi.fn().mockResolvedValue('redis_version:7.2.0');
   readonly get = vi.fn(async (key: string) => await Promise.resolve(this.values.get(key) ?? null));
+  readonly set = vi.fn(async (key: string, value: string) => {
+    this.values.set(key, value);
+    return await Promise.resolve('OK');
+  });
+  readonly unlink = vi.fn(async (key: string) => await Promise.resolve(this.values.delete(key) ? 1 : 0));
   readonly multi = vi.fn(() => {
     const ops: (() => unknown)[] = [];
     const tx = {
@@ -175,6 +180,7 @@ describe('session-storage', () => {
     const storage = createSessionStorage<{ value: string }>('public-application');
     await storage.set('sid-1', 'flow-1', { value: 'hello' });
 
+    expect(client.multi).toHaveBeenCalledOnce();
     expect([...client.values.keys()]).toEqual(['SESSION:sid-1:STATE:public-application:flow-1', 'SESSION:sid-1:STATE']);
 
     await deleteSessionStorage('sid-1');

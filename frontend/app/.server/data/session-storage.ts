@@ -77,10 +77,11 @@ export function createSessionStorage<T>(namespace: string, options?: SessionStor
 
     async set(sessionId: string, key: string, value: T): Promise<void> {
       const store = getSessionStore();
+      const indexKey = sessionIndexKey(sessionId);
       const entryKey = sessionEntryKey(sessionId, namespace, key);
-      await store.set({ key: entryKey, value: value as JsonValue, ttlSeconds });
-      // Rewritten on every save so the index TTL never expires before any entry it tracks.
-      await store.update(sessionIndexKey(sessionId), (current) => Option.some({ ...parseSessionIndex(current), [entryKey]: ttlSeconds ?? null }));
+      const index = parseSessionIndex(await store.find(indexKey));
+      // Rewritten alongside the entry in one batch so the index TTL never expires before any entry it tracks.
+      await store.set({ key: entryKey, value: value as JsonValue, ttlSeconds }, { key: indexKey, value: { ...index, [entryKey]: ttlSeconds ?? null } });
     },
 
     async delete(sessionId: string, key: string): Promise<void> {

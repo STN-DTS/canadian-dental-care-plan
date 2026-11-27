@@ -14,6 +14,8 @@ class FailingRedisClient extends EventEmitter {
   readonly connect = vi.fn();
   readonly info = vi.fn().mockResolvedValue('redis_version:7.2.0');
   readonly get = vi.fn().mockRejectedValue(new Error('Redis unavailable'));
+  readonly set = vi.fn().mockRejectedValue(new Error('Redis unavailable'));
+  readonly unlink = vi.fn().mockRejectedValue(new Error('Redis unavailable'));
   readonly multi = vi.fn(() => ({
     set: vi.fn().mockReturnThis(),
     del: vi.fn().mockReturnThis(),
@@ -29,6 +31,11 @@ class InMemoryRedisClient extends EventEmitter {
   readonly values = new Map<string, string>();
   readonly info = vi.fn().mockResolvedValue('redis_version:7.2.0');
   readonly get = vi.fn(async (key: string) => await Promise.resolve(this.values.get(key) ?? null));
+  readonly set = vi.fn(async (key: string, value: string) => {
+    this.values.set(key, value);
+    return await Promise.resolve('OK');
+  });
+  readonly unlink = vi.fn(async (key: string) => await Promise.resolve(this.values.delete(key) ? 1 : 0));
   readonly exists = vi.fn(async (key: string) => await Promise.resolve(this.values.has(key) ? 1 : 0));
   readonly multi = vi.fn(() => {
     const ops: (() => unknown)[] = [];
@@ -89,8 +96,15 @@ describe('KeyvStore', () => {
     await expect(store.has('a')).resolves.toBe(true);
 
     await store.delete('a');
+    expect(client.unlink).toHaveBeenCalledExactlyOnceWith('test-redis-roundtrip:a');
     await expect(store.has('a')).resolves.toBe(false);
     await expect(store.find('a')).resolves.toEqual(Option.none());
+
+    client.multi.mockClear();
+    await store.set({ key: 'single', value: 'only-one' });
+    expect(client.set).toHaveBeenCalledOnce();
+    expect(client.multi).not.toHaveBeenCalled();
+    await expect(store.find('single')).resolves.toEqual(Option.some('only-one'));
   });
 
   it('honors per-entry ttlSeconds overrides', async () => {

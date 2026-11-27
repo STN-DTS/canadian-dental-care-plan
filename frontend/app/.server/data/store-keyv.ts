@@ -61,7 +61,20 @@ export class KeyvStore<T extends JsonValue> implements Store<T> {
       return;
     }
 
-    const results = await (await this.getKeyv()).setMany(entries.map(({ key, value, ttlSeconds }) => (ttlSeconds === undefined ? { key, value } : { key, value, ttl: ttlSeconds * 1000 })));
+    const keyv = await this.getKeyv();
+    const [firstEntry] = entries;
+
+    if (entries.length === 1 && firstEntry) {
+      const saved = await keyv.set(firstEntry.key, firstEntry.value, firstEntry.ttlSeconds === undefined ? undefined : firstEntry.ttlSeconds * 1000);
+
+      if (!saved) {
+        throw new Error('Store entries could not be written.');
+      }
+
+      return;
+    }
+
+    const results = await keyv.setMany(entries.map(({ key, value, ttlSeconds }) => (ttlSeconds === undefined ? { key, value } : { key, value, ttl: ttlSeconds * 1000 })));
 
     if (results.includes(false)) {
       throw new Error('Store entries could not be written.');
@@ -73,7 +86,15 @@ export class KeyvStore<T extends JsonValue> implements Store<T> {
       return;
     }
 
-    await (await this.getKeyv()).deleteMany(keys);
+    const keyv = await this.getKeyv();
+    const [firstKey] = keys;
+
+    if (keys.length === 1 && firstKey !== undefined) {
+      await keyv.delete(firstKey);
+      return;
+    }
+
+    await keyv.deleteMany(keys);
   }
 
   async clear(): Promise<void> {
