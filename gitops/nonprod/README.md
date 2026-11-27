@@ -141,7 +141,12 @@ Init rebuilds `sentinel.conf` from the template on every start. It seeds the
 monitor with the chosen primary and keeps the existing `sentinel myid`.
 Without that identifier, the other Sentinels keep a stale entry for every pod
 recreation. Stale entries raise the number of votes needed for a failover.
-Init makes `sentinel.conf` owned by `redis` because Sentinel rewrites it.
+Init gives the `redis` user ownership of `/data`, the generated configs
+(`sentinel.conf` with mode `0600`), and any existing persistence files
+(`appendonlydir` and `*.rdb`), leaving `lost+found` untouched. Both the
+`redis` and `redis-sentinel` containers set `SKIP_FIX_PERMS=1` because the
+official entrypoint skips its own permission fixes when config files or
+`lost+found` are present in `/data`.
 
 Every node uses the append-only file settings from `primary.conf`, so a
 replica that Sentinel promotes keeps its data across restarts. The `replicaof`
@@ -182,17 +187,21 @@ after every pod restarted.
 ### Run the Sentinel rejoin check
 
 `base/redis/tests/redis-sentinel-rejoin.sh` starts three Redis and Sentinel
-containers on an internal Podman network with synthetic data. It removes the
-primary, waits for Sentinel to promote a replica, and recreates pods with new IP
-addresses. It checks that recreated pods replicate from the current primary,
-that Sentinel reports pod DNS names, that each Sentinel lists exactly two peers,
-and that every node uses the append-only file. It then kills every pod and
-starts them again in ordinal order, and checks that the same primary keeps the
-last write. It runs both preStop hooks on a replica, which must leave the
-primary in place, and on the primary, which must promote a replica in under 5
-seconds without losing the last write, and the stopped primary must rejoin as a
-replica. Finally, it checks that init logs omit the password.
-Podman removes the containers, volumes, and network when the test exits.
+containers on an internal Podman network with fresh root-owned `/data` volumes
+(including a root-owned `lost+found` directory) and synthetic data. It verifies
+that Redis and Sentinel start without permission or unknown-file warnings, that
+`lost+found` stays untouched, and that Sentinel persists its `myid` to
+`/data/sentinel.conf`. It removes the primary, waits for Sentinel to promote a
+replica, and recreates pods with new IP addresses. It checks that recreated pods
+replicate from the current primary, that Sentinel reports pod DNS names, that
+each Sentinel lists exactly two peers, and that every node uses the append-only
+file. It then kills every pod and starts them again in ordinal order, and checks
+that the same primary keeps the last write. It runs both preStop hooks on a
+replica, which must leave the primary in place, and on the primary, which must
+promote a replica in under 5 seconds without losing the last write, and the
+stopped primary must rejoin as a replica. Finally, it checks that init logs omit
+the password. Podman removes the containers, volumes, and network when the test
+exits.
 
 From the repository root, run:
 

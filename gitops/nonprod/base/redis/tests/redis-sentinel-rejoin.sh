@@ -12,7 +12,7 @@ set -euo pipefail
 test_directory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 config_directory=${REDIS_CONFIG_DIRECTORY:-$test_directory/../configs}
 config_directory=$(cd -- "$config_directory" && pwd)
-image=${REDIS_TEST_IMAGE:-docker.io/library/redis:8.10.3-trixie}
+image=${REDIS_TEST_IMAGE:-docker.io/library/redis:8.12.0-trixie}
 password=synthetic-regression-password
 prefix=redis-rejoin-$$
 subnet_octet=$((RANDOM % 200 + 20))
@@ -32,6 +32,10 @@ fail() {
     if podman container exists "$prefix-redis-$ordinal"; then
       echo "--- redis-$ordinal init log" >&2
       podman exec "$prefix-redis-$ordinal" cat /tmp/init.log >&2 2>/dev/null || podman logs "$prefix-redis-$ordinal" >&2 || true
+      echo "--- redis-$ordinal entrypoint log" >&2
+      podman exec "$prefix-redis-$ordinal" cat /tmp/entrypoint.log >&2 2>/dev/null || true
+      echo "--- redis-$ordinal Redis log" >&2
+      podman exec "$prefix-redis-$ordinal" tail -n 40 /tmp/redis.log >&2 2>/dev/null || true
       echo "--- redis-$ordinal Sentinel log" >&2
       podman exec "$prefix-redis-$ordinal" tail -n 40 /tmp/sentinel.log >&2 2>/dev/null || true
     fi
@@ -40,8 +44,8 @@ fail() {
 }
 
 pod_script='bash /etc/init.sh > /tmp/init.log 2>&1 \
-  && bash /etc/start-redis.sh /data/redis.conf --requirepass "$REDIS_PASSWORD" --masterauth "$REDIS_PASSWORD" --daemonize yes --logfile /tmp/redis.log \
-  && docker-entrypoint.sh /data/sentinel.conf --sentinel --daemonize yes --logfile /tmp/sentinel.log \
+  && bash /etc/start-redis.sh /data/redis.conf --requirepass "$REDIS_PASSWORD" --masterauth "$REDIS_PASSWORD" --daemonize yes --pidfile /tmp/redis.pid --logfile /tmp/redis.log > /tmp/entrypoint.log 2>&1 \
+  && docker-entrypoint.sh /data/sentinel.conf --sentinel --daemonize yes --pidfile /tmp/sentinel.pid --logfile /tmp/sentinel.log >> /tmp/entrypoint.log 2>&1 \
   && exec sleep infinity'
 
 start_pod() {
@@ -54,6 +58,7 @@ start_pod() {
     --network "$prefix" --ip "$ip" \
     --network-alias "redis-$ordinal.redis-headless" --network-alias redis-headless \
     --env REDIS_PASSWORD="$password" \
+    --env SKIP_FIX_PERMS=1 \
     --volume "$prefix-data-$ordinal:/data" "${mounts[@]}" \
     --entrypoint bash "$image" -c "$pod_script" >/dev/null
 }
@@ -104,19 +109,30 @@ sentinel_lists_replicas() {
 
 podman network create --internal --subnet "$subnet.0/24" "$prefix" >/dev/null
 
-# Existing PVCs have /data and sentinel.conf owned by the redis user from earlier image versions.
+# Fresh ext4 PVCs start with /data and lost+found owned by root.
 for ordinal in 0 1 2; do
   podman run --rm --volume "$prefix-data-$ordinal:/data" --entrypoint bash "$image" \
-    -c 'touch /data/sentinel.conf && chown redis:redis /data /data/sentinel.conf'
+    -c 'mkdir -m 0700 /data/lost+found && chown root:root /data /data/lost+found && chmod 0755 /data'
 done
 
 for ordinal in 0 1 2; do
   start_pod "$ordinal" "$subnet.1$ordinal"
   eventually 60 "redis-$ordinal did not become ready" is_ready "$ordinal"
 done
+for ordinal in 0 1 2; do
+  [[ $(podman exec "$prefix-redis-$ordinal" stat -c '%u:%g:%a' /data/lost+found) == 0:0:700 ]] \
+    || fail "redis-$ordinal modified /data/lost+found ownership or mode"
+  [[ $(podman exec "$prefix-redis-$ordinal" stat -c '%U:%G:%a' /data/sentinel.conf) == redis:redis:600 ]] \
+    || fail "redis-$ordinal sentinel.conf does not have redis:redis 600 permissions"
+  podman exec "$prefix-redis-$ordinal" grep -q '^sentinel myid ' /data/sentinel.conf \
+    || fail "redis-$ordinal Sentinel did not persist its myid to /data/sentinel.conf"
+  if podman exec "$prefix-redis-$ordinal" grep -Eq 'Permission denied|Unknown file' /tmp/entrypoint.log /tmp/redis.log /tmp/sentinel.log; then
+    fail "redis-$ordinal logged permission or unknown-file warnings"
+  fi
+done
 [[ $(redis_cli 0 role | head -n 1) == master ]] || fail "cold start did not make redis-0 primary"
 eventually 30 "redis-0 did not get two replicas" has_replicas 0 2
-echo "PASS: cold start made redis-0 primary with two replicas."
+echo "PASS: cold start on fresh root-owned /data volumes made redis-0 primary with two replicas."
 
 redis_cli 0 set rejoin-key before-failover >/dev/null
 podman rm --force --time 0 "$prefix-redis-0" >/dev/null

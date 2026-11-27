@@ -115,23 +115,41 @@ echo "Configuring this pod as $role (primary $primary_host:$primary_port)."
 } > /data/replica.conf
 
 #
-# Sentinel rewrites its config at runtime, so it must stay owned by redis.
-# Keep its myid so the other Sentinels update this one's address instead of
-# keeping a stale entry for every pod recreation.
+# Keep Sentinel's myid so the other Sentinels update this one's address instead
+# of keeping a stale entry for every pod recreation.
 #
 sentinel_id=$(awk '$1 == "sentinel" && $2 == "myid" { print $3 }' /data/sentinel.conf 2>/dev/null || true)
-{
-  awk -v host="$primary_host" -v port="$primary_port" \
-    '$1 == "sentinel" && $2 == "monitor" && $3 == "myprimary" { $4 = host; $5 = port } { print }' /etc/sentinel.conf
-  echo
-  if [[ -n $sentinel_id ]]; then
-    echo "sentinel myid $sentinel_id"
-  fi
-  echo "sentinel announce-hostnames yes"
-  echo "sentinel announce-ip $pod_host"
-  echo "sentinel auth-pass myprimary ${REDIS_PASSWORD}"
-} > /data/sentinel.conf.new
+rm -f /data/sentinel.conf.new
+(
+  umask 0077
+  {
+    awk -v host="$primary_host" -v port="$primary_port" \
+      '$1 == "sentinel" && $2 == "monitor" && $3 == "myprimary" { $4 = host; $5 = port } { print }' /etc/sentinel.conf
+    echo
+    if [[ -n $sentinel_id ]]; then
+      echo "sentinel myid $sentinel_id"
+    fi
+    echo "sentinel announce-hostnames yes"
+    echo "sentinel announce-ip $pod_host"
+    echo "sentinel auth-pass myprimary ${REDIS_PASSWORD}"
+  } > /data/sentinel.conf.new
+)
 chown redis:redis /data/sentinel.conf.new
 mv /data/sentinel.conf.new /data/sentinel.conf
 
 ln --force --symbolic "/data/$role.conf" /data/redis.conf
+
+#
+# Redis and Sentinel drop privileges to the redis user, and the image entrypoint
+# skips its own permission fixes when config files (or ext4 lost+found) are in
+# /data. Give redis ownership of /data, the generated configs, and any existing
+# persistence files without modifying lost+found.
+#
+chown redis:redis /data /data/primary.conf /data/replica.conf
+chmod u+rwx /data
+chmod u+rw /data/primary.conf /data/replica.conf
+chown --no-dereference redis:redis /data/redis.conf
+if [[ -d /data/appendonlydir ]]; then
+  find /data/appendonlydir \( ! -user redis -o ! -group redis \) -exec chown redis:redis {} +
+fi
+find /data -maxdepth 1 -name '*.rdb' \( ! -user redis -o ! -group redis \) -exec chown redis:redis {} +
