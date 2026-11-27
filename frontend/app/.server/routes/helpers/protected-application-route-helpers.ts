@@ -18,6 +18,7 @@ import {
   ATTR_CDCP_APPLICATION_ID,
   ATTR_CDCP_SESSION_KEY,
 } from '~/.server/logging/log-attributes';
+import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
@@ -123,7 +124,11 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The protected application state.
  */
-export function getProtectedApplicationState({ params, session }: LoadStateArgs): ProtectedApplicationState {
+export function getProtectedApplicationState(args: LoadStateArgs): ProtectedApplicationState {
+  return getProtectedApplicationStateInternal(args);
+}
+
+function getProtectedApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): ProtectedApplicationState {
   const log = createLogger('protected-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
@@ -136,6 +141,7 @@ export function getProtectedApplicationState({ params, session }: LoadStateArgs)
   const sessionKey = getSessionKey(params.id);
 
   if (!session.has(sessionKey)) {
+    countApplicationStateOutcome('protected', 'missing');
     log.debug('Application session state not found; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
       [ATTR_SESSION_ID]: session.id,
@@ -145,13 +151,15 @@ export function getProtectedApplicationState({ params, session }: LoadStateArgs)
 
   const state = session.get(sessionKey);
 
-  // Checks if the elapsed time since the last update exceeds 20 minutes,
+  // Checks if the elapsed time since the last update exceeds the configured session expiry,
   // and performs necessary actions if it does.
+  const { SESSION_EXPIRES_SECONDS } = getEnv();
   const lastUpdatedOn = parseDateTimeString(state.lastUpdatedOn);
   const now = Temporal.Now.instant();
 
-  if (Temporal.Instant.compare(now, lastUpdatedOn.add({ minutes: 20 })) >= 0) {
+  if (!allowExpired && Temporal.Instant.compare(now, lastUpdatedOn.add({ seconds: SESSION_EXPIRES_SECONDS })) >= 0) {
     session.unset(sessionKey);
+    countApplicationStateOutcome('protected', 'expired');
     log.debug('Application session state expired; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
       [ATTR_SESSION_ID]: session.id,
@@ -186,7 +194,8 @@ interface SaveProtectedApplicationStateArgs {
  */
 export function saveProtectedApplicationState({ params, session, state }: SaveProtectedApplicationStateArgs): ProtectedApplicationState {
   const log = createLogger('protected-application-route-helpers/saveApplicationState');
-  const currentState = getProtectedApplicationState({ params, session });
+  // Preserve submissionInfo even if the external submission call crossed the expiry boundary.
+  const currentState = getProtectedApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
 
   const newState = {
     ...currentState,

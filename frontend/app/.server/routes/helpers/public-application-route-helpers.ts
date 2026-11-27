@@ -9,6 +9,7 @@ import type { ArrayElement, PickDeep, ReadonlyDeep } from 'type-fest';
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_APPLICATION_ALLOWED_FLOWS, ATTR_CDCP_APPLICATION_CHILD_ID, ATTR_CDCP_APPLICATION_FLOW, ATTR_CDCP_APPLICATION_ID, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
+import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
@@ -115,7 +116,11 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The public application state.
  */
-export function getPublicApplicationState({ params, session }: LoadStateArgs): PublicApplicationState {
+export function getPublicApplicationState(args: LoadStateArgs): PublicApplicationState {
+  return getPublicApplicationStateInternal(args);
+}
+
+function getPublicApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): PublicApplicationState {
   const log = createLogger('public-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
@@ -128,6 +133,7 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
   const sessionKey = getSessionKey(params.id);
 
   if (!session.has(sessionKey)) {
+    countApplicationStateOutcome('public', 'missing');
     log.debug('Application session state not found; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
       [ATTR_SESSION_ID]: session.id,
@@ -137,13 +143,15 @@ export function getPublicApplicationState({ params, session }: LoadStateArgs): P
 
   const state = session.get(sessionKey);
 
-  // Checks if the elapsed time since the last update exceeds 20 minutes,
+  // Checks if the elapsed time since the last update exceeds the configured session expiry,
   // and performs necessary actions if it does.
+  const { SESSION_EXPIRES_SECONDS } = getEnv();
   const lastUpdatedOn = parseDateTimeString(state.lastUpdatedOn);
   const now = Temporal.Now.instant();
 
-  if (Temporal.Instant.compare(now, lastUpdatedOn.add({ minutes: 20 })) >= 0) {
+  if (!allowExpired && Temporal.Instant.compare(now, lastUpdatedOn.add({ seconds: SESSION_EXPIRES_SECONDS })) >= 0) {
     session.unset(sessionKey);
+    countApplicationStateOutcome('public', 'expired');
     log.debug('Application session state expired; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
       [ATTR_SESSION_ID]: session.id,
@@ -178,7 +186,8 @@ interface SavePublicApplicationStateArgs {
  */
 export function savePublicApplicationState({ params, session, state }: SavePublicApplicationStateArgs): PublicApplicationState {
   const log = createLogger('public-application-route-helpers/saveApplicationState');
-  const currentState = getPublicApplicationState({ params, session });
+  // Preserve submissionInfo even if the external submission call crossed the expiry boundary.
+  const currentState = getPublicApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
 
   const newState = {
     ...currentState,
