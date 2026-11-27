@@ -10,7 +10,7 @@ import type { RouteObject, ServerBuild } from 'react-router';
 
 import type { Logger } from 'winston';
 
-import type { RedisClient } from '~/.server/data';
+import type { RedisClient } from '~/.server/data/redis-client';
 import type { LoggingConfig } from '~/.server/logging/logging-config';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';

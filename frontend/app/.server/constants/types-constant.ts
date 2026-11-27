@@ -10,7 +10,7 @@ import type { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-to
 import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ClientConfig, ServerConfig } from '~/.server/configs';
 import type { BuildInfoService } from '~/.server/core';
-import type { RedisService } from '~/.server/data';
+import type { RedisService } from '~/.server/data/redis-service';
 import type {
   AddressValidationDtoMapper,
   AppealUploadEligibilityDtoMapper,

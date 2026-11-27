@@ -10,7 +10,7 @@ import { DefaultRaoidcService } from '~/.server/auth/raoidc-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
 import { DefaultBuildInfoService } from '~/.server/core';
-import { DefaultRedisService } from '~/.server/data';
+import { DefaultRedisService } from '~/.server/data/redis-service';
 import {
   DefaultAddressValidationService,
   DefaultAppealUploadEligibilityService,

@@ -3,7 +3,7 @@ import { mock } from 'vitest-mock-extended';
 
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
-import type { RedisService } from '~/.server/data';
+import type { RedisService } from '~/.server/data/redis-service';
 import type { BenefitApplicationDto, BenefitRenewalDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationDtoMapper, BenefitRenewalDtoMapper } from '~/.server/domain/mappers';
 import type { BenefitApplicationRepository, BenefitRenewalRepository } from '~/.server/domain/repositories';

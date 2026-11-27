@@ -5,7 +5,7 @@ import { AUDIT_EVENT_APPLICATION_SUBMIT_POST, AUDIT_EVENT_PROTECTED_APPLICATION_
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { RedisService } from '~/.server/data';
+import type { RedisService } from '~/.server/data/redis-service';
 import type { BenefitApplicationDto } from '~/.server/domain/dtos';
 import type { BenefitApplicationDtoMapper } from '~/.server/domain/mappers';
 import type { BenefitApplicationRepository } from '~/.server/domain/repositories';

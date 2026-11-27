@@ -5,7 +5,7 @@ import { AUDIT_EVENT_BENEFIT_RENEWAL_SUBMIT_POST, AUDIT_EVENT_PROTECTED_RENEWAL_
 import type { AuditService } from '~/.server/audit/audit-service';
 import type { ServerConfig } from '~/.server/configs';
 import { TYPES } from '~/.server/constants';
-import type { RedisService } from '~/.server/data';
+import type { RedisService } from '~/.server/data/redis-service';
 import type { BenefitRenewalDto } from '~/.server/domain/dtos';
 import type { BenefitRenewalDtoMapper } from '~/.server/domain/mappers';
 import type { BenefitRenewalRepository } from '~/.server/domain/repositories';
