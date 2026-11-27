@@ -13,8 +13,11 @@ import type { QueryParamsRedactorAttributesOptions, QueryParamsRedactorReplaceme
  * clauses inside `$expand` compare only status codes and hard-coded status IDs. Keep them that way:
  * if a query puts a client ID or other personal value in one of these parameters, remove the name
  * from this set. `$filter` is not listed because repositories put client IDs in it.
+ *
+ * `error` is not listed because sign-in callbacks receive it from the identity provider, which can
+ * put arbitrary text in it. The auth routes log only an allowlisted error type instead.
  */
-export const SAFE_QUERY_PARAMETER_NAMES: ReadonlySet<string> = new Set(['$expand', '$orderby', '$select', 'client_id', 'code_challenge_method', 'engage', 'error', 'lang', 'locale', 'response_type', 'scenario', 'scope', 'sort']);
+export const SAFE_QUERY_PARAMETER_NAMES: ReadonlySet<string> = new Set(['$expand', '$orderby', '$select', 'client_id', 'code_challenge_method', 'engage', 'lang', 'locale', 'response_type', 'scenario', 'scope', 'sort']);
 
 /**
  * The default options for query parameter redaction. `react_router.url` is the full request URL that
