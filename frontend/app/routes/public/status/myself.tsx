@@ -102,8 +102,8 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   });
 
   const id = randomUUID().toString();
-  startStatusState({ id, session });
-  saveStatusState({
+  await startStatusState({ id, session });
+  await saveStatusState({
     id,
     params,
     session,

@@ -40,7 +40,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   securityHandler.validateFeatureEnabled('status');
 
   const statusStateId = getStatusStateIdFromUrl(url);
-  const { statusCheckResult } = loadStatusState({ id: statusStateId, params, session });
+  const { statusCheckResult } = await loadStatusState({ id: statusStateId, params, session });
 
   const locale = getLocale(url);
 
@@ -67,7 +67,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   securityHandler.validateFeatureEnabled('status');
 
   const statusStateId = getStatusStateIdFromUrl(url);
-  const { id } = loadStatusState({ id: statusStateId, params, session });
+  const { id } = await loadStatusState({ id: statusStateId, params, session });
 
   const t = await getFixedT(url, 'status');
 
@@ -77,7 +77,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return redirect(getPathById('public/status/index', params));
   }
 
-  clearStatusState({ id, params, session });
+  await clearStatusState({ id, params, session });
   return redirect(t(($) => $.result.exitLink));
 }
 

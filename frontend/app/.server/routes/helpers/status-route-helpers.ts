@@ -2,10 +2,12 @@ import { redirectDocument } from 'react-router';
 
 // session.id is currently an incubating OpenTelemetry convention.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import { Option } from 'effect';
 import * as z from 'zod';
 
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
+import { deleteStatusState, findStatusState, setStatusState } from '~/.server/routes/helpers/status-state-storage';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
 
@@ -52,7 +54,7 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The loaded state.
  */
-export function loadStatusState({ id, params, session }: LoadStateArgs): StatusState {
+export async function loadStatusState({ id, params, session }: LoadStateArgs): Promise<StatusState> {
   const log = createLogger('status-route-helpers/loadStatusState');
   const statusIndexUrl = getPathById('public/status/index', params);
 
@@ -64,8 +66,9 @@ export function loadStatusState({ id, params, session }: LoadStateArgs): StatusS
   }
 
   const sessionKey = getSessionKey(parsedId.data);
+  const stateOption = await findStatusState(session, parsedId.data);
 
-  if (!session.has(sessionKey)) {
+  if (Option.isNone(stateOption)) {
     log.debug('Status session state not found; redirecting to status index', {
       [ATTR_CDCP_REDIRECT_TARGET]: statusIndexUrl,
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -74,7 +77,7 @@ export function loadStatusState({ id, params, session }: LoadStateArgs): StatusS
     throw redirectDocument(statusIndexUrl);
   }
 
-  return session.get(sessionKey);
+  return stateOption.value;
 }
 
 interface SaveStateArgs {
@@ -90,9 +93,9 @@ interface SaveStateArgs {
  * @param args - The arguments.
  * @returns The new status state.
  */
-export function saveStatusState({ id, params, session, state }: SaveStateArgs) {
+export async function saveStatusState({ id, params, session, state }: SaveStateArgs) {
   const log = createLogger('status-route-helpers/saveStatusState');
-  const currentState = loadStatusState({ id, params, session });
+  const currentState = await loadStatusState({ id, params, session });
 
   const newState = {
     ...currentState,
@@ -100,7 +103,7 @@ export function saveStatusState({ id, params, session, state }: SaveStateArgs) {
   } satisfies StatusState;
 
   const sessionKey = getSessionKey(currentState.id);
-  session.set(sessionKey, newState);
+  await setStatusState(session, currentState.id, newState);
   log.debug('Status session state saved', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return newState;
 }
@@ -115,11 +118,11 @@ interface ClearStateArgs {
  * Clears status state.
  * @param args - The arguments.
  */
-export function clearStatusState({ id, params, session }: ClearStateArgs) {
+export async function clearStatusState({ id, params, session }: ClearStateArgs) {
   const log = createLogger('status-route-helpers/clearStatusState');
-  const state = loadStatusState({ id, params, session });
+  const state = await loadStatusState({ id, params, session });
   const sessionKey = getSessionKey(state.id);
-  session.unset(sessionKey);
+  await deleteStatusState(session, state.id);
   log.debug('Status session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
@@ -133,7 +136,7 @@ interface StartArgs {
  * @param args - The arguments.
  * @returns The initial status state.
  */
-export function startStatusState({ id, session }: StartArgs) {
+export async function startStatusState({ id, session }: StartArgs) {
   const log = createLogger('status-route-helpers/startStatusState');
   const parsedId = idSchema.parse(id);
 
@@ -143,7 +146,7 @@ export function startStatusState({ id, session }: StartArgs) {
   };
 
   const sessionKey = getSessionKey(parsedId);
-  session.set(sessionKey, initialState);
+  await setStatusState(session, parsedId, initialState);
   log.debug('Status session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }

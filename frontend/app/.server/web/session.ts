@@ -11,7 +11,6 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_SESSION_KEY, ATTR_CDCP_SESSION_KEY_EXISTS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
-import type { StatusState, StatusStateSessionKey } from '~/.server/routes/helpers/status-route-helpers';
 import { throwAppError } from '~/.server/utils/error-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { ErrorCodes } from '~/errors/error-codes';
@@ -24,8 +23,6 @@ import { isEmpty } from '~/utils/string-utils';
  * Extend this interface to add more session keys and their types as needed.
  */
 type SessionTypeMap = {
-  [K in StatusStateSessionKey]: StatusState;
-} & {
   [K in DocumentUploadStateSessionKey]: DocumentUploadState;
 } & {
   applicant: ApplicantDto;
