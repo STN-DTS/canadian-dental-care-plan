@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: canada-dental-care-plan
 resources:
+  - ./pdbs.yaml
   - ./services.yaml
   - ./stateful-sets.yaml
 configMapGenerator:

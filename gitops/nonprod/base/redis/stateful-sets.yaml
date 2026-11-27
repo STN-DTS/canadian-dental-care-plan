@@ -18,6 +18,14 @@ spec:
       labels:
         app.kubernetes.io/name: redis
     spec:
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
       initContainers:
         - name: init
           image: docker.io/redis:8.12.0-trixie@sha256:3c4881844c6421f29fb9f9e8ca4f573d9fbdfb35967d65834504b6994cf6cd3b
@@ -25,6 +33,13 @@ spec:
           envFrom:
             - secretRef:
                 name: redis
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
           volumeMounts:
             - name: data
               mountPath: /data
@@ -60,11 +75,11 @@ spec:
                 command: [bash, /etc/prestop-redis.sh]
           livenessProbe:
             exec:
-              command: [/usr/local/bin/redis-cli, --pass, $(REDIS_PASSWORD), ping]
+              command: [sh, -c, 'REDISCLI_AUTH="$REDIS_PASSWORD" /usr/local/bin/redis-cli ping']
             initialDelaySeconds: 10
           readinessProbe:
             exec:
-              command: [/usr/local/bin/redis-cli, --pass, $(REDIS_PASSWORD), ping]
+              command: [sh, -c, 'REDISCLI_AUTH="$REDIS_PASSWORD" /usr/local/bin/redis-cli ping']
             initialDelaySeconds: 10
           resources:
             requests:
@@ -95,9 +110,27 @@ spec:
             preStop:
               exec:
                 command: [bash, /etc/prestop-sentinel.sh]
+          livenessProbe:
+            exec:
+              command: [/usr/local/bin/redis-cli, -p, '26379', ping]
+            initialDelaySeconds: 10
+          readinessProbe:
+            exec:
+              command: [/usr/local/bin/redis-cli, -p, '26379', ping]
+            initialDelaySeconds: 10
           ports:
             - name: sentinel
               containerPort: 26379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: config
               mountPath: /etc/prestop-sentinel.sh
