@@ -300,12 +300,15 @@ describe('getEnv auth provider', () => {
     expect(config).not.toHaveProperty('AUTH_RAOIDC_CLIENT_ID');
   });
 
-  it.each(['https://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc', 'http://localhost:3000/auth/callback/oidc', 'https://cdcp.example.test:8443/auth/callback/oidc'])('accepts the redirect URI %s', (redirectUri) => {
-    configureOidc();
-    vi.stubEnv('AUTH_OIDC_REDIRECT_URI', redirectUri);
+  it.each(['https://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc', 'https://cdcp.example.test:8443/auth/callback/oidc', 'http://localhost:3000/auth/callback/oidc', 'http://127.0.0.1:3000/auth/callback/oidc', 'http://[::1]:3000/auth/callback/oidc'])(
+    'accepts the redirect URI %s',
+    (redirectUri) => {
+      configureOidc();
+      vi.stubEnv('AUTH_OIDC_REDIRECT_URI', redirectUri);
 
-    expect(getEnv()).toMatchObject({ AUTH_OIDC_REDIRECT_URI: redirectUri });
-  });
+      expect(getEnv()).toMatchObject({ AUTH_OIDC_REDIRECT_URI: redirectUri });
+    },
+  );
 
   it('accepts the OIDC private key as single-line base64 PKCS#8', () => {
     configureOidc();
@@ -330,6 +333,10 @@ describe('getEnv auth provider', () => {
     ['AUTH_OIDC_REDIRECT_URI', 'ftp://cdcp.example.test/auth/callback/oidc'],
     ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test:443/auth/callback/oidc'],
     ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp.example.test:80/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://localhost.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://10.0.0.5:3000/auth/callback/oidc'],
     ['AUTH_OIDC_REDIRECT_URI', 'https://CDCP.example.test/auth/callback/oidc'],
     ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/./callback/oidc'],
     ['AUTH_OIDC_PRIVATE_KEY', 'not-a-key'],

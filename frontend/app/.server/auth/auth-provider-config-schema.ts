@@ -8,10 +8,14 @@ import { stringToRedacted } from '~/.server/utils/zod-utils';
 /** The only callback path the auth loader serves for AUTH_PROVIDER=oidc. */
 export const OIDC_CALLBACK_PATHNAME = '/auth/callback/oidc';
 
+/** Loopback hosts that may use plain HTTP for local development (RFC 8252 section 7.3); everything else needs HTTPS. */
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
+
 /**
  * The redirect URI is sent at authorization and rebuilt from its origin and path at token exchange, so it must point at
  * the served callback path with no query, fragment or credentials. It must also be canonical (for example no explicit
  * default port or uppercase host), because URL parsing would otherwise send a different string than the registered one.
+ * It must use HTTPS, except on loopback hosts, so the authorization code and state are not sent without TLS.
  */
 function isValidOidcRedirectUri(value: string): boolean {
   if (!URL.canParse(value)) {
@@ -19,7 +23,8 @@ function isValidOidcRedirectUri(value: string): boolean {
   }
 
   const url = new URL(value);
-  return url.href === value && url.pathname === OIDC_CALLBACK_PATHNAME && url.search === '' && url.hash === '' && !value.includes('?') && !value.includes('#') && url.username === '' && url.password === '';
+  const isSecure = url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK_HOSTNAMES.has(url.hostname));
+  return isSecure && url.href === value && url.pathname === OIDC_CALLBACK_PATHNAME && url.search === '' && url.hash === '' && !value.includes('?') && !value.includes('#') && url.username === '' && url.password === '';
 }
 
 /** RS256 requires an RSA key; iSAMS accepts 2048- or 4096-bit keys. */
@@ -48,7 +53,9 @@ const oidcAuthProviderConfigSchema = z.object({
   AUTH_OIDC_CLIENT_ID: z.string().trim().nonempty(),
 
   /** The exact redirect URI registered with the provider; sent unchanged at authorization and token exchange. */
-  AUTH_OIDC_REDIRECT_URI: z.url({ protocol: /^https?$/ }).refine(isValidOidcRedirectUri, { error: `OIDC redirect URI must use the ${OIDC_CALLBACK_PATHNAME} path, in canonical form, with no query, fragment or credentials` }),
+  AUTH_OIDC_REDIRECT_URI: z
+    .url({ protocol: /^https?$/ })
+    .refine(isValidOidcRedirectUri, { error: `OIDC redirect URI must use HTTPS (or HTTP on a loopback host) and the ${OIDC_CALLBACK_PATHNAME} path, in canonical form, with no query, fragment or credentials` }),
 
   /** RSA signing key registered for `private_key_jwt` (PEM or single-line base64 PKCS#8). */
   AUTH_OIDC_PRIVATE_KEY: z.string().refine(isValidRs256PrivateKey, { error: 'OIDC private key must be an RSA key of at least 2048 bits' }).pipe(stringToRedacted),
