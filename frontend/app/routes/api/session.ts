@@ -7,6 +7,7 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { touchSessionStorage } from '~/.server/data/session-storage';
 import { createLogger } from '~/.server/logging';
 /**
  * An API route that can be used to perform actions with user's server-side session.
@@ -67,6 +68,8 @@ export async function action({ context, request, url }: Route.ActionArgs) {
 
     case 'extend': {
       log.debug('Extending server-side session lifetime', { [ATTR_SESSION_ID]: sessionId });
+      // Express rolling sessions refresh the session record automatically; refresh separate session-storage entries alongside it.
+      await touchSessionStorage(sessionId);
       return Response.json({
         status: 'success',
         message: 'Session extended successfully.',

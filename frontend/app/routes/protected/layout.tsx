@@ -1,10 +1,8 @@
 import { Outlet, isRouteErrorResponse, useNavigate } from 'react-router';
 
-import { useTranslation } from 'react-i18next';
-
 import { NotFoundError, ProtectedLayout, ServerError } from '~/components/layouts/protected-layout';
 import SessionTimeout from '~/components/session-timeout';
-import { useClientEnv } from '~/hooks';
+import { useClientEnv, useCurrentLanguage } from '~/hooks';
 import { authMiddleware } from '~/middlewares/auth.server';
 import { useApiSession } from '~/utils/api-session-utils';
 import { mergeMeta } from '~/utils/meta-utils';
@@ -24,12 +22,12 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 
 export default function Layout() {
   const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = useClientEnv();
+  const { currentLanguage } = useCurrentLanguage();
   const navigate = useNavigate();
   const apiSession = useApiSession();
-  const { i18n } = useTranslation();
 
   async function handleOnSessionEnd() {
-    await navigate('/auth/logout?locale=' + i18n.language);
+    await navigate('/auth/logout?locale=' + currentLanguage);
   }
 
   async function handleOnSessionExtend() {

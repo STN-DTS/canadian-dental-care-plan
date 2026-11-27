@@ -29,7 +29,7 @@ Temporary multi-step flow states and per-session Power Platform caches live outs
 | ------------------------------------------------ | ---------- | ------------------------------------------------------- |
 | `SESSION_STORAGE_TYPE`                           | `memory`   | Backend (`memory` or `redis`)                           |
 | `SESSION_KEY_PREFIX`                             | `SESSION:` | Base Redis prefix shared with `connect-redis`           |
-| `SESSION_EXPIRES_SECONDS`                        | `1200`     | Session lifetime and application-state expiry threshold |
+| `SESSION_EXPIRES_SECONDS`                        | `1200`     | Base session lifetime (default storage TTL adds offset) |
 | `SESSION_STORAGE_TTL_OFFSET_SECONDS`             | `300`      | Extra Redis TTL buffer above `SESSION_EXPIRES_SECONDS`  |
 | `SESSION_STORAGE_MEMORY_MAX_SIZE`                | `1000`     | `QuickLRU` capacity for the memory backend              |
 | `SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS` | `300`      | Shorter TTL override for cached client applications     |
@@ -40,7 +40,7 @@ Temporary multi-step flow states and per-session Power Platform caches live outs
 - Per-session key index: `SESSION:<sid>:STATE`
 - State entries: `SESSION:<sid>:STATE:<namespace>:<key>`
 
-Default TTL is `SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (25 minutes by default). Every `set` rewrites the per-session index so its TTL never expires before its entries. `deleteSessionStorage(sessionId)` reads the index and deletes all indexed entries and the index without scanning Redis.
+Default TTL is `SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (25 minutes by default). Every `set` rewrites the per-session index (`{ [entryKey]: ttlSeconds | null }`) so its TTL never expires before its entries. `touchSessionStorage(sessionId)` refreshes all still-live indexed entries with each entry's configured TTL (pruning expired/deleted entries) in one `store.set(...)`, and `deleteSessionStorage(sessionId)` deletes all indexed entries and the index without scanning Redis.
 
 > **Gotcha:** Because this store shares the base `SESSION` Redis namespace with `connect-redis`, never call `store.clear()` on it — on Redis, `clear()` scans `SESSION:*` and would delete Express sessions too.
 
@@ -50,8 +50,8 @@ Each temporary state or per-session Power Platform cache has its own lazy storag
 
 | Module                                                                                                         | Namespace               | TTL            | Notes                                                                    |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------- | ------------------------------------------------------------------------ |
-| [`public-application-storage.ts`](../../app/.server/routes/data/public-application-storage.ts)                 | `public-application`    | Session + 300s | App-level expiry checked against `SESSION_EXPIRES_SECONDS`               |
-| [`protected-application-storage.ts`](../../app/.server/routes/data/protected-application-storage.ts)           | `protected-application` | Session + 300s | App-level expiry checked against `SESSION_EXPIRES_SECONDS`               |
+| [`public-application-storage.ts`](../../app/.server/routes/data/public-application-storage.ts)                 | `public-application`    | Session + 300s | Public application flow (`lastUpdatedOn` kept as debug metadata)         |
+| [`protected-application-storage.ts`](../../app/.server/routes/data/protected-application-storage.ts)           | `protected-application` | Session + 300s | Protected application flow (`lastUpdatedOn` kept as debug metadata)      |
 | [`status-storage.ts`](../../app/.server/routes/data/status-storage.ts)                                         | `status`                | Session + 300s | Public status-checker flow                                               |
 | [`document-upload-storage.ts`](../../app/.server/routes/data/document-upload-storage.ts)                       | `document-upload`       | Session + 300s | Protected document-upload flow                                           |
 | [`profile-email-address-flow-storage.ts`](../../app/.server/routes/data/profile-email-address-flow-storage.ts) | `profile-email-address` | Session + 300s | Protected profile email verification flow                                |
@@ -68,8 +68,9 @@ Each temporary state or per-session Power Platform cache has its own lazy storag
 
 ## Application-state expiry & metrics
 
-- Public and protected application helpers check `lastUpdatedOn + SESSION_EXPIRES_SECONDS`. When persisting `submissionInfo` after a successful external submission, the expiry check is bypassed (`allowExpired`) so submissions that cross the threshold while in flight still reach confirmation.
-- Missing and expired application states increment the bounded `cdcp.application.state.unavailable` counter ([`application-state-metrics.ts`](../../app/.server/observability/application-state-metrics.ts)) with `cdcp.route.id` (from [`matchRouteId`](../../app/.server/utils/server-build-utils.ts)), `cdcp.application.channel`, and `cdcp.application.state.outcome`.
+- Flow expiry is enforced uniformly by Keyv/Redis TTL (`SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS`). The 5-minute buffer gives in-flight submissions headroom beyond `SESSION_EXPIRES_SECONDS` to persist `submissionInfo` and reach confirmation, while `lastUpdatedOn` is retained as debugging metadata.
+- `POST /api/session` (`action: 'extend'`) calls `touchSessionStorage(session.id)` alongside Express session `touch()`, refreshing all live session-storage entries across public and protected flows using their configured TTLs.
+- Missing application states increment the bounded `cdcp.application.state.unavailable` counter ([`application-state-metrics.ts`](../../app/.server/observability/application-state-metrics.ts)) with `cdcp.route.id` (from [`matchRouteId`](../../app/.server/utils/server-build-utils.ts)), `cdcp.application.channel`, and `cdcp.application.state.outcome`.
 
 ## Trade-offs & rejected alternatives
 

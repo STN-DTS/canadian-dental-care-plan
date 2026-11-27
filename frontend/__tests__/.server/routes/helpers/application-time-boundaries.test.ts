@@ -80,19 +80,19 @@ describe('public application time boundaries', () => {
     children: [],
   } as PublicApplicationState;
 
-  it('retains the state before twenty minutes and expires it exactly at twenty minutes', async () => {
+  it('retains state within session storage TTL and treats it as missing once evicted', async () => {
     const session = mock<Session>({ id: 'session' });
     await setPublicApplicationState(session, 'flow', baseState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
-    vi.setSystemTime(Temporal.Instant.from('2026-07-01T11:59:59.999Z').epochMilliseconds);
 
+    // TTL is SESSION_EXPIRES_SECONDS (1200s) + SESSION_STORAGE_TTL_OFFSET_SECONDS (60s) = 1260s.
+    vi.advanceTimersByTime(1_259_999);
     await expect(getPublicApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
-    expect(Option.isSome(await findPublicApplicationState(session, 'flow'))).toBe(true);
 
-    vi.advanceTimersByTime(1);
+    vi.advanceTimersByTime(2);
     await expect(getPublicApplicationState(args)).rejects.toThrow();
     await expect(findPublicApplicationState(session, 'flow')).resolves.toEqual(Option.none());
-    expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('public', 'expired');
+    expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('public', 'missing');
   });
 
   it('counts state missing from storage', async () => {
@@ -100,26 +100,6 @@ describe('public application time boundaries', () => {
 
     await expect(getPublicApplicationState({ params: { id: 'flow', lang: 'en' }, session })).rejects.toThrow();
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('public', 'missing');
-  });
-
-  it('does not expire fractional timestamps before twenty minutes have elapsed', async () => {
-    const session = mock<Session>({ id: 'session' });
-    const fractionalState = { ...baseState, lastUpdatedOn: '2026-07-01T11:40:00.123456789Z' } as PublicApplicationState;
-    await setPublicApplicationState(session, 'flow', fractionalState);
-    const args = { params: { id: 'flow', lang: 'en' }, session };
-    const now = vi.spyOn(Temporal.Now, 'instant');
-
-    try {
-      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456788Z'));
-      await expect(getPublicApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: fractionalState.lastUpdatedOn });
-      expect(Option.isSome(await findPublicApplicationState(session, 'flow'))).toBe(true);
-
-      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456789Z'));
-      await expect(getPublicApplicationState(args)).rejects.toThrow();
-      await expect(findPublicApplicationState(session, 'flow')).resolves.toEqual(Option.none());
-    } finally {
-      now.mockRestore();
-    }
   });
 });
 
@@ -133,19 +113,18 @@ describe('protected application time boundaries', () => {
     children: [],
   } as ProtectedApplicationState;
 
-  it('retains the state before twenty minutes and expires it exactly at twenty minutes', async () => {
+  it('retains state within session storage TTL and treats it as missing once evicted', async () => {
     const session = mock<Session>({ id: 'session' });
     await setProtectedApplicationState(session, 'flow', baseState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
-    vi.setSystemTime(Temporal.Instant.from('2026-07-01T11:59:59.999Z').epochMilliseconds);
 
+    vi.advanceTimersByTime(1_259_999);
     await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
-    expect(Option.isSome(await findProtectedApplicationState(session, 'flow'))).toBe(true);
 
-    vi.advanceTimersByTime(1);
+    vi.advanceTimersByTime(2);
     await expect(getProtectedApplicationState(args)).rejects.toThrow();
     await expect(findProtectedApplicationState(session, 'flow')).resolves.toEqual(Option.none());
-    expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'expired');
+    expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'missing');
   });
 
   it('counts state missing from storage', async () => {
@@ -154,45 +133,26 @@ describe('protected application time boundaries', () => {
     await expect(getProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session })).rejects.toThrow();
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'missing');
   });
-
-  it('does not expire fractional timestamps before twenty minutes have elapsed', async () => {
-    const session = mock<Session>({ id: 'session' });
-    const fractionalState = { ...baseState, lastUpdatedOn: '2026-07-01T11:40:00.123456789Z' } as ProtectedApplicationState;
-    await setProtectedApplicationState(session, 'flow', fractionalState);
-    const args = { params: { id: 'flow', lang: 'en' }, session };
-    const now = vi.spyOn(Temporal.Now, 'instant');
-
-    try {
-      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456788Z'));
-      await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: fractionalState.lastUpdatedOn });
-      expect(Option.isSome(await findProtectedApplicationState(session, 'flow'))).toBe(true);
-
-      now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456789Z'));
-      await expect(getProtectedApplicationState(args)).rejects.toThrow();
-      await expect(findProtectedApplicationState(session, 'flow')).resolves.toEqual(Option.none());
-    } finally {
-      now.mockRestore();
-    }
-  });
 });
 
-describe('successful submission persistence at expiry', () => {
+describe('successful submission persistence within TTL buffer', () => {
   const submissionInfo = {
     confirmationCode: 'confirmation-code',
     submittedOn: '2026-07-01T12:00:00Z',
   };
 
-  it('saves public submission information when the external submission crosses the expiry boundary', async () => {
+  it('saves public submission information during the TTL offset window past SESSION_EXPIRES_SECONDS', async () => {
     const state = {
       id: 'flow',
       channelCode: 'public',
       context: 'intake',
-      lastUpdatedOn: '2026-07-01T11:40:00.000Z',
+      lastUpdatedOn: '2026-07-01T12:00:00.000Z',
       applicationYear: { applicationYearId: '1', taxYear: '2025', dependentEligibilityEndDate: '2026-06-30' },
       children: [],
     } as PublicApplicationState;
     const session = mock<Session>({ id: 'session' });
     await setPublicApplicationState(session, 'flow', state);
+    vi.advanceTimersByTime(1_210_000);
 
     const result = await savePublicApplicationState({ params: { id: 'flow', lang: 'en' }, session, state: { submissionInfo } });
 
@@ -200,17 +160,18 @@ describe('successful submission persistence at expiry', () => {
     expect(Option.getOrUndefined(await findPublicApplicationState(session, 'flow'))).toMatchObject({ submissionInfo });
   });
 
-  it('saves protected submission information when the external submission crosses the expiry boundary', async () => {
+  it('saves protected submission information during the TTL offset window past SESSION_EXPIRES_SECONDS', async () => {
     const state = {
       id: 'flow',
       channelCode: 'protected',
       context: 'intake',
-      lastUpdatedOn: '2026-07-01T11:40:00.000Z',
+      lastUpdatedOn: '2026-07-01T12:00:00.000Z',
       applicationYear: { applicationYearId: '1', taxYear: '2025', dependentEligibilityEndDate: '2026-06-30' },
       children: [],
     } as ProtectedApplicationState;
     const session = mock<Session>({ id: 'session' });
     await setProtectedApplicationState(session, 'flow', state);
+    vi.advanceTimersByTime(1_210_000);
 
     const result = await saveProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session, state: { submissionInfo } });
 

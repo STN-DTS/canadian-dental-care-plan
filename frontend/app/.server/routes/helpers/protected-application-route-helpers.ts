@@ -126,11 +126,7 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The protected application state.
  */
-export async function getProtectedApplicationState(args: LoadStateArgs): Promise<ProtectedApplicationState> {
-  return await getProtectedApplicationStateInternal(args);
-}
-
-async function getProtectedApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): Promise<ProtectedApplicationState> {
+export async function getProtectedApplicationState({ params, session }: LoadStateArgs): Promise<ProtectedApplicationState> {
   const log = createLogger('protected-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
@@ -154,22 +150,6 @@ async function getProtectedApplicationStateInternal({ params, session, allowExpi
   }
 
   const state = stateOption.value;
-
-  // Checks if the elapsed time since the last update exceeds the configured session expiry,
-  // and performs necessary actions if it does.
-  const { SESSION_EXPIRES_SECONDS } = getEnv();
-  const lastUpdatedOn = parseDateTimeString(state.lastUpdatedOn);
-  const now = Temporal.Now.instant();
-
-  if (!allowExpired && Temporal.Instant.compare(now, lastUpdatedOn.add({ seconds: SESSION_EXPIRES_SECONDS })) >= 0) {
-    await deleteProtectedApplicationState(session, params.id);
-    countApplicationStateOutcome('protected', 'expired');
-    log.debug('Application session state expired; redirecting to CDCP application website', {
-      [ATTR_CDCP_SESSION_KEY]: sessionKey,
-      [ATTR_SESSION_ID]: session.id,
-    });
-    throw redirectDocument(cdcpWebsiteApplicationUrl);
-  }
 
   // Validate channelCode to ensure the session state is consistent with protected application expectations
   const channelCode = state.channelCode as string | undefined;
@@ -198,8 +178,7 @@ interface SaveProtectedApplicationStateArgs {
  */
 export async function saveProtectedApplicationState({ params, session, state }: SaveProtectedApplicationStateArgs): Promise<ProtectedApplicationState> {
   const log = createLogger('protected-application-route-helpers/saveApplicationState');
-  // Preserve submissionInfo even if the external submission call crossed the expiry boundary.
-  const currentState = await getProtectedApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
+  const currentState = await getProtectedApplicationState({ params, session });
 
   const newState = {
     ...currentState,

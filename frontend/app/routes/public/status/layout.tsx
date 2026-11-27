@@ -1,14 +1,7 @@
 import { Outlet } from 'react-router';
 
-import { TYPES } from '~/.server/constants';
-import { appContext } from '~/.server/context/app-context';
-import { getLocale } from '~/.server/utils/locale-utils';
 import { PublicLayout } from '~/components/layouts/public-layout';
-import SessionTimeout from '~/components/session-timeout';
-import { useApiSession } from '~/utils/api-session-utils';
 import type { RouteHandleData } from '~/utils/route-utils';
-
-import type { Route } from './+types/layout';
 
 export const handle = {
   // Declare all i18n namespaces required by this route and its descendants.
@@ -16,28 +9,9 @@ export const handle = {
   i18nPreloadNamespace: ['gcweb', 'status'],
 } as const satisfies RouteHandleData;
 
-export function loader({ context, url }: Route.LoaderArgs) {
-  const { appContainer } = context.get(appContext);
-  const locale = getLocale(url);
-  const { SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = appContainer.get(TYPES.ClientConfig);
-  return { locale, SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS };
-}
-
-export default function Route({ loaderData, params }: Route.ComponentProps) {
-  const { locale, SESSION_TIMEOUT_PROMPT_SECONDS, SESSION_TIMEOUT_SECONDS } = loaderData;
-  const apiSession = useApiSession();
-
-  async function handleOnSessionEnd() {
-    await apiSession.submit({ action: 'end', locale, redirectTo: 'cdcp-website-status' });
-  }
-
-  async function handleOnSessionExtend() {
-    await apiSession.submit({ action: 'extend' });
-  }
-
+export default function Route() {
   return (
     <PublicLayout>
-      <SessionTimeout promptBeforeIdle={SESSION_TIMEOUT_PROMPT_SECONDS * 1000} timeout={SESSION_TIMEOUT_SECONDS * 1000} onSessionEnd={handleOnSessionEnd} onSessionExtend={handleOnSessionExtend} />
       <Outlet />
     </PublicLayout>
   );

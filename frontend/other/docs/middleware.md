@@ -28,16 +28,16 @@ Middleware runs from parent routes to child routes. Within one route, it runs in
 
 Shared middleware lives in `app/middlewares`.
 
-| Middleware                         | Responsibility                                                            | Provides                                   | Current registration                                 |
-| ---------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------- |
-| `contextStorageMiddleware`         | Stores request-scoped routing objects in server-only async storage.       | `getContext()`, `getRequest()`, `getUrl()` | Root route                                           |
-| `csrfMiddleware`                   | Rejects requests from untrusted origins with HTTP 403.                    | None                                       | Localized layout                                     |
-| `csrfTokenMiddleware`              | Creates the signed CSRF token cookie and validates submitted form tokens. | CSRF token accessed through `getCsrfToken` | Localized layout                                     |
-| `authMiddleware`                   | Validates the RAOIDC session and confirms token identities.               | `userContext`                              | Protected layout and protected application-state API |
-| `createFeatureMiddleware(feature)` | Creates a guard that validates one configured feature before continuing.  | None                                       | Documents and Letters layouts                        |
-| `applicantMiddleware`              | Resolves an applicant. The applicant category may be absent.              | `applicantContext`                         | Documents and Letters layouts                        |
-| `programApplicantMiddleware`       | Resolves a program applicant and requires an applicant category.          | `programApplicantContext`                  | Not currently registered                             |
-| `clientApplicationMiddleware`      | Resolves the current client application.                                  | `clientApplicationContext`                 | Profile layout                                       |
+| Middleware                         | Responsibility                                                            | Provides                                   | Current registration          |
+| ---------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------- |
+| `contextStorageMiddleware`         | Stores request-scoped routing objects in server-only async storage.       | `getContext()`, `getRequest()`, `getUrl()` | Root route                    |
+| `csrfMiddleware`                   | Rejects requests from untrusted origins with HTTP 403.                    | None                                       | Localized layout              |
+| `csrfTokenMiddleware`              | Creates the signed CSRF token cookie and validates submitted form tokens. | CSRF token accessed through `getCsrfToken` | Localized layout              |
+| `authMiddleware`                   | Validates the RAOIDC session and confirms token identities.               | `userContext`                              | Protected layout              |
+| `createFeatureMiddleware(feature)` | Creates a guard that validates one configured feature before continuing.  | None                                       | Documents and Letters layouts |
+| `applicantMiddleware`              | Resolves an applicant. The applicant category may be absent.              | `applicantContext`                         | Documents and Letters layouts |
+| `programApplicantMiddleware`       | Resolves a program applicant and requires an applicant category.          | `programApplicantContext`                  | Not currently registered      |
+| `clientApplicationMiddleware`      | Resolves the current client application.                                  | `clientApplicationContext`                 | Profile layout                |
 
 ## Route-local middleware
 
