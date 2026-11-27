@@ -119,6 +119,12 @@ describe('getEnv secret values', () => {
     expect(() => getEnv()).toThrow('Invalid application configuration');
   });
 
+  it('defaults REDIS_COMMAND_TIMEOUT_SECONDS to 5 when unset', () => {
+    vi.stubEnv('REDIS_COMMAND_TIMEOUT_SECONDS', undefined);
+
+    expect(getEnv().REDIS_COMMAND_TIMEOUT_SECONDS).toBe(5);
+  });
+
   it('defaults the Other evidentiary document type code to 998', () => {
     vi.stubEnv('EVIDENTIARY_DOCUMENT_TYPE_CODE_OTHER', undefined);
 

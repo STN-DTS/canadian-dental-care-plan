@@ -9,7 +9,7 @@ import { redisErrorType } from '~/.server/data/redis-error-type';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_ERROR_CODE, ATTR_CDCP_RETRY_COUNT, ATTR_CDCP_RETRY_DELAY_MS } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
-import { singleton } from '~/.server/utils/instance-registry';
+import { deleteSingleton, hasSingleton, singleton } from '~/.server/utils/instance-registry';
 import { operationalErrorCode } from '~/instrumentation/operational-error-type';
 
 export type RedisClient = RedisClientType | RedisSentinelType;
@@ -42,6 +42,28 @@ export async function getRedisClient(): Promise<RedisClient> {
   }
 
   return client;
+}
+
+/**
+ * Gracefully closes the singleton Redis client if it has been created and opened.
+ */
+export async function closeRedisClient(): Promise<void> {
+  if (!hasSingleton('redisClient')) {
+    return;
+  }
+
+  const log = createLogger('redis-client/closeRedisClient');
+  const client = singleton('redisClient');
+
+  try {
+    if (client.isOpen) {
+      log.info('Closing Redis client');
+      await client.close();
+      log.info('Redis client closed');
+    }
+  } finally {
+    deleteSingleton('redisClient');
+  }
 }
 
 /**
@@ -125,6 +147,7 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
   const sentinel = createSentinel({
     name: config.REDIS_SENTINEL_NAME,
     scanInterval: 10_000, // Documented default says 10_000, but actual default is 0
+    passthroughClientErrorEvents: true,
     sentinelRootNodes: [
       {
         host: config.REDIS_SENTINEL_HOST,
@@ -158,6 +181,27 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
     })
     .on('reconnecting', () => {
       log.debug('Reconnecting to Redis Sentinel', { [ATTR_SERVER_ADDRESS]: config.REDIS_SENTINEL_HOST, [ATTR_SERVER_PORT]: config.REDIS_SENTINEL_PORT });
+    })
+    .on('topology-change', (event: { type?: string; node?: { host?: string; port?: number } }) => {
+      const nodeAttrs = event.node?.host ? { [ATTR_SERVER_ADDRESS]: event.node.host, ...(event.node.port !== undefined && { [ATTR_SERVER_PORT]: event.node.port }) } : undefined;
+
+      switch (event.type) {
+        case 'MASTER_CHANGE':
+          log.info('Redis Sentinel primary changed', nodeAttrs);
+          break;
+        case 'SENTINEL_CHANGE':
+          log.info('Redis Sentinel node changed', nodeAttrs);
+          break;
+        case 'REPLICA_ADD':
+          log.info('Redis Sentinel replica added', nodeAttrs);
+          break;
+        case 'REPLICA_REMOVE':
+          log.info('Redis Sentinel replica removed', nodeAttrs);
+          break;
+        default:
+          log.info('Redis Sentinel topology changed');
+          break;
+      }
     })
     .on('error', (error: unknown) => {
       const code = operationalErrorCode(error);
