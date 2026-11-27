@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-state-storage';
+import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-storage';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
@@ -16,7 +16,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('public-application-state-storage', () => {
+describe('public-application-storage', () => {
   beforeEach(() => {
     deleteSingleton('stores');
     vi.mocked(getEnv).mockReturnValue(

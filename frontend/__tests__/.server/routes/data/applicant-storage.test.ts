@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-state-storage';
-import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
+import type { ApplicantDto } from '~/.server/domain/dtos';
+import { deleteApplicantState, findApplicantState, setApplicantState } from '~/.server/routes/data/applicant-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -12,7 +12,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('document-upload-state-storage', () => {
+describe('applicant-storage', () => {
   beforeEach(() => {
     deleteSingleton('stores');
     vi.mocked(getEnv).mockReturnValue(
@@ -30,25 +30,25 @@ describe('document-upload-state-storage', () => {
     deleteSingleton('stores');
   });
 
-  it('stores, reads, and deletes state scoped to the session', async () => {
+  it('stores, reads, and deletes applicant data scoped to the session', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const state: DocumentUploadState = { id: 'flow-1', status: 'initialized', documents: [] };
+    const applicant = { clientNumber: '123456' } as ApplicantDto;
 
-    await setDocumentUploadState(session, 'flow-1', state);
+    await setApplicantState(session, applicant);
     expect(session.initialize).toHaveBeenCalledOnce();
-    await expect(findDocumentUploadState(session, 'flow-1')).resolves.toEqual(Option.some(state));
+    await expect(findApplicantState(session)).resolves.toEqual(Option.some(applicant));
 
-    await deleteDocumentUploadState(session, 'flow-1');
-    await expect(findDocumentUploadState(session, 'flow-1')).resolves.toEqual(Option.none());
+    await deleteApplicantState(session);
+    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
   });
 
   it('cleans up stored entries when session storage is deleted', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const state: DocumentUploadState = { id: 'flow-1', status: 'initialized', documents: [] };
+    const applicant = { clientNumber: '123456' } as ApplicantDto;
 
-    await setDocumentUploadState(session, 'flow-1', state);
+    await setApplicantState(session, applicant);
     await deleteSessionStorage('session-a');
 
-    await expect(findDocumentUploadState(session, 'flow-1')).resolves.toEqual(Option.none());
+    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
   });
 });

@@ -9,7 +9,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_PHONE_NUMBER, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
-import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
+import { deleteClientApplicationState } from '~/.server/routes/data/client-application-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { phoneSchema } from '~/.server/validation/phone-schema';

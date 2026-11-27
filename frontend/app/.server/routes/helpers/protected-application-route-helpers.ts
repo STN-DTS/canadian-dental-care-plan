@@ -20,7 +20,7 @@ import {
   ATTR_CDCP_SESSION_KEY,
 } from '~/.server/logging/log-attributes';
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
-import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-state-storage';
+import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-storage';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,

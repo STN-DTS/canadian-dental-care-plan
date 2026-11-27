@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import { deleteProfileEmailAddressFlowState, findProfileEmailAddressFlowState, setProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-state-storage';
-import type { ProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-state-storage';
+import { deleteProfileEmailAddressFlowState, findProfileEmailAddressFlowState, setProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-storage';
+import type { ProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -12,7 +12,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('profile-email-address-flow-state-storage', () => {
+describe('profile-email-address-flow-storage', () => {
   beforeEach(() => {
     deleteSingleton('stores');
     vi.mocked(getEnv).mockReturnValue(

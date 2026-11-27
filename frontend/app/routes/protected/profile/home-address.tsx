@@ -11,7 +11,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_HOME_ADDRESS, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
-import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
+import { deleteClientApplicationState } from '~/.server/routes/data/client-application-storage';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import type { AddressInvalidResponse, AddressResponse, AddressSuggestionResponse, CanadianAddress } from '~/components/address-validation-dialog';

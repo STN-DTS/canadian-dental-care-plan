@@ -11,7 +11,7 @@ import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos'
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_APPLICATION_ALLOWED_FLOWS, ATTR_CDCP_APPLICATION_CHILD_ID, ATTR_CDCP_APPLICATION_FLOW, ATTR_CDCP_APPLICATION_ID, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
-import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-state-storage';
+import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-storage';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,

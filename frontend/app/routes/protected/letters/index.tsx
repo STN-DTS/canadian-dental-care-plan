@@ -10,7 +10,7 @@ import { AUDIT_EVENT_PAGE_VIEW_LETTERS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
-import { setLettersState } from '~/.server/routes/data/letters-state-storage';
+import { setLettersState } from '~/.server/routes/data/letters-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';

@@ -9,7 +9,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EMAIL_ADDRESS, AUDIT_EVENT_UPDATE_DATA_PR
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
-import { setProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-state-storage';
+import { setProfileEmailAddressFlowState } from '~/.server/routes/data/profile-email-address-flow-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';

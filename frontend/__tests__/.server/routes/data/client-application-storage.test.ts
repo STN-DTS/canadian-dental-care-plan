@@ -4,7 +4,7 @@ import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
-import { deleteClientApplicationState, findClientApplicationState, setClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
+import { deleteClientApplicationState, findClientApplicationState, setClientApplicationState } from '~/.server/routes/data/client-application-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -12,7 +12,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('client-application-state-storage', () => {
+describe('client-application-storage', () => {
   const clientApplication = { applicantInformation: { clientId: 'client-1', clientNumber: '123456' } } as ClientApplicationDto;
 
   beforeEach(() => {

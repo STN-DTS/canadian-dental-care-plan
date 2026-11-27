@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
-import { findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-state-storage';
-import { findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-state-storage';
+import { findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-storage';
+import { findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-storage';
 import { getProtectedApplicationState, isWithinRenewalPeriod as isProtectedRenewalPeriod, saveProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import { getPublicApplicationState, isWithinRenewalPeriod as isPublicRenewalPeriod, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';

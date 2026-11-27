@@ -14,7 +14,7 @@ import type { AppContext } from '~/.server/context/app-context';
 import type { DocumentUploadService, EvidentiaryDocumentTypeService } from '~/.server/domain/services';
 import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
-import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-state-storage';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-storage';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState, SubmittedDocument } from '~/.server/routes/helpers/document-upload-route-helpers';
 import { getEnv } from '~/.server/utils/env-utils';
@@ -28,7 +28,7 @@ vi.unmock(import('react-i18next'));
 vi.mock(import('~/.server/utils/env-utils'));
 vi.mock(import('~/.server/utils/locale-utils'), { spy: true });
 vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'), { spy: true });
-vi.mock(import('~/.server/routes/data/document-upload-state-storage'));
+vi.mock(import('~/.server/routes/data/document-upload-storage'));
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
 const session = mock<Session>({ id: 'session-a' });

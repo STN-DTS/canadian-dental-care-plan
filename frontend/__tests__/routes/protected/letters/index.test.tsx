@@ -11,12 +11,12 @@ import { appContext } from '~/.server/context/app-context';
 import { applicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { LetterService, LetterTypeService } from '~/.server/domain/services';
-import { setLettersState } from '~/.server/routes/data/letters-state-storage';
+import { setLettersState } from '~/.server/routes/data/letters-storage';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
-vi.mock(import('~/.server/routes/data/letters-state-storage'));
+vi.mock(import('~/.server/routes/data/letters-storage'));
 vi.mock(import('~/.server/utils/locale-utils'));
 
 const applicant = {

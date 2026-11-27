@@ -40,7 +40,7 @@ Store migrated temporary state outside the Express session using three layers:
    (`SESSION_STORAGE_MEMORY_MAX_SIZE`, default `1000`).
    `deleteSessionStorage(sessionId)` cleans up every namespace indexed for that
    session.
-3. **Feature storage modules (e.g. `routes/data/public-application-state-storage.ts`)**:
+3. **Feature storage modules (e.g. `routes/data/public-application-storage.ts`)**:
    each migrated state has its own storage module built on `createSessionStorage`,
    imported by its route helpers. `Session` keeps its existing synchronous API
    (no `*TemporaryState` methods) plus a write-once `initialize()` method so
@@ -53,16 +53,16 @@ Store migrated temporary state outside the Express session using three layers:
 
 Roll out by state type. Each temporary state or per-session backend cache gets
 its own storage module built on `createSessionStorage`: public application
-(`public-application-state-storage.ts`), protected application
-(`protected-application-state-storage.ts`), status checker
-(`status-state-storage.ts`), document upload
-(`document-upload-state-storage.ts`), profile email verification
-(`profile-email-address-flow-state-storage.ts`), applicant
-(`applicant-state-storage.ts`), client application
-(`client-application-state-storage.ts`, with a shorter configurable
+(`public-application-storage.ts`), protected application
+(`protected-application-storage.ts`), status checker
+(`status-storage.ts`), document upload
+(`document-upload-storage.ts`), profile email verification
+(`profile-email-address-flow-storage.ts`), applicant
+(`applicant-storage.ts`), client application
+(`client-application-storage.ts`, with a shorter configurable
 `SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS` default of 300 seconds and invalidation
-after profile updates), program applicant (`program-applicant-state-storage.ts`),
-and letters (`letters-state-storage.ts`). Authentication tokens and OIDC handshake values
+after profile updates), program applicant (`program-applicant-storage.ts`),
+and letters (`letters-storage.ts`). Authentication tokens and OIDC handshake values
 stay in the Express session, which is therefore written only during login and
 OIDC handshakes.
 

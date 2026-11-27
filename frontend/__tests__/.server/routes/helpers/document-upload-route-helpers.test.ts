@@ -4,12 +4,12 @@ import { Option } from 'effect';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
-import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-state-storage';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-storage';
 import { finishDocumentUploadState, loadDocumentUploadState, recordDocumentUploadAttempt, resetDocumentUploadState, startDocumentUploadState, updateDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { Session } from '~/.server/web/session';
 
-vi.mock(import('~/.server/routes/data/document-upload-state-storage'));
+vi.mock(import('~/.server/routes/data/document-upload-storage'));
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
 const params = { lang: 'en' };

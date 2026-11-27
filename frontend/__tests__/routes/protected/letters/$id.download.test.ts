@@ -13,12 +13,12 @@ import type { AppContext } from '~/.server/context/app-context';
 import { applicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto, LetterDto } from '~/.server/domain/dtos';
 import type { LetterService, LetterTypeService } from '~/.server/domain/services';
-import { findLettersState, setLettersState } from '~/.server/routes/data/letters-state-storage';
+import { findLettersState, setLettersState } from '~/.server/routes/data/letters-storage';
 import { getLocale } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/$id.download';
 
-vi.mock(import('~/.server/routes/data/letters-state-storage'));
+vi.mock(import('~/.server/routes/data/letters-storage'));
 vi.mock(import('~/.server/utils/locale-utils'));
 
 describe('protected/letters/$id.download loader', () => {
