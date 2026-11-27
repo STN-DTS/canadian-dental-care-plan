@@ -6,10 +6,6 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { deleteApplicantState } from '~/.server/routes/data/applicant-state-storage';
-import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
-import { deleteLettersState } from '~/.server/routes/data/letters-state-storage';
-import { deleteProgramApplicantState } from '~/.server/routes/data/program-applicant-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
@@ -145,18 +141,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     mocked: true,
   };
 
-  if (session.has('userInfoToken')) {
-    const userInfoToken = session.get('userInfoToken');
-    userInfoToken.sin = sin;
-    userInfoToken.sub = sub;
-
-    session.set('userInfoToken', userInfoToken);
-  } else {
-    session.set('userInfoToken', userInfoTokenPayload);
-  }
-
+  // Regenerate the session like real login so the session ID rotates and all prior session storage is cleared.
+  await session.regenerate();
   session.set('idToken', idToken);
-  await Promise.all([deleteApplicantState(session), deleteClientApplicationState(session), deleteProgramApplicantState(session), deleteLettersState(session)]);
+  session.set('userInfoToken', userInfoTokenPayload);
 
   return redirectDocument(getPathById(parsedDataResult.data.destinationRouteId, params));
 }
