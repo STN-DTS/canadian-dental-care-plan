@@ -13,6 +13,7 @@ Development environment for the Canadian Dental Care Plan.
 ## Base Components
 
 - Frontend
+- Redis
 
 ## Additional Resources
 
@@ -23,8 +24,10 @@ Development environment for the Canadian Dental Care Plan.
 
 - `patches/deployments.yaml` — Adds OAuth proxy sidecar to the frontend deployment
 - `patches/services.yaml` — Service customizations
+- `patches/stateful-sets.yaml` — Redis StatefulSet replica count (2 pods: 1 primary + 1 replica)
 
 ## Configuration Overrides
 
 - `configs/frontend/config.conf` — Environment-specific frontend settings
+- `configs/redis/replica.conf`, `configs/redis/sentinel.conf` — Redis HA configuration
 - OAuth proxy Secret populated from Vault by External Secrets Operator

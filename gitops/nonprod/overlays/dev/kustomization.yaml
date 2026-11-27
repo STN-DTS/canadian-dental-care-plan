@@ -14,16 +14,23 @@ labels:
       app.kubernetes.io/tier: nonprod
 resources:
   - ../../base/frontend/
+  - ../../base/redis/
   - ./external-secrets.yaml
   - ./ingresses.yaml
 patches:
   - path: ./patches/deployments.yaml
   - path: ./patches/services.yaml
+  - path: ./patches/stateful-sets.yaml
 configMapGenerator:
   - name: frontend
     behavior: merge
     envs:
       - ./configs/frontend/config.conf
+  - name: redis
+    behavior: merge
+    files:
+      - ./configs/redis/replica.conf
+      - ./configs/redis/sentinel.conf
   - name: oauth-proxy
     behavior: create
     files:

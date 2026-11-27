@@ -37,7 +37,7 @@ The [migration plan](../.github/plans/gitops-nonprod-prod-split.md) describes th
 
 | Environment                                     | Tier | Frontend | Redis | OAuth Proxy | Fluentd Logging | HPA (Auto-scaling) | Error Pages (404) | Maintenance Page | Reloader | Squid Proxy |
 | ----------------------------------------------- | ---- | -------- | ----- | ----------- | --------------- | ------------------ | ----------------- | ---------------- | -------- | ----------- |
-| [Dev](nonprod/overlays/dev/README.md)           | np   | ✅       | ❌    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
+| [Dev](nonprod/overlays/dev/README.md)           | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
 | [Int1](nonprod/overlays/int1/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
 | [Int2](nonprod/overlays/int2/README.md)         | np   | ✅       | ✅    | ✅          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
 | [Otto](nonprod/overlays/otto/README.md)         | np   | ✅       | ✅    | ❌          | ❌              | ❌                 | ❌                | ❌               | ❌       | ❌          |
