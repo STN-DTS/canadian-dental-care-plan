@@ -4,7 +4,7 @@ import type { Request } from 'express';
 import assert from 'node:assert';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
+import type { LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 // Session attributes are currently incubating OpenTelemetry conventions.
@@ -22,7 +22,6 @@ import { isEmpty } from '~/utils/string-utils';
  * Extend this interface to add more session keys and their types as needed.
  */
 type SessionTypeMap = {
-  applicant: ApplicantDto;
   authCodeVerifier: string;
   authReturnUrl: string;
   authState: string;

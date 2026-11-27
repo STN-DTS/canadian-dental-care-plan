@@ -6,6 +6,7 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { deleteApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
@@ -152,7 +153,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   session.set('idToken', idToken);
-  session.unset('applicant');
+  await deleteApplicantState(session);
 
   return redirectDocument(getPathById(parsedDataResult.data.destinationRouteId, params));
 }

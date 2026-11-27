@@ -15,6 +15,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_FEATURE_NAME, ATTR_CDCP_HTTP_ALLOWED_METHODS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
+import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
@@ -344,10 +345,11 @@ export class DefaultSecurityHandler implements SecurityHandler {
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
 
-    if (session.has('applicant')) {
-      const applicant = session.get('applicant');
+    const cachedApplicant = await findApplicantState(session);
+
+    if (Option.isSome(cachedApplicant)) {
       this.log.debug('Applicant found in session', { [ATTR_SESSION_ID]: session.id });
-      return applicant;
+      return cachedApplicant.value;
     }
 
     const applicantOption = await this.applicantService.findApplicantBySin({
@@ -361,7 +363,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     const applicant = Option.getOrThrow(applicantOption);
 
-    session.set('applicant', applicant);
+    await setApplicantState(session, applicant);
 
     this.log.debug('Applicant found', { [ATTR_SESSION_ID]: session.id });
     return applicant;

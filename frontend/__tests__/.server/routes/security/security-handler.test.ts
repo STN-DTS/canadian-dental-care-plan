@@ -8,6 +8,7 @@ import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/
 import type { ApplicantService, ClientApplicationService, ClientEligibilityService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
+import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
 import { DefaultSecurityHandler } from '~/.server/routes/security';
 import type { ValidateRequestMethodParams } from '~/.server/routes/security';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
@@ -16,6 +17,7 @@ import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 import type { FeatureName } from '~/utils/env-utils';
 
+vi.mock(import('~/.server/routes/helpers/applicant-state-storage'));
 vi.mock(import('~/.server/utils/ip-address-utils'));
 
 describe('DefaultSecurityHandler', () => {
@@ -320,7 +322,7 @@ describe('DefaultSecurityHandler', () => {
     it('should return and cache an applicant without an assigned type', async () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
-      mockSession.has.calledWith('applicant').mockReturnValue(false);
+      vi.mocked(findApplicantState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
@@ -336,7 +338,25 @@ describe('DefaultSecurityHandler', () => {
       expect(result).toBe(applicant);
       expect(mockApplicantService.findApplicantBySin).toHaveBeenCalledWith({ sin: '123456789' });
       expect(mockProgramApplicantService.findProgramApplicantBySin).not.toHaveBeenCalled();
-      expect(mockSession.set).toHaveBeenCalledWith('applicant', applicant);
+      expect(setApplicantState).toHaveBeenCalledWith(mockSession, applicant);
+    });
+
+    it('should return a cached applicant from session storage', async () => {
+      const mockSession = mock<Session>();
+      mockSession.id = 'session-id';
+      const applicant = mock<ApplicantDto>({ clientNumber: 'client-number' });
+      vi.mocked(findApplicantState).mockResolvedValue(Option.some(applicant));
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
+
+      const result = await securityHandler.requireApplicant({
+        requestUrl: new URL('https://localhost:3000/en/protected/documents'),
+        params: { lang: 'en' },
+        session: mockSession,
+      });
+
+      expect(result).toBe(applicant);
+      expect(mockApplicantService.findApplicantBySin).not.toHaveBeenCalled();
     });
   });
 
