@@ -53,4 +53,7 @@ export type StoreOptions = {
 
   /** Entries never expire when omitted. */
   readonly ttlSeconds?: number;
+
+  /** Maximum number of entries kept by the memory LRU backend. Defaults to 1000. */
+  readonly maxSize?: number;
 };

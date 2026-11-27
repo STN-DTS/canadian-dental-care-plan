@@ -11,7 +11,7 @@ export function createStore<T extends JsonValue>(name: string, options: StoreOpt
   const existing = stores.get(name);
 
   if (existing) {
-    if (existing.options.backend !== options.backend || existing.options.ttlSeconds !== options.ttlSeconds) {
+    if (existing.options.backend !== options.backend || existing.options.ttlSeconds !== options.ttlSeconds || existing.options.maxSize !== options.maxSize) {
       throw new Error(`Store "${name}" was already created with different options.`);
     }
 

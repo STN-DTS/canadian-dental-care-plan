@@ -109,6 +109,18 @@ describe('KeyvStore', () => {
     }
   });
 
+  it('evicts least-recently-used entries in the memory backend once maxSize is exceeded', async () => {
+    const store = new KeyvStore<number>('test-lru', { backend: 'memory', maxSize: 2 });
+
+    await store.set({ key: 'a', value: 1 }, { key: 'b', value: 2 });
+    // Writing 4 more keys guarantees the oldest generation containing 'a' and 'b' is rotated out.
+    await store.set({ key: 'c', value: 3 }, { key: 'd', value: 4 }, { key: 'e', value: 5 });
+
+    await expect(store.find('a')).resolves.toEqual(Option.none());
+    await expect(store.find('b')).resolves.toEqual(Option.none());
+    await expect(store.find('e')).resolves.toEqual(Option.some(5));
+  });
+
   it('rejects failed Redis operations instead of reporting missing keys', async () => {
     const client = new FailingRedisClient();
     vi.mocked(getRedisClient).mockResolvedValue(client as never);
@@ -146,5 +158,6 @@ describe('createStore', () => {
 
     expect(createStore('test-factory', { backend: 'memory', ttlSeconds: 60 })).toBe(store);
     expect(() => createStore('test-factory', { backend: 'memory', ttlSeconds: 30 })).toThrow('already created with different options');
+    expect(() => createStore('test-factory', { backend: 'memory', ttlSeconds: 60, maxSize: 50 })).toThrow('already created with different options');
   });
 });

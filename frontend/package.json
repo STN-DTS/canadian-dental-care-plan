@@ -89,6 +89,7 @@
     "morgan": "catalog:",
     "nprogress": "catalog:",
     "openid-client": "catalog:",
+    "quick-lru": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",

@@ -1,9 +1,12 @@
 import KeyvRedis from '@keyv/redis';
 import { Option } from 'effect';
 import Keyv from 'keyv';
+import QuickLRU from 'quick-lru';
 
 import { getRedisClient } from '~/.server/data/redis-client';
 import type { JsonValue, Store, StoreEntry, StoreOptions } from '~/.server/data/store';
+
+const DEFAULT_MEMORY_MAX_SIZE = 1000;
 
 /**
  * Creates a Keyv instance whose failed operations reject instead of returning fallback values.
@@ -13,11 +16,12 @@ import type { JsonValue, Store, StoreEntry, StoreOptions } from '~/.server/data/
  * adapter's error forwarding is removed so connection errors emitted outside an operation do not throw from
  * the Redis client's event handler; the shared client already logs them.
  */
-async function createKeyv(namespace: string, { backend, ttlSeconds }: StoreOptions): Promise<Keyv> {
+async function createKeyv(namespace: string, { backend, ttlSeconds, maxSize }: StoreOptions): Promise<Keyv> {
   const ttl = ttlSeconds === undefined ? undefined : ttlSeconds * 1000;
 
   if (backend === 'memory') {
-    return new Keyv({ namespace, namespaceSeparator: ':', ttl });
+    const store = new QuickLRU<string, unknown>({ maxSize: maxSize ?? DEFAULT_MEMORY_MAX_SIZE });
+    return new Keyv({ store, namespace, namespaceSeparator: ':', ttl });
   }
 
   const store = new KeyvRedis(await getRedisClient(), { namespace, namespaceSeparator: ':', throwOnErrors: true });

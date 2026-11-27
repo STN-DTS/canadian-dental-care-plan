@@ -116,6 +116,7 @@ catalog:
   oxfmt: 0.80.0
   oxlint: 1.95.0
   oxlint-tsgolint: 7.0.2008
+  quick-lru: 8.0.0
   react: 19.3.1
   react-dom: 19.3.1
   react-i18next: 18.0.3
