@@ -21,7 +21,7 @@ export function createMemoryStore(): MemoryStore {
   const memoryStore = new MemoryStore();
 
   log.info('      registering automated session purger (running every 60 seconds)');
-  setInterval(() => purgeExpiredSessions(memoryStore), 60_000);
+  setInterval(() => purgeExpiredSessions(memoryStore), 60_000).unref();
 
   return memoryStore;
 }

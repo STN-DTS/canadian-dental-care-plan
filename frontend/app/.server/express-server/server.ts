@@ -3,10 +3,12 @@ import compression from 'compression';
 import express from 'express';
 import sourceMapSupport from 'source-map-support';
 
+import { closeRedisClient } from '~/.server/data/redis-client';
 import { createRequestLoggerMiddleware, createResponseMaxListenersMiddleware, createSecurityHeadersMiddleware, createSessionMiddleware } from '~/.server/express-server/middleware';
 import { createGlobalErrorHandler } from '~/.server/express-server/request-handlers';
 import { configureDevServer, configureDevStaticAssets } from '~/.server/express-server/server-dev';
 import { configureProductionServer, configureProductionStaticAssets } from '~/.server/express-server/server-prod';
+import { configureGracefulShutdown } from '~/.server/express-server/shutdown';
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_RUNTIME_MODE, ATTR_CDCP_SERVER_LISTEN_TARGET, ATTR_CDCP_SESSION_STORAGE } from '~/.server/logging/log-attributes';
 import { getEnv } from '~/.server/utils/env-utils';
@@ -108,3 +110,5 @@ server.on('error', (error: Error) => {
   log.error(error);
   process.exit(1);
 });
+
+configureGracefulShutdown(server, { onShutdown: closeRedisClient });
