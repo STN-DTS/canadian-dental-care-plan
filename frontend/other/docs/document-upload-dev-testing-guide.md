@@ -47,16 +47,17 @@ switching accounts or testing ineligible users.
 
 Use harmless files with fictional content. Prepare:
 
-| File                                                          | Use                                     |
-| ------------------------------------------------------------- | --------------------------------------- |
-| A small, genuine PDF                                          | Test one successful file                |
-| A small, genuine image                                        | Test another supported format           |
-| Several different valid files                                 | Test multiple selection                 |
-| A valid file larger than the displayed limit                  | Test size validation                    |
-| A harmless file with an unsupported extension, such as `.csv` | Test extension validation               |
-| A plain-text or image file renamed to `.pdf` (wrong format)   | Test content-mismatch format validation |
-| A plain-text file named exactly `mock-upload-failure.txt`     | Test a repeatable mock upload failure   |
-| An unchanged copy of a selected file                          | Test duplicate detection                |
+| File                                                           | Use                                     |
+| -------------------------------------------------------------- | --------------------------------------- |
+| A small, genuine PDF                                           | Test one successful file                |
+| A small, genuine image                                         | Test another supported format           |
+| Several different valid files                                  | Test multiple selection                 |
+| A valid file larger than the displayed limit                   | Test size validation                    |
+| A harmless file with an unsupported extension, such as `.csv`  | Test extension validation               |
+| A plain-text or image file renamed to `.pdf` (wrong format)    | Test content-mismatch format validation |
+| An empty (0-byte) file with an allowed extension (e.g. `.txt`) | Test empty-file validation              |
+| A plain-text file named exactly `mock-upload-failure.txt`      | Test a repeatable mock upload failure   |
+| An unchanged copy of a selected file                           | Test duplicate detection                |
 
 For the failure test, ordinary text such as `Fictional upload test` is enough.
 Check the full filename. It must be `mock-upload-failure.txt`, not
