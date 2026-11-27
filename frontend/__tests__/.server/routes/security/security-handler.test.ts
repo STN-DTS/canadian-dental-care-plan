@@ -9,6 +9,7 @@ import type { ApplicantService, ClientApplicationService, ClientEligibilityServi
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
 import { DefaultSecurityHandler } from '~/.server/routes/security';
 import type { ValidateRequestMethodParams } from '~/.server/routes/security';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
@@ -18,6 +19,7 @@ import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/va
 import type { FeatureName } from '~/utils/env-utils';
 
 vi.mock(import('~/.server/routes/helpers/applicant-state-storage'));
+vi.mock(import('~/.server/routes/helpers/program-applicant-state-storage'));
 vi.mock(import('~/.server/utils/ip-address-utils'));
 
 describe('DefaultSecurityHandler', () => {
@@ -364,7 +366,7 @@ describe('DefaultSecurityHandler', () => {
     it('should return an applicant with an assigned type', async () => {
       const session = mock<Session>();
       session.id = 'session-id';
-      session.has.calledWith('programApplicant').mockReturnValue(false);
+      vi.mocked(findProgramApplicantState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
@@ -378,17 +380,16 @@ describe('DefaultSecurityHandler', () => {
 
       expect(result).toBe(programApplicant);
       expect(mockProgramApplicantService.findProgramApplicantBySin).toHaveBeenCalledWith({ sin: '123456789' });
-      expect(session.set).toHaveBeenCalledWith('programApplicant', programApplicant);
+      expect(setProgramApplicantState).toHaveBeenCalledWith(session, programApplicant);
     });
 
-    it('should return a program applicant from the session', async () => {
+    it('should return a program applicant from session storage', async () => {
       const session = mock<Session>();
       session.id = 'session-id';
-      session.has.calledWith('programApplicant').mockReturnValue(true);
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
       const programApplicant = mock<ProgramApplicantDto>({ applicantType: '775170000' });
-      session.get.calledWith('programApplicant').mockReturnValue(programApplicant);
+      vi.mocked(findProgramApplicantState).mockResolvedValue(Option.some(programApplicant));
 
       const result = await securityHandler.requireProgramApplicant({
         requestUrl: new URL('https://localhost:3000/en/protected/application'),
@@ -403,6 +404,7 @@ describe('DefaultSecurityHandler', () => {
     it('should redirect when no program applicant is found', async () => {
       const session = mock<Session>();
       session.id = 'session-id';
+      vi.mocked(findProgramApplicantState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       session.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
       mockProgramApplicantService.findProgramApplicantBySin.mockResolvedValue(Option.none());

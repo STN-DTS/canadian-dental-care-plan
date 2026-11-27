@@ -16,6 +16,7 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_FEATURE_NAME, ATTR_CDCP_HTTP_ALLOWED_METHODS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
@@ -382,10 +383,11 @@ export class DefaultSecurityHandler implements SecurityHandler {
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
 
-    if (session.has('programApplicant')) {
-      const programApplicant = session.get('programApplicant');
+    const cachedProgramApplicant = await findProgramApplicantState(session);
+
+    if (Option.isSome(cachedProgramApplicant)) {
       this.log.debug('Program applicant found in session', { [ATTR_SESSION_ID]: session.id });
-      return programApplicant;
+      return cachedProgramApplicant.value;
     }
 
     const programApplicantOption = await this.programApplicantService.findProgramApplicantBySin({
@@ -399,7 +401,7 @@ export class DefaultSecurityHandler implements SecurityHandler {
 
     const programApplicant = Option.getOrThrow(programApplicantOption);
 
-    session.set('programApplicant', programApplicant);
+    await setProgramApplicantState(session, programApplicant);
 
     this.log.debug('Program applicant found', { [ATTR_SESSION_ID]: session.id });
     return programApplicant;
