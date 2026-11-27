@@ -1,5 +1,4 @@
-import type { RouteObject, RouterContextProvider, ServerInstrumentation } from 'react-router';
-import { matchRoutes } from 'react-router';
+import type { RouterContextProvider, ServerInstrumentation } from 'react-router';
 
 import { ATTR_ERROR_TYPE, ATTR_HTTP_REQUEST_METHOD, ATTR_HTTP_RESPONSE_STATUS_CODE, ATTR_HTTP_ROUTE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 
@@ -20,7 +19,7 @@ import type { Logger } from '~/.server/logging';
  * handler metadata or a matching route, along with ignored routes, are skipped.
  */
 import { ATTR_CDCP_OPERATION_NAME, ATTR_CDCP_ROUTE_ID } from '~/.server/logging/log-attributes';
-import { singleton } from '~/.server/utils/instance-registry';
+import { matchRouteId } from '~/.server/utils/server-build-utils';
 
 /**
  * Creates the request counter instrumentation object consumed by React Router.
@@ -117,14 +116,8 @@ function requestCounter(log: Logger, context: ReadonlyContext, request: Readonly
     } else {
       log.debug('Request counter route cache miss; matching routes', { [ATTR_URL_PATH]: pathname, [ATTR_HTTP_ROUTE]: pattern });
 
-      const serverBuild = singleton('serverBuild');
-      const agnosticRoutes = singleton('agnosticRoutes');
-      const matches = matchRoutes(agnosticRoutes as RouteObject[], pathname, serverBuild.basename);
-
-      // The most specific match is last in the array; fall back to null when there
-      // is no match or the matched route has no id.
-      const lastMatch = matches?.at(-1);
-      routeId = lastMatch?.route.id ?? null;
+      // Fall back to null when there is no match or the matched route has no id.
+      routeId = matchRouteId(pathname) ?? null;
 
       // Cache the result, including negative (null) matches, so repeat lookups stay fast.
       pathCache.set(pattern, routeId);

@@ -1,4 +1,7 @@
-import type { ServerBuild, matchRoutes } from 'react-router';
+import { matchRoutes } from 'react-router';
+import type { RouteObject, ServerBuild } from 'react-router';
+
+import { singleton } from '~/.server/utils/instance-registry';
 
 type ServerRouteManifest = ServerBuild['routes'];
 export type ServerRouteManifestEntry = NonNullable<ServerRouteManifest[string]>;
@@ -113,4 +116,27 @@ function mapServerRouteToAgnosticRoute(serverRoute: ServerRoute): AgnosticRoute 
 
     return nonIndexRoute;
   }
+}
+
+export type MatchRouteIdOptions = {
+  /** Route tree to match against. */
+  routes: ReadonlyArray<RouteObject>;
+  /** Basename prefix to strip before matching. */
+  basename?: string;
+};
+
+/**
+ * Resolves the most specific React Router route ID matching `pathname`.
+ *
+ * Uses the registered `agnosticRoutes` and `serverBuild.basename` singletons
+ * when `options` is omitted.
+ *
+ * @param pathname - The URL pathname to match against the route tree.
+ * @param options - Optional explicit route tree and basename to match against instead of singletons.
+ * @returns The matched leaf route's ID, or `undefined` when no route matches or it has no ID.
+ */
+export function matchRouteId(pathname: string, options?: MatchRouteIdOptions): string | undefined {
+  const routes = options ? options.routes : singleton('agnosticRoutes');
+  const basename = options ? options.basename : singleton('serverBuild').basename;
+  return matchRoutes([...routes], pathname, basename)?.at(-1)?.route.id;
 }

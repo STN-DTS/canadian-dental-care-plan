@@ -9,13 +9,13 @@
  * Resource routes have no error boundary, so direct requests to them keep the
  * original error. Data (`.data`) requests are always adapted.
  */
-import { matchRoutes } from 'react-router';
 import type { ErrorResponse, LoaderFunction, LoaderFunctionArgs, RouteObject, ServerBuild } from 'react-router';
 
 import { trace } from '@opentelemetry/api';
 
 import { ATTR_CDCP_CORRELATION_ID } from '~/.server/logging/log-attributes';
 import { recordError } from '~/.server/utils/otel-instrumentation-utils';
+import { matchRouteId } from '~/.server/utils/server-build-utils';
 import { isAppError } from '~/errors/app-error';
 import type { AppError } from '~/errors/app-error';
 
@@ -116,7 +116,7 @@ function isDirectResourceRequest(build: ServerBuild, routes: ReadonlyArray<Route
     return false;
   }
 
-  const routeId = matchRoutes([...routes], url.pathname, build.basename)?.at(-1)?.route.id;
+  const routeId = matchRouteId(url.pathname, { routes, basename: build.basename });
   const routeModule: { default?: unknown; ErrorBoundary?: unknown } | undefined = routeId ? build.routes[routeId]?.module : undefined;
   return routeModule !== undefined && routeModule.default == null && routeModule.ErrorBoundary == null;
 }

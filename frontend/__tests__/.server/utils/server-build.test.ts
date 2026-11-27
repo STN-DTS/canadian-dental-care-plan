@@ -1,8 +1,9 @@
-import type { ServerBuild } from 'react-router';
+import type { RouteObject, ServerBuild } from 'react-router';
 
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
 
-import { createAgnosticRoutes, createServerRoutes } from '~/.server/utils/server-build-utils';
+import { deleteSingleton, setSingleton } from '~/.server/utils/instance-registry';
+import { createAgnosticRoutes, createServerRoutes, matchRouteId } from '~/.server/utils/server-build-utils';
 import type { ServerRoute } from '~/.server/utils/server-build-utils';
 
 type ServerRouteManifest = NonNullable<ServerBuild['routes']>;
@@ -468,5 +469,38 @@ describe('createAgnosticRoutes', () => {
         ],
       },
     ]);
+  });
+});
+
+describe('matchRouteId', () => {
+  const routes: RouteObject[] = [
+    {
+      id: 'root',
+      path: '/',
+      children: [
+        { id: 'public/apply/$id/adult/marital-status-en', path: ':lang/apply/:id/adult/marital-status' },
+        { id: 'routes/index', index: true },
+      ],
+    },
+  ];
+
+  afterEach(() => {
+    deleteSingleton('serverBuild');
+    deleteSingleton('agnosticRoutes');
+  });
+
+  test('resolves the matched leaf route ID from registered server build singletons', () => {
+    setSingleton('serverBuild', { basename: '/base' } as ServerBuild);
+    setSingleton('agnosticRoutes', routes);
+
+    expect(matchRouteId('/base/en/apply/abc-123/adult/marital-status')).toBe('public/apply/$id/adult/marital-status-en');
+    expect(matchRouteId('/base')).toBe('routes/index');
+    expect(matchRouteId('/other/path')).toBeUndefined();
+  });
+
+  test('resolves using explicit routes and basename without reading singletons', () => {
+    expect(matchRouteId('/en/apply/abc-123/adult/marital-status', { routes, basename: undefined })).toBe('public/apply/$id/adult/marital-status-en');
+    expect(matchRouteId('/app/en/apply/abc-123/adult/marital-status', { routes, basename: '/app' })).toBe('public/apply/$id/adult/marital-status-en');
+    expect(matchRouteId('/unmatched', { routes, basename: '/app' })).toBeUndefined();
   });
 });
