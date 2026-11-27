@@ -184,9 +184,10 @@ const baseServerEnvSchema  = clientEnvSchema.extend({
 
   // session configuration
   SESSION_STORAGE_TYPE: z.enum(['memory', 'redis']).default('memory'),
+  SESSION_STORAGE_TTL_OFFSET_SECONDS: z.coerce.number().int().nonnegative().default(5 * 60),
+  SESSION_STORAGE_MEMORY_MAX_SIZE: z.coerce.number().int().positive().default(1000),
+  SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS: z.coerce.number().int().positive().default(5 * 60),
   SESSION_EXPIRES_SECONDS: z.coerce.number().default(1200),
-  SESSION_STATE_TTL_OFFSET_SECONDS: z.coerce.number().int().nonnegative().default(5 * 60),
-  CLIENT_APPLICATION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(5 * 60),
   SESSION_COOKIE_NAME: z.string().trim().nonempty().default('__CDCP||session'),
   SESSION_COOKIE_DOMAIN: z.string().trim().nonempty().optional(),
   SESSION_COOKIE_PATH: z.string().trim().nonempty().default('/'),

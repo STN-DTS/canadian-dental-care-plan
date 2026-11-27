@@ -18,13 +18,14 @@ export type SessionStorageOptions = {
 const SESSION_STATE_SEGMENT = 'STATE';
 
 function getSessionStore(): Store<JsonValue> {
-  const { SESSION_EXPIRES_SECONDS, SESSION_KEY_PREFIX, SESSION_STATE_TTL_OFFSET_SECONDS, SESSION_STORAGE_TYPE } = getEnv();
+  const { SESSION_EXPIRES_SECONDS, SESSION_KEY_PREFIX, SESSION_STORAGE_MEMORY_MAX_SIZE, SESSION_STORAGE_TTL_OFFSET_SECONDS, SESSION_STORAGE_TYPE } = getEnv();
   // Shares the base SESSION namespace with connect-redis (SESSION:<sid>). Never call
   // store.clear() on this store: on Redis it scans the namespace and would delete Express sessions too.
   const baseNamespace = SESSION_KEY_PREFIX.replace(/:+$/, '') || 'SESSION';
   return createStore<JsonValue>(baseNamespace, {
     backend: SESSION_STORAGE_TYPE === 'redis' ? 'redis' : 'memory',
-    ttlSeconds: SESSION_EXPIRES_SECONDS + SESSION_STATE_TTL_OFFSET_SECONDS,
+    ttlSeconds: SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS,
+    maxSize: SESSION_STORAGE_MEMORY_MAX_SIZE,
   });
 }
 

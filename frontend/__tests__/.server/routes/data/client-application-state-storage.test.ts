@@ -22,8 +22,9 @@ describe('client-application-state-storage', () => {
         SESSION_STORAGE_TYPE: 'memory',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 1200,
-        SESSION_STATE_TTL_OFFSET_SECONDS: 300,
-        CLIENT_APPLICATION_CACHE_TTL_SECONDS: 300,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 300,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
+        SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS: 300,
       }),
     );
   });
@@ -49,7 +50,7 @@ describe('client-application-state-storage', () => {
     await expect(findClientApplicationState(session, 'year-2026')).resolves.toEqual(Option.some(yearSpecific));
   });
 
-  it('expires cached client applications after CLIENT_APPLICATION_CACHE_TTL_SECONDS', async () => {
+  it('expires cached client applications after SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS', async () => {
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
     const session = mock<Session>({ id: 'session-a' });
 

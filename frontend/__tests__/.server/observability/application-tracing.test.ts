@@ -534,7 +534,8 @@ describe('application method spans', () => {
         SESSION_STORAGE_TYPE: 'memory',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 60,
-        SESSION_STATE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
       }),
     );
     const { session, sessionData } = createExpressSession();

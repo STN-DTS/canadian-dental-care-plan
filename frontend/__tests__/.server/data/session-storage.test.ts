@@ -51,7 +51,8 @@ describe('session-storage', () => {
         SESSION_STORAGE_TYPE: 'memory',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 60,
-        SESSION_STATE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
       }),
     );
   });
@@ -90,14 +91,15 @@ describe('session-storage', () => {
     await expect(storageB.find('session:1', 'a:key')).resolves.toEqual(Option.none());
   });
 
-  it('expires entries after SESSION_EXPIRES_SECONDS plus SESSION_STATE_TTL_OFFSET_SECONDS', async () => {
+  it('expires entries after SESSION_EXPIRES_SECONDS plus SESSION_STORAGE_TTL_OFFSET_SECONDS', async () => {
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
     vi.mocked(getEnv).mockReturnValue(
       mock<ServerEnv>({
         SESSION_STORAGE_TYPE: 'memory',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 1,
-        SESSION_STATE_TTL_OFFSET_SECONDS: 2,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 2,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
       }),
     );
     const storage = createSessionStorage<{ value: string }>('public-application');
@@ -132,7 +134,8 @@ describe('session-storage', () => {
         SESSION_STORAGE_TYPE: 'redis',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 60,
-        SESSION_STATE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
       }),
     );
 

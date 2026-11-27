@@ -32,12 +32,14 @@ Store migrated temporary state outside the Express session using three layers:
 2. **Session-scoped storage (`data/session-storage.ts`)**: `createSessionStorage(namespace)`
    returns a lazy storage view backed by a shared Keyv store under the base
    `SESSION_KEY_PREFIX` namespace (default `SESSION`) with a single `:`
-   separator, resolving `SESSION_STORAGE_TYPE`, `SESSION_KEY_PREFIX`,
-   `SESSION_EXPIRES_SECONDS`, and `SESSION_STATE_TTL_OFFSET_SECONDS` on first
-   use to avoid module-import side effects. The backend is Redis when
-   `SESSION_STORAGE_TYPE` is `redis`; otherwise it uses a bounded `QuickLRU`
-   in-memory store (default `maxSize: 1000`). `deleteSessionStorage(sessionId)`
-   cleans up every namespace indexed for that session.
+   separator, resolving `SESSION_STORAGE_TYPE`,
+   `SESSION_STORAGE_TTL_OFFSET_SECONDS`, `SESSION_STORAGE_MEMORY_MAX_SIZE`,
+   `SESSION_KEY_PREFIX`, and `SESSION_EXPIRES_SECONDS` on first use to avoid
+   module-import side effects. The backend is Redis when `SESSION_STORAGE_TYPE`
+   is `redis`; otherwise it uses a bounded `QuickLRU` in-memory store
+   (`SESSION_STORAGE_MEMORY_MAX_SIZE`, default `1000`).
+   `deleteSessionStorage(sessionId)` cleans up every namespace indexed for that
+   session.
 3. **Feature storage modules (e.g. `routes/data/public-application-state-storage.ts`)**:
    each migrated state has its own storage module built on `createSessionStorage`,
    imported by its route helpers. `Session` keeps its existing synchronous API
@@ -58,7 +60,7 @@ its own storage module built on `createSessionStorage`: public application
 (`profile-email-address-flow-state-storage.ts`), applicant
 (`applicant-state-storage.ts`), client application
 (`client-application-state-storage.ts`, with a shorter configurable
-`CLIENT_APPLICATION_CACHE_TTL_SECONDS` default of 300 seconds and invalidation
+`SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS` default of 300 seconds and invalidation
 after profile updates), program applicant (`program-applicant-state-storage.ts`),
 and letters (`letters-state-storage.ts`). Authentication tokens and OIDC handshake values
 stay in the Express session, which is therefore written only during login and
@@ -67,7 +69,7 @@ OIDC handshakes.
 Each state is stored as its own Keyv key
 (`SESSION:<sessionId>:STATE:<namespace>:<key>`, using the configured
 `SESSION_KEY_PREFIX` base) with a TTL of
-`SESSION_EXPIRES_SECONDS + SESSION_STATE_TTL_OFFSET_SECONDS` (default offset
+`SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (default offset
 `300` seconds). A per-session index key (`SESSION:<sessionId>:STATE`) lists the
 session's scoped keys across all namespaces and is rewritten, refreshing its
 TTL, on every save. Destroying or regenerating a session reads the index and

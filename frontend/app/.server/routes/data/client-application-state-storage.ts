@@ -10,7 +10,7 @@ const DEFAULT_APPLICATION_YEAR_KEY = 'default';
 
 function getStorage(): SessionStorage<ClientApplicationDto> {
   return createSessionStorage<ClientApplicationDto>('client-application', {
-    ttlSeconds: getEnv().CLIENT_APPLICATION_CACHE_TTL_SECONDS,
+    ttlSeconds: getEnv().SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS,
   });
 }
 
@@ -27,7 +27,7 @@ export async function findClientApplicationState(session: Session, applicationYe
 
 /**
  * Caches a client application in session-scoped storage with the configured
- * `CLIENT_APPLICATION_CACHE_TTL_SECONDS` TTL and ensures the Express session is initialized.
+ * `SESSION_STORAGE_CLIENT_APPLICATION_TTL_SECONDS` TTL and ensures the Express session is initialized.
  */
 export async function setClientApplicationState(session: Session, clientApplication: ClientApplicationDto, applicationYearId?: string): Promise<void> {
   session.initialize();
