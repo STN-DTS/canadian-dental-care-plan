@@ -16,6 +16,7 @@ import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_FEATURE_NAME, ATTR_CDCP_HTTP_ALLOWED_METHODS } from '~/.server/logging/log-attributes';
 import { Traced } from '~/.server/observability/decorator';
 import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import { findClientApplicationState, setClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
 import type { Session } from '~/.server/web/session';
@@ -318,6 +319,13 @@ export class DefaultSecurityHandler implements SecurityHandler {
       throw redirectDocument(`/auth/login?returnto=${returnTo}`);
     }
 
+    const cachedClientApplication = await findClientApplicationState(session, applicationYearId);
+
+    if (Option.isSome(cachedClientApplication)) {
+      this.log.debug('Client application found in session storage', { [ATTR_SESSION_ID]: session.id });
+      return cachedClientApplication.value;
+    }
+
     const clientApplicationOption = await this.clientApplicationService.findClientApplicationBySin({
       applicationYearId,
       sin: userInfoToken.sin,
@@ -329,8 +337,11 @@ export class DefaultSecurityHandler implements SecurityHandler {
       throw redirect(redirectUrl);
     }
 
+    const clientApplication = Option.getOrThrow(clientApplicationOption);
+    await setClientApplicationState(session, clientApplication, applicationYearId);
+
     this.log.debug('Client application found', { [ATTR_SESSION_ID]: session.id });
-    return Option.getOrThrow(clientApplicationOption);
+    return clientApplication;
   }
 
   @Traced()

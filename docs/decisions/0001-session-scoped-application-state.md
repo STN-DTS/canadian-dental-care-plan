@@ -56,9 +56,11 @@ its own storage module built on `createSessionStorage`: public application
 (`status-state-storage.ts`), document upload
 (`document-upload-state-storage.ts`), profile email verification
 (`profile-email-address-flow-state-storage.ts`), applicant
-(`applicant-state-storage.ts`), program applicant
-(`program-applicant-state-storage.ts`), and letters
-(`letters-state-storage.ts`). Authentication tokens and OIDC handshake values
+(`applicant-state-storage.ts`), client application
+(`client-application-state-storage.ts`, with a shorter configurable
+`CLIENT_APPLICATION_CACHE_TTL_SECONDS` default of 300 seconds and invalidation
+after profile updates), program applicant (`program-applicant-state-storage.ts`),
+and letters (`letters-state-storage.ts`). Authentication tokens and OIDC handshake values
 stay in the Express session, which is therefore written only during login and
 OIDC handshakes.
 

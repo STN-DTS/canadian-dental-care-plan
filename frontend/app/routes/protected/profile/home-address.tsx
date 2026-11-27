@@ -11,6 +11,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_HOME_ADDRESS, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { AddressInvalidDialogContent, AddressSuggestionDialogContent } from '~/components/address-validation-dialog';
 import type { AddressInvalidResponse, AddressResponse, AddressSuggestionResponse, CanadianAddress } from '~/components/address-validation-dialog';
@@ -96,7 +97,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer } = context.get(appContext);
+  const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
   const locale = getLocale(url);
 
@@ -152,6 +153,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
       },
       homeAddress,
     });
+    await deleteClientApplicationState(session);
     return redirect(getPathById('protected/profile/contact-information', params));
   }
 
@@ -215,6 +217,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     },
     homeAddress,
   });
+  await deleteClientApplicationState(session);
   return redirect(getPathById('protected/profile/contact-information', params));
 }
 

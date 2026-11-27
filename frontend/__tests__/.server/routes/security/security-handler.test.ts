@@ -9,6 +9,7 @@ import type { ApplicantService, ClientApplicationService, ClientEligibilityServi
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import { findClientApplicationState, setClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
 import { DefaultSecurityHandler } from '~/.server/routes/security';
 import type { ValidateRequestMethodParams } from '~/.server/routes/security';
@@ -19,6 +20,7 @@ import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/va
 import type { FeatureName } from '~/utils/env-utils';
 
 vi.mock(import('~/.server/routes/helpers/applicant-state-storage'));
+vi.mock(import('~/.server/routes/helpers/client-application-state-storage'));
 vi.mock(import('~/.server/routes/helpers/program-applicant-state-storage'));
 vi.mock(import('~/.server/utils/ip-address-utils'));
 
@@ -258,6 +260,7 @@ describe('DefaultSecurityHandler', () => {
     it('should throw a redirect response to data-unavailable if no client application is found', async () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
+      vi.mocked(findClientApplicationState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
@@ -271,12 +274,14 @@ describe('DefaultSecurityHandler', () => {
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(302);
       expect((error as Response).headers.get('Location')).toBe('/en/protected/data-unavailable');
+      expect(setClientApplicationState).not.toHaveBeenCalled();
     });
 
     // added test for the new redirectUrl option
     it('should throw a redirect response to the custom redirectUrl if no client application is found', async () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
+      vi.mocked(findClientApplicationState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
@@ -293,9 +298,10 @@ describe('DefaultSecurityHandler', () => {
       expect((error as Response).headers.get('Location')).toBe(customRedirectUrl);
     });
 
-    it('should return the client application if found', async () => {
+    it('should return and cache the client application if found', async () => {
       const mockSession = mock<Session>();
       mockSession.id = 'session-id';
+      vi.mocked(findClientApplicationState).mockResolvedValue(Option.none());
       const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
       mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
 
@@ -317,6 +323,26 @@ describe('DefaultSecurityHandler', () => {
 
       const clientApplication = await securityHandler.requireClientApplication({ requestUrl: mockRequestUrl, params, session: mockSession });
       expect(clientApplication).toBe(mockClientApplication);
+      expect(setClientApplicationState).toHaveBeenCalledExactlyOnceWith(mockSession, mockClientApplication, undefined);
+    });
+
+    it('should return a cached client application from session storage without querying the service', async () => {
+      const mockSession = mock<Session>();
+      mockSession.id = 'session-id';
+      const userInfoToken = mock<UserinfoToken>({ sin: '123456789', sub: 'user-id' });
+      mockSession.find.calledWith('userInfoToken').mockReturnValue(Option.some(userInfoToken));
+      const cached = mock<ClientApplicationDto>({ applicantInformation: { clientId: 'client-id', clientNumber: 'client-number' } });
+      vi.mocked(findClientApplicationState).mockResolvedValue(Option.some(cached));
+
+      const result = await securityHandler.requireClientApplication({
+        requestUrl: new URL('https://localhost:3000/en/protected-page'),
+        params: { lang: 'en' },
+        session: mockSession,
+      });
+
+      expect(result).toBe(cached);
+      expect(mockClientApplicationService.findClientApplicationBySin).not.toHaveBeenCalled();
+      expect(setClientApplicationState).not.toHaveBeenCalled();
     });
   });
 

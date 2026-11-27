@@ -12,6 +12,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_VERIFY_EMAIL, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { deleteProfileEmailAddressFlowState, findProfileEmailAddressFlowState, setProfileEmailAddressFlowState } from '~/.server/routes/helpers/profile-email-address-flow-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
@@ -193,8 +194,8 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     });
   }
 
-  // Clear the flow state
-  await deleteProfileEmailAddressFlowState(session);
+  // Clear the flow state and invalidate cached client application so the next page shows updated data
+  await Promise.all([deleteProfileEmailAddressFlowState(session), deleteClientApplicationState(session)]);
 
   // Redirect based on context
   if (profileEmailAddressFlowState.context === 'communication-preferences') {

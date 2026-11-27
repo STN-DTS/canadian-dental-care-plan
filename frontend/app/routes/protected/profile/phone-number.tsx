@@ -9,6 +9,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_PHONE_NUMBER, AUDIT_EVENT_UPDATE_DATA_PRO
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { phoneSchema } from '~/.server/validation/phone-schema';
@@ -72,7 +73,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer } = context.get(appContext);
+  const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const clientApplication = getClientApplication(context);
@@ -105,6 +106,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     phoneNumberAlt: parsedDataResult.data.phoneNumberAlt,
   });
 
+  await deleteClientApplicationState(session);
   appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_PHONE_NUMBER);
 
   return redirect(getPathById('protected/profile/contact-information', params));

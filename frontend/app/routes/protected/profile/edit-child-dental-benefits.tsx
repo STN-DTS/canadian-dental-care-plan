@@ -10,6 +10,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_CHILD_DENTAL_BENEFITS, AUDIT_EVENT_U
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
+import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -124,7 +125,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 }
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
-  const { appContainer } = context.get(appContext);
+  const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
   const clientApplication = getClientApplication(context);
@@ -226,6 +227,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     provincialTerritorialSocialProgram: parsedProvincialTerritorialBenefitsResult.data.provincialTerritorialSocialProgram,
   });
 
+  await deleteClientApplicationState(session);
   appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_UPDATE_DATA_PROFILE_EDIT_CHILD_DENTAL_BENEFITS);
 
   return redirect(getPathById('protected/profile/dental-benefits', params));
