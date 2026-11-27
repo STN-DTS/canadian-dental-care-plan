@@ -7,7 +7,7 @@ import * as z from 'zod';
 
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
-import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/helpers/document-upload-state-storage';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-state-storage';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
 

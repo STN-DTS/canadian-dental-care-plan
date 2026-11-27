@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/data/document-upload-state-storage';
 import type { DocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
-import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/helpers/document-upload-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';

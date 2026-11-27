@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import type { ApplicantDto } from '~/.server/domain/dtos';
-import { deleteApplicantState, findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import type { ProgramApplicantDto } from '~/.server/domain/dtos';
+import { deleteProgramApplicantState, findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/data/program-applicant-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -12,7 +12,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('applicant-state-storage', () => {
+describe('program-applicant-state-storage', () => {
   beforeEach(() => {
     deleteSingleton('stores');
     vi.mocked(getEnv).mockReturnValue(
@@ -29,25 +29,25 @@ describe('applicant-state-storage', () => {
     deleteSingleton('stores');
   });
 
-  it('stores, reads, and deletes applicant data scoped to the session', async () => {
+  it('stores, reads, and deletes program applicant data scoped to the session', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const applicant = { clientNumber: '123456' } as ApplicantDto;
+    const programApplicant = { clientNumber: '123456', applicantType: '775170000' } as ProgramApplicantDto;
 
-    await setApplicantState(session, applicant);
+    await setProgramApplicantState(session, programApplicant);
     expect(session.initialize).toHaveBeenCalledOnce();
-    await expect(findApplicantState(session)).resolves.toEqual(Option.some(applicant));
+    await expect(findProgramApplicantState(session)).resolves.toEqual(Option.some(programApplicant));
 
-    await deleteApplicantState(session);
-    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
+    await deleteProgramApplicantState(session);
+    await expect(findProgramApplicantState(session)).resolves.toEqual(Option.none());
   });
 
   it('cleans up stored entries when session storage is deleted', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const applicant = { clientNumber: '123456' } as ApplicantDto;
+    const programApplicant = { clientNumber: '123456', applicantType: '775170000' } as ProgramApplicantDto;
 
-    await setApplicantState(session, applicant);
+    await setProgramApplicantState(session, programApplicant);
     await deleteSessionStorage('session-a');
 
-    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
+    await expect(findProgramApplicantState(session)).resolves.toEqual(Option.none());
   });
 });

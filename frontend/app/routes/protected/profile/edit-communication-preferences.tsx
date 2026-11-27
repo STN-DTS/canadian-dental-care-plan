@@ -12,7 +12,7 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
-import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
+import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';

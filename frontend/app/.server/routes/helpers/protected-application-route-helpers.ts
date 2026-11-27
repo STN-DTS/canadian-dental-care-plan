@@ -20,6 +20,7 @@ import {
   ATTR_CDCP_SESSION_KEY,
 } from '~/.server/logging/log-attributes';
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
+import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-state-storage';
 import type {
   BaseApplicationAddressDeclaredChangeState,
   BaseApplicationApplicantInformationState,
@@ -39,7 +40,6 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
-import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/helpers/protected-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';

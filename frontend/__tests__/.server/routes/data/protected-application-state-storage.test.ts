@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
+import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-state-storage';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/helpers/protected-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';

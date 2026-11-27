@@ -8,7 +8,7 @@ import { AUDIT_EVENT_DOWNLOAD_LETTER } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
-import { findLettersState, setLettersState } from '~/.server/routes/helpers/letters-state-storage';
+import { findLettersState, setLettersState } from '~/.server/routes/data/letters-state-storage';
 import { getLocale } from '~/.server/utils/locale-utils';
 
 import type { Route } from './+types/$id.download';

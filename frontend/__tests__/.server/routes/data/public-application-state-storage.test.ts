@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
+import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-state-storage';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
-import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/helpers/public-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';

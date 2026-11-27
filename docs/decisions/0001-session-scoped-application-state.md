@@ -38,7 +38,7 @@ Store migrated temporary state outside the Express session using three layers:
    `SESSION_STORAGE_TYPE` is `redis`; otherwise it is Keyv's process-local
    memory store. `deleteSessionStorage(sessionId)` cleans up every namespace
    indexed for that session.
-3. **Feature storage modules (e.g. `routes/helpers/public-application-state-storage.ts`)**:
+3. **Feature storage modules (e.g. `routes/data/public-application-state-storage.ts`)**:
    each migrated state has its own storage module built on `createSessionStorage`,
    imported by its route helpers. `Session` keeps its existing synchronous API
    (no `*TemporaryState` methods) plus a write-once `initialize()` method so

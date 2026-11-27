@@ -8,9 +8,9 @@ import type { ApplicantDto, ClientApplicationDto, ProgramApplicantDto } from '~/
 import type { ApplicantService, ClientApplicationService, ClientEligibilityService, ProgramApplicantService } from '~/.server/domain/services';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
-import { findApplicantState, setApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
-import { findClientApplicationState, setClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
-import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
+import { findApplicantState, setApplicantState } from '~/.server/routes/data/applicant-state-storage';
+import { findClientApplicationState, setClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
+import { findProgramApplicantState, setProgramApplicantState } from '~/.server/routes/data/program-applicant-state-storage';
 import { DefaultSecurityHandler } from '~/.server/routes/security';
 import type { ValidateRequestMethodParams } from '~/.server/routes/security';
 import { getClientIpAddress } from '~/.server/utils/ip-address-utils';
@@ -19,9 +19,9 @@ import type { Session } from '~/.server/web/session';
 import type { HCaptchaValidator, RaoidcSessionValidator } from '~/.server/web/validators';
 import type { FeatureName } from '~/utils/env-utils';
 
-vi.mock(import('~/.server/routes/helpers/applicant-state-storage'));
-vi.mock(import('~/.server/routes/helpers/client-application-state-storage'));
-vi.mock(import('~/.server/routes/helpers/program-applicant-state-storage'));
+vi.mock(import('~/.server/routes/data/applicant-state-storage'));
+vi.mock(import('~/.server/routes/data/client-application-state-storage'));
+vi.mock(import('~/.server/routes/data/program-applicant-state-storage'));
 vi.mock(import('~/.server/utils/ip-address-utils'));
 
 describe('DefaultSecurityHandler', () => {

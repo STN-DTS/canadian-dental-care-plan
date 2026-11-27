@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
-import type { StatusState } from '~/.server/routes/helpers/status-route-helpers';
-import { deleteStatusState, findStatusState, setStatusState } from '~/.server/routes/helpers/status-state-storage';
+import type { ApplicantDto } from '~/.server/domain/dtos';
+import { deleteApplicantState, findApplicantState, setApplicantState } from '~/.server/routes/data/applicant-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -12,7 +12,7 @@ import type { Session } from '~/.server/web/session';
 
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
 
-describe('status-state-storage', () => {
+describe('applicant-state-storage', () => {
   beforeEach(() => {
     deleteSingleton('stores');
     vi.mocked(getEnv).mockReturnValue(
@@ -29,25 +29,25 @@ describe('status-state-storage', () => {
     deleteSingleton('stores');
   });
 
-  it('stores, reads, and deletes state scoped to the session', async () => {
+  it('stores, reads, and deletes applicant data scoped to the session', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const state: StatusState = { id: 'flow-1', statusCheckResult: { statusId: 'status-1' } };
+    const applicant = { clientNumber: '123456' } as ApplicantDto;
 
-    await setStatusState(session, 'flow-1', state);
+    await setApplicantState(session, applicant);
     expect(session.initialize).toHaveBeenCalledOnce();
-    await expect(findStatusState(session, 'flow-1')).resolves.toEqual(Option.some(state));
+    await expect(findApplicantState(session)).resolves.toEqual(Option.some(applicant));
 
-    await deleteStatusState(session, 'flow-1');
-    await expect(findStatusState(session, 'flow-1')).resolves.toEqual(Option.none());
+    await deleteApplicantState(session);
+    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
   });
 
   it('cleans up stored entries when session storage is deleted', async () => {
     const session = mock<Session>({ id: 'session-a' });
-    const state: StatusState = { id: 'flow-1', statusCheckResult: { statusId: 'status-1' } };
+    const applicant = { clientNumber: '123456' } as ApplicantDto;
 
-    await setStatusState(session, 'flow-1', state);
+    await setApplicantState(session, applicant);
     await deleteSessionStorage('session-a');
 
-    await expect(findStatusState(session, 'flow-1')).resolves.toEqual(Option.none());
+    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
   });
 });

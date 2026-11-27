@@ -6,10 +6,10 @@ import * as z from 'zod';
 
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
-import { deleteApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
-import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
-import { deleteLettersState } from '~/.server/routes/helpers/letters-state-storage';
-import { deleteProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
+import { deleteApplicantState } from '~/.server/routes/data/applicant-state-storage';
+import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
+import { deleteLettersState } from '~/.server/routes/data/letters-state-storage';
+import { deleteProgramApplicantState } from '~/.server/routes/data/program-applicant-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';

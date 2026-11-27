@@ -10,7 +10,7 @@ import { AUDIT_EVENT_PAGE_VIEW_PROFILE_EDIT_CHILD_DENTAL_BENEFITS, AUDIT_EVENT_U
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getClientApplication } from '~/.server/context/client-application-context';
-import { deleteClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
+import { deleteClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
 import { getFixedT, getLocale } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
 import { AppPageTitle } from '~/components/app-page-title';

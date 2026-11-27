@@ -4,7 +4,7 @@ import { mock } from 'vitest-mock-extended';
 
 import { deleteSessionStorage } from '~/.server/data/session-storage';
 import type { ClientApplicationDto } from '~/.server/domain/dtos';
-import { deleteClientApplicationState, findClientApplicationState, setClientApplicationState } from '~/.server/routes/helpers/client-application-state-storage';
+import { deleteClientApplicationState, findClientApplicationState, setClientApplicationState } from '~/.server/routes/data/client-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';

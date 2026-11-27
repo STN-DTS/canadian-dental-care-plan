@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
+import { findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/data/protected-application-state-storage';
+import { findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/data/public-application-state-storage';
 import { getProtectedApplicationState, isWithinRenewalPeriod as isProtectedRenewalPeriod, saveProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
-import { findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/helpers/protected-application-state-storage';
 import { getPublicApplicationState, isWithinRenewalPeriod as isPublicRenewalPeriod, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
-import { findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/helpers/public-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
