@@ -117,10 +117,11 @@ The following helpers are deliberately untraced:
   provincial government insurance plans, GC and Sun Life communication methods,
   languages, letter types, marital statuses, provinces/territories/states, and
   record sources.
-- Bearer-token resolution, build-info retrieval, and Redis command wrappers.
-- In-memory `has`, `find`, `get`, `set`, and `unset` methods in `ExpressSession`
-  and `NoopSession`. Their `save`, `destroy`, and `regenerate` lifecycle methods
-  remain traced.
+- Bearer-token resolution, build-info retrieval, Redis command wrappers, and
+  `KeyvStore`.
+- In-memory `has`, `find`, `get`, `set`, `unset`, and `initialize` methods in
+  `ExpressSession` and `NoopSession`. Their `save`, `destroy`, and `regenerate`
+  lifecycle methods remain traced.
 - Phone/email field selection in public and protected application-state resolvers.
   Their other methods remain traced because they localize values or coordinate
   address and dental-benefit lookups.
