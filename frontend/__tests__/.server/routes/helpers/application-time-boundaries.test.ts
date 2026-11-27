@@ -5,6 +5,7 @@ import { mock } from 'vitest-mock-extended';
 import { countApplicationStateOutcome } from '~/.server/observability/application-state-metrics';
 import { getProtectedApplicationState, isWithinRenewalPeriod as isProtectedRenewalPeriod, saveProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
 import type { ProtectedApplicationState } from '~/.server/routes/helpers/protected-application-route-helpers';
+import { findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/helpers/protected-application-state-storage';
 import { getPublicApplicationState, isWithinRenewalPeriod as isPublicRenewalPeriod, savePublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { PublicApplicationState } from '~/.server/routes/helpers/public-application-route-helpers';
 import { findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/helpers/public-application-state-storage';
@@ -121,48 +122,52 @@ describe('public application time boundaries', () => {
 });
 
 describe('protected application time boundaries', () => {
-  const baseState = mock<ProtectedApplicationState>({ id: 'flow', channelCode: 'protected', lastUpdatedOn: '2026-07-01T11:40:00.000Z' });
+  const baseState = {
+    id: 'flow',
+    channelCode: 'protected',
+    context: 'intake',
+    lastUpdatedOn: '2026-07-01T11:40:00.000Z',
+    applicationYear: { applicationYearId: '1', taxYear: '2025', dependentEligibilityEndDate: '2026-06-30' },
+    children: [],
+  } as ProtectedApplicationState;
 
-  it('retains the session before twenty minutes and expires it exactly at twenty minutes', () => {
+  it('retains the state before twenty minutes and expires it exactly at twenty minutes', async () => {
     const session = mock<Session>({ id: 'session' });
-    session.has.mockReturnValue(true);
-    session.get.mockReturnValue(baseState);
+    await setProtectedApplicationState(session, 'flow', baseState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
     vi.setSystemTime(Temporal.Instant.from('2026-07-01T11:59:59.999Z').epochMilliseconds);
 
-    expect(getProtectedApplicationState(args)).toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
-    expect(session.unset).not.toHaveBeenCalled();
+    await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
+    expect(Option.isSome(await findProtectedApplicationState(session, 'flow'))).toBe(true);
 
     vi.advanceTimersByTime(1);
-    expect(() => getProtectedApplicationState(args)).toThrow();
-    expect(session.unset).toHaveBeenCalledWith('protected-application-flow-flow');
+    await expect(getProtectedApplicationState(args)).rejects.toThrow();
+    await expect(findProtectedApplicationState(session, 'flow')).resolves.toEqual(Option.none());
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'expired');
   });
 
-  it('counts state missing from the session', () => {
+  it('counts state missing from storage', async () => {
     const session = mock<Session>({ id: 'session' });
-    session.has.mockReturnValue(false);
 
-    expect(() => getProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session })).toThrow();
+    await expect(getProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session })).rejects.toThrow();
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'missing');
   });
 
-  it('does not expire fractional session timestamps before twenty minutes have elapsed', () => {
+  it('does not expire fractional timestamps before twenty minutes have elapsed', async () => {
     const session = mock<Session>({ id: 'session' });
-    const fractionalState = { ...baseState, lastUpdatedOn: '2026-07-01T11:40:00.123456789Z' };
-    session.has.mockReturnValue(true);
-    session.get.mockReturnValue(fractionalState);
+    const fractionalState = { ...baseState, lastUpdatedOn: '2026-07-01T11:40:00.123456789Z' } as ProtectedApplicationState;
+    await setProtectedApplicationState(session, 'flow', fractionalState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
     const now = vi.spyOn(Temporal.Now, 'instant');
 
     try {
       now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456788Z'));
-      expect(getProtectedApplicationState(args)).toMatchObject({ lastUpdatedOn: fractionalState.lastUpdatedOn });
-      expect(session.unset).not.toHaveBeenCalled();
+      await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: fractionalState.lastUpdatedOn });
+      expect(Option.isSome(await findProtectedApplicationState(session, 'flow'))).toBe(true);
 
       now.mockReturnValue(Temporal.Instant.from('2026-07-01T12:00:00.123456789Z'));
-      expect(() => getProtectedApplicationState(args)).toThrow();
-      expect(session.unset).toHaveBeenCalledWith('protected-application-flow-flow');
+      await expect(getProtectedApplicationState(args)).rejects.toThrow();
+      await expect(findProtectedApplicationState(session, 'flow')).resolves.toEqual(Option.none());
     } finally {
       now.mockRestore();
     }
@@ -193,16 +198,21 @@ describe('successful submission persistence at expiry', () => {
     expect(Option.getOrUndefined(await findPublicApplicationState(session, 'flow'))).toMatchObject({ submissionInfo });
   });
 
-  it('saves protected submission information when the external submission crosses the expiry boundary', () => {
-    const state = mock<ProtectedApplicationState>({ id: 'flow', channelCode: 'protected', lastUpdatedOn: '2026-07-01T11:40:00.000Z' });
+  it('saves protected submission information when the external submission crosses the expiry boundary', async () => {
+    const state = {
+      id: 'flow',
+      channelCode: 'protected',
+      context: 'intake',
+      lastUpdatedOn: '2026-07-01T11:40:00.000Z',
+      applicationYear: { applicationYearId: '1', taxYear: '2025', dependentEligibilityEndDate: '2026-06-30' },
+      children: [],
+    } as ProtectedApplicationState;
     const session = mock<Session>({ id: 'session' });
-    session.has.mockReturnValue(true);
-    session.get.mockReturnValue(state);
+    await setProtectedApplicationState(session, 'flow', state);
 
-    const result = saveProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session, state: { submissionInfo } });
+    const result = await saveProtectedApplicationState({ params: { id: 'flow', lang: 'en' }, session, state: { submissionInfo } });
 
     expect(result.submissionInfo).toEqual(submissionInfo);
-    expect(session.set).toHaveBeenCalledWith('protected-application-flow-flow', expect.objectContaining({ submissionInfo }));
-    expect(session.unset).not.toHaveBeenCalled();
+    expect(Option.getOrUndefined(await findProtectedApplicationState(session, 'flow'))).toMatchObject({ submissionInfo });
   });
 });

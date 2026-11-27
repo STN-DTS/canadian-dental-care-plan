@@ -22,10 +22,10 @@ interface LoadProtectedApplicationIntakeFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded protected application family state.
  */
-export function loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateArgs) {
+export async function loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateArgs) {
   const log = createLogger('protected-application-intake-family-route-helpers/loadProtectedApplicationIntakeFamilyState');
   const { pathname } = requestUrl;
-  const applicationState = getProtectedApplicationState({ params, session });
+  const applicationState = await getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'intake' || applicationState.typeOfApplication !== 'family') {
     throw redirect(getPathById('protected/application/$id/type-application', params));
@@ -63,8 +63,8 @@ interface LoadProtectedApplicationIntakeFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadProtectedApplicationIntakeFamilyStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateForReviewArgs) {
-  const state = loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session });
+export async function loadProtectedApplicationIntakeFamilyStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeFamilyStateForReviewArgs) {
+  const state = await loadProtectedApplicationIntakeFamilyState({ params, requestUrl, session });
   return validateProtectedApplicationFamilyStateForReview({ params, state });
 }
 

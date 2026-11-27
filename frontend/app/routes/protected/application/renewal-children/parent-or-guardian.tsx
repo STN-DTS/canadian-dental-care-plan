@@ -46,7 +46,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-children']);
 
   const t = await getFixedT(url, ['protectedApplicationRenewalChild', 'gcweb']);
@@ -164,7 +164,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-children']);
 
   const formData = await request.formData();
@@ -172,7 +172,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.PHONE_NUMBER_NOT_CHANGED) {
-    saveProtectedApplicationState({
+    await saveProtectedApplicationState({
       params,
       session,
       state: {
@@ -182,7 +182,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   if (formAction === FORM_ACTION.ADDRESS_NOT_CHANGED) {
-    saveProtectedApplicationState({
+    await saveProtectedApplicationState({
       params,
       session,
       state: {
@@ -193,7 +193,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   if (formAction === FORM_ACTION.COMMUNICATION_PREFERENCES_NOT_CHANGED) {
-    saveProtectedApplicationState({
+    await saveProtectedApplicationState({
       params,
       session,
       state: {

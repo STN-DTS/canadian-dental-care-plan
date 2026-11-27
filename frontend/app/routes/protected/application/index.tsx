@@ -61,7 +61,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     clientApplication = clientApplicationRenewalEligibilityResult.clientApplication;
   }
 
-  const state = startProtectedApplicationState({ session, applicationYear, clientApplication });
+  const state = await startProtectedApplicationState({ session, applicationYear, clientApplication });
 
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
   const meta = { title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }) };

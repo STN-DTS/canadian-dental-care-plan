@@ -26,7 +26,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  getSingleChildState({ params, session });
+  await getSingleChildState({ params, session });
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
 
   const meta = {
@@ -41,7 +41,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 
-  clearProtectedApplicationState({ params, session });
+  await clearProtectedApplicationState({ params, session });
 
   return redirect(t(($) => $.children.cannotApplyChild.exitBtnLink));
 }

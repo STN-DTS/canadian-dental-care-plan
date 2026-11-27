@@ -38,7 +38,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 
-  clearProtectedApplicationState({ params, session });
+  await clearProtectedApplicationState({ params, session });
 
   return redirect(t(($) => $.applicationDelegate.exitBtnLink));
 }

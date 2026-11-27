@@ -22,10 +22,10 @@ interface LoadProtectedApplicationIntakeAdultStateArgs {
  * @param args - The arguments.
  * @returns The loaded adult state.
  */
-export function loadProtectedApplicationIntakeAdultState({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateArgs) {
+export async function loadProtectedApplicationIntakeAdultState({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateArgs) {
   const log = createLogger('protected-application-intake-adult-route-helpers/loadProtectedApplicationIntakeAdultState');
   const { pathname } = requestUrl;
-  const applicationState = getProtectedApplicationState({ params, session });
+  const applicationState = await getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'intake' || applicationState.typeOfApplication !== 'adult') {
     throw redirect(getPathById('protected/application/$id/type-application', params));
@@ -63,8 +63,8 @@ interface LoadProtectedApplicationIntakeAdultStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated adult state.
  */
-export function loadProtectedApplicationIntakeAdultStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateForReviewArgs) {
-  const state = loadProtectedApplicationIntakeAdultState({ params, requestUrl, session });
+export async function loadProtectedApplicationIntakeAdultStateForReview({ params, requestUrl, session }: LoadProtectedApplicationIntakeAdultStateForReviewArgs) {
+  const state = await loadProtectedApplicationIntakeAdultState({ params, requestUrl, session });
   return validateProtectedApplicationIntakeAdultStateForReview({ params, state });
 }
 

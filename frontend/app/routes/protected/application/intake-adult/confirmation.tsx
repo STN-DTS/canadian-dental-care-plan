@@ -38,7 +38,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationIntakeAdultState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationIntakeAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-adult']);
 
   const t = await getFixedT(url, ['protectedApplicationIntakeAdult', 'gcweb']);
@@ -108,12 +108,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = loadProtectedApplicationIntakeAdultState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationIntakeAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-adult']);
 
   const t = await getFixedT(url, 'protectedApplicationIntakeAdult');
 
-  clearProtectedApplicationState({ params, session });
+  await clearProtectedApplicationState({ params, session });
 
   return redirect(t(($) => $.confirm.exitLink));
 }

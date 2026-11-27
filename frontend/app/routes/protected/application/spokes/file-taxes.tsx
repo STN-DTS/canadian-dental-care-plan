@@ -27,7 +27,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const { applicationYear } = getProtectedApplicationState({ params, session });
+  const { applicationYear } = await getProtectedApplicationState({ params, session });
 
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
   const meta = {
@@ -42,7 +42,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const t = await getFixedT(url, 'protectedApplication');
 
-  clearProtectedApplicationState({ params, session });
+  await clearProtectedApplicationState({ params, session });
   return redirect(t(($) => $.fileYourTaxes.exitBtnLink));
 }
 

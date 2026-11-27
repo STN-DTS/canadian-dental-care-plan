@@ -37,7 +37,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
 
   const meta = {
@@ -50,7 +50,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { session } = context.get(appContext);
   const formData = await request.formData();
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 
@@ -73,7 +73,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   const isLivingindependently = parsedDataResult.data.livingIndependently === LIVING_INDEPENDENTLY_OPTION.yes;
 
-  saveProtectedApplicationState({ params, session, state: { livingIndependently: isLivingindependently } });
+  await saveProtectedApplicationState({ params, session, state: { livingIndependently: isLivingindependently } });
 
   if (isLivingindependently) {
     const redirectUrl =

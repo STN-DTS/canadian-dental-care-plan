@@ -35,7 +35,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-family']);
 
   if (shouldSkipMaritalStatus(state)) {

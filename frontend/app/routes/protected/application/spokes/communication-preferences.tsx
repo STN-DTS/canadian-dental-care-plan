@@ -56,7 +56,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
 
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
@@ -83,7 +83,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
 
   const formData = await request.formData();
@@ -121,7 +121,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  saveProtectedApplicationState({
+  await saveProtectedApplicationState({
     params,
     session,
     state: {

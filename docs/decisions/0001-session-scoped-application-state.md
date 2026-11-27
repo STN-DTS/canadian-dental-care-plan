@@ -49,12 +49,12 @@ Store migrated temporary state outside the Express session using three layers:
    `deleteSessionStorage(id)` so all migrated session storages are cleaned up
    together.
 
-Roll out by state type. Iteration 1 moves only public application state
-(`public-application-state-storage.ts`). Protected application state stays in
-the Express session (synchronously) until iteration 2, when it will get its own
-storage module built on `createSessionStorage`. Status, document-upload, and
-email verification state may follow. Authentication tokens and OIDC handshake
-values stay in the Express session.
+Roll out by state type. Iteration 1 moves public application state
+(`public-application-state-storage.ts`), and iteration 2 moves protected
+application state (`protected-application-state-storage.ts`), both built on
+`createSessionStorage`. Status, document-upload, and email verification state
+may follow. Authentication tokens and OIDC handshake values stay in the Express
+session.
 
 Each state is stored as its own Keyv key
 (`SESSION:<sessionId>:STATE:<namespace>:<key>`, using the configured
@@ -118,9 +118,8 @@ duration.
 
 ## Consequences
 
-- A stale whole-session save can no longer overwrite public application state
-  after it has been externalized. Protected application state keeps this risk
-  until iteration 2.
+- A stale whole-session save can no longer overwrite public or protected
+  application state after it has been externalized.
 - Writes to the same application flow remain last-write-wins; this decision
   does not add compare-and-swap or versioned writes.
 - The index is updated with read-modify-write. Concurrent first writes of

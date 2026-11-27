@@ -64,7 +64,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['renewal-adult', 'intake-adult', 'intake-children', 'intake-family', 'renewal-family', 'renewal-children']);
 
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
@@ -94,7 +94,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-adult', 'intake-children', 'intake-family', 'renewal-adult', 'renewal-family', 'renewal-children']);
 
   const formData = await request.formData();
@@ -140,7 +140,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const canProceedToDental = isNotCanada || isUseInvalidAddressAction || isUseSelectedAddressAction;
 
   if (canProceedToDental) {
-    saveProtectedApplicationState({ params, session, state: { homeAddress: { value: homeAddress, hasChanged: true }, isHomeAddressSameAsMailingAddress: false } });
+    await saveProtectedApplicationState({ params, session, state: { homeAddress: { value: homeAddress, hasChanged: true }, isHomeAddressSameAsMailingAddress: false } });
     return redirect(getPathById(getRouteFromApplicationFlow(applicationFlow), params));
   }
 
@@ -192,7 +192,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     } as const satisfies AddressSuggestionResponse;
   }
 
-  saveProtectedApplicationState({ params, session, state: { homeAddress: { value: homeAddress, hasChanged: true }, isHomeAddressSameAsMailingAddress: false } });
+  await saveProtectedApplicationState({ params, session, state: { homeAddress: { value: homeAddress, hasChanged: true }, isHomeAddressSameAsMailingAddress: false } });
 
   return redirect(getPathById(getRouteFromApplicationFlow(applicationFlow), params));
 }

@@ -34,7 +34,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'intake');
 
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
@@ -50,7 +50,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { session } = context.get(appContext);
   const formData = await request.formData();
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'intake');
 
   const t = await getFixedT(url, 'protectedApplicationSpokes');
@@ -70,7 +70,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  saveProtectedApplicationState({ params, session, state: { typeOfApplication: parsedDataResult.data.typeOfApplication } });
+  await saveProtectedApplicationState({ params, session, state: { typeOfApplication: parsedDataResult.data.typeOfApplication } });
 
   if (parsedDataResult.data.typeOfApplication === APPLICANT_TYPE.delegate) {
     return redirect(getPathById('protected/application/$id/application-delegate', params));

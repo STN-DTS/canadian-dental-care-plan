@@ -27,10 +27,10 @@ interface LoadProtectedApplicationRenewalAdultStateArgs {
  * @param args - The arguments.
  * @returns The loaded adult state.
  */
-export function loadProtectedApplicationRenewalAdultState({ params, requestUrl, session }: LoadProtectedApplicationRenewalAdultStateArgs): ProtectedApplicationRenewalAdultState {
+export async function loadProtectedApplicationRenewalAdultState({ params, requestUrl, session }: LoadProtectedApplicationRenewalAdultStateArgs): Promise<ProtectedApplicationRenewalAdultState> {
   const log = createLogger('protected-application-renewal-adult-route-helpers/loadProtectedApplicationRenewalAdultState');
   const { pathname } = requestUrl;
-  const applicationState = getProtectedApplicationState({ params, session });
+  const applicationState = await getProtectedApplicationState({ params, session });
 
   if (applicationState.context !== 'renewal' || applicationState.typeOfApplication !== 'adult') {
     throw redirect(getPathById('protected/application/$id/type-application', params));
@@ -70,8 +70,8 @@ interface LoadProtectedApplicationRenewalAdultStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated adult state.
  */
-export function loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl, session }: LoadProtectedApplicationRenewalAdultStateForReviewArgs) {
-  const state = loadProtectedApplicationRenewalAdultState({ params, requestUrl, session });
+export async function loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl, session }: LoadProtectedApplicationRenewalAdultStateForReviewArgs) {
+  const state = await loadProtectedApplicationRenewalAdultState({ params, requestUrl, session });
   return validateProtectedRenewAdultStateForReview({ params, state });
 }
 

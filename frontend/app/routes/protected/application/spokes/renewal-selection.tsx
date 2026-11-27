@@ -40,7 +40,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'renewal');
 
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
@@ -88,7 +88,7 @@ function getEligibleApplicantsForRenewalSelection({ clientApplication }: Pick<Pr
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'renewal');
   invariant(state.clientApplication, 'Expected clientApplication to be defined');
 
@@ -110,7 +110,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const typeOfApplication = getTypeOfApplicationFromRenewalSelectionClientIds(state, applicantClientIdsToRenew);
   const children = getChildren(state, applicantClientIdsToRenew);
 
-  saveProtectedApplicationState({
+  await saveProtectedApplicationState({
     params,
     session,
     state: {

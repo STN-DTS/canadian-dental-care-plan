@@ -50,9 +50,9 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => {
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);
-  const childState = getSingleChildState({ params, session });
+  const childState = await getSingleChildState({ params, session });
 
   const { CANADA_COUNTRY_ID } = appContainer.get(TYPES.ClientConfig);
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
@@ -99,12 +99,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateApplicationFlow(state, params, ['intake-children', 'intake-family', 'renewal-children', 'renewal-family']);
 
   const formData = await request.formData();
 
-  const childState = getSingleChildState({ params, session });
+  const childState = await getSingleChildState({ params, session });
   const t = await getFixedT(url, 'protectedApplicationSpokes');
 
   // NOTE: state validation schemas are independent otherwise user have to anwser
@@ -190,7 +190,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     );
   }
 
-  saveProtectedApplicationState({
+  await saveProtectedApplicationState({
     params,
     session,
     state: {

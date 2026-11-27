@@ -35,7 +35,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_APPLICATION_ENTRY_ELIGIBILITY_REQUIREMENTS);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.eligibilityRequirements.pageTitle) }),

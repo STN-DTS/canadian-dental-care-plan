@@ -43,7 +43,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);
 
   const t = await getFixedT(url, ['protectedApplicationRenewalAdult', 'gcweb']);
@@ -73,14 +73,14 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
 
-  const state = loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-adult']);
 
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationRenewalAdult');
 
-  await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
-    clearProtectedApplicationState({ params, session });
+  await securityHandler.validateHCaptchaResponse({ formData, request }, async () => {
+    await clearProtectedApplicationState({ params, session });
     throw redirect(getPathById('protected/unable-to-process-request', params));
   });
 
@@ -105,7 +105,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const benefitApplicationDto = appContainer.get(TYPES.BenefitRenewalStateMapper).mapBenefitRenewalAdultStateToBenefitRenewalDto(state);
   const confirmationCode = await appContainer.get(TYPES.BenefitRenewalService).createProtectedBenefitRenewal(benefitApplicationDto);
   const submissionInfo = { confirmationCode, submittedOn: Temporal.Now.instant().toString() };
-  saveProtectedApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
+  await saveProtectedApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
 
   return redirect(getPathById('protected/application/$id/renewal-adult/confirmation', params));
 }

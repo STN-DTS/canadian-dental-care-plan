@@ -51,7 +51,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplicationSpokes', 'gcweb']);
   const meta = {
     title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.termsConditions.pageTitle) }),
@@ -61,7 +61,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  getProtectedApplicationState({ params, session });
+  await getProtectedApplicationState({ params, session });
 
   const formData = await request.formData();
   const t = await getFixedT(url, 'protectedApplicationSpokes');
@@ -125,7 +125,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  saveProtectedApplicationState({ params, session, state: { termsAndConditions: parsedDataResult.data } });
+  await saveProtectedApplicationState({ params, session, state: { termsAndConditions: parsedDataResult.data } });
   return redirect(getPathById('protected/application/$id/eligibility-requirements', params));
 }
 

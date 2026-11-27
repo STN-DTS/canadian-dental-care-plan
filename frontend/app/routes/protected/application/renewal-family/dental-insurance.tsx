@@ -43,7 +43,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-family']);
 
   const t = await getFixedT(url, ['protectedApplicationRenewalFamily', 'gcweb']);
@@ -122,7 +122,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-family']);
 
   const formData = await request.formData();
@@ -130,7 +130,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === (FORM_ACTION.DENTAL_BENEFITS_NOT_CHANGED as string)) {
-    saveProtectedApplicationState({
+    await saveProtectedApplicationState({
       params,
       session,
       state: {

@@ -166,13 +166,12 @@ using a Keyv-backed store keyed by session ID and state key. Redis is used when
 A per-session index lets session destruction and regeneration delete the
 session's states without scanning Redis.
 
-The first iteration moves only public application state. Protected application
-state stays in the Express session until the next iteration. No legacy
-migration from Express sessions is needed because deployments shut down the
-application and drop existing Redis sessions. Other temporary and
-authentication state remains in the Express session. This storage change does
-not prevent another person from using an unlocked browser with the same session
-cookie.
+Iteration 1 moves public application state and iteration 2 moves protected
+application state into session storage. No legacy migration from Express
+sessions is needed because deployments shut down the application and drop
+existing Redis sessions. Other temporary and authentication state remains in
+the Express session. This storage change does not prevent another person from
+using an unlocked browser with the same session cookie.
 
 See [ADR-0001](../decisions/0001-session-scoped-application-state.md) for the
 decision and its trade-offs.

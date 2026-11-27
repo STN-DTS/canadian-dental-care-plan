@@ -34,7 +34,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
 
   const meta = {
@@ -62,7 +62,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  saveProtectedApplicationState({ params, session, state: { hasFiledTaxes: parsedDataResult.data.hasFiledTaxes === TAX_FILING_OPTION.yes } });
+  await saveProtectedApplicationState({ params, session, state: { hasFiledTaxes: parsedDataResult.data.hasFiledTaxes === TAX_FILING_OPTION.yes } });
 
   if (parsedDataResult.data.hasFiledTaxes === TAX_FILING_OPTION.no) {
     return redirect(getPathById('protected/application/$id/file-taxes', params));

@@ -28,7 +28,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-children']);
 
   const t = await getFixedT(url, ['protectedApplicationRenewalChild', 'gcweb']);
@@ -41,12 +41,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
 
-  const state = loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationRenewalChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['renewal-children']);
 
   const t = await getFixedT(url, 'protectedApplicationRenewalChild');
 
-  clearProtectedApplicationState({ params, session });
+  await clearProtectedApplicationState({ params, session });
 
   return redirect(t(($) => $.exitApplication.exitLink));
 }

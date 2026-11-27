@@ -32,7 +32,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const state = loadProtectedApplicationIntakeFamilyState({ params, requestUrl: url, session });
+  const state = await loadProtectedApplicationIntakeFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['intake-family']);
 
   const t = await getFixedT(url, ['protectedApplicationIntakeFamily', 'gcweb']);

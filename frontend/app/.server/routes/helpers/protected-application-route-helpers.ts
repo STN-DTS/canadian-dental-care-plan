@@ -5,6 +5,7 @@ import { invariant } from '@dts-stn/invariant';
 import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 // session.id is currently an incubating OpenTelemetry convention.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import { Option } from 'effect';
 import type { ArrayElement, PickDeep, ReadonlyDeep } from 'type-fest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -38,6 +39,7 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
+import { deleteProtectedApplicationState, findProtectedApplicationState, setProtectedApplicationState } from '~/.server/routes/helpers/protected-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';
@@ -124,11 +126,11 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The protected application state.
  */
-export function getProtectedApplicationState(args: LoadStateArgs): ProtectedApplicationState {
-  return getProtectedApplicationStateInternal(args);
+export async function getProtectedApplicationState(args: LoadStateArgs): Promise<ProtectedApplicationState> {
+  return await getProtectedApplicationStateInternal(args);
 }
 
-function getProtectedApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): ProtectedApplicationState {
+async function getProtectedApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): Promise<ProtectedApplicationState> {
   const log = createLogger('protected-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
@@ -140,7 +142,9 @@ function getProtectedApplicationStateInternal({ params, session, allowExpired = 
 
   const sessionKey = getSessionKey(params.id);
 
-  if (!session.has(sessionKey)) {
+  const stateOption = await findProtectedApplicationState(session, params.id);
+
+  if (Option.isNone(stateOption)) {
     countApplicationStateOutcome('protected', 'missing');
     log.debug('Application session state not found; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -149,7 +153,7 @@ function getProtectedApplicationStateInternal({ params, session, allowExpired = 
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
-  const state = session.get(sessionKey);
+  const state = stateOption.value;
 
   // Checks if the elapsed time since the last update exceeds the configured session expiry,
   // and performs necessary actions if it does.
@@ -158,7 +162,7 @@ function getProtectedApplicationStateInternal({ params, session, allowExpired = 
   const now = Temporal.Now.instant();
 
   if (!allowExpired && Temporal.Instant.compare(now, lastUpdatedOn.add({ seconds: SESSION_EXPIRES_SECONDS })) >= 0) {
-    session.unset(sessionKey);
+    await deleteProtectedApplicationState(session, params.id);
     countApplicationStateOutcome('protected', 'expired');
     log.debug('Application session state expired; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -192,10 +196,10 @@ interface SaveProtectedApplicationStateArgs {
  * @param args - The arguments.
  * @returns The new protected application state.
  */
-export function saveProtectedApplicationState({ params, session, state }: SaveProtectedApplicationStateArgs): ProtectedApplicationState {
+export async function saveProtectedApplicationState({ params, session, state }: SaveProtectedApplicationStateArgs): Promise<ProtectedApplicationState> {
   const log = createLogger('protected-application-route-helpers/saveApplicationState');
   // Preserve submissionInfo even if the external submission call crossed the expiry boundary.
-  const currentState = getProtectedApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
+  const currentState = await getProtectedApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
 
   const newState = {
     ...currentState,
@@ -205,7 +209,7 @@ export function saveProtectedApplicationState({ params, session, state }: SavePr
   } satisfies ProtectedApplicationState;
 
   const sessionkey = getSessionKey(currentState.id);
-  session.set(sessionkey, newState);
+  await setProtectedApplicationState(session, currentState.id, newState);
   log.debug('Application session state saved', { [ATTR_CDCP_SESSION_KEY]: sessionkey, [ATTR_SESSION_ID]: session.id });
   return newState;
 }
@@ -219,12 +223,12 @@ interface ClearStateArgs {
  * Clears protected application state.
  * @param args - The arguments.
  */
-export function clearProtectedApplicationState({ params, session }: ClearStateArgs): void {
+export async function clearProtectedApplicationState({ params, session }: ClearStateArgs): Promise<void> {
   const log = createLogger('protected-application-route-helpers/clearApplicationState');
-  const { id } = getProtectedApplicationState({ params, session });
+  const { id } = await getProtectedApplicationState({ params, session });
 
   const sessionKey = getSessionKey(id);
-  session.unset(sessionKey);
+  await deleteProtectedApplicationState(session, id);
   log.debug('Application session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
@@ -256,7 +260,7 @@ interface StartProtectedApplicationStateArgs {
  * @param args - The arguments.
  * @returns The initialized protected application state.
  */
-export function startProtectedApplicationState({ applicationYear, clientApplication, session }: StartProtectedApplicationStateArgs): ProtectedApplicationState {
+export async function startProtectedApplicationState({ applicationYear, clientApplication, session }: StartProtectedApplicationStateArgs): Promise<ProtectedApplicationState> {
   const id = generateId();
   const context = isWithinRenewalPeriod() ? 'renewal' : 'intake';
 
@@ -276,9 +280,8 @@ export function startProtectedApplicationState({ applicationYear, clientApplicat
     children: [],
   } satisfies ProtectedApplicationState;
 
-  // Store the initial state in the session
-  const sessionKey = getSessionKey(initialState.id);
-  session.set(sessionKey, initialState);
+  // Store the initial state in session storage
+  await setProtectedApplicationState(session, initialState.id, initialState);
 
   return initialState;
 }
@@ -451,9 +454,9 @@ interface getSingleChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function getSingleChildState({ params, session }: getSingleChildStateArgs) {
+export async function getSingleChildState({ params, session }: getSingleChildStateArgs) {
   const log = createLogger('protected-application-route-helpers/ProtectedApplicationSingleChildState');
-  const applicationState = getProtectedApplicationState({ params, session });
+  const applicationState = await getProtectedApplicationState({ params, session });
   const childId = params.childId;
   const childState = applicationState.children.find(({ id }) => id === childId);
 
@@ -487,14 +490,14 @@ interface RemoveChildStateArgs {
  * @param args - The arguments.
  * @returns Metadata about the removed child: its zero-based index, one-based number, and derived full name (if available).
  */
-export function removeChildState({ params, session, childId }: RemoveChildStateArgs) {
-  const applicationState = getProtectedApplicationState({ params, session });
+export async function removeChildState({ params, session, childId }: RemoveChildStateArgs) {
+  const applicationState = await getProtectedApplicationState({ params, session });
   const removedIndex = applicationState.children.findIndex((child) => child.id === childId);
   const removedChild = applicationState.children[removedIndex];
   const childName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
   const children = applicationState.children.filter((child) => child.id !== childId);
 
-  saveProtectedApplicationState({ params, session, state: { children } });
+  await saveProtectedApplicationState({ params, session, state: { children } });
 
   return { removedIndex, childNumber: removedIndex + 1, childName };
 }

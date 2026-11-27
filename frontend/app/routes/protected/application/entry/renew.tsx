@@ -37,7 +37,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
   appContainer.get(TYPES.AuditService).createAudit(AUDIT_EVENT_PAGE_VIEW_APPLICATION_ENTRY_TYPE_OF_APPLICATION);
 
-  const state = getProtectedApplicationState({ params, session });
+  const state = await getProtectedApplicationState({ params, session });
   validateProtectedApplicationContext(state, params, 'renewal');
 
   const t = await getFixedT(url, ['protectedApplication', 'gcweb']);
