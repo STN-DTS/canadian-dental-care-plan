@@ -16,7 +16,7 @@ export const ATTR_CDCP_APPLICATION_ALLOWED_FLOWS = 'cdcp.application.allowed_flo
 /** string: submission channel, `public` or `protected`. */
 export const ATTR_CDCP_APPLICATION_CHANNEL = 'cdcp.application.channel';
 
-/** string: application state availability outcome, `missing` or `expired`. */
+/** string: application state availability outcome (`missing`). */
 export const ATTR_CDCP_APPLICATION_STATE_OUTCOME = 'cdcp.application.state.outcome';
 
 /** string: approved opaque child-flow identifier, not a backend client number. */

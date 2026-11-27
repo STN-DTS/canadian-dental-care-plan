@@ -11,7 +11,7 @@ import { matchRouteId } from '~/.server/utils/server-build-utils';
 import { findContext, getUrl } from '~/middlewares/context-storage.server';
 
 export type ApplicationStateChannel = 'public' | 'protected';
-export type ApplicationStateOutcome = 'missing' | 'expired';
+export type ApplicationStateOutcome = 'missing';
 
 const log = createLogger('observability/application-state-metrics');
 
