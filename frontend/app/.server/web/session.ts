@@ -3,6 +3,7 @@ import { Option } from 'effect';
 import type { Request } from 'express';
 import assert from 'node:assert';
 
+import type { AuthCorrelation } from '~/.server/auth/auth-service';
 import type { ApplicantDto, LetterDto, ProgramApplicantDto } from '~/.server/domain/dtos';
 import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
@@ -58,6 +59,8 @@ type SessionTypeMap = {
         preferredMethodGovernmentOfCanada: string;
       }
   );
+  /** Correlation values for an AUTH_PROVIDER=oidc sign-in attempt; removed at the callback. */
+  oidcAuthCorrelation: AuthCorrelation;
   programApplicant: ProgramApplicantDto;
   userInfoToken: UserinfoToken;
 };

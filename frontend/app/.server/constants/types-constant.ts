@@ -7,6 +7,8 @@ import type { AppIdentityClient } from '~/.server/auth/app-identity-client';
 import type { AppIdentityDiscoveryCacheConfig } from '~/.server/auth/app-identity-discovery-cache-config';
 import type { AppIdentityTokenCache } from '~/.server/auth/app-identity-token-cache';
 import type { AppIdentityTokenCacheConfig } from '~/.server/auth/app-identity-token-cache-config';
+import type { AuthService } from '~/.server/auth/auth-service';
+import type { OpenIdServiceConfig } from '~/.server/auth/openid-service-config';
 import type { RaoidcService } from '~/.server/auth/raoidc-service';
 import type { ClientConfig, ServerConfig } from '~/.server/configs';
 import type { BuildInfoService } from '~/.server/core';
@@ -182,6 +184,7 @@ export const TYPES = assignServiceIdentifiers({
   ApplicationYearRepository: serviceId<ApplicationYearRepository>(),
   ApplicationYearService: serviceId<ApplicationYearService>(),
   AuditService: serviceId<AuditService>(),
+  AuthService: serviceId<AuthService>(),
   BearerTokenResolver: serviceId<BearerTokenResolver>(),
   BenefitApplicationDtoMapper: serviceId<BenefitApplicationDtoMapper>(),
   BenefitApplicationRepository: serviceId<BenefitApplicationRepository>(),
@@ -249,6 +252,7 @@ export const TYPES = assignServiceIdentifiers({
   MailingAddressValidatorFactory: serviceId<MailingAddressValidatorFactory>(),
   MaritalStatusDtoMapper: serviceId<MaritalStatusDtoMapper>(),
   MaritalStatusService: serviceId<MaritalStatusService>(),
+  OpenIdServiceConfig: serviceId<OpenIdServiceConfig>(),
   ProfileDtoMapper: serviceId<ProfileDtoMapper>(),
   ProfileRepository: serviceId<ProfileRepository>(),
   ProfileService: serviceId<ProfileService>(),

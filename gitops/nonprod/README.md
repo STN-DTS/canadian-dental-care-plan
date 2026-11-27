@@ -1,6 +1,6 @@
 # Nonproduction GitOps
 
-This tree contains the manifests for dev, int1, int2, otto, perf, shared,
+This tree contains the manifests for dev, int1, int2, isams, otto, perf, shared,
 staging, training, uat1, and uat2. Production does not use these bases
 or overlays. Do not synchronize changes into production.
 

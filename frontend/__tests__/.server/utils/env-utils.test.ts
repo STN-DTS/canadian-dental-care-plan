@@ -233,3 +233,121 @@ function configureDefault() {
   vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_OAUTH_SCOPE', 'documents.write');
   vi.stubEnv('EWDU_ENCAPSULATION_PASSWORD', 'password');
 }
+
+describe('getEnv auth provider', () => {
+  const oidcPrivateKey = generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey;
+
+  beforeEach(() => {
+    deleteSingleton('serverEnv');
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('INTEROP_API_BASE_URI', 'https://interop.example.test');
+    vi.stubEnv('INTEROP_API_SUBSCRIPTION_KEY', 'subscription-key');
+    vi.stubEnv('AUTH_JWT_PRIVATE_KEY', privateKey.toString('base64'));
+    vi.stubEnv('AUTH_JWT_PUBLIC_KEY', publicKey.toString('base64'));
+    vi.stubEnv('AUTH_LOGOUT_REDIRECT_URL', 'https://auth.example.test/logout');
+    vi.stubEnv('AUTH_RAOIDC_BASE_URL', 'https://auth.example.test');
+    vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', 'client-id');
+    vi.stubEnv('AUTH_RASCL_LOGOUT_URL', 'https://auth.example.test/signout');
+    vi.stubEnv('GC_NOTIFY_API_KEY', 'notify-key');
+    vi.stubEnv('INTEROP_DOCUMENT_UPLOAD_PROVIDER', 'mock');
+    vi.stubEnv('ENABLED_MOCKS', '');
+    vi.stubEnv('AUTH_PROVIDER', '');
+  });
+
+  afterEach(() => {
+    deleteSingleton('serverEnv');
+    vi.unstubAllEnvs();
+  });
+
+  function configureOidc() {
+    vi.stubEnv('AUTH_PROVIDER', 'oidc');
+    vi.stubEnv('AUTH_RAOIDC_BASE_URL', '');
+    vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', '');
+    vi.stubEnv('AUTH_OIDC_ISSUER_URL', 'https://isams.example.test/oauth2');
+    vi.stubEnv('AUTH_OIDC_CLIENT_ID', 'isams-client');
+    vi.stubEnv('AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc');
+    vi.stubEnv('AUTH_OIDC_PRIVATE_KEY', oidcPrivateKey);
+    vi.stubEnv('AUTH_OIDC_PRIVATE_KEY_ID', 'cdcp-isams-test');
+  }
+
+  it('defaults to RAOIDC and keeps its settings required', () => {
+    expect(getEnv()).toMatchObject({ AUTH_PROVIDER: 'raoidc', AUTH_RAOIDC_BASE_URL: 'https://auth.example.test', AUTH_RAOIDC_CLIENT_ID: 'client-id' });
+
+    deleteSingleton('serverEnv');
+    vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', '');
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+
+  it('accepts the OIDC provider without RAOIDC settings and keeps the private key redacted', () => {
+    configureOidc();
+
+    const config = getEnv();
+    assert(config.AUTH_PROVIDER === 'oidc');
+    expect(config).toMatchObject({ AUTH_OIDC_CLIENT_ASSERTION_AUDIENCE: 'token-endpoint', AUTH_OIDC_CLIENT_ID: 'isams-client' });
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_BASE_URL');
+    expect(Redacted.isRedacted(config.AUTH_OIDC_PRIVATE_KEY)).toBe(true);
+    expect(JSON.stringify(config)).not.toContain('PRIVATE KEY');
+  });
+
+  it('drops RAOIDC settings when the OIDC provider is configured', () => {
+    configureOidc();
+    vi.stubEnv('AUTH_RAOIDC_BASE_URL', 'https://auth.example.test');
+    vi.stubEnv('AUTH_RAOIDC_CLIENT_ID', 'client-id');
+
+    const config = getEnv();
+
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_BASE_URL');
+    expect(config).not.toHaveProperty('AUTH_RAOIDC_CLIENT_ID');
+  });
+
+  it.each(['https://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc', 'https://cdcp.example.test:8443/auth/callback/oidc', 'http://localhost:3000/auth/callback/oidc', 'http://127.0.0.1:3000/auth/callback/oidc', 'http://[::1]:3000/auth/callback/oidc'])(
+    'accepts the redirect URI %s',
+    (redirectUri) => {
+      configureOidc();
+      vi.stubEnv('AUTH_OIDC_REDIRECT_URI', redirectUri);
+
+      expect(getEnv()).toMatchObject({ AUTH_OIDC_REDIRECT_URI: redirectUri });
+    },
+  );
+
+  it('accepts the OIDC private key as single-line base64 PKCS#8', () => {
+    configureOidc();
+    vi.stubEnv('AUTH_OIDC_PRIVATE_KEY', privateKey.toString('base64'));
+
+    expect(getEnv().AUTH_PROVIDER).toBe('oidc');
+  });
+
+  it.each([
+    ['AUTH_OIDC_ISSUER_URL', 'http://isams.example.test/oauth2'],
+    ['AUTH_OIDC_ISSUER_URL', 'https://isams.example.test/oauth2/.well-known/openid-configuration'],
+    ['AUTH_OIDC_CLIENT_ID', ''],
+    ['AUTH_OIDC_REDIRECT_URI', 'not-a-url'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/callback'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc/'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/raoidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc?env=test'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc?'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc#fragment'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/callback/oidc#'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://user:pass@cdcp.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'ftp://cdcp.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test:443/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp.example.test:80/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://cdcp-isams.dev-dp.dts-stn.com/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://localhost.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'http://10.0.0.5:3000/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://CDCP.example.test/auth/callback/oidc'],
+    ['AUTH_OIDC_REDIRECT_URI', 'https://cdcp.example.test/auth/./callback/oidc'],
+    ['AUTH_OIDC_PRIVATE_KEY', 'not-a-key'],
+    ['AUTH_OIDC_PRIVATE_KEY', generateKeyPairSync('ec', { namedCurve: 'P-256', privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey],
+    ['AUTH_OIDC_PRIVATE_KEY_ID', ''],
+    ['AUTH_OIDC_CLIENT_ASSERTION_AUDIENCE', 'anything'],
+    ['AUTH_PROVIDER', 'mock'],
+  ])('rejects invalid %s (case %#)', (name, value) => {
+    configureOidc();
+    vi.stubEnv(name, value);
+
+    expect(() => getEnv()).toThrow('Invalid application configuration');
+  });
+});

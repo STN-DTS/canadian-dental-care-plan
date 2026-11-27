@@ -14,6 +14,14 @@ describe('QueryParamsRedactor', () => {
     });
   });
 
+  test('redacts the provider-controlled error parameter by default', () => {
+    expect(SAFE_QUERY_PARAMETER_NAMES.has('error')).toBe(false);
+    expect(new QueryParamsRedactor().redactAttributes({ 'react_router.url': '/auth/callback/raoidc?error=synthetic-provider-detail&lang=en' })).toEqual({
+      redacted: true,
+      attributes: { 'react_router.url': '/auth/callback/raoidc?error=%5BREDACTED%5D&lang=en' },
+    });
+  });
+
   test('leaves URLs with only safe parameters unchanged by default', () => {
     const query = [...SAFE_QUERY_PARAMETER_NAMES].map((name) => `${encodeURIComponent(name)}=1`).join('&');
 

@@ -1,6 +1,6 @@
 import { Buffer, atob } from 'node:buffer';
-import type { webcrypto } from 'node:crypto';
-import { createHash, subtle } from 'node:crypto';
+import type { KeyObject, webcrypto } from 'node:crypto';
+import { createHash, createPrivateKey, subtle } from 'node:crypto';
 
 import { createLogger } from '~/.server/logging';
 /**
@@ -17,6 +17,48 @@ export function generateJwkId(jwk: webcrypto.JsonWebKey) {
   return createHash('md5')
     .update(jwk.n ?? '')
     .digest('hex');
+}
+
+/**
+ * Parses a private key given either as PEM (with BEGIN/END lines) or as single-line base64 PKCS#8 DER, the format
+ * used by `AUTH_JWT_PRIVATE_KEY`.
+ *
+ * @throws When the value is not a parseable private key.
+ */
+export function parsePrivateKey(value: string): KeyObject {
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith('-----BEGIN')) {
+    return createPrivateKey(trimmed);
+  }
+
+  return createPrivateKey({ key: Buffer.from(trimmed, 'base64'), format: 'der', type: 'pkcs8' });
+}
+
+interface PrivateKeyRequirements {
+  /** Required key type, for example `rsa` or `ec`. */
+  readonly asymmetricKeyType?: KeyObject['asymmetricKeyType'];
+  /** Minimum RSA modulus length in bits. */
+  readonly minModulusLength?: number;
+}
+
+/**
+ * Returns true if the value parses as a private key (see {@link parsePrivateKey}) that meets the given requirements.
+ */
+export function isPrivateKey(value: string, { asymmetricKeyType, minModulusLength }: PrivateKeyRequirements = {}): boolean {
+  let key: KeyObject;
+
+  try {
+    key = parsePrivateKey(value);
+  } catch {
+    return false;
+  }
+
+  if (asymmetricKeyType !== undefined && key.asymmetricKeyType !== asymmetricKeyType) {
+    return false;
+  }
+
+  return minModulusLength === undefined || (key.asymmetricKeyDetails?.modulusLength ?? 0) >= minModulusLength;
 }
 
 /**

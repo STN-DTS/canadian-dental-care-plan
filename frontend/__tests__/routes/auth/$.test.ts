@@ -39,7 +39,7 @@ function createArgs(slug: string, session: Session) {
     [TYPES.AuditService, auditService],
     [TYPES.InstrumentationService, instrumentationService],
     [TYPES.RaoidcService, raoidcService],
-    [TYPES.ServerConfig, { AUTH_RASCL_LOGOUT_URL: 'https://rascl.invalid/logout' } as ServerConfig],
+    [TYPES.ServerConfig, { AUTH_PROVIDER: 'raoidc', AUTH_RASCL_LOGOUT_URL: 'https://rascl.invalid/logout' } as ServerConfig],
   ]);
   const appContainer = mock<AppContainerProvider>();
   appContainer.get.mockImplementation(((serviceIdentifier: unknown) => services.get(serviceIdentifier)) as unknown as AppContainerProvider['get']);

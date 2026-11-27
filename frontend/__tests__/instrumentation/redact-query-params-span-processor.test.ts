@@ -50,6 +50,15 @@ describe('RedactQueryParamsSpanProcessor', () => {
     expect(span.attributes).toEqual({ 'url.full': 'https://example.test/?token=%5BREDACTED%5D&lang=en' });
   });
 
+  test('redacts provider-controlled sign-in callback errors with the default options', async () => {
+    const callbackUrl = 'https://cdcp.example.test/auth/callback/oidc?error=synthetic-provider-detail&error_description=synthetic-description&state=synthetic-state&lang=en';
+    const span = await exportSpan({ 'react_router.url': callbackUrl, 'url.full': callbackUrl, 'error.type': 'access_denied' });
+
+    const expected = 'https://cdcp.example.test/auth/callback/oidc?error=%5BREDACTED%5D&error_description=%5BREDACTED%5D&state=%5BREDACTED%5D&lang=en';
+    expect(span.attributes).toEqual({ 'react_router.url': expected, 'url.full': expected, 'error.type': 'access_denied' });
+    expect(JSON.stringify(span.attributes)).not.toContain('synthetic-');
+  });
+
   test('redacts nothing with an empty parameter name list', async () => {
     const attributes = { 'url.full': 'https://example.test/?token=secret' };
     const span = await exportSpan(attributes, { parameterNames: [] });

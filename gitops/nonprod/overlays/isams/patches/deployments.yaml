@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  annotations:
+    # reload the pod whenever the secrets change
+    secret.reloader.stakater.com/auto: 'true'
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+  template:
+    metadata:
+      annotations:
+        container.inject.dynatrace.com/oauth-proxy: 'false'
+    spec:
+      containers:
+        - name: canada-dental-care-plan-frontend
+          # TODO: pin a tag that includes the 8840 OIDC flow before merging.
+          # The build workflow restarts only dev and int1, so do not rely on `latest`.
+          image: dtsrhpdevscedacr.azurecr.io/canada-dental-care-plan/canada-dental-care-plan-frontend:latest
+          envFrom:
+            - configMapRef:
+                name: frontend
+            - secretRef:
+                name: frontend
+            - secretRef:
+                name: redis
+        - name: oauth-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.6@sha256:c3415e8660af553f5e18f5d90db050614c02493c0ac6260ac59442f6d9b12048
+          args:
+            - --config=/etc/oauth-proxy.conf
+          envFrom:
+            - secretRef:
+                name: oauth-proxy
+          ports:
+            - name: oauth-proxy
+              containerPort: 4180
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: oauth-proxy
+            initialDelaySeconds: 0
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: oauth-proxy
+            initialDelaySeconds: 0
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: oauth-proxy-conf
+              mountPath: /etc/oauth-proxy.conf
+              subPath: config.conf
+      volumes:
+        - name: oauth-proxy-conf
+          configMap:
+            name: oauth-proxy

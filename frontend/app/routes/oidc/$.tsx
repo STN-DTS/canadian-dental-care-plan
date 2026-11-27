@@ -80,10 +80,10 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
 function validateRaoidcMockEnabled({ context }: Pick<Route.LoaderArgs, 'context'>): void {
   const { appContainer } = context.get(appContext);
-  const { ENABLED_MOCKS } = appContainer.get(TYPES.ServerConfig);
+  const { AUTH_PROVIDER, ENABLED_MOCKS } = appContainer.get(TYPES.ServerConfig);
   const mockName = 'raoidc' satisfies MockName;
 
-  if (!ENABLED_MOCKS.includes(mockName)) {
+  if (AUTH_PROVIDER !== 'raoidc' || !ENABLED_MOCKS.includes(mockName)) {
     const log = createLogger('routes/oidc/validateRaoidcMockEnabled');
     log.debug('RAOIDC mock is disabled');
     throw Response.json(null, { status: 404 });
@@ -95,7 +95,13 @@ function validateRaoidcMockEnabled({ context }: Pick<Route.LoaderArgs, 'context'
 //
 function handleOpenidConfigurationRequest({ context }: Pick<Route.LoaderArgs, 'context'>): Response {
   const { appContainer } = context.get(appContext);
-  const { AUTH_RAOIDC_BASE_URL } = appContainer.get(TYPES.ServerConfig);
+  const serverConfig = appContainer.get(TYPES.ServerConfig);
+
+  if (serverConfig.AUTH_PROVIDER !== 'raoidc') {
+    throw Response.json(null, { status: 404 });
+  }
+
+  const { AUTH_RAOIDC_BASE_URL } = serverConfig;
   const ServerMetadata: ServerMetadata = {
     issuer: 'GC-ECAS-MOCK',
     authorization_endpoint: `${AUTH_RAOIDC_BASE_URL}/authorize`,

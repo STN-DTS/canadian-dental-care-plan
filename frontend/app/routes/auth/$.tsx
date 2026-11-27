@@ -1,11 +1,13 @@
 import { redirectDocument } from 'react-router';
 
+import { trace } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE, ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 // Session attributes are currently incubating OpenTelemetry conventions.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { Option } from 'effect';
 
 import { AUDIT_EVENT_AUTH_SESSION_CREATED, AUDIT_EVENT_AUTH_SESSION_DESTROYED } from '~/.server/audit/audit-event-ids';
+import type { AuthConnectivityVerifiedResult } from '~/.server/auth/auth-service';
 import { TYPES } from '~/.server/constants';
 /**
  * Handler for /auth/logout{?locale=(en|fr)} requests
@@ -13,13 +15,19 @@ import { TYPES } from '~/.server/constants';
  */
 import { appContext } from '~/.server/context/app-context';
 import { createLogger } from '~/.server/logging';
+import type { Logger } from '~/.server/logging';
 import { ATTR_CDCP_AUTH_MISSING_SESSION_FIELDS } from '~/.server/logging/log-attributes';
+import type { InstrumentationService } from '~/.server/observability/instrumentation-service';
+import { throwAppError } from '~/.server/utils/error-utils';
+import { recordError } from '~/.server/utils/otel-instrumentation-utils';
 import type { IdToken } from '~/.server/utils/raoidc-utils';
 import { generateCallbackUri } from '~/.server/utils/raoidc-utils';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { isAppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 import type { Route } from './+types/$';
 
-const defaultProviderId = 'raoidc';
 const defaultReturnUrl = '/';
 
 /**
@@ -46,22 +54,39 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   const log = createLogger('auth.$/loader');
   const { '*': slug } = params;
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  const { AUTH_PROVIDER } = appContainer.get(TYPES.ServerConfig);
 
-  switch (slug) {
-    case 'login': {
+  // Only the configured provider's routes are served, so there is no fallback between providers.
+  switch (true) {
+    case slug === 'login': {
       return handleLoginRequest({ context, url });
     }
 
-    case 'logout': {
+    case slug === 'logout': {
+      if (AUTH_PROVIDER === 'oidc') {
+        const { session } = context.get(appContext);
+        const { AUTH_LOGOUT_REDIRECT_URL } = appContainer.get(TYPES.ServerConfig);
+        await session.destroy();
+        return redirectDocument(AUTH_LOGOUT_REDIRECT_URL);
+      }
+
       return await handleLogoutRequest({ context, url });
     }
 
-    case 'login/raoidc': {
+    case slug === 'login/raoidc' && AUTH_PROVIDER === 'raoidc': {
       return await handleRaoidcLoginRequest({ context, url });
     }
 
-    case 'callback/raoidc': {
+    case slug === 'callback/raoidc' && AUTH_PROVIDER === 'raoidc': {
       return await handleRaoidcCallbackRequest({ context, url });
+    }
+
+    case slug === 'login/oidc' && AUTH_PROVIDER === 'oidc': {
+      return await withOidcErrorResponse(async () => await handleOidcLoginRequest({ context }), log, instrumentationService);
+    }
+
+    case slug === 'callback/oidc' && AUTH_PROVIDER === 'oidc': {
+      return await withOidcErrorResponse(async () => await handleOidcCallbackRequest({ context, url }), log, instrumentationService);
     }
 
     default: {
@@ -83,7 +108,8 @@ function handleLoginRequest({ context, url }: Pick<Route.LoaderArgs, 'context' |
   const instrumentationService = appContainer.get(TYPES.InstrumentationService);
   instrumentationService.createCounter('auth.login.requests').add(1);
 
-  const loginUrl = new URL(`/auth/login/${defaultProviderId}`, url);
+  const { AUTH_PROVIDER } = appContainer.get(TYPES.ServerConfig);
+  const loginUrl = new URL(`/auth/login/${AUTH_PROVIDER}`, url);
   loginUrl.search = url.search;
 
   log.debug('Redirecting to default authentication provider', { [ATTR_URL_PATH]: loginUrl.pathname });
@@ -206,4 +232,86 @@ async function handleRaoidcCallbackRequest({ context, url }: Pick<Route.LoaderAr
   auditService.createAudit(AUDIT_EVENT_AUTH_SESSION_CREATED, { userId: idToken.sub });
 
   return redirectDocument(returnUrl);
+}
+
+/**
+ * Handler for /auth/login/oidc requests (iSAMS OIDC connectivity proof)
+ */
+async function handleOidcLoginRequest({ context }: Pick<Route.LoaderArgs, 'context'>) {
+  const { appContainer, session } = context.get(appContext);
+  const log = createLogger('auth.$/handleOidcLoginRequest');
+  log.debug('Handling OIDC login request');
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  instrumentationService.createCounter('auth.login.oidc.requests').add(1);
+
+  const authService = appContainer.get(TYPES.AuthService);
+  const { authUrl, correlation } = await authService.generateSigninRequest();
+
+  log.debug('Regenerate session to prevent fixation and wipe prior session data');
+  await session.regenerate();
+  session.set('oidcAuthCorrelation', correlation);
+
+  log.debug('Redirecting to OIDC sign-in');
+  return redirectDocument(authUrl.href);
+}
+
+/**
+ * Handler for /auth/callback/oidc requests (iSAMS OIDC connectivity proof)
+ *
+ * Reports verified connectivity only. It never stores tokens or claims, so it cannot create an authenticated CDCP
+ * session or grant access to protected routes.
+ */
+async function handleOidcCallbackRequest({ context, url }: Pick<Route.LoaderArgs, 'context' | 'url'>) {
+  const { appContainer, session } = context.get(appContext);
+  const log = createLogger('auth.$/handleOidcCallbackRequest');
+  log.debug('Handling OIDC callback request');
+  const instrumentationService = appContainer.get(TYPES.InstrumentationService);
+  instrumentationService.createCounter('auth.callback.oidc.requests').add(1);
+
+  // Removed before validation so a later or failed callback cannot reuse it. This is not atomic: overlapping requests
+  // can load the same session copy, and the provider's single-use code is what stops both from succeeding. Atomic
+  // consumption is needed once the callback creates a CDCP session (8845).
+  const correlation = session.find('oidcAuthCorrelation');
+  session.unset('oidcAuthCorrelation');
+
+  if (Option.isNone(correlation)) {
+    log.debug('OIDC callback has no sign-in attempt in session', { [ATTR_ERROR_TYPE]: 'authentication_callback_session_missing' });
+    instrumentationService.createCounter('auth.callback.oidc.requests.stale-session').add(1);
+    throwAppError('OIDC callback has no matching sign-in attempt.', ErrorCodes.AUTH_OIDC_CONNECTIVITY_CALLBACK_INVALID, { httpStatusCode: HttpStatusCodes.BAD_REQUEST, meta: { reason: 'authentication_callback_session_missing' } });
+  }
+
+  const authService = appContainer.get(TYPES.AuthService);
+  // Typed as the connectivity result so this route fails to compile if the callback can ever return a signed-in user.
+  const result: AuthConnectivityVerifiedResult = await authService.handleCallback({ callbackUrl: url, correlation: correlation.value });
+
+  instrumentationService.createCounter('auth.callback.oidc.requests.connectivity-verified').add(1);
+  return Response.json({ outcome: result.outcome, authenticated: result.authenticated, issuer: result.issuer, verifiedAt: Temporal.Now.instant().toString() }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+/**
+ * `/auth/*` is a resource route, so `withAppErrorResponses` leaves its errors alone and React Router would turn an
+ * AppError into a 500. Return the AppError's configured status with only its public details instead. A returned
+ * response skips `handleError`, so the error is logged and recorded on the active span here. Other errors are rethrown.
+ */
+async function withOidcErrorResponse(handler: () => Promise<Response>, log: Logger, instrumentationService: InstrumentationService): Promise<Response> {
+  try {
+    return await handler();
+  } catch (error) {
+    if (!isAppError(error)) {
+      throw error;
+    }
+
+    const span = trace.getActiveSpan();
+
+    if (span) {
+      recordError(span, error);
+    }
+
+    // The single failure log for OIDC requests. The service attaches a bounded reason in meta.reason.
+    const reason = typeof error.meta?.reason === 'string' ? error.meta.reason : error.errorCode;
+    log[error.httpStatusCode >= 500 ? 'error' : 'warn']('OIDC request failed', { [ATTR_ERROR_TYPE]: reason, correlationId: error.correlationId, errorCode: error.errorCode });
+    instrumentationService.createCounter('auth.oidc.requests.failed').add(1);
+
+    return Response.json({ name: error.name, errorCode: error.errorCode, correlationId: error.correlationId }, { status: error.httpStatusCode, headers: { 'Cache-Control': 'no-store' } });
+  }
 }
