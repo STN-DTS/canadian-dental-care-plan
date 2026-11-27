@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
 import { getRedisClient } from '~/.server/data/redis-client';
-import { createSessionStorage, deleteSessionStorage } from '~/.server/data/session-storage';
+import { createSessionStorage, deleteSessionStorage, touchSessionStorage } from '~/.server/data/session-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
@@ -126,6 +126,39 @@ describe('session-storage', () => {
     await expect(defaultStorage.find('session-a', 'flow-1')).resolves.toEqual(Option.some({ value: 'long' }));
   });
 
+  it('touches live entries using their configured TTL and prunes expired entries from the index', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    vi.mocked(getEnv).mockReturnValue(
+      mock<ServerEnv>({
+        SESSION_STORAGE_TYPE: 'memory',
+        SESSION_KEY_PREFIX: 'SESSION:',
+        SESSION_EXPIRES_SECONDS: 4,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 2,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
+      }),
+    );
+    const defaultStorage = createSessionStorage<{ value: string }>('public-application');
+    const shortStorage = createSessionStorage<{ value: string }>('client-application', { ttlSeconds: 3 });
+
+    await defaultStorage.set('session-a', 'flow-1', { value: 'keep' });
+    await shortStorage.set('session-a', 'default', { value: 'short' });
+
+    // At t=2s, both are live; touching resets defaultStorage to t+6s (8s) and shortStorage to t+3s (5s).
+    vi.advanceTimersByTime(2_000);
+    await touchSessionStorage('session-a');
+
+    // At t=5.001s, shortStorage has expired (3s after touch), while defaultStorage is still alive past its original 6s TTL (at t=7s).
+    vi.advanceTimersByTime(3_001);
+    await expect(shortStorage.find('session-a', 'default')).resolves.toEqual(Option.none());
+    vi.advanceTimersByTime(2_000);
+    await expect(defaultStorage.find('session-a', 'flow-1')).resolves.toEqual(Option.some({ value: 'keep' }));
+
+    // Touching again extends defaultStorage past t=8s and prunes the expired short entry.
+    await touchSessionStorage('session-a');
+    vi.advanceTimersByTime(2_000);
+    await expect(defaultStorage.find('session-a', 'flow-1')).resolves.toEqual(Option.some({ value: 'keep' }));
+  });
+
   it('stores Redis keys under SESSION_KEY_PREFIX with the SESSION:<sid>:STATE:<namespace>:<key> layout', async () => {
     const client = new FakeRedisClient();
     vi.mocked(getRedisClient).mockResolvedValue(client as never);
@@ -145,6 +178,34 @@ describe('session-storage', () => {
     expect([...client.values.keys()]).toEqual(['SESSION:sid-1:STATE:public-application:flow-1', 'SESSION:sid-1:STATE']);
 
     await deleteSessionStorage('sid-1');
+    expect([...client.values.keys()]).toEqual([]);
+  });
+
+  it('prunes deleted entries from the index and removes the index when no live entries remain on touch', async () => {
+    const client = new FakeRedisClient();
+    vi.mocked(getRedisClient).mockResolvedValue(client as never);
+    vi.mocked(getEnv).mockReturnValue(
+      mock<ServerEnv>({
+        SESSION_STORAGE_TYPE: 'redis',
+        SESSION_KEY_PREFIX: 'SESSION:',
+        SESSION_EXPIRES_SECONDS: 60,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 10,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
+      }),
+    );
+
+    const storage = createSessionStorage<{ value: string }>('public-application');
+    await storage.set('sid-1', 'flow-1', { value: 'one' });
+    await storage.set('sid-1', 'flow-2', { value: 'two' });
+    await storage.delete('sid-1', 'flow-1');
+
+    await touchSessionStorage('sid-1');
+    expect(JSON.parse(client.values.get('SESSION:sid-1:STATE') ?? '{}').value).toEqual({
+      'sid-1:STATE:public-application:flow-2': null,
+    });
+
+    await storage.delete('sid-1', 'flow-2');
+    await touchSessionStorage('sid-1');
     expect([...client.values.keys()]).toEqual([]);
   });
 
