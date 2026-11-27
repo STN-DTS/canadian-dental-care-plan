@@ -7,6 +7,8 @@ import { Buffer } from 'node:buffer';
 import { AUDIT_EVENT_DOWNLOAD_LETTER } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
+import { getApplicant } from '~/.server/context/applicant-context';
+import { findLettersState, setLettersState } from '~/.server/routes/helpers/letters-state-storage';
 import { getLocale } from '~/.server/utils/locale-utils';
 
 import type { Route } from './+types/$id.download';
@@ -18,14 +20,17 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
     throw data(null, { status: 400 });
   }
 
-  const lettersOption = session.find('letters');
+  const lettersOption = await findLettersState(session);
+  let letters = Option.getOrUndefined(lettersOption);
 
-  // Optional TODO: add a check to see if the letter belongs to the user. (Done with LetterService call)
-  if (Option.isNone(lettersOption)) {
-    throw data(null, { status: 404 });
+  if (!letters) {
+    const applicant = getApplicant(context);
+    const [allLetters, letterTypes] = await Promise.all([appContainer.get(TYPES.LetterService).findLettersByClientId({ clientId: applicant.clientNumber, sortOrder: 'desc' }), appContainer.get(TYPES.LetterTypeService).listLetterTypes()]);
+    letters = allLetters.filter(({ letterTypeId }) => letterTypes.some(({ id }) => letterTypeId === id));
+    await setLettersState(session, letters);
   }
 
-  const letter = Option.getOrThrow(lettersOption).find((letter) => letter.id === params.id);
+  const letter = letters.find((letter) => letter.id === params.id);
 
   if (!letter) {
     throw data(null, { status: 404 });

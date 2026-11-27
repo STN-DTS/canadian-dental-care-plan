@@ -11,10 +11,12 @@ import { appContext } from '~/.server/context/app-context';
 import { applicantContext } from '~/.server/context/applicant-context';
 import type { ApplicantDto } from '~/.server/domain/dtos';
 import type { LetterService, LetterTypeService } from '~/.server/domain/services';
+import { setLettersState } from '~/.server/routes/helpers/letters-state-storage';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
 import type { Session } from '~/.server/web/session';
 import { loader } from '~/routes/protected/letters/index';
 
+vi.mock(import('~/.server/routes/helpers/letters-state-storage'));
 vi.mock(import('~/.server/utils/locale-utils'));
 
 const applicant = {
@@ -83,6 +85,7 @@ describe('Letters Page', () => {
         url: new URL('http://localhost/letters?sort=desc'),
       });
 
+      expect(setLettersState).toHaveBeenCalledExactlyOnceWith(mockSession, response.letters);
       expect(response.letters).toHaveLength(3);
       expect(response.letters[2]?.id).toEqual('3');
       expect(response.letters[2]?.letterTypeId).toEqual('DEN');

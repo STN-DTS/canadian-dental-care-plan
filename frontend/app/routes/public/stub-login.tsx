@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { deleteApplicantState } from '~/.server/routes/helpers/applicant-state-storage';
+import { deleteLettersState } from '~/.server/routes/helpers/letters-state-storage';
 import { deleteProgramApplicantState } from '~/.server/routes/helpers/program-applicant-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
@@ -154,7 +155,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   session.set('idToken', idToken);
-  await Promise.all([deleteApplicantState(session), deleteProgramApplicantState(session)]);
+  await Promise.all([deleteApplicantState(session), deleteProgramApplicantState(session), deleteLettersState(session)]);
 
   return redirectDocument(getPathById(parsedDataResult.data.destinationRouteId, params));
 }

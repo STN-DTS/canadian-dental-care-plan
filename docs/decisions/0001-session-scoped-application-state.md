@@ -49,15 +49,18 @@ Store migrated temporary state outside the Express session using three layers:
    `deleteSessionStorage(id)` so all migrated session storages are cleaned up
    together.
 
-Roll out by state type. Each flow state gets its own storage module built on
-`createSessionStorage`: public application
+Roll out by state type. Each temporary state or per-session backend cache gets
+its own storage module built on `createSessionStorage`: public application
 (`public-application-state-storage.ts`), protected application
 (`protected-application-state-storage.ts`), status checker
 (`status-state-storage.ts`), document upload
-(`document-upload-state-storage.ts`), and profile email verification
-(`profile-email-address-flow-state-storage.ts`). Per-session backend caches
-(`applicant`, `programApplicant`, `letters`), authentication tokens, and OIDC
-handshake values stay in the Express session.
+(`document-upload-state-storage.ts`), profile email verification
+(`profile-email-address-flow-state-storage.ts`), applicant
+(`applicant-state-storage.ts`), program applicant
+(`program-applicant-state-storage.ts`), and letters
+(`letters-state-storage.ts`). Authentication tokens and OIDC handshake values
+stay in the Express session, which is therefore written only during login and
+OIDC handshakes.
 
 Each state is stored as its own Keyv key
 (`SESSION:<sessionId>:STATE:<namespace>:<key>`, using the configured

@@ -10,6 +10,7 @@ import { AUDIT_EVENT_PAGE_VIEW_LETTERS } from '~/.server/audit/audit-event-ids';
 import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { getApplicant } from '~/.server/context/applicant-context';
+import { setLettersState } from '~/.server/routes/helpers/letters-state-storage';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { UserinfoToken } from '~/.server/utils/raoidc-utils';
 import { AppPageTitle } from '~/components/app-page-title';
@@ -64,7 +65,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const letterTypes = await appContainer.get(TYPES.LetterTypeService).listLetterTypes();
   const letters = allLetters.filter(({ letterTypeId }) => letterTypes.some(({ id }) => letterTypeId === id));
 
-  session.set('letters', letters);
+  await setLettersState(session, letters);
 
   const t = await getFixedT(url, ['letters', 'gcweb']);
   const meta = {
