@@ -23,7 +23,7 @@ blockExoticSubdeps: true
 # Catalog of dependencies with explicit versions to ensure consistent installations across all projects.
 # https://pnpm.io/catalogs
 catalog:
-  '@axe-core/playwright': 4.14.0
+  '@axe-core/playwright': 4.14.1
   '@dts-stn/health-checks': 2.0.0
   '@dts-stn/invariant': 1.0.0
   '@epic-web/client-hints': 1.3.9
