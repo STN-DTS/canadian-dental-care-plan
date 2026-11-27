@@ -104,6 +104,8 @@ for (const scenario of [
 for (const scenario of [
   { name: 'missing document type', file: validFile, type: '', error: 'Select a document type for file' },
   { name: 'unsupported extension', file: documentFile('evidence.exe'), type: 'invalid-type-id', error: 'You can\'t upload this file format for "evidence.exe". Choose a file in one of these formats:' },
+  { name: 'empty text file', file: documentFile('empty.txt', '', 'text/plain'), type: 'invalid-type-id', error: 'The file "empty.txt" is empty. You must choose a different file.' },
+  { name: 'empty PDF file', file: documentFile('empty.pdf', '', 'application/pdf'), type: 'invalid-type-id', error: 'The file "empty.pdf" is empty. You must choose a different file.' },
   { name: 'oversized file', file: { ...documentFile('oversized.txt'), buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 'a') }, type: 'invalid-type-id', error: 'The file is too large to upload. Make sure the file size is less than 5\u00A0MB.' },
   {
     name: 'undetectable non-text content',

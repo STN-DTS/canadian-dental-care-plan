@@ -96,6 +96,8 @@ const ns = {
       invalidFileContent_fileSelection: "Le fichier semble avoir été enregistré dans le mauvais format. Enregistrez le fichier dans le format suivant\u00A0: {{fileTypeName}} ({{fileExtension}}), puis téléversez-le à nouveau.",
       tooManyFiles_one: "Vous pouvez téléverser jusqu'à {{count}} fichiers à la fois. Vous devez les soumettre avant d'en téléverser d'autres.",
       tooManyFiles_other: "Vous pouvez téléverser jusqu'à {{count}} fichiers à la fois. Vous devez les soumettre avant d'en téléverser d'autres.",
+      emptyFile: "Le fichier «\u00A0{{filename}}\u00A0» est vide. Vous devez choisir un autre fichier.",
+      emptyFile_fileSelection: "Le fichier est vide. Vous devez choisir un autre fichier.",
       fileTooLarge: "La taille du fichier est trop grande. Assurez-vous que la taille du fichier est de moins de {{filesize}}.",
       fileTooLarge_fileSelection: "La taille du fichier est trop grande. Assurez-vous que la taille du fichier est de moins de {{filesize}}.",
       scanFailed: "Le fichier «\u00A0{{filename}}\u00A0» ne passe pas notre vérification de sécurité. Vous devez choisir un autre fichier.",

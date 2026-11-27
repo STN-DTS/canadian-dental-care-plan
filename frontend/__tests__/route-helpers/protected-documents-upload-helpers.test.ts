@@ -31,6 +31,7 @@ const tFunctionMock = mockFn<TFunction<'documents'>>().mockImplementation((selec
         contentValidationError: 'content validation error',
         duplicateFile: 'duplicate file',
         documentTypeRequired: 'document type required',
+        emptyFile: 'empty file',
         fileRequired: 'file required',
         fileTooLarge: 'file too large',
         invalidFileContent: 'invalid file content',
@@ -183,6 +184,28 @@ describe('protected-documents-upload-helpers', () => {
         filename: 'LETTER.RTF',
         fileTypeName: 'Rich Text Format document',
         fileExtension: '.rtf',
+      });
+    });
+
+    it('should reject empty (0-byte) files before content validation', async () => {
+      const args = createFileSelectionArgs([new File([], 'empty.txt', { type: 'text/plain' })]);
+
+      const actual = await validateFileSelection(args);
+
+      expect(actual).toEqual({
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: ['empty file'],
+            },
+          },
+        },
+      });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'fileSelection',
+        filename: 'empty.txt',
       });
     });
 
@@ -350,6 +373,39 @@ describe('protected-documents-upload-helpers', () => {
       const files = await getFiles(formData);
 
       expect(validateUploadedFiles({ files, locale: 'en', t: tFunctionMock }).success).toBe(true);
+    });
+
+    it('should reject empty (0-byte) files on submit', async () => {
+      const formData = createUploadFormData([{ id: 'first', file: new File([], 'empty.txt', { type: 'text/plain' }), documentType: 'receipt' }]);
+
+      const files = await getFiles(formData);
+      const actual = validateUploadedFiles({ files, locale: 'en', t: tFunctionMock });
+
+      expect(actual).toEqual({
+        success: false,
+        errors: {
+          errors: [],
+          properties: {
+            files: {
+              errors: [],
+              properties: {
+                first: {
+                  errors: [],
+                  properties: {
+                    file: {
+                      errors: ['empty file'],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      expect(tFunctionMock).toHaveBeenCalledWith(expect.any(Function), {
+        context: 'submit',
+        filename: 'empty.txt',
+      });
     });
 
     it('should reject an unsupported file extension', async () => {

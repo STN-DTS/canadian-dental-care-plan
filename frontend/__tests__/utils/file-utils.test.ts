@@ -166,6 +166,14 @@ describe('file-utils', () => {
       await expect(isFileContentTypeAllowed({ allowedExtensions: ['.pdf', '.txt'], file: renamedPdfFile })).resolves.toBe(false);
     });
 
+    it('should reject empty (0-byte) files regardless of extension or declared MIME type', async () => {
+      const emptyTxtFile = new File([], 'empty.txt', { type: 'text/plain' });
+      const emptyPdfFile = new File([], 'empty.pdf', { type: 'application/pdf' });
+
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.txt', '.pdf'], file: emptyTxtFile })).resolves.toBe(false);
+      await expect(isFileContentTypeAllowed({ allowedExtensions: ['.txt', '.pdf'], file: emptyPdfFile })).resolves.toBe(false);
+    });
+
     it('should reject undetected content not declared as text/plain', async () => {
       const file = new File(['Unknown content'], 'document.pdf', { type: 'application/pdf' });
 

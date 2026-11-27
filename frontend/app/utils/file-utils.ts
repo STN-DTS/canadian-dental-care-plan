@@ -176,6 +176,10 @@ function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | und
  * @throws {Error} When the file's allowed extension has no registered MIME type
  */
 export async function isFileContentTypeAllowed({ allowedExtensions, file }: IsFileContentTypeAllowedArgs): Promise<boolean> {
+  if (file.size === 0) {
+    return false;
+  }
+
   const fileExtension = getFileExtension(file.name).toLowerCase();
   const normalizedAllowedExtensions = new Set(allowedExtensions.map((extension) => extension.toLowerCase()));
 

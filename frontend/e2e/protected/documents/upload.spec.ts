@@ -165,6 +165,7 @@ test.describe('selection and editing', () => {
 
   for (const scenario of [
     { name: 'unsupported extension', payload: file('evidence.exe'), error: /You can't upload this file format\. Choose a file in one of these formats:/ },
+    { name: 'empty file', payload: file('empty.txt', '', 'text/plain'), error: 'The file is empty. You must choose a different file.' },
     { name: 'oversized file', payload: { ...file('oversized.txt'), buffer: Buffer.alloc(maxBytes + 1, 'a') }, error: 'The file is too large to upload. Make sure the file size is less than 5 MB.' },
     { name: 'duplicate file', payload: file(), error: 'The file "evidence.txt" is already selected or uploaded. You must choose a different file.' },
     {

@@ -122,6 +122,28 @@ describe.each(['en', 'fr'] as const)('document upload messages (%s)', (locale) =
     });
   });
 
+  it('validates empty (0-byte) files both during selection and during submission', async () => {
+    const t = await getTranslator();
+    const file = new File([], 'empty.txt', { type: 'text/plain' });
+
+    const submission = new FormData();
+    submission.append('file_id', 'first');
+    submission.append('file_object', file);
+    submission.append('file_document_type', 'receipt');
+    const files = await getFiles(submission);
+    const expectedSelection = locale === 'en' ? 'The file is empty. You must choose a different file.' : 'Le fichier est vide. Vous devez choisir un autre fichier.';
+    const expectedSubmit = locale === 'en' ? 'The file "empty.txt" is empty. You must choose a different file.' : 'Le fichier «\u00A0empty.txt\u00A0» est vide. Vous devez choisir un autre fichier.';
+
+    await expect(validateFileSelection({ currentFileCount: 0, existingFiles: [], files: [file], locale, t })).resolves.toMatchObject({
+      success: false,
+      errors: { properties: { files: { errors: [expectedSelection] } } },
+    });
+    expect(validateUploadedFiles({ files, locale, t })).toMatchObject({
+      success: false,
+      errors: { properties: { files: { properties: { first: { properties: { file: { errors: [expectedSubmit] } } } } } } },
+    });
+  });
+
   it('validates oversized files both during selection and during submission', async () => {
     const t = await getTranslator();
     const file = new File([new Uint8Array(1024 * 1024 + 1)], 'oversized.txt');

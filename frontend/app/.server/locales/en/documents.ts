@@ -96,6 +96,8 @@ const ns = {
       invalidFileContent_fileSelection: "The file appears to be saved in the wrong format. Save the file as a {{fileTypeName}} ({{fileExtension}}) and upload it again.",
       tooManyFiles_one: "You can upload up to {{count}} file at a time. Submit before uploading more.",
       tooManyFiles_other: "You can upload up to {{count}} files at a time. Submit before uploading more.",
+      emptyFile: 'The file "{{filename}}" is empty. You must choose a different file.',
+      emptyFile_fileSelection: "The file is empty. You must choose a different file.",
       fileTooLarge: "The file is too large to upload. Make sure the file size is less than {{filesize}}.",
       fileTooLarge_fileSelection: "The file is too large to upload. Make sure the file size is less than {{filesize}}.",
       scanFailed: 'The file "{{filename}}" does not pass our security checks. You must choose a different file.',

@@ -373,6 +373,14 @@ function createFileValidationSchema({ context, locale, t }: CreateFileValidation
             extensions: allowedExtensions.join(', '),
           }),
         });
+      } else if (file.size === 0) {
+        ctx.addIssue({
+          code: 'custom',
+          message: t(($) => $.upload.errorMessage.emptyFile, {
+            context,
+            filename: file.name,
+          }),
+        });
       } else if (file.size > maxFileSizeInBytes) {
         ctx.addIssue({
           code: 'custom',

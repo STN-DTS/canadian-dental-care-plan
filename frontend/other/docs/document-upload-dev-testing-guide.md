@@ -129,17 +129,18 @@ Check where keyboard focus goes after each addition and removal.
 Try each case from a fresh form, or keep one valid file selected to check that
 an error does not discard other work:
 
-| Case                          | Do this                                                          | You should see                                                                                |
-| ----------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Empty selection               | Select **Submit** with no files.                                 | A message says a file is required.                                                            |
-| Missing type                  | Add a valid file, leave its type unselected, then submit.        | An error identifies the file that needs a type.                                               |
-| Unsupported extension         | Try the harmless unsupported file.                               | The selection is rejected and the supported-extensions guidance appears.                      |
-| Wrong file format (renamed)   | Try a plain-text or image file renamed to `.pdf`.                | The selection is rejected immediately with the localized format guidance naming PDF (`.pdf`). |
-| Oversized file                | Try a file larger than the displayed per-file limit.             | The selection is rejected and the size guidance appears.                                      |
-| File count                    | Fill the displayed limit, then try to add another distinct file. | The additional selection is rejected. Existing files remain.                                  |
-| Exact duplicate               | Add the same unchanged file twice.                               | The second selection is rejected as a duplicate.                                              |
-| Same contents, different name | Try the same contents under a different name.                    | Matching contents alone do not make it a duplicate.                                           |
-| Same name, different contents | Try different contents with the same name.                       | Matching names alone do not make it a duplicate.                                              |
+| Case                          | Do this                                                              | You should see                                                                                |
+| ----------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Empty selection               | Select **Submit** with no files.                                     | A message says a file is required.                                                            |
+| Missing type                  | Add a valid file, leave its type unselected, then submit.            | An error identifies the file that needs a type.                                               |
+| Unsupported extension         | Try the harmless unsupported file.                                   | The selection is rejected and the supported-extensions guidance appears.                      |
+| Wrong file format (renamed)   | Try a plain-text or image file renamed to `.pdf`.                    | The selection is rejected immediately with the localized format guidance naming PDF (`.pdf`). |
+| Empty (0-byte) file           | Try a 0-byte file with an allowed extension (e.g. `.txt` or `.pdf`). | The selection is rejected immediately with the localized empty-file message.                  |
+| Oversized file                | Try a file larger than the displayed per-file limit.                 | The selection is rejected and the size guidance appears.                                      |
+| File count                    | Fill the displayed limit, then try to add another distinct file.     | The additional selection is rejected. Existing files remain.                                  |
+| Exact duplicate               | Add the same unchanged file twice.                                   | The second selection is rejected as a duplicate.                                              |
+| Same contents, different name | Try the same contents under a different name.                        | Matching contents alone do not make it a duplicate.                                           |
+| Same name, different contents | Try different contents with the same name.                           | Matching names alone do not make it a duplicate.                                              |
 
 A duplicate requires the same filename, size, and contents. Correct the reported
 problem and check that you can continue without redoing unrelated work. Empty
