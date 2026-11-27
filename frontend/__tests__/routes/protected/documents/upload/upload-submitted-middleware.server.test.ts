@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe('submitted upload lifecycle middleware', () => {
   it.each(['en', 'fr'])('continues a finished flow for %s', async (lang) => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'finished', documents: [uploadedDocument] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'finished', documents: [uploadedDocument] });
     const args = createArgs(lang);
     const response = new Response(null, { status: 204 });
     const next = vi.fn().mockResolvedValue(response);
@@ -53,7 +53,7 @@ describe('submitted upload lifecycle middleware', () => {
     { lang: 'en', status: 'partial-upload' as const, destination: '/en/protected/documents' },
     { lang: 'fr', status: 'partial-upload' as const, destination: '/fr/protege/documents' },
   ])('replaces an open $status confirmation URL with the $lang listing', async ({ lang, status, destination }) => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status, documents: status === 'partial-upload' ? [uploadedDocument] : [] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status, documents: status === 'partial-upload' ? [uploadedDocument] : [] });
     const args = createArgs(lang);
     const next = vi.fn();
 

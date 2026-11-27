@@ -2,10 +2,12 @@ import { data, replace } from 'react-router';
 
 // session.id is currently an incubating OpenTelemetry convention.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import { Option } from 'effect';
 import * as z from 'zod';
 
 import { createLogger } from '~/.server/logging';
 import { ATTR_CDCP_REDIRECT_TARGET, ATTR_CDCP_SESSION_KEY } from '~/.server/logging/log-attributes';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/helpers/document-upload-state-storage';
 import type { Session } from '~/.server/web/session';
 import { getPathById } from '~/utils/route-utils';
 
@@ -63,7 +65,7 @@ interface LoadStateArgs {
  * @returns The loaded state.
  * @throws A replacement redirect to the localized documents listing if the ID or flow is unavailable.
  */
-export function loadDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {
+export async function loadDocumentUploadState({ id, params, session }: LoadStateArgs): Promise<DocumentUploadState> {
   const log = createLogger('document-upload-route-helpers/loadDocumentUploadState');
   const documentsIndexUrl = getPathById('protected/documents/index', params);
 
@@ -75,8 +77,9 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
   }
 
   const sessionKey = getSessionKey(parsedId.data);
+  const stateOption = await findDocumentUploadState(session, parsedId.data);
 
-  if (!session.has(sessionKey)) {
+  if (Option.isNone(stateOption)) {
     log.debug('Document upload session state not found; redirecting to documents index', {
       [ATTR_CDCP_REDIRECT_TARGET]: documentsIndexUrl,
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -85,7 +88,7 @@ export function loadDocumentUploadState({ id, params, session }: LoadStateArgs):
     throw replace(documentsIndexUrl);
   }
 
-  return session.get(sessionKey);
+  return stateOption.value;
 }
 
 interface StartStateArgs {
@@ -98,7 +101,7 @@ interface StartStateArgs {
  * @param args - The arguments.
  * @returns The initial document upload state.
  */
-export function startDocumentUploadState({ id, session }: StartStateArgs) {
+export async function startDocumentUploadState({ id, session }: StartStateArgs): Promise<DocumentUploadState> {
   const log = createLogger('document-upload-route-helpers/startDocumentUploadState');
   const parsedId = idSchema.parse(id);
 
@@ -109,7 +112,7 @@ export function startDocumentUploadState({ id, session }: StartStateArgs) {
   };
 
   const sessionKey = getSessionKey(parsedId);
-  session.set(sessionKey, initialState);
+  await setDocumentUploadState(session, parsedId, initialState);
   log.debug('Document upload session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }
@@ -125,9 +128,9 @@ interface ResetStateArgs {
  * @param args - The arguments.
  * @returns The reset document upload state.
  */
-export function resetDocumentUploadState({ id, params, session }: ResetStateArgs) {
+export async function resetDocumentUploadState({ id, params, session }: ResetStateArgs): Promise<DocumentUploadState> {
   const log = createLogger('document-upload-route-helpers/resetDocumentUploadState');
-  const currentState = loadDocumentUploadState({ id, params, session });
+  const currentState = await loadDocumentUploadState({ id, params, session });
 
   if (currentState.status === 'finished') {
     throw data(null, { status: 409 });
@@ -140,7 +143,7 @@ export function resetDocumentUploadState({ id, params, session }: ResetStateArgs
   };
 
   const sessionKey = getSessionKey(currentState.id);
-  session.set(sessionKey, resettedState);
+  await setDocumentUploadState(session, currentState.id, resettedState);
   log.debug('Document upload session state reset', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return resettedState;
 }
@@ -157,9 +160,9 @@ interface UpdateStateArgs {
  * @param args - The arguments.
  * @returns The updated document upload state.
  */
-export function updateDocumentUploadState({ id, session, state, params }: UpdateStateArgs) {
+export async function updateDocumentUploadState({ id, session, state, params }: UpdateStateArgs): Promise<DocumentUploadState> {
   const log = createLogger('document-upload-route-helpers/updateDocumentUploadState');
-  const currentState = loadDocumentUploadState({ id, params, session });
+  const currentState = await loadDocumentUploadState({ id, params, session });
 
   if (currentState.status === 'finished') {
     throw data(null, { status: 409 });
@@ -172,7 +175,7 @@ export function updateDocumentUploadState({ id, session, state, params }: Update
   };
 
   const sessionKey = getSessionKey(currentState.id);
-  session.set(sessionKey, newState);
+  await setDocumentUploadState(session, currentState.id, newState);
 
   log.debug('Document upload session state updated', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return newState;
@@ -190,27 +193,27 @@ interface RecordAttemptArgs {
  * @returns The attempt number of this submission, starting at 1.
  * @throws If the flow has already finished.
  */
-export function recordDocumentUploadAttempt({ id, params, session }: RecordAttemptArgs): number {
-  const currentState = loadDocumentUploadState({ id, params, session });
+export async function recordDocumentUploadAttempt({ id, params, session }: RecordAttemptArgs): Promise<number> {
+  const currentState = await loadDocumentUploadState({ id, params, session });
 
   if (currentState.status === 'finished') {
     throw data(null, { status: 409 });
   }
 
   const uploadAttemptCount = (currentState.uploadAttemptCount ?? 0) + 1;
-  session.set(getSessionKey(currentState.id), { ...currentState, uploadAttemptCount } satisfies DocumentUploadState);
+  await setDocumentUploadState(session, currentState.id, { ...currentState, uploadAttemptCount } satisfies DocumentUploadState);
   return uploadAttemptCount;
 }
 
-export function finishDocumentUploadState({ id, params, session }: LoadStateArgs): DocumentUploadState {
-  const currentState = loadDocumentUploadState({ id, params, session });
+export async function finishDocumentUploadState({ id, params, session }: LoadStateArgs): Promise<DocumentUploadState> {
+  const currentState = await loadDocumentUploadState({ id, params, session });
 
   if (currentState.status === 'finished' || !currentState.documents.some((document) => document.status === 'uploaded') || currentState.documents.some((document) => document.status === 'pending')) {
     throw data(null, { status: 409 });
   }
 
   const finishedState: DocumentUploadState = { ...currentState, status: 'finished' };
-  session.set(getSessionKey(currentState.id), finishedState);
+  await setDocumentUploadState(session, currentState.id, finishedState);
   return finishedState;
 }
 
@@ -224,11 +227,11 @@ interface ClearStateArgs {
  * Clears document upload state.
  * @param args - The arguments.
  */
-export function clearDocumentUploadState({ id, params, session }: ClearStateArgs) {
+export async function clearDocumentUploadState({ id, params, session }: ClearStateArgs): Promise<void> {
   const log = createLogger('document-upload-route-helpers/clearDocumentUploadState');
-  const state = loadDocumentUploadState({ id, params, session });
+  const state = await loadDocumentUploadState({ id, params, session });
   const sessionKey = getSessionKey(state.id);
-  session.unset(sessionKey);
+  await deleteDocumentUploadState(session, state.id);
   log.debug('Document upload session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 

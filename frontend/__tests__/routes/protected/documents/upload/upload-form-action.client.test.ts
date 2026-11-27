@@ -60,7 +60,7 @@ beforeEach(() => {
   vi.mocked(validateUploadedFileContents).mockResolvedValue({ success: true });
   vi.mocked(getLanguage).mockReturnValue('en');
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
-  vi.mocked(startDocumentUploadState).mockReturnValue({ id: 'upload-id', status: 'initialized', documents: [] });
+  vi.mocked(startDocumentUploadState).mockResolvedValue({ id: 'upload-id', status: 'initialized', documents: [] });
 });
 
 afterEach(() => {

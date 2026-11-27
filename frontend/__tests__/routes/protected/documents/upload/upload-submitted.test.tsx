@@ -2,6 +2,7 @@ import { getDefaultNormalizer, render, screen, within } from '@testing-library/r
 
 import { MemoryRouter, RouterContextProvider } from 'react-router';
 
+import { Option } from 'effect';
 import { I18nextProvider } from 'react-i18next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
@@ -15,6 +16,7 @@ import enDocuments from '~/.server/locales/en/documents';
 import frDocuments from '~/.server/locales/fr/documents';
 import { loadDocumentUploadState } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { DocumentUploadState, SubmittedDocument } from '~/.server/routes/helpers/document-upload-route-helpers';
+import { deleteDocumentUploadState, findDocumentUploadState, setDocumentUploadState } from '~/.server/routes/helpers/document-upload-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import { getFixedT, getLocale, initI18n } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
@@ -26,20 +28,21 @@ vi.unmock(import('react-i18next'));
 vi.mock(import('~/.server/utils/env-utils'));
 vi.mock(import('~/.server/utils/locale-utils'), { spy: true });
 vi.mock(import('~/.server/routes/helpers/document-upload-route-helpers'), { spy: true });
+vi.mock(import('~/.server/routes/helpers/document-upload-state-storage'));
 
 const uploadId = '00000000-0000-0000-0000-000000000000';
-const sessionKey = `document-upload-flow-${uploadId}` as const;
-const session = mock<Session>();
+const session = mock<Session>({ id: 'session-a' });
 const appContainer = mock<AppContext['appContainer']>();
 const documentTypeService = mock<EvidentiaryDocumentTypeService>();
 const documentUploadService = mock<DocumentUploadService>();
 const auditService = mock<AuditService>();
 const baseUri = 'https://account.example.test';
 const uploadedDocument: SubmittedDocument = { id: 'first', fileName: 'evidence.pdf', documentType: 'receipt', fileSize: 12, status: 'uploaded' };
+const storedStates = new Map<string, DocumentUploadState>();
 
-function storeDocuments(documents: ReadonlyArray<SubmittedDocument>) {
-  const state: DocumentUploadState = { id: uploadId, status: 'finished', documents };
-  session.get.calledWith(sessionKey).mockReturnValue(state);
+function storeDocuments(documents: ReadonlyArray<SubmittedDocument>, id: string = uploadId) {
+  const state: DocumentUploadState = { id, status: 'finished', documents };
+  storedStates.set(id, state);
   return state;
 }
 
@@ -53,8 +56,9 @@ function createArgs(locale: AppLocale): Parameters<typeof loader>[0] {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  storedStates.clear();
   vi.mocked(getEnv, { partial: true }).mockReturnValue({ I18NEXT_DEBUG: false });
-  session.has.mockReturnValue(true);
+  vi.mocked(findDocumentUploadState).mockImplementation(async (_session, id) => await Promise.resolve(Option.fromUndefinedOr(storedStates.get(id))));
   storeDocuments([uploadedDocument]);
   appContainer.get.calledWith(TYPES.EvidentiaryDocumentTypeService).mockReturnValue(documentTypeService);
   appContainer.get.calledWith(TYPES.DocumentUploadService).mockReturnValue(documentUploadService);
@@ -78,7 +82,7 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
     const result = await loader(args);
 
     expect(loadDocumentUploadState).toHaveBeenCalledExactlyOnceWith({ id: uploadId, params: args.params, session });
-    expect(session.get).toHaveBeenCalledExactlyOnceWith(sessionKey);
+    expect(findDocumentUploadState).toHaveBeenCalledExactlyOnceWith(session, uploadId);
     expect(getLocale).toHaveBeenCalledWith(args.url);
     expect(getFixedT).toHaveBeenCalledExactlyOnceWith(args.url, ['documents', 'gcweb']);
     expect(documentTypeService.listLocalizedEvidentiaryDocumentTypes).toHaveBeenCalledExactlyOnceWith(locale);
@@ -155,8 +159,8 @@ describe.each(['en', 'fr'] as const)('submitted documents loader (%s)', (locale)
     expect(appContainer.get).not.toHaveBeenCalledWith(TYPES.DocumentUploadService);
     expect(documentUploadService.scanDocument).not.toHaveBeenCalled();
     expect(documentUploadService.uploadDocument).not.toHaveBeenCalled();
-    expect(session.set).not.toHaveBeenCalled();
-    expect(session.unset).not.toHaveBeenCalled();
+    expect(setDocumentUploadState).not.toHaveBeenCalled();
+    expect(deleteDocumentUploadState).not.toHaveBeenCalled();
   });
 });
 
@@ -164,7 +168,7 @@ describe('submitted documents reloads', () => {
   it('uses the flow ID in the current route rather than another stored flow or a query-string ID', async () => {
     const otherId = '11111111-1111-4111-8111-111111111111';
     const otherDocument = { ...uploadedDocument, id: 'other-flow-file', fileName: 'other-flow.pdf' };
-    session.get.calledWith(`document-upload-flow-${otherId}`).mockReturnValue({ id: otherId, status: 'finished', documents: [otherDocument] });
+    storeDocuments([otherDocument], otherId);
     const args = createArgs('en');
     args.params.id = otherId;
     args.url.pathname = args.url.pathname.replace(uploadId, otherId);
@@ -174,7 +178,7 @@ describe('submitted documents reloads', () => {
     const result = await loader(args);
 
     expect(loadDocumentUploadState).toHaveBeenCalledExactlyOnceWith({ id: otherId, params: args.params, session });
-    expect(session.get).toHaveBeenCalledExactlyOnceWith(`document-upload-flow-${otherId}`);
+    expect(findDocumentUploadState).toHaveBeenCalledExactlyOnceWith(session, otherId);
     expect(result.uploadedDocuments).toEqual([{ id: otherDocument.id, fileName: otherDocument.fileName, documentTypeName: 'Receipt' }]);
   });
 

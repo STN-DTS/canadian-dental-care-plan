@@ -17,7 +17,7 @@ import type { Route } from './+types/upload-form';
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const documentUploadState = resetDocumentUploadState({ id: params.id, params, session });
+  const documentUploadState = await resetDocumentUploadState({ id: params.id, params, session });
 
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);

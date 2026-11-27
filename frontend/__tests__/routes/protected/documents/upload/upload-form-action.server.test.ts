@@ -84,9 +84,9 @@ beforeEach(() => {
   vi.mocked(getDocumentUploadStateIdFromUrl).mockReturnValue(uploadId);
   vi.mocked(getDocumentUploadSubmittedUrl).mockReturnValue(submittedUrl);
   vi.mocked(getLanguage).mockReturnValue('en');
-  vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
+  vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(validateDocumentContents).mockResolvedValue({ success: true });
-  vi.mocked(updateDocumentUploadState).mockReturnValue({ id: uploadId, status: 'initialized', documents: [] });
+  vi.mocked(updateDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'initialized', documents: [] });
   vi.mocked(uploadDocuments).mockResolvedValue({ success: true, uploadDates: { 'file-1': '2026-11-01T06:30:00Z', 'file-2': '2026-11-01T06:30:01Z' } });
 });
 
@@ -116,7 +116,7 @@ describe('action', () => {
 
   it('clears stale pending metadata and completes the flow without processing file bytes', async () => {
     const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ ...uploadedDocument, id: 'removed-file', status: 'pending' }, uploadedDocument] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [{ ...uploadedDocument, id: 'removed-file', status: 'pending' }, uploadedDocument] });
     const formData = new FormData();
     formData.set('_action', 'finish');
     const args = createActionArgs(formData);
@@ -181,7 +181,7 @@ describe('action', () => {
   });
 
   it('rejects resubmission of an uploaded ID without changing state', async () => {
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7, status: 'uploaded' }] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'file-1', fileName: 'document.pdf', documentType: 'receipt', fileSize: 7, status: 'uploaded' }] });
 
     await expect(action(createActionArgs(validUploadFormData()))).rejects.toMatchObject({ init: { status: 409 } });
     expect(validateUploadedFiles).not.toHaveBeenCalled();
@@ -235,7 +235,7 @@ describe('action', () => {
     const args = createActionArgs(validUploadFormData());
     const { session } = args.context.get(appContext);
     const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'removed-file', fileName: 'removed.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }, uploadedDocument] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [{ id: 'removed-file', fileName: 'removed.pdf', documentType: 'receipt', fileSize: 7, status: 'pending' }, uploadedDocument] });
     const errors = { errors: [], properties: { files: { errors: [], properties: { 'file-1': { errors: ['invalid file type'] } } } } } satisfies DocumentUploadSchemaErrorTree;
     vi.mocked(validateDocumentContents).mockResolvedValue({ success: false, errors });
 
@@ -330,7 +330,7 @@ describe('action', () => {
     const retryDocument = { id: 'file-1', fileName: retryFile.name, fileSize: retryFile.size, documentType: 'receipt', status: 'pending' as const };
     const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:00Z' };
     const newDocument = { id: 'file-3', fileName: newFile.name, fileSize: newFile.size, documentType: 'receipt', status: 'pending' as const };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [retryDocument, uploadedDocument, { ...retryDocument, id: 'removed' }] });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [retryDocument, uploadedDocument, { ...retryDocument, id: 'removed' }] });
     const files = {
       'file-1': { file: retryFile, fileBuffer: new ArrayBuffer(retryFile.size), fileHash: 'retry-hash', documentType: 'receipt' },
       'file-3': { file: newFile, fileBuffer: new ArrayBuffer(newFile.size), fileHash: 'new-hash', documentType: 'receipt' },
@@ -436,7 +436,7 @@ describe('upload telemetry', () => {
 
   beforeEach(() => {
     vi.mocked(createLogger).mockReturnValue(logger);
-    vi.mocked(recordDocumentUploadAttempt).mockReturnValue(1);
+    vi.mocked(recordDocumentUploadAttempt).mockResolvedValue(1);
   });
 
   it('logs the attempt and the finished flow when every file uploads', async () => {
@@ -452,9 +452,9 @@ describe('upload telemetry', () => {
   });
 
   it('logs a warning with per-attempt and flow counts when a retry partly fails', async () => {
-    vi.mocked(recordDocumentUploadAttempt).mockReturnValue(2);
+    vi.mocked(recordDocumentUploadAttempt).mockResolvedValue(2);
     const uploadedDocument = { id: 'file-2', fileName: 'uploaded.pdf', fileSize: 8, documentType: 'receipt', status: 'uploaded' as const, uploadDate: '2026-11-01T05:30:00Z' };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: 1 });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument], uploadAttemptCount: 1 });
     const retryFile = new File(['retry'], 'retry.pdf');
     const newFile = new File(['new'], 'new.pdf');
     const files = {
@@ -511,7 +511,7 @@ describe('upload telemetry', () => {
 
   it('logs the finished flow with the recorded attempt count on an explicit finish', async () => {
     const uploadedDocument = { id: 'uploaded', fileName: 'uploaded.txt', documentType: 'receipt', fileSize: 8, status: 'uploaded' as const };
-    vi.mocked(loadDocumentUploadState).mockReturnValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument, { ...uploadedDocument, id: 'pending', status: 'pending' }], uploadAttemptCount: 3 });
+    vi.mocked(loadDocumentUploadState).mockResolvedValue({ id: uploadId, status: 'partial-upload', documents: [uploadedDocument, { ...uploadedDocument, id: 'pending', status: 'pending' }], uploadAttemptCount: 3 });
     const formData = new FormData();
     formData.set('_action', 'finish');
 

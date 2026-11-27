@@ -35,7 +35,7 @@ export { middleware } from '~/routes/protected/documents/upload/upload-submitted
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
 
-  const { documents } = loadDocumentUploadState({ id: params.id, params, session });
+  const { documents } = await loadDocumentUploadState({ id: params.id, params, session });
   const locale = getLocale(url);
   const t = await getFixedT(url, ['documents', 'gcweb']);
   // Receipts describe stored submissions, including types no longer available for new selections.

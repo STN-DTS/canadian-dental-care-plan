@@ -14,7 +14,7 @@ import type { Route } from './+types/upload-form';
  */
 const finishedUploadMiddleware: Route.MiddlewareFunction = async ({ context, params }, next) => {
   const { session } = context.get(appContext);
-  const uploadState = loadDocumentUploadState({ id: params.id, params, session });
+  const uploadState = await loadDocumentUploadState({ id: params.id, params, session });
 
   if (uploadState.status === 'finished') {
     throw replace(getDocumentUploadSubmittedUrl(uploadState.id, params));

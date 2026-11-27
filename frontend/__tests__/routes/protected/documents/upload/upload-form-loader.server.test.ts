@@ -41,9 +41,9 @@ const listAndSortLocalizedEvidentiaryDocumentTypesByStatus = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
   listAndSortLocalizedEvidentiaryDocumentTypesByStatus.mockResolvedValue(sortedDocumentTypes);
-  vi.mocked(loadDocumentUploadState).mockReturnValue(state);
-  vi.mocked(updateDocumentUploadState).mockReturnValue(emptyState);
-  vi.mocked(resetDocumentUploadState).mockReturnValue(emptyState);
+  vi.mocked(loadDocumentUploadState).mockResolvedValue(state);
+  vi.mocked(updateDocumentUploadState).mockResolvedValue(emptyState);
+  vi.mocked(resetDocumentUploadState).mockResolvedValue(emptyState);
   vi.mocked(getLocale).mockReturnValue('en');
   vi.mocked(getFixedT).mockResolvedValue(mockFn<Awaited<ReturnType<typeof getFixedT>>>().mockReturnValue('Upload documents'));
   vi.mocked(getUser).mockReturnValue(mock<ReturnType<typeof getUser>>({ id: 'user' }));

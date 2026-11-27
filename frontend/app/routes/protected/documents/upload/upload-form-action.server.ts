@@ -40,13 +40,13 @@ const source = 'server' as const;
  */
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const uploadState = loadDocumentUploadState({ id: params.id, session, params });
+  const uploadState = await loadDocumentUploadState({ id: params.id, session, params });
 
   const formData = await request.formData();
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.finish) {
-    return finishAction({ formAction, formData, params, session, uploadState });
+    return await finishAction({ formAction, formData, params, session, uploadState });
   }
 
   const locale = getLocale(url);
@@ -68,7 +68,7 @@ type FinishActionParams = {
  * @returns A redirect to the upload confirmation page.
  * @throws If the action is invalid, upload fields are present, or the flow cannot finish.
  */
-function finishAction({ formAction, formData, params, session, uploadState }: FinishActionParams) {
+async function finishAction({ formAction, formData, params, session, uploadState }: FinishActionParams) {
   if (formAction !== FORM_ACTION.finish) {
     throw new Error(`Invalid formAction: ${formAction}`);
   }
@@ -83,8 +83,8 @@ function finishAction({ formAction, formData, params, session, uploadState }: Fi
     throw data(null, { status: 409 });
   }
 
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: uploadedDocuments } });
-  finishDocumentUploadState({ id: uploadState.id, session, params });
+  await updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: uploadedDocuments } });
+  await finishDocumentUploadState({ id: uploadState.id, session, params });
   logFlowFinished({ attemptCount: uploadState.uploadAttemptCount ?? 0, flowId: uploadState.id, session, uploadedTotal: uploadedDocuments.length });
   return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }
@@ -151,7 +151,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     ...submittedDocuments.filter((document) => !existingIds.has(document.id)),
   ];
 
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents } });
+  await updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents } });
 
   const contentValidationResult = await validateDocumentContents(validationResult.data.files);
 
@@ -159,7 +159,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     return data({ formAction, source, responseType: 'content-validation-errors', errors: contentValidationResult.errors } as const, 400);
   }
 
-  const attemptNumber = recordDocumentUploadAttempt({ id: uploadState.id, session, params });
+  const attemptNumber = await recordDocumentUploadAttempt({ id: uploadState.id, session, params });
   const uploadResult = await uploadDocuments(validationResult.data.files);
 
   const processedDocuments = documents.map((document) => {
@@ -170,7 +170,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     return Object.assign({}, document, { status: 'uploaded' as const, uploadDate: uploadResult.uploadDates[document.id] });
   });
 
-  updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });
+  await updateDocumentUploadState({ id: uploadState.id, session, params, state: { documents: processedDocuments } });
 
   const uploadedTotal = processedDocuments.filter((document) => document.status === 'uploaded').length;
 
@@ -197,7 +197,7 @@ async function uploadAction({ formAction, formData, locale, params, session, t, 
     );
   }
 
-  finishDocumentUploadState({ id: uploadState.id, session, params });
+  await finishDocumentUploadState({ id: uploadState.id, session, params });
   logFlowFinished({ attemptCount: attemptNumber, flowId: uploadState.id, session, uploadedTotal });
   return replace(getDocumentUploadSubmittedUrl(uploadState.id, params));
 }

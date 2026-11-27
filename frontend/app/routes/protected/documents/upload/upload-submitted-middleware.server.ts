@@ -15,7 +15,7 @@ import type { Route } from './+types/upload-submitted';
  */
 const unfinishedUploadMiddleware: Route.MiddlewareFunction = async ({ context, params }, next) => {
   const { session } = context.get(appContext);
-  const uploadState = loadDocumentUploadState({ id: params.id, params, session });
+  const uploadState = await loadDocumentUploadState({ id: params.id, params, session });
 
   if (uploadState.status !== 'finished') {
     throw replace(getPathById('protected/documents/index', params));

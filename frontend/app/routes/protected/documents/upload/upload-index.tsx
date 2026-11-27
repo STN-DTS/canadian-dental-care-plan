@@ -10,8 +10,8 @@ import type { Route } from './+types/upload-index';
  * Loader function for initiating a new document upload and redirecting to
  * the upload form page that will perform a `history.replaceState`.
  */
-export function loader({ context, params }: Route.LoaderArgs) {
+export async function loader({ context, params }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const newUploadState = startDocumentUploadState({ id: generateId(), session });
+  const newUploadState = await startDocumentUploadState({ id: generateId(), session });
   return replace(getDocumentUploadFormUrl(newUploadState.id, params));
 }
