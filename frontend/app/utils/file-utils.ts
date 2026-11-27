@@ -1,11 +1,45 @@
 import { Option } from 'effect';
-import { fileTypeFromBlob } from 'file-type';
 import mime from 'mime';
 
 type IsFileContentTypeAllowedArgs = {
   readonly allowedExtensions: readonly string[];
   readonly file: File;
 };
+
+/**
+ * Binary formats whose `file-type` signatures are 2-3 printable ASCII characters
+ * (`"BM"` for BMP, `"GIF"` for GIF, `"MZ"` for Windows PE executables) and can
+ * false-positive on legitimate plain-text `.txt` files (e.g. `"BMO..."` or `"GIFT..."`).
+ *
+ * When validating a `.txt` file, these detections fall through to stricter header and
+ * plain-text byte checks instead of being rejected on prefix alone.
+ */
+const shortAsciiBinaryMimeTypes = new Set(['image/bmp', 'image/gif', 'application/x-msdownload']);
+
+/**
+ * Declared MIME essences accepted for plain-text `.txt` files.
+ *
+ * Browsers or OSes without a `.txt` MIME mapping may supply `""`, which multipart
+ * `FormData` serializes as `application/octet-stream` on the server. Actual file bytes
+ * are still verified as valid UTF-8 or Windows-1252 text without binary control
+ * characters, while explicit mismatched declared types (e.g. `application/pdf`,
+ * `text/html`) are rejected.
+ */
+const allowedPlainTextDeclaredMimeTypes = new Set(['', 'text/plain', 'application/octet-stream']);
+
+/**
+ * Undefined byte slots in Windows-1252.
+ *
+ * Used only as a fallback when a `.txt` file is not valid UTF-8 (for example, French
+ * documents saved as Windows-1252 / ANSI from Microsoft Word or legacy Notepad).
+ * Valid UTF-8 is checked first because these byte values can appear as UTF-8 continuation bytes.
+ */
+const undefinedWindows1252Bytes = new Set([0x81, 0x8d, 0x8f, 0x90, 0x9d]);
+
+/**
+ * Reusable fatal UTF-8 decoder for verifying plain-text byte payloads.
+ */
+const utf8FatalDecoder = new TextDecoder('utf-8', { fatal: true });
 
 /**
  * EICAR test string used for antivirus testing.
@@ -125,9 +159,17 @@ function findDuplicateByHash(hashedFiles: ReadonlyArray<HashedFile>): File | und
  * Validates that a file's detected content matches the MIME type of its own allowed extension.
  *
  * The file extension must appear in `allowedExtensions`, and any detected MIME type must
- * equal the MIME type registered for that extension. When signature detection returns no
- * type, the file is allowed only when its extension maps to `text/plain` and its declared
- * MIME type is `text/plain`.
+ * equal the MIME type registered for that extension.
+ *
+ * Plain-text extensions (`text/plain`) have no magic-byte header, so they are validated by:
+ * 1. Rejecting any non-colliding signature detected by `file-type` (e.g. PDF, PNG, RTF, ICS,
+ *    XML, ELF, Mach-O) as well as genuine `GIF87a`/`GIF89a` headers.
+ * 2. Allowing short ASCII-prefix false positives (`"BM"`, `"GIF"`, `"MZ"`) and undetected
+ *    files to pass only when the declared MIME essence is compatible and the raw bytes are
+ *    valid UTF-8 or Windows-1252 text without NUL or non-whitespace binary control characters.
+ *
+ * `file-type` is dynamically imported so `file-utils` (shared with `env-utils` in the root
+ * client bundle) does not pull the binary-signature parser into non-upload routes.
  *
  * @param args - Allowed extensions and file to inspect
  * @returns Whether the content matches the expected MIME type for the file's allowed extension
@@ -142,15 +184,78 @@ export async function isFileContentTypeAllowed({ allowedExtensions, file }: IsFi
   }
 
   const expectedMimeType = getMimeType(fileExtension);
+  const { fileTypeFromBlob } = await import('file-type');
   const detectedFileType = await fileTypeFromBlob(file);
 
-  // Plain text has no detectable signature, so fall back to its declared MIME type only for plain-text extensions.
-  if (!detectedFileType) {
-    const declaredMimeType = file.type.split(';')[0]?.trim().toLowerCase();
-    return expectedMimeType === 'text/plain' && declaredMimeType === 'text/plain';
+  if (expectedMimeType === 'text/plain') {
+    return await isValidPlainTextContent(file, detectedFileType?.mime);
   }
 
-  return detectedFileType.mime === expectedMimeType;
+  return detectedFileType?.mime === expectedMimeType;
+}
+
+/**
+ * Verifies that a `.txt` candidate is genuinely plain text (UTF-8 or Windows-1252) rather
+ * than a mislabeled binary or structured file.
+ *
+ * Rejects any `file-type` detection other than the short ASCII binary prefixes (`"BM"`,
+ * `"GIF"`, `"MZ"`), rejects genuine `GIF87a`/`GIF89a` headers, rejects incompatible explicit
+ * declared MIME types, and requires valid UTF-8 or Windows-1252 bytes without NUL or binary
+ * control bytes.
+ */
+async function isValidPlainTextContent(file: File, detectedMimeType?: string): Promise<boolean> {
+  if (detectedMimeType !== undefined && !shortAsciiBinaryMimeTypes.has(detectedMimeType)) {
+    return false;
+  }
+
+  const declaredMimeType = file.type.split(';')[0]?.trim().toLowerCase() ?? '';
+
+  if (!allowedPlainTextDeclaredMimeTypes.has(declaredMimeType)) {
+    return false;
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  if (detectedMimeType === 'image/gif' && hasGifVersionHeader(bytes)) {
+    return false;
+  }
+
+  return isValidPlainTextBytes(bytes);
+}
+
+/**
+ * Checks whether bytes begin with a genuine GIF87a or GIF89a header (after an optional UTF-8 BOM).
+ */
+function hasGifVersionHeader(bytes: Uint8Array): boolean {
+  const offset = bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? 3 : 0;
+
+  if (bytes.length < offset + 6) {
+    return false;
+  }
+
+  const prefix = String.fromCharCode(bytes[offset]!, bytes[offset + 1]!, bytes[offset + 2]!, bytes[offset + 3]!, bytes[offset + 4]!, bytes[offset + 5]!);
+
+  return prefix === 'GIF87a' || prefix === 'GIF89a';
+}
+
+/**
+ * Checks that raw bytes contain no NUL or non-whitespace binary control characters
+ * (allowing tab, LF, CR, and printable characters) and decode as valid UTF-8 or
+ * Windows-1252 / ISO-8859-1 text (supporting French documents saved from Windows tools).
+ */
+function isValidPlainTextBytes(bytes: Uint8Array): boolean {
+  for (const byte of bytes) {
+    if ((byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d) || byte === 0x7f) {
+      return false;
+    }
+  }
+
+  try {
+    utf8FatalDecoder.decode(bytes);
+    return true;
+  } catch {
+    return bytes.every((byte) => !undefinedWindows1252Bytes.has(byte));
+  }
 }
 
 /**

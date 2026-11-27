@@ -80,7 +80,10 @@ describe('clientAction', () => {
     expect(validateUploadedFileContents).not.toHaveBeenCalled();
   });
 
-  it.each(['en', 'fr'] as const)('rejects mismatched file contents in %s without calling the server action', async (locale) => {
+  it.each([
+    { locale: 'en' as const, expectedTypeName: 'PDF document' },
+    { locale: 'fr' as const, expectedTypeName: 'Document PDF' },
+  ])('rejects mismatched file contents in $locale without calling the server action', async ({ locale, expectedTypeName }) => {
     const { validateUploadedFileContents: validateUploadedFileContentsActual } = await vi.importActual<{
       validateUploadedFileContents: typeof validateUploadedFileContents;
     }>('~/route-helpers/protected-documents-upload-helpers');
@@ -110,7 +113,17 @@ describe('clientAction', () => {
                   errors: [],
                   properties: {
                     file: {
-                      errors: [expect.anything()],
+                      errors: [
+                        JSON.stringify({
+                          key: 'upload.errorMessage.invalidFileContent',
+                          options: {
+                            context: 'submit',
+                            filename: 'document.pdf',
+                            fileTypeName: expectedTypeName,
+                            fileExtension: '.pdf',
+                          },
+                        }),
+                      ],
                     },
                   },
                 },

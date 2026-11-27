@@ -142,6 +142,17 @@ for (const scenario of [
   });
 }
 
+test('server content validation rejects the entire batch before uploading any valid file', async ({ uploadApi }) => {
+  const truncatedPng = { ...documentFile('truncated.png', '', 'image/png'), buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) };
+  const { response, values } = await uploadApi.postData([...validFields, ['file_id', 'second'], ['file_object', truncatedPng], ['file_document_type', 'invalid-type-id']]);
+  expect(response.status()).toBe(400);
+  expect(values).toContain('The file "truncated.png" appears to be saved in the wrong format. Save the file as a PNG image (.png) and upload it again.');
+
+  // Because content validation stopped the entire batch before EWDU upload, no file was marked uploaded.
+  const finishResponse = await uploadApi.post([['_action', 'finish']]);
+  expect(finishResponse.status()).toBe(409);
+});
+
 test.describe('French server-bypass content validation', () => {
   test.use({ uploadLocale: 'fr' });
 

@@ -47,15 +47,16 @@ switching accounts or testing ineligible users.
 
 Use harmless files with fictional content. Prepare:
 
-| File                                                          | Use                                   |
-| ------------------------------------------------------------- | ------------------------------------- |
-| A small, genuine PDF                                          | Test one successful file              |
-| A small, genuine image                                        | Test another supported format         |
-| Several different valid files                                 | Test multiple selection               |
-| A valid file larger than the displayed limit                  | Test size validation                  |
-| A harmless file with an unsupported extension, such as `.csv` | Test format validation                |
-| A plain-text file named exactly `mock-upload-failure.txt`     | Test a repeatable mock upload failure |
-| An unchanged copy of a selected file                          | Test duplicate detection              |
+| File                                                          | Use                                     |
+| ------------------------------------------------------------- | --------------------------------------- |
+| A small, genuine PDF                                          | Test one successful file                |
+| A small, genuine image                                        | Test another supported format           |
+| Several different valid files                                 | Test multiple selection                 |
+| A valid file larger than the displayed limit                  | Test size validation                    |
+| A harmless file with an unsupported extension, such as `.csv` | Test extension validation               |
+| A plain-text or image file renamed to `.pdf` (wrong format)   | Test content-mismatch format validation |
+| A plain-text file named exactly `mock-upload-failure.txt`     | Test a repeatable mock upload failure   |
+| An unchanged copy of a selected file                          | Test duplicate detection                |
 
 For the failure test, ordinary text such as `Fictional upload test` is enough.
 Check the full filename. It must be `mock-upload-failure.txt`, not
@@ -128,16 +129,17 @@ Check where keyboard focus goes after each addition and removal.
 Try each case from a fresh form, or keep one valid file selected to check that
 an error does not discard other work:
 
-| Case                          | Do this                                                          | You should see                                               |
-| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| Empty selection               | Select **Submit** with no files.                                 | A message says a file is required.                           |
-| Missing type                  | Add a valid file, leave its type unselected, then submit.        | An error identifies the file that needs a type.              |
-| Unsupported extension         | Try the harmless unsupported file.                               | The selection is rejected and the format guidance appears.   |
-| Oversized file                | Try a file larger than the displayed per-file limit.             | The selection is rejected and the size guidance appears.     |
-| File count                    | Fill the displayed limit, then try to add another distinct file. | The additional selection is rejected. Existing files remain. |
-| Exact duplicate               | Add the same unchanged file twice.                               | The second selection is rejected as a duplicate.             |
-| Same contents, different name | Try the same contents under a different name.                    | Matching contents alone do not make it a duplicate.          |
-| Same name, different contents | Try different contents with the same name.                       | Matching names alone do not make it a duplicate.             |
+| Case                          | Do this                                                          | You should see                                                                                |
+| ----------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Empty selection               | Select **Submit** with no files.                                 | A message says a file is required.                                                            |
+| Missing type                  | Add a valid file, leave its type unselected, then submit.        | An error identifies the file that needs a type.                                               |
+| Unsupported extension         | Try the harmless unsupported file.                               | The selection is rejected and the supported-extensions guidance appears.                      |
+| Wrong file format (renamed)   | Try a plain-text or image file renamed to `.pdf`.                | The selection is rejected immediately with the localized format guidance naming PDF (`.pdf`). |
+| Oversized file                | Try a file larger than the displayed per-file limit.             | The selection is rejected and the size guidance appears.                                      |
+| File count                    | Fill the displayed limit, then try to add another distinct file. | The additional selection is rejected. Existing files remain.                                  |
+| Exact duplicate               | Add the same unchanged file twice.                               | The second selection is rejected as a duplicate.                                              |
+| Same contents, different name | Try the same contents under a different name.                    | Matching contents alone do not make it a duplicate.                                           |
+| Same name, different contents | Try different contents with the same name.                       | Matching names alone do not make it a duplicate.                                              |
 
 A duplicate requires the same filename, size, and contents. Correct the reported
 problem and check that you can continue without redoing unrelated work. Empty
