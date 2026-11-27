@@ -42,7 +42,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultStateForReview({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const t = await getFixedT(url, ['applicationSimplifiedAdult', 'gcweb']);
@@ -69,15 +69,15 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultStateForReview({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const formData = await request.formData();
   const t = await getFixedT(url, 'applicationSimplifiedAdult');
 
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
-  await securityHandler.validateHCaptchaResponse({ formData, request }, () => {
-    clearPublicApplicationState({ params, session });
+  await securityHandler.validateHCaptchaResponse({ formData, request }, async () => {
+    await clearPublicApplicationState({ params, session });
     throw redirect(getPathById('public/unable-to-process-request', params));
   });
 
@@ -102,7 +102,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const benefitApplicationDto = appContainer.get(TYPES.BenefitRenewalStateMapper).mapBenefitRenewalAdultStateToBenefitRenewalDto(state);
   const confirmationCode = await appContainer.get(TYPES.BenefitRenewalService).createPublicBenefitRenewal(benefitApplicationDto);
   const submissionInfo = { confirmationCode, submittedOn: Temporal.Now.instant().toString() };
-  savePublicApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
+  await savePublicApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
 
   return redirect(getPathById('public/application/$id/simplified-adult/confirmation', params));
 }

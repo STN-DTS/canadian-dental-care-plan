@@ -53,7 +53,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family']);
 
   const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
@@ -72,7 +72,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family']);
 
   const formData = await request.formData();
@@ -158,7 +158,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     );
   }
 
-  savePublicApplicationState({
+  await savePublicApplicationState({
     params,
     session,
     state: {

@@ -25,7 +25,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
 
   const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
@@ -37,12 +37,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family']);
 
   const t = await getFixedT(url, 'applicationSpokes');
 
-  clearPublicApplicationState({ params, session });
+  await clearPublicApplicationState({ params, session });
 
   return redirect(t(($) => $.dentalInsuranceExitApplication.exitLink));
 }

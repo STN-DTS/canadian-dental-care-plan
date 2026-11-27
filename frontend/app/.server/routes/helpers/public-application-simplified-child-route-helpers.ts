@@ -28,10 +28,10 @@ interface LoadPublicApplicationSimplifiedChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function loadPublicApplicationSimplifiedChildState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateArgs): PublicApplicationRenewalChildState {
+export async function loadPublicApplicationSimplifiedChildState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateArgs): Promise<PublicApplicationRenewalChildState> {
   const log = createLogger('public-application-simplified-child-route-helpers/loadPublicApplicationSimplifiedChildState');
   const { pathname } = requestUrl;
-  const applicationState = getPublicApplicationState({ params, session });
+  const applicationState = await getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'simplified' || applicationState.typeOfApplication !== 'children') {
     throw redirect(getPathById('public/application/$id/type-application', params));
@@ -71,8 +71,8 @@ interface LoadPublicApplicationSimplifiedChildStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated child state.
  */
-export function loadPublicApplicationSimplifiedChildStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateForReviewArgs) {
-  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl, session });
+export async function loadPublicApplicationSimplifiedChildStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedChildStateForReviewArgs) {
+  const state = await loadPublicApplicationSimplifiedChildState({ params, requestUrl, session });
   return validatePublicApplicationSimplifiedChildStateForReview({ params, state });
 }
 

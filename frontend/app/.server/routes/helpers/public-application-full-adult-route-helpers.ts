@@ -23,10 +23,10 @@ interface LoadPublicApplicationFullAdultStateArgs {
  * @param args - The arguments.
  * @returns The loaded adult state.
  */
-export function loadPublicApplicationFullAdultState({ params, requestUrl, session }: LoadPublicApplicationFullAdultStateArgs) {
+export async function loadPublicApplicationFullAdultState({ params, requestUrl, session }: LoadPublicApplicationFullAdultStateArgs) {
   const log = createLogger('public-application-full-adult-route-helpers/loadPublicApplicationFullAdultState');
   const { pathname } = requestUrl;
-  const applicationState = getPublicApplicationState({ params, session });
+  const applicationState = await getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'full' || applicationState.typeOfApplication !== 'adult') {
     throw redirect(getPathById('public/application/$id/type-application', params));
@@ -72,8 +72,8 @@ interface LoadPublicApplicationFullAdultStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated adult state.
  */
-export function loadPublicApplicationFullAdultStateForReview({ params, requestUrl, session }: LoadPublicApplicationFullAdultStateForReviewArgs) {
-  const state = loadPublicApplicationFullAdultState({ params, requestUrl, session });
+export async function loadPublicApplicationFullAdultStateForReview({ params, requestUrl, session }: LoadPublicApplicationFullAdultStateForReviewArgs) {
+  const state = await loadPublicApplicationFullAdultState({ params, requestUrl, session });
   return validatePublicApplicationFullAdultStateForReview({ params, state });
 }
 

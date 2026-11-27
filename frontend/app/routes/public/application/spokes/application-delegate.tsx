@@ -38,7 +38,7 @@ export async function action({ context, params, url }: Route.ActionArgs) {
 
   const t = await getFixedT(url, 'applicationSpokes');
 
-  clearPublicApplicationState({ params, session });
+  await clearPublicApplicationState({ params, session });
 
   return redirect(t(($) => $.applicationDelegate.exitBtnLink));
 }

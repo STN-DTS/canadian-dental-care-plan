@@ -34,7 +34,7 @@ export async function loader({ context, url }: Route.LoaderArgs) {
   const currentDate = getCurrentDateString(locale);
   const applicationYearService = appContainer.get(TYPES.ApplicationYearService);
   const applicationYear = applicationYearService.getIntakeApplicationYear(currentDate);
-  const state = startApplicationState({ session, applicationYear });
+  const state = await startApplicationState({ session, applicationYear });
 
   const meta = { title: t(($) => $.meta.title.template, { ns: 'gcweb', title: t(($) => $.index.pageTitle) }) };
 

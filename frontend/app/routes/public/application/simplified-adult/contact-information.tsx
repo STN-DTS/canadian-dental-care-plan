@@ -45,7 +45,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const t = await getFixedT(url, ['applicationSimplifiedAdult', 'gcweb']);
@@ -121,7 +121,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const formData = await request.formData();
@@ -129,7 +129,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === FORM_ACTION.PHONE_NUMBER_NOT_CHANGED) {
-    savePublicApplicationState({
+    await savePublicApplicationState({
       params,
       session,
       state: {
@@ -139,7 +139,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   if (formAction === FORM_ACTION.ADDRESS_NOT_CHANGED) {
-    savePublicApplicationState({
+    await savePublicApplicationState({
       params,
       session,
       state: {
@@ -150,7 +150,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   if (formAction === FORM_ACTION.COMMUNICATION_PREFERENCES_NOT_CHANGED) {
-    savePublicApplicationState({
+    await savePublicApplicationState({
       params,
       session,
       state: {

@@ -23,10 +23,10 @@ interface LoadPublicApplicationFullFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded public application family state.
  */
-export function loadPublicApplicationFullFamilyState({ params, requestUrl, session }: LoadPublicApplicationFullFamilyStateArgs) {
+export async function loadPublicApplicationFullFamilyState({ params, requestUrl, session }: LoadPublicApplicationFullFamilyStateArgs) {
   const log = createLogger('public-application-full-family-route-helpers/loadPublicApplicationFullFamilyState');
   const { pathname } = requestUrl;
-  const applicationState = getPublicApplicationState({ params, session });
+  const applicationState = await getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'full' || applicationState.typeOfApplication !== 'family') {
     throw redirect(getPathById('public/application/$id/type-application', params));
@@ -64,8 +64,8 @@ interface LoadPublicApplicationFullFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadPublicApplicationFullFamilyStateForReview({ params, requestUrl, session }: LoadPublicApplicationFullFamilyStateForReviewArgs) {
-  const state = loadPublicApplicationFullFamilyState({ params, requestUrl, session });
+export async function loadPublicApplicationFullFamilyStateForReview({ params, requestUrl, session }: LoadPublicApplicationFullFamilyStateForReviewArgs) {
+  const state = await loadPublicApplicationFullFamilyState({ params, requestUrl, session });
   return validatePublicApplicationFamilyStateForReview({ params, state });
 }
 

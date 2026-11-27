@@ -45,7 +45,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
 
   const meta = {
@@ -62,7 +62,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { appContainer, session } = context.get(appContext);
   const formData = await request.formData();
 
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   const t = await getFixedT(url, 'applicationSpokes');
   const locale = getLocale(url);
   const { RENEWAL_PERIOD_END_DATE, TIME_ZONE } = appContainer.get(TYPES.ServerConfig);
@@ -232,7 +232,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     inputModel = clientApplication.inputModel;
   }
 
-  savePublicApplicationState({
+  await savePublicApplicationState({
     params,
     session,
     state: {

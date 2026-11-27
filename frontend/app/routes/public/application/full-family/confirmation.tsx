@@ -38,7 +38,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationFullFamilyState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationFullFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-family']);
 
   const t = await getFixedT(url, ['applicationFullFamily', 'gcweb']);
@@ -133,12 +133,12 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = loadPublicApplicationFullFamilyState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationFullFamilyState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-family']);
 
   const t = await getFixedT(url, 'applicationFullFamily');
 
-  clearPublicApplicationState({ params, session });
+  await clearPublicApplicationState({ params, session });
 
   return redirect(t(($) => $.confirm.exitLink));
 }

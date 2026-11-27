@@ -27,7 +27,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const childState = getSingleChildState({ params, session });
+  const childState = await getSingleChildState({ params, session });
   const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
 
   const meta = {
@@ -50,7 +50,7 @@ export async function action({ context, params, url }: Route.ActionArgs) {
 
   const t = await getFixedT(url, 'applicationSpokes');
 
-  clearPublicApplicationState({ params, session });
+  await clearPublicApplicationState({ params, session });
 
   return redirect(t(($) => $.children.cannotApplyChild.exitBtnLink));
 }

@@ -33,7 +33,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   const t = await getFixedT(url, ['applicationSpokes', 'gcweb']);
 
   const meta = {
@@ -47,7 +47,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const { session } = context.get(appContext);
   const formData = await request.formData();
 
-  getPublicApplicationState({ params, session });
+  await getPublicApplicationState({ params, session });
   const t = await getFixedT(url, 'applicationSpokes');
 
   /**
@@ -65,7 +65,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     return data({ errors: transformFlattenedError(z.flattenError(parsedDataResult.error)) }, { status: 400 });
   }
 
-  savePublicApplicationState({ params, session, state: { typeOfApplication: parsedDataResult.data.typeOfApplication } });
+  await savePublicApplicationState({ params, session, state: { typeOfApplication: parsedDataResult.data.typeOfApplication } });
 
   if (parsedDataResult.data.typeOfApplication === APPLICANT_TYPE.delegate) {
     return redirect(getPathById('public/application/$id/application-delegate', params));

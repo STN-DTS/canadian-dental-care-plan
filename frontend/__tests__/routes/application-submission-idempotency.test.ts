@@ -113,12 +113,12 @@ const benefitRequest = {
 } as const satisfies BenefitApplicationRequestEntity & BenefitRenewalRequestEntity;
 
 function setReviewState(id: string, context: 'intake' | 'renewal') {
-  vi.mocked(loadPublicApplicationFullAdultStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationFullAdultStateForReview>>({ id, context }));
-  vi.mocked(loadPublicApplicationFullChildStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationFullChildStateForReview>>({ id, context }));
-  vi.mocked(loadPublicApplicationFullFamilyStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationFullFamilyStateForReview>>({ id, context }));
-  vi.mocked(loadPublicApplicationSimplifiedAdultStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationSimplifiedAdultStateForReview>>({ id, context: 'renewal' }));
-  vi.mocked(loadPublicApplicationSimplifiedChildStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationSimplifiedChildStateForReview>>({ id, context: 'renewal' }));
-  vi.mocked(loadPublicApplicationSimplifiedFamilyStateForReview).mockReturnValue(mock<ReturnType<typeof loadPublicApplicationSimplifiedFamilyStateForReview>>({ id, context: 'renewal' }));
+  vi.mocked(loadPublicApplicationFullAdultStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationFullAdultStateForReview>>>({ id, context }));
+  vi.mocked(loadPublicApplicationFullChildStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationFullChildStateForReview>>>({ id, context }));
+  vi.mocked(loadPublicApplicationFullFamilyStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationFullFamilyStateForReview>>>({ id, context }));
+  vi.mocked(loadPublicApplicationSimplifiedAdultStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationSimplifiedAdultStateForReview>>>({ id, context: 'renewal' }));
+  vi.mocked(loadPublicApplicationSimplifiedChildStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationSimplifiedChildStateForReview>>>({ id, context: 'renewal' }));
+  vi.mocked(loadPublicApplicationSimplifiedFamilyStateForReview).mockResolvedValue(mock<Awaited<ReturnType<typeof loadPublicApplicationSimplifiedFamilyStateForReview>>>({ id, context: 'renewal' }));
   vi.mocked(loadProtectedApplicationIntakeAdultStateForReview).mockReturnValue(mock<ReturnType<typeof loadProtectedApplicationIntakeAdultStateForReview>>({ id, context: 'intake' }));
   vi.mocked(loadProtectedApplicationIntakeChildStateForReview).mockReturnValue(mock<ReturnType<typeof loadProtectedApplicationIntakeChildStateForReview>>({ id, context: 'intake' }));
   vi.mocked(loadProtectedApplicationIntakeFamilyStateForReview).mockReturnValue(mock<ReturnType<typeof loadProtectedApplicationIntakeFamilyStateForReview>>({ id, context: 'intake' }));

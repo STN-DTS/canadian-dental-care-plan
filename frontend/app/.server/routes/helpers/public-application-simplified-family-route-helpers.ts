@@ -28,10 +28,10 @@ interface LoadPublicApplicationSimplifiedFamilyStateArgs {
  * @param args - The arguments.
  * @returns The loaded public simplified family state.
  */
-export function loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateArgs) {
+export async function loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateArgs) {
   const log = createLogger('public-application-simplified-family-route-helpers/loadPublicApplicationSimplifiedFamilyState');
   const { pathname } = requestUrl;
-  const applicationState = getPublicApplicationState({ params, session });
+  const applicationState = await getPublicApplicationState({ params, session });
 
   if (applicationState.inputModel !== 'simplified' || applicationState.typeOfApplication !== 'family') {
     throw redirect(getPathById('public/application/$id/type-application', params));
@@ -71,8 +71,8 @@ interface LoadPublicApplicationSimplifiedFamilyStateForReviewArgs {
  * @param args - The arguments.
  * @returns The validated family state.
  */
-export function loadPublicApplicationSimplifiedFamilyStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateForReviewArgs) {
-  const state = loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session });
+export async function loadPublicApplicationSimplifiedFamilyStateForReview({ params, requestUrl, session }: LoadPublicApplicationSimplifiedFamilyStateForReviewArgs) {
+  const state = await loadPublicApplicationSimplifiedFamilyState({ params, requestUrl, session });
   return validatePublicApplicationFamilyStateForReview({ params, state });
 }
 

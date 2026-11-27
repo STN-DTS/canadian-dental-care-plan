@@ -62,7 +62,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family', 'simplified-children']);
 
   invariant(state.email, 'Expected state.email to be defined');
@@ -81,7 +81,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = getPublicApplicationState({ params, session });
+  const state = await getPublicApplicationState({ params, session });
   validateApplicationFlow(state, params, ['full-adult', 'full-children', 'full-family', 'simplified-adult', 'simplified-family', 'simplified-children']);
 
   const formData = await request.formData();
@@ -99,7 +99,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   if (formAction === FORM_ACTION.request) {
     const verificationCode = verificationCodeService.createVerificationCode();
 
-    savePublicApplicationState({
+    await savePublicApplicationState({
       params,
       session,
       state: {
@@ -155,7 +155,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     if (state.verifyEmail && state.verifyEmail.verificationCode !== parsedDataResult.data.verificationCode) {
       const verificationAttempts = state.verifyEmail.verificationAttempts + 1;
 
-      savePublicApplicationState({
+      await savePublicApplicationState({
         params,
         session,
         state: {
@@ -170,7 +170,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     }
 
     if (state.verifyEmail) {
-      savePublicApplicationState({
+      await savePublicApplicationState({
         params,
         session,
         state: {

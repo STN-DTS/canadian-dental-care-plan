@@ -43,7 +43,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-children']);
 
   const t = await getFixedT(url, ['applicationSimplifiedChild', 'gcweb']);
@@ -105,7 +105,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedChildState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-children']);
 
   const formData = await request.formData();
@@ -116,7 +116,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
     const childId = generateId();
     const children = [...state.children, { id: childId }];
 
-    savePublicApplicationState({
+    await savePublicApplicationState({
       params,
       session,
       state: {
@@ -129,13 +129,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
 
   if (formAction === FORM_ACTION.remove) {
     const removeChildId = String(formData.get('childId'));
-    const { removedIndex, childNumber, childName } = removeChildState({ params, session, childId: removeChildId });
+    const { removedIndex, childNumber, childName } = await removeChildState({ params, session, childId: removeChildId });
 
     return { operation: FORM_ACTION.remove, childNumber, childName, removedIndex };
   }
 
   const childId = formData.get('childId');
-  savePublicApplicationState({
+  await savePublicApplicationState({
     params,
     session,
     state: {

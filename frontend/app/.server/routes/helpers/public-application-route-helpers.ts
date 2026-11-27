@@ -4,6 +4,7 @@ import type { Params } from 'react-router';
 import { ATTR_URL_PATH } from '@opentelemetry/semantic-conventions';
 // session.id is currently an incubating OpenTelemetry convention.
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import { Option } from 'effect';
 import type { ArrayElement, PickDeep, ReadonlyDeep } from 'type-fest';
 
 import type { ClientApplicationRenewalEligibleDto } from '~/.server/domain/dtos';
@@ -29,6 +30,7 @@ import type {
   BaseApplicationYearState,
 } from '~/.server/routes/helpers/base-application-route-helpers';
 import { getAgeCategoryFromAge, getAgeCategoryReferenceDate } from '~/.server/routes/helpers/base-application-route-helpers';
+import { deletePublicApplicationState, findPublicApplicationState, setPublicApplicationState } from '~/.server/routes/helpers/public-application-state-storage';
 import { getEnv } from '~/.server/utils/env-utils';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { getLocaleFromParams } from '~/.server/utils/locale-utils';
@@ -116,11 +118,11 @@ interface LoadStateArgs {
  * @param args - The arguments.
  * @returns The public application state.
  */
-export function getPublicApplicationState(args: LoadStateArgs): PublicApplicationState {
-  return getPublicApplicationStateInternal(args);
+export async function getPublicApplicationState(args: LoadStateArgs): Promise<PublicApplicationState> {
+  return await getPublicApplicationStateInternal(args);
 }
 
-function getPublicApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): PublicApplicationState {
+async function getPublicApplicationStateInternal({ params, session, allowExpired = false }: LoadStateArgs & { allowExpired?: boolean }): Promise<PublicApplicationState> {
   const log = createLogger('public-application-route-helpers/loadApplicationState');
   const locale = getLocaleFromParams(params);
   const cdcpWebsiteApplicationUrl = getCdcpWebsiteApplyUrl(locale);
@@ -132,7 +134,9 @@ function getPublicApplicationStateInternal({ params, session, allowExpired = fal
 
   const sessionKey = getSessionKey(params.id);
 
-  if (!session.has(sessionKey)) {
+  const stateOption = await findPublicApplicationState(session, params.id);
+
+  if (Option.isNone(stateOption)) {
     countApplicationStateOutcome('public', 'missing');
     log.debug('Application session state not found; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -141,7 +145,7 @@ function getPublicApplicationStateInternal({ params, session, allowExpired = fal
     throw redirectDocument(cdcpWebsiteApplicationUrl);
   }
 
-  const state = session.get(sessionKey);
+  const state = stateOption.value;
 
   // Checks if the elapsed time since the last update exceeds the configured session expiry,
   // and performs necessary actions if it does.
@@ -150,7 +154,7 @@ function getPublicApplicationStateInternal({ params, session, allowExpired = fal
   const now = Temporal.Now.instant();
 
   if (!allowExpired && Temporal.Instant.compare(now, lastUpdatedOn.add({ seconds: SESSION_EXPIRES_SECONDS })) >= 0) {
-    session.unset(sessionKey);
+    await deletePublicApplicationState(session, params.id);
     countApplicationStateOutcome('public', 'expired');
     log.debug('Application session state expired; redirecting to CDCP application website', {
       [ATTR_CDCP_SESSION_KEY]: sessionKey,
@@ -184,10 +188,10 @@ interface SavePublicApplicationStateArgs {
  * @param args - The arguments.
  * @returns The new public application state.
  */
-export function savePublicApplicationState({ params, session, state }: SavePublicApplicationStateArgs): PublicApplicationState {
+export async function savePublicApplicationState({ params, session, state }: SavePublicApplicationStateArgs): Promise<PublicApplicationState> {
   const log = createLogger('public-application-route-helpers/saveApplicationState');
   // Preserve submissionInfo even if the external submission call crossed the expiry boundary.
-  const currentState = getPublicApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
+  const currentState = await getPublicApplicationStateInternal({ params, session, allowExpired: state.submissionInfo !== undefined });
 
   const newState = {
     ...currentState,
@@ -197,7 +201,7 @@ export function savePublicApplicationState({ params, session, state }: SavePubli
   } satisfies PublicApplicationState;
 
   const sessionkey = getSessionKey(currentState.id);
-  session.set(sessionkey, newState);
+  await setPublicApplicationState(session, currentState.id, newState);
   log.debug('Application session state saved', {
     [ATTR_CDCP_SESSION_KEY]: sessionkey,
     [ATTR_SESSION_ID]: session.id,
@@ -214,12 +218,12 @@ interface ClearStateArgs {
  * Clears public application state.
  * @param args - The arguments.
  */
-export function clearPublicApplicationState({ params, session }: ClearStateArgs): void {
+export async function clearPublicApplicationState({ params, session }: ClearStateArgs): Promise<void> {
   const log = createLogger('public-application-route-helpers/clearApplicationState');
-  const { id } = getPublicApplicationState({ params, session });
+  const { id } = await getPublicApplicationState({ params, session });
 
   const sessionKey = getSessionKey(id);
-  session.unset(sessionKey);
+  await deletePublicApplicationState(session, id);
   log.debug('Application session state cleared', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
 }
 
@@ -233,7 +237,7 @@ interface StartArgs {
  * @param args - The arguments.
  * @returns The initial application state.
  */
-export function startApplicationState({ applicationYear, session }: StartArgs): PublicApplicationState {
+export async function startApplicationState({ applicationYear, session }: StartArgs): Promise<PublicApplicationState> {
   const log = createLogger('public-application-route-helpers/startApplicationState');
 
   const id = generateId();
@@ -247,7 +251,7 @@ export function startApplicationState({ applicationYear, session }: StartArgs): 
   };
 
   const sessionKey = getSessionKey(initialState.id);
-  session.set(sessionKey, initialState);
+  await setPublicApplicationState(session, initialState.id, initialState);
   log.debug('Application session state started', { [ATTR_CDCP_SESSION_KEY]: sessionKey, [ATTR_SESSION_ID]: session.id });
   return initialState;
 }
@@ -420,9 +424,9 @@ interface getSingleChildStateArgs {
  * @param args - The arguments.
  * @returns The loaded child state.
  */
-export function getSingleChildState({ params, session }: getSingleChildStateArgs) {
+export async function getSingleChildState({ params, session }: getSingleChildStateArgs) {
   const log = createLogger('public-application-route-helpers/publicApplicationSingleChildState');
-  const applicationState = getPublicApplicationState({ params, session });
+  const applicationState = await getPublicApplicationState({ params, session });
   const childId = params.childId;
   const childState = applicationState.children.find(({ id }) => id === childId);
 
@@ -457,14 +461,14 @@ interface RemoveChildStateArgs {
  * @param args - The arguments.
  * @returns Metadata about the removed child: its zero-based index, one-based number, and derived full name (if available).
  */
-export function removeChildState({ params, session, childId }: RemoveChildStateArgs) {
-  const applicationState = getPublicApplicationState({ params, session });
+export async function removeChildState({ params, session, childId }: RemoveChildStateArgs) {
+  const applicationState = await getPublicApplicationState({ params, session });
   const removedIndex = applicationState.children.findIndex((child) => child.id === childId);
   const removedChild = applicationState.children[removedIndex];
   const childName = removedChild?.information ? `${removedChild.information.firstName} ${removedChild.information.lastName}` : undefined;
   const children = applicationState.children.filter((child) => child.id !== childId);
 
-  savePublicApplicationState({ params, session, state: { children } });
+  await savePublicApplicationState({ params, session, state: { children } });
 
   return { removedIndex, childNumber: removedIndex + 1, childName };
 }

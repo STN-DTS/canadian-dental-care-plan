@@ -42,7 +42,7 @@ export const meta: Route.MetaFunction = mergeMeta(({ loaderData }) => getTitleMe
 
 export async function loader({ context, params, url }: Route.LoaderArgs) {
   const { appContainer, session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const t = await getFixedT(url, ['applicationSimplifiedAdult', 'gcweb']);
@@ -117,7 +117,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
 
 export async function action({ context, params, request, url }: Route.ActionArgs) {
   const { session } = context.get(appContext);
-  const state = loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
+  const state = await loadPublicApplicationSimplifiedAdultState({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['simplified-adult']);
 
   const formData = await request.formData();
@@ -125,7 +125,7 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   const formAction = z.enum(FORM_ACTION).parse(formData.get('_action'));
 
   if (formAction === (FORM_ACTION.DENTAL_BENEFITS_NOT_CHANGED as string)) {
-    savePublicApplicationState({ params, session, state: { dentalBenefits: { hasChanged: false, value: undefined } } });
+    await savePublicApplicationState({ params, session, state: { dentalBenefits: { hasChanged: false, value: undefined } } });
   }
 
   return data({ success: true }, { status: 200 });

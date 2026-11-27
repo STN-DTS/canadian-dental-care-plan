@@ -49,7 +49,7 @@ export async function action({ context, request, url }: Route.ActionArgs) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     case 'extend': {
       log.debug('Extending public application state', { [ATTR_CDCP_APPLICATION_ID]: params.id, [ATTR_SESSION_ID]: sessionId });
-      savePublicApplicationState({ params, session, state: {} });
+      await savePublicApplicationState({ params, session, state: {} });
       return Response.json({
         status: 'success',
         message: 'Application state extended successfully.',

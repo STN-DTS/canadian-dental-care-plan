@@ -12,7 +12,6 @@ import { ATTR_CDCP_SESSION_KEY, ATTR_CDCP_SESSION_KEY_EXISTS } from '~/.server/l
 import { Traced } from '~/.server/observability/decorator';
 import type { DocumentUploadState, DocumentUploadStateSessionKey } from '~/.server/routes/helpers/document-upload-route-helpers';
 import type { ProtectedApplicationState, ProtectedApplicationStateSessionKey } from '~/.server/routes/helpers/protected-application-route-helpers';
-import type { PublicApplicationState, PublicApplicationStateSessionKey } from '~/.server/routes/helpers/public-application-route-helpers';
 import type { StatusState, StatusStateSessionKey } from '~/.server/routes/helpers/status-route-helpers';
 import { throwAppError } from '~/.server/utils/error-utils';
 import type { IdToken, UserinfoToken } from '~/.server/utils/raoidc-utils';
@@ -26,8 +25,6 @@ import { isEmpty } from '~/utils/string-utils';
  * Extend this interface to add more session keys and their types as needed.
  */
 type SessionTypeMap = {
-  [K in PublicApplicationStateSessionKey]: PublicApplicationState;
-} & {
   [K in ProtectedApplicationStateSessionKey]: ProtectedApplicationState;
 } & {
   [K in StatusStateSessionKey]: StatusState;
