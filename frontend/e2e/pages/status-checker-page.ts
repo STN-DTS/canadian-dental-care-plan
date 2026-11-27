@@ -39,6 +39,7 @@ export class StatusCheckerPage extends BasePage {
   readonly sinInput;
   readonly submitButton;
   readonly errorHeading;
+  readonly checkAnotherStatusButton;
   readonly correlationLabel;
   readonly correlationId;
 
@@ -55,6 +56,7 @@ export class StatusCheckerPage extends BasePage {
     this.sinInput = this.main.getByRole('textbox', { name: this.copy.sin });
     this.submitButton = this.main.getByRole('button', { name: this.copy.submit, exact: true });
     this.errorHeading = this.main.getByRole('heading', { level: 1, name: this.copy.errorTitle });
+    this.checkAnotherStatusButton = this.main.getByRole('button', { name: locale === 'en' ? 'Check another status' : /vérifier un autre/i });
     this.correlationLabel = this.main.getByText(this.copy.correlationIdLabel, { exact: true });
     this.correlationId = this.main.getByRole('definition').first().locator('span');
   }

@@ -72,6 +72,20 @@ Each temporary state or per-session Power Platform cache has its own lazy storag
 - `POST /api/session` (`action: 'extend'`) calls `touchSessionStorage(session.id)` alongside Express session `touch()`, refreshing all live session-storage entries across public and protected flows using their configured TTLs.
 - Missing application states increment the bounded `cdcp.application.state.unavailable` counter ([`application-state-metrics.ts`](../../app/.server/observability/application-state-metrics.ts)) with `cdcp.route.id` (from [`matchRouteId`](../../app/.server/utils/server-build-utils.ts)), `cdcp.application.channel`, and `cdcp.application.state.outcome`.
 
+## Browser verification
+
+After building the frontend, run the normal Playwright suite and the separate short-TTL suite from the repository root:
+
+```sh
+pnpm --filter @cdcp-rcsd/frontend run build
+pnpm --filter @cdcp-rcsd/frontend run test:e2e
+pnpm --filter @cdcp-rcsd/frontend exec playwright test --config=e2e/session-storage.config.ts
+```
+
+The E2E page objects in `frontend/e2e/pages/` cover the public application, status checker, session-timeout dialog, and protected letters page. Add new journey interactions to these page objects rather than duplicating locators in specs.
+
+The short-TTL suite uses the memory backend, mock services, and a 15-second storage TTL. It checks status flows in both languages and compares an extended application with an unextended control after the original TTL. It does not validate Redis expiry or failover.
+
 ## Trade-offs & rejected alternatives
 
 - **Last-write-wins per key:** External storage prevents whole-session overwrites, but concurrent writes to the same flow key remain last-write-wins (no compare-and-swap or versioned writes).
