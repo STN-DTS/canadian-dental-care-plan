@@ -1,11 +1,12 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createClientMock, createSentinelMock, infoMock, debugMock, errorMock } = vi.hoisted(() => ({
+const { createClientMock, createSentinelMock, infoMock, debugMock, traceMock, errorMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   createSentinelMock: vi.fn(),
   infoMock: vi.fn(),
   debugMock: vi.fn(),
+  traceMock: vi.fn(),
   errorMock: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock('~/.server/logging', () => ({
   createLogger: vi.fn(() => ({
     info: infoMock,
     debug: debugMock,
+    trace: traceMock,
     error: errorMock,
   })),
 }));
@@ -85,6 +87,12 @@ describe('redis-client', () => {
       'server.address': 'redis-dev-1.redis-headless-dev',
       'server.port': 6379,
     });
+
+    infoMock.mockClear();
+    fakeSentinel.emit('topology-change', { type: 'SENTINE_LIST_CHANGE', size: 3 });
+
+    expect(traceMock).toHaveBeenCalledWith('Redis Sentinel topology changed');
+    expect(infoMock).not.toHaveBeenCalled();
   });
 
   it('closes an open Redis client and clears the singleton registry', async () => {

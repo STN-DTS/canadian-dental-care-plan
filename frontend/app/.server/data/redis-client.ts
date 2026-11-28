@@ -199,7 +199,9 @@ function createRedisSentinelClient(config: RedisSentinelClientServerConfig): Red
           log.info('Redis Sentinel replica removed', nodeAttrs);
           break;
         default:
-          log.info('Redis Sentinel topology changed');
+          // Routine scanInterval checks against a Kubernetes Service seed round-robin across
+          // Sentinels and emit SENTINE_LIST_CHANGE on each scan, so keep this at trace.
+          log.trace('Redis Sentinel topology changed');
           break;
       }
     })
