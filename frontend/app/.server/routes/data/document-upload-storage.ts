@@ -8,7 +8,7 @@ import type { Session } from '~/.server/web/session';
 let storage: SessionStorage<DocumentUploadState> | undefined;
 
 function getStorage(): SessionStorage<DocumentUploadState> {
-  storage ??= createSessionStorage<DocumentUploadState>('document-upload');
+  storage ??= createSessionStorage<DocumentUploadState>('document-upload', { slidingTtl: true });
   return storage;
 }
 

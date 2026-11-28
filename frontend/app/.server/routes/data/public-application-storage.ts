@@ -8,7 +8,7 @@ import type { Session } from '~/.server/web/session';
 let storage: SessionStorage<PublicApplicationState> | undefined;
 
 function getStorage(): SessionStorage<PublicApplicationState> {
-  storage ??= createSessionStorage<PublicApplicationState>('public-application');
+  storage ??= createSessionStorage<PublicApplicationState>('public-application', { slidingTtl: true });
   return storage;
 }
 

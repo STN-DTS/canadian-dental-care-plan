@@ -80,16 +80,21 @@ describe('public application time boundaries', () => {
     children: [],
   } as PublicApplicationState;
 
-  it('retains state within session storage TTL and treats it as missing once evicted', async () => {
+  it('extends state TTL on read and treats it as missing once idle past session storage TTL', async () => {
     const session = mock<Session>({ id: 'session' });
     await setPublicApplicationState(session, 'flow', baseState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
 
     // TTL is SESSION_EXPIRES_SECONDS (1200s) + SESSION_STORAGE_TTL_OFFSET_SECONDS (60s) = 1260s.
+    // Reading just before expiry slides the TTL forward by another 1260s.
     vi.advanceTimersByTime(1_259_999);
     await expect(getPublicApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
 
     vi.advanceTimersByTime(2);
+    await expect(getPublicApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
+
+    // Going idle past the full 1260s TTL without reading evicts the state.
+    vi.advanceTimersByTime(1_260_001);
     await expect(getPublicApplicationState(args)).rejects.toThrow();
     await expect(findPublicApplicationState(session, 'flow')).resolves.toEqual(Option.none());
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('public', 'missing');
@@ -113,7 +118,7 @@ describe('protected application time boundaries', () => {
     children: [],
   } as ProtectedApplicationState;
 
-  it('retains state within session storage TTL and treats it as missing once evicted', async () => {
+  it('extends state TTL on read and treats it as missing once idle past session storage TTL', async () => {
     const session = mock<Session>({ id: 'session' });
     await setProtectedApplicationState(session, 'flow', baseState);
     const args = { params: { id: 'flow', lang: 'en' }, session };
@@ -122,6 +127,9 @@ describe('protected application time boundaries', () => {
     await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
 
     vi.advanceTimersByTime(2);
+    await expect(getProtectedApplicationState(args)).resolves.toMatchObject({ lastUpdatedOn: baseState.lastUpdatedOn });
+
+    vi.advanceTimersByTime(1_260_001);
     await expect(getProtectedApplicationState(args)).rejects.toThrow();
     await expect(findProtectedApplicationState(session, 'flow')).resolves.toEqual(Option.none());
     expect(countApplicationStateOutcome).toHaveBeenCalledExactlyOnceWith('protected', 'missing');

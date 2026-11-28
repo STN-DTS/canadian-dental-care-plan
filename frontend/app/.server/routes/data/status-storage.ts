@@ -8,7 +8,7 @@ import type { Session } from '~/.server/web/session';
 let storage: SessionStorage<StatusState> | undefined;
 
 function getStorage(): SessionStorage<StatusState> {
-  storage ??= createSessionStorage<StatusState>('status');
+  storage ??= createSessionStorage<StatusState>('status', { slidingTtl: true });
   return storage;
 }
 

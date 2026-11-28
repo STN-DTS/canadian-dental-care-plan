@@ -13,11 +13,11 @@ Temporary multi-step flow states and per-session Power Platform caches live outs
 
 ### 1. Generic key-value store (`app/.server/data/store*.ts`)
 
-- [`store.ts`](../../app/.server/data/store.ts) defines an Effect `Option`-based `Store<T extends JsonValue>` contract (`find`, `set`, `delete`, `has`, `update`, `clear`) with optional per-entry `ttlSeconds` on `StoreEntry<T>`. Missing keys return `Option.none()`; stored `null` values remain `Option.some(null)`.
+- [`store.ts`](../../app/.server/data/store.ts) defines an Effect `Option`-based `Store<T extends JsonValue>` contract (`find`, `set`, `touch`, `delete`, `has`, `update`, `clear`) with optional per-entry `ttlSeconds` on `StoreEntry<T>` / `StoreTouchEntry` and optional `extendTtl` on `StoreFindOptions`. Missing keys return `Option.none()`; stored `null` values remain `Option.some(null)`.
 - [`store-factory.ts`](../../app/.server/data/store-factory.ts) exposes `createStore(name, options)`, cached in `globalThis.__instanceRegistry` (`stores`) so the React Router server build and Express server bundle share the same store instances. Requesting an existing name with different options throws.
-- [`store-keyv.ts`](../../app/.server/data/store-keyv.ts) implements `KeyvStore<T>` directly over [Keyv](https://keyv.org) (without `cacheable`), using a single `:` `namespaceSeparator` to match existing Redis keys:
-  - **Redis backend:** uses `@keyv/redis` with the shared client from `getRedisClient()` and `throwOnErrors: true`.
-  - **Memory backend:** uses `QuickLRU` (bounded LRU, default `maxSize: 1000`, configurable via `StoreOptions.maxSize`).
+- [`store-keyv.ts`](../../app/.server/data/store-keyv.ts) implements `KeyvStore<T>` directly over [Keyv](https://keyv.org) (without `cacheable`), using `checkExpired: false`, `expires: null` in the serialized JSON envelope (so mixed-version rolling deployments with older pods running `checkExpired: true` never delete keys whose Redis TTL was extended), and a single `:` `namespaceSeparator` to match existing Redis keys:
+  - **Redis backend:** uses `@keyv/redis` with the shared client from `getRedisClient()` and `throwOnErrors: true`. `find(..., { extendTtl })` runs atomic Redis `GETEX ... PX`, and `touch(...)` runs `PEXPIRE` (with optional `GT` via `onlyIfGreater`, batched in `MULTI` for multiple keys) so TTL refreshes never rewrite entry values.
+  - **Memory backend:** uses a `QuickLRU`-backed Keyv storage adapter (bounded LRU, default `maxSize: 1000`, configurable via `StoreOptions.maxSize`) that tracks mutable per-entry `expiresAt` in place for expiry and TTL extension without extra LRU insertions.
 
 **Error semantics:** Failed backend operations reject rather than looking like missing keys. No `error` listener is attached to the `Keyv` instance (which would otherwise convert failures to `undefined` or `false`). The `error` listener Keyv attaches to `@keyv/redis` is removed so out-of-band Redis client errors do not throw from event handlers; the shared Redis client already logs them.
 
@@ -40,7 +40,9 @@ Temporary multi-step flow states and per-session Power Platform caches live outs
 - Per-session key index: `SESSION:<sid>:STATE`
 - State entries: `SESSION:<sid>:STATE:<namespace>:<key>`
 
-Default TTL is `SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (25 minutes by default). Every `set` rewrites the per-session index (`{ [entryKey]: ttlSeconds | null }`) so its TTL never expires before its entries. `touchSessionStorage(sessionId)` refreshes all still-live indexed entries with each entry's configured TTL (pruning expired/deleted entries) in one `store.set(...)`, and `deleteSessionStorage(sessionId)` deletes all indexed entries and the index without scanning Redis.
+Default TTL is `SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (25 minutes by default). Sliding expiration on read is opt-in via `{ slidingTtl: true }`: when enabled, `find()` concurrently refreshes the entry's TTL (`GETEX` on Redis / in-place expiry update in memory) and extends the per-session index TTL using `onlyIfGreater` (`PEXPIRE ... GT` on Redis, so a shorter-TTL namespace never shortens an index tracking a longer-lived entry). This keeps active multi-step flows aligned with the rolling Express session in a single Redis round-trip even across read-only requests or repeated form validation failures. By default (`slidingTtl: false`), reads do not extend TTLs so caches of third-party service data expire on a fixed TTL.
+
+Every `set` rewrites the per-session index (`{ [entryKey]: ttlSeconds | null }`) so its TTL never expires before its entries. `touchSessionStorage(sessionId)` refreshes all still-live indexed entries via `store.touch(...)` (`PEXPIRE` on Redis) without rewriting values, pruning expired/deleted entries from the index when needed, and `deleteSessionStorage(sessionId)` deletes all indexed entries and the index without scanning Redis.
 
 > **Gotcha:** Because this store shares the base `SESSION` Redis namespace with `connect-redis`, never call `store.clear()` on it — on Redis, `clear()` scans `SESSION:*` and would delete Express sessions too.
 
@@ -48,17 +50,17 @@ Default TTL is `SESSION_EXPIRES_SECONDS + SESSION_STORAGE_TTL_OFFSET_SECONDS` (2
 
 Each temporary state or per-session Power Platform cache has its own lazy storage module built on `createSessionStorage`:
 
-| Module                                                                                                         | Namespace               | TTL            | Notes                                                                    |
-| -------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------- | ------------------------------------------------------------------------ |
-| [`public-application-storage.ts`](../../app/.server/routes/data/public-application-storage.ts)                 | `public-application`    | Session + 300s | Public application flow (`lastUpdatedOn` kept as debug metadata)         |
-| [`protected-application-storage.ts`](../../app/.server/routes/data/protected-application-storage.ts)           | `protected-application` | Session + 300s | Protected application flow (`lastUpdatedOn` kept as debug metadata)      |
-| [`status-storage.ts`](../../app/.server/routes/data/status-storage.ts)                                         | `status`                | Session + 300s | Public status-checker flow                                               |
-| [`document-upload-storage.ts`](../../app/.server/routes/data/document-upload-storage.ts)                       | `document-upload`       | Session + 300s | Protected document-upload flow                                           |
-| [`profile-email-address-flow-storage.ts`](../../app/.server/routes/data/profile-email-address-flow-storage.ts) | `profile-email-address` | Session + 300s | Protected profile email verification flow                                |
-| [`applicant-storage.ts`](../../app/.server/routes/data/applicant-storage.ts)                                   | `applicant`             | Session + 300s | Refetched from Power Platform on miss                                    |
-| [`program-applicant-storage.ts`](../../app/.server/routes/data/program-applicant-storage.ts)                   | `program-applicant`     | Session + 300s | Refetched from Power Platform on miss                                    |
-| [`letters-storage.ts`](../../app/.server/routes/data/letters-storage.ts)                                       | `letters`               | Session + 300s | Refetched and re-cached on download miss                                 |
-| [`client-application-storage.ts`](../../app/.server/routes/data/client-application-storage.ts)                 | `client-application`    | 300s override  | Keyed by `applicationYearId ?? 'default'`; cleared after profile updates |
+| Module                                                                                                         | Namespace               | TTL            | Sliding on `find` | Notes                                                                    |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------- | ----------------- | ------------------------------------------------------------------------ |
+| [`public-application-storage.ts`](../../app/.server/routes/data/public-application-storage.ts)                 | `public-application`    | Session + 300s | Yes               | Public application flow (`lastUpdatedOn` kept as debug metadata)         |
+| [`protected-application-storage.ts`](../../app/.server/routes/data/protected-application-storage.ts)           | `protected-application` | Session + 300s | Yes               | Protected application flow (`lastUpdatedOn` kept as debug metadata)      |
+| [`status-storage.ts`](../../app/.server/routes/data/status-storage.ts)                                         | `status`                | Session + 300s | Yes               | Public status-checker flow                                               |
+| [`document-upload-storage.ts`](../../app/.server/routes/data/document-upload-storage.ts)                       | `document-upload`       | Session + 300s | Yes               | Protected document-upload flow                                           |
+| [`profile-email-address-flow-storage.ts`](../../app/.server/routes/data/profile-email-address-flow-storage.ts) | `profile-email-address` | Session + 300s | Yes               | Protected profile email verification flow                                |
+| [`applicant-storage.ts`](../../app/.server/routes/data/applicant-storage.ts)                                   | `applicant`             | Session + 300s | No                | Refetched from Power Platform on miss                                    |
+| [`program-applicant-storage.ts`](../../app/.server/routes/data/program-applicant-storage.ts)                   | `program-applicant`     | Session + 300s | No                | Refetched from Power Platform on miss                                    |
+| [`letters-storage.ts`](../../app/.server/routes/data/letters-storage.ts)                                       | `letters`               | Session + 300s | No                | Refetched and re-cached on download miss                                 |
+| [`client-application-storage.ts`](../../app/.server/routes/data/client-application-storage.ts)                 | `client-application`    | 300s override  | No                | Keyed by `applicationYearId ?? 'default'`; cleared after profile updates |
 
 ## Express session lifecycle (`app/.server/web/session.ts`)
 

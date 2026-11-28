@@ -27,7 +27,23 @@ describe('applicant-storage', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     deleteSingleton('stores');
+  });
+
+  it('does not extend TTL on reads for cached applicant data', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const session = mock<Session>({ id: 'session-a' });
+    const applicant = { clientNumber: '123456' } as ApplicantDto;
+
+    // Default TTL is 60s + 10s = 70s.
+    await setApplicantState(session, applicant);
+
+    vi.advanceTimersByTime(69_999);
+    await expect(findApplicantState(session)).resolves.toEqual(Option.some(applicant));
+
+    vi.advanceTimersByTime(2);
+    await expect(findApplicantState(session)).resolves.toEqual(Option.none());
   });
 
   it('stores, reads, and deletes applicant data scoped to the session', async () => {

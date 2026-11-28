@@ -28,7 +28,7 @@ const STATE_KEY = 'current';
 let storage: SessionStorage<ProfileEmailAddressFlowState> | undefined;
 
 function getStorage(): SessionStorage<ProfileEmailAddressFlowState> {
-  storage ??= createSessionStorage<ProfileEmailAddressFlowState>('profile-email-address');
+  storage ??= createSessionStorage<ProfileEmailAddressFlowState>('profile-email-address', { slidingTtl: true });
   return storage;
 }
 

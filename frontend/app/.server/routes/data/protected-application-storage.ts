@@ -8,7 +8,7 @@ import type { Session } from '~/.server/web/session';
 let storage: SessionStorage<ProtectedApplicationState> | undefined;
 
 function getStorage(): SessionStorage<ProtectedApplicationState> {
-  storage ??= createSessionStorage<ProtectedApplicationState>('protected-application');
+  storage ??= createSessionStorage<ProtectedApplicationState>('protected-application', { slidingTtl: true });
   return storage;
 }
 

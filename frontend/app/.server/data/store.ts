@@ -15,6 +15,26 @@ export type StoreEntry<T extends JsonValue> = {
   readonly ttlSeconds?: number;
 };
 
+export type StoreFindOptions = {
+  /**
+   * Extends a live entry's TTL on read without rewriting its value.
+   * Pass `true` to use the store's configured TTL, or a positive number of seconds to override it.
+   */
+  readonly extendTtl?: boolean | number;
+};
+
+export type StoreTouchEntry = {
+  readonly key: string;
+  /** Optional per-entry TTL override in seconds; defaults to the store's configured TTL. */
+  readonly ttlSeconds?: number;
+  /**
+   * When `true`, updates the expiry only if the new TTL is greater than the key's current remaining TTL
+   * (Redis `PEXPIRE ... GT` semantics). Non-volatile keys and keys with a longer remaining TTL are left
+   * unchanged and report `false`.
+   */
+  readonly onlyIfGreater?: boolean;
+};
+
 /**
  * An async key-value store. Keys are scoped to the store's namespace.
  *
@@ -27,13 +47,22 @@ export type Store<T extends JsonValue> = {
   /** Missing keys are ignored. */
   delete(...keys: string[]): Promise<void>;
 
-  /** Returns `Option.none()` for missing keys and preserves stored `null` values as `Option.some(null)`. */
-  find(key: string): Promise<Option.Option<T>>;
+  /**
+   * Returns `Option.none()` for missing keys and preserves stored `null` values as `Option.some(null)`.
+   * Pass `{ extendTtl: true }` or `{ extendTtl: seconds }` to refresh a live entry's TTL on read without rewriting its value.
+   */
+  find(key: string, options?: StoreFindOptions): Promise<Option.Option<T>>;
 
   has(key: string): Promise<boolean>;
 
   /** Overwrites existing keys and refreshes their TTL. */
   set(...entries: StoreEntry<T>[]): Promise<void>;
+
+  /**
+   * Refreshes the TTL of existing keys without rewriting their values.
+   * Returns a boolean per entry indicating whether the key was touched (or existed when no TTL is applied).
+   */
+  touch(...entries: StoreTouchEntry[]): Promise<boolean[]>;
 
   /**
    * Reads, transforms, and writes a value. If the updater returns `Option.none()`, the key is deleted.

@@ -1,5 +1,4 @@
 import { Option } from 'effect';
-import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 
@@ -9,44 +8,10 @@ import { getEnv } from '~/.server/utils/env-utils';
 import type { ServerEnv } from '~/.server/utils/env-utils';
 import { deleteSingleton } from '~/.server/utils/instance-registry';
 
+import { FakeRedisClient } from './fake-redis-client';
+
 vi.mock(import('~/.server/data/redis-client'), () => ({ getRedisClient: vi.fn() }));
 vi.mock(import('~/.server/utils/env-utils'), () => ({ getEnv: vi.fn() }));
-
-class FakeRedisClient extends EventEmitter {
-  readonly isOpen = true;
-  readonly isReady = true;
-  readonly connect = vi.fn();
-  readonly values = new Map<string, string>();
-  readonly info = vi.fn().mockResolvedValue('redis_version:7.2.0');
-  readonly get = vi.fn(async (key: string) => await Promise.resolve(this.values.get(key) ?? null));
-  readonly set = vi.fn(async (key: string, value: string) => {
-    this.values.set(key, value);
-    return await Promise.resolve('OK');
-  });
-  readonly unlink = vi.fn(async (key: string) => await Promise.resolve(this.values.delete(key) ? 1 : 0));
-  readonly multi = vi.fn(() => {
-    const ops: (() => unknown)[] = [];
-    const tx = {
-      set: (key: string, value: string) => {
-        ops.push(() => {
-          this.values.set(key, value);
-          return 'OK';
-        });
-        return tx;
-      },
-      del: (key: string) => {
-        ops.push(() => (this.values.delete(key) ? 1 : 0));
-        return tx;
-      },
-      unlink: (key: string) => {
-        ops.push(() => (this.values.delete(key) ? 1 : 0));
-        return tx;
-      },
-      exec: async () => await Promise.resolve(ops.map((op) => op())),
-    };
-    return tx;
-  });
-}
 
 describe('session-storage', () => {
   beforeEach(() => {
@@ -96,25 +61,95 @@ describe('session-storage', () => {
     await expect(storageB.find('session:1', 'a:key')).resolves.toEqual(Option.none());
   });
 
-  it('expires entries after SESSION_EXPIRES_SECONDS plus SESSION_STORAGE_TTL_OFFSET_SECONDS', async () => {
+  it('expires entries after SESSION_EXPIRES_SECONDS plus SESSION_STORAGE_TTL_OFFSET_SECONDS without extending on find by default', async () => {
     vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const client = new FakeRedisClient();
+    vi.mocked(getRedisClient).mockResolvedValue(client as never);
     vi.mocked(getEnv).mockReturnValue(
       mock<ServerEnv>({
-        SESSION_STORAGE_TYPE: 'memory',
+        SESSION_STORAGE_TYPE: 'redis',
         SESSION_KEY_PREFIX: 'SESSION:',
         SESSION_EXPIRES_SECONDS: 1,
         SESSION_STORAGE_TTL_OFFSET_SECONDS: 2,
         SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
       }),
     );
-    const storage = createSessionStorage<{ value: string }>('public-application');
+    const storage = createSessionStorage<{ value: string }>('applicant');
 
     await storage.set('session-a', 'flow-1', { value: 'temporary' });
     vi.advanceTimersByTime(2_999);
     await expect(storage.find('session-a', 'flow-1')).resolves.toEqual(Option.some({ value: 'temporary' }));
+    expect(client.getEx).not.toHaveBeenCalled();
+    expect(client.pExpire).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(2);
     await expect(storage.find('session-a', 'flow-1')).resolves.toEqual(Option.none());
+  });
+
+  it('extends entry and session index TTLs on find when slidingTtl is enabled', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const client = new FakeRedisClient();
+    vi.mocked(getRedisClient).mockResolvedValue(client as never);
+    vi.mocked(getEnv).mockReturnValue(
+      mock<ServerEnv>({
+        SESSION_STORAGE_TYPE: 'redis',
+        SESSION_KEY_PREFIX: 'SESSION:',
+        SESSION_EXPIRES_SECONDS: 2,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 1,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
+      }),
+    );
+    const storage = createSessionStorage<{ value: string }>('public-application', { slidingTtl: true });
+
+    await storage.set('sid-1', 'flow-1', { value: 'active' });
+
+    // Reading at t=2s extends both the entry (GETEX) and per-session index (PEXPIRE GT) concurrently to t=5s.
+    vi.advanceTimersByTime(2_000);
+    await expect(storage.find('sid-1', 'flow-1')).resolves.toEqual(Option.some({ value: 'active' }));
+    expect(client.getEx).toHaveBeenCalledExactlyOnceWith('SESSION:sid-1:STATE:public-application:flow-1', { type: 'PX', value: 3_000 });
+    expect(client.pExpire).toHaveBeenCalledExactlyOnceWith('SESSION:sid-1:STATE', 3_000, 'GT');
+
+    // Reading a missing session returns Option.none without creating an index key.
+    await expect(storage.find('sid-missing', 'flow-1')).resolves.toEqual(Option.none());
+    expect(client.values.has('SESSION:sid-missing:STATE')).toBe(false);
+
+    // At t=4s (past the original 3s TTL), the entry is still alive and indexed for session deletion.
+    vi.advanceTimersByTime(2_000);
+    await expect(storage.find('sid-1', 'flow-1')).resolves.toEqual(Option.some({ value: 'active' }));
+
+    await deleteSessionStorage('sid-1');
+    expect([...client.values.keys()]).toEqual([]);
+  });
+
+  it('does not shorten the per-session index TTL on sliding find when another entry has a longer TTL', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const client = new FakeRedisClient();
+    vi.mocked(getRedisClient).mockResolvedValue(client as never);
+    vi.mocked(getEnv).mockReturnValue(
+      mock<ServerEnv>({
+        SESSION_STORAGE_TYPE: 'redis',
+        SESSION_KEY_PREFIX: 'SESSION:',
+        SESSION_EXPIRES_SECONDS: 2,
+        SESSION_STORAGE_TTL_OFFSET_SECONDS: 1,
+        SESSION_STORAGE_MEMORY_MAX_SIZE: 1000,
+      }),
+    );
+
+    const flowStorage = createSessionStorage<{ value: string }>('public-application', { slidingTtl: true });
+    const longStorage = createSessionStorage<{ value: string }>('client-application', { ttlSeconds: 10 });
+
+    await flowStorage.set('sid-1', 'flow-1', { value: 'short-flow' });
+    await longStorage.set('sid-1', 'default', { value: 'long-entry' });
+
+    // Reading the shorter-TTL flow at t=1s must not shrink the index from t=10s down to t=4s.
+    vi.advanceTimersByTime(1_000);
+    await expect(flowStorage.find('sid-1', 'flow-1')).resolves.toEqual(Option.some({ value: 'short-flow' }));
+
+    // At t=5s (past t=4s), the flow expired but the longer entry and index must still be live and removable together.
+    vi.advanceTimersByTime(4_000);
+    await expect(longStorage.find('sid-1', 'default')).resolves.toEqual(Option.some({ value: 'long-entry' }));
+    await deleteSessionStorage('sid-1');
+    expect([...client.values.keys()]).toEqual([]);
   });
 
   it('honors a per-namespace ttlSeconds override independently of the session TTL', async () => {
@@ -203,6 +238,12 @@ describe('session-storage', () => {
     const storage = createSessionStorage<{ value: string }>('public-application');
     await storage.set('sid-1', 'flow-1', { value: 'one' });
     await storage.set('sid-1', 'flow-2', { value: 'two' });
+
+    // Touching when all entries are live refreshes TTLs via PEXPIRE without rewriting values or the index.
+    client.set.mockClear();
+    await touchSessionStorage('sid-1');
+    expect(client.set).not.toHaveBeenCalled();
+
     await storage.delete('sid-1', 'flow-1');
 
     await touchSessionStorage('sid-1');

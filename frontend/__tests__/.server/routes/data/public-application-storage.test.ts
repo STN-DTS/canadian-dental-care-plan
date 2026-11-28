@@ -31,7 +31,31 @@ describe('public-application-storage', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     deleteSingleton('stores');
+  });
+
+  it('extends state TTL on repeated reads without saving', async () => {
+    vi.useFakeTimers({ now: Temporal.Instant.from('2026-07-01T00:00:00Z').epochMilliseconds });
+    const session = mock<Session>({ id: 'session-a' });
+    const state = {
+      id: 'flow-1',
+      channelCode: 'public',
+      context: 'intake',
+      lastUpdatedOn: '2026-07-01T12:00:00Z',
+      applicationYear: { applicationYearId: '1', taxYear: '2025', dependentEligibilityEndDate: '2026-06-30' },
+      children: [],
+    } as PublicApplicationState;
+
+    // Default TTL is 60s + 10s = 70s.
+    await setPublicApplicationState(session, 'flow-1', state);
+
+    vi.advanceTimersByTime(50_000);
+    await expect(findPublicApplicationState(session, 'flow-1')).resolves.toEqual(Option.some(state));
+
+    // At t=100s (past the original 70s TTL), the read at t=50s kept the state alive.
+    vi.advanceTimersByTime(50_000);
+    await expect(findPublicApplicationState(session, 'flow-1')).resolves.toEqual(Option.some(state));
   });
 
   it('stores, reads, and deletes state scoped to the session', async () => {
