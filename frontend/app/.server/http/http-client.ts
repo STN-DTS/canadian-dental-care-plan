@@ -216,6 +216,7 @@ export class DefaultHttpClient implements HttpClient {
       if (!isAppError(error)) {
         this.log.warn('HTTP request did not complete', { ...requestAttributes, [ATTR_ERROR_TYPE]: operationalErrorCode(error) ?? 'http_request_failed' });
         this.instrumentationService.countHttpStatus(metricPrefix, 500);
+        throwAppError('HTTP request did not complete.', ErrorCodes.API_HTTP_REQUEST_FAILED, { cause: error });
       } else if (isRetryConditionError(error) && lastResponseStatus !== undefined) {
         this.log.warn('HTTP request retries exhausted', { ...requestAttributes, [ATTR_HTTP_RESPONSE_STATUS_CODE]: lastResponseStatus, [ATTR_CDCP_RETRY_LIMIT]: retries });
       }

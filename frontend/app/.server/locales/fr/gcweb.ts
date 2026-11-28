@@ -116,6 +116,21 @@ const ns = {
     option01: "Actualisez la page ou réessayez plus tard",
     option02: "Retournez à la <home>page d'accueil</home>",
   },
+  actionError: {
+    contact: "Si le problème persiste, contactez Service Canada en appelant le 1\u2011833\u2011537\u20114342 et fournissez les détails d'erreur ci-dessous.",
+    default: {
+      heading: "Nous éprouvons des difficultés à traiter votre demande",
+      body: "Une erreur inattendue s'est produite. Vos renseignements n'ont pas été perdus. Veuillez réessayer.",
+    },
+    applicationSubmissionFailed: {
+      heading: "Nous éprouvons des difficultés à soumettre votre demande",
+      body: "Une erreur inattendue s'est produite lors de la soumission de votre demande. Vos renseignements n'ont pas été perdus. Veuillez essayer de la soumettre de nouveau.",
+    },
+    renewalSubmissionFailed: {
+      heading: "Nous éprouvons des difficultés à soumettre votre renouvellement",
+      body: "Une erreur inattendue s'est produite lors de la soumission de votre renouvellement. Vos renseignements n'ont pas été perdus. Veuillez essayer de le soumettre de nouveau.",
+    },
+  },
   inputLabel: {
     required: "requis",
   },

@@ -80,8 +80,7 @@ export function TracedHttpRequest() {
 
             return response;
           } catch (error) {
-            const cause: unknown = Error.isError(error) ? Object.getOwnPropertyDescriptor(error, 'cause')?.value : undefined;
-            span.setAttribute(ATTR_ERROR_TYPE, operationalErrorCode(error) ?? operationalErrorCode(cause) ?? 'http_request_failed');
+            span.setAttribute(ATTR_ERROR_TYPE, findOperationalErrorCode(error) ?? 'http_request_failed');
             span.setStatus({ code: SpanStatusCode.ERROR, message: 'HTTP request did not complete.' });
             throw error;
           } finally {
@@ -91,4 +90,20 @@ export function TracedHttpRequest() {
       },
     });
   };
+}
+
+function findOperationalErrorCode(error: unknown, maxDepth = 4): string | undefined {
+  let current: unknown = error;
+
+  for (let depth = 0; depth <= maxDepth && Error.isError(current); depth++) {
+    const code = operationalErrorCode(current);
+
+    if (code) {
+      return code;
+    }
+
+    current = Object.getOwnPropertyDescriptor(current, 'cause')?.value;
+  }
+
+  return undefined;
 }

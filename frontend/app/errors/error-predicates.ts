@@ -20,6 +20,10 @@ const upstreamRateLimitCodes: ReadonlySet<ErrorCode> = new Set([
   ErrorCodes.API_VERIFY_CODE_HEALTH_RATE_LIMITED,
 ]);
 
+export type ActionAppError = Readonly<{
+  appError: AppErrorPayload;
+}>;
+
 export function getAppError(error: unknown): AppErrorPayload | undefined {
   if (isAppError(error)) {
     return toAppErrorPayload(error);
@@ -40,7 +44,15 @@ export function getAppError(error: unknown): AppErrorPayload | undefined {
   }
 }
 
-function toAppErrorPayload(error: AppError | AppErrorPayload): AppErrorPayload {
+export function getActionAppError(actionData: unknown): AppErrorPayload | undefined {
+  if (typeof actionData === 'object' && actionData !== null && 'appError' in actionData && isAppErrorPayload(actionData.appError)) {
+    return toAppErrorPayload(actionData.appError);
+  }
+
+  return undefined;
+}
+
+export function toAppErrorPayload(error: AppError | AppErrorPayload): AppErrorPayload {
   return {
     name: error.name,
     errorCode: error.errorCode,

@@ -12,6 +12,7 @@ import { Traced } from '~/.server/observability/decorator';
 import { throwAppError } from '~/.server/utils/error-utils';
 import { buildEndpointUrl } from '~/.server/utils/url-utils';
 import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { isAppError } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
 import { isValidId } from '~/utils/id-utils';
 
@@ -59,41 +60,49 @@ export class DefaultBenefitRenewalRepository implements BenefitRenewalRepository
     const url = new URL(this.benefitApplicationUrl);
     url.searchParams.set('scenario', 'RENEWAL');
 
-    const response = await this.httpClient.instrumentedFetch('http.client.interop-api.benefit-application-renewal.posts', url, {
-      proxyUrl: this.serverConfig.HTTP_PROXY_URL,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Idempotency-Key': applicationId,
-        'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
-      },
-      body: JSON.stringify(benefitRenewalRequest),
-      retryOptions: {
-        retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
-        backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
-        retryConditions: {
-          [HttpStatusCodes.BAD_REQUEST]: [/A record with the same value for Application Confirmation Number already exists/],
+    try {
+      const response = await this.httpClient.instrumentedFetch('http.client.interop-api.benefit-application-renewal.posts', url, {
+        proxyUrl: this.serverConfig.HTTP_PROXY_URL,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': applicationId,
+          'Ocp-Apim-Subscription-Key': Redacted.value(this.subscriptionKey),
         },
-        // A 502 or lost response does not prove the renewal was not created; replaying it creates duplicates.
-        retryOnTransportError: false,
-      },
-    });
+        body: JSON.stringify(benefitRenewalRequest),
+        retryOptions: {
+          retries: this.serverConfig.INTEROP_API_MAX_RETRIES,
+          backoffMs: this.serverConfig.INTEROP_API_BACKOFF_MS,
+          retryConditions: {
+            [HttpStatusCodes.BAD_REQUEST]: [/A record with the same value for Application Confirmation Number already exists/],
+          },
+          // A 502 or lost response does not prove the renewal was not created; replaying it creates duplicates.
+          retryOnTransportError: false,
+        },
+      });
 
-    if (!response.ok) {
-      await response.text();
+      if (!response.ok) {
+        await response.text();
 
-      if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
-        // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
-        throwAppError('Failed to POST to /benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_RATE_LIMITED);
+        if (response.status === HttpStatusCodes.TOO_MANY_REQUESTS) {
+          // TODO ::: GjB ::: this throw is to facilitate enabling the application kill switch -- it should be removed once the killswitch functionality is removed
+          throwAppError('Failed to POST to /benefit-application. Status: 429, Status Text: Too Many Requests', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_RATE_LIMITED);
+        }
+
+        throwAppError('Renewal submission failed.', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED);
       }
 
-      throwAppError('Renewal submission failed.', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED);
+      const data = (await response.json()) as BenefitRenewalResponseEntity;
+      this.log.trace('Benefit renewal response received');
+
+      return data;
+    } catch (cause) {
+      if (isAppError(cause) && cause.errorCode !== ErrorCodes.API_HTTP_REQUEST_FAILED) {
+        throw cause;
+      }
+
+      throwAppError('Renewal submission failed.', ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED, { cause });
     }
-
-    const data = (await response.json()) as BenefitRenewalResponseEntity;
-    this.log.trace('Benefit renewal response received');
-
-    return data;
   }
 }
 

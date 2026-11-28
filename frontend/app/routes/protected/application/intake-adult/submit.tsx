@@ -8,8 +8,10 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { loadProtectedApplicationIntakeAdultStateForReview } from '~/.server/routes/helpers/protected-application-intake-adult-route-helpers';
 import { clearProtectedApplicationState, saveProtectedApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/protected-application-route-helpers';
+import { withActionAppError } from '~/.server/utils/action-app-error';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
+import { AppErrorAlert } from '~/components/app-error-alert';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
@@ -67,7 +69,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
+export const action = withActionAppError(async ({ context, params, request, url }: Route.ActionArgs) => {
   const { appContainer, session } = context.get(appContext);
   const securityHandler = appContainer.get(TYPES.SecurityHandler);
 
@@ -106,13 +108,13 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   await saveProtectedApplicationState({ params, session, state: { submitTerms: parsedDataResult.data, submissionInfo } });
 
   return redirect(getPathById('protected/application/$id/intake-adult/confirmation', params));
-}
+});
 
 export default function NewAdultSubmit({ loaderData, params }: Route.ComponentProps) {
   const { state, payload } = loaderData;
   const { t } = useTranslation('protectedApplicationIntakeAdult');
   const fetcher = useFetcher<typeof action>();
-  const errors = fetcher.data?.errors;
+  const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : undefined;
   const { handleSubmit, hCaptchaEnabled, hCaptchaOnLoad, hCaptchaRef, hCaptchaSitekey, isSubmitting } = useHCaptchaFetcherSubmit(fetcher);
 
   const eligibilityLink = <InlineLink to={t(($) => $.submit.doYouQualifyHref)} className="external-link" newTabIndicator target="_blank" />;
@@ -123,6 +125,7 @@ export default function NewAdultSubmit({ loaderData, params }: Route.ComponentPr
       <ErrorSummaryProvider actionData={fetcher.data}>
         <ProgressStepper activeStep="submit" className="mb-8" />
         <div className="max-w-prose space-y-8">
+          <AppErrorAlert actionData={fetcher.data} isSubmitting={isSubmitting} />
           <ErrorSummary />
           <div className="space-y-8">
             <section className="space-y-4">

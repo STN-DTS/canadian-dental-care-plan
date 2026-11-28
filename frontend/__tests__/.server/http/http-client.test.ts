@@ -11,6 +11,7 @@ import { createLogger } from '~/.server/logging';
 import type { Logger } from '~/.server/logging';
 import type { InstrumentationService } from '~/.server/observability';
 import { AppError } from '~/errors/app-error';
+import { ErrorCodes } from '~/errors/error-codes';
 
 vi.unmock(import('~/.server/observability/decorator'));
 
@@ -93,7 +94,11 @@ describe('DefaultHttpClient', () => {
       const client = new DefaultHttpClient(instrumentation);
       vi.spyOn(client, 'getFetchFn').mockReturnValue(vi.fn().mockRejectedValue(error));
 
-      await expect(client.instrumentedFetch('http.client.test.gets', 'https://example.test')).rejects.toBe(error);
+      await expect(client.instrumentedFetch('http.client.test.gets', 'https://example.test')).rejects.toMatchObject({
+        name: 'AppError',
+        errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED,
+        cause: error,
+      });
 
       const spans = exporter.getFinishedSpans();
       expect(spans).toHaveLength(1);
@@ -216,7 +221,11 @@ describe('DefaultHttpClient', () => {
         ['first.request', 'second.request'].map(async (name) => {
           await trace.getTracer('http-client-test').startActiveSpan(name, async (parent) => {
             try {
-              await expect(client.instrumentedFetch('http.client.test.gets', 'https://example.test')).rejects.toBe(error);
+              await expect(client.instrumentedFetch('http.client.test.gets', 'https://example.test')).rejects.toMatchObject({
+                name: 'AppError',
+                errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED,
+                cause: error,
+              });
               expect(trace.getActiveSpan()).toBe(parent);
             } finally {
               parent.end();
@@ -260,9 +269,14 @@ describe('DefaultHttpClient', () => {
 
     it('logs the endpoint when the request does not complete', async () => {
       const { client, log } = createClientWithLogger();
-      mockFetch.mockRejectedValueOnce(new Error('transport-canary'));
+      const error = new Error('transport-canary');
+      mockFetch.mockRejectedValueOnce(error);
 
-      await expect(client.instrumentedFetch('http.client.test.gets', new Request('https://api.example.test/operation'))).rejects.toThrow('transport-canary');
+      await expect(client.instrumentedFetch('http.client.test.gets', new Request('https://api.example.test/operation'))).rejects.toMatchObject({
+        name: 'AppError',
+        errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED,
+        cause: error,
+      });
 
       expect(log.warn).toHaveBeenCalledExactlyOnceWith('HTTP request did not complete', {
         'cdcp.operation.name': 'http.client.test.gets',
@@ -427,7 +441,11 @@ describe('DefaultHttpClient', () => {
       const error = transportError(code);
       mockFetch.mockRejectedValue(error);
 
-      await expect(httpClient.instrumentedFetch('example-metric', 'https://api.example.com', { method: 'POST', retryOptions: { retries: 3, backoffMs: 0, retryOnTransportError: false } })).rejects.toBe(error);
+      await expect(httpClient.instrumentedFetch('example-metric', 'https://api.example.com', { method: 'POST', retryOptions: { retries: 3, backoffMs: 0, retryOnTransportError: false } })).rejects.toMatchObject({
+        name: 'AppError',
+        errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED,
+        cause: error,
+      });
 
       expect(mockFetch).toHaveBeenCalledOnce();
     });

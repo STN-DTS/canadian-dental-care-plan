@@ -8,8 +8,10 @@ import { TYPES } from '~/.server/constants';
 import { appContext } from '~/.server/context/app-context';
 import { loadPublicApplicationFullFamilyStateForReview } from '~/.server/routes/helpers/public-application-full-family-route-helpers';
 import { clearPublicApplicationState, savePublicApplicationState, validateApplicationFlow } from '~/.server/routes/helpers/public-application-route-helpers';
+import { withActionAppError } from '~/.server/utils/action-app-error';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import { transformFlattenedError } from '~/.server/utils/zod-utils';
+import { AppErrorAlert } from '~/components/app-error-alert';
 import { AppPageTitle } from '~/components/app-page-title';
 import { ButtonLink } from '~/components/buttons';
 import { CsrfTokenInput } from '~/components/csrf-token-input';
@@ -82,7 +84,7 @@ export async function loader({ context, params, url }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ context, params, request, url }: Route.ActionArgs) {
+export const action = withActionAppError(async ({ context, params, request, url }: Route.ActionArgs) => {
   const { appContainer, session } = context.get(appContext);
   const state = await loadPublicApplicationFullFamilyStateForReview({ params, requestUrl: url, session });
   validateApplicationFlow(state, params, ['full-family']);
@@ -127,14 +129,14 @@ export async function action({ context, params, request, url }: Route.ActionArgs
   }
 
   return redirect(getPathById('public/application/$id/full-family/confirmation', params));
-}
+});
 
 export default function NewFamilySubmit({ loaderData, params }: Route.ComponentProps) {
   const { state, payload } = loaderData;
   const { t } = useTranslation('applicationFullFamily');
 
   const fetcher = useFetcher<typeof action>();
-  const errors = fetcher.data?.errors;
+  const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : undefined;
 
   const { handleSubmit, hCaptchaEnabled, hCaptchaOnLoad, hCaptchaRef, hCaptchaSitekey, isSubmitting } = useHCaptchaFetcherSubmit(fetcher);
 
@@ -146,6 +148,7 @@ export default function NewFamilySubmit({ loaderData, params }: Route.ComponentP
       <ErrorSummaryProvider actionData={fetcher.data}>
         <ProgressStepper activeStep="submit" className="mb-8" />
         <div className="max-w-prose space-y-8">
+          <AppErrorAlert actionData={fetcher.data} isSubmitting={isSubmitting} />
           <ErrorSummary />
           <div className="space-y-8">
             <section className="space-y-4">

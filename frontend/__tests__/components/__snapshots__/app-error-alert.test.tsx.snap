@@ -1,0 +1,256 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppErrorAlert > matches snapshot for application submission failure preset > application submission failed alert 1`] = `
+<div>
+  <section
+    aria-labelledby="_r_7_"
+    class="overflow-hidden rounded-lg border border-t-4 border-gray-300 border-t-red-700 bg-white text-gray-900 shadow-xs focus:ring-2 focus:ring-red-700 focus:ring-offset-2 focus:outline-hidden"
+    tabindex="-1"
+  >
+    <div
+      aria-atomic="true"
+      role="alert"
+    >
+      <div
+        class="flex items-center gap-2.5 border-b border-red-100 bg-red-50 px-5 py-3.5"
+      >
+        <svg
+          aria-hidden="true"
+          class="svg-inline--fa fa-circle-exclamation size-5 shrink-0 text-red-700"
+          data-icon="circle-exclamation"
+          data-prefix="fas"
+          role="img"
+          viewBox="0 0 512 512"
+        >
+          <path
+            d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"
+            fill="currentColor"
+          />
+        </svg>
+        <h2
+          class="font-lato text-lg leading-snug font-bold text-gray-900 sm:text-xl"
+          id="_r_7_"
+        >
+          actionError.applicationSubmissionFailed.heading
+        </h2>
+      </div>
+      <div
+        class="px-5 py-4"
+      >
+        <p
+          class="text-base leading-relaxed text-gray-900"
+        >
+          actionError.applicationSubmissionFailed.body
+        </p>
+        <p
+          class="mt-2 text-base leading-relaxed text-gray-900"
+        >
+          actionError.contact
+        </p>
+      </div>
+      <dl
+        class="space-y-1 border-t border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-700"
+      >
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.correlationId
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            AB-123456
+          </dd>
+        </div>
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.errorCode
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            API-BENEFIT-0003
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</div>
+`;
+
+exports[`AppErrorAlert > matches snapshot for default fallback AppError message > default fallback alert 1`] = `
+<div>
+  <section
+    aria-labelledby="_r_3_"
+    class="overflow-hidden rounded-lg border border-t-4 border-gray-300 border-t-red-700 bg-white text-gray-900 shadow-xs focus:ring-2 focus:ring-red-700 focus:ring-offset-2 focus:outline-hidden"
+    tabindex="-1"
+  >
+    <div
+      aria-atomic="true"
+      role="alert"
+    >
+      <div
+        class="flex items-center gap-2.5 border-b border-red-100 bg-red-50 px-5 py-3.5"
+      >
+        <svg
+          aria-hidden="true"
+          class="svg-inline--fa fa-circle-exclamation size-5 shrink-0 text-red-700"
+          data-icon="circle-exclamation"
+          data-prefix="fas"
+          role="img"
+          viewBox="0 0 512 512"
+        >
+          <path
+            d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"
+            fill="currentColor"
+          />
+        </svg>
+        <h2
+          class="font-lato text-lg leading-snug font-bold text-gray-900 sm:text-xl"
+          id="_r_3_"
+        >
+          actionError.default.heading
+        </h2>
+      </div>
+      <div
+        class="px-5 py-4"
+      >
+        <p
+          class="text-base leading-relaxed text-gray-900"
+        >
+          actionError.default.body
+        </p>
+        <p
+          class="mt-2 text-base leading-relaxed text-gray-900"
+        >
+          actionError.contact
+        </p>
+      </div>
+      <dl
+        class="space-y-1 border-t border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-700"
+      >
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.correlationId
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            AB-123456
+          </dd>
+        </div>
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.errorCode
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            DEV-TEST-0001
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</div>
+`;
+
+exports[`AppErrorAlert > matches snapshot for renewal submission failure preset > renewal submission failed alert 1`] = `
+<div>
+  <section
+    aria-labelledby="_r_b_"
+    class="overflow-hidden rounded-lg border border-t-4 border-gray-300 border-t-red-700 bg-white text-gray-900 shadow-xs focus:ring-2 focus:ring-red-700 focus:ring-offset-2 focus:outline-hidden"
+    tabindex="-1"
+  >
+    <div
+      aria-atomic="true"
+      role="alert"
+    >
+      <div
+        class="flex items-center gap-2.5 border-b border-red-100 bg-red-50 px-5 py-3.5"
+      >
+        <svg
+          aria-hidden="true"
+          class="svg-inline--fa fa-circle-exclamation size-5 shrink-0 text-red-700"
+          data-icon="circle-exclamation"
+          data-prefix="fas"
+          role="img"
+          viewBox="0 0 512 512"
+        >
+          <path
+            d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"
+            fill="currentColor"
+          />
+        </svg>
+        <h2
+          class="font-lato text-lg leading-snug font-bold text-gray-900 sm:text-xl"
+          id="_r_b_"
+        >
+          actionError.renewalSubmissionFailed.heading
+        </h2>
+      </div>
+      <div
+        class="px-5 py-4"
+      >
+        <p
+          class="text-base leading-relaxed text-gray-900"
+        >
+          actionError.renewalSubmissionFailed.body
+        </p>
+        <p
+          class="mt-2 text-base leading-relaxed text-gray-900"
+        >
+          actionError.contact
+        </p>
+      </div>
+      <dl
+        class="space-y-1 border-t border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-700"
+      >
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.correlationId
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            AB-123456
+          </dd>
+        </div>
+        <div
+          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <dt
+            class="font-semibold text-gray-800"
+          >
+            serverError.errorCode
+          </dt>
+          <dd
+            class="min-w-0 font-mono wrap-anywhere text-gray-900"
+          >
+            API-BENEFIT-0004
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</div>
+`;

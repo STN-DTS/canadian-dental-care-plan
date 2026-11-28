@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AppError, isAppError, isAppErrorPayload } from '~/errors/app-error';
 import { ErrorCodes } from '~/errors/error-codes';
-import { getAppError, getCorrelationId, isUpstreamRateLimitedError } from '~/errors/error-predicates';
+import { getActionAppError, getAppError, getCorrelationId, isUpstreamRateLimitedError, toAppErrorPayload } from '~/errors/error-predicates';
 import { randomString } from '~/utils/string-utils';
 
 vi.mock(import('~/utils/string-utils'));
@@ -62,6 +62,47 @@ describe('error extraction', () => {
   ])('ignores non-AppError shapes: %j', (error) => {
     expect(getAppError(error)).toBeUndefined();
     expect(getCorrelationId(error)).toBeUndefined();
+  });
+
+  it('extracts only public AppErrorPayload fields from inline actionData', () => {
+    const raw = {
+      appError: {
+        name: 'AppError',
+        errorCode: ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED,
+        correlationId: 'AB-123456',
+        message: 'synthetic-private-message',
+        extra: 'should-be-stripped',
+      },
+    };
+
+    expect(getActionAppError(raw)).toEqual({
+      name: 'AppError',
+      errorCode: ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED,
+      correlationId: 'AB-123456',
+    });
+
+    const appError = new AppError('synthetic-private-message', ErrorCodes.DEV_TEST_ERROR, {
+      correlationId: 'CD-999999',
+      meta: { secret: 'value' },
+    });
+    expect(toAppErrorPayload(appError)).toEqual({
+      name: 'AppError',
+      errorCode: ErrorCodes.DEV_TEST_ERROR,
+      correlationId: 'CD-999999',
+    });
+  });
+
+  it.each([
+    undefined,
+    null,
+    'string',
+    { errors: { acknowledgeInfo: ['Required'] } },
+    { appError: null },
+    { appError: { name: 'Error', errorCode: ErrorCodes.DEV_TEST_ERROR, correlationId: '' } },
+    { appError: { name: 'AppError', errorCode: 'UNKNOWN-0001', correlationId: '' } },
+    { appError: { name: 'AppError', errorCode: ErrorCodes.DEV_TEST_ERROR } },
+  ])('returns undefined from getActionAppError for non-matching shapes: %j', (actionData) => {
+    expect(getActionAppError(actionData)).toBeUndefined();
   });
 });
 

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { RouterContextProvider } from 'react-router';
+import { RouterContextProvider, data } from 'react-router';
 
 import { Redacted } from 'effect';
 import { Headers, Response } from 'undici';
@@ -39,6 +39,8 @@ import type { BenefitRenewalStateMapper } from '~/.server/routes/mappers/benefit
 import type { SecurityHandler } from '~/.server/routes/security/security-handler';
 import { getFixedT } from '~/.server/utils/locale-utils';
 import type { Session } from '~/.server/web/session';
+import { HttpStatusCodes } from '~/constants/http-status-codes';
+import { ErrorCodes } from '~/errors/error-codes';
 import { action as protectedIntakeAdult } from '~/routes/protected/application/intake-adult/submit';
 import { action as protectedIntakeChildren } from '~/routes/protected/application/intake-children/submit';
 import { action as protectedIntakeFamily } from '~/routes/protected/application/intake-family/submit';
@@ -150,6 +152,53 @@ beforeEach(() => {
   vi.mocked(getFixedT).mockResolvedValue(mockFn<Awaited<ReturnType<typeof getFixedT>>>().mockReturnValue('test'));
 });
 
+function createSubmissionHarness(channel: 'public' | 'protected', fetchFn: FetchFn) {
+  const httpClient = new DefaultHttpClient(mock<InstrumentationService>());
+  vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetchFn);
+
+  const applicationStateMapper = mock<BenefitApplicationStateMapper>();
+  applicationStateMapper.mapApplicationAdultStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
+  applicationStateMapper.mapApplicationChildrenStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
+  applicationStateMapper.mapApplicationFamilyStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
+  const renewalStateMapper = mock<BenefitRenewalStateMapper>();
+  renewalStateMapper.mapBenefitRenewalAdultStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
+  renewalStateMapper.mapBenefitRenewalChildStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
+  renewalStateMapper.mapBenefitRenewalFamilyStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
+
+  const applicationDtoMapper = mock<BenefitApplicationDtoMapper>();
+  applicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity.mockReturnValue(benefitRequest);
+  applicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode.mockReturnValue('confirmation');
+  const renewalDtoMapper = mock<BenefitRenewalDtoMapper>();
+  renewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity.mockReturnValue(benefitRequest);
+  renewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode.mockReturnValue('confirmation');
+
+  const applicationService = new DefaultBenefitApplicationService(applicationDtoMapper, new DefaultBenefitApplicationRepository(serverConfig, httpClient), mock<AuditService>(), mock<ServerConfig>());
+  const renewalService = new DefaultBenefitRenewalService(renewalDtoMapper, new DefaultBenefitRenewalRepository(serverConfig, httpClient), mock<AuditService>(), mock<ServerConfig>());
+  const securityHandler = mock<SecurityHandler>();
+  securityHandler.validateHCaptchaResponse.mockResolvedValue(undefined);
+  const session = mock<Session>({ id: 'different-session-id' });
+  const appContainer = mock<AppContext['appContainer']>();
+  appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValue(securityHandler);
+  appContainer.get.calledWith(TYPES.BenefitApplicationStateMapper).mockReturnValue(applicationStateMapper);
+  appContainer.get.calledWith(TYPES.BenefitRenewalStateMapper).mockReturnValue(renewalStateMapper);
+  appContainer.get.calledWith(TYPES.BenefitApplicationService).mockReturnValue(applicationService);
+  appContainer.get.calledWith(TYPES.BenefitRenewalService).mockReturnValue(renewalService);
+  const context = new RouterContextProvider();
+  context.set(appContext, { appContainer, session });
+
+  const formData = new FormData();
+  formData.set('acknowledgeInfo', 'yes');
+  formData.set('acknowledgeCriteria', 'yes');
+
+  const createActionArgs = (id: string) => {
+    const url = new URL(`https://example.test/en/application/${id}/submit`);
+    const request = mock<Request>({ formData: async () => await Promise.resolve(formData) });
+    return { context, params: { id, lang: 'en' }, request, url, pattern: '/:lang/application/:id/submit' };
+  };
+
+  return { createActionArgs };
+}
+
 describe.each(cases)('$name', ({ action, channel, context: applicationContext }) => {
   it('reuses the flow key after an ambiguous failure and sends a different key for another flow', async () => {
     setReviewState(applicationId, applicationContext);
@@ -158,50 +207,22 @@ describe.each(cases)('$name', ({ action, channel, context: applicationContext })
       .fn<FetchFn>()
       .mockRejectedValueOnce(error)
       .mockImplementation(async () => await Promise.resolve(new Response('{}')));
-    const httpClient = new DefaultHttpClient(mock<InstrumentationService>());
-    vi.spyOn(httpClient, 'getFetchFn').mockReturnValue(fetchFn);
+    const { createActionArgs } = createSubmissionHarness(channel, fetchFn);
+    const expectedErrorCode = applicationContext === 'intake' ? ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED : ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED;
 
-    const applicationStateMapper = mock<BenefitApplicationStateMapper>();
-    applicationStateMapper.mapApplicationAdultStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
-    applicationStateMapper.mapApplicationChildrenStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
-    applicationStateMapper.mapApplicationFamilyStateToBenefitApplicationDto.mockImplementation((state) => mock<BenefitApplicationDto>({ applicationId: state.id, applicationChannelCode: channel }));
-    const renewalStateMapper = mock<BenefitRenewalStateMapper>();
-    renewalStateMapper.mapBenefitRenewalAdultStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
-    renewalStateMapper.mapBenefitRenewalChildStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
-    renewalStateMapper.mapBenefitRenewalFamilyStateToBenefitRenewalDto.mockImplementation((state) => mock<BenefitRenewalDto>({ applicationId: state.id, applicationChannelCode: channel }));
-
-    const applicationDtoMapper = mock<BenefitApplicationDtoMapper>();
-    applicationDtoMapper.mapBenefitApplicationDtoToBenefitApplicationRequestEntity.mockReturnValue(benefitRequest);
-    applicationDtoMapper.mapBenefitApplicationResponseEntityToApplicationCode.mockReturnValue('confirmation');
-    const renewalDtoMapper = mock<BenefitRenewalDtoMapper>();
-    renewalDtoMapper.mapBenefitRenewalDtoToBenefitRenewalRequestEntity.mockReturnValue(benefitRequest);
-    renewalDtoMapper.mapBenefitRenewalResponseEntityToApplicationCode.mockReturnValue('confirmation');
-
-    const applicationService = new DefaultBenefitApplicationService(applicationDtoMapper, new DefaultBenefitApplicationRepository(serverConfig, httpClient), mock<AuditService>(), mock<ServerConfig>());
-    const renewalService = new DefaultBenefitRenewalService(renewalDtoMapper, new DefaultBenefitRenewalRepository(serverConfig, httpClient), mock<AuditService>(), mock<ServerConfig>());
-    const securityHandler = mock<SecurityHandler>();
-    securityHandler.validateHCaptchaResponse.mockResolvedValue(undefined);
-    const session = mock<Session>({ id: 'different-session-id' });
-    const appContainer = mock<AppContext['appContainer']>();
-    appContainer.get.calledWith(TYPES.SecurityHandler).mockReturnValue(securityHandler);
-    appContainer.get.calledWith(TYPES.BenefitApplicationStateMapper).mockReturnValue(applicationStateMapper);
-    appContainer.get.calledWith(TYPES.BenefitRenewalStateMapper).mockReturnValue(renewalStateMapper);
-    appContainer.get.calledWith(TYPES.BenefitApplicationService).mockReturnValue(applicationService);
-    appContainer.get.calledWith(TYPES.BenefitRenewalService).mockReturnValue(renewalService);
-    const context = new RouterContextProvider();
-    context.set(appContext, { appContainer, session });
-
-    const formData = new FormData();
-    formData.set('acknowledgeInfo', 'yes');
-    formData.set('acknowledgeCriteria', 'yes');
-
-    const createActionArgs = (id: string) => {
-      const url = new URL(`https://example.test/en/application/${id}/submit`);
-      const request = mock<Request>({ formData: async () => await Promise.resolve(formData) });
-      return { context, params: { id, lang: 'en' }, request, url, pattern: '/:lang/application/:id/submit' };
-    };
-
-    await expect(action(createActionArgs(applicationId))).rejects.toBe(error);
+    const failedResult = await action(createActionArgs(applicationId));
+    expect(failedResult).toEqual(
+      data(
+        {
+          appError: {
+            name: 'AppError',
+            errorCode: expectedErrorCode,
+            correlationId: '',
+          },
+        },
+        { status: HttpStatusCodes.INTERNAL_SERVER_ERROR },
+      ),
+    );
     expect(fetchFn).toHaveBeenCalledOnce();
     const retryResult = await action(createActionArgs(applicationId));
     setReviewState(anotherApplicationId, applicationContext);
@@ -210,5 +231,28 @@ describe.each(cases)('$name', ({ action, channel, context: applicationContext })
     expect(retryResult).toMatchObject({ status: 302 });
     expect(newFlowResult).toMatchObject({ status: 302 });
     expect(fetchFn.mock.calls.map(([, init]) => new Headers(init?.headers).get('Idempotency-Key'))).toEqual([applicationId, applicationId, anotherApplicationId]);
+  });
+
+  it('returns an inline ActionAppError instead of throwing when Interop returns 502', async () => {
+    setReviewState(applicationId, applicationContext);
+    const fetchFn = vi.fn<FetchFn>().mockResolvedValue(new Response('Bad Gateway', { status: HttpStatusCodes.BAD_GATEWAY }));
+    const { createActionArgs } = createSubmissionHarness(channel, fetchFn);
+
+    const expectedErrorCode = applicationContext === 'intake' ? ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED : ErrorCodes.API_BENEFIT_RENEWAL_CREATE_FAILED;
+
+    const result = await action(createActionArgs(applicationId));
+
+    expect(result).toEqual(
+      data(
+        {
+          appError: {
+            name: 'AppError',
+            errorCode: expectedErrorCode,
+            correlationId: '',
+          },
+        },
+        { status: HttpStatusCodes.INTERNAL_SERVER_ERROR },
+      ),
+    );
   });
 });

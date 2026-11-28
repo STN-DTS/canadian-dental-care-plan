@@ -116,6 +116,21 @@ const ns = {
     option01: "Try refreshing the page or try again later",
     option02: "Return to the <home>home page</home>",
   },
+  actionError: {
+    contact: "If the problem persists, contact Service Canada by calling 1\u2011833\u2011537\u20114342 and provide the error details below.",
+    default: {
+      heading: "We're having a problem processing your request",
+      body: "An unexpected error occurred. Your information hasn't been lost. Please try again.",
+    },
+    applicationSubmissionFailed: {
+      heading: "We're having a problem submitting your application",
+      body: "An unexpected error occurred while submitting your application. Your information hasn't been lost. Please try submitting again.",
+    },
+    renewalSubmissionFailed: {
+      heading: "We're having a problem submitting your renewal",
+      body: "An unexpected error occurred while submitting your renewal. Your information hasn't been lost. Please try submitting again.",
+    },
+  },
   inputLabel: {
     required: "required",
   },

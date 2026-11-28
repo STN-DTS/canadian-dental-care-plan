@@ -124,12 +124,14 @@ function createHttpClient(fetchFn: FetchFn): DefaultHttpClient {
   return client;
 }
 
-describe.each(writeOperations)('$name', ({ submit, errorCode }) => {
+describe.each(writeOperations)('$name', ({ name, submit, errorCode }) => {
   it('does not retry a transport error', async () => {
     const error = new TypeError('fetch failed', { cause: Object.assign(new Error('connection refused'), { code: 'ECONNREFUSED' }) });
     const fetchFn = vi.fn<FetchFn>().mockRejectedValue(error);
+    const expectedTransportError = { name: 'AppError', errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED, cause: error };
+    const expectedError = name === 'benefit application' || name === 'benefit renewal' ? { name: 'AppError', errorCode, cause: expectedTransportError } : expectedTransportError;
 
-    await expect(submit(createHttpClient(fetchFn))).rejects.toBe(error);
+    await expect(submit(createHttpClient(fetchFn))).rejects.toMatchObject(expectedError);
     expect(fetchFn).toHaveBeenCalledOnce();
   });
 
@@ -141,14 +143,18 @@ describe.each(writeOperations)('$name', ({ submit, errorCode }) => {
   });
 });
 
-it.each(benefitOperations)('$name stops on a transport error after retrying a duplicate confirmation number', async ({ submit }) => {
+it.each(benefitOperations)('$name stops on a transport error after retrying a duplicate confirmation number', async ({ submit, errorCode }) => {
   const error = new TypeError('fetch failed', { cause: Object.assign(new Error('connection refused'), { code: 'ECONNREFUSED' }) });
   const fetchFn = vi
     .fn<FetchFn>()
     .mockResolvedValueOnce(new Response('A record with the same value for Application Confirmation Number already exists', { status: 400 }))
     .mockRejectedValue(error);
 
-  await expect(submit(createHttpClient(fetchFn))).rejects.toBe(error);
+  await expect(submit(createHttpClient(fetchFn))).rejects.toMatchObject({
+    name: 'AppError',
+    errorCode,
+    cause: { name: 'AppError', errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED, cause: error },
+  });
   expect(fetchFn).toHaveBeenCalledTimes(2);
 });
 
@@ -193,7 +199,15 @@ it('does not repeat an application POST when a redirect fails to connect', async
     const client = createHttpClient(async (input, init) => await fetch(input, { ...init, dispatcher: agent }));
     const repository = new DefaultBenefitApplicationRepository(serverConfig, client);
 
-    await expect(repository.createBenefitApplication({ ...benefitRequest, applicationId })).rejects.toMatchObject({ cause: { code: 'ECONNREFUSED' } });
+    await expect(repository.createBenefitApplication({ ...benefitRequest, applicationId })).rejects.toMatchObject({
+      name: 'AppError',
+      errorCode: ErrorCodes.API_BENEFIT_APPLICATION_CREATE_FAILED,
+      cause: {
+        name: 'AppError',
+        errorCode: ErrorCodes.API_HTTP_REQUEST_FAILED,
+        cause: { cause: { code: 'ECONNREFUSED' } },
+      },
+    });
     expect(agent.getCallHistory()?.filterCallsByPath('/applications')).toHaveLength(1);
     expect(agent.getCallHistory()?.filterCallsByPath('/redirected')).toHaveLength(1);
   } finally {
